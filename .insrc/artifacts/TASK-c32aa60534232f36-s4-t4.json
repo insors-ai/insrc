@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b52eb5b6-5d34-48f1-931f-ff87a3c365be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.674Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Fence owners and validate resume compatibility",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0f877fc3060ac121a3e3cfc1ad95559827b7b26c8644a02d858c759b2afd2726",
+        "at": "2026-10-29T09:20:00.675Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.675Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Fence owners and validate resume compatibility",
+    "summary": "Complete recovery-store.ts lifecycle: claim/renew/release lease, persistent generation fencing, serialized state changes, restart reconciliation, compatibility and terminal receipt storage. Consume trusted process guard; terminal eligibility/publication remain s5.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Concurrent session claims yield one current owner; expiry/takeover strictly increases generation and late callbacks cannot mutate.",
+      "Lost process ownership, backward wall clock or stale lease refuses writes; restart does not trust old owner.",
+      "Pinned subject/contracts/policy/evidence/tool/provider mismatch reports stale/unsupported with reasons; legacy runs explicitly non-resumable.",
+      "Terminal receipt storage idempotent with conflicting receipt refusal; no completion eligibility or canonical CR authoring added."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Resume compatibility, unsupported legacy state and clock rollback"
+      },
+      {
+        "level": "integration",
+        "name": "Concurrent owner claims, generation takeover and lost process guard fencing"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

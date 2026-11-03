@@ -1,0 +1,166 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "af2ff8df7fd016b29805e093abf7f4b3dc1bdca9fe95a1c0cc8539dd1b1cb1b9",
+        "at": "2026-10-29T11:53:47.682Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:53:48.634Z",
+        "override": {
+          "reason": "User explicitly approved completion with the presented verification override. Single independent review WARN: 0 HIGH, 2 MED, 2 LOW. Both MED observations contradicted by direct source/passing tests: isUnresolved is used in retained-work filter; renew/requestCompletion/issueAttempt/settleAttempt/extendAllowance have direct calls in recorded publication tests and the passing 58-test compatibility sweep. Evidence /tmp/publication-prerequisite-review-verification.json. All five task gates and production build passed. No automatic second review per user instruction."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-216bdab4-d91b-4640-bdaf-a0576900a1cb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:26:31.450Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-10-29T11:41:54.756Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "resume-frozen-review-publication-after-interruption"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-binding.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-journal.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-replay.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-callback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-deadline.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-crash-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/publication-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T11:53:45.526Z"
+      }
+    ],
+    "commit": "f227a4b07",
+    "summary": "Implemented approved sc4 publication recovery: one immutable intent/checkpoint, completion-requested owner takeover, exact withPublicationFence API and ten-second callback uncertainty response while retaining the queue until callback drain. Real process-crash/concurrency tests preserve operation identity and separate terminal receipts. S5 canonical publication and S6 rollout remain unchanged."
+  },
+  "citations": []
+}

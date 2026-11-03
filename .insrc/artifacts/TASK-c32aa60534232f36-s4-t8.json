@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-feaae3d6-7835-466e-b58b-471e9e599aa0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.679Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Verify crash recovery and publish internal composition boundary",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a932b183af61e245df7a675ad68558c80ee5240a8688ed9e2d70d7f13900db7e",
+        "at": "2026-10-29T09:20:00.679Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.680Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify crash recovery and publish internal composition boundary",
+    "summary": "Integrate recovery store, guarded backend and unchanged sc3 coordinator with deterministic providers. Test real process crash matrix, indexed/source equivalence, concurrent ownership and combined usage/budget restoration. Export internal recovery surface for s5/s6 and maintain relevant diagrams without activating production routing.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Crash before/after stage, commit sync and ACK restores only verified accepted progress; two accepted blocks survive uncertain enclosing request and only unresolved work redispatched.",
+      "Source-only and indexed-impact replay preserve same subject packets; stale/empty impact remains explicit.",
+      "End-to-end resume preserves findings, evidence, receipt provenance, attempt consumption and pending/unknown usage.",
+      "Focused recovery/investigation and legacy compatibility suites plus production build pass; no live LLM calls or whole repository test sweep.",
+      "Internal exports documented; legacy entrypoints/default selection and sibling-owned MCP/provider/completion behavior remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Two-block sc3 session crash resume preserves accepted work and accounting"
+      },
+      {
+        "level": "integration",
+        "name": "Source-only and indexed-impact recovery with legacy routing unchanged"
+      },
+      {
+        "level": "smoke",
+        "name": "Focused investigation and legacy compatibility suites plus production build"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

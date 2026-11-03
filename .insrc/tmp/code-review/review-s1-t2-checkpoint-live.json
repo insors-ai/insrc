@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "review-s1-t2-checkpoint-live",
+  "project": "/home/subho/work/dev/insors/insrc",
+  "storyId": "s1",
+  "taskId": "t2",
+  "attempts": [
+    {
+      "header": {
+        "attempt": 1,
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "createdAt": "2026-10-31T13:33:21.771Z",
+        "selectedTaskIds": [
+          "t2"
+        ],
+        "completedAt": "2026-10-31T13:35:59.008Z"
+      },
+      "submitted": {
+        "storyId": "s1",
+        "taskId": "t2",
+        "functionalSummary": "Review the selected atomic checkpoint writer addition for task t2. Only checkpoint.ts is finding scope; coordinator code and tests are context. The writer must persist whole JSON, flush it before atomic replacement, and retain a valid prior checkpoint if persistence fails. Do not infer scope from the current checkout or other files in this commit.",
+        "documents": {
+          "story": {
+            "path": ".insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+            "commit": "1c8d9c22df8987c078f59c1f5793925a7a0ecec2"
+          },
+          "lld": {
+            "path": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s1.json",
+            "commit": "1c8d9c22df8987c078f59c1f5793925a7a0ecec2"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s1.json",
+            "commit": "1c8d9c22df8987c078f59c1f5793925a7a0ecec2"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "c0339f78f5b9a6baae698fccf142fd60360e2d5e",
+            "parent": "1c8d9c22df8987c078f59c1f5793925a7a0ecec2",
+            "files": [
+              {
+                "path": "src/workflow/code-review/task-review/checkpoint.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      26
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "cases": [
+              "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+              "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry",
+              "checkpoint write failure stops scheduling and retains the last complete JSON"
+            ],
+            "command": "node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "result": "pass",
+            "executionDetails": "Builder-reported focused regression run passed 46 tests, including these task-review cases, before c0339f78f was committed. The relevant source/test content was committed in c0339f78f. Recorded log: /tmp/review-t2-regressions.log. This is builder-reported execution, not reviewer execution; current test/adapter source has since changed.",
+            "evidenceReferences": [
+              "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "Explicitly user-authorized one-time recovery of retained actual native daemon feedback. This is the exact result of the built normalizeTaskResult function on the unedited native answer: incomplete, not passed. No feedback is removed or reclassified and no model review is repeated. Original failed checkpoint remains at /tmp/review-t2-checkpoint-before-repair.json; original host refusal retained in review-response.error. CR publication pending. This demonstrates a useful actual assessment/checkpoint, not clean review signoff.",
+        "tasks": [
+          {
+            "taskId": "t2",
+            "status": "incomplete",
+            "summary": "checkpoint.ts (26 new lines, unchanged since c0339f78f) implements saveCheckpoint/checkpointPath exactly to sc2's durability contract: a whole-JSON write to a uuid-suffixed temp file opened exclusively (mode 0o600), fsync'd before the atomic rename, followed by a best-effort directory fsync (tolerating EINVAL/ENOTSUP/EISDIR as \"and directory as supported\"), with the temp file cleaned up in a finally. Any failure before rename leaves the existing checkpoint at `path` untouched, so a prior valid checkpoint is always retained on persistence failure; rename itself is atomic so pollers never observe a partial document. The coordinator.ts caller (context) awaits save() before each task transition and stops scheduling (without discarding the last durable file) when save() throws, matching the required behavior end-to-end.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "I executed `node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/coordinator.test.ts` myself in the current checkout; checkpoint.ts is byte-identical between c0339f78f and the current checkout (confirmed via `git diff c0339f78f -- checkpoint.ts`, no output), so this run is valid evidence against the committed implementation even though coordinator.test.ts itself has since gained one additional unrelated test. All 7 tests passed, including the three named tests: 'task review admission...' reads the checkpoint file from disk via fs.readFile+JSON.parse immediately after start() and again after settlement, proving saveCheckpoint produces a parseable whole JSON file both pre- and post-task; 'task execution: checkpoint before next task...' wraps the real saveCheckpoint (not a pure mock) and asserts the prior task's result is durable on disk before the next provider call begins; 'checkpoint write failure stops scheduling...' also wraps the real saveCheckpoint for writes 1-4 and injects a throw on write 5, then asserts only t1's result is retained on disk and no third task runs — this is genuine filesystem-level exercise of the atomic-replace path, not a stub.",
+              "evidenceReferences": [
+                "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/checkpoint.ts",
+                "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/coordinator.ts"
+              ]
+            },
+            "limitations": [
+              "One minor non-blocking edge case noted but not raised as a finding per the optional-improvements rule: if the write/rename path throws AND the outer finally's unlink(temporary) also throws with a non-ENOENT error, the unlink error masks the original persistence error. This doesn't violate any stated requirement (the on-disk checkpoint is still correctly retained either way) and is narrative advice only."
+            ],
+            "advice": [
+              "Consider preserving the original error (e.g. via AggregateError or logging-then-rethrow) if the cleanup unlink in the outer finally also fails, so a genuine write failure isn't masked by an unrelated cleanup error. Low priority — behavior and durability guarantees are unaffected either way."
+            ],
+            "inspectedReferences": [
+              "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/checkpoint.ts",
+              "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/coordinator.ts",
+              "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+              "1c8d9c22df8987c078f59c1f5793925a7a0ecec2:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s1.json"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "cases": [
+                  "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                  "task execution: checkpoint before next task, one size-based deadline, failure continuation and no automatic retry",
+                  "checkpoint write failure stops scheduling and retains the last complete JSON"
+                ],
+                "command": "node --import tsx --test --test-force-exit src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "result": "pass",
+                "executionDetails": "Reviewer-executed (not builder-reported) against the current checkout, which is byte-identical to checkpoint.ts at c0339f78f. All 7 tests in the file passed (7 pass, 0 fail, 0 skipped). The three named tests passed individually, each exercising the real saveCheckpoint against a real temp directory (mkdtemp) with real fs reads back.",
+                "evidenceReferences": [
+                  "c0339f78f5b9a6baae698fccf142fd60360e2d5e:src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "crPublication": "pending"
+      }
+    }
+  ]
+}

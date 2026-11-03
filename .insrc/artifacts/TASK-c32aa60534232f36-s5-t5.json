@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3f9e42e5-410c-4f8e-945e-26665db6e5e4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.218Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Reconcile canonical writes and persist terminal completion receipts",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "76257a9e52bb4c6d85fa7c94a885539dce3a880d487926cafdddcf0b4879d309",
+        "at": "2026-10-29T12:02:08.218Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.219Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile canonical writes and persist terminal completion receipts",
+    "summary": "Complete publisher retry/recovery: reconcile frozen operation against canonical head/history after lost ACK, create immutable sc5 receipt, and record it through sc4 only after the publication callback queue releases.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Crash after canonical write but before terminal receipt resolves the same operation/revision without rerunning judges or appending a duplicate CR.",
+      "Receipt binds run/subject/terminal checkpoint/canonical ID and revision/verdict/coverageRef and is durable before success returns.",
+      "Identical terminal replay returns original receipt read-only; mismatching head/content/receipt reports conflict.",
+      "Owner/freshness loss or callback timeout cannot become completion; respect sc4 revoked guard and non-reentrant queue contract.",
+      "Partial/failed execution never produces a passing CR; accepted findings and usage limitations remain intact."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Lost canonical write acknowledgment reconciles one revision and terminal receipt"
+      },
+      {
+        "level": "integration",
+        "name": "Terminal replay conflict and revoked callback authority cannot manufacture completion"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

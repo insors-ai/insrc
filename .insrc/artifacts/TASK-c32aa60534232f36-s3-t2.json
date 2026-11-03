@@ -1,0 +1,81 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-00376b0d-0408-4fc3-8f74-1ac02b365879",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:01:41.749Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Accept per-block progress before returning acknowledgment",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ed54800abc921786bb6d258b672c8999d2cfcd28fc10447b3315d1c146ecd4b1",
+        "at": "2026-10-29T07:01:41.749Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T07:01:41.750Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Accept per-block progress before returning acknowledgment",
+    "summary": "Implement progress.ts over sc2 pure candidate validation and sc6 object staging/transition append. Bind progress identities, expected sequence, block ownership, receipt replay and uncertainty without implementing durable storage.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Authenticate every progress binding and selected block; reject unsupported evidence, wrong sequence/generation/attempt and conflicting payload identity.",
+      "Stage object-valued candidate/transition and append through sc6 before advancing accepted ledger/sequence or returning ACK.",
+      "Identical accepted progress returns authoritative prior receipt without reapplying or recharging; missing/lost acceptance stays explicitly uncertain.",
+      "Append failure prevents next block assessment; needs-followup/unverified and large-block partial progress retain outstanding work.",
+      "Focused delayed-append, lost-ACK, conflict and immutable-state tests pass with test-only in-memory ports."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Per-block append-before-ACK, replay and uncertain acceptance"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

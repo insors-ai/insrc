@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e61763ad-b238-4610-acd6-78130039d718",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.213Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Validate accountable completion at one accepted checkpoint",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "59193af031941d50c7c03dcdb6dfdb7850df854e294934b03e816ffdc0091c18",
+        "at": "2026-10-29T12:02:08.213Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.214Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate accountable completion at one accepted checkpoint",
+    "summary": "Add completion-types.ts and completion-assessment.ts with exact sc5 assessment/receipt types and fail-closed coverage checks. Consume verified sc2/sc4 state and current approved pins/party records; do not execute reviewers or accept new final deltas.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exact CompletionAssessmentV1 and ReviewCompletionReceiptV1 shapes match approved sc5.",
+      "Every required task/check/design/change/criterion/impact row and latest selected block disposition is checked against pinned basis and trusted receipt closure.",
+      "Missing/pending/unverified rows, unfinished blocks or outstanding work return incomplete; unsupported satisfaction/applicability refuses.",
+      "Unplanned changed scope remains required; conflicting expectations or unknown/same author-reviewer return conflict without weakening requirements.",
+      "Stale source/BUILD/contract/policy compatibility returns stale with reasons; findings can form accountable completed WARN/BLOCK."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Completion validates every required row block evidence and independent party"
+      },
+      {
+        "level": "unit",
+        "name": "Completion rejects stale conflicting and unsupported coverage without canonical writes"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

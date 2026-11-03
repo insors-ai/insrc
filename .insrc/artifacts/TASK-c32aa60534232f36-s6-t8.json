@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-442bcc22-eb6c-42c3-acfa-a0a1ff5f7c47",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.988Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Integrate qualified Codex investigation sessions",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd1aef4c0cada89a760ce497454498ad62fe6032267d4b1f6822e2ae85853711",
+        "at": "2026-10-29T13:20:29.988Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.989Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integrate qualified Codex investigation sessions",
+    "summary": "Implement the Codex-specific isolated invocation adapter through the same provider abstraction and bridge with independent effective-configuration qualification.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Codex effective tool/config isolation is verified independently of a read-only sandbox; broad registered MCP/tools and executable startup context are not admitted.",
+      "One scoped session can accept multiple durable blocks; full reply validation, budget, retry and cancellation behavior match the common domain.",
+      "Unsupported installed versions refuse explicitly; existing no-binding Codex/design behavior and CLI OAuth ownership remain unchanged."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Codex scoped session progress budget cancellation and legacy behavior"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

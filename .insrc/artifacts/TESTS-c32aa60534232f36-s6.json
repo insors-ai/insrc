@@ -1,0 +1,1321 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 15,
+        "contentHash": "8dd3fddef9fdce11da164836dcf0f440dd835f1bd142dc2eb4712fde968a1d11",
+        "at": "2026-10-29T18:21:54.012Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "createdAt": "2026-10-29T13:24:51.323Z",
+    "updatedAt": "2026-10-29T18:21:53.906Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 15
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a035c8b12",
+        "ranAt": "2026-10-29T13:24:51.323Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Strict investigation commands status schema and default legacy selection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/review-investigation.test.ts",
+                "title": "Strict investigation commands status schema and default legacy selection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/review-investigation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 506,
+            "titles": [
+              {
+                "title": "Strict investigation commands status schema and default legacy selection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f994e5bcf",
+        "ranAt": "2026-10-29T13:33:31.225Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical approved planned and upstream scope rejects ambiguous attribution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-work.test.ts",
+                "title": "Canonical approved planned and upstream scope rejects ambiguous attribution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-work.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 749,
+            "titles": [
+              {
+                "title": "Canonical approved planned and upstream scope rejects ambiguous attribution",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "621c63e33",
+        "ranAt": "2026-10-29T14:09:57.681Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pinned source artifact test and caller evidence preserve provenance and limitations",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-evidence.test.ts",
+                "title": "Pinned source artifact test and caller evidence preserve provenance and limitations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 884,
+            "titles": [
+              {
+                "title": "Pinned source artifact test and caller evidence preserve provenance and limitations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2beab2121",
+        "ranAt": "2026-10-29T14:19:28.477Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Idempotent admission descriptor recovery and runtime source exclusions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-service.test.ts",
+                "title": "Idempotent admission descriptor recovery and runtime source exclusions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Service lease budget and frozen publication composition survive restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-service.test.ts",
+                "title": "Service lease budget and frozen publication composition survive restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4421,
+            "titles": [
+              {
+                "title": "Idempotent admission descriptor recovery and runtime source exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "Service lease budget and frozen publication composition survive restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "9ac0cd010",
+        "ranAt": "2026-10-29T14:27:20.629Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Scoped bridge accepts multiple block ACKs and rejects stale cross run capabilities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-bridge.test.ts",
+                "title": "Scoped bridge accepts multiple block ACKs and rejects stale cross run capabilities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/review-investigation-bridge.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1980,
+            "titles": [
+              {
+                "title": "Scoped bridge accepts multiple block ACKs and rejects stale cross run capabilities",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a21b9e55e",
+        "ranAt": "2026-10-29T14:38:33.121Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 830,
+            "titles": [
+              {
+                "title": "Effective native isolation qualification rejects inherited tools and unproven binaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "7c865ba3b",
+        "ranAt": "2026-10-29T15:02:32.022Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Claude scoped session progress budget cancellation and legacy behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-service.test.ts",
+                "title": "Service lease budget and frozen publication composition survive restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4616,
+            "titles": [
+              {
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35407,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              },
+              {
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4900,
+            "titles": [
+              {
+                "title": "Idempotent admission descriptor recovery and runtime source exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "Service lease budget and frozen publication composition survive restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "6d22250b6",
+        "ranAt": "2026-10-29T15:22:35.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Codex scoped session progress budget cancellation and legacy behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5818,
+            "titles": [
+              {
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-review-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 35239,
+            "titles": [
+              {
+                "title": "claude reviewer-session arguments allow reading and insrc analyze only",
+                "result": "pass"
+              },
+              {
+                "title": "codex reviewer-session arguments use a read-only sandbox",
+                "result": "pass"
+              },
+              {
+                "title": "a claude reviewer session runs in the repo with the session arguments and returns the checked answer",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session takes the LAST message as the answer",
+                "result": "pass"
+              },
+              {
+                "title": "a session with no checked answer fails",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is retried once",
+                "result": "pass"
+              },
+              {
+                "title": "a transient CLI error is never retried more than once",
+                "result": "pass"
+              },
+              {
+                "title": "an error that is not transient is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "a session is stopped at its deadline and that is not retried",
+                "result": "pass"
+              },
+              {
+                "title": "the retry gets only the time that remains",
+                "result": "pass"
+              },
+              {
+                "title": "no attempt starts once the deadline has passed",
+                "result": "pass"
+              },
+              {
+                "title": "one-shot calls and the edit session build the same arguments as before",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session that produces no model output is killed early and retried once as a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "a codex run silent twice fails with its session named, and a run that is answering is never cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "only the reviewer session is watched: a one-shot codex call that is silent at first is not cut by the stall limit",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints no output and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call with stallMs kills a run that prints an item event and then goes silent, stallMs after its last output",
+                "result": "pass"
+              },
+              {
+                "title": "a structured codex call that keeps printing within stallMs completes, and without stallMs no watchdog is armed",
+                "result": "pass"
+              },
+              {
+                "title": "claude ignores stallMs and reviewer sessions keep the first-output watchdog",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session given stallMs is killed after that much stdout silence, also after an early item event, and throws CliStallError",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session without stallMs keeps the first-output watchdog: model output printed early then a long silence is not a stall",
+                "result": "pass"
+              },
+              {
+                "title": "a size refusal in a claude session envelope is now an InputTooLargeError, and a codex session refusal still is",
+                "result": "pass"
+              },
+              {
+                "title": "with effort, claude invocations carry --effort <e> and codex invocations carry -c model_reasoning_effort=<e>, in complete, structured, edit session and both review sessions",
+                "result": "pass"
+              },
+              {
+                "title": "without effort every argv is byte-identical to today's",
+                "result": "pass"
+              },
+              {
+                "title": "provider profile and normalized enveloped wire schema agree before planning and dispatch without config writes",
+                "result": "pass"
+              },
+              {
+                "title": "review-scoped provider and driver logs redact sentinel content on all failure paths",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5838,
+            "titles": [
+              {
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "d9f368808",
+        "ranAt": "2026-10-29T16:20:59.480Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Entry parity across daemon controller source and indexed planned and planless runs",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+                "title": "Entry parity across daemon controller source and indexed planned and planless runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+                "title": "Canonical repository publication completes without a second model call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Cross engine schema generation and capability replay are rejected",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+                "title": "Cross engine schema generation and capability replay are rejected",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16019,
+            "titles": [
+              {
+                "title": "Entry parity across daemon controller source and indexed planned and planless runs",
+                "result": "pass"
+              },
+              {
+                "title": "Cross engine schema generation and capability replay are rejected",
+                "result": "pass"
+              },
+              {
+                "title": "Canonical repository publication completes without a second model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "be8379997",
+        "ranAt": "2026-10-29T16:29:11.246Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Status reconnect progress accounting and pending unknown usage are truthful",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-status.test.ts",
+                "title": "Status reconnect progress accounting and pending unknown usage are truthful",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+                "title": "Entry parity across daemon controller source and indexed planned and planless runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5879,
+            "titles": [
+              {
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5934,
+            "titles": [
+              {
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-repository.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16998,
+            "titles": [
+              {
+                "title": "Entry parity across daemon controller source and indexed planned and planless runs",
+                "result": "pass"
+              },
+              {
+                "title": "Cross engine schema generation and capability replay are rejected",
+                "result": "pass"
+              },
+              {
+                "title": "Canonical repository publication completes without a second model call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-status.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 998,
+            "titles": [
+              {
+                "title": "Status reconnect progress accounting and pending unknown usage are truthful",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "adc7b92f9",
+        "ranAt": "2026-10-29T16:38:14.415Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+                "title": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+                "title": "Accountable findings and pending usage survive canonical WARN and BLOCK publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+                "title": "Process wide provider admission serializes repositories and cancels queued work without a lease",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 25839,
+            "titles": [
+              {
+                "title": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+                "result": "pass"
+              },
+              {
+                "title": "Accountable findings and pending usage survive canonical WARN and BLOCK publication",
+                "result": "pass"
+              },
+              {
+                "title": "Process wide provider admission serializes repositories and cancels queued work without a lease",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "d9a8176ee",
+        "ranAt": "2026-10-29T17:05:27.926Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+                "title": "legacy design shapes refuse stale before requiring new declarations or replies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+                "title": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9777,
+            "titles": [
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 26518,
+            "titles": [
+              {
+                "title": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+                "result": "pass"
+              },
+              {
+                "title": "Accountable findings and pending usage survive canonical WARN and BLOCK publication",
+                "result": "pass"
+              },
+              {
+                "title": "Process wide provider admission serializes repositories and cancels queued work without a lease",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1861,
+            "titles": [
+              {
+                "title": "start emits one assigned prompt and versioned answer schema without whole grounding (ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "the opaque token resumes to next:done and persists a CR- record via runCodeReview (ac2/ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "an out-of-changedFiles finding is DROPPED so the persisted record matches the daemon path (ac3 parity)",
+                "result": "pass"
+              },
+              {
+                "title": "fetchGrounding (injected) is the sole grounding source; the emit_judgements frame surfaces it (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "all-empty judgements => a written PASS record (vacuous but valid, ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: non-object input / unknown phase / missing state / unknown token => next:error, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: missing/empty judgements, wrong-dimension set, malformed finding, malformed location => bad-judgements, no write",
+                "result": "pass"
+              },
+              {
+                "title": "ac5: a declined subject (no-subject) and a grounding-unavailable start => next:error, no state saved",
+                "result": "pass"
+              },
+              {
+                "title": "resending the same judgements token after done fails loadState (no double-write)",
+                "result": "pass"
+              },
+              {
+                "title": "a superseded code-review token fails with today's not-found message",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with a stale index (staleFiles) => next:confirm_wait with the stale list + state, and fetchGrounding is NEVER called",
+                "result": "pass"
+              },
+              {
+                "title": "s9: start with isProcessing:true (empty staleFiles) => confirm_wait too",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a fresh index proceeds directly to emit_judgements and the persisted record is groundingMode:full (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: proceed:true block-and-polls the freshness IPC (stale twice then fresh) then continues to emit_judgements",
+                "result": "pass"
+              },
+              {
+                "title": "S001: proceed:true that never becomes fresh before the timeout auto-falls-back to the diff review (emit_judgements over diff), not a confirm_wait re-prompt",
+                "result": "pass"
+              },
+              {
+                "title": "S001: the timeout auto-diff releases the confirm_wait token before the diff review",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh-but-hollow grounding (symbols:[]) auto-falls-back to the diff review, NOT a hollow full emit",
+                "result": "pass"
+              },
+              {
+                "title": "S001: a fresh index with >=1 changed-symbol still uses the FULL graph review (auto-diff does not fire)",
+                "result": "pass"
+              },
+              {
+                "title": "s9: a freshness-IPC failure on the initial check => next:error (freshness-unavailable), no confirm_wait, no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10: proceed:false (decline) calls assembleDiffGrounding and returns emit_judgements over the diff grounding — NO review-declined error",
+                "result": "pass"
+              },
+              {
+                "title": "s10: the degraded judgements turn drives runReview with groundingMode:degraded + capVerdictAtWarn:true and persists a degraded record",
+                "result": "pass"
+              },
+              {
+                "title": "T48: the degraded review passes the Story's resolved range base and LEDGER_EXCLUDE_GLOBS to the diff assembler",
+                "result": "pass"
+              },
+              {
+                "title": "T48: with no resolvable base the degraded review still passes the ledger globs, and an undefined base",
+                "result": "pass"
+              },
+              {
+                "title": "s10: a diff-unavailable failure (assembleDiffGrounding rejects) => next:error (diff-unavailable), no write",
+                "result": "pass"
+              },
+              {
+                "title": "s10 ac6: a fresh index (no decline) still drives runReview with the DEFAULT opts (no groundingMode, no cap) and stamps full",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — dropped findings are carried on the record as outOfScope, verbatim, and never counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the response says how many were dropped, per dimension, and against how large a set",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — the markdown lists the dropped findings and says they are not counted",
+                "result": "pass"
+              },
+              {
+                "title": "11e4fa88 — with nothing dropped the response, the record and the markdown carry no trace of the feature",
+                "result": "pass"
+              },
+              {
+                "title": "a proceed:true wait that times out falls back with fallbackReason freshness-timeout carrying waitedMs, pendingCodeIndexJobs and staleFiles; proceed:false gives declined; a hollow grounding gives hollow-grounding; a fresh full review carries none; the daemon-reviewed path forwards the reason",
+                "result": "pass"
+              },
+              {
+                "title": "on the controller-reviewed path, a timed-out wait saves the reason in the state and the judgements turn writes it to the record and the done frame, distinguishing queued-only from in-flight work",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/steps/code-review-step/__tests__/handler.test.ts: with proceed:true and a freshness that keeps reporting one stale file with an idle queue while other changed files have symbols, the wait ends at the freshness time-out in the degraded diff review (fallback reason freshness-timeout naming that file) and no full review runs",
+                "result": "pass"
+              },
+              {
+                "title": "full degraded and confirm-wait controller continuations use complete-frame admission and atomic call consumption",
+                "result": "pass"
+              },
+              {
+                "title": "controller dimensions retain independent epochs and reject expired attempts and overflowing final reserves before writes",
+                "result": "pass"
+              },
+              {
+                "title": "controller source edits refuse stale answers and persisted run IDs match canonical paired events",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/review-step/__tests__/budget-continuations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1437,
+            "titles": [
+              {
+                "title": "template extraction evidence verification and finalization preserve every required claim through admitted controller turns",
+                "result": "pass"
+              },
+              {
+                "title": "design continuations refuse expired changed and cancelled sources without a review write",
+                "result": "pass"
+              },
+              {
+                "title": "grounded and degraded design evidence retain all claims and enforce original-epoch deadline boundaries",
+                "result": "pass"
+              },
+              {
+                "title": "actual design and code-review handlers refuse cross-protocol tokens and stale envelopes without consuming valid work",
+                "result": "pass"
+              },
+              {
+                "title": "final controller reserve overflow precedes every persistence effect and late attempts cannot use remaining job time",
+                "result": "pass"
+              },
+              {
+                "title": "an artifact edited during awaited inspection cannot receive stale controller findings",
+                "result": "pass"
+              },
+              {
+                "title": "legacy design shapes refuse stale before requiring new declarations or replies",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "e7d9d195e",
+        "ranAt": "2026-10-29T17:46:00.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Adjudicated fixture baseline preserves required defects coverage and labelled efficiency metrics",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-evaluation.test.ts",
+                "title": "Adjudicated fixture baseline preserves required defects coverage and labelled efficiency metrics",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "No default quality or savings claim without separately authorized live evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/review-investigation-evaluation.test.ts",
+                "title": "No default quality or savings claim without separately authorized live evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/review-investigation-adoption.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9712,
+            "titles": [
+              {
+                "title": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+                "result": "pass"
+              },
+              {
+                "title": "Rollback retains accepted complete work for publication without new judgment",
+                "result": "pass"
+              },
+              {
+                "title": "An exact start replay never schedules another completed or paused attempt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent resume requests converge on one bounded invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-evaluation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1151,
+            "titles": [
+              {
+                "title": "Adjudicated fixture baseline preserves required defects coverage and labelled efficiency metrics",
+                "result": "pass"
+              },
+              {
+                "title": "No default quality or savings claim without separately authorized live evidence",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "dc8c3797f",
+        "ranAt": "2026-10-29T18:21:53.906Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Installed adapter and activation readiness remain explicit across the final matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/review-investigation-native-restart.test.ts",
+                "title": "Native restart isolates stale capability files instead of overwriting another invocation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/review-investigation-installation.test.ts",
+                "title": "Installed adapter and activation readiness remain explicit across the final matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Focused production integration domain legacy provider fixtures and production build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/s6-final-focused-tests.log (198/199 original); /tmp/s6-t14-method-routing-tests.log (corrected file4/4); /tmp/s6-native-restart-final-tests.log (native SDK stdio + both scripted CLI fixtures3/3); /tmp/s6-native-restart-production-build.log (rebuilt production exit0); /tmp/s6-compiled-native-binding-smoke.log (compiled stdio scoped tools/read passed); /tmp/s6-installed-cli-final-diagnostics.json (metadata only, no qualification). Formal review failure separately recorded /tmp/s6-final-review-failure.json, not a passing review."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5798,
+            "titles": [
+              {
+                "title": "Claude scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5893,
+            "titles": [
+              {
+                "title": "Codex scoped session progress budget cancellation and legacy behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/review-investigation-installation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1205,
+            "titles": [
+              {
+                "title": "Installed adapter and activation readiness remain explicit across the final matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/review-investigation-native-restart.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 898,
+            "titles": [
+              {
+                "title": "Native restart isolates stale capability files instead of overwriting another invocation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

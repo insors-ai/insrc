@@ -1,0 +1,270 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "6ef58b5c06d6fe84d09bad0ab2266fe99c9affe6b6940113cf8ab21794808a23",
+        "at": "2026-10-29T07:39:51.247Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "createdAt": "2026-10-29T07:05:18.670Z",
+    "updatedAt": "2026-10-29T07:39:51.191Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "b59d81267",
+        "ranAt": "2026-10-29T07:05:18.670Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sc3 bindings, backend qualification and inclusive continuation policy",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation-policy.test.ts",
+                "title": "sc3 bindings, backend qualification and inclusive continuation policy",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/continuation-policy.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 622,
+            "titles": [
+              {
+                "title": "sc3 bindings, backend qualification and inclusive continuation policy",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "b543599b4",
+        "ranAt": "2026-10-29T07:11:24.711Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Per-block append-before-ACK, replay and uncertain acceptance",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/progress.test.ts",
+                "title": "Per-block append-before-ACK, replay and uncertain acceptance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 631,
+            "titles": [
+              {
+                "title": "Per-block append-before-ACK, replay and uncertain acceptance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "19f87026f",
+        "ranAt": "2026-10-29T07:16:29.843Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pinned navigation and changed-entity impact scope parity",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/navigation.test.ts",
+                "title": "Pinned navigation and changed-entity impact scope parity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/navigation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 598,
+            "titles": [
+              {
+                "title": "Pinned navigation and changed-entity impact scope parity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1d15b8950",
+        "ranAt": "2026-10-29T07:28:06.852Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Grouped continuation execution, bounded retries and cancellation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation.test.ts",
+                "title": "Grouped continuation execution, bounded retries and cancellation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation.test.ts",
+                "title": "Continuation mode, deadline and final-reply refusals",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/continuation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "Grouped continuation execution, bounded retries and cancellation",
+                "result": "pass"
+              },
+              {
+                "title": "Continuation mode, deadline and final-reply refusals",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f4277d157",
+        "ranAt": "2026-10-29T07:32:45.009Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Idempotent usage observations and retained active allowance",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation-usage.test.ts",
+                "title": "Idempotent usage observations and retained active allowance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/continuation-usage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 655,
+            "titles": [
+              {
+                "title": "Idempotent usage observations and retained active allowance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "efb20f54f",
+        "ranAt": "2026-10-29T07:39:51.191Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pinned source-ledger-progress integration and legacy compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation-integration.test.ts",
+                "title": "Pinned source-ledger-progress integration and legacy compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/continuation-integration.test.ts",
+                "title": "Progress binding, staging and late-callback boundaries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/continuation-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 954,
+            "titles": [
+              {
+                "title": "Pinned source-ledger-progress integration and legacy compatibility",
+                "result": "pass"
+              },
+              {
+                "title": "Progress binding, staging and late-callback boundaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

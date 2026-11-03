@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b0805f5b-f36d-4e3f-a838-eef1e40c5976",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.982Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Compose pinned evidence test and caller-impact adapters",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3ec8a17cc3e0512ae385034766ba773db0ea338c54b83d0a5e53a5d46c131881",
+        "at": "2026-10-29T13:20:29.982Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.983Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Compose pinned evidence test and caller-impact adapters",
+    "summary": "Add trusted bounded source/artifact/test-result reads and optional graph caller lookup tied to exact selected entities and registered dependency closure.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Evidence identities derive from actual pinned reads and verified test records, never reviewer attestations or mutable markdown.",
+      "Source-only exposes no caller query; indexed lookup verifies source/index/entity mapping and retains partial/stale/unknown limitations.",
+      "Empty or partial caller results do not imply no impact; unresolved impact obligations remain required, with no client DB access."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Pinned source artifact test and caller evidence preserve provenance and limitations"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

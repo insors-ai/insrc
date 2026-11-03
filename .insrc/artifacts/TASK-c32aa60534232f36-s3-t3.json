@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fdd18aa0-8c5b-4ae0-8d79-3d423b15da58",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:01:41.750Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Mediate pinned navigation and optional changed-entity impact",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "af3c0aa107e4be28212520d662618d1e636e97e961eda19b3916e5632eb0e119",
+        "at": "2026-10-29T07:01:41.750Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T07:01:41.751Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Mediate pinned navigation and optional changed-entity impact",
+    "summary": "Add narrow sc3 source/impact wrappers over s1 reads and s2 trusted receipt admission. Keep identical subject seeds in both modes; only indexed mode receives validated daemon-owned changed-entity caller capability.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Source reads stay pinned, bounded and read-only; trusted inspection receipts support later ledger deltas, not backend-claimed file access.",
+      "Caller queries require exact entity membership in selected packet source; ambiguous mapping, stale/missing/partial/empty index results remain explicit unresolved impact.",
+      "Impact evidence is context-only with matching native receipt metadata and limits; no additional commits, packets or changed blocks.",
+      "Use injected closure-scoped daemon capability, with no DB access in clients or new analyzer recipe; focused source/mode/impact tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Pinned navigation and changed-entity impact scope parity"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

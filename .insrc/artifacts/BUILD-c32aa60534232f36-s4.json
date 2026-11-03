@@ -1,0 +1,268 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 9,
+        "contentHash": "2e90fbe4dc0090c7d5ebe360f96047b661e330e51335c3e2f28ba119b4734b39",
+        "at": "2026-10-29T10:15:55.931Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 9,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T10:16:01.277Z",
+        "override": {
+          "reason": "User explicitly approved completion with the presented verification override. Single independent review WARN: 0 HIGH, 3 MED, 4 LOW. All three MED observations contradicted by direct source and daemon-passed tests: issueAttempt and ports called from recorded .test.ts files; foldRecoveryLifecycle directly validates records/integers/identities and delegates attempt/usage validation. Evidence recorded in /tmp/plan-directed-review-s4-review-verification.json. All eight task gates passed, 48 focused tests and final three integration tests passed, production build passed. No automatic second review per user instruction."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-958ea52f-677f-41fa-ba11-350e30323fb3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:21:26.771Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "revision": 9,
+    "updatedAt": "2026-10-29T09:59:10.827Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-types.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-journal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-journal.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-replay.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-replay.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-owner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-attempts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-attempts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-usage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-usage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": ".gitignore"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-runtime-paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-exclusions.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/git-packets.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/source.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/runners/build/changed-files.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-crash-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/recovery-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/recovery-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T10:15:53.302Z"
+      }
+    ],
+    "commit": "279ead05f",
+    "summary": "Implemented daemon-owned durable per-block review recovery with hash-chained journal replay, lease/generation fencing, uncertain attempt reservations, pending usage outbox and private-runtime exclusions. Deterministic process-crash integration preserves accepted evidence/findings and resumes unresolved work; production engine routing remains deferred to s6."
+  },
+  "citations": []
+}

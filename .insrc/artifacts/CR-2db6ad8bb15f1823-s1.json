@@ -1,0 +1,423 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "76e45c08979cc986b481d7efbd2125a607911a1aedd149e06b3b4303e14a09b8",
+        "at": "2026-10-29T13:51:25.228Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793281818896-h7wzfb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:50:18.896Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 66331,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2db6ad8bb15f1823",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-29T13:38:03.643Z",
+    "epicSlug": "admit-verified-test-evidence-through-investigation",
+    "standalone": true,
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "2db6ad8bb15f1823",
+    "storyId": "s1",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/code-review/investigation/__tests__/navigation-test-evidence.test.ts",
+        "src/workflow/code-review/investigation/navigation.ts"
+      ],
+      "buildFingerprint": "4886be120667837f5feb7c51fb5f0bac1b434aef15ec9eeddbd8503d6b83becb",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for untilInvestigationAborted, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — the graph may simply be missing the edge rather than this being uncovered.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337268"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for abort, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — likely a missed graph edge rather than an actual gap.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337269"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for InvestigationNavigation, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — likely a missed graph edge rather than an actual gap.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337270"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for basis, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — likely a missed graph edge rather than an actual gap.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337271"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for check, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — likely a missed graph edge rather than an actual gap.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337272"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for admit, despite it being the core evidence-admission path (ledgerSnapshot/ledgerEqual/admitLedgerEvidence). The Story's test file navigation-test-evidence.test.ts passes in full (3/3), which plausibly covers this via the 'admits actual results and only passing evidence satisfies test obligations' test, but the missing edge means per-symbol exercise can't be graph-confirmed.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337273"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "No test-reaching edge recorded for capability, but the Story's test file navigation-test-evidence.test.ts passes in full (3/3) — likely a missed graph edge rather than an actual gap.",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "337274"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/navigation.ts:1",
+            "message": "untilInvestigationAborted races `work` against the AbortSignal via a nested `abort` callback. If `abort` is registered with signal.addEventListener('abort', ...) and there is no corresponding removeEventListener once the race settles (whichever side wins), repeated calls against a long-lived or reused AbortSignal (e.g. capability() invoked per poll/per test case) will accumulate abort listeners — a resource leak and potential late/duplicate rejection if the signal later fires after `work` already resolved.",
+            "counterpartRef": "",
+            "confidence": "observation"
+          }
+        ]
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 2,
+      "low": 6
+    },
+    "callEvents": [
+      {
+        "event": "start",
+        "reviewId": "40fb4ef9-c119-4671-a8ee-6ef233a00aac",
+        "callId": "5b3140cd-e2ad-4376-8886-01e00e36f736",
+        "dimension": "conventions",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282119232,
+          "elapsedMs": 1,
+          "remainingMs": 299999,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 8261,
+          "promptTokens": 2754,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 28561,
+          "remainingTokens": 99439,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "40fb4ef9-c119-4671-a8ee-6ef233a00aac",
+        "callId": "5b3140cd-e2ad-4376-8886-01e00e36f736",
+        "dimension": "conventions",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282119232,
+          "elapsedMs": 10732,
+          "remainingMs": 289268,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 8261,
+          "promptTokens": 2754,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 28561,
+          "remainingTokens": 99439,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 10731
+      },
+      {
+        "event": "start",
+        "reviewId": "8ee4512e-2dfa-40c7-b1ac-1cdd12469adf",
+        "callId": "af0fb30e-cf13-4f73-a249-7bf6710a933e",
+        "dimension": "coverage",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282129965,
+          "elapsedMs": 0,
+          "remainingMs": 300000,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 7701,
+          "promptTokens": 2567,
+          "schemaChars": 742,
+          "schemaTokens": 248,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 28416,
+          "remainingTokens": 99584,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "8ee4512e-2dfa-40c7-b1ac-1cdd12469adf",
+        "callId": "af0fb30e-cf13-4f73-a249-7bf6710a933e",
+        "dimension": "coverage",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282129965,
+          "elapsedMs": 23543,
+          "remainingMs": 276457,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 7701,
+          "promptTokens": 2567,
+          "schemaChars": 742,
+          "schemaTokens": 248,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 28416,
+          "remainingTokens": 99584,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 23542
+      },
+      {
+        "event": "start",
+        "reviewId": "4c1c6b9b-bc24-42cc-b0ba-83b3f8ee2bc9",
+        "callId": "38239e0b-167c-4870-a2d3-0f3600200978",
+        "dimension": "quality",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282153509,
+          "elapsedMs": 0,
+          "remainingMs": 300000,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 6540,
+          "promptTokens": 2180,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 27987,
+          "remainingTokens": 100013,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "4c1c6b9b-bc24-42cc-b0ba-83b3f8ee2bc9",
+        "callId": "38239e0b-167c-4870-a2d3-0f3600200978",
+        "dimension": "quality",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793282153509,
+          "elapsedMs": 31718,
+          "remainingMs": 268282,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 6540,
+          "promptTokens": 2180,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 27987,
+          "remainingTokens": 100013,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 31717
+      }
+    ]
+  },
+  "citations": []
+}

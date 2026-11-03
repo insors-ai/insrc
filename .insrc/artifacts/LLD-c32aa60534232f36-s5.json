@@ -32,7 +32,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 2,
         "contentHash": "a87abac31881aea6f1c82c0655c32a3afcc0739ea91ec0a5739daf1565b617e3",
@@ -52,19 +52,28 @@
           "properties": {}
         },
         "party": "daemon",
-        "verdict": "warn",
+        "verdict": "pass",
         "counts": {
           "high": 0,
           "med": 0,
           "low": 14
         },
-        "at": "2026-10-29T10:39:16.486Z",
+        "at": "2026-10-29T10:44:49.708Z",
         "report": {
           "entityId": "LLD-c32aa60534232f36-s5",
           "type": "change-log-entry",
           "relation": "reviews",
           "fragment": "review-5e5b29679f181ea46de4e181ad92006b"
         }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T10:44:49.712Z"
       }
     },
     "questionResolutions": {

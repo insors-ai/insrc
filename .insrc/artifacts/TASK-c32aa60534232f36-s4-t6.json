@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-26424a12-d1fc-4815-8117-0f8a014899e3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.677Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Add durable usage observation outbox",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0223064133e0f75d3fd6183d2e50373c04c98b8fa0ead67235cf9c331ce7af7",
+        "at": "2026-10-29T09:20:00.677Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.677Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add durable usage observation outbox",
+    "summary": "Add recovery-usage.ts implementing recordAttemptUsage behind existing sc6 type. Persist pending observations before invoking existing usage writer, qualify stable deduplication, record delivery receipts and replay pending work without manufacturing actual usage.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Stable observation identity/digest and issued-attempt attribution validated; conflicting replay refuses.",
+      "Pending entry durable before writer; crash after writer success reuses same deduplication key; unqualified writer remains pending.",
+      "Reported/estimated/unavailable counters remain distinct; null unknowns and native provenance survive restart; allowances never become usage.",
+      "Current owner may record accounting-only usage of cancelled issued attempt; no stale progress authority or new warehouse schema."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Usage identity, null quality counters and conflicting observation refusal"
+      },
+      {
+        "level": "integration",
+        "name": "Durable pending-before-write outbox and lost receipt deduplication"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

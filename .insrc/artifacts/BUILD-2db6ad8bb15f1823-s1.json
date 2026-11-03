@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "41188b1b0645096b5e89b9eae9bcfcc7367951058a9fbb019a20115fa84ffe8f",
+        "at": "2026-10-29T13:58:45.083Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:58:46.142Z",
+        "override": {
+          "reason": "Manual verification of the single review: the abort listener is already removed in navigation.ts:13 finally; nav.read tests execute private admit through navigation.ts:45 and verify retained receipts. Both MED observations are contradicted by source/executed tests. 65 focused tests and production build pass."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-ee74d9cf-92ed-441f-9bc3-492be09a7570",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:44:37.367Z",
+    "epicCreatedAt": "2026-10-29T13:38:03.643Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "2db6ad8bb15f1823",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "admit-verified-test-evidence-through-investigation",
+    "updatedAt": "2026-10-29T13:47:08.726Z"
+  },
+  "body": {
+    "focus": "Admit verified test evidence through investigation navigation\n\nRun `/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx /tmp/reproduce-s6-test-inspection-gap.mts`. The deterministic fixture supplies a daemon-verified passing test-result receipt bound to the active attempt and pinned BUILD source. S2 evidenceFromReceipt accepts it, but InvestigationNavigation.read rejects the same inspection with `Read is not the authenticated inspected receipt.` Expected: verified test evidence reaches the existing ledger admission path and can support test obligations; source provenance checks remain strict. Reproduction output is in /tmp/s6-test-inspection-gap.log. No model call or source mutation is needed. [c1,c2,c3]\n\nInvestigationNavigation.read applies the source-read receipt equality check to every inspection kind. In contrast, evidenceFromReceipt intentionally requires readReceipt:null for test-result receipts, along with a pinned source commit and explicit actual result. A non-null read returned to the reviewer therefore cannot equal the valid test inspection's null readReceipt. The source and verified-test receipt forms are both individually valid but their integration is incompatible. This S3-owned defect blocks S6 t3 production test-evidence integration. [c1,c2]\n\nAllow actual daemon-verified test inspections through the existing authenticated navigation and S2 evidence admission path, with read/result metadata bound to the same pinned source and active attempt. Preserve source-read equality, cancellation/ownership checks, receipt identity and all S2 provenance/result checks; unsupported or forged kinds/results must still refuse. Add focused regression coverage for valid passing/failed/unknown results, mismatched or unverified metadata, wrong attempt/source, and unchanged source-read behavior. Do not change shared interface shapes, S4 journal formats, review severity, coverage obligations or automatic completion. Resume the already approved S6 plan after this prerequisite is completed. [c1,c2,c3]",
+    "producesLld": false,
+    "commit": "8dfd85a9d",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Admit daemon-verified test-result displays through authenticated navigation while preserving S2 source/result provenance, source-read equality, cancellation/owner guards and immutable receipt identity. All 65 focused investigation tests and production build passed; logs: /tmp/test-evidence-prerequisite-tests.log and /tmp/test-evidence-prerequisite-build.log.",
+    "testRecord": {
+      "md": "docs/standalone/admit-verified-test-evidence-through-investigation-E202610292db6ad8b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/navigation-test-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:58:43.806Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/navigation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T13:58:43.806Z"
+      }
+    ]
+  },
+  "citations": []
+}

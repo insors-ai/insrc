@@ -1,0 +1,463 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "d9eef9417f9cb95c1a38febd52771d882dfeee4ad042cf9d1fe14f7914f97121",
+        "at": "2026-10-29T09:59:10.909Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "createdAt": "2026-10-29T09:21:26.771Z",
+    "updatedAt": "2026-10-29T09:59:10.827Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fe12f6fdf",
+        "ranAt": "2026-10-29T09:21:26.771Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Recovery contract shapes, version and identity refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-types.test.ts",
+                "title": "Recovery contract shapes, version and identity refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Bounded child-worker handshake kill and reopen feasibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-types.test.ts",
+                "title": "Bounded child-worker handshake kill and reopen feasibility",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-types.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 513,
+            "titles": [
+              {
+                "title": "Recovery contract shapes, version and identity refusal",
+                "result": "pass"
+              },
+              {
+                "title": "Bounded child-worker handshake kill and reopen feasibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "85d9486e3",
+        "ranAt": "2026-10-29T09:25:03.833Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Private run paths, canonical immutable values and symlink escape refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-journal.test.ts",
+                "title": "Private run paths, canonical immutable values and symlink escape refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Blob-before-event durability and append sync fault matrix",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-journal.test.ts",
+                "title": "Blob-before-event durability and append sync fault matrix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-journal.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 402,
+            "titles": [
+              {
+                "title": "Private run paths, canonical immutable values and symlink escape refusal",
+                "result": "pass"
+              },
+              {
+                "title": "Blob-before-event durability and append sync fault matrix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "205217136",
+        "ranAt": "2026-10-29T09:29:58.128Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-replay.test.ts",
+                "title": "Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-replay.test.ts",
+                "title": "Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-replay.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 807,
+            "titles": [
+              {
+                "title": "Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure",
+                "result": "pass"
+              },
+              {
+                "title": "Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "068211343",
+        "ranAt": "2026-10-29T09:35:53.887Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Resume compatibility, unsupported legacy state and clock rollback",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-owner.test.ts",
+                "title": "Resume compatibility, unsupported legacy state and clock rollback",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Concurrent owner claims, generation takeover and lost process guard fencing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-owner.test.ts",
+                "title": "Concurrent owner claims, generation takeover and lost process guard fencing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 800,
+            "titles": [
+              {
+                "title": "Resume compatibility, unsupported legacy state and clock rollback",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent owner claims, generation takeover and lost process guard fencing",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ebb01294c",
+        "ranAt": "2026-10-29T09:41:21.005Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Reservation settlement, inactive pause and audited extension accounting",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-attempts.test.ts",
+                "title": "Reservation settlement, inactive pause and audited extension accounting",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Issued-before-dispatch retry identities and uncertain attempt recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-attempts.test.ts",
+                "title": "Issued-before-dispatch retry identities and uncertain attempt recovery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-attempts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1255,
+            "titles": [
+              {
+                "title": "Reservation settlement, inactive pause and audited extension accounting",
+                "result": "pass"
+              },
+              {
+                "title": "Issued-before-dispatch retry identities and uncertain attempt recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9539ea8d1",
+        "ranAt": "2026-10-29T09:46:26.834Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Usage identity, null quality counters and conflicting observation refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-usage.test.ts",
+                "title": "Usage identity, null quality counters and conflicting observation refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Durable pending-before-write outbox and lost receipt deduplication",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-usage.test.ts",
+                "title": "Durable pending-before-write outbox and lost receipt deduplication",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-usage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 987,
+            "titles": [
+              {
+                "title": "Usage identity, null quality counters and conflicting observation refusal",
+                "result": "pass"
+              },
+              {
+                "title": "Durable pending-before-write outbox and lost receipt deduplication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "45eb1433e",
+        "ranAt": "2026-10-29T09:50:18.776Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Runtime namespace excluded from Git scope, index and review manifests",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-exclusions.test.ts",
+                "title": "Runtime namespace excluded from Git scope, index and review manifests",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-exclusions.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 703,
+            "titles": [
+              {
+                "title": "Runtime namespace excluded from Git scope, index and review manifests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "279ead05f",
+        "ranAt": "2026-10-29T09:59:10.827Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Two-block sc3 session crash resume preserves accepted work and accounting",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-integration.test.ts",
+                "title": "Two-block sc3 session crash resume preserves accepted work and accounting",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-integration.test.ts",
+                "title": "Recovered evidence findings and receipt provenance remain linked",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Source-only and indexed-impact recovery with legacy routing unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/recovery-integration.test.ts",
+                "title": "Source-only and indexed-impact recovery with legacy routing unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Focused investigation and legacy compatibility suites plus production build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/plan-directed-review-s4-compatibility.tap:48 pass,0fail; /tmp/plan-directed-review-s4-integration-final.tap:3pass,0fail including final compatibility boundary; /tmp/plan-directed-review-s4-build.log:production build passed."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/recovery-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7876,
+            "titles": [
+              {
+                "title": "Two-block sc3 session crash resume preserves accepted work and accounting",
+                "result": "pass"
+              },
+              {
+                "title": "Source-only and indexed-impact recovery with legacy routing unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "Recovered evidence findings and receipt provenance remain linked",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

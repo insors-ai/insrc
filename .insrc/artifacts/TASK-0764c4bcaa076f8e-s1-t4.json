@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b87b4b8f-a6ee-44cc-a2c5-312c7659a0b8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:24:46.819Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bound callback responses while retaining the write fence",
+      "parent": {
+        "entityId": "STORY-0764c4bcaa076f8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0764c4bcaa076f8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0764c4bcaa076f8e-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5565d2ff38abff2b66ab60c0a12b43ebeda717eba4e3817eb2d0b3294cdc9be4",
+        "at": "2026-10-29T11:24:46.819Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.820Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bound callback responses while retaining the write fence",
+    "summary": "Add the ten-second callback deadline and invocation revocation. Return timeout/uncertainty promptly while retaining run serialization until the actual callback settles, so no competing write can overlap an undrained external commit.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Normal callback returns only while authority remains valid; deadline/late result cannot produce success.",
+      "Timeout revokes the supplied guard and reports uncertainty without claiming external cancellation or a missing side effect.",
+      "Queued takeover/mutation remains blocked until the actual callback drains; an unresponsive run stays fenced until safe daemon restart.",
+      "Timers/listeners clean up on settlement; use deterministic mock timers/gated promises, not ten-second sleeps or live model calls."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Callback deadline revokes authority and rejects late success"
+      },
+      {
+        "level": "integration",
+        "name": "Undrained callback retains write fence through caller timeout"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

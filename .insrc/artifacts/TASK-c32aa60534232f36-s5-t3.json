@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d1e61b7-efcd-40d0-91fc-28c2bb613a9f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.216Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Freeze one immutable publication intent and coverage snapshot",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b34e73a83310fe61d4033cad230b64ed5f6f2e6bfb9359c1399febab8756a787",
+        "at": "2026-10-29T12:02:08.216Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.217Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Freeze one immutable publication intent and coverage snapshot",
+    "summary": "Add completion-publication.ts to stage validated coverage and candidate references plus deterministic operation identity, expected canonical revision/absence and trusted pins. Enter completed sc4 withPublicationFence and reuse its frozen reference on retries.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Intent binds run/subject/policy/terminal checkpoint, candidate/coverage digests, canonical target, expected prior revision or explicit absence, BUILD and party provenance.",
+      "Coverage snapshot retains basis/ledger/trusted receipt references outside artifact JSON; staged-but-unaccepted values are not publication authority.",
+      "No active attempt or non-publishable assessment enters publication; completed status resolves existing receipt without new mutating callback.",
+      "Identical retry reuses original frozen intent; conflicting checkpoint/intent is refused by consumed sc4 capability.",
+      "Do not change sc4 journal/private events, deadline/fencing or recovery semantics."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Immutable publication intent binds candidate coverage target and expected revision"
+      },
+      {
+        "level": "integration",
+        "name": "Completed sc4 fence freezes original intent and refuses conflicts without duplicate recovery"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

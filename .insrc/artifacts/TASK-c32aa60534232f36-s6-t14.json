@@ -1,0 +1,109 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b3d9b54-283c-456c-ad4f-9513c50d5495",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.996Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Prove installation rollout matrix and complete focused verification",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2bb973dc03f1951637287b0ae21e432d97745e1ae736f73de0e9a0ae52a9aefe",
+        "at": "2026-10-29T13:20:29.996Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.997Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove installation rollout matrix and complete focused verification",
+    "summary": "Run the final daemon/controller/source/index/planned/planless/native/legacy installation matrix, actual adapter qualification diagnostics, focused suites and production build; retain required sequence documentation and one final independent code review.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "Matrix covers capability mismatch, both installation orders, scope ambiguity, unknown impact/usage, concurrency, crash/reconnect and rollback without legacy/design regressions.",
+      "Installed adapter qualification is reported truthfully; an unsupported binary or pending reconciliation leaves opt-in closed rather than manufacturing readiness.",
+      "Focused affected suites and production build pass without whole-repo/live sweeps; record logs in /tmp, update relevant diagram if integration changes its boundaries, and run exactly one mandatory independent code review before asking BUILD completion approval.",
+      "Final BUILD distinguishes completed implementation from activation readiness, listing any unsupported installed adapter or separately pending reconciliation approval explicitly."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Installed adapter and activation readiness remain explicit across the final matrix"
+      },
+      {
+        "level": "smoke",
+        "name": "Focused production integration domain legacy provider fixtures and production build"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

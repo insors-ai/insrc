@@ -1,0 +1,579 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 16,
+        "contentHash": "880660ebec584198928e3c5c8ecc8c9ecab90e27fab373b2eafcc1adc7d8118f",
+        "at": "2026-10-29T18:28:51.268Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 16,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T18:29:04.465Z",
+        "override": {
+          "reason": "User explicitly authorized override in chat. Single independent review cr-1793296975633-jatc2k timed out on its second adherence chunk at 300 seconds, produced no CR/verdict, and was not rerun. User waives that uncompleted formal review requirement for S6. Focused tests, typechecks, production build and compiled MCP smoke pass, including native restart fix dc8c3797f. Complete S6 with this recorded override; activation and predecessor AMD-8315a11f29fd2812-1 remain pending."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8525e460-a61c-4288-829e-b8378bc5bc93",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:24:51.323Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "revision": 16,
+    "updatedAt": "2026-10-29T18:21:53.906Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": false
+      }
+    ],
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S006/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/__tests__/review-investigation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-work.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-work.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-evidence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-impact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-service.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-descriptor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-runtime-paths.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-investigation-bridge.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-investigation-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/ollama.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/claude-investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/claude-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-review-bridge.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-investigation-native.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/codex-investigation-session.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/native-investigation-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/codex-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-session.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-repository.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/code-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-gateway.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-repository.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/handler.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/schema-registry.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/review-budget-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/server.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-controller-budget-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/review-investigation-wire.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-status.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-crash-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-8315a11f29fd2812-1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-8315a11f29fd2812-1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "docs/review-investigation.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-adoption.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-adoption.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/__tests__/handler.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fixtures/review-evaluation-baseline.v1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/fixtures/review-evaluation-oracle.v1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-evaluation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-approval.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/review-investigation-evaluation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/native-investigation-installation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/review-investigation-installation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/installed-commit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/helpers/method-class-worker-bootstrap.mjs"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      },
+      {
+        "target": {
+          "file": "src/mcp/__tests__/review-investigation-native-restart.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T18:28:44.517Z"
+      }
+    ],
+    "commit": "dc8c3797f",
+    "summary": "S6 implementation tasks 1–14 are built: pinned canonical investigation routing/evidence/recovery/publication, scoped native/controller transport, truthful status/usage, concurrency-safe replay, gated adoption/rollback and independently approved deterministic evaluation. Final focused affected sweep: 198/199 initially, sole Node22 worker-fixture loader corrected and affected file passed4/4; production build passed. One formal independent legacy code-review round was attempted (run cr-1793296975633-jatc2k): chunk1 succeeded291295ms, chunk2 timed out300000ms, no CR or verdict written, and no review rerun. A subsequent reproduced native restart EEXIST edge case was fixed within t14 using per-invocation capability files/private environment selection; actual MCP stdio entry and both scripted CLI adapters passed focused regressions, rebuilt production and compiled stdio smoke passed. Completion needs explicit review override or separate user authorization for another review. Activation remains disabled/default legacy: installed Claude2.1.310/Codex0.164.0 lack independent installed-probe certification, production readiness/oracle reports are not approved, and AMD-8315a11f29fd2812-1 remains pending. No live comparison, default flip, push or automatic approval."
+  },
+  "citations": []
+}

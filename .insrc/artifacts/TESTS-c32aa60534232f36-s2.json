@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "0507baa810d580f160bd1d7631eb44cc76b2fa8c113c107ac55bc4baef98eb34",
+        "at": "2026-10-28T13:56:46.615Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "createdAt": "2026-10-28T13:36:21.476Z",
+    "updatedAt": "2026-10-28T13:56:46.561Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d90ad91f5",
+        "ranAt": "2026-10-28T13:36:21.476Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "sc2 contracts, canonical identities and bounded immutable values",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger-identity.test.ts",
+                "title": "sc2 contracts, canonical identities and bounded immutable values",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/ledger-identity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 397,
+            "titles": [
+              {
+                "title": "sc2 contracts, canonical identities and bounded immutable values",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "813a2bb1b",
+        "ranAt": "2026-10-28T13:41:29.074Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-s2-ac1 complete catalog, legacy projection and planless obligations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger-catalog.test.ts",
+                "title": "review-s2-ac1 complete catalog, legacy projection and planless obligations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/ledger-catalog.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 567,
+            "titles": [
+              {
+                "title": "review-s2-ac1 complete catalog, legacy projection and planless obligations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "e47bb7f1e",
+        "ranAt": "2026-10-28T13:47:23.813Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Trusted receipt admission, provenance, completeness and replay",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger-evidence.test.ts",
+                "title": "Trusted receipt admission, provenance, completeness and replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/ledger-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 588,
+            "titles": [
+              {
+                "title": "Trusted receipt admission, provenance, completeness and replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "4e2ecbd28",
+        "ranAt": "2026-10-28T13:52:25.915Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "review-s2-ac2/ac3 atomic many-to-many coverage and history retention",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger.test.ts",
+                "title": "review-s2-ac2/ac3 atomic many-to-many coverage and history retention",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/ledger.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 609,
+            "titles": [
+              {
+                "title": "Trusted receipt admission, provenance, completeness and replay",
+                "result": "pass"
+              },
+              {
+                "title": "review-s2-ac2/ac3 atomic many-to-many coverage and history retention",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "bb4963819",
+        "ranAt": "2026-10-28T13:56:46.561Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pinned sc1-to-ledger integration and legacy obligation compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger-integration.test.ts",
+                "title": "Pinned sc1-to-ledger integration and legacy obligation compatibility",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/ledger-integration.test.ts",
+                "title": "ledger rejects malformed provenance and preserves unresolved history atomically",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/ledger-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 764,
+            "titles": [
+              {
+                "title": "Pinned sc1-to-ledger integration and legacy obligation compatibility",
+                "result": "pass"
+              },
+              {
+                "title": "ledger rejects malformed provenance and preserves unresolved history atomically",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

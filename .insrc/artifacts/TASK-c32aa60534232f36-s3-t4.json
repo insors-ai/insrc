@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-40ce6298-13ce-4dde-a34f-2e2b4b2cb85e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:01:41.751Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Run serial bounded continuations with retry and cancellation",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0d67eeca1af6b7839eeb2d8f69dc44ede4acf250aa36fc0d385db48a5db9892e",
+        "at": "2026-10-29T07:01:41.751Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T07:01:41.752Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run serial bounded continuations with retry and cancellation",
+    "summary": "Implement continuation.ts to seed navigation-oriented requests, run qualified backend through its bound LLMProvider, expose narrow source/impact/progress tools and return validated replies referencing accepted block receipts.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "One compatible backend session can inspect related obligations and ACK several blocks; no mandatory call per clause/block or eager whole-source packet.",
+      "Serialize provider work; enforce accepted-progress barrier before next block assessment and preserve earlier accepted receipts on enclosing-call failure.",
+      "At most one immediate transient retry with new attempt identity and retained consumption, provider internalRetry:false; non-transient binding/schema/permission/budget/stale failures do not auto-retry.",
+      "Abort provider/tools promptly, fence late callbacks and pause before pending backlog; final reply cannot silently reapply accepted deltas or publish a verdict.",
+      "Focused grouped-session, block-yield, unsupported-backend, retry/cancel/deadline and final-reply tests pass."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Grouped continuation execution, bounded retries and cancellation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

@@ -1,0 +1,650 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793255741363-9i7il5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T06:43:14.846Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 452145,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "hldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "0a640114c890c7259c54c536f1cf7471c3d5028b9e598bea64bb24c4e9678233",
+        "at": "2026-10-29T06:43:58.027Z",
+        "by": {
+          "id": "insrc:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "pass",
+        "counts": {
+          "high": 0,
+          "med": 0,
+          "low": 15
+        },
+        "at": "2026-10-29T06:47:41.095Z",
+        "report": {
+          "entityId": "LLD-c32aa60534232f36-s3",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-9a487082b2bab10eeff6b3e89c83536e"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T06:52:54.190Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Let the independent reviewer choose which pinned source and related obligations to investigate next. Save each assessed block through an acknowledgment exchange while allowing several blocks in one compatible session. Bound time, input, retries and cancellation, and disclose incomplete caller-impact evidence without changing review scope.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a daemon-owned durable investigation state machine with provider-independent accepted state. Seed each run with sc1's approved tasks/checks, artifact references and explicit commit packets, not embedded source partitions. Source-only and indexed-impact runs use identical packets, obligations, reviewer policy and completion checks; only the indexed capability in sc3 differs. Substantive judgments remain the independent agent's job; deterministic guards validate identity, evidence provenance, coverage and publication, not semantic correctness. Reuse existing LLMProvider/CliProvider read-only execution, budget admission, source freshness, ownership and canonical artifact lifecycle; introduce the investigation protocol and durable accepted-state store behind the existing code-review entrypoints. Checkpoint cadence is per reviewed commit-packet block, independently of continuation boundaries and run time limits; multiple block checkpoints may be accepted within one managed reviewer session.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "InvestigationContinuationV1",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "One bounded independent read-only investigation protocol for both entrypoints/modes. Provider sessions execute requests but never own scope, accepted coverage or completion. Accept incremental per-block progress and durable acknowledgments inside one managed continuation; final replies reference accepted block receipts. Domain protocol only; s6 owns external MCP registration. Legacy sibling 8315a11f/S005 sc7 remains separate.",
+          "interfaceSketch": "interface InvestigationTurnV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly attemptId: string; readonly requestDigest: string; readonly policyDigest: string;\n readonly assignment: readonly string[]; readonly navigationRefs: readonly string[];\n readonly unresolvedRefs: readonly string[]; readonly priorAcceptedCheckpoint: string;\n readonly limits: { readonly attemptMs: number; readonly activeMsRemaining: number; readonly continuationsRemaining: number; readonly inclusiveTokenLimit: number };\n}\ninterface InvestigationReplyV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly acceptedBlockReceiptIds: readonly string[]; readonly lastAcceptedSequence: number;\n readonly inspectedEvidenceIds: readonly string[]; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings'];\n readonly next: { readonly kind: 'continue' | 'request-completion' | 'pause'; readonly remainingWork: readonly string[]; readonly reason: string };\n}\ninterface ImpactCapabilityV1 {\n readonly mode: 'source-only' | 'indexed-impact';\n readonly index: { readonly revision: string; readonly freshness: 'compatible' | 'stale' | 'unknown'; readonly completeness: 'partial' | 'unknown' } | null;\n readonly queryChangedEntityCallers: ((entityRef: string) => Promise<readonly EvidenceV1[]>) | null;\n}\ninterface ReviewBlockProgressV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly progressId: string; readonly expectedSequence: number; readonly blockId: string;\n readonly disposition: 'reviewed' | 'needs-followup' | 'unverified';\n readonly evidenceIds: readonly string[]; readonly notes: string; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings']; readonly outstandingWork: readonly string[];\n}\ninterface BlockCheckpointReceiptV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly progressId: string; readonly blockId: string; readonly sequence: number; readonly checkpointDigest: string;\n}",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ImmutableReviewSubjectV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "The only authority for changed scope. Exact selected commit packets identify relevant parent-relative blocks; frozen context can include other source only as context. No HEAD/working-tree diff fallback.",
+          "interfaceSketch": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "EvidenceCoverageV1",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Run-scoped evidence and many-to-many coverage bindings. Each approved obligation, packet block/non-text change and applicable criterion has a required row; findings and unresolved work cannot disappear.",
+          "interfaceSketch": "interface EvidenceV1 {\n readonly evidenceId: string; readonly subjectDigest: string;\n readonly kind: 'changed-block' | 'context-source' | 'artifact' | 'test-result' | 'caller-impact';\n readonly source: { readonly path: string; readonly revision: string; readonly digest: string; readonly lines: readonly [number, number] | null };\n readonly role: 'changed-scope' | 'context-only'; readonly inspectedByAttempt: string;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n readonly contentRef: string;\n}\ninterface CoverageV1 {\n readonly rowId: string; readonly subjectDigest: string; readonly requirementRef: string;\n readonly category: 'task' | 'acceptance' | 'design' | 'change' | 'criterion' | 'impact';\n readonly disposition: 'pending' | 'satisfied' | 'finding' | 'unverified' | 'not-applicable';\n readonly evidenceIds: readonly string[]; readonly findingIds: readonly string[];\n readonly rationale: string; readonly assessedByAttempt: string | null;\n}\ninterface ReviewLedgerV1 {\n readonly runId: string; readonly subjectDigest: string;\n readonly evidence: readonly EvidenceV1[]; readonly coverage: readonly CoverageV1[];\n readonly findings: readonly { readonly findingId: string; readonly criterion: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly confidence: 'breach' | 'observation'; readonly evidenceIds: readonly string[]; readonly expectationRefs: readonly string[]; readonly message: string }[];\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "ReviewRuntimePortsV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Foundational type-level ports avoid making the investigation Story depend backwards on recovery. s4 implements durable storage, s3 uses the port, and s6 composes production adapters. Usage observations flow to existing usage contracts with a durable pending outbox when a writer is unavailable.",
+          "interfaceSketch": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc6"
+        ],
+        "internal": "Own independent read-only task-directed continuation behavior, on-demand source navigation, optional indexed caller/impact enrichment, budget admission, bounded retry/pause and attempt usage emission through foundational ports. In-memory ports are test scaffolding while production selection remains disabled until s4/s6; no durable storage implementation or terminal approval logic. Publish and acknowledge incremental block progress within continuations, with partial cross-block assessments recorded rather than lost. Domain progress contracts only; no competing MCP phase/schema ownership. External registration belongs to s6."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "Own subject preparation, attribution ambiguity detection, exact Git commit/blob/block navigation and frozen context binding. Define foundational runtime-port types only; do not implement task investigation, a recovery store or new accounting storage. No generic HEAD/working-tree diff may select scope."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc6"
+          ],
+          "internal": "Own required-row enumeration, evidence identity/provenance and coverage relationships/dispositions. Reuse subject inputs and runtime ports. Keep ledger validation helpers private; do not execute reviewer turns or publish CRs."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc6"
+          ],
+          "internal": "Own durable implementation of foundational acceptance/usage-outbox ports, append/replay/checkpoint integrity, lease/generation fencing, uncertain attempts and compatibility/time recovery. Do not alter review criteria or introduce a usage warehouse. Its recovery implementation is composed by downstream s6 rather than consumed backwards by s3. Persist/replay block-level evidence and assessment receipts independently of final provider-call completion."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Own completion coverage/freshness/party validation, canonical CR adaptation and idempotent terminal publication receipts. Reuse existing lifecycle and severity/confidence policy. Do not let a completion request, missing evidence or a failed run masquerade as a completed verdict."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own production composition, equivalent MCP/daemon/controller start/status/resume/cancel adapters, status/usage presentation fields, explicit engine rollout/rollback, legacy compatibility and evaluation fixtures. No client opens stores directly; no client-specific board UI or design-review replacement. Sole new-engine MCP adapter/schema owner; reconcile 8315a11f/S005 legacy sc7 as specified in the architecture and record code-only supersession before opt-in. Verify routing partitions across both installation orders."
+        }
+      ],
+      "rolloutPhase": "C — bounded agent investigation",
+      "nonFunctional": {
+        "performance": "No eager whole-source or whole-contract repetition and no mandatory call-per-clause. Bounded read ranges and explicit evidence references prevent unbounded request growth.128K inclusive estimated admission and five-minute continuation cap; default120active-minute/24continuation limits pause with durable progress and explicit extension rather than claim success. Use deterministic/mock providers for routine tests; measure authorized live comparisons against recorded baselines before claiming savings. Block checkpoint acceptance is independent of run duration:120minutes is a pause ceiling, never a save interval. Grouping several block assessments in one session remains allowed.",
+        "security": "Daemon owns runtime state and DB access; cloud access remains LLMProvider/CliProvider only. Independent reviewer identity is checked at start and publication. Source reads are pinned and read-only; untrusted repository text is data, not tool/policy authority. Trusted evidence reads cannot escape the declared snapshot/approved-artifact view, graph queries bind to the registered source repo and declared dependency closure, and native adapters that cannot meet pinning/read-only capability refuse explicitly. Private runtime state uses restrictive access; metadata diagnostics contain no raw prompts/evidence.",
+        "observability": "Expose run/subject/engine/policy IDs, owner generation, attempt lifecycle, required/covered/unverified rows, pause/stale causes and resume compatibility. Show managed attempt count/active time, observed usage quality and unknown/pending observations distinctly from reservations and estimates. Emit status/heartbeats without replaying accepted work; transport disconnect is not a review verdict. Keep human-readable review reports only in /tmp. Surface latest accepted block/progress receipt and outstanding block IDs so clients can distinguish durable block progress from provider-session liveness.",
+        "durability": "Journal-committed acceptance precedes acknowledgment; snapshots/checkpoints are reconstructible and verified against immutable evidence/answer blobs. Detect torn tails and corruption, fence concurrent owners and late replies, preserve uncertain provider outcomes and idempotent completion/usage receipts. Pauses do not erase consumed execution time. Legacy runs are explicitly non-resumable; runtime data remains outside artifact JSON and excluded from changed scope. Every reviewed block is journal-committed before its durable acknowledgment and cursor advancement, even while a native session continues. Accepted block state survives an uncertain or failed enclosing attempt; only unfinished/unacknowledged work is resumed."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "InvestigationTurnV1",
+          "signature": "interface InvestigationTurnV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly attemptId: string; readonly requestDigest: string; readonly policyDigest: string;\n readonly assignment: readonly string[]; readonly navigationRefs: readonly string[];\n readonly unresolvedRefs: readonly string[]; readonly priorAcceptedCheckpoint: string;\n readonly limits: { readonly attemptMs: number; readonly activeMsRemaining: number; readonly continuationsRemaining: number; readonly inclusiveTokenLimit: number };\n}\ninterface InvestigationReplyV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly acceptedBlockReceiptIds: readonly string[]; readonly lastAcceptedSequence: number;\n readonly inspectedEvidenceIds: readonly string[]; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings'];\n readonly next: { readonly kind: 'continue' | 'request-completion' | 'pause'; readonly remainingWork: readonly string[]; readonly reason: string };\n}\ninterface ImpactCapabilityV1 {\n readonly mode: 'source-only' | 'indexed-impact';\n readonly index: { readonly revision: string; readonly freshness: 'compatible' | 'stale' | 'unknown'; readonly completeness: 'partial' | 'unknown' } | null;\n readonly queryChangedEntityCallers: ((entityRef: string) => Promise<readonly EvidenceV1[]>) | null;\n}\ninterface ReviewBlockProgressV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly progressId: string; readonly expectedSequence: number; readonly blockId: string;\n readonly disposition: 'reviewed' | 'needs-followup' | 'unverified';\n readonly evidenceIds: readonly string[]; readonly notes: string; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings']; readonly outstandingWork: readonly string[];\n}\ninterface BlockCheckpointReceiptV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly progressId: string; readonly blockId: string; readonly sequence: number; readonly checkpointDigest: string;\n}",
+          "parameters": [],
+          "returns": {
+            "type": "InvestigationReplyV1",
+            "meaning": "One bounded continuation outcome plus references to accepted per-block progress. A request-completion reply is a request to s5, never an approved or published verdict."
+          },
+          "errors": [
+            {
+              "type": "InvestigationError",
+              "condition": "invalid-binding, unsupported-backend, invalid-progress, acceptance-conflict, budget-refused, cancelled, provider-failed or impact-unavailable; operational failures produce typed pause state preserving accepted receipts."
+            }
+          ],
+          "preconditions": [
+            "Trusted daemon context pins independent reviewer party/role routing, sc1 subject/sc2 basis and ledger, current owner generation, sc6 ports, budget profile, usage observer and backend qualification.",
+            "Backend qualification explicitly states pinned-read-only access and in-session-progress or block-yield behavior. Existing opaque native runReviewSession is not sufficient evidence of either capability."
+          ],
+          "postconditions": [
+            "Only validated sc2 deltas accepted through sc6 may change accountable progress; each assessed block ACK follows successful appendTransition, before next block assessment.",
+            "No new source scope, storage backend, MCP phase, approval or CR publication. Reuse existing provider abstraction and inclusive budget admission."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Continuation coordinator and backend boundary",
+        "change": "new",
+        "details": "Proposed investigation/continuation-types.ts exports exact sc3 plus internal typed policy/backend/coordinator context; continuation.ts owns runInvestigationContinuation(turn,context): Promise<InvestigationReplyV1> and serial progress/read handlers. A backend executes one managed request via a trusted LLMProvider binding, receives only an immutable navigation-oriented seed and narrow source/impact/progress capabilities, and returns a typed final reply. It must declare progress mode, provider/profile identity, pinning/read-only enforcement and cancellation support. Unsupported capability refuses before model dispatch. s3 builds the coordinator and capability checks; s6 composes provider/controller bridges and exposes external tools, while s4 implements durable ports. In-memory ports and deterministic backend/provider fixtures are scaffolding, explicitly not production durability. Existing CliProvider/OllamaProvider/runReviewSession/ReadOnlyToolLoop signatures and existing legacy tool catalogs stay unchanged in this Story. Existing native Read/Grep/Glob on a mutable checkout is not qualified pinned evidence. Existing runReadOnlyToolLoop is a reuse candidate only through its current allowed/registered execution and authenticated connectionExecution rules, not a bypass; a qualified integration belongs to s6. A provider without compatible in-session capability may explicitly use block-yield execution, stopping after one assessed block until ACK, or refuse; never silently choose this mode or prescribe one call for every block/requirement. The backend abstraction permits many block progress exchanges within one managed provider session. No native progress bridge is claimed implemented merely by defining this interface. All actual LLM access remains serial LLMProvider/CliProvider, with router-enforced critical review tier and independent party. This is staged domain implementation, not production provider rollout.",
+        "callSites": [],
+        "schemaDiff": "// Proposed INTERNAL sc3 seams. These do not extend LLMProvider or register MCP phases.\ninterface InvestigationBackend {\n readonly provider: LLMProvider;\n readonly qualification: { readonly providerId: string; readonly profileDigest: string;\n  readonly pinnedReads: true; readonly readOnly: true;\n  readonly progressMode: 'in-session-progress' | 'block-yield'; readonly cancellable: true };\n readonly execute: (turn: InvestigationTurnV1, tools: InvestigationTools, signal: AbortSignal) => Promise<InvestigationReplyV1>;\n}\ninterface InvestigationTools {\n readonly read: (reference: string) => Promise<ReviewReadReceiptV1>;\n readonly impact: ImpactCapabilityV1;\n readonly progress: (progress: ReviewBlockProgressV1) => Promise<BlockCheckpointReceiptV1>;\n}\n// Backend is trusted composition, never a reviewer-supplied capability assertion.\n// Its execute closure must use the bound LLMProvider; tests supply deterministic providers.\n// Coordinator context supplies sc1 subject, sc2 LedgerBasis/ReviewLedgerV1 and trusted receipts,\n// sc6 ports, current ownership generation, authenticated parties/critical role, budget profile,\n// monotonic clock/consumed active time, usage observer, prior accepted progress receipts and signal.\n// runInvestigationContinuation(turn, context): Promise<InvestigationReplyV1>\n"
+      },
+      {
+        "entity": "Pinned navigation, evidence and indexed impact",
+        "change": "new",
+        "details": "The turn binds run/subject/generation/attempt/request/policy digests, assignment refs, unresolved refs and prior accepted checkpoint. Validate against trusted context, verify subject freshness through s1, validate sc2 ledger/basis, and resolve assignment IDs against required rows and selected blocks. Seed detailed task/check IDs, pinned artifact refs, packet/block navigation and outstanding work; do not eagerly copy whole source/contracts or one clause per model call. Read requests go through s1 readReviewSource/sc6 readEvidence and trusted inspection adapters; coordinator admits receipts via sc2 admitLedgerEvidence/applyReviewLedgerDelta, never backend-claimed file access. A backend lacking trustworthy evidence mediation cannot claim substantive coverage. Untrusted source text is returned as data and cannot alter policy, role, allowlist or scope. Source-only and indexed-impact use byte-equivalent subject/task/packet seed and rules; the latter additionally receives ImpactCapabilityV1. Its daemon-owned query validates entity membership in a selected changed method/entity with exact source digest/location; ambiguous old/new symbol mapping yields an unresolved impact obligation. Context helpers and callers are not additional commits or changed blocks. Reuse daemon findCallers through an injected closure-scoped adapter; no DB handles in client/controller or new analyzer recipe. Index revision/freshness and partial/unknown coverage appear on every impact receipt; empty or truncated caller results never prove no impact. Stale/missing data records limitations and unresolved obligations, with source inspection available. Sc2's trusted receipt adapter records index metadata and appendImpactRequirements accounts for discovered questions. No default widening to HEAD or foreign source. Every EvidenceV1 returned by the impact capability must have matching trusted native receipt metadata in the sc2 validation context; model-supplied EvidenceV1 arrays are never sufficient. Global index completeness remains partial/unknown as sc3 declares; independently inspected caller source may be complete textual evidence without claiming exhaustive caller coverage.",
+        "callSites": []
+      },
+      {
+        "entity": "Per-block progress and accepted-state acknowledgment",
+        "change": "new",
+        "details": "Proposed progress.ts validates ReviewBlockProgressV1 and converts trusted inspection references to sc2 deltas. One run owns 1..N attempts; an attempt may submit 0..N block progress versions; each progress binds exactly one selected block and one expected accepted sequence. One accepted progress identity yields exactly one reusable receipt; many progress versions may refine the same block. Evidence may support many coverage rows. Validate all bindings, selected block, authenticated attempt, progress disposition, linked evidence/findings, outstanding refs and notes bounds. reviewed means this block was assessed, not that every task is satisfied; cross-block needs remain needs-followup/unverified. Large blocks may save additional partial progress before assessment. Compute sc2 candidate without mutating accepted ledger; stage its transition object through sc6.stageImmutableValue (objects remain objects at this boundary), then appendTransition(runId,generation,expectedSequence,transitionRef). Only after append succeeds may local accepted ledger/sequence and BlockCheckpointReceiptV1 advance and ACK return. Failure sends no ACK, leaves old accepted view and pauses; do not advance another block assessment. The port's journal/lease/idempotence semantics belong to s4. Transition payload includes progressId, canonical payload digest, attempt binding, candidate/delta references, evidence receipts, outstanding work, and predecessor receipt so s4 can recognize duplicate replay. Same progress ID and digest returns prior receipt without reapplying; conflicting digest/sequence refuses. Coordinator reads previously accepted progress receipts from trusted owner context before a resumed/replayed request; it never reconstructs absent state from provider memory. An append whose result is uncertain stays uncertain; no claim of exact-once external execution. Final reply references acceptedBlockReceiptIds/lastAcceptedSequence and must not resubmit accepted deltas; any remaining coverageUpdates/findings need a fresh validated transition, not silent acceptance at return. request-completion can be emitted only as an s5 request; pending/unverified work remains visible. No terminal CR writes.",
+        "callSites": [],
+        "schemaDiff": "// Versioned payload behind sc6.stageImmutableValue; s4 stores refs, sc3 owns its interpretation.\ninterface BlockProgressTransitionV1 {\n readonly version: 1; readonly kind: 'block-progress';\n readonly progress: ReviewBlockProgressV1; readonly payloadDigest: string;\n readonly candidateLedgerRef: string; readonly trustedReceiptRefs: readonly string[];\n readonly predecessorCheckpoint: string;\n}\n// Same progressId + payloadDigest resolves the same accepted receipt from authoritative context.\n// A lost ACK may be recovered from accepted transitions; never infer acceptance from model memory.\n"
+      },
+      {
+        "entity": "Inclusive admission, pause controls, failure and usage",
+        "change": "new",
+        "details": "Proposed continuation-policy.ts reuses resolveReviewBudgetPolicy/createReviewBudgetPolicy/measureReviewBudget and provider-final wire schema/tools manifest normalization; no replacement token estimator or serializer. Admission covers seed/history, response schema, full capability descriptions, host declarations, native/transport/completion/inspection reserves and correction headroom. Default cap128000 estimated tokens; unsafe indivisible request refuses instead of dropping required evidence. Bounded read results return references/limits; backend must yield before required context would overflow. Profiles for opaque native history stay explicitly reserved/estimated, not a verified hard native ceiling. Effective attempt timeout is min(300000ms, remaining active budget, admitted role/provider limit), with300000ms silence cap only if below total timeout. Default run pause at120active minutes or24managed attempts; a trusted caller may supply explicitly extended allowance. These are pause controls, never checkpoint intervals. Count active provider/tool execution time, carry consumed time/attempts across yields, and do not reset on client disconnect. At most one immediate transient retry, with new attempt identity and consumed allowance preserved; provider internalRetry:false prevents hidden retry multiplication. Authentication, schema/binding, permission, budget and stale errors do not auto-retry. Repeated failure or cancellation pauses promptly before remaining backlog. Abort propagates to provider and tools; serialize all provider calls and fence late callbacks by generation/attempt. Accepted block receipts survive cancellation; unacknowledged work remains unresolved. Record attempt usage through sc6.recordAttemptUsage with stable observationId and all existing nullable counters/provider/model/quality/granularity fields. Backend must supply an actual observer when available; unsupported native usage remains unavailable, not inferred from reserves or tool counts. Idempotent replay does not emit another charge. Pending/unavailable usage state is retained in transition/status for s4 outbox; no new usage store or artifact JSON collection.",
+        "callSites": []
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Use exact selected packets and freshness-bound navigation; never select additional commits or reinterpret scope."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reuse ledger catalog, trusted receipt admission and atomic delta validation. Semantic judgment stays independent; missing graph evidence alone is not a code breach."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Own bounded continuation and progress/ACK domain behavior, optional impact capability, pause/retry and usage emission; no external MCP registration."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Stage object-valued transitions centrally and append accepted state before ACK; emit usage observations. s4 owns durable implementation, s6 composition."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Unsupported backend or untrusted reviewer/tool scope",
+          "detection": "Compare qualification manifest and trusted role/party/pinning/progress capabilities before dispatch; validate every source/entity request against sc1 and tool allowlist.",
+          "response": "InvestigationError unsupported-backend/invalid-binding; no model/tool call, no fallback to mutable checkout or legacy protocol.",
+          "userImpact": "Use a qualified adapter; s6 integration must supply missing native/controller bridge.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Bad progress, conflicting replay or failed/uncertain acceptance",
+          "detection": "Validate run/subject/generation/attempt/progress identity, expected sequence, block membership and canonical payload; sc2 rejects unsupported evidence or dangling links; sc6 append reports conflict/failure.",
+          "response": "No ACK or assessment advance; pause with last known accepted receipt and explicit uncertain work. Same accepted progress digest reuses stored receipt; conflict refuses.",
+          "userImpact": "Recover authoritative accepted state through s4; only unfinished/unacknowledged work may repeat.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Budget/time exhaustion, cancellation or repeated provider failure",
+          "detection": "Inclusive admission fails, active deadline/attempt allowance consumed, AbortSignal fires, or one transient retry has already failed.",
+          "response": "Typed pause with accepted block IDs, outstanding refs and consumed usage/time. Cancel provider/tools, fence late callbacks, no fabricated complete verdict or backlog sweep.",
+          "userImpact": "Explicit extension/retry or corrected backend may resume later.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale/incomplete index mapping or unavailable usage",
+          "detection": "Adapter cannot bind changed entity to packet source or discloses stale/missing caller coverage; usage observer lacks actual counters.",
+          "response": "Impact remains contextual and unresolved with limitations; source navigation remains available. Usage uses unavailable/pending semantics, never fabricated zero or allowance-as-consumption.",
+          "userImpact": "User sees uncertainty and remaining impact questions without changed-scope expansion.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "One backend session assesses several related blocks",
+          "expected": "Progress/append/ACK repeats inside that session; each block is accepted before next assessment, no mandatory separate call per block."
+        },
+        {
+          "input": "Cross-block reasoning or large-block partial inspection",
+          "expected": "Checkpoint needs-followup/unverified with outstanding refs; context reads may cross blocks while the assessed-block cursor remains ACK-gated."
+        },
+        {
+          "input": "Append accepted just before transport cancellation but acknowledgment lost",
+          "expected": "Do not assume failure or success locally; retain uncertain identity. s4 replay can return the same authoritative accepted receipt."
+        },
+        {
+          "input": "Source-only vs indexed mode, empty callers and foreign concurrent edits",
+          "expected": "Identical packet seed; caller evidence is context-only and empty results do not prove no impact; foreign commits remain excluded."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Provider execution remains serial through LLMProvider with current read-only/connectionExecution restrictions; no direct REST or registry bypass. Grounded by provider/tool-loop analyze bundle.",
+          "source": "c1"
+        },
+        {
+          "text": "Inclusive budget helpers, pinned source reads and sc2 validation remain authoritative; no new estimator or evidence store. Grounded by budget/source/ledger analyze bundle.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test and node:assert/strict via tsx, following completed investigation fixtures and inspected read-only loop/provider tests. Deterministic LLMProvider/backend, fake clock and in-memory sc6 ports; no routine live model tests.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove bounded coordinator, capability, retry/pause and receipt rules.",
+          "subjects": [
+            "review-s3-ac1 grouped investigation: several block progress/ACK exchanges inside one compatible backend session, same subject seed in both modes, no call-per-clause plan",
+            "review-s3-ac2 inclusive budget covers history/schema/tools/reserves; deadline min300s/remaining allowance; overflow yields without dropping evidence; run ceilings never set checkpoint cadence",
+            "review-s3-ac3 cancel/repeated transient failure pauses promptly, at most one retry, internalRetry disabled, consumed allowances retained and late callbacks fenced",
+            "review-s3-ac4 wrong party/tier/context/capability or mutable/unmediated reads refuse before dispatch; tools cannot alter source/policy/scope and provider calls are serial",
+            "review-s3-ac5 changed-entity mapping gates caller query; stale/missing/partial/empty results retain unresolved impact and never add commits",
+            "Progress validation rejects foreign block/generation/attempt/sequence, uninspected evidence and conflicting progress digest; identical accepted replay returns prior receipt",
+            "Append failure/uncertainty sends no ACK, preserves accepted ledger, and prevents next block assessment; final reply does not reapply accepted deltas",
+            "Usage observations retain provider/model/native quality/granularity and stable IDs; absent counters unknown, pending writer explicit, replay does not recharge"
+          ],
+          "fixturesNeeded": [
+            "Deterministic compatible backend and unsupported current-native capability fixture",
+            "Fake active clock/AbortSignal, delayed append/ACK promises, trusted owner/role/source/index/usage contexts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Compose completed sc1/sc2 with the sc3 domain using in-memory ports while production remains disabled.",
+          "subjects": [
+            "Real pinned source receipt -> sc2 candidate -> stage object -> append accepted transition -> block ACK, including two blocks before final session reply",
+            "Crash/cancel after an acknowledged block but before enclosing reply preserves earlier accepted state; uncertain in-flight block remains explicit (durable restart is s4 test obligation)",
+            "Qualified block-yield path and unsupported opaque native path are explicit; no MCP registration, legacy/provider signature changes or production activation",
+            "Existing inclusive-budget, read-only loop and s1/s2 focused fixtures remain compatible"
+          ],
+          "fixturesNeeded": [
+            "Existing temporary-Git subject/ledger fixtures and deterministic backend executing through fake LLMProvider",
+            "In-memory acceptance/usage adapters marked test-only, no real DB or network"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "review-s3-ac1 grouped investigation",
+            "Pinned source/ledger/progress integration with two blocks per session"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "review-s3-ac2 inclusive budget and effective deadlines",
+            "Append-before-ACK and final-delta replay fixtures"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "review-s3-ac3 bounded failure/cancel",
+            "Acknowledged-block preservation and uncertain acceptance fixtures"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "review-s3-ac4 trust/party/tool/serial execution",
+            "Explicit qualified/unsupported backend paths and legacy compatibility"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "review-s3-ac5 index/entity limits",
+            "Both-mode scope parity and empty-caller uncertainty"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Analyze bundles locate existing final-answer reviewer sessions and budget/read-only tool-loop helpers, plus completed sc1/sc2. ReviewSessionOpts/native CLI tooling do not expose the required progress/ACK and pinned-evidence bridge. Legacy review execution remains active.",
+      "stateAfter": "Add isolated sc3 domain types/coordinator, qualified backend interface, progress acceptance, policy and impact wrappers. Deterministic compatible backends/in-memory ports demonstrate behavior; current opaque native sessions refuse unsupported qualification. s4 supplies durable backend and s6 qualifies/composes production provider/controller bridges.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add exact sc3 domain values and capability/policy validators, consuming existing sc1/sc2/sc6 and budget helpers.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add serial coordinator, pinned evidence/progress acceptance and optional impact wrappers, with in-memory ports and deterministic backend tests.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Expose internal sc3 entrypoints for downstream composition; verify compatibility and keep production selection disabled until s4/s6 provide durable/qualified adapters.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No edits to existing LLMProvider/ReviewSessionOpts/native CLI flags/read-only loop contracts, MCP schemas or legacy controller frames in this Story. New engine is not activated. Legacy sibling8315a11f/S005 retains transport ownership; s6 alone registers the versioned new-engine adapter per approved HLD. No persisted artifact rewrite or forced migration of old volatile sessions.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Capability-qualified continuation coordinator",
+        "oneLineSummary": "One domain coordinator supports acknowledged in-session progress and explicit block-boundary yields.",
+        "approach": "Use exact sc3 turn/progress/receipt values over sc1/sc2/sc6. A trusted backend executes through LLMProvider and declares pinned read-only and progress capabilities; coordinator mediates reads, evidence, ledger updates and acceptance before ACK. Compatible backends may assess many blocks in one session; block-yield is an explicit capability mode, not a mandatory per-block request plan. Unqualified native sessions refuse until s6 composition.",
+        "pros": [
+          "Preserves per-block durability without mandated per-block model calls",
+          "Keeps protocol/storage/MCP ownership separate",
+          "Small domain state machine with deterministic fake-backend tests"
+        ],
+        "cons": [
+          "Existing opaque native sessions need a compatible progress/pinning adapter before production adoption"
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Single capability mode for in-session progress",
+        "oneLineSummary": "Require every backend to expose bidirectional progress/read callbacks; no block-yield compatibility mode.",
+        "approach": "Use the same sc3/sc1/sc2/sc6 contracts, but admit only backends with in-session progress. Keep legacy/native sessions unavailable until their bridges are qualified. Coordinator still requires acceptance before each block ACK and reuses existing budget/ledger helpers.",
+        "pros": [
+          "Simple capability contract",
+          "No cost-heavy fallback execution"
+        ],
+        "cons": [
+          "Drops the HLD's permitted explicit block-boundary-yield option",
+          "More restrictive integration without improving accepted-state correctness"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Safe but needlessly restricts qualified block-boundary execution."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "s3-per-block-progress",
+      "narrative": "Proposed sc3 coordination: several inspected blocks can be acknowledged within one compatible reviewer session. Source/ledger validation precedes acceptance; only successful append permits ACK. The s4 acceptance backend and s6 provider/MCP bridge are separate downstream implementations.",
+      "participants": [
+        {
+          "id": "coordinator",
+          "label": "sc3 coordinator",
+          "description": "Validates bindings, budgets and serial continuation state."
+        },
+        {
+          "id": "reviewer",
+          "label": "Qualified reviewer backend",
+          "description": "Independent LLMProvider-backed execution; current opaque native sessions are not assumed qualified."
+        },
+        {
+          "id": "evidence",
+          "label": "Pinned source and ledger (s1/s2)",
+          "description": "Trusted reads, inspection receipts and pure ledger candidate validation."
+        },
+        {
+          "id": "ports",
+          "label": "Acceptance ports (sc6 / s4 backend)",
+          "description": "Central object serialization and accepted transition append; in-memory scaffolding only in s3 tests."
+        }
+      ],
+      "messages": [
+        {
+          "from": "coordinator",
+          "to": "reviewer",
+          "label": "Admit bounded turn and scoped capabilities",
+          "description": "Capability/party/pinning checks and inclusive budget admission happen before dispatch."
+        },
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "label": "Request pinned evidence on demand",
+          "description": "The agent chooses source and related obligations without eager source chunks."
+        },
+        {
+          "from": "coordinator",
+          "to": "evidence",
+          "label": "Read source and authenticate inspection",
+          "description": "Use sc1 pins and sc2 trusted receipt admission; no mutable checkout fallback."
+        },
+        {
+          "from": "evidence",
+          "to": "reviewer",
+          "label": "Bounded evidence and limitations",
+          "kind": "return",
+          "description": "Context remains contextual; incomplete evidence never becomes an unsupported pass."
+        },
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "label": "Progress for this assessed block",
+          "description": "Includes bound progress identity, expected sequence, evidence, coverage and outstanding work."
+        },
+        {
+          "from": "coordinator",
+          "to": "evidence",
+          "label": "Validate sc2 candidate without mutation",
+          "description": "Semantic judgments are independent; structural/provenance guards validate the proposed delta."
+        },
+        {
+          "from": "coordinator",
+          "to": "ports",
+          "label": "Stage immutable transition object",
+          "description": "Serialization stays centralized behind stageImmutableValue."
+        },
+        {
+          "from": "coordinator",
+          "to": "ports",
+          "label": "Append with generation and expected sequence",
+          "description": "s4 owns durable acceptance and replay; a failure or uncertain outcome sends no ACK."
+        },
+        {
+          "from": "ports",
+          "to": "coordinator",
+          "label": "Accepted sequence and checkpoint digest",
+          "kind": "return",
+          "description": "Only successful append establishes accepted progress."
+        },
+        {
+          "from": "coordinator",
+          "to": "reviewer",
+          "label": "ACK block; next assessment may begin",
+          "kind": "return",
+          "note": "Repeat progress/ACK in the same compatible session; no required separate model call per block.",
+          "description": "Prior accepted blocks survive cancellation or failure of the enclosing attempt."
+        },
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "label": "Final reply references accepted receipts",
+          "kind": "return",
+          "description": "No reapplication of accepted deltas; request-completion only delegates to s5."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/0",
+      "quotedText": "Analyzer locates CLI/Ollama runReviewSession and runReadOnlyToolLoop. Source ReviewSessionOpts exposes budget/cwd/deadline/retry/stall/signal, not an incremental progress/tool bridge. CLI native tools are Read/Grep/Glob plus analyze; they are not proof of pinned sc1 reads or block ACK support. Read-only loop has injected execution but registry allowlist/dependency context constraints; do not silently bypass them. Existing native sessions must refuse unsupported progress/pinning qualification until a compatible adapter is composed."
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/1",
+      "quotedText": "Analyzer locates resolveReviewBudgetPolicy/createReviewBudgetPolicy/measureReviewBudget, applyReviewLedgerDelta/readReviewSource and findCallers. Reuse inclusive admission and source/ledger validation rather than new serializers/evidence stores. Caller service remains daemon-owned; graph lookup alone is not proof of fresh/complete coverage. Source call-limits declares300s silence for code review; five-minute continuation cap is new engine policy bounded by run remaining time."
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1/analyzeBundles/2",
+      "quotedText": "Analyzer test.locate was broad/off-topic; direct file lookup locates read-only-tool-loop tests, provider reviewer-session fixtures and completed s1/s2 investigation tests. No live model suite needed for routine validation. No implementation of sc4 recovery store, sc5 publication or sc7 external adapters belongs here."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-c32aa60534232f36.json",
+      "quotedText": "Approved sc3 and s3 boundary; sc1/sc2/sc6 consumed, sc4/sc5/sc7 deferred."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/types.ts:248-269",
+      "quotedText": "Current reviewer session options do not provide an incremental progress bridge."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review-pipeline/budget.ts:86-148",
+      "quotedText": "Reuse inclusive budget policy/measurement."
+    }
+  ]
+}

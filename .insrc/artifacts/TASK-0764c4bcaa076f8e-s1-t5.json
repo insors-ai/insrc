@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d7589c4-eb5a-45fe-8cef-4728c943b0ca",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:24:46.820Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prove crash reconciliation and downstream compatibility",
+      "parent": {
+        "entityId": "STORY-0764c4bcaa076f8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0764c4bcaa076f8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0764c4bcaa076f8e-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "689f2cf7fd0008f19bf8fa877ce09ba5a070d17ec16f4360b74c801578d0bbd0",
+        "at": "2026-10-29T11:24:46.820Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.821Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove crash reconciliation and downstream compatibility",
+    "summary": "Extend real recovery worker/fixtures with publication boundaries and test concurrent callers, callback side effects, restart and separate receipt persistence. Verify exports/documentation and keep relevant sequence source aligned; no S5 canonical publisher or S6 activation.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Crashes before/after frozen-intent commit and after callback before receipt restore only the verified binding and preserve recovery state.",
+      "A deterministic external-write stand-in reconciles the same operation on retry; no test or API claims arbitrary callback exactly-once.",
+      "Concurrent same/different intents and stale callbacks cannot change frozen scope or overlap undrained writes.",
+      "Verified terminal receipt is recorded separately after callback queue releases and replays idempotently.",
+      "Focused recovery/investigation compatibility suites and production build pass; no whole-repo sweep, live LLM test, canonical CR changes or rollout."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Publication crash boundaries reconcile frozen intent and terminal receipt"
+      },
+      {
+        "level": "integration",
+        "name": "Concurrent publication and external-operation replay preserve one frozen scope"
+      },
+      {
+        "level": "smoke",
+        "name": "Focused recovery investigation compatibility suites and production build"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

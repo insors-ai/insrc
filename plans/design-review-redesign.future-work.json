@@ -1,0 +1,16 @@
+{
+  "id": "FUTURE-design-review-redesign",
+  "type": "epic",
+  "title": "Redesign design reviews for background execution and durable recovery",
+  "status": "backlog",
+  "implementationAuthorized": false,
+  "requestedBy": "user",
+  "createdAt": "2026-11-01T05:34:00.980755+00:00",
+  "scope": [
+    "Redesign design review as its own epic, using the task-based code-review experience as input",
+    "Background start with short acknowledgement, durable incremental results and explicit recovery",
+    "Preserve independent reviewer routing and normal approval gates",
+    "Observable progress and reliable final-result retrieval independent of MCP connection lifetime"
+  ],
+  "currentWork": "Backlog only. User requested temporary direct-daemon transport workaround for the current timeout LLD; do not fold this redesign into timeout policy or S4 progress work."
+}

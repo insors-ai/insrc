@@ -1,0 +1,313 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "0168ed1225a0c844f530c15f119a8a65e2898f4da9918bf49d957c8ebc200235",
+        "at": "2026-10-29T11:41:54.835Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "createdAt": "2026-10-29T11:26:31.450Z",
+    "updatedAt": "2026-10-29T11:41:54.756Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "epicSlug": "resume-frozen-review-publication-after-interruption",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "01628c2d9",
+        "ranAt": "2026-10-29T11:26:31.450Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Frozen publication binding validates identity checkpoint and attempt state",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-binding.test.ts",
+                "title": "Frozen publication binding validates identity checkpoint and attempt state",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Publication-intent fsync replay and uncertain append reconciliation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-binding.test.ts",
+                "title": "Publication-intent fsync replay and uncertain append reconciliation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/publication-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1039,
+            "titles": [
+              {
+                "title": "Frozen publication binding validates identity checkpoint and attempt state",
+                "result": "pass"
+              },
+              {
+                "title": "Publication-intent fsync replay and uncertain append reconciliation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "da9667728",
+        "ranAt": "2026-10-29T11:29:50.463Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Frozen completion-requested takeover and legacy terminal refusal",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-owner.test.ts",
+                "title": "Frozen completion-requested takeover and legacy terminal refusal",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Replacement owner preserves publication intent and fences prior generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-owner.test.ts",
+                "title": "Replacement owner preserves publication intent and fences prior generation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/publication-owner.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1003,
+            "titles": [
+              {
+                "title": "Frozen completion-requested takeover and legacy terminal refusal",
+                "result": "pass"
+              },
+              {
+                "title": "Replacement owner preserves publication intent and fences prior generation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "8d545a463",
+        "ranAt": "2026-10-29T11:34:08.546Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Approved publication callback binding guard and null replay",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-callback.test.ts",
+                "title": "Approved publication callback binding guard and null replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Callback failure and separate terminal receipt do not reenter run queue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-callback.test.ts",
+                "title": "Callback failure and separate terminal receipt do not reenter run queue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/publication-callback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 918,
+            "titles": [
+              {
+                "title": "Approved publication callback binding guard and null replay",
+                "result": "pass"
+              },
+              {
+                "title": "Callback failure and separate terminal receipt do not reenter run queue",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "df4ba3b83",
+        "ranAt": "2026-10-29T11:38:01.260Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Callback deadline revokes authority and rejects late success",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-deadline.test.ts",
+                "title": "Callback deadline revokes authority and rejects late success",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Undrained callback retains write fence through caller timeout",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-deadline.test.ts",
+                "title": "Undrained callback retains write fence through caller timeout",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/publication-deadline.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 875,
+            "titles": [
+              {
+                "title": "Callback deadline revokes authority and rejects late success",
+                "result": "pass"
+              },
+              {
+                "title": "Undrained callback retains write fence through caller timeout",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "f227a4b07",
+        "ranAt": "2026-10-29T11:41:54.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Publication crash boundaries reconcile frozen intent and terminal receipt",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-integration.test.ts",
+                "title": "Publication crash boundaries reconcile frozen intent and terminal receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Concurrent publication and external-operation replay preserve one frozen scope",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/publication-integration.test.ts",
+                "title": "Concurrent publication and external-operation replay preserve one frozen scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Focused recovery investigation compatibility suites and production build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/publication-prerequisite-compatibility.tap:focused investigation, publication/recovery, legacy diff-attribution and read-only loop suites pass; /tmp/publication-prerequisite-build.log: npm run build passes."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/publication-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3019,
+            "titles": [
+              {
+                "title": "Publication crash boundaries reconcile frozen intent and terminal receipt",
+                "result": "pass"
+              },
+              {
+                "title": "Concurrent publication and external-operation replay preserve one frozen scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

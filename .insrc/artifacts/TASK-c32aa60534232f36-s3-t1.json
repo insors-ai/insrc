@@ -1,0 +1,75 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-da2fd04d-faec-480b-bfcf-102f5d4aec64",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:01:41.747Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Define sc3 bindings, backend qualification and inclusive policy",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "069d0ba901cc1714da3472c4689ae39168521fac47836658ede9edd936d485ee",
+        "at": "2026-10-29T07:01:41.747Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T07:01:41.748Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define sc3 bindings, backend qualification and inclusive policy",
+    "summary": "Add exact sc3 types and internal coordinator/backend context. Validate immutable turn/subject/policy/party/critical-role bindings, backend capability mode and inclusive request/time admission using existing budget helpers.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exact sc3 values retained; consume sc1/sc2/sc6 types and trusted role/provider context without changing existing interfaces.",
+      "Unsupported opaque native or mutable/unmediated source capability refuses before dispatch; qualification is trusted composition, not model assertion.",
+      "Inclusive admission covers history/schema/tool manifest/reserves; effective attempt cap min300s/remaining allowance/provider limit;120active-minute/24attempt defaults only pause, never set checkpoint cadence.",
+      "Focused binding, qualification, budget and fake-clock tests pass; no direct cloud REST, production activation or MCP schema change."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "sc3 bindings, backend qualification and inclusive continuation policy"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

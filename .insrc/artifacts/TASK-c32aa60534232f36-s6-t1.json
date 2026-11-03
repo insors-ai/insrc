@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-95c6bbbc-dae9-4de1-8ef9-2a5b19763c78",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.979Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Define versioned commands status and disabled engine selection",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b21fa3988acc7814361e92462784e8d1bdb16b76b1495728535a6e29c1839f9",
+        "at": "2026-10-29T13:20:29.979Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.980Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define versioned commands status and disabled engine selection",
+    "summary": "Add the exact sc7 status type, discriminated production command/diagnostic envelopes, errors and capability declarations in proposed src/shared/review-investigation.ts; add default-legacy selection/readiness configuration without enabling starts.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Exact ReviewClientStatusV1 matches HLD; progress/usage diagnostics remain explicitly versioned outer fields.",
+      "Strict commands distinguish engine/version/operation and reject unknown fields/versions before dispatch; no client-supplied reviewer party is authoritative.",
+      "Default behavior remains legacy and a config value alone cannot enable investigation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Strict investigation commands status schema and default legacy selection"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

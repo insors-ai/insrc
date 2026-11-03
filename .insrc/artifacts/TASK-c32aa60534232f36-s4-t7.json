@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1229205b-13fa-48e1-9264-a802c6976514",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.678Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Exclude generated recovery state from source processing",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "34dc435c604057dce75d6a7a025f4d3b5ba7e95cfec4758b7829a65999a54451",
+        "at": "2026-10-29T09:20:00.678Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.679Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Exclude generated recovery state from source processing",
+    "summary": "Verify and, where necessary, extend existing exclusions for project/.insrc/review-runs/investigation-v1/** across Git attribution, indexing and review manifests. Keep metadata-only legacy diagnostic paths and external registrations unchanged.",
+    "size": "S",
+    "order": 7,
+    "acceptanceChecks": [
+      "Generated runtime blobs/journal/snapshots never enter selected review packets, index entities or review source manifests.",
+      "Existing review diagnostics and legitimate tracked source files retain current behavior; do not broaden exclusion beyond approved runtime namespace unnecessarily."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Runtime namespace excluded from Git scope, index and review manifests"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

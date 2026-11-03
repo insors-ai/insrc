@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3b6a2ffb-837d-48f0-a951-056cb10cd289",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:24:46.818Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Expose the approved owner-fenced publication callback",
+      "parent": {
+        "entityId": "STORY-0764c4bcaa076f8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0764c4bcaa076f8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0764c4bcaa076f8e-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d95866571c26a2eae42cf49f07ae06adfa6df36a01df3191e72435f278801127",
+        "at": "2026-10-29T11:24:46.818Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.819Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose the approved owner-fenced publication callback",
+    "summary": "Implement the exact withPublicationFence signature on RecoveryStore, with recovery-publication.ts helper only if useful. Reuse the run-root queue; accept/stabilize intent before callback and provide current-owner assertion. Keep terminal receipt persistence outside the callback queue and avoid canonical CR semantics.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Callback begins only after durable frozen binding and receives its original reference plus current-owner guard.",
+      "Same/null reference retrieves existing binding; null without binding and conflicting references refuse before callback.",
+      "Current-owner guard checks invocation, checkpoint/intent, generation, daemon process ownership and lease.",
+      "Callback failure retains frozen state; successful result does not manufacture completion/CR/approval. Same-intent callback retry is allowed for S5 reconciliation, not claimed exactly-once.",
+      "Callback cannot reenter the run queue by contract; existing normal recovery and external entrypoints retain behavior."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Approved publication callback binding guard and null replay"
+      },
+      {
+        "level": "integration",
+        "name": "Callback failure and separate terminal receipt do not reenter run queue"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

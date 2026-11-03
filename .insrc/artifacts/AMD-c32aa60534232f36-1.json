@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "store-46b2e56b-3c47-4921-90b4-7ba71e3c64ec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T10:35:22.618Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b71d3968625da9d58e50edcd67370b2dccdec1f90ab4590506385a6abb7d3c64",
+        "at": "2026-10-29T10:35:22.618Z",
+        "by": {
+          "id": "insrc:design.story",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T10:44:22.283Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "id": "AMD-c32aa60534232f36-1",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "amendment": {
+      "type": "sharedContract.methodAdd",
+      "contractId": "sc4",
+      "method": {
+        "name": "withPublicationFence",
+        "signature": "withPublicationFence<T>(leaseId: string, generation: number, checkpointDigest: string, intentRef: string | null, publish: (frozenIntentRef: string, assertCurrent: () => void) => Promise<T>): Promise<T>",
+        "purpose": "sc4-owned durable single-intent checkpoint freeze, recoverable completion-requested takeover and exclusive owner fence for bounded canonical publication. Null intentRef retrieves an already accepted intent on retry; conflicting intent refuses. Callback receives current-owner assertion for canonical CAS; terminal receipt persists separately."
+      }
+    },
+    "rationale": "Current s4 cannot reacquire completion-requested runs and cannot durably bind a publication intent. Required for s5 ac3 without unsafe cross-store exactly-once claims or adjacent-scope edits.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1793269677017-7ohwmg",
+      "storyId": "s5",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-29T10:35:22.617Z"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/recovery-store.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    }
+  ]
+}

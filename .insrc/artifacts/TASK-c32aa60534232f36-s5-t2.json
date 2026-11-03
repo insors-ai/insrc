@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-5e54952c-02b4-46ca-9414-ccc2d428a681",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.215Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Adapt accepted findings to versioned canonical review records",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ee1baaa53d1ccce338bac0f9acc3cf99eac81a03b57dc11154c0cbef039c35f3",
+        "at": "2026-10-29T12:02:08.215Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.215Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Adapt accepted findings to versioned canonical review records",
+    "summary": "Add completion-artifact.ts and extend canonical CodeReviewBody with investigation grounding and compact versioned linkage. Reuse or extract runner count/verdict/build validation without invoking judges; update necessary internal type guards while retaining legacy full/degraded behavior.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "All accepted findings retain criterion, severity, confidence, evidence/expectation identity and accountable locations; unknown or unmappable dimensions refuse rather than drop.",
+      "HIGH yields block, MED warn and LOW pass under existing code-review fold; source-only/indexed investigation inputs have the same verdict policy.",
+      "New investigation records require version/sourceMode/run/subject/policy/checkpoint/coverage/operation linkage; legacy records remain readable with their existing degraded warn cap.",
+      "Metadata records authenticated reviewer and reviewed BUILD fingerprint/revision; no raw ledger/evidence collection embedded in artifact JSON.",
+      "No judge rerun, automatic approval or external tool registration."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Canonical investigation adaptation preserves finding identity severity and confidence"
+      },
+      {
+        "level": "unit",
+        "name": "Investigation mode parity and legacy full degraded verdict compatibility"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

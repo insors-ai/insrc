@@ -1,0 +1,440 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793265270793-6lmgxx",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:16:54.863Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 142556,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s4",
+    "lldRunId": "wf-1793260444044-b8iv7o",
+    "lldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f0c62d08d967f21c16b0396f29313bbc2006bb82f90e6c98ba6714d730df51b0",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.311Z"
+      }
+    },
+    "rangeBase": "d7ecc184dda03a8c6af0d901c79303df05d795de"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build a durable recovery layer around the existing per-block review protocol, with verified replay and one current owner. Prove crash handling early, preserve execution and usage accounting through interruptions, then validate the integrated path with deterministic providers. Production review routing remains unchanged until Story 6.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define recovery contracts and prove crash-test infrastructure",
+        "summary": "Add recovery-types.ts exact sc4 projections, internal manifest/event/error types and validation boundaries. Add new recovery-fixtures.ts/recovery-worker.ts child fixture with temporary project root and deterministic fault handshakes; prove parent can stop worker at a known boundary and reopen files. Treat existing s2/s3 contracts as consumed.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "ReviewRecoveryV1 and ResumeCompatibilityV1 match approved sc4; strict version/identity/error validation rejects malformed input.",
+          "Child-process fixture reaches deterministic handshake, is killed and reopens the same temporary runtime root; test has bounded timeout and cleanup.",
+          "No shared sc1/sc2/sc3/sc6 signature, MCP or default engine changes."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Recovery contract shapes, version and identity refusal"
+          },
+          {
+            "level": "integration",
+            "name": "Bounded child-worker handshake kill and reopen feasibility"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement private immutable storage and durable journal",
+        "summary": "Add recovery-journal.ts under project/.insrc/review-runs/investigation-v1/<runId> with bounded canonical immutable blobs, no-overwrite installation, file/directory sync and framed hash-chained events. Bind all writes to trusted process guard and root-scoped serialized store registry.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "0700 directories/0600 files; traversal, symlink and cross-run reference escape refused.",
+          "Blob durability precedes event references and event fsync precedes successful append acknowledgment; fail injection yields no false success.",
+          "Event ordinal separate from accepted-block sequence; malformed complete frames fail closed; torn final frame handled only under exclusive owner."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Private run paths, canonical immutable values and symlink escape refusal"
+          },
+          {
+            "level": "integration",
+            "name": "Blob-before-event durability and append sync fault matrix"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Reconstruct and validate accepted block state",
+        "summary": "Add recovery-replay.ts and durable staging/append ports in recovery-store.ts. Validate staged block closure, recompute sc2 deltas, preserve basis/trusted receipts and reconstruct accepted ledger/checkpoint/outstanding work. Rebuild snapshots from journal and resolve uncertain ACK idempotently.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Unchanged sc3 coordinator accepts two blocks in one session; journal records each before ACK, independent of final reply.",
+          "Replay verifies all reachable blobs, identities, predecessor and recomputed candidate ledger; forged candidates and missing/corrupt closure refuse.",
+          "Identical progress returns original receipt without sequence or usage increment; conflicting payload refuses.",
+          "Missing/stale/corrupt snapshot rebuilds only from verified journal; prior findings and unresolved impact work cannot disappear."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure"
+          },
+          {
+            "level": "integration",
+            "name": "Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Fence owners and validate resume compatibility",
+        "summary": "Complete recovery-store.ts lifecycle: claim/renew/release lease, persistent generation fencing, serialized state changes, restart reconciliation, compatibility and terminal receipt storage. Consume trusted process guard; terminal eligibility/publication remain s5.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Concurrent session claims yield one current owner; expiry/takeover strictly increases generation and late callbacks cannot mutate.",
+          "Lost process ownership, backward wall clock or stale lease refuses writes; restart does not trust old owner.",
+          "Pinned subject/contracts/policy/evidence/tool/provider mismatch reports stale/unsupported with reasons; legacy runs explicitly non-resumable.",
+          "Terminal receipt storage idempotent with conflicting receipt refusal; no completion eligibility or canonical CR authoring added."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Resume compatibility, unsupported legacy state and clock rollback"
+          },
+          {
+            "level": "integration",
+            "name": "Concurrent owner claims, generation takeover and lost process guard fencing"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Persist attempt reservations and recovery accounting",
+        "summary": "Add recovery-attempts.ts guarded execution wrapper journaling each dispatch including sc3 retry. Reserve continuation/capped active time before backend call, settle using monotonic actual duration, reconcile interruption as uncertain, preserve accepted blocks and support explicit audited allowance extensions.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Issued identity/request digest and budget reservation durable before every execute; internal retry receives distinct linked attempt record.",
+          "Crash leaves uncertain attempt with consumed continuation and conservative time reservation; accepted blocks retained.",
+          "Settlement replaces only its reservation without double-counting cumulative onState; replay isn't a new call and inactive pause time is uncharged.",
+          "Exhausted allowance pauses with extensionRequired; explicit extension audited; late stale-owner settlement refused."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Reservation settlement, inactive pause and audited extension accounting"
+          },
+          {
+            "level": "integration",
+            "name": "Issued-before-dispatch retry identities and uncertain attempt recovery"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add durable usage observation outbox",
+        "summary": "Add recovery-usage.ts implementing recordAttemptUsage behind existing sc6 type. Persist pending observations before invoking existing usage writer, qualify stable deduplication, record delivery receipts and replay pending work without manufacturing actual usage.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Stable observation identity/digest and issued-attempt attribution validated; conflicting replay refuses.",
+          "Pending entry durable before writer; crash after writer success reuses same deduplication key; unqualified writer remains pending.",
+          "Reported/estimated/unavailable counters remain distinct; null unknowns and native provenance survive restart; allowances never become usage.",
+          "Current owner may record accounting-only usage of cancelled issued attempt; no stale progress authority or new warehouse schema."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Usage identity, null quality counters and conflicting observation refusal"
+          },
+          {
+            "level": "integration",
+            "name": "Durable pending-before-write outbox and lost receipt deduplication"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Exclude generated recovery state from source processing",
+        "summary": "Verify and, where necessary, extend existing exclusions for project/.insrc/review-runs/investigation-v1/** across Git attribution, indexing and review manifests. Keep metadata-only legacy diagnostic paths and external registrations unchanged.",
+        "size": "S",
+        "order": 7,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Generated runtime blobs/journal/snapshots never enter selected review packets, index entities or review source manifests.",
+          "Existing review diagnostics and legitimate tracked source files retain current behavior; do not broaden exclusion beyond approved runtime namespace unnecessarily."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Runtime namespace excluded from Git scope, index and review manifests"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify crash recovery and publish internal composition boundary",
+        "summary": "Integrate recovery store, guarded backend and unchanged sc3 coordinator with deterministic providers. Test real process crash matrix, indexed/source equivalence, concurrent ownership and combined usage/budget restoration. Export internal recovery surface for s5/s6 and maintain relevant diagrams without activating production routing.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Crash before/after stage, commit sync and ACK restores only verified accepted progress; two accepted blocks survive uncertain enclosing request and only unresolved work redispatched.",
+          "Source-only and indexed-impact replay preserve same subject packets; stale/empty impact remains explicit.",
+          "End-to-end resume preserves findings, evidence, receipt provenance, attempt consumption and pending/unknown usage.",
+          "Focused recovery/investigation and legacy compatibility suites plus production build pass; no live LLM calls or whole repository test sweep.",
+          "Internal exports documented; legacy entrypoints/default selection and sibling-owned MCP/provider/completion behavior remain unchanged."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Two-block sc3 session crash resume preserves accepted work and accounting"
+          },
+          {
+            "level": "integration",
+            "name": "Source-only and indexed-impact recovery with legacy routing unchanged"
+          },
+          {
+            "level": "smoke",
+            "name": "Focused investigation and legacy compatibility suites plus production build"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "recovery journal integrity and snapshots",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "lease generation and state transitions",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "attempt reservation and settlement",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "usage outbox idempotency and compatibility",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "per-block acceptance survives process restart",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "uncertain append receipt recovery",
+        "coveredByTaskIds": [
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "two-session owner race and stale callback fencing",
+        "coveredByTaskIds": [
+          "t4",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "sc3 execution wrapper journals internal retry attempts",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "usage delivery crash and replay",
+        "coveredByTaskIds": [
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "missing/corrupt closure fail-closed",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReviewRecoveryV1 and ResumeCompatibilityV1 exact HLD shape",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "ReviewRuntimePortsV1 durable implementation with unchanged sc3 coordinator",
+        "coveredByTaskIds": [
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "source-only and indexed basis replay",
+        "coveredByTaskIds": [
+          "t3",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "legacy non-resumable refusal and no production engine activation",
+        "coveredByTaskIds": [
+          "t4",
+          "t7",
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#7-test-strategy"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#3-data-model-changes",
+      "quotedText": "Recovery journal event; BlockProgressTransitionV1; runtime namespace exclusion."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#6-error-paths",
+      "quotedText": "Concurrent resume or late worker; stale compatibility and lost ownership."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#3-data-model-changes",
+      "quotedText": "Attempt recovery and budget reservation."
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/LLD.md#3-data-model-changes",
+      "quotedText": "Usage outbox."
+    }
+  ]
+}

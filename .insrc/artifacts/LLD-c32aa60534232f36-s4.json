@@ -1,0 +1,864 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793260444044-b8iv7o",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T08:15:19.608Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1274065,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1793173650139-u4mcad",
+    "hldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "05b9bdd04da0ed0dae0982cc295e9e52f253339b9ea5c24f294af0bb6bd437d4",
+        "at": "2026-10-29T08:20:46.995Z",
+        "by": {
+          "id": "controller:codex",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "insrc:daemon",
+          "kind": "agent",
+          "properties": {}
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "high": 0,
+          "med": 2,
+          "low": 14
+        },
+        "at": "2026-10-29T08:20:04.627Z",
+        "report": {
+          "entityId": "LLD-c32aa60534232f36-s4",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "review-e72794bdd24fab8ee1a6bd9546db5db5"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:14:28.669Z",
+        "override": {
+          "reason": "User explicitly approved with override. One independent design review found 0 HIGH and 2 MED; both corrected in revision 2: project-local runtime path aligned with HLD and proposed implementation modules named. New crash/multi-client fixtures explicitly identified for feasibility verification during build. No additional review round, per user's instruction to limit repeated reviews."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Persist each accepted review block before acknowledging it, then reconstruct evidence, coverage and remaining work after interruption. Fence concurrent sessions and late workers with one daemon-owned run lease. Preserve uncertain attempts and usage records without treating an interrupted call as free or completed.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a daemon-owned durable investigation state machine with provider-independent accepted state. Seed each run with sc1's approved tasks/checks, artifact references and explicit commit packets, not embedded source partitions. Source-only and indexed-impact runs use identical packets, obligations, reviewer policy and completion checks; only the indexed capability in sc3 differs. Substantive judgments remain the independent agent's job; deterministic guards validate identity, evidence provenance, coverage and publication, not semantic correctness. Reuse existing LLMProvider/CliProvider read-only execution, budget admission, source freshness, ownership and canonical artifact lifecycle; introduce the investigation protocol and durable accepted-state store behind the existing code-review entrypoints. Checkpoint cadence is per reviewed commit-packet block, independently of continuation boundaries and run time limits; multiple block checkpoints may be accepted within one managed reviewer session.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "DurableReviewRecoveryV1",
+          "ownedByStory": "s4",
+          "consumedByStories": [
+            "s5",
+            "s6"
+          ],
+          "purpose": "Daemon-owned acceptance journal, reconstructible checkpoints and exclusive generation/lease fencing; accepted replies are idempotent, uncertain provider outcomes remain explicit. Checkpoint per reviewed block, not only after a whole provider request or at the run time limit.",
+          "interfaceSketch": "interface ReviewRecoveryV1 {\n readonly schemaVersion: 1; readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string;\n readonly state: 'prepared' | 'running' | 'paused' | 'completion-requested' | 'completed' | 'cancelled' | 'stale';\n readonly journalSequence: number; readonly acceptedCheckpointDigest: string;\n readonly owner: { readonly leaseId: string; readonly generation: number; readonly expiresAt: string } | null;\n readonly attempts: readonly { readonly attemptId: string; readonly requestDigest: string; readonly state: 'issued' | 'partially-accepted' | 'accepted' | 'failed' | 'uncertain' | 'cancelled'; readonly acceptedSequence: number | null; readonly usageReceipt: string | null }[];\n readonly activeMsConsumed: number; readonly continuationsConsumed: number;\n readonly blockCheckpoints: readonly { readonly blockId: string; readonly progressId: string; readonly sequence: number; readonly checkpointDigest: string }[];\n readonly outstandingWork: readonly string[]; readonly completionReceipt: string | null;\n}\ninterface ResumeCompatibilityV1 {\n readonly kind: 'compatible' | 'stale' | 'unsupported';\n readonly invalidatedEvidenceIds: readonly string[]; readonly reasons: readonly string[];\n readonly extensionRequired: boolean;\n}",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "ImmutableReviewSubjectV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "The only authority for changed scope. Exact selected commit packets identify relevant parent-relative blocks; frozen context can include other source only as context. No HEAD/working-tree diff fallback.",
+          "interfaceSketch": "interface ReviewSubjectV1 {\n readonly version: 1; readonly subjectId: string; readonly subjectDigest: string;\n readonly repoId: string; readonly rootArtifactId: string; readonly storyId: string;\n readonly build: { readonly artifactId: string; readonly revision: number; readonly sourceCommit: string };\n readonly contracts: readonly { readonly artifactId: string; readonly path: string; readonly revision: number; readonly contentDigest: string }[];\n readonly taskBasis: 'approved-plan' | 'approved-upstream';\n readonly tasks: readonly { readonly id: string; readonly description: string; readonly acceptanceChecks: readonly { readonly id: string; readonly text: string }[] }[];\n readonly packets: readonly CommitPacketV1[]; readonly contextTree: string;\n readonly ambiguities: readonly string[];\n}\ninterface CommitPacketV1 {\n readonly packetId: string; readonly commitId: string; readonly parentId: string;\n readonly attribution: { readonly basis: string; readonly evidenceRefs: readonly string[] };\n readonly blocks: readonly { readonly blockId: string; readonly oldPath: string | null; readonly newPath: string | null; readonly oldBlob: string | null; readonly newBlob: string | null; readonly oldLines: readonly [number, number] | null; readonly newLines: readonly [number, number] | null; readonly kind: 'text' | 'binary' | 'rename' | 'mode' | 'delete' | 'add'; readonly attributionRefs: readonly string[] }[];\n}",
+          "assumptions": [
+            "c2"
+          ]
+        },
+        {
+          "id": "sc2",
+          "name": "EvidenceCoverageV1",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Run-scoped evidence and many-to-many coverage bindings. Each approved obligation, packet block/non-text change and applicable criterion has a required row; findings and unresolved work cannot disappear.",
+          "interfaceSketch": "interface EvidenceV1 {\n readonly evidenceId: string; readonly subjectDigest: string;\n readonly kind: 'changed-block' | 'context-source' | 'artifact' | 'test-result' | 'caller-impact';\n readonly source: { readonly path: string; readonly revision: string; readonly digest: string; readonly lines: readonly [number, number] | null };\n readonly role: 'changed-scope' | 'context-only'; readonly inspectedByAttempt: string;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n readonly contentRef: string;\n}\ninterface CoverageV1 {\n readonly rowId: string; readonly subjectDigest: string; readonly requirementRef: string;\n readonly category: 'task' | 'acceptance' | 'design' | 'change' | 'criterion' | 'impact';\n readonly disposition: 'pending' | 'satisfied' | 'finding' | 'unverified' | 'not-applicable';\n readonly evidenceIds: readonly string[]; readonly findingIds: readonly string[];\n readonly rationale: string; readonly assessedByAttempt: string | null;\n}\ninterface ReviewLedgerV1 {\n readonly runId: string; readonly subjectDigest: string;\n readonly evidence: readonly EvidenceV1[]; readonly coverage: readonly CoverageV1[];\n readonly findings: readonly { readonly findingId: string; readonly criterion: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly confidence: 'breach' | 'observation'; readonly evidenceIds: readonly string[]; readonly expectationRefs: readonly string[]; readonly message: string }[];\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "InvestigationContinuationV1",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "One bounded independent read-only investigation protocol for both entrypoints/modes. Provider sessions execute requests but never own scope, accepted coverage or completion. Accept incremental per-block progress and durable acknowledgments inside one managed continuation; final replies reference accepted block receipts. Domain protocol only; s6 owns external MCP registration. Legacy sibling 8315a11f/S005 sc7 remains separate.",
+          "interfaceSketch": "interface InvestigationTurnV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly attemptId: string; readonly requestDigest: string; readonly policyDigest: string;\n readonly assignment: readonly string[]; readonly navigationRefs: readonly string[];\n readonly unresolvedRefs: readonly string[]; readonly priorAcceptedCheckpoint: string;\n readonly limits: { readonly attemptMs: number; readonly activeMsRemaining: number; readonly continuationsRemaining: number; readonly inclusiveTokenLimit: number };\n}\ninterface InvestigationReplyV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly acceptedBlockReceiptIds: readonly string[]; readonly lastAcceptedSequence: number;\n readonly inspectedEvidenceIds: readonly string[]; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings'];\n readonly next: { readonly kind: 'continue' | 'request-completion' | 'pause'; readonly remainingWork: readonly string[]; readonly reason: string };\n}\ninterface ImpactCapabilityV1 {\n readonly mode: 'source-only' | 'indexed-impact';\n readonly index: { readonly revision: string; readonly freshness: 'compatible' | 'stale' | 'unknown'; readonly completeness: 'partial' | 'unknown' } | null;\n readonly queryChangedEntityCallers: ((entityRef: string) => Promise<readonly EvidenceV1[]>) | null;\n}\ninterface ReviewBlockProgressV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number; readonly attemptId: string;\n readonly progressId: string; readonly expectedSequence: number; readonly blockId: string;\n readonly disposition: 'reviewed' | 'needs-followup' | 'unverified';\n readonly evidenceIds: readonly string[]; readonly notes: string; readonly coverageUpdates: readonly CoverageV1[];\n readonly findings: ReviewLedgerV1['findings']; readonly outstandingWork: readonly string[];\n}\ninterface BlockCheckpointReceiptV1 {\n readonly runId: string; readonly subjectDigest: string; readonly generation: number;\n readonly progressId: string; readonly blockId: string; readonly sequence: number; readonly checkpointDigest: string;\n}",
+          "assumptions": []
+        },
+        {
+          "id": "sc6",
+          "name": "ReviewRuntimePortsV1",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6"
+          ],
+          "purpose": "Foundational type-level ports avoid making the investigation Story depend backwards on recovery. s4 implements durable storage, s3 uses the port, and s6 composes production adapters. Usage observations flow to existing usage contracts with a durable pending outbox when a writer is unavailable.",
+          "interfaceSketch": "interface ReviewRuntimePortsV1 {\n readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>;\n readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>;\n readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>;\n readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>;\n}\ninterface ReviewUsageObservationV1 {\n readonly runId: string; readonly attemptId: string; readonly observationId: string;\n readonly activity: 'code-review'; readonly chargedArtifactId: string; readonly subjectArtifactId: string;\n readonly providerRequestId: string | null; readonly quality: 'reported' | 'estimated' | 'unavailable';\n readonly providerId: string; readonly modelId: string | null;\n readonly granularity: 'model-call' | 'invocation-total' | 'cumulative-snapshot';\n readonly counters: { readonly inputUncachedTokens: number | null; readonly cacheReadTokens: number | null; readonly cacheWriteTokens: number | null; readonly outputTokens: number | null; readonly reasoningTokens: number | null };\n readonly nativeObservationRef: string | null;\n readonly allowanceTokens: number; readonly elapsedActiveMs: number;\n}\ninterface ReviewReadReceiptV1 {\n readonly reference: string; readonly sourceDigest: string; readonly contentRef: string; readonly text: string | null;\n readonly lines: readonly [number, number] | null;\n readonly completeness: 'complete' | 'partial' | 'unavailable'; readonly limitations: readonly string[];\n}",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc6"
+        ],
+        "internal": "Own durable implementation of foundational acceptance/usage-outbox ports, append/replay/checkpoint integrity, lease/generation fencing, uncertain attempts and compatibility/time recovery. Do not alter review criteria or introduce a usage warehouse. Its recovery implementation is composed by downstream s6 rather than consumed backwards by s3. Persist/replay block-level evidence and assessment receipts independently of final provider-call completion."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc6"
+          ],
+          "depends": [],
+          "internal": "Own subject preparation, attribution ambiguity detection, exact Git commit/blob/block navigation and frozen context binding. Define foundational runtime-port types only; do not implement task investigation, a recovery store or new accounting storage. No generic HEAD/working-tree diff may select scope."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc2"
+          ],
+          "depends": [
+            "sc1",
+            "sc6"
+          ],
+          "internal": "Own required-row enumeration, evidence identity/provenance and coverage relationships/dispositions. Reuse subject inputs and runtime ports. Keep ledger validation helpers private; do not execute reviewer turns or publish CRs."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc6"
+          ],
+          "internal": "Own independent read-only task-directed continuation behavior, on-demand source navigation, optional indexed caller/impact enrichment, budget admission, bounded retry/pause and attempt usage emission through foundational ports. In-memory ports are test scaffolding while production selection remains disabled until s4/s6; no durable storage implementation or terminal approval logic. Publish and acknowledge incremental block progress within continuations, with partial cross-block assessments recorded rather than lost. Domain progress contracts only; no competing MCP phase/schema ownership. External registration belongs to s6."
+        },
+        {
+          "storyId": "s5",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc6"
+          ],
+          "internal": "Own completion coverage/freshness/party validation, canonical CR adaptation and idempotent terminal publication receipts. Reuse existing lifecycle and severity/confidence policy. Do not let a completion request, missing evidence or a failed run masquerade as a completed verdict."
+        },
+        {
+          "storyId": "s6",
+          "owns": [
+            "sc7"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4",
+            "sc5",
+            "sc6"
+          ],
+          "internal": "Own production composition, equivalent MCP/daemon/controller start/status/resume/cancel adapters, status/usage presentation fields, explicit engine rollout/rollback, legacy compatibility and evaluation fixtures. No client opens stores directly; no client-specific board UI or design-review replacement. Sole new-engine MCP adapter/schema owner; reconcile 8315a11f/S005 legacy sc7 as specified in the architecture and record code-only supersession before opt-in. Verify routing partitions across both installation orders."
+        }
+      ],
+      "rolloutPhase": "D — durable accepted-state recovery",
+      "nonFunctional": {
+        "performance": "No eager whole-source or whole-contract repetition and no mandatory call-per-clause. Bounded read ranges and explicit evidence references prevent unbounded request growth.128K inclusive estimated admission and five-minute continuation cap; default120active-minute/24continuation limits pause with durable progress and explicit extension rather than claim success. Use deterministic/mock providers for routine tests; measure authorized live comparisons against recorded baselines before claiming savings. Block checkpoint acceptance is independent of run duration:120minutes is a pause ceiling, never a save interval. Grouping several block assessments in one session remains allowed.",
+        "security": "Daemon owns runtime state and DB access; cloud access remains LLMProvider/CliProvider only. Independent reviewer identity is checked at start and publication. Source reads are pinned and read-only; untrusted repository text is data, not tool/policy authority. Trusted evidence reads cannot escape the declared snapshot/approved-artifact view, graph queries bind to the registered source repo and declared dependency closure, and native adapters that cannot meet pinning/read-only capability refuse explicitly. Private runtime state uses restrictive access; metadata diagnostics contain no raw prompts/evidence.",
+        "observability": "Expose run/subject/engine/policy IDs, owner generation, attempt lifecycle, required/covered/unverified rows, pause/stale causes and resume compatibility. Show managed attempt count/active time, observed usage quality and unknown/pending observations distinctly from reservations and estimates. Emit status/heartbeats without replaying accepted work; transport disconnect is not a review verdict. Keep human-readable review reports only in /tmp. Surface latest accepted block/progress receipt and outstanding block IDs so clients can distinguish durable block progress from provider-session liveness.",
+        "durability": "Journal-committed acceptance precedes acknowledgment; snapshots/checkpoints are reconstructible and verified against immutable evidence/answer blobs. Detect torn tails and corruption, fence concurrent owners and late replies, preserve uncertain provider outcomes and idempotent completion/usage receipts. Pauses do not erase consumed execution time. Legacy runs are explicitly non-resumable; runtime data remains outside artifact JSON and excluded from changed scope. Every reviewed block is journal-committed before its durable acknowledgment and cursor advancement, even while a native session continues. Accepted block state survives an uncertain or failed enclosing attempt; only unfinished/unacknowledged work is resumed."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "ReviewRecoveryV1",
+          "signature": "interface ReviewRecoveryV1 { readonly schemaVersion: 1; readonly runId: string; readonly subjectDigest: string; readonly policyDigest: string; readonly state: 'prepared' | 'running' | 'paused' | 'completion-requested' | 'completed' | 'cancelled' | 'stale'; readonly journalSequence: number; readonly acceptedCheckpointDigest: string; readonly owner: { readonly leaseId: string; readonly generation: number; readonly expiresAt: string } | null; readonly attempts: readonly { readonly attemptId: string; readonly requestDigest: string; readonly state: 'issued' | 'partially-accepted' | 'accepted' | 'failed' | 'uncertain' | 'cancelled'; readonly acceptedSequence: number | null; readonly usageReceipt: string | null }[]; readonly activeMsConsumed: number; readonly continuationsConsumed: number; readonly blockCheckpoints: readonly { readonly blockId: string; readonly progressId: string; readonly sequence: number; readonly checkpointDigest: string }[]; readonly outstandingWork: readonly string[]; readonly completionReceipt: string | null; }",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewRecoveryV1",
+            "meaning": "Validated replay-derived status projection; no mutable client authority."
+          },
+          "errors": [
+            {
+              "type": "RecoveryError",
+              "condition": "Malformed, corrupt, unsupported, stale or unauthorized run."
+            }
+          ],
+          "preconditions": [
+            "One trusted daemon writer owns the runtime root; callers cannot open runtime storage directly."
+          ],
+          "postconditions": [
+            "Every acknowledged block is recoverable independently of enclosing attempt outcome."
+          ]
+        },
+        {
+          "name": "ResumeCompatibilityV1",
+          "signature": "interface ResumeCompatibilityV1 { readonly kind: 'compatible' | 'stale' | 'unsupported'; readonly invalidatedEvidenceIds: readonly string[]; readonly reasons: readonly string[]; readonly extensionRequired: boolean; }",
+          "parameters": [],
+          "returns": {
+            "type": "ResumeCompatibilityV1",
+            "meaning": "Explicit compatibility and remaining-allowance decision; never silently rebind old evidence."
+          },
+          "errors": [],
+          "preconditions": [
+            "Pinned subject, contracts, policy and tool/provider/evidence versions supplied by trusted composition."
+          ],
+          "postconditions": [
+            "Incompatible runs retain forensic state but cannot dispatch or publish; legacy logs explicitly unsupported."
+          ]
+        },
+        {
+          "name": "ReviewRuntimePortsV1",
+          "signature": "interface ReviewRuntimePortsV1 { readonly readEvidence: (subjectId: string, reference: string) => Promise<ReviewReadReceiptV1>; readonly stageImmutableValue: (runId: string, value: Readonly<Record<string, unknown>> | string) => Promise<{ readonly reference: string; readonly digest: string }>; readonly appendTransition: (runId: string, generation: number, expectedSequence: number, transitionRef: string) => Promise<{ readonly sequence: number; readonly checkpointDigest: string }>; readonly recordAttemptUsage: (observation: ReviewUsageObservationV1) => Promise<{ readonly state: 'recorded' | 'pending' | 'unavailable'; readonly receiptRef: string | null }>; }",
+          "parameters": [],
+          "returns": {
+            "type": "ReviewRuntimePortsV1",
+            "meaning": "Owner-bound durable implementation of sc6; read delegates to sc1 pinned reader."
+          },
+          "errors": [
+            {
+              "type": "ReviewRuntimePortError",
+              "condition": "Invalid identity/value, stale generation, sequence conflict or unknown reference."
+            },
+            {
+              "type": "RecoveryError",
+              "condition": "Storage uncertain, corrupt or unavailable; no acknowledgment."
+            }
+          ],
+          "preconditions": [
+            "Factory binds run, lease identity, generation and process-owner guard; no lease token accepted from model arguments.",
+            "append validates staged transition and complete referenced closure under serialized run queue."
+          ],
+          "postconditions": [
+            "Content-addressed immutable blob file sync and directory sync precede event commit.",
+            "Append is replay-idempotent by progressId and payload digest; conflicts refused; fsync precedes receipt."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewRecoveryV1",
+        "change": "new",
+        "details": "Stored under private daemon runtime root <project>/.insrc/review-runs/investigation-v1/<validated runId>/, outside artifact JSON and Git scope. Directories 0700/files0600; reject symlink traversal, invalid run IDs and foreign-root references. manifest pins subject, initial ledger/basis, policy, evidence format, engine version, provider qualification/tool policy compatibility and initial outstanding requirements. Runtime root requires exclusive trusted daemon process ownership; all store mutations assert that ownership and serialize per run, with a root-scoped singleton store registry. Production process guard is supplied by s6 using existing daemon ownership infrastructure; a standalone unguarded production store must refuse. No multi-host/shared-filesystem support. Lease expiry permits a new session within the same daemon to claim a strictly greater persistent generation; old lease/generation callbacks cannot mutate. Restart obtains exclusive daemon ownership, replays, and marks old owner inactive before claiming. Clock rollback pauses rather than extends authority. Each run owns many events/blobs/attempts; events point to immutable blobs; snapshots are disposable projections, not independent authority. New implementation files: src/workflow/code-review/investigation/recovery-types.ts defines sc4 projections and RecoveryError (codes invalid-input, corrupt, unsupported, stale, ownership-lost, storage-unavailable, uncertain-append, budget-exhausted); src/workflow/code-review/investigation/recovery-store.ts owns the serialized run lifecycle and owner-bound ports. These are proposed new files, not existing call sites. The runtime subtree must be explicitly excluded from Git attribution, indexing and review manifests as required by HLD.",
+        "callSites": [
+          "src/workflow/code-review/investigation/progress.ts"
+        ]
+      },
+      {
+        "entity": "Recovery journal event",
+        "change": "new",
+        "details": "Internal versioned framed canonical JSON records contain eventOrdinal, previousEventDigest, eventId, run/subject/policy identity, generation, kind, payloadRef and digest. Separate monotonically increasing eventOrdinal counts lease/attempt/usage/state controls; sc4 journalSequence and sc3 expectedSequence count accepted block transitions only, preserving existing coordinator semantics. Block checkpoint digest hashes prior block checkpoint plus canonical block commit identity; control records cannot alter it. Durable complete append is authority; torn final unterminated frame is quarantined/truncated only under exclusive owner after verifying valid prefix, with explicit diagnostic. Any complete invalid frame, broken hash/sequence or missing/corrupt reachable blob refuses writable recovery. Snapshots bind eventOrdinal and event hash; missing/stale/corrupt snapshot is rebuilt from valid journal, never used to bypass corruption. Stage immutable canonical objects/strings once with digest verification and bounded sizes; atomic no-overwrite install, file sync and parent-directory sync. Unreferenced staging blobs are harmless and not accepted work; no automatic garbage collection in this story. New implementation file: src/workflow/code-review/investigation/recovery-journal.ts owns immutable blobs, framing, durable append and replay; src/workflow/code-review/investigation/recovery-replay.ts validates the projection and referenced closure. Existing Call sites remain consumers, not implementation homes.",
+        "callSites": [
+          "src/workflow/code-review/investigation/progress.ts"
+        ]
+      },
+      {
+        "entity": "BlockProgressTransitionV1",
+        "change": "invariant-change",
+        "details": "Consume unchanged sc3 shape. At append and replay validate progress run/subject/attempt/generation, expectedSequence and predecessor checkpoint; resolve and hash-check candidate ledger, basis and trusted receipt blobs. Recompute sc2 delta from prior ledger with verified native receipt provenance and compare candidate digest, rather than trusting arbitrary staged candidate JSON. New basis may only add valid packet-bound impact requirements; subject, criteria and existing requirements immutable. Accumulate earlier trusted receipt closure across checkpoints. Reconstruct accepted progress receipt history and outstanding work from requirements/coverage plus explicit retained work; never drop prior unresolved work based solely on provider list. Identical progress replay returns original receipt even after uncertain ACK; conflicting payload refuses. Old generation cannot add new progress. Receipt retrieval for an already accepted identity is read-only through recovery, distinct from allowing an old worker to append.",
+        "callSites": [
+          "src/workflow/code-review/investigation/progress.ts",
+          "src/workflow/code-review/investigation/continuation-types.ts"
+        ]
+      },
+      {
+        "entity": "Attempt recovery and budget reservation",
+        "change": "new",
+        "details": "Before backend dispatch, owner-bound execution wrapper durably records issued attemptId/requestDigest and reserves one continuation plus capped active-time allowance. Wrapper encloses every execute call, including sc3 internal retry, without changing sc3 domain interfaces; s6 composes it. Reservations prevent a crash from resetting consumed budgets. Settled attempt replaces its own time reservation with validated monotonic elapsed duration, never double-counts block replays or the onState cumulative view. Unknown interrupted attempt conservatively retains reservation and state uncertain, with accepted block receipts retained and missing usage explicitly unknown. Inactive pause time consumes nothing; wall-clock timestamps never reconstruct active duration. Lost response/append ACK does not imply no external model execution. Retry is new attempt identity explicitly linked to prior uncertain attempt. Remaining limit exhaustion pauses with extensionRequired; extensions are explicit audited allowance changes, not policy/criteria changes. sc3 onState is a cache hint, never durable accounting authority; durable wrapper settles in finally and ignores stale-generation callbacks. New implementation file: src/workflow/code-review/investigation/recovery-attempts.ts owns the guarded backend wrapper and reservation/settlement transitions.",
+        "callSites": [
+          "src/workflow/code-review/investigation/continuation-types.ts"
+        ]
+      },
+      {
+        "entity": "Usage outbox",
+        "change": "new",
+        "details": "Each run owns zero or more immutable observations keyed observationId plus digest; observation references its issued attempt. Persist pending event before calling existing usage writer; stable idempotency key required at writer boundary. Durable receipt event marks recorded; writer failure remains pending. Crash after external write but before receipt replays same key, never a new model call. If writer cannot guarantee deduplication, retain pending/uncertain and refuse automatic resend rather than promise exactly-once. Unknown counters remain null and quality unavailable; reservations are never usage. Conflicting observation replay refuses. Provider usage may be accepted for an already issued cancelled attempt as accounting-only under current owner, never progress authority. No usage warehouse/schema change. New implementation file: src/workflow/code-review/investigation/recovery-usage.ts owns pending observations and idempotent delivery receipts.",
+        "callSites": [
+          "src/workflow/code-review/investigation/types.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Own durable recovery projections, lease/generation fencing, compatibility, conservative interrupted budget accounting and reconstructible block checkpoints; expose owner-bound internal lifecycle commands to s5/s6. Terminal receipt recording is idempotent storage only; s5 decides completion eligibility and canonical publication."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reuse exact subject digest and pinned read/freshness checks; never select HEAD diff or widen packets."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Replay and validate ledger deltas/provenance with existing sc2 helpers; do not change criteria or findings semantics."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Persist unchanged staged block transitions and hydrate InvestigationState; supply guarded ports/backend wrapper; accepted blocks survive uncertain enclosing attempts."
+      },
+      {
+        "contractId": "sc6",
+        "role": "consumes",
+        "howDetails": "Implement durable immutable staging, append and usage outbox behind unchanged foundational interfaces; production composition and external registration remain s6."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Crash during blob staging or journal append.",
+          "detection": "Replay verifies framing, hashes, event sequence and complete referenced closure; append failure leaves durability uncertain.",
+          "response": "No ACK on failed append. Quarantine torn final tail under exclusive writer, replay committed prefix, resolve progress identity before retry. Complete corruption refuses writable recovery.",
+          "userImpact": "Only unaccepted work may repeat; accepted blocks remain visible.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Concurrent resume or late worker.",
+          "detection": "Serialized owner-bound mutation checks leaseId, persisted generation, expiry and daemon process guard immediately before commit.",
+          "response": "One claimant obtains next generation; foreign/expired generation cannot append, settle or publish. Read-only receipt lookup may resolve prior acceptance.",
+          "userImpact": "No competing accepted histories.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale subject, contract, policy or compatibility version.",
+          "detection": "Compare manifest fingerprints and invoke pinned freshness check; verify all persisted receipt/source bindings.",
+          "response": "Return stale or unsupported with reasons and affected evidence IDs; retain history but refuse dispatch/publication. Do not mutate old evidence into a new subject.",
+          "userImpact": "New run required when semantic inputs differ.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Provider interrupted after possible execution.",
+          "detection": "Issued attempt has no durable settlement at recovery, regardless of provider session availability.",
+          "response": "Mark uncertain, retain accepted blocks, keep capped active reservation and one consumed continuation; unknown usage explicit. New dispatch records new linked attempt.",
+          "userImpact": "Possible duplicate external execution is disclosed; progress not discarded.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Storage unavailable or missing reachable value.",
+          "detection": "File sync/read error, digest mismatch or absent referenced blob during replay.",
+          "response": "Fail closed with storage/corruption reason and no success receipt; never rebuild from unverified snapshot.",
+          "userImpact": "Review paused until storage is restored or a new run chosen.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Usage writer unavailable or ACK lost.",
+          "detection": "Pending observation has no durable delivery receipt; writer error/timeout or incompatible deduplication contract.",
+          "response": "Keep durable pending observation; resend same idempotency key only with qualified writer; preserve unknown values and refuse conflicting observation payload.",
+          "userImpact": "Usage delivery status stays separate from token quality and review status.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Remaining allowance exhausted or clock rolls backward.",
+          "detection": "Replayed settled plus reserved consumption reaches limits, or wall-clock owner validation detects regression.",
+          "response": "Pause, mark extensionRequired when applicable; require explicit audited extension; inactive time never resets allowance.",
+          "userImpact": "No silent restart of execution budgets.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Forged staged progress or path traversal.",
+          "detection": "Validate run-scoped reference syntax/digests and sc2 recomputed delta against trusted receipt closure and immutable subject.",
+          "response": "Refuse before append; no model-supplied filesystem path or claimed receipt is authority.",
+          "userImpact": "Invalid submission cannot alter accepted work.",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Two blocks accepted within one still-running provider request.",
+          "expected": "Each independently commits and ACKs; process loss retains both even if final attempt uncertain."
+        },
+        {
+          "input": "Identical progress replay after append succeeded but ACK was lost.",
+          "expected": "Return original receipt by identity/digest; no new block sequence, model call or usage event."
+        },
+        {
+          "input": "Stale or missing snapshot with valid journal.",
+          "expected": "Rebuild projection and verify all referenced blobs; snapshot cache is optional."
+        },
+        {
+          "input": "Legacy review without recovery manifest.",
+          "expected": "Explicit unsupported/non-resumable result; do not invent checkpoint or usage."
+        },
+        {
+          "input": "Clean pause followed by long offline interval.",
+          "expected": "No inactive time charged; previous consumption and unresolved work preserved."
+        },
+        {
+          "input": "Empty/stale caller graph result or multiple impact checkpoints for a block.",
+          "expected": "Replay retained impact obligations and provenance without interpreting absence as no impact."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Block append precedes receipt/owner-state publication; accepted blocks are independent of provider final reply. Grounded in first context bundle and src/workflow/code-review/investigation/progress.ts.",
+          "source": "c1"
+        },
+        {
+          "text": "Keep runtime recovery separate from canonical artifact staged-head journal and lifecycle. Grounded in second context bundle and src/workflow/artifact-core/journal.ts.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test and node:assert/strict via tsx; *.test.ts in __tests__, extending existing investigation and artifact journal fixtures.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate canonical framing, immutable references, deterministic replay, compatibility and accounting without model calls.",
+          "subjects": [
+            "recovery journal integrity and snapshots",
+            "lease generation and state transitions",
+            "attempt reservation and settlement",
+            "usage outbox idempotency and compatibility"
+          ],
+          "fixturesNeeded": [
+            "temporary private runtime directories",
+            "fake monotonic/wall clocks",
+            "injected write/sync fault points",
+            "deterministic subject and ledger fixtures"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove crash boundaries and concurrency using the real filesystem and sc3 coordinator with deterministic backend.",
+          "subjects": [
+            "per-block acceptance survives process restart",
+            "uncertain append receipt recovery",
+            "two-session owner race and stale callback fencing",
+            "sc3 execution wrapper journals internal retry attempts",
+            "usage delivery crash and replay",
+            "missing/corrupt closure fail-closed"
+          ],
+          "fixturesNeeded": [
+            "child-process crash harness at stage/append/sync/ACK boundaries",
+            "two clients of one daemon store",
+            "fake idempotent usage writer",
+            "two-block deterministic review backend",
+            "New src/workflow/code-review/investigation/__tests__/recovery-worker.ts child-process fixture and recovery-fixtures.ts shared temporary-root helpers; prove fork/kill feasibility first during build, not an existing tested capability."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Preserve unchanged sc1/sc2/sc3/sc6 surfaces and sibling ownership.",
+          "subjects": [
+            "ReviewRecoveryV1 and ResumeCompatibilityV1 exact HLD shape",
+            "ReviewRuntimePortsV1 durable implementation with unchanged sc3 coordinator",
+            "source-only and indexed basis replay",
+            "legacy non-resumable refusal and no production engine activation"
+          ],
+          "fixturesNeeded": [
+            "source-only and indexed-impact fixtures",
+            "legacy log fixture"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Crash after block fsync before ACK and after ACK: restore ledger/evidence/basis/receipts and dispatch only unresolved blocks.",
+            "Accept two blocks inside one provider request then kill worker before final reply; both survive.",
+            "Legacy logs explicitly unsupported; stale/missing snapshots reconstruct from journal."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Crash after issued attempt before result or settlement: uncertain identity retained, active reservation and unknown usage preserved.",
+            "Identical uncertain progress retry resolves original receipt; conflicting payload refuses."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Concurrent owner claims yield one valid generation; expired owner and late backend callback cannot append or settle.",
+            "Attempt duplicate publication receipt recording is idempotent; s5 eligibility remains external.",
+            "Lost daemon process guard refuses all writes even with valid run lease."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Changed subject/contracts/policy/tool/evidence compatibility yields explicit stale/unsupported reasons.",
+            "Corrupt full frame/hash/blob refuses; torn final frame recovers only verified prefix under exclusive writer.",
+            "Pause interval uncharged; uncertain reservation retained; exhausted limit requires explicit audited extension; backward clock pauses."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Identical replay does not increment attempt/model usage; actual retries get distinct linked identity.",
+            "Crash after usage writer success before receipt resends stable key once through deduplication; unqualified writer remains pending.",
+            "Unavailable counters remain null, estimates separate; budget reservation never reported as measured usage."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Context bundle c1: sc3 stages candidate ledger/basis/receipts and consumes injected append ports; durable implementation is absent from its scope. Context bundle c2: canonical artifact journal recovers staged artifact heads, not investigation execution. Existing legacy reviews remain active.",
+      "stateAfter": "Internal sc4 recovery implementation available to s5/s6 behind unchanged sc6 ports, with private versioned runtime files. Production review engine unchanged until s6 composes guarded adapters and enables explicit rollout.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add isolated versioned recovery types, strict validators and private file journal; exclude runtime path from source scope. No existing artifact rewrite.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add owner-bound durable ports, reconstructible projection, attempt accounting and usage outbox; exercise only deterministic fixtures.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Export internal recovery composition boundary for downstream s5/s6; retain old entrypoints and engine selection unchanged.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "At eventual s6 opt-in, create only new-engine manifests; mark legacy review runs unsupported for resume. Rollback selection leaves existing journals intact and pauses new-engine work rather than importing into legacy.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No current public IPC/MCP/provider interface or default engine changes. sc1/sc2/sc3/sc6 shared types unchanged. Runtime schema unknown to an older binary is refused, never overwritten. Canonical CR publication remains s5 and external registration s6.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Per-run immutable blobs and chained event journal",
+        "oneLineSummary": "Implement sc4/sc6 with one serialized daemon-owned run store and reconstructible snapshots.",
+        "approach": "Store content-addressed immutable values, append hash-chained validated events with durable sync before acknowledgment, and derive ReviewRecoveryV1 plus InvestigationState by replay. Use an exclusive daemon process lock and per-run serialized lease/generation checks. Snapshots accelerate loading but never replace the journal authority. Usage observations form a replayable outbox to the existing usage writer.",
+        "pros": [
+          "Smallest shape matching staged sc3 transitions without modifying consumed contracts.",
+          "Crash and uncertain-append boundaries are explicit; block checkpoints independent of provider completion."
+        ],
+        "cons": [
+          "Requires strict journal framing, filesystem durability and replay validation.",
+          "Single daemon ownership must be enforced, including restart overlap."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Transactional embedded run store with event table",
+        "oneLineSummary": "Put events, immutable values and owner state in a daemon-owned transactional KV database.",
+        "approach": "Implement the same sc4/sc6 contracts using an embedded transactional KV namespace, atomically committing event sequence, lease fencing and blob references. Preserve append-only event history and reconstructible projections, with pending usage records in the same transaction.",
+        "pros": [
+          "Atomic compare-and-append and multi-record updates.",
+          "Retains explicit replay and receipt identities."
+        ],
+        "cons": [
+          "Adds database lifecycle and schema integration to an isolated runtime subsystem.",
+          "Existing artifact journal cannot supply this transaction model; broader storage coupling than required."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Correct but adds database ownership and migration coupling without a required capability gain over a single daemon journal."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "narrative": "A run owns its append-only event history and attempts. Events reference immutable blobs; accepted block records bind progress to recoverable checkpoints, while usage observations retain independent delivery state.",
+      "classes": {
+        "ReviewRun": {
+          "description": "Daemon-owned run root and immutable subject/policy binding.",
+          "attributes": {
+            "runId": {
+              "description": "Run identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "events": {
+              "description": "Ordered owned journal history.",
+              "range": "RecoveryEvent",
+              "multivalued": true
+            },
+            "attempts": {
+              "description": "Owned issued provider attempts.",
+              "range": "ReviewAttempt",
+              "multivalued": true
+            }
+          }
+        },
+        "RecoveryEvent": {
+          "description": "Hash-chained committed event; authoritative only after durable append.",
+          "attributes": {
+            "ordinal": {
+              "description": "Total event order, distinct from block acceptance sequence.",
+              "range": "integer",
+              "required": true
+            },
+            "blobs": {
+              "description": "Referenced immutable payload closure verified during replay.",
+              "range": "ImmutableBlob",
+              "multivalued": true
+            },
+            "blockCheckpoint": {
+              "description": "Optional accepted block checkpoint for block-progress events.",
+              "range": "BlockCheckpoint",
+              "maximum_cardinality": 1
+            }
+          }
+        },
+        "ImmutableBlob": {
+          "description": "Run-scoped content-addressed immutable value.",
+          "attributes": {
+            "digest": {
+              "description": "Canonical content digest.",
+              "range": "string",
+              "identifier": true
+            }
+          }
+        },
+        "BlockCheckpoint": {
+          "description": "Accepted block progress with reconstructible receipt.",
+          "attributes": {
+            "progressId": {
+              "description": "Idempotent progress identity.",
+              "range": "string",
+              "required": true
+            },
+            "sequence": {
+              "description": "Monotonic accepted-block sequence.",
+              "range": "integer",
+              "required": true
+            }
+          }
+        },
+        "ReviewAttempt": {
+          "description": "Issued attempt retains reservations, outcome and usage provenance.",
+          "attributes": {
+            "attemptId": {
+              "description": "Unique issued request identity.",
+              "range": "string",
+              "identifier": true
+            },
+            "usage": {
+              "description": "Owned observations independently delivered through usage outbox.",
+              "range": "UsageObservation",
+              "multivalued": true
+            }
+          }
+        },
+        "UsageObservation": {
+          "description": "Immutable token observation with durable delivery status.",
+          "attributes": {
+            "observationId": {
+              "description": "Stable writer deduplication identity.",
+              "range": "string",
+              "identifier": true
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "narrative": "Each block becomes durable before ACK while the provider session remains open. Recovery preserves that accepted block even when the surrounding attempt has an uncertain outcome.",
+      "participants": [
+        {
+          "id": "reviewer",
+          "label": "Independent reviewer",
+          "description": "One bounded managed provider attempt."
+        },
+        {
+          "id": "coordinator",
+          "label": "sc3 coordinator",
+          "description": "Validates progress and stages candidate state."
+        },
+        {
+          "id": "store",
+          "label": "sc4 owner-bound store",
+          "description": "Serializes lease checks, durable append and replay."
+        },
+        {
+          "id": "disk",
+          "label": "Private runtime files",
+          "description": "Immutable blobs and authoritative journal."
+        }
+      ],
+      "messages": [
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "label": "Submit block assessment",
+          "description": "Progress carries exact run/attempt/generation and expected block sequence."
+        },
+        {
+          "from": "coordinator",
+          "to": "store",
+          "label": "Stage ledger, basis, receipts and transition",
+          "description": "Existing sc3 port calls preserve trusted provenance."
+        },
+        {
+          "from": "store",
+          "to": "disk",
+          "label": "Install immutable values and sync",
+          "description": "File and parent-directory durability before journal references."
+        },
+        {
+          "from": "coordinator",
+          "to": "store",
+          "label": "Append transition under owner fence",
+          "description": "Recompute delta, validate references, generation and predecessor."
+        },
+        {
+          "from": "store",
+          "to": "disk",
+          "label": "Append hash-chained event and sync",
+          "description": "Commit acceptance before acknowledgment."
+        },
+        {
+          "from": "store",
+          "to": "coordinator",
+          "label": "Return durable checkpoint receipt",
+          "kind": "return",
+          "description": "Idempotent accepted progress identity and original sequence."
+        },
+        {
+          "from": "coordinator",
+          "to": "reviewer",
+          "label": "ACK block; session may continue",
+          "kind": "return",
+          "description": "No wait for final provider reply or run timeout."
+        },
+        {
+          "from": "store",
+          "to": "disk",
+          "label": "After interruption: replay verified history",
+          "description": "Missing settlement becomes uncertain; accepted block remains."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-er",
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S004/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/progress.ts",
+      "quotedText": "Durable append, idempotent storage and generation fencing are sc4/sc6 responsibilities."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/journal.ts",
+      "quotedText": "The write journal port (sc2)."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/continuation-types.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/HLD.md"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "design.story/s1-s8: c32aa60534232f36/s4"
+    }
+  ]
+}

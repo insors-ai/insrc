@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-836458bf-f3a3-4a2f-86ee-e8e68f92b69b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.219Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Render canonical investigation reviews and preserve approval compatibility",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5ccee805fb544e8b068aaae0b59b3463822eb7668a9bf5e8f30a1f407963f2e2",
+        "at": "2026-10-29T12:02:08.219Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.220Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Render canonical investigation reviews and preserve approval compatibility",
+    "summary": "Update canonical CR rendering and existing completion-evidence readers for versioned investigation records, with deterministic view regeneration. Preserve legacy record, independent review and explicit override behavior; keep new engine activation capability-gated for S6.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Canonical view exposes compact subject/checkpoint/coverage linkage and explicit source mode without raw evidence dumps.",
+      "Rendering failure after valid canonical persistence is repairable without a second artifact revision or lost result.",
+      "Existing full/degraded records, severity/confidence and human BUILD approval/override semantics remain unchanged.",
+      "Unsupported investigation versions/modes refuse explicitly; older strict consumers are not claimed automatically compatible.",
+      "No production engine selection, new MCP phases, tracker messaging or user approval performed."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Canonical investigation rendering regenerates without another content revision"
+      },
+      {
+        "level": "integration",
+        "name": "Legacy records independent approval overrides and unsupported versions retain explicit behavior"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

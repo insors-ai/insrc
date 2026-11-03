@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bd32f85c-e537-4452-b288-b8a49dc6aa77",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.217Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Publish through the canonical artifact queue with revision checks",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9381e6f85e19525b143cfab77fb8d542bf5f0a24701fc7e452a3b001f7e5d603",
+        "at": "2026-10-29T12:02:08.217Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.218Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish through the canonical artifact queue with revision checks",
+    "summary": "Add completion-publisher.ts guarded persistence using the daemon-owned ArtifactStore/History/LifecycleService. Support explicit absent-head creation and expected-revision update under the existing canonical queue, with fresh ownership/pin checks inside the mutation boundary.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Canonical mutation compares frozen expected absence/revision atomically under the existing artifact queue; no check-then-write race or direct JSON overwrite.",
+      "Same operation plus exact subject/checkpoint/content returns existing revision with no new write/logged round.",
+      "Different/newer/human-edited canonical head returns conflict and is not overwritten.",
+      "Recheck current-owner assertion, independent party and pinned source/BUILD/contracts immediately before canonical mutation.",
+      "Validate adapted record in memory and verify persisted head/revision after lifecycle write; two stores are treated as recoverable commits, not one atomic transaction."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Canonical artifact queue creates or updates only the frozen expected revision"
+      },
+      {
+        "level": "integration",
+        "name": "Owner freshness and canonical identity checks refuse concurrent or edited heads"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

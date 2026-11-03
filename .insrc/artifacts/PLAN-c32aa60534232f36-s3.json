@@ -1,0 +1,366 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793256777042-0la4v5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T06:55:47.062Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 168697,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s3",
+    "lldRunId": "wf-1793255741363-9i7il5",
+    "lldEffectiveHash": "12565b4b7f9e3569dff0699c5aa063f18189563c676dc7a94de8b51269ab1fed",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fceb46f13b6bfd0f8567a45fb7004815fbaa1a387f2597fc29e008acca3aec81",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T07:01:41.326Z"
+      }
+    },
+    "rangeBase": "ea6f3ac10d35c811e5a43bdbb60b015b5fba288d"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build the bounded reviewer coordinator around the completed pinned subject and evidence ledger. Accept each block through the shared transition ports before acknowledgment, retain explicit pauses and usage, and keep caller impact separate from changed scope. Qualify execution capabilities explicitly; production provider bridges and durable storage remain downstream work.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define sc3 bindings, backend qualification and inclusive policy",
+        "summary": "Add exact sc3 types and internal coordinator/backend context. Validate immutable turn/subject/policy/party/critical-role bindings, backend capability mode and inclusive request/time admission using existing budget helpers.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Exact sc3 values retained; consume sc1/sc2/sc6 types and trusted role/provider context without changing existing interfaces.",
+          "Unsupported opaque native or mutable/unmediated source capability refuses before dispatch; qualification is trusted composition, not model assertion.",
+          "Inclusive admission covers history/schema/tool manifest/reserves; effective attempt cap min300s/remaining allowance/provider limit;120active-minute/24attempt defaults only pause, never set checkpoint cadence.",
+          "Focused binding, qualification, budget and fake-clock tests pass; no direct cloud REST, production activation or MCP schema change."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "sc3 bindings, backend qualification and inclusive continuation policy"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Accept per-block progress before returning acknowledgment",
+        "summary": "Implement progress.ts over sc2 pure candidate validation and sc6 object staging/transition append. Bind progress identities, expected sequence, block ownership, receipt replay and uncertainty without implementing durable storage.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Authenticate every progress binding and selected block; reject unsupported evidence, wrong sequence/generation/attempt and conflicting payload identity.",
+          "Stage object-valued candidate/transition and append through sc6 before advancing accepted ledger/sequence or returning ACK.",
+          "Identical accepted progress returns authoritative prior receipt without reapplying or recharging; missing/lost acceptance stays explicitly uncertain.",
+          "Append failure prevents next block assessment; needs-followup/unverified and large-block partial progress retain outstanding work.",
+          "Focused delayed-append, lost-ACK, conflict and immutable-state tests pass with test-only in-memory ports."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Per-block append-before-ACK, replay and uncertain acceptance"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Mediate pinned navigation and optional changed-entity impact",
+        "summary": "Add narrow sc3 source/impact wrappers over s1 reads and s2 trusted receipt admission. Keep identical subject seeds in both modes; only indexed mode receives validated daemon-owned changed-entity caller capability.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Source reads stay pinned, bounded and read-only; trusted inspection receipts support later ledger deltas, not backend-claimed file access.",
+          "Caller queries require exact entity membership in selected packet source; ambiguous mapping, stale/missing/partial/empty index results remain explicit unresolved impact.",
+          "Impact evidence is context-only with matching native receipt metadata and limits; no additional commits, packets or changed blocks.",
+          "Use injected closure-scoped daemon capability, with no DB access in clients or new analyzer recipe; focused source/mode/impact tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Pinned navigation and changed-entity impact scope parity"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Run serial bounded continuations with retry and cancellation",
+        "summary": "Implement continuation.ts to seed navigation-oriented requests, run qualified backend through its bound LLMProvider, expose narrow source/impact/progress tools and return validated replies referencing accepted block receipts.",
+        "size": "L",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "One compatible backend session can inspect related obligations and ACK several blocks; no mandatory call per clause/block or eager whole-source packet.",
+          "Serialize provider work; enforce accepted-progress barrier before next block assessment and preserve earlier accepted receipts on enclosing-call failure.",
+          "At most one immediate transient retry with new attempt identity and retained consumption, provider internalRetry:false; non-transient binding/schema/permission/budget/stale failures do not auto-retry.",
+          "Abort provider/tools promptly, fence late callbacks and pause before pending backlog; final reply cannot silently reapply accepted deltas or publish a verdict.",
+          "Focused grouped-session, block-yield, unsupported-backend, retry/cancel/deadline and final-reply tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Grouped continuation execution, bounded retries and cancellation"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Emit idempotent usage and retained pause accounting",
+        "summary": "Wire attempt usage observer and consumed active-time/attempt accounting into coordinator transitions through existing sc6 recordAttemptUsage. Preserve actual/estimated/unavailable provenance and pending writer state.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Usage observations retain stable observation/attempt/provider/model IDs, existing five nullable counters, quality/granularity and native references.",
+          "Allowance/reserves/tool counts never become measured usage; unsupported native observation is unavailable and accepted replay emits no new charge.",
+          "Consumed active time/attempts survive yields, retries, cancellation and transport detach; pending/unavailable accounting state is visible for s4 outbox recovery.",
+          "No new usage warehouse, artifact JSON collection or storage backend; deterministic observer/clock/replay tests pass."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Idempotent usage observations and retained active allowance"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Prove end-to-end sc1/sc2/sc3 coordination and compatibility",
+        "summary": "Complete real pinned source-to-ledger-to-stage/append/ACK fixtures with deterministic backend/providers and explicitly test-only ports. Verify approved LLD coverage, existing focused regressions, production build and generated sequence consistency.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "All five Story ACs and all12 LLD test subjects map to concrete passing tests without routine live provider suites.",
+          "Two blocks ACK within one session; cancellation after ACK preserves accepted state, uncertain in-flight work stays explicit and source/indexed modes keep identical scope.",
+          "Qualified block-yield and unsupported native paths explicit; legacy provider/tool-loop/MCP/controller interfaces unchanged and no production activation.",
+          "Focused inclusive-budget/read-only-loop/s1/s2 regression checks and production build pass; keep structured sequence artifact aligned with actual behavior.",
+          "Record task/build/test evidence and run one required independent code review; no automatic repeated review rounds."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Pinned source-ledger-progress integration and legacy compatibility"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "review-s3-ac1 grouped investigation: several block progress/ACK exchanges inside one compatible backend session, same subject seed in both modes, no call-per-clause plan",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s3-ac2 inclusive budget covers history/schema/tools/reserves; deadline min300s/remaining allowance; overflow yields without dropping evidence; run ceilings never set checkpoint cadence",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s3-ac3 cancel/repeated transient failure pauses promptly, at most one retry, internalRetry disabled, consumed allowances retained and late callbacks fenced",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s3-ac4 wrong party/tier/context/capability or mutable/unmediated reads refuse before dispatch; tools cannot alter source/policy/scope and provider calls are serial",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "review-s3-ac5 changed-entity mapping gates caller query; stale/missing/partial/empty results retain unresolved impact and never add commits",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Progress validation rejects foreign block/generation/attempt/sequence, uninspected evidence and conflicting progress digest; identical accepted replay returns prior receipt",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Append failure/uncertainty sends no ACK, preserves accepted ledger, and prevents next block assessment; final reply does not reapply accepted deltas",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Usage observations retain provider/model/native quality/granularity and stable IDs; absent counters unknown, pending writer explicit, replay does not recharge",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real pinned source receipt -> sc2 candidate -> stage object -> append accepted transition -> block ACK, including two blocks before final session reply",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Crash/cancel after an acknowledged block but before enclosing reply preserves earlier accepted state; uncertain in-flight block remains explicit (durable restart is s4 test obligation)",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Qualified block-yield path and unsupported opaque native path are explicit; no MCP registration, legacy/provider signature changes or production activation",
+        "coveredByTaskIds": [
+          "t1",
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Existing inclusive-budget, read-only loop and s1/s2 focused fixtures remain compatible",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4",
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 contractDetails and owned sc3/consumed sc1-sc2-sc6 boundary"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 backend qualification and inclusive admission/pause policy"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 per-block progress transition, append-before-ACK and replay"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 pinned navigation and changed-entity caller impact"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 serial continuation, retry/cancel and final-reply semantics"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 usage observation and active allowance accounting"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s3 testStrategy, additive migration and sequenceDefinition"
+    }
+  ]
+}

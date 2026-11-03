@@ -1,0 +1,1230 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "review-e6ddcdcb-s4-t4-live-20261101",
+  "project": "/home/subho/work/dev/insors/insrc",
+  "storyId": "s4",
+  "taskId": "t4",
+  "attempts": [
+    {
+      "header": {
+        "attempt": 1,
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "createdAt": "2026-11-01T14:58:08.821Z",
+        "selectedTaskIds": [
+          "t4"
+        ],
+        "completedAt": "2026-11-01T15:03:21.344Z"
+      },
+      "submitted": {
+        "storyId": "s4",
+        "taskId": "t4",
+        "functionalSummary": "Review only S4 task4: read-only task-review progress API, execution ownership versus immutable saved status, deterministic5sec polling/45sec user updates, and cancellation that closes only the observation socket and suppresses late updates. Selected file/ranges below are the entire finding scope; commits are change pointers only. Other S4/timeout code is dependency context, not new scope. The selected t5 commit contributes only two t4 corrections in coordinator/progress-client; its other changes are excluded. Review current final behavior including subsequent selected corrections, rather than flagging a defect already corrected in a later supplied segment. Source reads may use the provided committed references and history. Critical policy is30min inactivity with no fixed deadline; do not restore old5/10/15min deadlines or legacy review engines. Normal MCP/session migration is S3 and outside this task. Complete four named test cases passed in the daemon build validation; the author also ran12 focused regressions and npm build. Those are submitted evidence, not independent execution. Inspect relevant assertions; no broad test sweep/rebuild is required. BUILD was user-approved with override pending this live independent verification. Checkpoint input/results are immutable; progress metadata is provisional and bounded. Do not request a new framework, signing keys or extra trust machinery.",
+        "documents": {
+          "story": {
+            "path": ".insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "lld": {
+            "path": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "75a04c6205701444538f62168ae26efd03da78d2",
+            "parent": "b869864a0ecfca93be6f22b6db41495a33ae038c",
+            "files": [
+              {
+                "path": "src/daemon/handler-runtime.ts",
+                "segments": [
+                  {
+                    "after": [
+                      608,
+                      608
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/task-review-rpc.ts",
+                "segments": [
+                  {
+                    "after": [
+                      93,
+                      102
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      2
+                    ]
+                  },
+                  {
+                    "after": [
+                      70,
+                      86
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      51
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      17
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d",
+            "parent": "75a04c6205701444538f62168ae26efd03da78d2",
+            "files": [
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "before": [
+                      77,
+                      77
+                    ],
+                    "after": [
+                      77,
+                      77
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      14,
+                      14
+                    ],
+                    "after": [
+                      14,
+                      14
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "31f7110989c95dd55818b9f940b1716ec68549c2",
+            "parent": "cd387d6abef57cf1a4959a643093dfb26c0556d9",
+            "files": [
+              {
+                "path": "docs/task-review-execution.md",
+                "segments": [
+                  {
+                    "after": [
+                      117,
+                      124
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      8
+                    ]
+                  },
+                  {
+                    "before": [
+                      6,
+                      6
+                    ],
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      15,
+                      15
+                    ],
+                    "after": [
+                      22,
+                      22
+                    ]
+                  },
+                  {
+                    "before": [
+                      26,
+                      26
+                    ],
+                    "after": [
+                      33,
+                      33
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  },
+                  {
+                    "after": [
+                      47,
+                      76
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      3,
+                      3
+                    ],
+                    "after": [
+                      3,
+                      5
+                    ]
+                  },
+                  {
+                    "after": [
+                      9,
+                      9
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      11,
+                      11
+                    ],
+                    "after": [
+                      15,
+                      15
+                    ]
+                  },
+                  {
+                    "after": [
+                      33,
+                      43
+                    ]
+                  },
+                  {
+                    "before": [
+                      36,
+                      36
+                    ],
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "before": [
+                      42,
+                      42
+                    ],
+                    "after": [
+                      57,
+                      58
+                    ]
+                  },
+                  {
+                    "before": [
+                      45,
+                      46
+                    ],
+                    "after": [
+                      61,
+                      62
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      11,
+                      11
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "cases": [
+              "Read-only progress IPC validates scope and never invokes providers",
+              "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+              "Inactive execution stops polling without rewriting saved task status or restarting review",
+              "Cancellation closes the real observation socket before its RPC deadline"
+            ],
+            "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "result": "pass",
+            "executionDetails": "Daemon build validation1961 ran all four named cases and typecheck successfully. Final committed TESTS record at450f213f3 includes the correction test mapping. Builder additionally ran12 focused regressions/native fixtures and build; this is author/daemon build evidence, not independent model execution.",
+            "evidenceReferences": [
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s4.json",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/TESTS.md"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "All selected task assessments are terminal. CR publication complete.",
+        "tasks": [
+          {
+            "taskId": "t4",
+            "status": "incomplete",
+            "summary": "t4 adds a read-only `codeReview.task.progress` IPC route (handler-runtime.ts, task-review-rpc.ts) backed by `TaskReviewCoordinator.progress()` (coordinator.ts), a typed progress view (progress-view.ts) and a client poller (progress-client.ts) with 5s deterministic polling, 45s-or-change update cadence, and abort-only cancellation that closes just the observation socket. The two in-scope corrections from the t5 commit (coordinator.ts, progress-client.ts) fix a stale-controller leak across non-controller-driven reviews and add a belt-and-suspenders post-await abort check that suppresses a late update racing cancellation. Final state (commit 31f711098, matching the current checkout exactly — git diff against HEAD for all seven scoped files is empty) also adds `executionState` (active/starting/inactive) so a fatal-write/restart that leaves the saved status at `running` with no live execution is surfaced as \"explicit recovery required\" and treated as terminal by the poller, without ever writing to the checkpoint or re-invoking a provider — independently confirmed by `progress()` containing only `loadCheckpoint` reads, no `save` call.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Independently executed npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts against the current checkout (which has zero diff from the pinned final commit 31f7110989c95dd55818b9f940b1716ec68549c2 for every file in scope). All four named cases passed: Read-only progress IPC validates scope and never invokes providers; Polling helper emits immediate transitions and45sec updates and cancels cleanly; Inactive execution stops polling without rewriting saved task status or restarting review; Cancellation closes the real observation socket before its RPC deadline. This matches the committed TESTS record at 450f213f3 (task t4, commit 31f711098, all four cases pass) and the builder's reported evidence - same commit, same cases, same result, now cross-checked by my own run rather than taken on report alone. Also ran npx tsc --noEmit -p . with zero errors across the whole repo.",
+              "evidenceReferences": [
+                "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s4.json"
+              ]
+            },
+            "limitations": [
+              "The daemon-level integration (socket wiring end-to-end through the real production daemon process, rather than the in-process fixture/mock sockets the test file uses) was not separately re-verified; relied on the test file's own createServer/createConnection-based socket test plus the committed build-validation record for that layer.",
+              "Did not re-run the builder's additional 12 focused regressions or full npm build; relied on the builder's report for those, consistent with their framing as author-submitted evidence rather than part of this task's named tests."
+            ],
+            "advice": [
+              "None - the implementation is tight, the two t5 corrections are genuine fixes (not incidental), and test coverage for the stated acceptance checks (ownership vs saved status, 5s/45s cadence, socket-only cancellation) is direct and passing."
+            ],
+            "inspectedReferences": [
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/daemon/handler-runtime.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/daemon/handler-runtime.ts",
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/daemon/task-review-rpc.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/daemon/task-review-rpc.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/workflow/code-review/task-review/coordinator.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/coordinator.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/progress-client.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/progress-view.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/coordinator.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/progress-client.ts",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:docs/task-review-execution.md",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:docs/task-review-execution.md",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:src/workflow/code-review/task-review/coordinator.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/coordinator.ts",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:src/workflow/code-review/task-review/progress-client.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/progress-client.ts",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:src/workflow/code-review/task-review/progress-view.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/progress-view.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/daemon/handler-runtime.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/daemon/task-review-rpc.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "cases": [
+                  "Read-only progress IPC validates scope and never invokes providers",
+                  "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+                  "Inactive execution stops polling without rewriting saved task status or restarting review",
+                  "Cancellation closes the real observation socket before its RPC deadline"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout (verified zero diff vs the pinned final commit 31f7110989c95dd55818b9f940b1716ec68549c2 for all 7 scoped files). All 4 cases passed in 693ms total; also ran npx tsc --noEmit -p . with zero errors.",
+                "evidenceReferences": [
+                  "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "crPublication": "complete",
+        "crPath": "/home/subho/work/dev/insors/insrc/docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/CR.md"
+      },
+      "progress": {
+        "schemaVersion": 1,
+        "executionId": "17b1290f-b2d2-4608-9c96-10b3f7e73cb1",
+        "sequence": 3415,
+        "phase": "complete",
+        "task": {
+          "id": "t4",
+          "name": "Expose read-only progress and deterministic user updates",
+          "position": 1,
+          "total": 1
+        },
+        "completedTasks": 1,
+        "reviewElapsedMs": 312518,
+        "taskElapsedMs": 312518,
+        "observedAt": "2026-11-01T15:03:21.344Z",
+        "lastMeaningfulActivityAt": "2026-11-01T15:03:20.681Z",
+        "processState": "unknown",
+        "lastProcessObservedAt": "2026-11-01T15:03:20.681Z",
+        "activeToolCount": 0
+      }
+    },
+    {
+      "header": {
+        "attempt": 2,
+        "reviewer": "daemon",
+        "status": "failed",
+        "createdAt": "2026-11-01T16:04:29.962Z",
+        "selectedTaskIds": [
+          "t4"
+        ],
+        "completedAt": "2026-11-01T16:06:54.190Z"
+      },
+      "submitted": {
+        "storyId": "s4",
+        "taskId": "t4",
+        "functionalSummary": "Review only S4 task4: read-only task-review progress API, execution ownership versus immutable saved status, deterministic5sec polling/45sec user updates, and cancellation that closes only the observation socket and suppresses late updates. Selected file/ranges below are the entire finding scope; commits are change pointers only. Other S4/timeout code is dependency context, not new scope. The selected t5 commit contributes only two t4 corrections in coordinator/progress-client; its other changes are excluded. Review current final behavior including subsequent selected corrections, rather than flagging a defect already corrected in a later supplied segment. Source reads may use the provided committed references and history. Critical policy is30min inactivity with no fixed deadline; do not restore old5/10/15min deadlines or legacy review engines. Normal MCP/session migration is S3 and outside this task. Complete four named test cases passed in the daemon build validation; the author also ran12 focused regressions and npm build. Those are submitted evidence, not independent execution. Inspect relevant assertions; no broad test sweep/rebuild is required. BUILD was user-approved with override pending this live independent verification. Checkpoint input/results are immutable; progress metadata is provisional and bounded. Do not request a new framework, signing keys or extra trust machinery. Re-review attempt2 after the user clarified mandatory versus optional scope. You must inspect every in-scope changed code/module and assess relevant test coverage. Running tests, integration checks, typecheck or builds is optional; skipped optional execution belongs in nonblocking advice, not limitations. Prior attempt1 remains immutable and was incomplete solely for optional execution disclosures. Make a fresh reassessment under the current policy rather than reusing that incomplete status or promoting the old record. Finding scope is still exactly the same supplied change set; no new source changes or generic HEAD diff are included.",
+        "documents": {
+          "story": {
+            "path": ".insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "lld": {
+            "path": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "75a04c6205701444538f62168ae26efd03da78d2",
+            "parent": "b869864a0ecfca93be6f22b6db41495a33ae038c",
+            "files": [
+              {
+                "path": "src/daemon/handler-runtime.ts",
+                "segments": [
+                  {
+                    "after": [
+                      608,
+                      608
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/task-review-rpc.ts",
+                "segments": [
+                  {
+                    "after": [
+                      93,
+                      102
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      2
+                    ]
+                  },
+                  {
+                    "after": [
+                      70,
+                      86
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      51
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      17
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d",
+            "parent": "75a04c6205701444538f62168ae26efd03da78d2",
+            "files": [
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "before": [
+                      77,
+                      77
+                    ],
+                    "after": [
+                      77,
+                      77
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      14,
+                      14
+                    ],
+                    "after": [
+                      14,
+                      14
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "31f7110989c95dd55818b9f940b1716ec68549c2",
+            "parent": "cd387d6abef57cf1a4959a643093dfb26c0556d9",
+            "files": [
+              {
+                "path": "docs/task-review-execution.md",
+                "segments": [
+                  {
+                    "after": [
+                      117,
+                      124
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      8
+                    ]
+                  },
+                  {
+                    "before": [
+                      6,
+                      6
+                    ],
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      15,
+                      15
+                    ],
+                    "after": [
+                      22,
+                      22
+                    ]
+                  },
+                  {
+                    "before": [
+                      26,
+                      26
+                    ],
+                    "after": [
+                      33,
+                      33
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  },
+                  {
+                    "after": [
+                      47,
+                      76
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      3,
+                      3
+                    ],
+                    "after": [
+                      3,
+                      5
+                    ]
+                  },
+                  {
+                    "after": [
+                      9,
+                      9
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      11,
+                      11
+                    ],
+                    "after": [
+                      15,
+                      15
+                    ]
+                  },
+                  {
+                    "after": [
+                      33,
+                      43
+                    ]
+                  },
+                  {
+                    "before": [
+                      36,
+                      36
+                    ],
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "before": [
+                      42,
+                      42
+                    ],
+                    "after": [
+                      57,
+                      58
+                    ]
+                  },
+                  {
+                    "before": [
+                      45,
+                      46
+                    ],
+                    "after": [
+                      61,
+                      62
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      11,
+                      11
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "cases": [
+              "Read-only progress IPC validates scope and never invokes providers",
+              "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+              "Inactive execution stops polling without rewriting saved task status or restarting review",
+              "Cancellation closes the real observation socket before its RPC deadline"
+            ],
+            "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "result": "pass",
+            "executionDetails": "Daemon build validation1961 ran all four named cases and typecheck successfully. Final committed TESTS record at450f213f3 includes the correction test mapping. Builder additionally ran12 focused regressions/native fixtures and build; this is author/daemon build evidence, not independent model execution.",
+            "evidenceReferences": [
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s4.json",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/TESTS.md"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "All selected task assessments are terminal. CR publication complete.",
+        "tasks": [
+          {
+            "taskId": "t4",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Every applicable task needs exactly one derived scope",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Every applicable task needs exactly one derived scope"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Every applicable task needs exactly one derived scope"
+          }
+        ],
+        "crPublication": "complete",
+        "crPath": "/home/subho/work/dev/insors/insrc/docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/CR.md"
+      },
+      "progress": {
+        "schemaVersion": 1,
+        "executionId": "bb807d59-6d67-447f-9993-1c863efd4f66",
+        "sequence": 545,
+        "phase": "complete",
+        "task": {
+          "id": "t4",
+          "name": "Expose read-only progress and deterministic user updates",
+          "position": 1,
+          "total": 1
+        },
+        "completedTasks": 1,
+        "reviewElapsedMs": 144222,
+        "taskElapsedMs": 144222,
+        "observedAt": "2026-11-01T16:06:54.190Z",
+        "lastMeaningfulActivityAt": "2026-11-01T16:06:54.167Z",
+        "processState": "unknown",
+        "lastProcessObservedAt": "2026-11-01T16:06:54.167Z",
+        "activeToolCount": 0
+      }
+    },
+    {
+      "header": {
+        "attempt": 3,
+        "reviewer": "daemon",
+        "status": "passed",
+        "createdAt": "2026-11-01T18:06:58.636Z",
+        "selectedTaskIds": [
+          "t4"
+        ],
+        "reassessmentSummary": "Attempt 3 reassesses t4. All 13 Changes entries and the 1 Tests entry match t4 scope. Reassess because no valid completed same-party source exists to reuse.",
+        "completedAt": "2026-11-01T18:12:54.454Z"
+      },
+      "submitted": {
+        "storyId": "s4",
+        "taskId": "t4",
+        "functionalSummary": "Review only S4 task4: read-only task-review progress API, execution ownership versus immutable saved status, deterministic5sec polling/45sec user updates, and cancellation that closes only the observation socket and suppresses late updates. Selected file/ranges below are the entire finding scope; commits are change pointers only. Other S4/timeout code is dependency context, not new scope. The selected t5 commit contributes only two t4 corrections in coordinator/progress-client; its other changes are excluded. Review current final behavior including subsequent selected corrections, rather than flagging a defect already corrected in a later supplied segment. Source reads may use the provided committed references and history. Critical policy is30min inactivity with no fixed deadline; do not restore old5/10/15min deadlines or legacy review engines. Normal MCP/session migration is S3 and outside this task. Complete four named test cases passed in the daemon build validation; the author also ran12 focused regressions and npm build. Those are submitted evidence, not independent execution. Inspect relevant assertions; no broad test sweep/rebuild is required. BUILD was user-approved with override pending this live independent verification. Checkpoint input/results are immutable; progress metadata is provisional and bounded. Do not request a new framework, signing keys or extra trust machinery. Re-review attempt2 after the user clarified mandatory versus optional scope. You must inspect every in-scope changed code/module and assess relevant test coverage. Running tests, integration checks, typecheck or builds is optional; skipped optional execution belongs in nonblocking advice, not limitations. Prior attempt1 remains immutable and was incomplete solely for optional execution disclosures. Make a fresh reassessment under the current policy rather than reusing that incomplete status or promoting the old record. Finding scope is still exactly the same supplied change set; no new source changes or generic HEAD diff are included. Attempt3 follows a daemon attribution-scope fix: only t4 is applicable. Attempts1 and2 remain immutable; attempt2 failed before code assessment. Reassess the same selected t4 changes under the current mandatory-inspection/optional-execution policy. No generic HEAD diff or additional finding scope is introduced.",
+        "documents": {
+          "story": {
+            "path": ".insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "lld": {
+            "path": ".insrc/artifacts/LLD-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s4.json",
+            "commit": "450f213f3b6971b4f4e7a83e356d431a307ad435"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "75a04c6205701444538f62168ae26efd03da78d2",
+            "parent": "b869864a0ecfca93be6f22b6db41495a33ae038c",
+            "files": [
+              {
+                "path": "src/daemon/handler-runtime.ts",
+                "segments": [
+                  {
+                    "after": [
+                      608,
+                      608
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/task-review-rpc.ts",
+                "segments": [
+                  {
+                    "after": [
+                      93,
+                      102
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      37
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      2
+                    ]
+                  },
+                  {
+                    "after": [
+                      70,
+                      86
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      51
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      17
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d",
+            "parent": "75a04c6205701444538f62168ae26efd03da78d2",
+            "files": [
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "before": [
+                      77,
+                      77
+                    ],
+                    "after": [
+                      77,
+                      77
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      14,
+                      14
+                    ],
+                    "after": [
+                      14,
+                      14
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "31f7110989c95dd55818b9f940b1716ec68549c2",
+            "parent": "cd387d6abef57cf1a4959a643093dfb26c0556d9",
+            "files": [
+              {
+                "path": "docs/task-review-execution.md",
+                "segments": [
+                  {
+                    "after": [
+                      117,
+                      124
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      2,
+                      8
+                    ]
+                  },
+                  {
+                    "before": [
+                      6,
+                      6
+                    ],
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      15,
+                      15
+                    ],
+                    "after": [
+                      22,
+                      22
+                    ]
+                  },
+                  {
+                    "before": [
+                      26,
+                      26
+                    ],
+                    "after": [
+                      33,
+                      33
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  },
+                  {
+                    "after": [
+                      47,
+                      76
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/coordinator.ts",
+                "segments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-client.ts",
+                "segments": [
+                  {
+                    "before": [
+                      3,
+                      3
+                    ],
+                    "after": [
+                      3,
+                      5
+                    ]
+                  },
+                  {
+                    "after": [
+                      9,
+                      9
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      13
+                    ]
+                  },
+                  {
+                    "before": [
+                      11,
+                      11
+                    ],
+                    "after": [
+                      15,
+                      15
+                    ]
+                  },
+                  {
+                    "after": [
+                      33,
+                      43
+                    ]
+                  },
+                  {
+                    "before": [
+                      36,
+                      36
+                    ],
+                    "after": [
+                      51,
+                      51
+                    ]
+                  },
+                  {
+                    "before": [
+                      42,
+                      42
+                    ],
+                    "after": [
+                      57,
+                      58
+                    ]
+                  },
+                  {
+                    "before": [
+                      45,
+                      46
+                    ],
+                    "after": [
+                      61,
+                      62
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/code-review/task-review/progress-view.ts",
+                "segments": [
+                  {
+                    "after": [
+                      11,
+                      11
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "cases": [
+              "Read-only progress IPC validates scope and never invokes providers",
+              "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+              "Inactive execution stops polling without rewriting saved task status or restarting review",
+              "Cancellation closes the real observation socket before its RPC deadline"
+            ],
+            "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+            "result": "pass",
+            "executionDetails": "Daemon build validation1961 ran all four named cases and typecheck successfully. Final committed TESTS record at450f213f3 includes the correction test mapping. Builder additionally ran12 focused regressions/native fixtures and build; this is author/daemon build evidence, not independent model execution.",
+            "evidenceReferences": [
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s4.json",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/TESTS.md"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "All selected task assessments are terminal. CR publication complete.",
+        "tasks": [
+          {
+            "taskId": "t4",
+            "status": "passed",
+            "summary": "t4 adds a read-only `codeReview.task.progress` IPC route (handler-runtime.ts:608, task-review-rpc.ts readTaskReviewProgress) backed by `TaskReviewCoordinator.progress()` (coordinator.ts), a typed progress view (progress-view.ts) and a client poller (progress-client.ts) with 5s deterministic polling, 45s-or-change update cadence, and abort-only cancellation that closes just the observation socket. I independently traced every scoped segment at the pinned final commit 31f711098 (current checkout has zero diff from it for all 7 source files; only docs/task-review-execution.md has since gained two unrelated sections from later, out-of-scope commits about review policy/attribution, which do not touch t4's subject matter). `progress()` contains only `loadCheckpoint` reads plus in-memory `active`/`controllers` map lookups — no `save`, no provider resolution, no admission/resume path — confirming AC1. `formatReviewProgress`/`pollTaskReviewProgress` never compute a percentage and explicitly surface `freshness` ('live'/'stale'/'unknown') and, via the two in-scope t5-commit corrections, 'execution inactive; explicit recovery required' when `executionState==='inactive'` and publication isn't complete — confirming AC2. The poller takes an `onUpdate` callback, and `readReviewProgress` destroys only the RPC observation socket on abort (verified against a real `net.Server`/`net.Socket` in the fourth test) without touching review execution — confirming AC3. The stale-controller-leak correction (`owned&&active?.attempt.header.reviewer==='controller'`) is a genuine fix: without it, `progress()` could attribute a daemon-reviewed attempt's status to a stale `this.controllers` entry left from an earlier controller-reviewed attempt on the same path.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Independently ran `npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts` against the current checkout (zero diff from the pinned commit 31f7110989c95dd55818b9f940b1716ec68549c2 for all 7 scoped files). All 4 named cases passed, each asserting a distinct acceptance behavior: (1) `progress()`/`readTaskReviewProgress` validate repo/reviewId/attempt, reject a path-traversal reviewId (`../escape`, blocked by `checkpointPath`'s `^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$` regex), reject a bad attempt, and never invoke the injected provider (`calls===0`); (2) the poller emits at t=0/45000/50000(phase change)/60000(terminal), never includes '%', and the stale-freshness format path reports 'current process activity unknown'/'last meaningful activity unknown'; it also verifies immediate-abort, abort-raced-with-a-late-update (0 updates emitted), and identity-mismatch rejection; (3) a disk-full write failure during the first task leaves the on-disk checkpoint at status='running' with 0 completed tasks (confirmed by tracing `commitResult`'s rollback-on-save-failure path in coordinator.ts, which restores `activeTaskId` and rethrows `persistenceError` before any failure is durably committed), and both the original and a fresh coordinator instance report `executionState:'inactive'` + the 'explicit recovery required' message, stopping after exactly 1 read/0 sleeps with no provider call and no checkpoint mutation; (4) cancellation against a real `net.createServer`/`net.createConnection` pair confirms the RPC socket is destroyed before its 15s deadline and 0 updates are emitted. `npx tsc --noEmit -p .` also passed with zero errors. I additionally located (not part of t4's own change/test scope, but directly relevant corroborating evidence for the one-line coordinator.ts stale-controller-leak correction that IS in t4's scope) a sibling test 'A new daemon attempt never exposes retired controller progress' in progress-e2e.test.ts (added by the adjacent t5 commit a8ba108b, same file set) that exercises exactly that scenario (controller attempt 1 retires, daemon attempt 2 on the same reviewId must not leak attempt 1's controller progress). I was not able to execute that file in this sandbox (command required approval I did not escalate), so I rely on static trace of the fix plus the passing named-test suite for the formal verdict.",
+              "evidenceReferences": [
+                "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/TESTS-e6ddcdcb3d9cf330-s4.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: did not re-run the daemon-level production-socket integration test (progress-e2e.test.ts's 'Both native CLI fixtures expose isolated reconnectable progress through production IPC' and 'A new daemon attempt never exposes retired controller progress') — the sandbox's command-approval gate blocked it and I chose not to escalate since it is adjacent-file supplementary evidence, not part of t4's own named tests.",
+              "Optional execution: did not re-run the builder's reported 12 focused regressions or full `npm run build`; relied on the builder's report plus my own direct execution of the 4 named cases and a full `tsc --noEmit` pass.",
+              "No blocking issues found. The two t5-commit corrections pulled into t4's scope (stale-controller-attribution guard in coordinator.ts, and the 'last observed process ... at ...' timestamp addition in progress-client.ts) are both genuine, narrowly-targeted fixes consistent with the acceptance checks."
+            ],
+            "inspectedReferences": [
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/DEF-e6ddcdcb3d9cf330.json",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/LLD-e6ddcdcb3d9cf330-s4.json",
+              "450f213f3b6971b4f4e7a83e356d431a307ad435:.insrc/artifacts/PLAN-e6ddcdcb3d9cf330-s4.json",
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/daemon/handler-runtime.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/daemon/handler-runtime.ts",
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/daemon/task-review-rpc.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/daemon/task-review-rpc.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/daemon/task-review-rpc.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "b869864a0ecfca93be6f22b6db41495a33ae038c:src/workflow/code-review/task-review/coordinator.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/coordinator.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/coordinator.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/progress-client.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/progress-client.ts",
+              "75a04c6205701444538f62168ae26efd03da78d2:src/workflow/code-review/task-review/progress-view.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/progress-view.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/coordinator.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/progress-client.ts",
+              "a8ba108b3c16ccb561853fe8cc0d6f5df5a3203d:src/workflow/code-review/task-review/__tests__/progress-e2e.test.ts",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:docs/task-review-execution.md",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:docs/task-review-execution.md",
+              "cd387d6abef57cf1a4959a643093dfb26c0556d9:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/checkpoint.ts",
+              "31f7110989c95dd55818b9f940b1716ec68549c2:src/shared/ipc-client.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "cases": [
+                  "Read-only progress IPC validates scope and never invokes providers",
+                  "Polling helper emits immediate transitions and45sec updates and cancels cleanly",
+                  "Inactive execution stops polling without rewriting saved task status or restarting review",
+                  "Cancellation closes the real observation socket before its RPC deadline"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/progress-client.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout (verified zero diff vs the pinned final commit 31f7110989c95dd55818b9f940b1716ec68549c2 for all 7 scoped source files; only docs/task-review-execution.md has since diverged with unrelated later content). All 4 cases passed in ~586ms total. Also ran `npx tsc --noEmit -p .` with zero errors.",
+                "evidenceReferences": [
+                  "31f7110989c95dd55818b9f940b1716ec68549c2:src/workflow/code-review/task-review/__tests__/progress-client.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "crPublication": "complete",
+        "crPath": "/home/subho/work/dev/insors/insrc/docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/S004/CR.md"
+      },
+      "progress": {
+        "schemaVersion": 1,
+        "executionId": "06a20906-3635-42f8-bc31-19730c2887c4",
+        "sequence": 2483,
+        "phase": "complete",
+        "task": {
+          "id": "t4",
+          "name": "Expose read-only progress and deterministic user updates",
+          "position": 1,
+          "total": 1
+        },
+        "completedTasks": 1,
+        "reviewElapsedMs": 355812,
+        "taskElapsedMs": 355812,
+        "observedAt": "2026-11-01T18:12:54.454Z",
+        "lastMeaningfulActivityAt": "2026-11-01T18:12:53.951Z",
+        "processState": "unknown",
+        "lastProcessObservedAt": "2026-11-01T18:12:53.951Z",
+        "activeToolCount": 0
+      }
+    }
+  ]
+}

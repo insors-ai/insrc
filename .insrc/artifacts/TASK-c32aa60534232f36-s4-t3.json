@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-90d3dfd8-0d31-47e5-aa26-36d064125d9e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.673Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Reconstruct and validate accepted block state",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c6ad08079518705188c60fbe34283cb4ff5ffb0328e7551e6060940e194b7660",
+        "at": "2026-10-29T09:20:00.673Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.674Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconstruct and validate accepted block state",
+    "summary": "Add recovery-replay.ts and durable staging/append ports in recovery-store.ts. Validate staged block closure, recompute sc2 deltas, preserve basis/trusted receipts and reconstruct accepted ledger/checkpoint/outstanding work. Rebuild snapshots from journal and resolve uncertain ACK idempotently.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Unchanged sc3 coordinator accepts two blocks in one session; journal records each before ACK, independent of final reply.",
+      "Replay verifies all reachable blobs, identities, predecessor and recomputed candidate ledger; forged candidates and missing/corrupt closure refuse.",
+      "Identical progress returns original receipt without sequence or usage increment; conflicting payload refuses.",
+      "Missing/stale/corrupt snapshot rebuilds only from verified journal; prior findings and unresolved impact work cannot disappear."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Verified replay recomputes sc2 deltas and rejects forged candidates and corrupt closure"
+      },
+      {
+        "level": "integration",
+        "name": "Per-block checkpoint ACK, uncertain receipt replay and snapshot reconstruction"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

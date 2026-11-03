@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2d611573-8688-4efa-9a50-e6b5a32f6c02",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:02:08.220Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "envelope": {
+      "description": "Verify complete publication across crashes and concurrent requests",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s5",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s5",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s5-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "284f231eb790f157733f220533073a5bd0d356e4687e59cd55f833cfa0e1d748",
+        "at": "2026-10-29T12:02:08.221Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:02:08.221Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify complete publication across crashes and concurrent requests",
+    "summary": "Integrate complete/incomplete ledgers, real canonical lifecycle store and completed sc4 fence with bounded crash/fault fixtures. Prove coverage, fresh ownership, canonical CAS, receipt replay and mode/legacy parity; export only the internal S5 composition boundary.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "All missing evidence/coverage/block cases and conflicting or non-independent inputs produce no successful canonical publication.",
+      "Real crash/lost-ACK tests around intent, canonical commit and terminal receipt converge to one operation/revision/receipt.",
+      "Concurrent completion and edited/newer heads cannot duplicate or overwrite canonical result; stale pins/owner between assessment and CAS refuse.",
+      "Identical source/index accepted state produces equal verdict and explicit impact limitations; pending usage never becomes invented coverage or tokens.",
+      "Focused completion/recovery/canonical-lifecycle/legacy compatibility suites and production build pass without live LLM or whole-repo sweep; one required code review after build."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Completion crash concurrency and stale pin matrix converges to one canonical result"
+      },
+      {
+        "level": "integration",
+        "name": "Complete blocked warned and incomplete review outcomes preserve mode and coverage semantics"
+      },
+      {
+        "level": "smoke",
+        "name": "Focused completion recovery canonical lifecycle compatibility suites and production build"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

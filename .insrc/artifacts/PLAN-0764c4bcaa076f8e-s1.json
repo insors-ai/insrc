@@ -1,0 +1,311 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793272882460-tqs7e4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:23:14.900Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 110454,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "epicSlug": "resume-frozen-review-publication-after-interruption",
+    "storyId": "s1",
+    "lldRunId": "wf-1793271216692-3ugmxy",
+    "lldEffectiveHash": "24be9a22390b8fee71dfc992545c2b4b815c66cb8d1c28fa59ba86f2bdac7e7c",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8b3f9865ab8bf4f97511095f40e85b9c5aa4b98f0dacc0419c6061a9f249dc04",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.402Z"
+      }
+    },
+    "rangeBase": "abd2701f4adf7dcea341b0f09eb2e8f50895a926"
+  },
+  "body": {
+    "summary": {
+      "prose": "Add recoverable publication intent and ownership fencing to the existing review runtime. Build the durable state first, then the callback and its timeout behavior, and prove the result with deterministic crash and concurrency tests. This supplies the approved Story 4 prerequisite without implementing S5 publication or activating the new engine.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Persist and replay one frozen publication binding",
+        "summary": "Extend recovery-types.ts, recovery-replay.ts, recovery-lifecycle.ts and recovery-journal.ts with the nullable internal publication projection and versioned publication-intent event. Validate run-scoped immutable object/digest, checkpoint, owner and settled-attempt boundary; atomically freeze state before any publisher callback.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Existing histories initialize publication null; ReviewRecoveryV1 and sc3/sc6 public signatures remain unchanged.",
+          "A valid intent binds one exact checkpoint through one durable event; control ordinal advances without moving accepted-block sequence.",
+          "Foreign/missing/corrupt/non-object intent, changed checkpoint or active issued attempt refuses before acceptance.",
+          "Identical binding replays without another event; different intent/checkpoint refuses, and uncertain append is reconciled before callback."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Frozen publication binding validates identity checkpoint and attempt state"
+          },
+          {
+            "level": "integration",
+            "name": "Publication-intent fsync replay and uncertain append reconciliation"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Recover completion-requested ownership without changing intent",
+        "summary": "Update lifecycle claim/replay and store admission so a valid frozen publication can be claimed under a later generation while state remains completion-requested. Preserve legacy no-intent and terminal-state refusals explicitly.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Restart/expiry takeover strictly increases generation while retaining the exact intent/digest/checkpoint and frozen state.",
+          "Late prior owner cannot mutate progress or publish after takeover.",
+          "Legacy completion-requested without binding is readable but explicitly unsupported for automatic publication recovery.",
+          "Completed/cancelled/stale runs cannot gain new publication authority; completed callers use terminal receipt."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Frozen completion-requested takeover and legacy terminal refusal"
+          },
+          {
+            "level": "integration",
+            "name": "Replacement owner preserves publication intent and fences prior generation"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Expose the approved owner-fenced publication callback",
+        "summary": "Implement the exact withPublicationFence signature on RecoveryStore, with recovery-publication.ts helper only if useful. Reuse the run-root queue; accept/stabilize intent before callback and provide current-owner assertion. Keep terminal receipt persistence outside the callback queue and avoid canonical CR semantics.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Callback begins only after durable frozen binding and receives its original reference plus current-owner guard.",
+          "Same/null reference retrieves existing binding; null without binding and conflicting references refuse before callback.",
+          "Current-owner guard checks invocation, checkpoint/intent, generation, daemon process ownership and lease.",
+          "Callback failure retains frozen state; successful result does not manufacture completion/CR/approval. Same-intent callback retry is allowed for S5 reconciliation, not claimed exactly-once.",
+          "Callback cannot reenter the run queue by contract; existing normal recovery and external entrypoints retain behavior."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Approved publication callback binding guard and null replay"
+          },
+          {
+            "level": "integration",
+            "name": "Callback failure and separate terminal receipt do not reenter run queue"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Bound callback responses while retaining the write fence",
+        "summary": "Add the ten-second callback deadline and invocation revocation. Return timeout/uncertainty promptly while retaining run serialization until the actual callback settles, so no competing write can overlap an undrained external commit.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Normal callback returns only while authority remains valid; deadline/late result cannot produce success.",
+          "Timeout revokes the supplied guard and reports uncertainty without claiming external cancellation or a missing side effect.",
+          "Queued takeover/mutation remains blocked until the actual callback drains; an unresponsive run stays fenced until safe daemon restart.",
+          "Timers/listeners clean up on settlement; use deterministic mock timers/gated promises, not ten-second sleeps or live model calls."
+        ],
+        "derivedFrom": [
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Callback deadline revokes authority and rejects late success"
+          },
+          {
+            "level": "integration",
+            "name": "Undrained callback retains write fence through caller timeout"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Prove crash reconciliation and downstream compatibility",
+        "summary": "Extend real recovery worker/fixtures with publication boundaries and test concurrent callers, callback side effects, restart and separate receipt persistence. Verify exports/documentation and keep relevant sequence source aligned; no S5 canonical publisher or S6 activation.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Crashes before/after frozen-intent commit and after callback before receipt restore only the verified binding and preserve recovery state.",
+          "A deterministic external-write stand-in reconciles the same operation on retry; no test or API claims arbitrary callback exactly-once.",
+          "Concurrent same/different intents and stale callbacks cannot change frozen scope or overlap undrained writes.",
+          "Verified terminal receipt is recorded separately after callback queue releases and replays idempotently.",
+          "Focused recovery/investigation compatibility suites and production build pass; no whole-repo sweep, live LLM test, canonical CR changes or rollout."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Publication crash boundaries reconcile frozen intent and terminal receipt"
+          },
+          {
+            "level": "integration",
+            "name": "Concurrent publication and external-operation replay preserve one frozen scope"
+          },
+          {
+            "level": "smoke",
+            "name": "Focused recovery investigation compatibility suites and production build"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Publication intent identity, run reference, checkpoint and active-attempt validation",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "Completion-requested lease takeover preserves frozen state",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Identical/null binding replay and conflict refusal",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Deadline revocation and undrained callback write-fence retention",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Crash before/after frozen intent commit and after callback before receipt",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Concurrent same/different intent and stale owner callbacks",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Successful callback followed by separately recoverable terminal receipt",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy pending state refusal and unaffected existing recovery",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/LLD.md#3-data-model-changes",
+      "quotedText": "RecoveryView publication binding and publication-intent journal transition."
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Completion-requested takeover."
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/LLD.md#3-data-model-changes",
+      "quotedText": "Bounded publication fence."
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/resume-frozen-review-publication-after-interruption-E202610290764c4bc/S001/LLD.md#7-test-strategy"
+    }
+  ]
+}

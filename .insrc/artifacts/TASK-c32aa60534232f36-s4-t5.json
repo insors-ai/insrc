@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f416aecc-1e7b-4c55-9a67-de60783e2bec",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.676Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Persist attempt reservations and recovery accounting",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4368bd7d67d10e68cae10680b1e82f0d091dbd4217e7cefa9db6e99bcee2f56f",
+        "at": "2026-10-29T09:20:00.676Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.676Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist attempt reservations and recovery accounting",
+    "summary": "Add recovery-attempts.ts guarded execution wrapper journaling each dispatch including sc3 retry. Reserve continuation/capped active time before backend call, settle using monotonic actual duration, reconcile interruption as uncertain, preserve accepted blocks and support explicit audited allowance extensions.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Issued identity/request digest and budget reservation durable before every execute; internal retry receives distinct linked attempt record.",
+      "Crash leaves uncertain attempt with consumed continuation and conservative time reservation; accepted blocks retained.",
+      "Settlement replaces only its reservation without double-counting cumulative onState; replay isn't a new call and inactive pause time is uncharged.",
+      "Exhausted allowance pauses with extensionRequired; explicit extension audited; late stale-owner settlement refused."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Reservation settlement, inactive pause and audited extension accounting"
+      },
+      {
+        "level": "integration",
+        "name": "Issued-before-dispatch retry identities and uncertain attempt recovery"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

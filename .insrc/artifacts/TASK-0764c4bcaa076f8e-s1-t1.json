@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9913bb8-d4bb-446a-8079-6143be634dab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:24:46.815Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Persist and replay one frozen publication binding",
+      "parent": {
+        "entityId": "STORY-0764c4bcaa076f8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0764c4bcaa076f8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e5c83c3ff7fd4a92572d54257939f42e6fe6429afdd4cb949c5ce74cac2f1e8e",
+        "at": "2026-10-29T11:24:46.815Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.816Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist and replay one frozen publication binding",
+    "summary": "Extend recovery-types.ts, recovery-replay.ts, recovery-lifecycle.ts and recovery-journal.ts with the nullable internal publication projection and versioned publication-intent event. Validate run-scoped immutable object/digest, checkpoint, owner and settled-attempt boundary; atomically freeze state before any publisher callback.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Existing histories initialize publication null; ReviewRecoveryV1 and sc3/sc6 public signatures remain unchanged.",
+      "A valid intent binds one exact checkpoint through one durable event; control ordinal advances without moving accepted-block sequence.",
+      "Foreign/missing/corrupt/non-object intent, changed checkpoint or active issued attempt refuses before acceptance.",
+      "Identical binding replays without another event; different intent/checkpoint refuses, and uncertain append is reconciled before callback."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Frozen publication binding validates identity checkpoint and attempt state"
+      },
+      {
+        "level": "integration",
+        "name": "Publication-intent fsync replay and uncertain append reconciliation"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

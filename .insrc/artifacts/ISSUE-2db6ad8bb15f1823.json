@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793281021761-7fkxw9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:38:03.643Z",
+    "epicCreatedAt": "2026-10-29T13:38:03.643Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 61880,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "2db6ad8bb15f1823",
+    "epicSlug": "admit-verified-test-evidence-through-investigation",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2d69189ef0a43df19f4570369e0ecc38c85645ac7219c83c513ef5c2c253087d",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:43:19.812Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "2db6ad8bb15f1823",
+      "slug": "EPIC-2db6ad8bb15f1823"
+    }
+  },
+  "body": {
+    "title": "Admit verified test evidence through investigation navigation",
+    "reproduction": "Run `/home/subho/.nvm/versions/node/v22.22.1/bin/node --import tsx /tmp/reproduce-s6-test-inspection-gap.mts`. The deterministic fixture supplies a daemon-verified passing test-result receipt bound to the active attempt and pinned BUILD source. S2 evidenceFromReceipt accepts it, but InvestigationNavigation.read rejects the same inspection with `Read is not the authenticated inspected receipt.` Expected: verified test evidence reaches the existing ledger admission path and can support test obligations; source provenance checks remain strict. Reproduction output is in /tmp/s6-test-inspection-gap.log. No model call or source mutation is needed. [c1,c2,c3]",
+    "rootCause": "InvestigationNavigation.read applies the source-read receipt equality check to every inspection kind. In contrast, evidenceFromReceipt intentionally requires readReceipt:null for test-result receipts, along with a pinned source commit and explicit actual result. A non-null read returned to the reviewer therefore cannot equal the valid test inspection's null readReceipt. The source and verified-test receipt forms are both individually valid but their integration is incompatible. This S3-owned defect blocks S6 t3 production test-evidence integration. [c1,c2]",
+    "fixIntent": "Allow actual daemon-verified test inspections through the existing authenticated navigation and S2 evidence admission path, with read/result metadata bound to the same pinned source and active attempt. Preserve source-read equality, cancellation/ownership checks, receipt identity and all S2 provenance/result checks; unsupported or forged kinds/results must still refuse. Add focused regression coverage for valid passing/failed/unknown results, mismatched or unverified metadata, wrong attempt/source, and unchanged source-read behavior. Do not change shared interface shapes, S4 journal formats, review severity, coverage obligations or automatic completion. Resume the already approved S6 plan after this prerequisite is completed. [c1,c2,c3]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/navigation.ts:32"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/ledger-evidence.ts:54"
+    },
+    {
+      "id": "c3",
+      "kind": "step-output",
+      "ref": "/tmp/s6-test-inspection-gap.log"
+    }
+  ]
+}

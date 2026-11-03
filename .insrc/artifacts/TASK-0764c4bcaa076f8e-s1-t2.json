@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-72f9ac9e-2feb-4d5b-b28e-fc1db96ba406",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T11:24:46.817Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0764c4bcaa076f8e",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Recover completion-requested ownership without changing intent",
+      "parent": {
+        "entityId": "STORY-0764c4bcaa076f8e-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-0764c4bcaa076f8e-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-0764c4bcaa076f8e-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0f66193e7b6b9d087f333e053e43d2a18a77a669d2e70b82fdc2f5195fa9f43f",
+        "at": "2026-10-29T11:24:46.817Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T11:24:46.817Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Recover completion-requested ownership without changing intent",
+    "summary": "Update lifecycle claim/replay and store admission so a valid frozen publication can be claimed under a later generation while state remains completion-requested. Preserve legacy no-intent and terminal-state refusals explicitly.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Restart/expiry takeover strictly increases generation while retaining the exact intent/digest/checkpoint and frozen state.",
+      "Late prior owner cannot mutate progress or publish after takeover.",
+      "Legacy completion-requested without binding is readable but explicitly unsupported for automatic publication recovery.",
+      "Completed/cancelled/stale runs cannot gain new publication authority; completed callers use terminal receipt."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Frozen completion-requested takeover and legacy terminal refusal"
+      },
+      {
+        "level": "integration",
+        "name": "Replacement owner preserves publication intent and fences prior generation"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

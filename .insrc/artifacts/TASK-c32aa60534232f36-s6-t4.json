@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-543811c1-7944-4e26-9ef9-bce0ec203731",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.983Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Build repository-owned admission and recovery composition service",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d09fa72e14e77c7846b5be0e88ec003a5b521cbbaa43ab6af32ddbc46fb1d8ec",
+        "at": "2026-10-29T13:20:29.983Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.984Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build repository-owned admission and recovery composition service",
+    "summary": "Add immutable private production descriptor discovery and one daemon service per registered repo, composing existing S1-S5 state, continuation and publication APIs.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Exact repeated requestId reuses one run; conflicting inputs refuse and admission-orphan crashes cannot infer accepted work.",
+      "Descriptor records scope/mode/policy/backend/party identity under restrictive runtime paths without a second acceptance journal or private sc4 format changes.",
+      "Lease claim occurs when execution is admitted; resume/cancel/restart preserve accepted progress, budget and frozen publication semantics; no provider executes until a qualified adapter is injected.",
+      "Production descriptor and scoped bridge runtime material is excluded from explicit packet selection and source/context reads through the shared path guard; no sc4 private namespace or event format is altered."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Idempotent admission descriptor recovery and runtime source exclusions"
+      },
+      {
+        "level": "integration",
+        "name": "Service lease budget and frozen publication composition survive restart"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

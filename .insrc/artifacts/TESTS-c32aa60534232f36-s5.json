@@ -1,0 +1,418 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "58bc137dba5425144a1190c225f6954145a3cdb5542e74bef70fdb1ca1a09654",
+        "at": "2026-10-29T12:41:45.845Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "createdAt": "2026-10-29T12:08:45.010Z",
+    "updatedAt": "2026-10-29T12:41:45.756Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "97a2d56bb",
+        "ranAt": "2026-10-29T12:08:45.010Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Completion validates every required row block evidence and independent party",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-assessment.test.ts",
+                "title": "Completion validates every required row block evidence and independent party",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Completion rejects stale conflicting and unsupported coverage without canonical writes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-assessment.test.ts",
+                "title": "Completion rejects stale conflicting and unsupported coverage without canonical writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-assessment.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2347,
+            "titles": [
+              {
+                "title": "Completion validates every required row block evidence and independent party",
+                "result": "pass"
+              },
+              {
+                "title": "Completion rejects stale conflicting and unsupported coverage without canonical writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1168b4332",
+        "ranAt": "2026-10-29T12:13:13.201Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical investigation adaptation preserves finding identity severity and confidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-artifact.test.ts",
+                "title": "Canonical investigation adaptation preserves finding identity severity and confidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Investigation mode parity and legacy full degraded verdict compatibility",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-artifact.test.ts",
+                "title": "Investigation mode parity and legacy full degraded verdict compatibility",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-artifact.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2266,
+            "titles": [
+              {
+                "title": "Canonical investigation adaptation preserves finding identity severity and confidence",
+                "result": "pass"
+              },
+              {
+                "title": "Investigation mode parity and legacy full degraded verdict compatibility",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "b18033038",
+        "ranAt": "2026-10-29T12:17:17.097Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Immutable publication intent binds candidate coverage target and expected revision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-publication.test.ts",
+                "title": "Immutable publication intent binds candidate coverage target and expected revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Completed sc4 fence freezes original intent and refuses conflicts without duplicate recovery",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-publication.test.ts",
+                "title": "Completed sc4 fence freezes original intent and refuses conflicts without duplicate recovery",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3199,
+            "titles": [
+              {
+                "title": "Immutable publication intent binds candidate coverage target and expected revision",
+                "result": "pass"
+              },
+              {
+                "title": "Completed sc4 fence freezes original intent and refuses conflicts without duplicate recovery",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "2e09f670e",
+        "ranAt": "2026-10-29T12:23:02.752Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical artifact queue creates or updates only the frozen expected revision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-publisher.test.ts",
+                "title": "Canonical artifact queue creates or updates only the frozen expected revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Owner freshness and canonical identity checks refuse concurrent or edited heads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-publisher.test.ts",
+                "title": "Owner freshness and canonical identity checks refuse concurrent or edited heads",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-publisher.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4376,
+            "titles": [
+              {
+                "title": "Canonical artifact queue creates or updates only the frozen expected revision",
+                "result": "pass"
+              },
+              {
+                "title": "Owner freshness and canonical identity checks refuse concurrent or edited heads",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "785376452",
+        "ranAt": "2026-10-29T12:29:01.972Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Lost canonical write acknowledgment reconciles one revision and terminal receipt",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-receipt.test.ts",
+                "title": "Lost canonical write acknowledgment reconciles one revision and terminal receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Terminal replay conflict and revoked callback authority cannot manufacture completion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-receipt.test.ts",
+                "title": "Terminal replay conflict and revoked callback authority cannot manufacture completion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-receipt.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4557,
+            "titles": [
+              {
+                "title": "Lost canonical write acknowledgment reconciles one revision and terminal receipt",
+                "result": "pass"
+              },
+              {
+                "title": "Terminal replay conflict and revoked callback authority cannot manufacture completion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "49353a581",
+        "ranAt": "2026-10-29T12:33:44.393Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical investigation rendering regenerates without another content revision",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-rendering.test.ts",
+                "title": "Canonical investigation rendering regenerates without another content revision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Legacy records independent approval overrides and unsupported versions retain explicit behavior",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-rendering.test.ts",
+                "title": "Legacy records independent approval overrides and unsupported versions retain explicit behavior",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-rendering.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3189,
+            "titles": [
+              {
+                "title": "Canonical investigation rendering regenerates without another content revision",
+                "result": "pass"
+              },
+              {
+                "title": "Legacy records independent approval overrides and unsupported versions retain explicit behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "abd713cd4",
+        "ranAt": "2026-10-29T12:41:45.756Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Completion crash concurrency and stale pin matrix converges to one canonical result",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-integration.test.ts",
+                "title": "Completion crash concurrency and stale pin matrix converges to one canonical result",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Complete blocked warned and incomplete review outcomes preserve mode and coverage semantics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/investigation/__tests__/completion-integration.test.ts",
+                "title": "Complete blocked warned and incomplete review outcomes preserve mode and coverage semantics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Focused completion recovery canonical lifecycle compatibility suites and production build",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/s5-focused-suites.log (209 pass, 0 fail, 0 skip); /tmp/s5-production-build.log (exit 0)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/completion-integration.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30137,
+            "titles": [
+              {
+                "title": "Completion crash concurrency and stale pin matrix converges to one canonical result",
+                "result": "pass"
+              },
+              {
+                "title": "Complete blocked warned and incomplete review outcomes preserve mode and coverage semantics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,719 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "fd819f97b336f6d697c2b36ab0ec414960ed7afecc9b86e4570d701de275c788",
+        "at": "2026-10-29T07:49:51.007Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "code-review",
+    "runId": "cr-1793259873616-6tdqgb",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:44:33.616Z",
+    "model": "claude:claude-sonnet-5",
+    "elapsedMs": 317390,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "reviewedBy": "daemon",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/workflow/code-review/investigation/__tests__/continuation-fixtures.ts",
+        "src/workflow/code-review/investigation/__tests__/continuation-policy.test.ts",
+        "src/workflow/code-review/investigation/continuation-policy.ts",
+        "src/workflow/code-review/investigation/continuation-types.ts",
+        "src/workflow/code-review/investigation/__tests__/progress.test.ts",
+        "src/workflow/code-review/investigation/progress.ts",
+        "src/workflow/code-review/investigation/__tests__/navigation.test.ts",
+        "src/workflow/code-review/investigation/navigation.ts",
+        "src/workflow/code-review/investigation/__tests__/continuation.test.ts",
+        "src/workflow/code-review/investigation/continuation.ts",
+        "src/workflow/code-review/investigation/__tests__/continuation-usage.test.ts",
+        "src/workflow/code-review/investigation/__tests__/ledger-fixtures.ts",
+        "src/workflow/code-review/investigation/continuation-usage.ts",
+        "src/workflow/code-review/investigation/__tests__/continuation-integration.test.ts",
+        "src/workflow/code-review/investigation/index.ts"
+      ],
+      "buildFingerprint": "7e4f2bc75ae03fa677559f56a5fd70d64fdb935c001bda1e5840bbaae069a1e5",
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": []
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": [
+          {
+            "dimension": "adherence",
+            "severity": "LOW",
+            "confidence": "observation",
+            "location": "src/workflow/code-review/investigation/continuation-types.ts:50-52",
+            "message": "The LLD's dataModelChanges schemaDiff for InvestigationBackend pins the qualification fields `pinnedReads`, `readOnly` and `cancellable` to the literal type `true` (a compile-time guarantee that only qualified backends can satisfy the interface). The implemented InvestigationBackend.qualification types these fields as plain `boolean`, which lets a backend object type-check with `false` values. Runtime guards in continuation-policy.ts's assertInvestigationBindings (`if(!q.pinnedReads||!q.readOnly||!q.cancellable...)`) still reject such a backend before dispatch, so no incorrect behavior results, but the static type no longer matches the approved schemaDiff's literal-`true` contract.",
+            "expectationRef": "LLD dataModelChanges[0].schemaDiff (InvestigationBackend.qualification: pinnedReads/readOnly/cancellable typed as literal `true`)"
+          }
+        ]
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation-policy.ts",
+            "message": "createInvestigationPolicy's only testsReaching edge is via continuation-fixtures.ts#continuationFixture, a test-helper file not itself listed in the test record's file results, so its direct pass-state is unverified — though the fixture is consumed by continuation.test.ts and continuation-integration.test.ts, both passing.",
+            "expectationRef": "createInvestigationPolicy",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335640"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation-policy.ts",
+            "message": "admitInvestigationRequest has no testsReaching edge in the graph, but the Story's test files (continuation-policy.test.ts, continuation.test.ts) pass; likely a missed call-graph edge rather than a real gap.",
+            "expectationRef": "admitInvestigationRequest",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335641"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation-policy.ts",
+            "message": "assertInvestigationBindings has no testsReaching edge in the graph, but its only caller runInvestigationContinuation is exercised by passing tests (continuation.test.ts, continuation-integration.test.ts); likely a missed edge.",
+            "expectationRef": "assertInvestigationBindings",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335644"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation-policy.ts",
+            "message": "positive has no testsReaching edge, but its callers (createInvestigationPolicy, assertInvestigationBindings) sit in passing test files; likely a missed edge for this small guard helper.",
+            "expectationRef": "positive",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335639"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation-types.ts",
+            "message": "InvestigationError has no testsReaching edge and no recorded callers/callees; coverage via the passing suites cannot be confirmed from the graph.",
+            "expectationRef": "InvestigationError",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335588"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/progress.ts",
+            "message": "BlockProgressCoordinator (class) has no testsReaching edge despite progress.test.ts passing; graph likely does not trace class-level construction edges.",
+            "expectationRef": "BlockProgressCoordinator",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335605"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/progress.ts",
+            "message": "state() has no testsReaching edge; progress.test.ts passes but the graph does not trace this accessor method.",
+            "expectationRef": "state",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335606"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/progress.ts",
+            "message": "account() has no testsReaching edge though its caller runInvestigationContinuation is covered by passing continuation tests; likely a missed method-call edge.",
+            "expectationRef": "account",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335607"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/progress.ts",
+            "message": "publish() has no testsReaching edge; reached only internally from account/accept, both in files covered by passing tests.",
+            "expectationRef": "publish",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335608"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "untilInvestigationAborted has no testsReaching edge though its callers (capability, runInvestigationContinuation) are covered by passing navigation.test.ts/continuation tests.",
+            "expectationRef": "untilInvestigationAborted",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335597"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "abort() has no testsReaching edge; its sole caller untilInvestigationAborted sits in a passing-test code path.",
+            "expectationRef": "abort",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335598"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "InvestigationNavigation (class) has no testsReaching edge despite navigation.test.ts passing; graph likely does not trace construction/instantiation edges for this class.",
+            "expectationRef": "InvestigationNavigation",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335599"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "basis() has no testsReaching edge; coverage via navigation.test.ts cannot be confirmed from the graph alone.",
+            "expectationRef": "basis",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335600"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "check() has no testsReaching edge; its caller capability() is covered by passing navigation.test.ts.",
+            "expectationRef": "check",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335601"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/navigation.ts",
+            "message": "admit() has no testsReaching edge; its caller capability() is covered by passing navigation.test.ts, but this evidence-admission path itself is unconfirmed by the graph.",
+            "expectationRef": "admit",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335602"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "InvestigationTransientError (class) has no testsReaching edge; coverage via passing continuation tests cannot be confirmed from the graph.",
+            "expectationRef": "InvestigationTransientError",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335689"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "unresolved() has no testsReaching edge; its callers pause/checkReply are reached from runInvestigationContinuation, covered by passing tests.",
+            "expectationRef": "unresolved",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335690"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "pause() has no testsReaching edge though runInvestigationContinuation is covered by passing continuation.test.ts/continuation-integration.test.ts; likely a missed internal edge.",
+            "expectationRef": "pause",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335691"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "checkReply() has no testsReaching edge though runInvestigationContinuation is covered by passing tests; the final-reply validation path is unconfirmed by the graph.",
+            "expectationRef": "checkReply",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335692"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "check() has no testsReaching edge; its caller runInvestigationContinuation is covered by passing tests.",
+            "expectationRef": "check",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335694"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts",
+            "message": "currentContext() has no testsReaching edge; its caller runInvestigationContinuation is covered by passing tests.",
+            "expectationRef": "currentContext",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335695"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation-usage.ts",
+            "message": "observationFor has no testsReaching edge despite its caller recordInvestigationUsage being part of the usage-observation path exercised by passing continuation-usage.test.ts.",
+            "expectationRef": "observationFor",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335702"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation-usage.ts",
+            "message": "recordInvestigationUsage has no testsReaching edge and no recorded callers within this Story's symbol set; continuation-usage.test.ts passes, but this exported entry point's direct exercise is unconfirmed by the graph.",
+            "expectationRef": "recordInvestigationUsage",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "335703"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": [
+          {
+            "dimension": "quality",
+            "severity": "MED",
+            "location": "src/workflow/code-review/investigation/continuation-usage.ts:1",
+            "message": "recordInvestigationUsage (and its callee observationFor) have no recorded callers anywhere in the Story's changed symbol set — runInvestigationContinuation only calls progress.ts's BlockProgressCoordinator.account for usage accounting, never recordInvestigationUsage. This looks like a new usage-observation path that was added but never wired into the main continuation loop, so elapsed active-time usage may not actually be recorded via this mechanism. Note the companion continuation-usage.test.ts also shows no resolved call edges, which can mean the graph grounding is simply hollow for this just-created file rather than proof the code is truly dead — verify by reading continuation.ts's body and running the test file directly before concluding either way.",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts:1",
+            "message": "The module-level check() function in continuation.ts (called from runInvestigationContinuation) and InvestigationNavigation.check() in navigation.ts (called from capability()) share the identical name 'check' but perform different checks (one appears to be an abort/turn guard, the other a ledger-drift guard against basis()). Reusing the same bare name for two semantically different guards in collaborating modules makes call sites harder to trace at a glance; a more specific name on one of them (e.g. assertNotAborted vs assertLedgerFresh) would remove the ambiguity. This is a naming/readability preference, not a functional defect.",
+            "counterpartRef": "InvestigationNavigation.check",
+            "confidence": "observation"
+          },
+          {
+            "dimension": "quality",
+            "severity": "LOW",
+            "location": "src/workflow/code-review/investigation/continuation.ts:1",
+            "message": "runInvestigationContinuation directly orchestrates roughly a dozen distinct collaborators (abort racing, capability/admission, seed/digest building, binding assertion, progress accounting/acceptance, pause/reply checks, context lookup). Even with the logic correctly delegated to each owning module, the sheer fan-out from one function makes its control flow harder to follow at a glance; consider whether the first-turn vs continuation-turn setup (admitInvestigationRequest/buildInvestigationSeed/investigationRequestDigest/assertInvestigationBindings) can be collapsed behind a single helper to shrink the orchestrator's visible surface. Flagged as a readability observation, not a confirmed defect, since the actual branching structure isn't visible from the symbol summary alone.",
+            "confidence": "observation"
+          }
+        ]
+      },
+      {
+        "dimension": "diagram",
+        "findings": []
+      }
+    ],
+    "verdict": "warn",
+    "counts": {
+      "high": 0,
+      "med": 10,
+      "low": 17
+    },
+    "callEvents": [
+      {
+        "event": "start",
+        "reviewId": "d39149c6-5db3-48c4-b613-15d9f564d028",
+        "callId": "6d8a272b-690b-4921-b5a8-7d9d5878738e",
+        "dimension": "adherence",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260175858,
+          "elapsedMs": 2,
+          "remainingMs": 299998,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 96265,
+          "promptTokens": 32089,
+          "schemaChars": 629,
+          "schemaTokens": 210,
+          "declaredToolsChars": 131,
+          "declaredToolsTokens": 44,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 24576,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 82519,
+          "remainingTokens": 45481,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "d39149c6-5db3-48c4-b613-15d9f564d028",
+        "callId": "6d8a272b-690b-4921-b5a8-7d9d5878738e",
+        "dimension": "adherence",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260175858,
+          "elapsedMs": 95026,
+          "remainingMs": 204974,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 96265,
+          "promptTokens": 32089,
+          "schemaChars": 629,
+          "schemaTokens": 210,
+          "declaredToolsChars": 131,
+          "declaredToolsTokens": 44,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 24576,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 82519,
+          "remainingTokens": 45481,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 95024
+      },
+      {
+        "event": "start",
+        "reviewId": "3b4dc22d-d0b7-46e0-845f-09af44bcb731",
+        "callId": "a3a4ba3a-cdcd-4879-a34b-0c7cf2cd1f75",
+        "dimension": "conventions",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260270885,
+          "elapsedMs": 1,
+          "remainingMs": 299999,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 34055,
+          "promptTokens": 11352,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 37159,
+          "remainingTokens": 90841,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "3b4dc22d-d0b7-46e0-845f-09af44bcb731",
+        "callId": "a3a4ba3a-cdcd-4879-a34b-0c7cf2cd1f75",
+        "dimension": "conventions",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260270885,
+          "elapsedMs": 19915,
+          "remainingMs": 280085,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 34055,
+          "promptTokens": 11352,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 37159,
+          "remainingTokens": 90841,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 19914
+      },
+      {
+        "event": "start",
+        "reviewId": "4cd38ec1-e3f7-4dc2-8f2b-b45e1b966edd",
+        "callId": "c1ecc8e9-54b5-46c4-b22a-7b5222a49455",
+        "dimension": "coverage",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260290802,
+          "elapsedMs": 1,
+          "remainingMs": 299999,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 24207,
+          "promptTokens": 8069,
+          "schemaChars": 742,
+          "schemaTokens": 248,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 33918,
+          "remainingTokens": 94082,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "4cd38ec1-e3f7-4dc2-8f2b-b45e1b966edd",
+        "callId": "c1ecc8e9-54b5-46c4-b22a-7b5222a49455",
+        "dimension": "coverage",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260290802,
+          "elapsedMs": 87953,
+          "remainingMs": 212047,
+          "attemptLimitMs": 299999
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 24207,
+          "promptTokens": 8069,
+          "schemaChars": 742,
+          "schemaTokens": 248,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 33918,
+          "remainingTokens": 94082,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 87952
+      },
+      {
+        "event": "start",
+        "reviewId": "ef9167ab-6964-43a5-9081-6f1cfe321859",
+        "callId": "1d546142-c883-4dae-ae77-ca2f1d51a98c",
+        "dimension": "quality",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260378758,
+          "elapsedMs": 0,
+          "remainingMs": 300000,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 32334,
+          "promptTokens": 10778,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 36585,
+          "remainingTokens": 91415,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 0
+      },
+      {
+        "event": "success",
+        "reviewId": "ef9167ab-6964-43a5-9081-6f1cfe321859",
+        "callId": "1d546142-c883-4dae-ae77-ca2f1d51a98c",
+        "dimension": "quality",
+        "stage": "judge",
+        "role": "single",
+        "attempt": 1,
+        "transport": "claude",
+        "timing": {
+          "currentBudgetChunkCount": 1,
+          "totalBudgetMs": 300000,
+          "kind": "review-execution",
+          "timeBudgetUnitMs": 300000,
+          "logicalWorkUnits": 1,
+          "jobBudgetMs": 300000,
+          "deadlineAt": 1793260378758,
+          "elapsedMs": 112247,
+          "remainingMs": 187753,
+          "attemptLimitMs": 300000
+        },
+        "policyVersion": 1,
+        "qualification": "reserved-native",
+        "budget": {
+          "configuredLimitTokens": 128000,
+          "limitTokens": 128000,
+          "promptChars": 32334,
+          "promptTokens": 10778,
+          "schemaChars": 616,
+          "schemaTokens": 206,
+          "declaredToolsChars": 2,
+          "declaredToolsTokens": 1,
+          "nativeReserveTokens": 16384,
+          "transportReserveTokens": 1024,
+          "completionReserveTokens": 8192,
+          "inspectionReserveTokens": 0,
+          "hostContextReserveTokens": 0,
+          "retryHeadroomTokens": 0,
+          "estimatedTotalTokens": 36585,
+          "remainingTokens": 91415,
+          "estimatorVersion": "chars-per-token-v1",
+          "qualification": "reserved-native"
+        },
+        "durationMs": 112246
+      }
+    ]
+  },
+  "citations": []
+}

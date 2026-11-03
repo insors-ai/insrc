@@ -1,0 +1,1474 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "review-b7a68147dcf72034-s8-final-live-20261102",
+  "project": "/home/subho/work/dev/insors/insrc",
+  "storyId": "s8",
+  "attempts": [
+    {
+      "header": {
+        "attempt": 1,
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "createdAt": "2026-11-02T13:44:10.228Z",
+        "selectedTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "buildFingerprint": "3b9e9aaafd913f20a7a3eed1a4d2967fec1d271500f498e9161392be5b09956b",
+        "completedAt": "2026-11-02T14:33:26.261Z"
+      },
+      "submitted": {
+        "storyId": "s8",
+        "functionalSummary": "Independent review of FINAL S8 Git tool-family implementation, all nine approved Plan tasks t1-t9 in dependency order. The story was already approved by a different controller session with self-review override; this request is the user-authorized independent review, not a request to rely on that override. Commits are lookup pointers: ONLY explicit selected reviewed-version blocks/deletion anchors are finding scope. Snapshot contains only paths from the eleven explicit S8 task/fix commits plus pinned docs/test record; other story work and uncommitted files are excluded. Full prior task-only t1 review is recorded in the existing CR, with two LOW coverage notes now addressed by new tests in final source; inspect the new tests rather than claiming the old source verdict covers them. This fresh whole-story review has no host-reusable same-review-id history; no judgments are pre-populated or silently promoted. Requirements/LLD/Plan are accessible via pinned paths. Inspect ALL selected modules and test coverage; tests/integration/build execution are optional disclosures, not mandatory omitted-scope limitations. The task test records are complete builder-reported evidence, and the two files changed by final corrections were freshly run (10 tests pass). The full sweep had documented failures in head/base; inspect the committed report and distinguish known residuals, builder claims and actual findings. Do not run another broad sweep/rebuild; use narrow commands if needed. The source versions of the frozen schema snapshot and older helper bodies are compatibility/context, never grounds to restore an old review engine. No code edits by reviewer. Sequential tasks, ordinary findings, mandatory coverage inspection, and optional execution policy remain the same for all nine tasks.",
+        "documents": {
+          "story": {
+            "path": ".insrc/artifacts/DEF-b7a68147dcf72034.json",
+            "commit": "e79a439cdd6084740569e0bc32a0f9ec8d69b010"
+          },
+          "lld": {
+            "path": ".insrc/artifacts/LLD-b7a68147dcf72034-s8.json",
+            "commit": "e79a439cdd6084740569e0bc32a0f9ec8d69b010"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-b7a68147dcf72034-s8.json",
+            "commit": "e79a439cdd6084740569e0bc32a0f9ec8d69b010"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "e79a439cdd6084740569e0bc32a0f9ec8d69b010",
+            "parent": "b8536445375fe59720d0d11565e1b1914eebc27a",
+            "files": [
+              {
+                "path": "docs/daemon.md",
+                "segments": [
+                  {
+                    "after": [
+                      1472,
+                      1472
+                    ]
+                  },
+                  {
+                    "after": [
+                      1498,
+                      1502
+                    ]
+                  },
+                  {
+                    "after": [
+                      1509,
+                      1511
+                    ]
+                  },
+                  {
+                    "after": [
+                      1518,
+                      1524
+                    ]
+                  },
+                  {
+                    "after": [
+                      1533,
+                      1537
+                    ]
+                  },
+                  {
+                    "after": [
+                      1541,
+                      1542
+                    ]
+                  },
+                  {
+                    "after": [
+                      1545,
+                      1640
+                    ]
+                  },
+                  {
+                    "after": [
+                      1650,
+                      1651
+                    ]
+                  },
+                  {
+                    "after": [
+                      1654,
+                      1654
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "docs/plans/tool-registry.md",
+                "segments": [
+                  {
+                    "after": [
+                      536,
+                      580
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      71,
+                      72
+                    ]
+                  },
+                  {
+                    "after": [
+                      128,
+                      128
+                    ]
+                  },
+                  {
+                    "after": [
+                      136,
+                      142
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      21,
+                      21
+                    ]
+                  },
+                  {
+                    "after": [
+                      45,
+                      47
+                    ]
+                  },
+                  {
+                    "after": [
+                      57,
+                      62
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      74
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      17,
+                      24
+                    ]
+                  },
+                  {
+                    "after": [
+                      37,
+                      58
+                    ]
+                  },
+                  {
+                    "after": [
+                      69,
+                      69
+                    ]
+                  },
+                  {
+                    "after": [
+                      216,
+                      260
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  },
+                  {
+                    "after": [
+                      42,
+                      42
+                    ]
+                  },
+                  {
+                    "after": [
+                      70,
+                      70
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      80
+                    ]
+                  },
+                  {
+                    "after": [
+                      87,
+                      87
+                    ]
+                  },
+                  {
+                    "after": [
+                      92,
+                      92
+                    ]
+                  },
+                  {
+                    "after": [
+                      117,
+                      131
+                    ]
+                  },
+                  {
+                    "after": [
+                      206,
+                      587
+                    ]
+                  },
+                  {
+                    "after": [
+                      671,
+                      688
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      40
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      70
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      69
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      38
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      46
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      84
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      192
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/coverage.ts",
+                "segments": [
+                  {
+                    "after": [
+                      7,
+                      7
+                    ]
+                  },
+                  {
+                    "after": [
+                      13,
+                      14
+                    ]
+                  },
+                  {
+                    "deletionAt": 216
+                  },
+                  {
+                    "after": [
+                      246,
+                      246
+                    ]
+                  },
+                  {
+                    "after": [
+                      273,
+                      277
+                    ]
+                  },
+                  {
+                    "after": [
+                      284,
+                      286
+                    ]
+                  },
+                  {
+                    "after": [
+                      293,
+                      299
+                    ]
+                  },
+                  {
+                    "after": [
+                      308,
+                      312
+                    ]
+                  },
+                  {
+                    "after": [
+                      316,
+                      317
+                    ]
+                  },
+                  {
+                    "after": [
+                      320,
+                      416
+                    ]
+                  },
+                  {
+                    "after": [
+                      427,
+                      428
+                    ]
+                  },
+                  {
+                    "after": [
+                      431,
+                      431
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/definitions.ts",
+                "segments": [
+                  {
+                    "deletionAt": 18
+                  },
+                  {
+                    "deletionAt": 27
+                  },
+                  {
+                    "deletionAt": 30
+                  },
+                  {
+                    "after": [
+                      49,
+                      58
+                    ]
+                  },
+                  {
+                    "after": [
+                      66,
+                      66
+                    ]
+                  },
+                  {
+                    "after": [
+                      76,
+                      76
+                    ]
+                  },
+                  {
+                    "after": [
+                      80,
+                      82
+                    ]
+                  },
+                  {
+                    "after": [
+                      101,
+                      109
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/extended.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      169
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/inspect.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      202
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/maintenance.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      79
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/objects.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      124
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/op-table.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      323
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/patch.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      102
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/reflog.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      59
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/refs.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      36
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/safe-args.ts",
+                "segments": [
+                  {
+                    "after": [
+                      25,
+                      27
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/setup.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      45
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/text.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      77
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tools/builtins/git/tree.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      111
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/daemon/tools/__tests__/typed-git-tools.test.ts",
+            "cases": [
+              "typed-git-tools.test.ts: a tool exported but not listed, and a listed object not exported by a tool file, are each reported by the same logic",
+              "typed-git-tools.test.ts: every listed tool declares typebox input and output schemas at run time",
+              "typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/__tests__/typed-git-tools.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t9\", \"taskCommit\": \"e9b399b45\", \"ranAt\": \"2026-11-02T12:56:33.653Z\", \"run\": {\"file\": \"src/daemon/tools/__tests__/typed-git-tools.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 555, \"titles\": [{\"title\": \"typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list\", \"result\": \"pass\"}, {\"title\": \"typed-git-tools.test.ts: every listed tool declares typebox input and output schemas at run time\", \"result\": \"pass\"}, {\"title\": \"typed-git-tools.test.ts: a tool exported but not listed, and a listed object not exported by a tool file, are each reported by the same logic\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+            "cases": [
+              "a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected",
+              "each work-destroying operation is destructive and each read is none",
+              "every typebox input schema serialises to the same JSON as the schema it replaced",
+              "git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input",
+              "git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8",
+              "git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged",
+              "git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t8\", \"taskCommit\": \"0b0bab6d3\", \"ranAt\": \"2026-11-02T12:19:58.083Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 745, \"titles\": [{\"title\": \"every typebox input schema serialises to the same JSON as the schema it replaced\", \"result\": \"pass\"}, {\"title\": \"git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged\", \"result\": \"pass\"}, {\"title\": \"a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected\", \"result\": \"pass\"}, {\"title\": \"each work-destroying operation is destructive and each read is none\", \"result\": \"pass\"}, {\"title\": \"git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none\", \"result\": \"pass\"}, {\"title\": \"git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8\", \"result\": \"pass\"}, {\"title\": \"git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "cases": [
+              "docs/daemon.md shows the coverage table",
+              "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+              "every covered row's case runs through executeTool and matches its assertion",
+              "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+              "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+              "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+              "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+              "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+              "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+              "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t2\", \"taskCommit\": \"f0b9e481c\", \"ranAt\": \"2026-11-02T11:43:54.697Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 8252, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t3\", \"taskCommit\": \"88f143d54\", \"ranAt\": \"2026-11-02T11:48:15.963Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 8828, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t4\", \"taskCommit\": \"bda1575df\", \"ranAt\": \"2026-11-02T11:52:24.595Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 9286, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t5\", \"taskCommit\": \"81a9b1ef4\", \"ranAt\": \"2026-11-02T12:00:27.851Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 10153, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t6\", \"taskCommit\": \"073a0e50e\", \"ranAt\": \"2026-11-02T12:15:56.035Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 15043, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations s8 added are covered\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t7\", \"taskCommit\": \"0b0bab6d3\", \"ranAt\": \"2026-11-02T12:18:25.647Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 13777, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations s8 added are covered\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t8\", \"taskCommit\": \"0b0bab6d3\", \"ranAt\": \"2026-11-02T12:19:58.083Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 14056, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations s8 added are covered\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}], \"otherFailures\": []}}, {\"taskId\": \"t9\", \"taskCommit\": \"e9b399b45\", \"ranAt\": \"2026-11-02T12:56:33.653Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 13936, \"titles\": [{\"title\": \"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\", \"result\": \"pass\"}, {\"title\": \"multi-operation commands are tracked per subcommand and the operations s8 added are covered\", \"result\": \"pass\"}, {\"title\": \"docs/daemon.md shows the coverage table\", \"result\": \"pass\"}, {\"title\": \"every covered row's case runs through executeTool and matches its assertion\", \"result\": \"pass\"}, {\"title\": \"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\", \"result\": \"pass\"}, {\"title\": \"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\", \"result\": \"pass\"}, {\"title\": \"git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+            "cases": [
+              "git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t2\", \"taskCommit\": \"f0b9e481c\", \"ranAt\": \"2026-11-02T11:43:54.697Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 710, \"titles\": [{\"title\": \"git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+            "cases": [
+              "git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t7\", \"taskCommit\": \"0b0bab6d3\", \"ranAt\": \"2026-11-02T12:18:25.647Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 684, \"titles\": [{\"title\": \"git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+            "cases": [
+              "git-objects.test.ts: a failed stdin delivery reports nothing as applied",
+              "git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t4\", \"taskCommit\": \"bda1575df\", \"ranAt\": \"2026-11-02T11:52:24.595Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-objects.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 700, \"titles\": [{\"title\": \"git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common\", \"result\": \"pass\"}, {\"title\": \"git-objects.test.ts: a failed stdin delivery reports nothing as applied\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-objects.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+            "cases": [
+              "git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t5\", \"taskCommit\": \"81a9b1ef4\", \"ranAt\": \"2026-11-02T12:00:27.851Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-patch.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 741, \"titles\": [{\"title\": \"git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+            "cases": [
+              "git-setup.test.ts: init in an existing repository reinitialises and reports it"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t7\", \"taskCommit\": \"0b0bab6d3\", \"ranAt\": \"2026-11-02T12:18:25.647Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-setup.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 686, \"titles\": [{\"title\": \"git-setup.test.ts: init in an existing repository reinitialises and reports it\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+            "cases": [
+              "git-text.test.ts: empty content, over-budget content and a failed delivery"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t3\", \"taskCommit\": \"88f143d54\", \"ranAt\": \"2026-11-02T11:48:15.963Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-text.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 725, \"titles\": [{\"title\": \"git-text.test.ts: empty content, over-budget content and a failed delivery\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+            "cases": [
+              "git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version",
+              "git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common",
+              "git-tree.test.ts: submodule add refuses an ext:: url and every submodule action switches the ext transport off"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t6\", \"taskCommit\": \"073a0e50e\", \"ranAt\": \"2026-11-02T12:15:56.035Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/git-tree.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 688, \"titles\": [{\"title\": \"git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common\", \"result\": \"pass\"}, {\"title\": \"git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\", \"freshFinalSourceRun\": {\"command\": \"node --import tsx --test --test-force-exit src/daemon/tools/builtins/git/__tests__/op-table.test.ts src/daemon/tools/builtins/git/__tests__/git-tree.test.ts\", \"exitCode\": 0, \"passed\": 10, \"failed\": 0, \"skipped\": 0, \"log\": \"/tmp/git-s8-final-updated-tests.log\", \"cases\": [\"git-tree.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common\", \"git-tree.test.ts: submodule add refuses an ext:: url and every submodule action switches the ext transport off\", \"git-tree.test.ts: a command the installed git lacks fails with git's message and the recorded version\"], \"selectedBytesMatchSnapshot\": true}}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+            "cases": [
+              "op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure",
+              "op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request",
+              "op-table.test.ts: a missing git is missing-tool, a killed command is timed-out with the unknown-outcome text when the op changes something, and a class that is a function is evaluated per input",
+              "op-table.test.ts: a stdin delivery error is a failure with no answer",
+              "op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op",
+              "op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields",
+              "op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+            "result": "pass",
+            "executionDetails": "{\"mode\": \"builder-reported committed task-validation records, not reviewer execution\", \"record\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\", \"runs\": [{\"taskId\": \"t1\", \"taskCommit\": \"7ab11caca\", \"ranAt\": \"2026-11-02T11:25:07.236Z\", \"run\": {\"file\": \"src/daemon/tools/builtins/git/__tests__/op-table.test.ts\", \"exitCode\": 0, \"timedOut\": false, \"durationMs\": 699, \"titles\": [{\"title\": \"op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op\", \"result\": \"pass\"}, {\"title\": \"op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields\", \"result\": \"pass\"}, {\"title\": \"op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request\", \"result\": \"pass\"}, {\"title\": \"op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure\", \"result\": \"pass\"}, {\"title\": \"op-table.test.ts: a stdin delivery error is a failure with no answer\", \"result\": \"pass\"}, {\"title\": \"op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision\", \"result\": \"pass\"}], \"otherFailures\": []}}], \"note\": \"Recorded task commits identify observed validation time, not review scope. Explicit selected blocks alone define finding scope. No full sweep rerun for this submission.\", \"freshFinalSourceRun\": {\"command\": \"node --import tsx --test --test-force-exit src/daemon/tools/builtins/git/__tests__/op-table.test.ts src/daemon/tools/builtins/git/__tests__/git-tree.test.ts\", \"exitCode\": 0, \"passed\": 10, \"failed\": 0, \"skipped\": 0, \"log\": \"/tmp/git-s8-final-updated-tests.log\", \"cases\": [\"op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op\", \"op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields\", \"op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request\", \"op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure\", \"op-table.test.ts: a stdin delivery error is a failure with no answer\", \"op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision\", \"op-table.test.ts: a missing git is missing-tool, a killed command is timed-out with the unknown-outcome text when the op changes something, and a class that is a function is evaluated per input\"], \"selectedBytesMatchSnapshot\": true}}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ]
+          },
+          {
+            "file": "package.json",
+            "cases": [
+              "S8 full sweep head/base comparison and documented residual failures"
+            ],
+            "command": "npx tsx --test (foreground directory chunks; see committed docs/plans/tool-registry.md section s8 full sweep)",
+            "result": "fail",
+            "executionDetails": "{\"mode\": \"prior builder-reported full sweep, not rerun or claimed reviewer execution\", \"evidence\": \"e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/plans/tool-registry.md\", \"head\": \"54b082196\", \"base\": \"cb2c00d4f\", \"note\": \"Both head and base had failures; report lists counts and head-only differences attributed by builder to other stories/load. Reviewer must assess evidence honestly; do not treat builder attribution as independently established. Focused named task tests have separate passing records. No requirement to rerun full sweep or production build.\"}",
+            "evidenceReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/plans/tool-registry.md"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "All selected task assessments are terminal. CR publication complete.",
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "passed",
+            "summary": "Independently re-reviewed s8/t1 (git op-table builder + extender). Fetched the exact committed source (e79a439c) for both reviewed files plus their direct dependencies (gh/op-table.ts, git/helpers.ts, git/safe-args.ts, git/stash.ts, _standin.ts) and confirmed byte-for-byte that the committed content matches the embedded review blocks, that the current checkout is identical to the reviewed commit for every relevant file, and that gh/op-table.ts is unchanged between parent and commit (git diff empty), satisfying the \"gh files are unchanged\" acceptance check. All six acceptance checks for t1 map onto one of the seven tests in op-table.test.ts and the test bodies genuinely assert the described behavior (schema shape, build-time throws for duplicate op / missing class / missing stdin field / disagreeing shared field, pre-approval field/pattern refusal, cut-stdout rejection with no partial text leaked, schema-mismatch keeping original text, stdin-delivery failure with no answer, extendGitTool preserving existing inputs/classes and throwing on name/field collisions, timeout/missing-tool/function-class behavior). I independently ran the test file (not just trusting the builder's record) via `npx tsx --test src/daemon/tools/builtins/git/__tests__/op-table.test.ts` and got 7/7 passing, matching the builder-reported and freshFinalSourceRun results. `npx tsc --noEmit -p .` shows no errors touching op-table.ts or its test. Code-level inspection found no logic defects: field-merge/required-field computation, refusal/validation ordering (schema → refuseInput → assertSafeArg → spawn), stdin size/encoding handling, scratch-dir cleanup via try/finally, and extendGitTool's collision/field-reuse checks are all consistent with the GitOpSpec contract and with gh/op-table.ts's established pattern, which this file explicitly reuses unchanged. No HIGH/MED findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Read the full committed test file (7 tests) and the full committed implementation. Each of the task's 6 acceptance checks has a corresponding test whose assertions actually exercise the described behavior (not just a smoke call): schema shape/required-field check, build-time throw messages (duplicate op / missing class / missing stdin field / disagreeing field) via assert.throws with specific regexes, pre-approval refusal (asserting zero approval asks and zero git invocations via the stand-in's call log), cut-stdout rejection asserting the partial text is absent from the returned data, schema-mismatch asserting the original text is preserved, stdin-delivery failure asserting no answer is parsed, and extendGitTool asserting unchanged approval/validity for pre-existing inputs plus throws for both a name collision and a field collision. Independently re-ran the exact test file against the current checkout (which git diff confirms is byte-identical to the reviewed commit for every file in scope) and got 7/7 passing, corroborating rather than merely trusting the builder's and prior reviewer's recorded results.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran `npx tsx --test src/daemon/tools/builtins/git/__tests__/op-table.test.ts` directly (sandbox denied a bare `node --import tsx --test` invocation, so the npx form was used instead) and got 7/7 passing, corroborating the builder's and the existing TESTS record's results.",
+              "Optional execution: ran `npx tsc --noEmit -p .` across the whole project; no errors reference op-table.ts or its test file.",
+              "No further action needed for t1; the only non-functional observation is that GitOpSpec/GitFamilySpec use plain `?:` rather than `prop?: T | undefined`, but this exactly mirrors the sibling gh/op-table.ts's OpDef (which this file explicitly reuses unchanged per its own header comment), so it is consistent with the established pattern rather than a new deviation."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/gh/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_standin.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/stash.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "cases": [
+                  "op-table.test.ts: buildGitFamilyTool makes a flat input schema with an op enum and an output union carrying the literal op",
+                  "op-table.test.ts: buildGitFamilyTool throws at build time for a duplicate op, an op without a class, a stdin op without a stdin field and disagreeing shared fields",
+                  "op-table.test.ts: a field the op does not take and a value outside its pattern are refused before any approval request",
+                  "op-table.test.ts: a cut stdout is a rejected failure and a result outside the answer member is a schema-mismatch failure",
+                  "op-table.test.ts: a stdin delivery error is a failure with no answer",
+                  "op-table.test.ts: extendGitTool keeps existing inputs and classes and throws for a collision",
+                  "op-table.test.ts: a missing git is missing-tool, a killed command is timed-out with the unknown-outcome text when the op changes something, and a class that is a function is evaluated per input"
+                ],
+                "command": "npx tsx --test src/daemon/tools/builtins/git/__tests__/op-table.test.ts",
+                "result": "pass",
+                "executionDetails": "Reviewer-executed (not builder-reported): all 7 node:test cases passed, 0 failed, 0 skipped, total duration ~971ms. Run against the current checkout, confirmed via `git diff e79a439c..HEAD -- <these files>` to be byte-identical to the reviewed commit.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/op-table.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t2",
+            "status": "passed",
+            "summary": "t2 adds git_inspect, a class-none, 27-op read-only family tool built on the s8 op-table builder (buildGitFamilyTool). Every op in GIT_INSPECT_OPS (describe, name-rev, cherry, shortlog, show-branch, grep, last-modified, count-objects, var, version, check-attr, check-ignore, check-mailmap, check-ref-format, get-tar-commit-id, diff-files, diff-index, diff-pairs, range-diff, show-index, verify-commit, verify-tag, verify-pack, fsck, fsck-objects, pack-redundant, repo) has a matching coverage.ts row owned 'covered' with toolIds ['git_inspect'] and a case, a matching test case in git-coverage.test.ts's RUN table, and a matching row in docs/daemon.md's generated table. A no-match exit (grep, check-ignore, check-ref-format, get-tar-commit-id, verify-commit, verify-tag) is handled via okCodes:[0,1] and parse functions that read run.code, giving found/valid/verified:false rather than a tool failure — confirmed both by git-inspect.test.ts's explicit no-match case and by the read() helper hard-coding cls:'none' for every op (never overridden), so gitInspectTool.approval always returns 'none', verified by git-inspect.test.ts's loop over every op. SAFE_REV / assertSafeArg and the paths-after-`--` convention are applied consistently with the rest of the op-table design. All four of t2's acceptance checks are met.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected git-coverage.test.ts's RUN table and coverage.ts's rows and confirmed a 1:1 match for all 27 git_inspect ops (every covered row names git_inspect and has a case; the test's own assert.deepEqual cross-checks case ids against RUN keys and GIT_COVERAGE rows against GIT_2_53_COMMANDS). Inspected git-inspect.test.ts and confirmed it independently asserts (a) every op's approval class is 'none' and (b) a no-match exit (grep, check-ignore) gives an empty/false answer with zero approval asks. Traced each of the 27 ops' argv/okCodes/parse in inspect.ts against its test case's assertions (e.g. grep okCodes [0,1] + found:run.code===0; check-ref-format okCodes [0,1] + valid:run.code===0; get-tar-commit-id/show-index stdinEncoding 'base64' matching their base64 test fixtures) and found no mismatch. Beyond static inspection, I independently ran both test files against the current checkout (verified byte-identical to the reviewed commit for every reviewed path via `git diff <commit> HEAD -- <paths>`, which returned no output) and both passed: git-inspect.test.ts (1/1) and git-coverage.test.ts (9/9, including 'every covered row's case runs through executeTool and matches its assertion', which exercises all 27 git_inspect cases end-to-end against a real temporary repository).",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/inspect.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran `npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts` (1/1 pass) and `npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts` (9/9 pass) directly against the current checkout, which I first confirmed is byte-identical to the reviewed commit for every reviewed path. Did not rerun the full sweep (prior documented baseline failures are out of this narrow task's scope and the committed TESTS/full-sweep record already accounts for them).",
+              "LOW/nit: `git-inspect.test.ts` asserts `GIT_INSPECT_OPS.length >= 27` rather than `=== 27`, so it alone wouldn't flag an extra undocumented op being silently added; this is harmless in practice because `git-coverage.test.ts`'s `assert.deepEqual([...ids].sort(), Object.keys(RUN).sort())` and its one-row-per-command invariant already force an exact 1:1 correspondence between coverage rows and ops."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/DEF-b7a68147dcf72034.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/PLAN-b7a68147dcf72034-s8.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/inspect.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+                "cases": [
+                  "git-inspect.test.ts: a no-match exit gives an empty answer and no git_inspect op asks for approval"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts",
+                "result": "pass",
+                "executionDetails": "Reviewer-executed directly against the current checkout (confirmed byte-identical to the reviewed commit for this path via `git diff <commit> HEAD -- <path>` returning no output). 1 test, 1 pass, 0 fail, duration ~67ms.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-inspect.test.ts"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                  "docs/daemon.md shows the coverage table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                  "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                  "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                  "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Reviewer-executed directly against the current checkout (confirmed byte-identical to the reviewed commit for this and all other reviewed paths). 9 tests, 9 pass, 0 fail, total duration ~14.4s; the 'every covered row's case runs through executeTool and matches its assertion' test exercises all 27 git_inspect coverage cases end-to-end against real temporary repositories.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t3",
+            "status": "passed",
+            "summary": "t3 (git_text) implementation inspected against the LLD/Plan acceptance checks: content is delivered via stdin (runShellBytes) and the op's parsed answer returned; empty content is sent as empty input; content over MAX_STDIN_BYTES is rejected before git starts; a stdin write failure (git exiting before reading its input) surfaces as a `rejected` failure with no `data`. Both named test files were re-run against the current checkout (identical to the reviewed commit — no diff) and pass, including the full-row executeTool pass that exercises all seven git_text ops with real git.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "git-text.test.ts directly exercises all three required behaviors from the acceptance checks: empty content -> empty stdin and a normal answer; content of MAX_STDIN_BYTES+1 bytes -> rejected before git starts (asserts standIn.calls() is empty, proving git was never spawned); content of exactly MAX_STDIN_BYTES bytes against a stand-in git that exits without reading stdin -> rejected with 'could not deliver content to git' and data undefined. git-coverage.test.ts's 'every covered row's case runs through executeTool and matches its assertion' test independently drives all seven git_text ops (column, stripspace, interpret-trailers, fmt-merge-msg, patch-id, mailinfo, mailsplit) through executeTool against a real git binary and asserts each op's parsed answer shape, and 'docs/daemon.md shows the coverage table' cross-checks the coverage table in coverage.ts against the rendered docs/daemon.md rows (including the git_text row). I re-ran both files against the current checkout (byte-identical to the reviewed commit for text.ts, the test file, op-table.ts and coverage.ts — confirmed via git diff showing no delta) and all cases passed. Minor, non-blocking coverage gap: the mailinfo keepSubject/scissors flags, interpret-trailers' parse/onlyTrailers flags, and column's non-default modes are not exercised by any case, though the default/common path for every op is.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/text.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: re-ran both named test files (git-text.test.ts, git-coverage.test.ts) against the current checkout rather than relying solely on the builder's recorded TESTS.md runs; both passed (1/1 and 9/9 respectively), and `git diff <task-commit> HEAD -- text.ts git-text.test.ts git-coverage.test.ts op-table.ts coverage.ts` showed zero delta, so the executed source matches the reviewed version.",
+              "Low-value, non-blocking: no case exercises mailinfo's keepSubject/scissors, interpret-trailers' parse/onlyTrailers, or column's non-default modes — the default path for every op is covered, so this is an optional coverage improvement, not a defect."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/text.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/shell-helper.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_standin.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+                "cases": [
+                  "git-text.test.ts: empty content, over-budget content and a failed delivery"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-text.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout (identical to the reviewed commit per git diff). 1 test, 1 pass, 0 fail, duration ~44ms.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-text.test.ts"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "docs/daemon.md shows the coverage table",
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                  "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                  "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                  "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                  "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout (identical to the reviewed commit per git diff). 9 tests, 9 pass, 0 fail, duration ~14.5s (the 'every covered row's case' test spawns real git for every op including all seven git_text ops).",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t4",
+            "status": "passed",
+            "summary": "test",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "test",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts"
+            ],
+            "executedTests": []
+          },
+          {
+            "taskId": "t5",
+            "status": "passed",
+            "summary": "t5 adds git_patch (apply/am/format-patch/archive/bundle/fast-export/diagnose/bugreport), the shared SAFE_REV pattern in safe-args.ts, wires git_patch into coverage.ts/definitions.ts/docs/daemon.md, and adds the git-coverage.test.ts coverage rows/cases and the dedicated git-patch.test.ts destructive-classification test. Inspected the actual commit content (not just the pinned diff) and cross-checked the destructive/none/common classification logic in patch.ts against both test files' assertions: every pair (format-patch/archive/bundle/fast-export/diagnose/bugreport, with vs without a named output file) matches the op's `cls` function exactly, and apply/am classifications match too. Traced several RUN[] case bodies (apply, am, format-patch, archive, bundle, fast-export) against the richRepo() fixture's actual file/commit state and confirmed the assertions are logically consistent with real git behavior. Confirmed SAFE_REV's new pattern (no leading '-', no whitespace/control chars, non-empty) is applied to the `range`/`rev` fields via the pre-existing field.str+pattern schema-validation path (enforced before any approval prompt), and that this export is also consumed by other s8 files (objects.ts), so it is not dead code. Verified definitions.ts registers git_patch and the 49-tool count the coverage test asserts actually totals 49 by counting the array. Verified docs/daemon.md's table content for every block in scope is byte-identical to coverage.ts's rows, which is additionally self-enforced by the existing 'docs/daemon.md shows the coverage table' test (renderCoverageTable() equality). The git-patch.test.ts denial test (3 of the 6 writing ops) demonstrates the required behavior (approval asked, git never invoked, file untouched) satisfying the acceptance check without needing to be exhaustive.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Both test files in scope were read in full at the pinned commit and their assertions were traced against the actual patch.ts op definitions and the richRepo() fixture state. git-coverage.test.ts's dedicated acceptance test ('no row is assigned...') plus the generic 'every covered row's case runs through executeTool' test give each of apply/am/format-patch/archive/bundle/fast-export/diagnose/bugreport a real executeTool case with an assertion on the produced patch/archive/bundle content, matching acceptance check 1. git-patch.test.ts's classOf-based test covers every with/without-file pair for the six potentially-destructive ops plus apply/am, matching acceptance check 2, and its executeTool-denial loop (archive/bundle-create/fast-export with a denying approval gate) demonstrates the repo and file are left untouched and git is never invoked, matching acceptance check 3. Builder-reported TESTS.md runs for this file are also present and consistent with the current source.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/patch.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: did not rerun the test files myself (relied on the committed builder-reported TESTS-b7a68147dcf72034-s8.json records plus manual trace of assertions against source); a narrow `npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-patch.test.ts src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts` run would further corroborate but was judged unnecessary given the full logical trace performed."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/patch.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/gh/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "docs/daemon.md shows the coverage table",
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Not re-executed by reviewer; relied on builder-reported committed TESTS record (all titles pass) cross-checked against a manual logical trace of the assertions against patch.ts and the richRepo() fixture.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+                "cases": [
+                  "git-patch.test.ts: an op writing a named file is destructive, the same op without one is not, and a denial leaves the file unchanged"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-patch.test.ts",
+                "result": "pass",
+                "executionDetails": "Not re-executed by reviewer; relied on builder-reported committed TESTS record (pass) cross-checked against a manual trace of classOf() against patch.ts's cls functions for every tested op/pair.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t6",
+            "status": "incomplete",
+            "summary": "git_tree is implemented and tested; two MED input-validation findings in tree.ts.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "src/daemon/tools/builtins/git/tree.ts:80-85",
+                "message": "merge-file current/base/other use path() but are listed in refs, so a leading-dash value passes schema validation and reaches the approval prompt before assertSafeArg rejects it at execute time.",
+                "rationale": "refs fields are supposed to use the dash-disallowing rev() pattern since they are positional args with no terminator; path() permits a leading dash.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts"
+                ]
+              },
+              {
+                "severity": "MED",
+                "location": "src/daemon/tools/builtins/git/tree.ts:89-98",
+                "message": "bisect good uses field.strs() with no pattern at all but is listed in refs, so a leading-dash entry passes schema validation and reaches the approval step before assertSafeArg rejects it.",
+                "rationale": "sibling fields bad and rev in the same op correctly use rev(); good is the one refs field left unpatterned.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "partial",
+              "explanation": "All covered ops have passing coverage cases (verified by fresh re-run), but no test exercises a leading-dash value for merge-file or bisect good, which is the exact LLD errorPaths scenario that should produce no approval prompt.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts"
+              ]
+            },
+            "limitations": [
+              "Required coverage remains partial: All covered ops have passing coverage cases (verified by fresh re-run), but no test exercises a leading-dash value for merge-file or bisect good, which is the exact LLD errorPaths scenario that should produce no approval prompt."
+            ],
+            "advice": [
+              "Optional execution: re-ran git-tree.test.ts and git-coverage.test.ts fresh; both passed."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+                "cases": [
+                  "destructive inputs are denied"
+                ],
+                "command": "npx tsx --test src/daemon/tools/builtins/git/__tests__/git-tree.test.ts",
+                "result": "pass",
+                "executionDetails": "3/3 pass",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-tree.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t7",
+            "status": "passed",
+            "summary": "t7 adds four new git_* tools (git_maintenance, git_setup, git_refs, git_reflog), registers them in definitions.ts, extends the coverage table and docs/daemon.md, and adds the matching test coverage (new git-maintenance.test.ts and git-setup.test.ts, plus large additions to git-coverage.test.ts). Reviewed the four new tool sources against the op-table infrastructure (safe-args/assertSafeArg, shell-helper's shell:false spawn), verified destructive-class routing for gc --prune=now, prune (non-dry-run), and reflog expire/delete matches the dedicated denial test, verified setup.ts blocks the ext:: transport and leading-dash urls/directories via its `refs` declaration plus an explicit check(), and cross-checked every new/changed coverage.ts row against the corresponding docs/daemon.md table block and against the test file's case ids (all 49 registered git tools, 169 GIT_2_53_COMMANDS rows, and each covered row's case id line up). No correctness, security, or coverage defects found in the submitted blocks.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Each new op in maintenance.ts/setup.ts/refs.ts/reflog.ts has a corresponding coverage.ts row with a case id, and each id resolves to a real test case in the git-coverage.test.ts block (lines 206-587) that exercises it through executeTool in a real temporary repository, asserting both success data and an observable git-level effect (e.g. gc/prune actually removing loose objects, init-db actually bare, refs migrate actually changing --show-ref-format, reflog expire/delete actually shrinking the reflog). The three acceptance checks are each covered by a dedicated assertion: (1) 'every covered row's case runs through executeTool' plus the per-op cases in the block satisfy 'each op has a coverage case'; (2) git-maintenance.test.ts's DESTRUCTIVE table plus a denying approval gate with a logging stand-in git binary proves gc --prune=now, prune (non-dry-run) and reflog expire/delete are classified destructive and never spawn git without approval; (3) git-setup.test.ts proves init on an existing repo reinitialises without losing history and reports reinitialised:true, and that clone refuses an option-like or ext:: url with failure.kind 'rejected'. The docs/daemon.md table is additionally checked for byte-for-byte equality against coverage.ts's renderCoverageTable() by an existing test, which I spot-verified row-by-row for every row touched by this task's diff (refs, stash/worktree/remote/branch/tag operation rows, and the full new am..write-tree alphabetical block) with no mismatch. The builder-reported TESTS record shows all three files passing (exitCode 0) across every task commit including the final one (t9, which reran the coverage suite one more time).",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not myself run `npx tsx --test` for git-coverage.test.ts / git-maintenance.test.ts / git-setup.test.ts; the pass verdict relies on the committed builder-reported TESTS-b7a68147dcf72034-s8.json record (exitCode 0 for every relevant task commit) plus my static read of the source at the pinned commit.",
+              "LOW/advisory: no dedicated negative test exercises the new SAFE_REV pattern on git_reflog's ref/oldOid/newOid fields directly (e.g. a ref string starting with '-' or containing a control character); the actual security boundary is the generic assertSafeArg('ref', ...) check in op-table.ts's runOp (already proven elsewhere, e.g. git_setup clone's url/ext:: test), so this is not a gap in protection, only in this task's own test demonstrating it for the new fields.",
+              "LOW/advisory: the embedded 'clone' case in git-coverage.test.ts asserts non-existence of a fixed path `/tmp/insrc-ext-ran` after a refused ext:: clone; since the refusal is expected to prevent the file from ever being created, this is safe, but a fixed /tmp path shared across runs is slightly fragile test hygiene (not a correctness defect)."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/maintenance.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/reflog.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/refs.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/setup.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/approval-policy.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/shell-helper.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_standin.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "docs/daemon.md shows the coverage table",
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                  "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                  "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                  "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                  "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                  "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Not run by the reviewer. Relied on builder-reported TESTS-b7a68147dcf72034-s8.json record (task t9, ranAt 2026-11-02T12:56:33.653Z, exitCode 0, durationMs 13936) plus static source inspection at the pinned commit.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                "cases": [
+                  "git-maintenance.test.ts: gc with prune now, prune and reflog expire and delete are denied with no client before git starts"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                "result": "pass",
+                "executionDetails": "Not run by the reviewer. Relied on builder-reported TESTS-b7a68147dcf72034-s8.json record (task t7, ranAt 2026-11-02T12:18:25.647Z, exitCode 0, durationMs 684) plus static source inspection at the pinned commit.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-maintenance.test.ts",
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                "cases": [
+                  "git-setup.test.ts: init in an existing repository reinitialises and reports it"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                "result": "pass",
+                "executionDetails": "Not run by the reviewer. Relied on builder-reported TESTS-b7a68147dcf72034-s8.json record (task t7, ranAt 2026-11-02T12:18:25.647Z, exitCode 0, durationMs 686) plus static source inspection at the pinned commit.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-setup.test.ts",
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t8",
+            "status": "passed",
+            "summary": "t8 (extend git_stash/git_worktree/git_remote/git_branch/git_tag with new ops, wire the final docs/coverage table, and settle the inventory/approval/coverage tests) is correct and fully exercised. I read every selected block plus the surrounding source it depends on (extendGitTool, the base five tools' schemas, assertSafeArg, the gh field helpers, and the GIT_2_53_COMMANDS/coverage machinery) and cross-checked the new op definitions by hand against the tests' own ADDED_BY_S8/S8_EXTENDED maps rather than trusting the reported pass results. Every new field name and `op` enum value the five STASH/WORKTREE/REMOTE/BRANCH/TAG_EXTRA_OPS arrays introduce matches exactly what the pinned-schema tests expect added, no reused field (`force`, `push`, `message`, `ref`, `path`) changes type/constraints versus the pre-s8 base schema, extendGitTool delegates every old op to the base's own class/gate/execute unchanged (by construction, not just by test), and the coverage.ts/docs.md table flips every remaining 'assigned' row to 'covered' with a real case or 'excluded' with a reason, leaving none assigned (confirmed row-for-row against the parent commit's prior placeholders). definitions.ts cleanly replaces the five direct base-tool imports with the *Extended ones and the resulting gitToolDefinitions length (49) is correct by manual count.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "I read the full bodies of git-approval.test.ts and git-coverage.test.ts (not just the diff hunks) and confirmed each new op (stash branch/create/store/export/import; worktree lock/unlock/repair; remote show/prune/update/set-head/set-branches/set-url-add/set-url-delete; branch rename/copy/set-upstream-to/unset-upstream/edit-description; tag verify/sign) has a dedicated coverage case that runs it through executeTool and asserts its real git-level effect (symbolic-ref, stash list, branch config, remote URLs, signed tag/cat-file, etc.), that the pinned-schema test's ADDED_BY_S8 input/op lists match the extended.ts field names and op names field-for-field by my own count (not the test's), and that approval-class-mapping.test.ts's S8_EXTENDED/ADDED_SINCE handling and the 'git_remote show' special-case skip are consistent with extendGitTool's actual approval() delegation. The git-coverage 'no row is assigned' test and the docs.md-vs-table equality test close the loop that nothing from the prior 'assigned' placeholders was left uncovered. All of this is evidence-backed by reading the committed sources at the pinned commit, not by rerunning the suite myself.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/extended.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I did not rerun the test suite myself; I relied on the builder-reported TESTS-b7a68147dcf72034-s8.json records plus my own line-by-line reading of the test bodies/assertions and source to establish correctness, per the no-rerun instruction for this submission.",
+              "Optional improvement (non-blocking): the `key` field on the new `git_tag sign` op and a couple of other newly-added fields rely solely on the runtime `assertSafeArg(v,'ref')` check (via the op's `refs` list) for leading-dash protection rather than a schema-level pattern; this is an accepted, already-supported pattern in the GitOpSpec framework (refs/paths exist for exactly this), not a defect, but a schema pattern would make the approval-preview-time rejection a touch earlier and more self-documenting."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/approval-class-mapping.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/extended.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/gh/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/provenance.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/branch.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/remote.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/stash.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tag.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/worktree.ts",
+              "b8536445375fe59720d0d11565e1b1914eebc27a:src/daemon/tools/builtins/git/definitions.ts",
+              "b8536445375fe59720d0d11565e1b1914eebc27a:src/daemon/tools/builtins/git/coverage.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                "cases": [
+                  "a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected",
+                  "each work-destroying operation is destructive and each read is none",
+                  "every typebox input schema serialises to the same JSON as the schema it replaced",
+                  "git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input",
+                  "git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8",
+                  "git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged",
+                  "git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                "result": "pass",
+                "executionDetails": "Not executed by this reviewer; result taken from the builder-reported committed test record (not rerun for this submission, per instructions).",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts",
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "docs/daemon.md shows the coverage table",
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row",
+                  "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                  "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                  "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                  "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                  "multi-operation commands are tracked per subcommand and the operations the existing schemas lack are assigned to s8"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Not executed by this reviewer; result taken from the builder-reported committed test record (not rerun for this submission, per instructions).",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t9",
+            "status": "passed",
+            "summary": "t9 (coverage.ts exclusions + no-assigned-row test + inventory docs) is correctly implemented. All previously `assigned` rows for the nine operations s8 added, and all previously-unowned commands s8 built, were turned into `covered` rows naming the correct new/extended tool; the thirteen user-decided exclusions (merge strategy drivers, subtree, request-pull, quiltimport, for-each-repo/hook/filter-branch) are present with non-empty reasons and no leftover `assigned` row exists. The new test in git-coverage.test.ts enforces exactly this (no assigned rows, every excluded row has a reason, every GIT_2_53_COMMANDS entry has a row, the thirteen named exclusions are present) and the new assertions in typed-git-tools.test.ts correctly verify the 49-tool inventory, the five extended tools' new ops, the nine new family tools, and the withFailureNet/extendGitTool provenance chain via definitionOf — grounded against the real (pre-existing) provenance.ts and op-table.ts implementations. docs/daemon.md's coverage table and docs/plans/tool-registry.md's new s8 decisions/outcome/full-sweep sections are consistent with coverage.ts and with the prior-task diffs already reviewed.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Reviewed the full diff of coverage.ts (every assigned row flipped to covered/excluded, no assigned() calls remain), the new assertions added to typed-git-tools.test.ts (49-tool count, extended-tool op enums, new family tool ids, withFailureNet/extendGitTool provenance via definitionOf) and the new 'no row is assigned' test plus the 180+ new per-op RUN cases in git-coverage.test.ts, each of which runs its tool through executeTool in a temporary repo and asserts a concrete result. Confirmed the working tree exactly matches the reviewed commit for every t9 file (empty git diff) and independently executed both test files on the current checkout: typed-git-tools.test.ts (3/3 pass) and git-coverage.test.ts (9/9 pass, including the 13.4s full-case run and the new no-assigned-row test), corroborating the builder-reported TESTS record rather than relying on it alone.",
+              "evidenceReferences": [
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/plans/tool-registry.md",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/provenance.ts",
+                "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: did not rerun the full repository test sweep (head vs base) that docs/plans/tool-registry.md reports — that is a large, previously-documented sweep outside this task's narrow scope, and the task instructs against rerunning it; relied on the committed report plus my own focused runs of the two task-named test files instead."
+            ],
+            "inspectedReferences": [
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/DEF-b7a68147dcf72034.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/PLAN-b7a68147dcf72034-s8.json",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/plans/tool-registry.md",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/provenance.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts",
+              "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "cases": [
+                  "typed-git-tools.test.ts: the list and the tool files agree in both directions, ids are unique and the registered ids equal the list",
+                  "typed-git-tools.test.ts: every listed tool declares typebox input and output schemas at run time",
+                  "typed-git-tools.test.ts: a tool exported but not listed, and a listed object not exported by a tool file, are each reported by the same logic"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/__tests__/typed-git-tools.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly on the current checkout (verified byte-identical to the reviewed commit for this file via empty git diff). All 3 tests passed in ~100ms.",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts"
+                ]
+              },
+              {
+                "file": "src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "cases": [
+                  "every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table",
+                  "multi-operation commands are tracked per subcommand and the operations s8 added are covered",
+                  "docs/daemon.md shows the coverage table",
+                  "every covered row's case runs through executeTool and matches its assertion",
+                  "git_amend runs its own case and git_diff with path and paths keeps its legacy failure",
+                  "git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions",
+                  "git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions",
+                  "git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes",
+                  "git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly on the current checkout (verified byte-identical to the reviewed commit for this file via empty git diff). All 9 tests passed (~13.5s total, dominated by the 'every covered row's case runs through executeTool' case exercising every s8 op).",
+                "evidenceReferences": [
+                  "e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "crPublication": "complete",
+        "failureDiagnostics": [
+          {
+            "phase": "assessment",
+            "taskId": "t4",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 2
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{\"taskId\":\"t4\",\"status\":\"passed\",\"summary\":\"t4 (git_objects: object, index and ref writes) is correctly implemented: all 12 ops (commit-tree, mktree, mktag, write-tree, read-tree, update-index, replace, notes, fast-import, unpack-objects, index-pack, pack-objects) match the LLD's destructive rule (read-tree --reset/-u, replace delete/force, notes remove/prune/add-force are destructive; everything else common; pack-objects read-only none), each has a coverage-table row wired to a matching executeTool case, and the stdin-delivery failure path correctly surfaces op-table.ts's existing EPIPE/stdinError handling with no answer reported. Verified op-by-op against the committed objects.ts, coverage.ts, the test file's case bodies, and the shared op-table.ts/helpers.ts execution path (not in this diff but correctly relied upon).</parameter>\\n<parameter name=\\\"findings\\\">[{\\\"severity\\\":\\\"LOW\\\",\\\"location\\\":\\\"src/daemon/tools/builtins/git/objects.ts:32\\\",\\\"message\\\":\\\"commit-tree's `parents` field is declared with `field.strs('Parent commits.')` with no SAFE_REV pattern, unlike every other ref-like field in this file (tree, rev, object, replacement all use the `rev()` helper that attaches `pattern: SAFE_REV`). An unsafe parent value is still blocked before git starts because `parents` is listed in `refs: ['tree', 'parents']` and so goes through `assertSafeArg('ref', ...)` inside `runOp` -- but that check runs after the (common-class) approval gate is built, so an unsafe value would appear in an approval preview it should never have reached per the file header's own stated contract ('every safety condition has to be in the schema, or an unsafe value would reach a destructive approval prompt').\\\",\\\"rationale\\\":\\\"This is a real inconsistency with the file's documented safety design and with sibling fields in the same op table, evidenced directly in the reviewed commit-tree op spec. It is not a security hole (git itself never runs on the unsafe value, since assertSafeArg throws before runIn/runShellBytes is reached and commit-tree is a 'common', not destructive, op so no privileged approval is actually bypassed), so it does not block approval, but it is a legitimate, concrete LOW-severity defect worth a follow-up fix (add the SAFE_REV pattern to the `parents` field for consistency and defense-in-depth parity with `tree`).\\\",\\\"evidenceReferences\\\":[\\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts\\\"]}]\",\"testCoverage\":{\"assessment\":\"verified\",\"explanation\":\"Every one of the 12 git_objects ops has a coverage-table row (docs/daemon.md + coverage.ts, both inspected) pointing to a case id that matches a key in git-coverage.test.ts's case map (inspected in full for the git_objects section), and each case body was traced against objects.ts's argv/parse/stdin logic and confirmed to produce the asserted object/ref/index effect (commit-tree parent linkage, mktree/write-tree tree sha round-trip, mktag type, read-tree reset+update worktree restore, update-index add/cacheinfo/index-info, replace create/list/delete lifecycle, notes add/append/show/list/remove/prune lifecycle, fast-import ref creation, unpack-objects/index-pack cross-repo object transfer, pack-objects binary PACK header). git-objects.test.ts's two dedicated tests (destructive-class enumeration with a denying no-client gate verifying zero git invocations, and the oversized-stdin EPIPE case) were cross-checked against the implementation's `cls` functions and against op-table.ts's pre-existing `stdinError` handling (confirmed present and unchanged, producing exactly the expected 'could not deliver ... may have partly run' message for a mutating op). The closing git-coverage.test.ts invariant test (no row left 'assigned', every excluded row has a reason, every GIT_2_53_COMMANDS command has a row) was also inspected and is consistent with the git_objects rows.\",\"evidenceReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-objects.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts\"]},\"limitations\":[],\"advice\":[\"Optional execution: did not re-run the test suite myself; relied on the builder-reported TESTS-b7a68147dcf72034-s8.json record (all titles pass, exit 0) for src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts and git-objects.test.ts, cross-checked against the committed source logic by hand.\",\"Consider adding the SAFE_REV pattern to commit-tree's `parents` field for schema/approval-preview parity with the `tree` field (see LOW finding); not blocking since assertSafeArg already prevents unsafe execution.\"],\"inspectedReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-objects.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/objects.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/gh/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/PLAN-b7a68147dcf72034-s8.json\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\"],\"executedTests\":[{\"file\":\"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"cases\":[\"docs/daemon.md shows the coverage table\",\"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\",\"every covered row's case runs through executeTool and matches its assertion\",\"git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row\",\"multi-operation commands are tracked per subcommand and the operations s8 added are covered\"],\"command\":\"npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"result\":\"pass\",\"executionDetails\":\"Not executed by this reviewer; relaying builder-reported result from the committed task-validation record (TESTS-b7a68147dcf72034-s8.json), cross-checked by hand-tracing each git_objects case against the committed source (exit 0, all titles pass across tasks t2-t9 which all include this file).\",\"evidenceReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\"]},{\"file\":\"src/daemon/tools/builtins/git/__tests__/git-objects.test.ts\",\"cases\":[\"git-objects.test.ts: a failed stdin delivery reports nothing as applied\",\"git-objects.test.ts: destructive inputs are denied with no client before git starts and safe inputs are common\"],\"command\":\"npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-objects.test.ts\",\"result\":\"pass\",\"executionDetails\":\"Not executed by this reviewer; relaying builder-reported result from the committed task-validation record (TESTS-b7a68147dcf72034-s8.json, task t4, exit 0, both titles pass), cross-checked by hand-tracing the test body against objects.ts's `cls` function",
+                "truncated": true
+              },
+              "truncated": true
+            },
+            "resolved": true
+          },
+          {
+            "phase": "assessment",
+            "taskId": "t6",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 2
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{\"taskId\":\"t6\",\"status\":\"changes_requested\",\"summary\":\"git_tree (checkout-index, clean, restore, mv, sparse-checkout, submodule, rerere, merge-file, bisect, replay) is implemented, wired into definitions.ts, documented in docs/daemon.md and covered by a per-op coverage case plus a dedicated classification/version-fallback test. I re-ran both test files fresh against the exact reviewed source (git-tree.test.ts: 3/3 pass; git-coverage.test.ts: 9/9 pass, including the 13.8s full case-runner), confirming the builder-reported results. All three stated acceptance checks hold. However, direct inspection of tree.ts turned up two concrete violations of the Story's own documented invariant that 'an input the schema refuses is refused before any approval request is built' / 'no prompt is shown for an input that cannot be run' (LLD c1, errorPaths): merge-file's current/base/other fields and bisect's 'good' field are declared in each op's refs list (checked at runtime by the dash-disallowing assertSafeArg(v,'ref'), since they are positional git arguments with no '--' terminator ahead of them), yet their JSON-schema FieldSpec uses the permissive path()/field.strs() helpers instead of the dash-disallowing rev() helper. A leading-dash value for any of these fields therefore passes schema validation, reaches the (for merge-file, destructive-class) approval prompt, and is only rejected afterward by the runtime assertSafeArg check inside execute() -- contradicting the documented behavior and leaving these four fields with no actual protection if that single runtime check were ever weakened.</parameter>\\n<parameter name=\\\"findings\\\">[{\\\"severity\\\":\\\"MED\\\",\\\"location\\\":\\\"src/daemon/tools/builtins/git/tree.ts:80-85\\\",\\\"message\\\":\\\"merge-file's current/base/other fields use path() (SAFE_PATH pattern, which permits a leading '-') while the op lists them in refs: ['current','base','other'] -- the category reserved for values that sit before any option terminator and are checked at runtime by assertSafeArg(v,'ref'), which disallows a leading '-'. Because the schema pattern does not match the refs category, a value such as current:'-L' passes JSON-schema validation, reaches the approval-gate preview (merge-file is the destructive class whenever stdout isn't set) and is only rejected afterward inside execute(). This violates the Story's own documented invariant ('An input the schema refuses is refused before any approval request is built', LLD c1) and the LLD errorPaths scenario for a ref/revision starting with '-' ('No prompt is shown for an input that cannot be run').\\\",\\\"rationale\\\":\\\"safe-args.ts's header comment states the schema pattern is the only gate that runs before the approval request is built, and op-table.ts's GitOpSpec doc comment defines refs fields as exactly those needing the dash-disallowing 'ref' check because they are positional with no terminator -- which is true here (argv places current/base/other as bare positional arguments, no '--'). The correct field builder for these three fields is rev() (SAFE_REV pattern), matching how restore's 'source' and replay's 'onto'/'advance'/'range' (also in refs) are built elsewhere in this same file.\\\",\\\"evidenceReferences\\\":[\\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts\\\",\\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts\\\"]},{\\\"severity\\\":\\\"MED\\\",\\\"location\\\":\\\"src/daemon/tools/builtins/git/tree.ts:89-98\\\",\\\"message\\\":\\\"bisect's 'good' field is built with field.strs(), which applies no pattern at all (any non-empty string is accepted), while the op lists 'good' in refs: ['bad','good','rev'] and the argv spreads it as bare positional arguments after 'bad' for git bisect start. A value such as good:['-x'] passes schema validation untouched, reaches the approval step, and is only caught afterward by assertSafeArg(v,'ref') inside execute(), the same invariant violation as the merge-file finding above.\\\",\\\"rationale\\\":\\\"The sibling fields 'bad' and 'rev' in the same op correctly use rev() (SAFE_REV pattern) for exactly this reason; 'good' is the one field of the three refs-listed fields that was built with the plain, unpatterned field.strs() helper, which has no array-with-pattern equivalent in the shared field table (fieldSchema's 'strings' case applies no pattern), so the dash check that protects 'bad' and 'rev' does not protect 'good'.\\\",\\\"evidenceReferences\\\":[\\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts\\\"]}]\",\"testCoverage\":{\"assessment\":\"partial\",\"explanation\":\"Every covered op in GIT_TREE_OPS (checkout-index, clean, restore, mv, sparse-checkout, submodule, rerere, merge-file, bisect, replay) has a coverage case in git-coverage.test.ts that runs it through executeTool in a temporary repository and checks the git-level effect (verified by reading coverage.ts's row list against the RUN case map and by re-running the file fresh: 9/9 pass, 13.8s case-runner included). git-tree.test.ts separately drives the classOf() approval-class function over a DESTRUCTIVE/SAFE table and a stand-in git to prove destructive inputs are denied with no client before git starts and an older git's 'is not a git command' failure carries the recorded table version (re-run fresh: 3/3 pass). All three of t6's stated acceptance checks are demonstrably met. The gap is that no test exercises a leading-dash value for merge-file's current/base/other or bisect's good -- the exact scenario the LLD's own errorPaths list as a required behavior ('An input names an option instead of a value...no prompt is shown for an input that cannot be run') -- so the two schema/refs mismatches reported above went undetected by the existing suite.\",\"evidenceReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-tree.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json\"]},\"limitations\":[],\"advice\":[\"Optional execution: re-ran both target test files fresh against the current checkout (which is byte-identical to the reviewed commit for every t6 file, confirmed via git diff against HEAD) rather than relying solely on the builder-reported TESTS record -- src/daemon/tools/builtins/git/__tests__/git-tree.test.ts (3/3 pass) and src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts (9/9 pass, 13.8s).\",\"Consider adding a 'strs' variant of rev()/an array-pattern option on fieldSchema's 'strings' case so a refs-listed array field (like bisect's good) can get the same dash-disallowing pattern as a refs-listed scalar field, closing the class of bug rather than only the two instances found here.\",\"The submodule 'url' field (for action:'add') is protected by an explicit check() regex rather than refs/assertSafeArg, which is a different but equally effective mechanism -- no change needed there, noted only for completeness since it was inspected alongside the refs-mismatch findings.\"],\"inspectedReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-tree.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tree.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/_repo.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/LLD-b7a68147dcf72034-s8.json\",\"72490f32416d60435495b436ed7ad84ef5aa09dd:src/daemon/to",
+                "truncated": true
+              },
+              "truncated": true
+            },
+            "resolved": true
+          },
+          {
+            "phase": "assessment",
+            "taskId": "t8",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 2
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "testCoverage",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'testCoverage' ({\"missingProperty\":\"testCoverage\"})",
+                  "occurrences": 1
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{\"taskId\":\"t8\",\"status\":\"passed\",\"summary\":\"t8 (extend git_stash/git_worktree/git_remote/git_branch/git_tag with new ops, wire the final docs/coverage table, and settle the inventory/approval/coverage tests) is correct and fully exercised. I read every selected block plus the surrounding source it depends on (extendGitTool, the base five tools' schemas, assertSafeArg, the gh field helpers, and the GIT_2_53_COMMANDS/coverage machinery) and cross-checked the new op definitions by hand against the tests' own ADDED_BY_S8/S8_EXTENDED maps rather than trusting the reported pass results. Every new field name and `op` enum value the five STASH/WORKTREE/REMOTE/BRANCH/TAG_EXTRA_OPS arrays introduce matches exactly what the pinned-schema tests expect added, no reused field (`force`, `push`, `message`, `ref`, `path`) changes type/constraints versus the pre-s8 base schema, extendGitTool delegates every old op to the base's own class/gate/execute unchanged (by construction, not just by test), and the coverage.ts/docs.md table flips every remaining 'assigned' row to 'covered' with a real case or 'excluded' with a reason, leaving none assigned (confirmed row-for-row against the parent commit's prior placeholders). definitions.ts cleanly replaces the five direct base-tool imports with the *Extended ones and the resulting gitToolDefinitions length (49) is correct by manual count.</summary>\\n<parameter name=\\\"findings\\\">[]</parameter>\\n<parameter name=\\\"testCoverage\\\">{\\\"assessment\\\": \\\"verified\\\", \\\"explanation\\\": \\\"I read the full bodies of git-approval.test.ts and git-coverage.test.ts (not just the diff hunks) and confirmed each new op (stash branch/create/store/export/import; worktree lock/unlock/repair; remote show/prune/update/set-head/set-branches/set-url-add/set-url-delete; branch rename/copy/set-upstream-to/unset-upstream/edit-description; tag verify/sign) has a dedicated coverage case that runs it through executeTool and asserts its real git-level effect (symbolic-ref, stash list, branch config, remote URLs, signed tag/cat-file, etc.), that the pinned-schema test's ADDED_BY_S8 input/op lists match the extended.ts field names and op names field-for-field by my own count (not the test's), and that approval-class-mapping.test.ts's S8_EXTENDED/ADDED_SINCE handling and the 'git_remote show' special-case skip are consistent with extendGitTool's actual approval() delegation. The git-coverage 'no row is assigned' test and the docs.md-vs-table equality test close the loop that nothing from the prior 'assigned' placeholders was left uncovered. All of this is evidence-backed by reading the committed sources at the pinned commit, not by rerunning the suite myself.\\\", \\\"evidenceReferences\\\": [\\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\\\", \\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\\\", \\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/approval-class-mapping.test.ts\\\", \\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts\\\", \\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/extended.ts\\\", \\\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts\\\"]}\",\"limitations\":[],\"advice\":[\"Optional execution: I did not rerun the test suite myself; I relied on the builder-reported TESTS-b7a68147dcf72034-s8.json records plus my own line-by-line reading of the test bodies/assertions and source to establish correctness, per the no-rerun instruction for this submission.\",\"Optional improvement (non-blocking): the `key` field on the new `git_tag sign` op and a couple of other newly-added fields rely solely on the runtime `assertSafeArg(v,'ref')` check (via the op's `refs` list) for leading-dash protection rather than a schema-level pattern; this is an accepted, already-supported pattern in the GitOpSpec framework (refs/paths exist for exactly this), not a defect, but a schema pattern would make the approval-preview-time rejection a touch earlier and more self-documenting.\"],\"inspectedReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:docs/daemon.md\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/approval-class-mapping.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/__tests__/typed-git-tools.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/coverage.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/definitions.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/extended.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/safe-args.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/gh/op-table.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/provenance.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/helpers.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/branch.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/remote.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/stash.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/tag.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/worktree.ts\",\"b8536445375fe59720d0d11565e1b1914eebc27a:src/daemon/tools/builtins/git/definitions.ts\",\"b8536445375fe59720d0d11565e1b1914eebc27a:src/daemon/tools/builtins/git/coverage.ts\"],\"executedTests\":[{\"file\":\"src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\",\"cases\":[\"a dash-prefixed path after '--' is accepted and a dash-prefixed ref is rejected\",\"each work-destroying operation is destructive and each read is none\",\"every typebox input schema serialises to the same JSON as the schema it replaced\",\"git-approval.test.ts: the five extended tools give the class and the result they gave before for every old input\",\"git-approval.test.ts: the pinned inputs of the five extended tools are unchanged and the new inputs are listed as added by s8\",\"git_log limit 0 and 501, git_diff maxBytes 100 and git_diff context 51 are rejected, git_show maxBytes 100 is clamped, and the schemas are unchanged\",\"git_push deletes and forced refspecs, branch and tag delete, stash drop and clear, hard reset, worktree remove with force and checkout of a path are destructive and each read is none\"],\"command\":\"npx tsx --test-force-exit src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\",\"result\":\"pass\",\"executionDetails\":\"Not executed by this reviewer; result taken from the builder-reported committed test record (not rerun for this submission, per instructions).\",\"evidenceReferences\":[\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:src/daemon/tools/builtins/git/__tests__/git-approval.test.ts\",\"e79a439cdd6084740569e0bc32a0f9ec8d69b010:.insrc/artifacts/TESTS-b7a68147dcf72034-s8.json\"]},{\"file\":\"src/daemon/tools/builtins/git/__tests__/git-coverage.test.ts\",\"cases\":[\"docs/daemon.md shows the coverage table\",\"every command of the recorded list has exactly one owner, an assigned row is never counted as covered and every registered git tool is in the table\",\"every covered row's case runs through executeTool and matches its assertion\",\"git-coverage.test.ts: no row is assigned, every excluded row has a reason and every command has a row\",\"git-coverage.test.ts: the ls-files coverage case still passes and the git_ls_files input lists maxBytes\",\"git_amend runs its own case and git_diff with path and paths keeps its legacy failure\",\"git_config, git_ls_remote, git_update_ref and git_rm are marked as built by s7 and are in gitToolDefinitions\",\"git_diff_tree and git_merge_tree are marked as built by s9 and are in gitToolDefinitions\",\"multi-operation commands are tracked per subcommand and",
+                "truncated": true
+              },
+              "truncated": true
+            },
+            "resolved": true
+          }
+        ],
+        "crPath": "/home/subho/work/dev/insors/insrc/docs/epics/one-tool-registry-git-gh-jira-E20261023b7a68147/S008/CR.md"
+      },
+      "progress": {
+        "schemaVersion": 1,
+        "executionId": "24d5b295-be39-4fb9-a31f-9941e3f03e19",
+        "sequence": 19451,
+        "phase": "complete",
+        "task": {
+          "id": "t9",
+          "name": "Close out: exclusions, registration, inventory, docs and the full sweep",
+          "position": 9,
+          "total": 9
+        },
+        "completedTasks": 9,
+        "reviewElapsedMs": 2956027,
+        "taskElapsedMs": 164922,
+        "observedAt": "2026-11-02T14:33:26.261Z",
+        "lastMeaningfulActivityAt": "2026-11-02T14:33:25.896Z",
+        "processState": "unknown",
+        "lastProcessObservedAt": "2026-11-02T14:33:25.896Z",
+        "activeToolCount": 0
+      }
+    }
+  ]
+}

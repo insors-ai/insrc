@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0718e735-1a34-4b59-9771-9bdfbbb903cc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.991Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Project truthful status reconnect and usage diagnostics",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec15d6602de5facd7dd98a80e9ac7a8bcb335b478a488a39443a78a03fb909c3",
+        "at": "2026-10-29T13:20:29.991Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.991Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Project truthful status reconnect and usage diagnostics",
+    "summary": "Implement one sc7 serializer and bounded status/heartbeat projections across transports, using verified recovery and the existing qualified idempotent usage writer/outbox.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "Covered/required/unresolved and latest block/checkpoint differ explicitly from provider liveness; detach is no verdict or automatic retry.",
+      "Observed, estimated, reserved, pending and unavailable usage remain distinct; unknown counters stay null and cumulative snapshots are not double counted.",
+      "Legacy status uses labelled diagnostic units and unavailable/non-resumable states without fabricating an investigation journal; status reads consume no execution allowance."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Status reconnect progress accounting and pending unknown usage are truthful"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

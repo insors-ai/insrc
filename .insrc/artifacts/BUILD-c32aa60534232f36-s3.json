@@ -1,0 +1,178 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "9e371dd2480dfd9791c0d7b6307e12b91bbc1e7d6b39962837872f70acba5f0f",
+        "at": "2026-10-29T07:43:32.555Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-9c2cfbc7-6ed0-41d5-8f45-343459d694b2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T07:05:18.670Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s3",
+    "revision": 7,
+    "updatedAt": "2026-10-29T07:39:51.191Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Completed sc3 domain coordinator with real pinned source-to-ledger-to-stage/append/ACK integration: two blocks per deterministic provider session and accepted-state preservation on cancellation. All31 focused sc1/sc2/sc3, inclusive-budget and read-only loop tests pass; production build passes. Logs in /tmp/plan-directed-review-s3-tests-final.tap and /tmp/plan-directed-review-s3-build.log. Sequence remains accurate; no production activation or legacy interface/MCP changes. One independent code review follows.",
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/continuation-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/continuation-policy.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/continuation-policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/continuation-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/progress.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/progress.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/navigation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/navigation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/continuation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/continuation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/continuation-usage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/continuation-usage.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/continuation-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T07:39:51.191Z"
+      }
+    ],
+    "commit": "efb20f54f"
+  },
+  "citations": []
+}

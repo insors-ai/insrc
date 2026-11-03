@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3d8d2ff6-a055-4550-bdee-e05b99702b9e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.990Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Route controller MCP and daemon commands by pinned engine",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3a151a917117e8653c8644e8c4ba625c80e47a43a7e26ced018c0846180ad3a0",
+        "at": "2026-10-29T13:20:29.990Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.990Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Route controller MCP and daemon commands by pinned engine",
+    "summary": "Register additive production IPC/MCP operations and route explicit new-engine calls before legacy resolution; adapt authenticated controller turns and fresh declared budgets to the same service.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Daemon/controller x source/indexed x planned/planless use the same subject, evidence, progress, recovery and completion service.",
+      "Controller replies cannot supply author identity, forge inspection receipts or reuse cross-engine/schema/generation tokens; budgets are declared estimates, not measured host context.",
+      "Existing legacy/predecessor/design handlers retain valid original frames and states; new-engine errors never fall through to legacy execution or HEAD diff."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Entry parity across daemon controller source and indexed planned and planless runs"
+      },
+      {
+        "level": "integration",
+        "name": "Cross engine schema generation and capability replay are rejected"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "17a6e823bfeb172f27cd3886be3aea058eb9a65b191da118f9cbd73cc5ec79bc",
+        "at": "2026-10-29T13:47:08.828Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "2db6ad8bb15f1823",
+    "storyId": "s1",
+    "createdAt": "2026-10-29T13:47:08.726Z",
+    "updatedAt": "2026-10-29T13:47:08.726Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-10-29T13:38:03.643Z",
+    "epicSlug": "admit-verified-test-evidence-through-investigation",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "8dfd85a9d",
+        "ranAt": "2026-10-29T13:47:08.726Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/investigation/__tests__/navigation-test-evidence.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/investigation/__tests__/navigation-test-evidence.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/investigation/__tests__/navigation-test-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 668,
+            "titles": [
+              {
+                "title": "Verified test navigation admits actual results and only passing evidence satisfies test obligations",
+                "result": "pass"
+              },
+              {
+                "title": "Test navigation rejects mismatched displays foreign provenance and unsupported receipts",
+                "result": "pass"
+              },
+              {
+                "title": "Verified test navigation retains cancellation owner checks and receipt identity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

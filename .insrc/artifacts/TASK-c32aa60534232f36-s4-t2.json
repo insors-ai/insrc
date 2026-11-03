@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1505449b-9261-4e9d-91a5-3796f0869da6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T09:20:00.672Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement private immutable storage and durable journal",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "453cd7827a7a32304d182e77aa19cf6592f276a7b3098cb8816c547a37abfb55",
+        "at": "2026-10-29T09:20:00.672Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T09:20:00.673Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement private immutable storage and durable journal",
+    "summary": "Add recovery-journal.ts under project/.insrc/review-runs/investigation-v1/<runId> with bounded canonical immutable blobs, no-overwrite installation, file/directory sync and framed hash-chained events. Bind all writes to trusted process guard and root-scoped serialized store registry.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "0700 directories/0600 files; traversal, symlink and cross-run reference escape refused.",
+      "Blob durability precedes event references and event fsync precedes successful append acknowledgment; fail injection yields no false success.",
+      "Event ordinal separate from accepted-block sequence; malformed complete frames fail closed; torn final frame handled only under exclusive owner."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Private run paths, canonical immutable values and symlink escape refusal"
+      },
+      {
+        "level": "integration",
+        "name": "Blob-before-event durability and append sync fault matrix"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

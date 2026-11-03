@@ -1,0 +1,558 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793279658875-ejab05",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:19:10.920Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 289811,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "epicSlug": "review-planned-changes-through-agent-investigation",
+    "storyId": "s6",
+    "lldRunId": "wf-1793278587047-ozknr8",
+    "lldEffectiveHash": "7d083bbbc4c1d31eff26d42f2e185718786d8b19b209fd73efa1d59947774d54",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f01dd3aef8ead38c95832f565fc6a0064d55cdf9c51a5d10f66a394a2e305a8",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.495Z"
+      }
+    },
+    "rangeBase": "abd713cd45741384b482ff93273d9af3a4b26d23"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build S6 in 14 ordered tasks: trusted canonical/evidence adapters and recovery composition first, then the scoped bridge, qualified provider adapters, versioned client routing and truthful status. Finish with compatibility, rollout and evaluation evidence. Legacy remains the default; activation requires separate readiness and predecessor approval, and no live comparison or default change is included."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define versioned commands status and disabled engine selection",
+        "summary": "Add the exact sc7 status type, discriminated production command/diagnostic envelopes, errors and capability declarations in proposed src/shared/review-investigation.ts; add default-legacy selection/readiness configuration without enabling starts.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Exact ReviewClientStatusV1 matches HLD; progress/usage diagnostics remain explicitly versioned outer fields.",
+          "Strict commands distinguish engine/version/operation and reject unknown fields/versions before dispatch; no client-supplied reviewer party is authoritative.",
+          "Default behavior remains legacy and a config value alone cannot enable investigation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Strict investigation commands status schema and default legacy selection"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Adapt canonical approved work and exact commit scope",
+        "summary": "Implement the daemon-owned verified WorkInputReader and scope/attestation adapter over existing registry and canonical lifecycle/history; feed sc1/sc2 without deriving scope from HEAD.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Canonical integrity, approved revision and source bindings are checked; a present invalid PLAN cannot be bypassed by planless routing.",
+          "Planned and approved-upstream small/planless builds retain required criteria and all selected changed blocks.",
+          "Mixed/ambiguous attribution refuses or requires explicit verified scope evidence; Story trailers alone are not exclusivity proofs."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Canonical approved planned and upstream scope rejects ambiguous attribution"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Compose pinned evidence test and caller-impact adapters",
+        "summary": "Add trusted bounded source/artifact/test-result reads and optional graph caller lookup tied to exact selected entities and registered dependency closure.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Evidence identities derive from actual pinned reads and verified test records, never reviewer attestations or mutable markdown.",
+          "Source-only exposes no caller query; indexed lookup verifies source/index/entity mapping and retains partial/stale/unknown limitations.",
+          "Empty or partial caller results do not imply no impact; unresolved impact obligations remain required, with no client DB access."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Pinned source artifact test and caller evidence preserve provenance and limitations"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Build repository-owned admission and recovery composition service",
+        "summary": "Add immutable private production descriptor discovery and one daemon service per registered repo, composing existing S1-S5 state, continuation and publication APIs.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Exact repeated requestId reuses one run; conflicting inputs refuse and admission-orphan crashes cannot infer accepted work.",
+          "Descriptor records scope/mode/policy/backend/party identity under restrictive runtime paths without a second acceptance journal or private sc4 format changes.",
+          "Lease claim occurs when execution is admitted; resume/cancel/restart preserve accepted progress, budget and frozen publication semantics; no provider executes until a qualified adapter is injected.",
+          "Production descriptor and scoped bridge runtime material is excluded from explicit packet selection and source/context reads through the shared path guard; no sc4 private namespace or event format is altered."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Idempotent admission descriptor recovery and runtime source exclusions"
+          },
+          {
+            "level": "integration",
+            "name": "Service lease budget and frozen publication composition survive restart"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Expose authenticated scoped evidence and progress bridge",
+        "summary": "Implement the service bridge for read/impact/progress/final-reply calls, binding private capability authority to process epoch/run/subject/attempt/request/generation/role/expiry.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The only reviewer operations reach trusted sc1/sc2 reads or validated sc3/sc4 progress/reply; no general RPC, shell, filesystem, approval or cross-repo capability.",
+          "Several blocks can be durably acknowledged before a final reply in one session; final deltas cannot bypass checkpoints.",
+          "Cross-run/stale/expired/revoked callbacks refuse, exact retries remain idempotent, and cancellation drains authority before reuse."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Scoped bridge accepts multiple block ACKs and rejects stale cross run capabilities"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add native binding and effective-isolation qualification",
+        "summary": "Extend shared provider options additively with the approved trusted investigation binding and common qualification records; preserve the existing no-binding review path.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Qualification checks effective isolated tool/config catalogue, adapter/binary/profile identity, cancellation and scoped progress support rather than trusting a boolean or read-only sandbox.",
+          "Inherited user/project MCP, plugins/hooks, executable repo instructions and broad tools cannot enter a qualified session; OAuth is not copied or replaced.",
+          "Unsupported/unproven adapter versions refuse before a provider call; deterministic fake-CLI evidence is labelled and does not certify an installed binary."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Effective native isolation qualification rejects inherited tools and unproven binaries"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Integrate qualified Claude investigation sessions",
+        "summary": "Implement the Claude-specific isolated invocation adapter behind LLMProvider/CliProvider using the common bridge and qualification boundary.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Qualified invocation exposes only the scoped bridge and supports multiple per-block ACKs in one managed CLI session.",
+          "128K inclusive estimated admission includes actual schema/tool catalogue and reserves; internalRetry:false, 5-minute cap and abort/stall behavior retain existing owner accounting.",
+          "No-binding legacy/design invocation behavior remains unchanged; unqualified installed versions fail closed without broad-tool fallback or direct REST."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Claude scoped session progress budget cancellation and legacy behavior"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Integrate qualified Codex investigation sessions",
+        "summary": "Implement the Codex-specific isolated invocation adapter through the same provider abstraction and bridge with independent effective-configuration qualification.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Codex effective tool/config isolation is verified independently of a read-only sandbox; broad registered MCP/tools and executable startup context are not admitted.",
+          "One scoped session can accept multiple durable blocks; full reply validation, budget, retry and cancellation behavior match the common domain.",
+          "Unsupported installed versions refuse explicitly; existing no-binding Codex/design behavior and CLI OAuth ownership remain unchanged."
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Codex scoped session progress budget cancellation and legacy behavior"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Route controller MCP and daemon commands by pinned engine",
+        "summary": "Register additive production IPC/MCP operations and route explicit new-engine calls before legacy resolution; adapt authenticated controller turns and fresh declared budgets to the same service.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Daemon/controller x source/indexed x planned/planless use the same subject, evidence, progress, recovery and completion service.",
+          "Controller replies cannot supply author identity, forge inspection receipts or reuse cross-engine/schema/generation tokens; budgets are declared estimates, not measured host context.",
+          "Existing legacy/predecessor/design handlers retain valid original frames and states; new-engine errors never fall through to legacy execution or HEAD diff."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Entry parity across daemon controller source and indexed planned and planless runs"
+          },
+          {
+            "level": "integration",
+            "name": "Cross engine schema generation and capability replay are rejected"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Project truthful status reconnect and usage diagnostics",
+        "summary": "Implement one sc7 serializer and bounded status/heartbeat projections across transports, using verified recovery and the existing qualified idempotent usage writer/outbox.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t4",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Covered/required/unresolved and latest block/checkpoint differ explicitly from provider liveness; detach is no verdict or automatic retry.",
+          "Observed, estimated, reserved, pending and unavailable usage remain distinct; unknown counters stay null and cumulative snapshots are not double counted.",
+          "Legacy status uses labelled diagnostic units and unavailable/non-resumable states without fabricating an investigation journal; status reads consume no execution allowance."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Status reconnect progress accounting and pending unknown usage are truthful"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Verify end-to-end recovery cancellation and canonical publication",
+        "summary": "Integrate production start/read/progress/reply/status/resume/cancel through real domain and canonical stores with deterministic provider/controller fixtures.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "Per-block ACKs survive provider/transport/daemon interruption; exact concurrent retries converge and late/revoked replies cannot create a terminal result.",
+          "Pinned source/contracts/BUILD/party changes and edited canonical heads refuse; frozen lost-ACK publication reconciles without rerunning judgments.",
+          "Incomplete/failed execution produces no successful CR while accountable WARN/BLOCK findings and pending usage remain intact."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Crash concurrent resume cancel and frozen publication recover without duplicate execution"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Implement explicit adoption rollback and predecessor reconciliation gate",
+        "summary": "Add readiness policy and schema/guide documentation; prepare the supported tracked predecessor code-only reconciliation for separate explicit approval, without rewriting sibling LLDs.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t9",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "Readiness requires compatible readers/client/daemon, real qualified backend, version-pinned evidence and approved predecessor reconciliation; missing/draft evidence keeps starts disabled.",
+          "Both S005 installation orders and valid pre-S005/legacy/design routes remain compatible; only predecessor code-only chunk/gather/new frames are superseded at adoption.",
+          "Rollback rejects new investigation work, safely pauses/drains current turns and preserves compatible status/export/cancel/frozen publication reconciliation; unsupported older resumes refuse without conversion.",
+          "Preparing the reconciliation never auto-approves it or enables opt-in; record any pending external approval explicitly."
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Legacy S005 pre S005 design and installation order partitions remain compatible"
+          },
+          {
+            "level": "integration",
+            "name": "Opt in readiness and rollback retain status while refusing unsupported resumes"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Add independently adjudicated deterministic quality and baseline evaluation",
+        "summary": "Implement versioned fixture/oracle and recorded-baseline comparison for required defects/coverage plus labelled call/time/repeated-input metrics and readiness evidence hashes.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Fixture oracle provenance is independently adjudicated; baseline and candidate records bind source/policy/schema/adapter/fixture identity and required coverage/defects cannot silently disappear.",
+          "Deterministic/provider-script metrics are labelled and unknown actual tokens/latency stay unavailable; no per-iteration full legacy review or live model run is required.",
+          "Passing deterministic evaluation can support explicit opt-in only alongside all other gates; no default quality/savings claim or default flip without separately authorized live evidence and decision."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Adjudicated fixture baseline preserves required defects coverage and labelled efficiency metrics"
+          },
+          {
+            "level": "unit",
+            "name": "No default quality or savings claim without separately authorized live evidence"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Prove installation rollout matrix and complete focused verification",
+        "summary": "Run the final daemon/controller/source/index/planned/planless/native/legacy installation matrix, actual adapter qualification diagnostics, focused suites and production build; retain required sequence documentation and one final independent code review.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t10",
+          "t11",
+          "t12",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Matrix covers capability mismatch, both installation orders, scope ambiguity, unknown impact/usage, concurrency, crash/reconnect and rollback without legacy/design regressions.",
+          "Installed adapter qualification is reported truthfully; an unsupported binary or pending reconciliation leaves opt-in closed rather than manufacturing readiness.",
+          "Focused affected suites and production build pass without whole-repo/live sweeps; record logs in /tmp, update relevant diagram if integration changes its boundaries, and run exactly one mandatory independent code review before asking BUILD completion approval.",
+          "Final BUILD distinguishes completed implementation from activation readiness, listing any unsupported installed adapter or separately pending reconciliation approval explicitly."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Installed adapter and activation readiness remain explicit across the final matrix"
+          },
+          {
+            "level": "smoke",
+            "name": "Focused production integration domain legacy provider fixtures and production build"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Entry parity across daemon controller source and indexed planned and planless runs",
+        "coveredByTaskIds": [
+          "t9",
+          "t11",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Cross engine schema generation and capability replay are rejected",
+        "coveredByTaskIds": [
+          "t1",
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Legacy S005 pre S005 design and installation order partitions remain compatible",
+        "coveredByTaskIds": [
+          "t9",
+          "t12",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Qualified native bridge permits multiple durable block ACKs and refuses broad tools",
+        "coveredByTaskIds": [
+          "t5",
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Canonical work packet attribution and snapshot evidence adapters reject ambiguous scope",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Status reconnect progress accounting and pending unknown usage are truthful",
+        "coveredByTaskIds": [
+          "t10",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "Crash concurrent resume cancel and frozen publication recover without duplicate execution",
+        "coveredByTaskIds": [
+          "t4",
+          "t11",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Opt in readiness and rollback retain status while refusing unsupported resumes",
+        "coveredByTaskIds": [
+          "t12",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native session isolation budget cancellation and OAuth boundaries remain explicit",
+        "coveredByTaskIds": [
+          "t6",
+          "t7",
+          "t8",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Adjudicated fixture baseline preserves required defects coverage and labelled efficiency metrics",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "No default quality or savings claim without separately authorized live evidence",
+        "coveredByTaskIds": [
+          "t13",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "Focused production integration domain legacy provider fixtures and production build",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails, dataModelChanges and errorPaths: canonical work, scope, evidence, descriptor, recovery and completion composition"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 contractDetails and dataModelChanges: qualified native/controller sessions, versioned transport, status and usage"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s6 migration and testStrategy: predecessor reconciliation, installation order, adoption/rollback, independent-oracle baseline and focused verification"
+    }
+  ]
+}

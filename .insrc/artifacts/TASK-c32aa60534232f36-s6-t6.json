@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7db3ebc3-61aa-40dd-8283-a0a459e1fbb5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.986Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Add native binding and effective-isolation qualification",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0c1eb13060679ee727023ff157ff3875f7a1da0b1484572ec7ec57c4b17224fa",
+        "at": "2026-10-29T13:20:29.986Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.987Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add native binding and effective-isolation qualification",
+    "summary": "Extend shared provider options additively with the approved trusted investigation binding and common qualification records; preserve the existing no-binding review path.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Qualification checks effective isolated tool/config catalogue, adapter/binary/profile identity, cancellation and scoped progress support rather than trusting a boolean or read-only sandbox.",
+      "Inherited user/project MCP, plugins/hooks, executable repo instructions and broad tools cannot enter a qualified session; OAuth is not copied or replaced.",
+      "Unsupported/unproven adapter versions refuse before a provider call; deterministic fake-CLI evidence is labelled and does not certify an installed binary."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Effective native isolation qualification rejects inherited tools and unproven binaries"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0e35fb50-8bbb-43fd-b9e7-b793894bb560",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.985Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Expose authenticated scoped evidence and progress bridge",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "807fbfcff4570313fae714494fc65b990cb77958f2190ba60f598441cf675f41",
+        "at": "2026-10-29T13:20:29.985Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.985Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose authenticated scoped evidence and progress bridge",
+    "summary": "Implement the service bridge for read/impact/progress/final-reply calls, binding private capability authority to process epoch/run/subject/attempt/request/generation/role/expiry.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "The only reviewer operations reach trusted sc1/sc2 reads or validated sc3/sc4 progress/reply; no general RPC, shell, filesystem, approval or cross-repo capability.",
+      "Several blocks can be durably acknowledged before a final reply in one session; final deltas cannot bypass checkpoints.",
+      "Cross-run/stale/expired/revoked callbacks refuse, exact retries remain idempotent, and cancellation drains authority before reuse."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Scoped bridge accepts multiple block ACKs and rejects stale cross run capabilities"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

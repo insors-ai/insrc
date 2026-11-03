@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793270741012-7lapzg",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T10:46:58.123Z",
+    "epicCreatedAt": "2026-10-29T10:46:58.123Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 77110,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "0764c4bcaa076f8e",
+    "epicSlug": "resume-frozen-review-publication-after-interruption",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "10b071a0fdd3c128a25e13852a274071f9b73810b0fdd59644f6729c22ff80ad",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T10:53:17.791Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "0764c4bcaa076f8e",
+      "slug": "EPIC-0764c4bcaa076f8e"
+    }
+  },
+  "body": {
+    "title": "Resume frozen review publication after interruption",
+    "reproduction": "Prepare a deterministic review run, claim its lease, and call RecoveryStore.requestCompletion. Reopen the same run with a replacement daemon process epoch, then claim a recovery lease. The current implementation refuses the claim while state remains completion-requested. Expected: a current exclusive owner can resume the same frozen publication and reconcile a lost canonical-write or receipt acknowledgment without repeating review work or publishing a second revision. No production engine activation is needed to reproduce this prerequisite gap. [c1,c2,c3]",
+    "rootCause": "RecoveryStore.claim delegates to foldRecoveryLifecycle, which rejects completion-requested alongside terminal states. The current recovery view also has no accepted immutable publication-intent binding, so a caller cannot recover the expected canonical revision/candidate identity safely across the two commit boundaries. S5 analyzer discovery located RecoveryStore; direct inspection of the reducer and deterministic reproduction confirm the gap. [c1,c2,c3]",
+    "fixIntent": "Deliver the sc4-owned publication-recovery capability already approved in AMD-c32aa60534232f36-1: preserve exactly one frozen intent/checkpoint, resume publication under the current owner, fence competing or late owners and refuse conflicting intent. Keep canonical coverage assessment and CR publication in S5, keep external rollout in S6, and prove crash/lost-ACK/concurrency behavior with deterministic tests. This record tracks the prerequisite to the approved S5 LLD, not a new review engine. [c3,c4]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/recovery-store.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/investigation/recovery-lifecycle.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/AMD-c32aa60534232f36-1.json"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S005/LLD.md"
+    }
+  ]
+}

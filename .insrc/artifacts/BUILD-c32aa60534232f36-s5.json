@@ -1,0 +1,254 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 8,
+        "contentHash": "e8558c88487cf6b70d47dcca75d66af9acac8ba228512336c907882fb2d1041e",
+        "at": "2026-10-29T12:55:31.495Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 8,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T12:55:37.045Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-03134e84-7489-47e7-8589-df2082767cdd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T12:08:45.010Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s5",
+    "revision": 8,
+    "updatedAt": "2026-10-29T12:41:45.756Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "summary": "Implemented accountable accepted-checkpoint completion, versioned canonical review adaptation, frozen publication intent, guarded canonical CAS, durable terminal receipt recovery and regenerable views. Verified real crash points, concurrent retries, stale pins and source/index verdict parity without activating the new engine.",
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S005/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-assessment.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/code-review-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-artifact.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-artifact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/record-validation.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/runner.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-publication.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-publisher.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-publisher.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-receipt.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/completion-receipt.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/build-freshness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/gate.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-rendering.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/rendering.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-crash-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/completion-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T12:55:28.491Z"
+      }
+    ],
+    "commit": "abd713cd4"
+  },
+  "citations": []
+}

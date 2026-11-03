@@ -1,0 +1,165 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "14071dd2d34c2971a8a89b674f5c46b0ed548a886892abe1931f6835377cccb8",
+        "at": "2026-10-29T06:33:26.266Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T06:33:28.624Z",
+        "override": {
+          "reason": "User explicitly approved BUILD completion with override after presentation. Story2 completed all five task gates,41 focused tests and production build. Sole independent review returned WARN (0 HIGH,1 MED,1 LOW). MED duplicate structural equality wrapper corrected in commit ea6f3ac10 by sharing ledgerEqual; six focused ledger tests and production build passed afterward. LOW is optional private-helper readability advice. No second independent review of the correction was run, per user direction to avoid repeated expensive rounds in the current framework. User accepts this residual risk; retain original review findings. Correction evidence: /tmp/plan-directed-review-s2-review-corrections.json."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-022f157d-a5d5-4672-8983-a6c6328653ea",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-28T13:36:21.476Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s2",
+    "revision": 6,
+    "updatedAt": "2026-10-28T13:56:46.561Z",
+    "authoredBy": "controller",
+    "epicSlug": "review-planned-changes-through-agent-investigation"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      }
+    ],
+    "summary": "Completed sc2 immutable evidence/coverage ledger and real pinned-source integration. 41 focused ledger, Story1, corpus canonical and legacy obligation tests passed; npm run build passed. Logs: /tmp/plan-directed-review-s2-tests.tap and /tmp/plan-directed-review-s2-build.log. Legacy helper interfaces/callers unchanged; one independent code review follows, no automatic repeated rounds.",
+    "testRecord": {
+      "md": "docs/epics/review-planned-changes-through-agent-investigation-E20261028c32aa605/S002/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-identity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/ledger-identity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/ledger-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-catalog.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/ledger-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/ledger-evidence.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/ledger.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/__tests__/ledger-integration.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/investigation/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-10-29T06:33:24.666Z"
+      }
+    ],
+    "commit": "ea6f3ac10"
+  },
+  "citations": []
+}

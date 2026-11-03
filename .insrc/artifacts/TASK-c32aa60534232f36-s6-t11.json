@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-23c7a255-8e74-47d7-b216-4520f2fe83fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-10-29T13:20:29.992Z",
+    "epicCreatedAt": "2026-10-28T05:39:34.110Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c32aa60534232f36",
+    "storyId": "s6",
+    "envelope": {
+      "description": "Verify end-to-end recovery cancellation and canonical publication",
+      "parent": {
+        "entityId": "STORY-c32aa60534232f36-s6",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-c32aa60534232f36-s6",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-c32aa60534232f36-s6-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "25f926501093458a4eb38cd735287591072771bbc29ba6febb3ea07b0c786b12",
+        "at": "2026-10-29T13:20:29.992Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-10-29T13:20:29.993Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify end-to-end recovery cancellation and canonical publication",
+    "summary": "Integrate production start/read/progress/reply/status/resume/cancel through real domain and canonical stores with deterministic provider/controller fixtures.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "Per-block ACKs survive provider/transport/daemon interruption; exact concurrent retries converge and late/revoked replies cannot create a terminal result.",
+      "Pinned source/contracts/BUILD/party changes and edited canonical heads refuse; frozen lost-ACK publication reconciles without rerunning judgments.",
+      "Incomplete/failed execution produces no successful CR while accountable WARN/BLOCK findings and pending usage remain intact."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Crash concurrent resume cancel and frozen publication recover without duplicate execution"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

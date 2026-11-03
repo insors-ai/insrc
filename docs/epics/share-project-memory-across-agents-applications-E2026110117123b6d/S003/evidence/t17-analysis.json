@@ -1,0 +1,200 @@
+{
+  "capturedAt": "2026-11-03T19:23:11.351338+00:00",
+  "scope": "Analysis only; no production or tracked test edits, inventory refreshes, runtime/model configuration changes, completion approvals or new full sweep.",
+  "failureGroups": [
+    {
+      "count": 6,
+      "cause": "Generated .gitignore is selected; fixed-count refusal matcher expects N rather than N+1.",
+      "kind": "fixture expectation",
+      "confidence": "confirmed by reduced compiled-daemon probe and source"
+    },
+    {
+      "count": 1,
+      "cause": "Graph document artifact flag omitted and embedding marker empty; Lance row manually artifact=true. Backfill rewrites artifact=false.",
+      "kind": "inconsistent fixture / timing-dependent",
+      "confidence": "synthetic-vector reproduction"
+    },
+    {
+      "count": 5,
+      "cause": "Bridge files share Gradle build outputs and require serialization; concurrent sweep got XML report write failures.",
+      "kind": "test orchestration",
+      "confidence": "all five pass serially; exact concurrent Gradle internals not traced"
+    },
+    {
+      "count": 1,
+      "cause": "spawn(false) creates hub channel but neither transfers nor closes ports; open MessagePort keeps process alive after assertions.",
+      "kind": "fixture resource leak",
+      "confidence": "original six pass then timeout; cleanup-only diagnostic copy exits"
+    },
+    {
+      "count": 1,
+      "cause": "Path rejection remains, error text changed to sanitized ManagementInputError.",
+      "kind": "outdated assertion",
+      "confidence": "source + repeated failure"
+    },
+    {
+      "count": 1,
+      "cause": "Steering hardening deliberately removed advisory hedge required by test.",
+      "kind": "outdated assertion",
+      "confidence": "commit 84fca26a7 and focused reproduction"
+    },
+    {
+      "count": 3,
+      "cause": "17 newly discovered inventory files, 29 changed reviewed source files, one changed removal-source hash; separate consumer inventory mismatch is daemon/index.ts.",
+      "kind": "reviewed evidence drift",
+      "confidence": "read-only inventory comparison; no security re-review or refresh claimed"
+    },
+    {
+      "count": 1,
+      "cause": "MCP imports CliProvider -> ollama-target -> ollama for OLLAMA_LIST_TIMEOUT_MS, which pulls analyzer modules through provider/tool-loop imports.",
+      "kind": "architecture boundary defect",
+      "confidence": "source + focused graph test"
+    },
+    {
+      "count": 1,
+      "cause": "ripgrep branch omits live-store exclusions present in Node walker; root refusal alone does not protect descendant files.",
+      "kind": "production file-access boundary defect",
+      "confidence": "source + focused failure"
+    },
+    {
+      "count": 1,
+      "cause": "Running fullIndex continues after SIGTERM; shutdown waits for whole queue job, then 20-second hard-exit backstop wins.",
+      "kind": "shutdown/drain behavior defect",
+      "confidence": "captured daemon stderr + source"
+    }
+  ],
+  "totalFailures": 21,
+  "countedRefusal": [
+    "repo-indexing: The repository /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-5LTset is being indexed: the run began at 2026-11-03T19:19:39.723Z, 0 of 201 files done. Retry once the index is ready."
+  ],
+  "semanticProbe": {
+    "beforeArtifactHits": 1,
+    "afterArtifactHits": 0,
+    "backfillFailures": 0,
+    "graphArtifactFlag": "absent",
+    "manuallySeededLanceArtifactFlag": true
+  },
+  "probes": [
+    {
+      "path": "/tmp/insrc-failure-worker-stores.tap",
+      "sha256": "936df1548b1317d32a0c1a7b912761aa81ab60ebc788865f1adf967007b2c02b",
+      "bytes": 8753,
+      "exitCode": 1,
+      "summary": {
+        "tests": 7,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 1,
+        "skipped": 0,
+        "duration_ms": 45013.090791
+      },
+      "note": "Original tracked worker-store scope: six assertions pass; process times out at 45 seconds."
+    },
+    {
+      "path": "/tmp/insrc-worker-stores-close-ports.tap",
+      "sha256": "d198efaa871829970bd78d1f7833fca11d5c8581d910c4357bb55b09434bd520",
+      "bytes": 8446,
+      "exitCode": 0,
+      "summary": {
+        "tests": 6,
+        "pass": 6,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "duration_ms": 4091.435667
+      },
+      "note": "Temporary diagnostic copy closes fixture-owned ports; six pass and natural exit in 4.09 seconds. Initial relocation/import errors were corrected before this final probe."
+    },
+    {
+      "path": "/tmp/insrc-failure-kotlin-serial.tap",
+      "sha256": "fb6d739517812d5a37d84f9ad59554806af6fc514f7ec40ce17e2b09bfcea112",
+      "bytes": 372,
+      "exitCode": 0,
+      "summary": {
+        "tests": 1,
+        "pass": 1,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "duration_ms": 31497.600542
+      },
+      "note": "One original failed Kotlin bridge passes alone."
+    },
+    {
+      "path": "/tmp/insrc-failure-kotlin-remaining-serial.tap",
+      "sha256": "d8507ba78f48546e08582b963b2e70d7ae4f67450e75c16bfbe835e381c9235f",
+      "bytes": 1460,
+      "exitCode": 0,
+      "summary": {
+        "tests": 4,
+        "pass": 4,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "duration_ms": 112159.063792
+      },
+      "note": "Remaining four original failed Kotlin bridge files pass serially."
+    },
+    {
+      "path": "/tmp/insrc-static-failure-retry.tap",
+      "sha256": "07b8ddae212b88caf12cff70aeefb7fe0c0c38b4ea96bd2d43fd2cb03809fc4f",
+      "bytes": 24903,
+      "exitCode": 1,
+      "summary": {
+        "tests": 4,
+        "pass": 1,
+        "fail": 3,
+        "cancelled": 0,
+        "skipped": 0,
+        "duration_ms": 752.710208
+      },
+      "note": "File-filter, MCP import boundary and steering assertion failures reproduce without global sweep."
+    },
+    {
+      "path": "/tmp/insrc-shutdown-diagnostic.tap",
+      "sha256": "40144f7795c91d112efdc29b0101401b706cd758a899a84b7ccf7fb3f6859a36",
+      "bytes": 43921,
+      "exitCode": 1,
+      "summary": {
+        "tests": 1,
+        "pass": 0,
+        "fail": 1,
+        "cancelled": 0,
+        "skipped": 0,
+        "duration_ms": 24309.23875
+      },
+      "note": "Temporary diagnostic copy adds captured stderr to failed SIGTERM assertion; confirms 20-second hard-exit backstop while full indexing continues."
+    },
+    {
+      "path": "/tmp/insrc-diagnostic-index-compiled.log",
+      "sha256": "595c1a7df7ed51a8c03083e38936d26772a9fcf6c05f52e6a400c70152dcc8cf",
+      "bytes": 127792,
+      "exitCode": 0,
+      "summary": {},
+      "note": "Temporary seeded fixture with precreated ignore files, mock embedding endpoint and already-built daemon; valid index refusal says 201 selected for 200 source files; semantic inference succeeds in this run."
+    },
+    {
+      "path": "/tmp/insrc-semantic-fixture-diagnostic.log",
+      "sha256": "ea4ca5b16f73783de98ccba829e6b3a10f7bb1935ec816f81c851889114b1825",
+      "bytes": 547,
+      "exitCode": 0,
+      "summary": {},
+      "note": "Synthetic-vector isolated store reproduces artifact query dropping from one hit to zero after backfill, without model calls."
+    }
+  ],
+  "attribution": {
+    "S3RootRuntimeChanges": [],
+    "S3RootChanges": [
+      "package-lock.json",
+      "src/indexer/__tests__/project-memory-isolation.test.ts",
+      "src/shared/__tests__/project-memory-platform-evidence.test.ts",
+      "src/shared/__tests__/project-memory-resource-evidence.test.ts"
+    ],
+    "note": "Story-trailer commit set touches no root backend production code. Text search found no root production memory import. Graph returned only three root test importers, with explicitly incomplete coverage. Backend native dependency versions unchanged. No direct S3 production cause found; this is not a claim that every failure predates all concurrent streams."
+  },
+  "remainingUncertainty": [
+    "The source-daemon probe timed out during boot; the compiled probe completed with delayed startup. Exact startup-delay mechanism remains unresolved.",
+    "Only reduced N=200 probe was run for the six N=3000 count failures; original six files were not rerun with corrected expectations.",
+    "Kotlin exact concurrent build/report-cache interaction was not separately instrumented."
+  ]
+}

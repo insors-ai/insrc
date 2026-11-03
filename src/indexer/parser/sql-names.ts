@@ -101,3 +101,19 @@ export function sqlStoredIdentifier(identifier: string): string {
 	if (u.open === '"' && (u.inner !== u.inner.toLowerCase() || /[.\s"`[\]]/.test(u.inner))) return identifier;
 	return u.inner;
 }
+
+/**
+ * Whether a reference can mean a definition: their folded segments agree from
+ * the last one back over the shorter length, and a reference longer than the
+ * definition needs the definition to be qualified. So users meets app.users,
+ * db.app.users meets app.users and the other way round, while audit.users
+ * does not meet a bare users -- a bare definition is not in schema audit.
+ */
+export function sqlNamesMeet(reference: string, definition: string): boolean {
+	const r = sqlFoldedSegments(reference);
+	const d = sqlFoldedSegments(definition);
+	if (r.length > d.length && d.length < 2) return false;
+	const n = Math.min(r.length, d.length);
+	for (let i = 1; i <= n; i++) if (r[r.length - i] !== d[d.length - i]) return false;
+	return true;
+}

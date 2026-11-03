@@ -48,6 +48,7 @@ import {
 	type GraphStore,
 } from './graph/store.js';
 import {
+	encodeEntityByFileKey,
 	encodeEntityKey,
 	encodeOutEdgeKey,
 	encodeInEdgeKey,
@@ -69,6 +70,7 @@ import {
 import { advanceGenerationInTxn, countUnwritableInTxn, movePendingInTxn, type PendingSlot } from './graph/index-state-rows.js';
 import { awaitingReasonOf, BOUNDARY_RELATION_KINDS, pendingClassOf } from './graph/pending-class.js';
 import { putExportNameInTxn } from './export-names.js';
+import { sqlFoldedText, sqlNameKey, sqlNamesMeet } from '../indexer/parser/sql-names.js';
 
 const log = getLogger('db.relations');
 
@@ -633,28 +635,50 @@ export function setSqlReferenceReader(read: ((statement: string) => string[] | u
 }
 
 /**
+ * The meta flag on a SQL reference the store returned to pending by name
+ * (ISSUE-0f3376a0): the next settle re-attempts the row whatever files it
+ * commits, then clears the flag.
+ */
+export const SQL_REPEND_MARKER = 'sqlRepend';
+
+/**
  * A SQL reference is matched by name (Story 9d8b5542), and a table that moves
  * to another file comes back under another id: a reference between SQL
  * entities of one repository returns pending by NAME, so the cross-file pass
  * finds the table wherever it is now -- or classes the name when it is gone.
  * The names are the ones the holder's statement references, read by the SQL
- * reader's own parse, that could have meant the removed target: its full name,
- * or a bare name equal to its last segment (one row each, as the reader writes
- * them). Undefined -- the reference awaits the id, as before -- for any other
- * reference, when the reader is not registered, or when no written name fits.
+ * reader's own parse, that could have meant the target (one row each, as the
+ * reader writes them, each carrying SQL_REPEND_MARKER): a name that meets it
+ * by the SQL name rule, or whose folded text does -- the comparison before
+ * the rule, so a definition stored under a lossy name ("Users" as Users)
+ * still returns its references; the cross-file pass then decides by the rule.
+ * Returning a row is only a trigger to re-attempt it, so the wider match
+ * never makes an edge.
+ * A name a table or view of the holder's own file answers is skipped: the
+ * reader linked it there. Undefined -- the reference awaits the id, as
+ * before -- for any other reference, when the reader is not registered, or
+ * when no written name fits.
  */
 function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined {
 	if (sqlReferenceReader === undefined) return undefined;
 	const holder = decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer);
 	const target = decodeEntityRow(s.entity.get(encodeEntityKey(toU64)) as Buffer);
 	if (holder.language !== 'sql' || target.language !== 'sql' || holder.repoId !== target.repoId) return undefined;
-	const full = target.name.toLowerCase();
-	const last = full.slice(full.lastIndexOf('.') + 1);
+	const local = new Set<string>();
+	for (const u64Buf of s.entityByFile.getValues(encodeEntityByFileKey(holder.repoId, holder.filePath))) {
+		const buf = s.entity.get(encodeEntityKey((u64Buf as Buffer).readBigUInt64BE(0)));
+		if (buf === undefined) continue;
+		const e = decodeEntityRow(buf as Buffer);
+		if (e.language === 'sql' && (e.kind === 'table' || e.kind === 'view')) local.add(sqlNameKey(e.name));
+	}
 	const names = [...new Set(sqlReferenceReader(holder.body) ?? [])]
-		.filter(n => n.toLowerCase() === full || (!n.includes('.') && n.toLowerCase() === last));
+		.filter(n => !local.has(sqlNameKey(n)))
+		// The folded texts meeting is the wider test: it holds whenever the keys meet.
+		.filter(n => sqlNamesMeet(sqlFoldedText(n), sqlFoldedText(target.name)));
 	if (names.length === 0) return undefined;
-	const { awaitsId: _a, class: _c, reason: _r, ...meta } = awaiting.meta;
+	const { awaitsId: _a, class: _c, reason: _r, ...rest } = awaiting.meta;
 	void _a; void _c; void _r;
+	const meta: Record<string, unknown> = { ...rest, [SQL_REPEND_MARKER]: true };
 	const repo = meta['repo'] as string;
 	return names.map(name => ({ ...awaiting, id: makeUnresolvedRelationId(repo, awaiting.fromEntity, 'REFERENCES', name), rawTo: name, meta }));
 }

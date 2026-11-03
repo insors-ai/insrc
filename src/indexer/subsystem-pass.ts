@@ -28,11 +28,11 @@ import type { DbClient } from '../db/client.js';
 import { entityIdsByU64s, entityU64ForId, findEntitiesByFile, getEntitiesByIds, listEntitiesForRepo } from '../db/entities.js';
 import { outNeighbors } from '../db/graph/edges.js';
 import { readIndexState } from '../db/index-state.js';
-import { readSubsystems, restampSubsystemsInTxn, writeSubsystemSummary, writeSubsystems, type SubsystemGroupRow, type SubsystemView } from '../db/subsystems.js';
+import { readSubsystems, restampSubsystemsInTxn, writeSubsystemSummary, writeSubsystemsInTxn, type SubsystemGroupRow, type SubsystemView } from '../db/subsystems.js';
 import { getGraphStore, withWriteTxn } from '../db/graph/store.js';
 import { lookupRepoId } from '../db/repos.js';
 import {
-	clearContributionsInTxn, consumeChangedFilesInTxn, readChangedFilesInTxn, readContributionsInTxn, writeContributionInTxn,
+	clearContributionsInTxn, consumeChangedFilesInTxn, readChangedFilesInTxn, readContributionsInTxn, readResetCounterInTxn, writeContributionInTxn,
 	type FileContributionRow,
 } from '../db/subsystem-changes.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
@@ -62,7 +62,8 @@ export type SubsystemPassMode = 'full' | 'incremental' | 'unchanged';
 
 export interface SubsystemPassResult {
 	readonly ran:              boolean;
-	readonly reason?:          'graph-incomplete' | 'up-to-date' | undefined;
+	/** 'superseded': a whole-repository delete (a full index) ran while the pass computed; it published nothing. */
+	readonly reason?:          'graph-incomplete' | 'up-to-date' | 'superseded' | undefined;
 	readonly generation:       number;
 	readonly subsystems:       number;
 	readonly summariesWritten: number;
@@ -88,6 +89,10 @@ export interface SubsystemPassDeps {
 	readonly isCodeIdle?:      (() => boolean) | undefined;
 	/** The daemon is stopping: no further model call. */
 	readonly shouldStop?:      (() => boolean) | undefined;
+	/** Test seam: awaited after the pass has read and computed, just before it publishes. */
+	readonly beforePublish?:   (() => Promise<void>) | undefined;
+	/** Test seam: called inside the publication transaction after its writes (a throw aborts it). */
+	readonly inPublish?:       (() => void) | undefined;
 }
 
 const SUMMARY_SCHEMA = {
@@ -265,6 +270,8 @@ export async function runSubsystemPass(opts: { readonly db: DbClient; readonly r
 	const store = await getGraphStore();
 	const rel = (file: string) => file.startsWith(repoPath + '/') ? file.slice(repoPath.length + 1) : file;
 
+	// Read before anything else: a whole-repository delete after this point makes the pass's work stale.
+	const resetAtStart = readResetCounterInTxn(store, repoId);
 	const record = readChangedFilesInTxn(store, repoId);
 	const stored = await readSubsystems(repoPath);
 	const storedRows = readContributionsInTxn(store, repoId);
@@ -306,13 +313,25 @@ export async function runSubsystemPass(opts: { readonly db: DbClient; readonly r
 	for (const [file, row] of computed) { if (row === undefined) rows.delete(file); else rows.set(file, row); }
 	const groups = changed ? regroup(rows) : undefined;
 
-	await withWriteTxn(s => {
+	// One transaction publishes everything, or nothing: the contribution rows, the groups (or their restamp)
+	// and the consumption of the record entries read (each only while it holds the stamp read). It first
+	// re-reads the reset counter: a full index's whole-repository delete since the pass began means its work
+	// is stale, so it publishes nothing and the next pass is full (the delete dropped the rows).
+	await opts.beforePublish?.();
+	const published = await withWriteTxn(s => {
+		if (readResetCounterInTxn(s, repoId) !== resetAtStart) return false;
 		if (full) clearContributionsInTxn(s, repoId);
 		for (const [file, row] of computed) writeContributionInTxn(s, repoId, file, row);
 		consumeChangedFilesInTxn(s, repoId, record);
 		if (groups === undefined) restampSubsystemsInTxn(s, repoId, generation);
+		else writeSubsystemsInTxn(s, repoId, generation, groups);
+		opts.inPublish?.();
+		return true;
 	});
-	if (groups !== undefined) await writeSubsystems(repoPath, generation, groups);
+	if (!published) {
+		log.info({ repo: repoPath, generation, mode }, 'subsystem pass: a full index ran meanwhile; nothing published');
+		return { ran: false, reason: 'superseded', generation, ...none, mode, filesRead: computed.size, elapsedMs: Date.now() - startedAt };
+	}
 	fullPassDone.add(repoPath);
 	const elapsedMs = Date.now() - startedAt;
 	const subsystems = groups?.length ?? stored.subsystems.length;

@@ -114,7 +114,7 @@ export class DesignReviewCoordinator {
   const work=job.serial.catch(()=>{}).then(async()=>{
    if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;}
    const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);attempt.progress=job.tracker.snapshot();
-   try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
+   try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){if(error instanceof DesignReviewError)throw error;throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
   });job.serial=work;return work;
  }

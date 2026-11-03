@@ -253,6 +253,26 @@ test('S001 t4: failed summaries re-queue on the bounded back-off at the queue ow
 	assert.equal(starts.length, 13);
 	await clock.advance(1);
 	await until('its retry', () => starts.length === 14);
+	// A pass that grouped nothing (incomplete graph, or superseded) is neither a failure nor clean: a pending
+	// retry is re-armed at its delay and the count is kept, so the next failure doubles it.
+	const own = new FakeClock();
+	const queued: string[] = [];
+	const scheduler = new SubsystemScheduler({ graphComplete: async () => true, enqueue: r => queued.push(r), isStopping: () => false, clock: own });
+	await scheduler.request('/r');
+	scheduler.started('/r');
+	scheduler.finished('/r', { summariesFailed: 1, stopped: false, startedAt: own.now() });   // failure 1: 60 s
+	await own.advance(60_000);
+	scheduler.started('/r');
+	scheduler.finished('/r', { summariesFailed: 0, stopped: false, startedAt: own.now(), grouped: false });
+	assert.equal(own.armed, 1, 'the retry is re-armed, not reset');
+	await own.advance(60_000);
+	assert.equal(queued.length, 3, 'and it queues the pass at its delay');
+	scheduler.started('/r');
+	scheduler.finished('/r', { summariesFailed: 1, stopped: false, startedAt: own.now() });   // failure 2: 120 s
+	await own.advance(119_999);
+	assert.equal(queued.length, 3, 'the count was kept: 120 s');
+	await own.advance(1);
+	assert.equal(queued.length, 4);
 });
 
 test('S001 t4: after an outage a retry writes the summaries, one call at a time after code work', async () => {

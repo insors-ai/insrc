@@ -670,7 +670,10 @@ export class IndexerService {
       isCodeIdle:      () => this.queue.isIndexIdle,
       shouldStop:      () => this.queue.isStopping,
     });
-    return { summariesFailed: r.summariesFailed, stopped: r.stopped, startedAt: r.startedAt };
+    return {
+      summariesFailed: r.summariesFailed, stopped: r.stopped, startedAt: r.startedAt,
+      ...((r.reason === 'graph-incomplete' || r.reason === 'superseded') && { grouped: false }),
+    };
   }
 
   /** The summaries' model: undefined is the cheap tier (a seam: the stub summary worker runs none). */

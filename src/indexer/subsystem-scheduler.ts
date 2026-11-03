@@ -36,6 +36,8 @@ export interface SubsystemsOutcome {
 	readonly summariesFailed: number;
 	readonly stopped:         boolean;
 	readonly startedAt:       number;
+	/** false: the pass grouped nothing (the graph was incomplete, or a full index superseded it); absent means true. */
+	readonly grouped?:        boolean | undefined;
 }
 
 /** The narrow facts the scheduler needs from its owner. */
@@ -141,6 +143,16 @@ export class SubsystemScheduler {
 		const st = this.state(repoPath);
 		st.inFlight = false;
 		st.lastStart = outcome?.startedAt ?? this.now();
+		// A pass that grouped nothing attempted no summary: it is neither a failure nor a clean pass. A retry it
+		// stood for is re-armed at its current delay (the graph may become complete without a settle).
+		if (outcome?.grouped === false) {
+			if (st.failures > 0 && st.retry === undefined && !this.disposed) {
+				const delay = Math.min(SUBSYSTEM_RETRY_BASE_MS * 2 ** (st.failures - 1), SUBSYSTEM_RETRY_CAP_MS);
+				st.retry = this.clock.setTimeout(() => { st.retry = undefined; void this.retryFired(repoPath, delay); }, delay);
+			}
+			if (st.requested) { st.requested = false; void this.request(repoPath); }
+			return;
+		}
 		const failed = outcome === undefined || (outcome.summariesFailed > 0 && !outcome.stopped);
 		const clean = outcome !== undefined && outcome.summariesFailed === 0 && !outcome.stopped;
 		if (failed) {
@@ -180,6 +192,6 @@ export function asSubsystemsOutcome(value: unknown): SubsystemsOutcome | undefin
 	if (typeof value !== 'object' || value === null) return undefined;
 	const v = value as Record<string, unknown>;
 	return typeof v['summariesFailed'] === 'number' && typeof v['stopped'] === 'boolean' && typeof v['startedAt'] === 'number'
-		? { summariesFailed: v['summariesFailed'], stopped: v['stopped'], startedAt: v['startedAt'] }
+		? { summariesFailed: v['summariesFailed'], stopped: v['stopped'], startedAt: v['startedAt'], ...(v['grouped'] === false && { grouped: false }) }
 		: undefined;
 }

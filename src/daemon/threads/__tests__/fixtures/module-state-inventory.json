@@ -850,6 +850,10 @@
 		"class": "per-thread",
 		"reason": "This thread's store guard over its own store handles; each thread guards the handles it opened."
 	},
+	"src/db/subsystem-changes.ts#GROUPING_KIND_BYTES": {
+		"class": "per-thread",
+		"reason": "An immutable Set of the relation-kind bytes the subsystem pass groups by, built once at load from constants; every thread builds the same set and never mutates it, so a per-thread copy is correct."
+	},
 	"src/docgen/extract/narrative-generator.ts#cachedProvider": {
 		"class": "per-thread",
 		"reason": "This thread's lazily built LLM provider for narratives; providers hold no shared state, so each thread may build its own."

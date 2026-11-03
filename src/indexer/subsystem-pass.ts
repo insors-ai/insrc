@@ -362,7 +362,13 @@ async function summarise(
 	const prompt = loadPrompt();
 	const rel = (file: string) => file.startsWith(repoPath + '/') ? file.slice(repoPath.length + 1) : file;
 	const exportsOf = new Map<string, string[]>();
-	for (const e of known ?? await listEntitiesForRepo(db, repoPath)) {
+	// The exported names of the pending subsystems' files only: a retry reads what it summarises, not the repository.
+	const entitiesOf = async (): Promise<Entity[]> => {
+		const out: Entity[] = [];
+		for (const file of new Set(pending.flatMap(sub => sub.files))) out.push(...await findEntitiesByFile(db, `${repoPath}/${file}`));
+		return out;
+	};
+	for (const e of known ?? await entitiesOf()) {
 		if (e.isExported !== true || !CODE_KINDS.has(e.kind)) continue;
 		const list = exportsOf.get(rel(e.file));
 		if (list === undefined) exportsOf.set(rel(e.file), [e.name]); else list.push(e.name);

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T14:57:31.085Z",
+    "updatedAt": "2026-11-03T15:57:42.576Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1037,6 +1037,166 @@
               },
               {
                 "title": "store-barriers-protection-overflow-is-explicit-before-partial-matching",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "c53f2db0e",
+        "ranAt": "2026-11-03T15:57:42.576Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-scope-epoch-predicate-escaping",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-null-vectors-version-pinned-reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-reader-expiry-delete-race",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-time-boundaries-expire-sources-without-a-generation-change",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-future-validity-is-published-as-a-cache-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-profile-query-text-float32-and-cold-current-projection-agree",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10896,
+            "titles": [
+              {
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-time-boundaries-expire-sources-without-a-generation-change",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-future-validity-is-published-as-a-cache-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-profile-query-text-float32-and-cold-current-projection-agree",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
                 "result": "pass"
               }
             ],

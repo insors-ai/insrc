@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 71 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -299,3 +299,46 @@ Run at 2026-11-03T14:57:31.085Z on commit `ef702f35b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-barriers.test.ts` | 0 | 7 | 8.6 s |  |
+
+## t9
+
+Run at 2026-11-03T15:57:42.576Z on commit `c53f2db0e`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-scope-epoch-predicate-escaping**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-binding-change-during-projection-is-rechecked-before-return | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-null-vectors-version-pinned-reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-reader-expiry-delete-race**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-binding-change-during-projection-is-rechecked-before-return | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-time-boundaries-expire-sources-without-a-generation-change | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-future-validity-is-published-as-a-cache-boundary | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-result-reference-and-byte-overflow-return-no-truncated-projection | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-embedding-profile-reopen-plan-query-compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-profile-query-text-float32-and-cold-current-projection-agree | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 11 | 10.9 s |  |

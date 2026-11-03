@@ -1,0 +1,209 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t9",
+    "passed": false,
+    "checks": [
+      {
+        "check": "A concurrent forget, binding change, generation change or expiry prevents stale content from returning.",
+        "satisfied": false,
+        "evidence": "reads.ts:145–148 validates freshness, but its finally block then awaits reader release at line 154. NativePinnedReader.close() awaits beforeClose (native-reads.ts:90), wired to the asynchronous read-close hook. While cleanup waits, a forget, binding change or expiry can occur; cleanup then completes and the previously validated projection returns without revalidation. The passing race tests pause at read-before-final and do not exercise this later window."
+      },
+      {
+        "check": "Lease/dependency/result limits fail explicitly without truncation, and no native handles escape the private facade.",
+        "satisfied": true,
+        "evidence": "ReadLeases enforces 16 leases with BACKPRESSURE and rejects result, dependency and byte overflow with CONTEXT_OVERFLOW. Native queries request limit+1 to detect overflow. Snapshots contain frozen scalar metadata registered by identity; native tables remain private. Test assertions cover capacity, overflow, forged/cross-instance leases and scalar-only projections. All four required named test groups have relevant assertions in store-reads.test.ts; the daemon reports all 11 cases passing."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The t9 changes stay within the storage snapshot surface, but asynchronous cleanup after final validation leaves a stale-return window.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd packages/project-memory && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 8705,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd packages/project-memory && npx tsc --noEmit): clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-DyQ2TG/report.tap packages/project-memory/src/__tests__/store-reads.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 10896,
+        "outputTail": "TAP version 13\n# Subtest: store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle\nok 1 - store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle\n  ---\n  duration_ms: 1285.3375\n  type: 'test'\n  ...\n# Subtest: store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated\nok 2 - store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated\n  ---\n  duration_ms: 1090.495291\n  type: 'test'\n  ...\n# Subtest: store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content\nok 3 - store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content\n  ---\n  duration_ms: 1106.1555\n  type: 'test'\n  ...\n# Subtest: store-reads-binding-change-during-projection-is-rechecked-before-return\nok 4 - store-reads-binding-change-during-projection-is-rechecked-before-return\n  ---\n  duration_ms: 744.85425\n  type: 'test'\n  ...\n# Subtest: store-reads-time-boundaries-expire-sources-without-a-generation-change\nok 5 - store-reads-time-boundaries-expire-sources-without-a-generation-change\n  ---\n  duration_ms: 962.402667\n  type: 'test'\n  ...\n# Subtest: store-reads-future-validity-is-published-as-a-cache-boundary\nok 6 - store-reads-future-validity-is-published-as-a-cache-boundary\n  ---\n  duration_ms: 1070.746292\n  type: 'test'\n  ...\n# Subtest: store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline\nok 7 - store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline\n  ---\n  duration_ms: 1315.803792\n  type: 'test'\n  ...\n# Subtest: store-reads-profile-query-text-float32-and-cold-current-projection-agree\nok 8 - store-reads-profile-query-text-float32-and-cold-current-projection-agree\n  ---\n  duration_ms: 795.913417\n  type: 'test'\n  ...\n# Subtest: store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases\nok 9 - store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases\n  ---\n  duration_ms: 1004.437584\n  type: 'test'\n  ...\n# Subtest: store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection\nok 10 - store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection\n  ---\n  duration_ms: 1058.484583\n  type: 'test'\n  ...\n# Subtest: store-reads-result-reference-and-byte-overflow-return-no-truncated-projection\nok 11 - store-reads-result-reference-and-byte-overflow-return-no-truncated-projection\n  ---\n  duration_ms: 11.333334\n  type: 'test'\n  ...\n1..11\n# tests 11\n# suites 0\n# pass 11\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 10449.176459\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-DyQ2TG/report.tap packages/project-memory/src/__tests__/store-reads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10896,
+            "titles": [
+              {
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-time-boundaries-expire-sources-without-a-generation-change",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-future-validity-is-published-as-a-cache-boundary",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-profile-query-text-float32-and-cold-current-projection-agree",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-reads.test.ts.1793721462573.52352.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "store-scope-epoch-predicate-escaping",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-null-vectors-version-pinned-reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-reader-expiry-delete-race",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-time-boundaries-expire-sources-without-a-generation-change",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-future-validity-is-published-as-a-cache-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-profile-query-text-float32-and-cold-current-projection-agree",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/TESTS.md"
+    }
+  },
+  "passed": false
+}

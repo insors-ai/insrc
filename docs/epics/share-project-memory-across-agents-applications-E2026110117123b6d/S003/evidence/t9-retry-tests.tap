@@ -1,0 +1,82 @@
+TAP version 13
+# Subtest: store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle
+ok 1 - store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle
+  ---
+  duration_ms: 1524.268375
+  type: 'test'
+  ...
+# Subtest: store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated
+ok 2 - store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated
+  ---
+  duration_ms: 639.360083
+  type: 'test'
+  ...
+# Subtest: store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content
+ok 3 - store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content
+  ---
+  duration_ms: 559.747917
+  type: 'test'
+  ...
+# Subtest: store-reads-binding-change-during-projection-is-rechecked-before-return
+ok 4 - store-reads-binding-change-during-projection-is-rechecked-before-return
+  ---
+  duration_ms: 192.706459
+  type: 'test'
+  ...
+# Subtest: store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content
+ok 5 - store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content
+  ---
+  duration_ms: 755.522417
+  type: 'test'
+  ...
+# Subtest: store-reads-time-boundaries-expire-sources-without-a-generation-change
+ok 6 - store-reads-time-boundaries-expire-sources-without-a-generation-change
+  ---
+  duration_ms: 262.200708
+  type: 'test'
+  ...
+# Subtest: store-reads-future-validity-is-published-as-a-cache-boundary
+ok 7 - store-reads-future-validity-is-published-as-a-cache-boundary
+  ---
+  duration_ms: 190.467375
+  type: 'test'
+  ...
+# Subtest: store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline
+ok 8 - store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline
+  ---
+  duration_ms: 437.649584
+  type: 'test'
+  ...
+# Subtest: store-reads-profile-query-text-float32-and-cold-current-projection-agree
+ok 9 - store-reads-profile-query-text-float32-and-cold-current-projection-agree
+  ---
+  duration_ms: 190.630083
+  type: 'test'
+  ...
+# Subtest: store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases
+ok 10 - store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases
+  ---
+  duration_ms: 370.175542
+  type: 'test'
+  ...
+# Subtest: store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection
+ok 11 - store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection
+  ---
+  duration_ms: 431.85425
+  type: 'test'
+  ...
+# Subtest: store-reads-result-reference-and-byte-overflow-return-no-truncated-projection
+ok 12 - store-reads-result-reference-and-byte-overflow-return-no-truncated-projection
+  ---
+  duration_ms: 2.54275
+  type: 'test'
+  ...
+1..12
+# tests 12
+# suites 0
+# pass 12
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5913.46775

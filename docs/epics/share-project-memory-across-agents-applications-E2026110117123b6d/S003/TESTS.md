@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 85 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -302,7 +302,7 @@ Run at 2026-11-03T14:57:31.085Z on commit `ef702f35b`. Tests check: **passed**. 
 
 ## t9
 
-Run at 2026-11-03T15:57:42.576Z on commit `c53f2db0e`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T16:09:45.971Z on commit `6a9165318`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: store-scope-epoch-predicate-escaping**
 
@@ -329,6 +329,7 @@ Run at 2026-11-03T15:57:42.576Z on commit `c53f2db0e`. Tests check: **passed**. 
 | pass | store-reads-future-validity-is-published-as-a-cache-boundary | `packages/project-memory/src/__tests__/store-reads.test.ts` |
 | pass | store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline | `packages/project-memory/src/__tests__/store-reads.test.ts` |
 | pass | store-reads-result-reference-and-byte-overflow-return-no-truncated-projection | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
 
 **integration: store-embedding-profile-reopen-plan-query-compatibility**
 
@@ -341,4 +342,4 @@ Run at 2026-11-03T15:57:42.576Z on commit `c53f2db0e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 11 | 10.9 s |  |
+| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 12 | 5.1 s |  |

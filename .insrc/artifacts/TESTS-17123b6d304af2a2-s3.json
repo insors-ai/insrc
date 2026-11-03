@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T15:57:42.576Z",
+    "updatedAt": "2026-11-03T16:09:45.971Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1046,8 +1046,8 @@
       },
       {
         "taskId": "t9",
-        "commit": "c53f2db0e",
-        "ranAt": "2026-11-03T15:57:42.576Z",
+        "commit": "6a9165318",
+        "ranAt": "2026-11-03T16:09:45.971Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1125,6 +1125,11 @@
                 "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
                 "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
                 "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content",
+                "result": "pass"
               }
             ],
             "files": []
@@ -1153,7 +1158,7 @@
             "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 10896,
+            "durationMs": 5127,
             "titles": [
               {
                 "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
@@ -1169,6 +1174,10 @@
               },
               {
                 "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content",
                 "result": "pass"
               },
               {

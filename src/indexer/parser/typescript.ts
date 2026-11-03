@@ -825,7 +825,7 @@ function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
   for (const c of classNode.namedChildren) stack.push(c);
   while (stack.length > 0) {
     const n = stack.pop()!;
-    if (n.type === 'class_declaration' || n.type === 'class') continue;  // nested class: different scope
+    if (CLASS_NODE_TYPES.has(n.type)) continue;  // nested class: different scope
     if (n.type === 'required_parameter' || n.type === 'optional_parameter'
         || n.type === 'public_field_definition' || n.type === 'property_signature') {
       const typeNode = n.childForFieldName('type');
@@ -837,6 +837,23 @@ function collectClassHttpFields(classNode: SyntaxNode): Set<string> {
     for (const c of n.namedChildren) stack.push(c);
   }
   return set;
+}
+
+/** Class nodes: each has its own fields, so a nested one is a boundary. */
+const CLASS_NODE_TYPES = new Set(['class_declaration', 'abstract_class_declaration', 'class']);
+
+/** Whether `this` at `node` is a class instance (ISSUE-1ad687e6): the nearest
+ *  enclosing non-arrow function is a class method (or there is none before the
+ *  class body, as in a field initialiser). In a plain function or an object
+ *  literal's method `this` is something else. */
+function thisIsClassInstance(node: SyntaxNode): boolean {
+  for (let a = node.parent; a !== null; a = a.parent) {
+    if (a.type === 'class_body') return true;
+    if (a.type === 'method_definition') return a.parent?.type === 'class_body';
+    if (a.type === 'function_declaration' || a.type === 'function_expression'
+        || a.type === 'generator_function' || a.type === 'generator_function_declaration') return false;
+  }
+  return false;
 }
 
 /** ISSUE-1ad687e6: the `this.<field>` names of the class being walked that
@@ -900,7 +917,7 @@ function collectClassUserFields(classNode: SyntaxNode): Set<string> {
   const stack: SyntaxNode[] = [...(classNode.childForFieldName('body')?.namedChildren ?? [])];
   while (stack.length > 0) {
     const n = stack.pop()!;
-    if (n.type === 'class_declaration' || n.type === 'class') continue;   // nested class: its own fields
+    if (CLASS_NODE_TYPES.has(n.type)) continue;   // nested class: its own fields
     if (n.type === 'assignment_expression') {
       const left = n.childForFieldName('left');
       if (left?.type === 'member_expression' && left.childForFieldName('object')?.type === 'this'
@@ -1168,7 +1185,7 @@ function walkForCalls(
   if (SCOPE_NODE_TYPES.has(node.type)) {
     axiosScopes.push(collectScopeFrame(node));
     pushedScope = true;
-  } else if (node.type === 'class_declaration' || node.type === 'class') {
+  } else if (CLASS_NODE_TYPES.has(node.type)) {
     prevClassHttpFields = currentClassHttpFields;
     currentClassHttpFields = collectClassHttpFields(node);
     prevClassUserFields = currentClassUserFields;
@@ -1268,9 +1285,9 @@ function isUserReceiver(obj: SyntaxNode | null, scopes: AxiosScope[]): boolean {
   if (obj.type === 'type_assertion') {                                             // <Repo>x
     return typeProvesUser(obj.namedChildren[0]?.namedChildren[0] ?? null) || isUserReceiver(obj.namedChildren[1] ?? null, scopes);
   }
-  if (obj.type === 'this' || obj.type === 'super') return true;
+  if (obj.type === 'this' || obj.type === 'super') return thisIsClassInstance(obj);
   if (obj.type === 'identifier') return isProvenUser(obj.text, scopes);
-  if (obj.type === 'member_expression' && obj.childForFieldName('object')?.type === 'this') {
+  if (obj.type === 'member_expression' && obj.childForFieldName('object')?.type === 'this' && thisIsClassInstance(obj)) {
     return currentClassUserFields.has(`this.${obj.childForFieldName('property')?.text ?? ''}`);
   }
   return false;

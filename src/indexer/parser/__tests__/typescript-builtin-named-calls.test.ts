@@ -246,10 +246,28 @@ export class A { private store = new Store(); run(): void { this.store.find(); }
 export class B { private store; go(): void { this.store.find(); } }
 export class A2 { private store = new Store(); }
 export function loose(this: any): void { this.store.find(); }
+export class Outer {
+	private store;
+	go3(): void {
+		abstract class Inner { m(): void { this.store = new Store(); } }
+		this.store.find();
+	}
+}
+export class WithClosures {
+	private store = new Store();
+	handler = () => this.store.find();
+	go4(): void {
+		[1].forEach(() => this.store.push(1));
+		[1].forEach(function (this: any) { this.store.map(); });
+		const o = { m() { this.find(); } };
+	}
+}
 `);
 	assert.deepEqual(calls(r, 'run'), ['find']);
 	assert.deepEqual(calls(r, 'go'), [], "A's field proof does not apply to B's same-named field");
 	assert.deepEqual(calls(r, 'loose'), [], 'nor to code after the class');
+	assert.deepEqual(calls(r, 'go3'), [], "a nested abstract class's assignment does not prove the outer class's field");
+	assert.deepEqual(calls(r, 'go4'), ['push'], 'this in an arrow is the instance; in a plain function or an object literal method it is not');
 
 	const next = parse(`export class C { private store; go2(): void { this.store.find(); } }\nexport function loose2(this: any): void { this.store.find(); }\n`, '/repo/src/c.ts');
 	assert.deepEqual(calls(next, 'go2'), [], 'nor to a class in the next file');

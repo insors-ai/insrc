@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 118 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -461,3 +461,45 @@ Run at 2026-11-03T16:41:37.530Z on commit `34419fe94`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-admission.test.ts` | 0 | 4 | 2.1 s |  |
 | `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.5 s |  |
+
+## t12
+
+Run at 2026-11-03T16:48:31.185Z on commit `77034ecb4`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-no-lane-inversion-drain-ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-native-uncertain-writes-fence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-timeout-retains-lane-native-work-and-owner-through-close | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+
+**integration: store-owned-work-two-participant-shutdown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-startup-rollback-every-open-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-initialization-rolls-back-each-acquired-native-resource | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-unverified-close-is-explicit-and-owner-stays-held | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.8 s |  |
+| `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.5 s |  |
+| `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 3.1 s |  |

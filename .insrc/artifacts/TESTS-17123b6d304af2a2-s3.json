@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T16:41:37.530Z",
+    "updatedAt": "2026-11-03T16:48:31.185Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1672,6 +1672,217 @@
               },
               {
                 "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "77034ecb4",
+        "ranAt": "2026-11-03T16:48:31.185Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-no-lane-inversion-drain-ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-native-uncertain-writes-fence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-owned-work-two-participant-shutdown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-startup-rollback-every-open-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2799,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2506,
+            "titles": [
+              {
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3077,
+            "titles": [
+              {
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
                 "result": "pass"
               }
             ],

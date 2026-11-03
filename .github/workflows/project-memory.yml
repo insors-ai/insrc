@@ -88,7 +88,7 @@ jobs:
           INSRC_MEMORY_STORE_INTEGRATION_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-integration.json
         run: |
           cd "$RUNNER_TEMP/project-memory"
-          node --import tsx --test --test-concurrency=1 --test-reporter=tap src/__tests__/store-initialization.test.ts src/__tests__/store-guards.test.ts src/__tests__/store-writer.test.ts src/__tests__/store-receipts.test.ts src/__tests__/store-barriers.test.ts src/__tests__/store-reads.test.ts src/__tests__/store-crash.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/store-integration.tap"
+          node --import tsx --test --test-concurrency=1 --test-reporter=tap src/__tests__/store-initialization.test.ts src/__tests__/store-guards.test.ts src/__tests__/store-writer.test.ts src/__tests__/store-receipts.test.ts src/__tests__/store-barriers.test.ts src/__tests__/store-reads.test.ts src/__tests__/store-admission.test.ts src/__tests__/store-lifecycle.test.ts src/__tests__/store-crash.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/store-integration.tap"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1,0 +1,105 @@
+ISSUE-1ad687e6 S001 t3 full sweep, 2026-11-03, at 836dfa40e docs(workflow): record user manual acceptance of memory S2 (includes this Story's commits up to ca8b54c88)
+command: per directory, perl alarm 1800 + npx tsx --test --test-force-exit --test-reporter=tap 'src/<dir>/**/__tests__/*.test.ts' (Node 22.23.2)
+# tests 7337
+# pass 7159
+# fail 29
+
+Per directory:
+  __tests__ rc=0 tests=1 pass=1 fail=0 secs=2
+  agent rc=0 tests=154 pass=140 fail=0 secs=41
+  analyze rc=0 tests=1228 pass=1132 fail=0 secs=39
+  artifact-theme rc=0 tests=23 pass=23 fail=0 secs=1
+  cli rc=0 tests=229 pass=229 fail=0 secs=11
+  config rc=0 tests=157 pass=157 fail=0 secs=4
+  daemon rc=1 tests=1868 pass=1831 fail=18 secs=203
+  db rc=0 tests=658 pass=658 fail=0 secs=74
+  design rc=0 tests=58 pass=58 fail=0 secs=3
+  docgen rc=0 tests=118 pass=115 fail=0 secs=2
+  indexer rc=0 tests=439 pass=439 fail=0 secs=97
+  mcp rc=1 tests=127 pass=126 fail=1 secs=15
+  shared rc=1 tests=126 pass=106 fail=9 secs=184
+  understanding rc=0 tests=17 pass=17 fail=0 secs=3
+  workflow rc=1 tests=2134 pass=2127 fail=1 secs=37
+
+Every failure, classified. None is in or reaches the TypeScript reader (src/indexer/parser/typescript.ts), the only production file this Story changes; src/indexer passed 439/439.
+Compared with the ISSUE-ca9883ca sweep of 2026-11-02 (same per-directory method):
+- src/daemon/__tests__/doc-summary-restore-ipc.test.ts: docSummary.restoreFromBackup restores over IPC and rejects a relative path, a missing file and the live store path
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/doc-summary-restore-ipc.test.ts: /Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/doc-summary-restore-ipc.test.ts
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/repo-completeness.test.ts: repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-filter.test.ts: search.callers across repositories leaves out the entities of a repository under index
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-filter.test.ts: search.query while one repository is being indexed returns rows from the other repositories only
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-filter.test.ts: entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-guard.test.ts: search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents 
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-guard.test.ts: entity.closure / entity.unreachable with a root in a repository under index are refused
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-guard.test.ts: search guard: a registry read that throws skips the guard and the request is answered as today
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/__tests__/search-request-contract.test.ts: search request contract: each guarded search request accepts its existing params and answers
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/driver-log-policy.test.ts: CM-S3-DRIVER-LOGS: owner context is immutable lazy quiet and remains quiet after authority expiry
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/duckdb-file-driver.test.ts: DuckDBFileDriver -- pool path-escape guard
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/removal-production-affinity.test.ts: CM-S4-AFFINITY: production single-thread daemon advertises default features but refuses unregistered roots and private consumers before use
+  -> new under load; src/daemon/db/__tests__/removal-production-affinity.test.ts passes 2/2 alone (timing flake; connection-manager work)
+- src/daemon/db/__tests__/session-release-gate.test.ts: CM-S3-GATE: stale/missing/mixed source+compiled evidence fails closed and release stays disabled
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/session-service-isolation.test.ts: CM-S4-SOURCE: real PostgreSQL and Redis survive both-scope removal failed close retry and same-ID recreation
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/session-source-inventory.test.ts: CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/db/__tests__/session-source-inventory.test.ts: CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts: file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/mcp/__tests__/import-graph.test.ts: import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-compatibility.test.ts: CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-isolation.test.ts: CM-S5-WINDOW: two real project owners, same roots/IDs, overlapping RPC IDs and isolated replies/disposal
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-kotlin-entry.test.ts: CM-S5-ENTRY-KT: native Settings and AnAction actual Project selection, chooser cancel/no-project and global Apply/reset independence
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-kotlin-model.test.ts: CM-S5-STATE-KT: Kotlin sc7 model matches common state/effect transcripts without platform I/O
+  -> the other session's connection-manager Kotlin/CM-S5 suites (same family as the pre-existing CM-S5 failures)
+- src/shared/__tests__/connection-manager-kotlin-mutation.test.ts: CM-S5-OUTCOME-KT: project-memory unknown-operation retention and scope-lane recovery with no repeated create
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-kotlin-owner.test.ts: CM-S5-OWNER-KT: actual PROJECT Disposable owner independent from APP gateway and manager views
+  -> the other session's connection-manager Kotlin/CM-S5 suites (same family as the pre-existing CM-S5 failures)
+- src/shared/__tests__/connection-manager-kotlin-removal.test.ts: CM-S5-REMOVE-KT: S004 snapshots plus actual Kotlin effect paths preserve old-generation cleanup and source-data guarantee
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/__tests__/connection-manager-kotlin-render.test.ts: CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation
+  -> the other session's connection-manager Kotlin/CM-S5 suites (same family as the pre-existing CM-S5 failures)
+- src/shared/__tests__/connection-manager-kotlin-test.test.ts: CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards
+  -> also failing in the 2026-11-02 sweep (pre-existing; classified there)
+- src/shared/locks/__tests__/lock-manager.test.ts: timeoutMs rejects with LockTimeoutError naming the holders and leaves no pending entry or count
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: an already-aborted signal refuses before queuing; an abort while waiting rejects with signal.reason and cleans up
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: requests for one name from one thread are served in arrival order
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: a full pending table gives LockCapacityError(pending) and queues nothing
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: a lock wait keeps its thread alive until it completes
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: a waiting exclusive request's metadata is in query().pending and in the blockedBy of a shared request it refuses
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: query lists held and pending entries with mode, threadId, since and metadata
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: query never returns a slot in its being-written state
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: reclaim releases a thread's holds and pending requests, recounts and wakes waiters
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: reclaim takes over a mutex and resets a name claim left by a foreign threadId
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/shared/locks/__tests__/lock-manager.test.ts: a timer or promise created inside a callback no longer holds the lock once the callback settled: holds() is false and a request of the same 
+  -> new under load; src/shared/locks/__tests__/lock-manager.test.ts passes 22/22 alone (timing flake; another session's locks work)
+- src/workflow/delivery/__tests__/handlers.test.ts: workflow.delivery returns one timestamped snapshot and leaves the store, docs and git untouched
+  -> new under load; src/workflow/delivery/__tests__/handlers.test.ts passes 7/7 alone (timing flake)

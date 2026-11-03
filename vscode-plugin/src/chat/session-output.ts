@@ -242,14 +242,37 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
 
   // E202611031bd72813:S001 t5: generations pinned by registered cursors, archived instead of discarded.
   const pinned = new Map<string, Set<number>>(); // sessionId -> generations
-  const archived = new Map<string, string>(); // `${sessionId}:${generation}` -> path
+  const archived = new Map<string, string>(); // `${sessionFileName(sessionId)}:${generation}` -> path
+
+  // Archives live on disk as `<session>.pinned.<gen>.ndjson`; the in-memory map is rebuilt from the
+  // directory on first use, so a recreated store (window reload) still discovers them (lossless
+  // recovery must not depend on one process's memory).
+  let archivesScanned: Promise<void> | undefined;
+  const scanArchives = (): Promise<void> => {
+    archivesScanned ??= (async () => {
+      let names: string[];
+      try {
+        names = await fs.readdir(deps.root);
+      } catch {
+        return; // no root yet — nothing archived
+      }
+      for (const name of names) {
+        const m = /^(.*)\.pinned\.(\d+)\.ndjson$/.exec(name);
+        if (m === null) continue;
+        const key = `${m[1]}:${Number(m[2])}`;
+        if (!archived.has(key)) archived.set(key, `${deps.root}/${name}`);
+      }
+    })();
+    return archivesScanned;
+  };
 
   /** The file currently holding a cursor's generation. */
   const fileFor = async (cursor: SegmentCursor): Promise<string> => {
+    await scanArchives();
     const p = paths(cursor.sessionId);
     if ((await generationOf(p.current)) === cursor.generation) return p.current;
     if ((await generationOf(p.previous)) === cursor.generation) return p.previous;
-    const arch = archived.get(`${cursor.sessionId}:${cursor.generation}`);
+    const arch = archived.get(`${sessionFileName(cursor.sessionId)}:${cursor.generation}`);
     if (arch !== undefined && (await generationOf(arch)) === cursor.generation) return arch;
     throw new SegmentGone(cursor);
   };
@@ -268,7 +291,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       set.delete(cursor.generation);
       if (set.size === 0) pinned.delete(cursor.sessionId);
       // drop the archived generation when nothing pins it any more
-      const key = `${cursor.sessionId}:${cursor.generation}`;
+      const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
       const arch = archived.get(key);
       if (arch !== undefined && !(pinned.get(cursor.sessionId)?.has(cursor.generation) ?? false)) {
         archived.delete(key);
@@ -277,21 +300,25 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
     async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
       const p = paths(sessionId);
+      const base = sessionFileName(sessionId);
+      await scanArchives();
       const gens: number[] = [];
       const cur = await generationOf(p.current);
       if (cur !== undefined) gens.push(cur);
       const prev = await generationOf(p.previous);
       if (prev !== undefined) gens.push(prev);
       for (const key of archived.keys()) {
-        if (key.startsWith(`${sessionId}:`)) gens.push(Number(key.slice(sessionId.length + 1)));
+        if (key.startsWith(`${base}:`)) gens.push(Number(key.slice(base.length + 1)));
       }
       return gens.length === 0 ? undefined : Math.min(...gens);
     },
     async recoverTurn(sessionId: string, turnId: string): Promise<SegmentCursor | undefined> {
       const p = paths(sessionId);
+      const base = sessionFileName(sessionId);
+      await scanArchives();
       // oldest retained first: archived generations (sorted), then previous, then current
-      const archKeys = [...archived.keys()].filter((k) => k.startsWith(`${sessionId}:`)).sort((a, b) => Number(a.slice(sessionId.length + 1)) - Number(b.slice(sessionId.length + 1)));
-      const candidates: { generation: number; path: string }[] = archKeys.map((k) => ({ generation: Number(k.slice(sessionId.length + 1)), path: archived.get(k)! }));
+      const archKeys = [...archived.keys()].filter((k) => k.startsWith(`${base}:`)).sort((a, b) => Number(a.slice(base.length + 1)) - Number(b.slice(base.length + 1)));
+      const candidates: { generation: number; path: string }[] = archKeys.map((k) => ({ generation: Number(k.slice(base.length + 1)), path: archived.get(k)! }));
       const prev = await generationOf(p.previous);
       if (prev !== undefined) candidates.push({ generation: prev, path: p.previous });
       const cur = await generationOf(p.current);
@@ -318,7 +345,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           if (prevGen !== undefined && pinned.get(sessionId)?.has(prevGen) === true) {
             const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
             await fs.rename(p.previous, arch);
-            archived.set(`${sessionId}:${prevGen}`, arch);
+            archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
           }
           await fs.rename(p.current, p.previous); // replaces the older generation
           generation = undefined;
@@ -396,7 +423,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       await fs.rm(p.previous);
       // E202611031bd72813:S001 t5: archived (pinned) generations of this session go too.
       for (const [key, arch] of archived) {
-        if (key.startsWith(`${sessionId}:`)) {
+        if (key.startsWith(`${sessionFileName(sessionId)}:`)) {
           archived.delete(key);
           await fs.rm(arch).catch(() => {});
         }

@@ -5980,3 +5980,82 @@ test('E202611031bd72813:S001 t5: the observer ignores a checkpoint of ANOTHER tu
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: the observer reconciles an ORPHANED turn (ownerHostPid 0, e.g. left by a detach in this window) — it is not skipped as this host\'s own', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const registered: unknown[] = [];
+  const stubOut = { registerCursor: (c: unknown) => void registered.push(c), unregisterCursor: () => {}, oldestRetainedGeneration: async () => 1, recoverTurn: async () => undefined } as never;
+  const resumeEvs: TurnEvent[] = [{ kind: 'done', turnId: 't9', ok: true, sessionId: 'n9' }];
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(): AsyncIterable<TurnEvent> {
+      for (const ev of resumeEvs) { yield ev; if (ev.kind === 'done') return; }
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    sessionOutput: stubOut,
+    observerTimerMs: 20,
+    hostPid: 7,
+    isAlive: () => false,
+  });
+  host.open();
+  const s = store.create('claude' as never);
+  store.setStatus(s.id, 'working');
+  const cur = store.get(s.id)!;
+  cur.liveTurn = { cursor: { turnId: 't9', generation: 1, offset: 0 }, ownerHostPid: 0, pid: 1234, startedAt: 1 }; // orphaned by a detach
+  store.save(cur);
+  await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the orphaned turn was observed to terminal');
+  assert.equal(store.get(s.id)?.status, 'done');
+  assert.ok(registered.length >= 1, 'the observer ran on the orphaned turn');
+});
+
+test('E202611031bd72813:S001 t5: the observer budget watchdog ends a pass even when the followed process is idle (no events), and later ticks still run (no overlap)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const stubOut = { registerCursor: () => {}, unregisterCursor: () => {}, oldestRetainedGeneration: async () => undefined, recoverTurn: async () => undefined } as never;
+  let resumeCalls = 0;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(_req, o): AsyncIterable<TurnEvent> {
+      resumeCalls += 1;
+      // idle live process: no events, wait until aborted (the watchdog) or forever
+      await new Promise<void>((resolve) => {
+        if (o?.signal?.aborted) return resolve();
+        o?.signal?.addEventListener('abort', () => resolve(), { once: true });
+      });
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    sessionOutput: stubOut,
+    observerTimerMs: 20,
+    observerTickBudgetMs: 40,
+    hostPid: 1,
+    // the owner HOST is dead (the observer engages), but the followed CLI pid is ALIVE:
+    // without the watchdog the pass would wait on it forever
+    isAlive: (pid) => pid !== 999,
+  });
+  host.open();
+  const s = store.create('claude' as never);
+  store.setStatus(s.id, 'working');
+  const cur = store.get(s.id)!;
+  cur.liveTurn = { cursor: { turnId: 't9', generation: 1, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+  store.save(cur);
+  await waitFor(() => resumeCalls >= 3, 5000, 'several passes ran: each idle pass ended at the budget watchdog and did not block the next tick');
+  assert.equal(store.get(s.id)?.status, 'working', 'a budget-aborted pass keeps the last status (not done)');
+  assert.ok(store.get(s.id)?.liveTurn !== undefined, 'the cursor is kept');
+});

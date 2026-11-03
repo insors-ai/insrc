@@ -401,7 +401,12 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         activeProvider = s.provider;
         detachThis = (): void => {
           detached = true;
-          if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
+          if (s.liveTurn !== undefined) {
+            runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
+            // E202611031bd72813:S001 t5: the turn is ORPHANED (owner 0 = no live window), so the
+            // background observer — in this or any other window — reconciles it.
+            s.liveTurn = { ...s.liveTurn, ownerHostPid: 0 };
+          }
           trySave(s); // the cursor and the rows handled so far
           finishIterator(it); // stop reading; the CLI keeps writing to the session file
         };
@@ -474,7 +479,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   function follow(s: ChatSession, sink: FollowSink): void {
     const live = s.liveTurn;
     if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;
-    if (live.ownerHostPid !== deps.hostPid && deps.isAlive(live.ownerHostPid)) return; // another window follows it
+    // ownerHostPid 0 = orphaned by a detach: no window owns it, so any (re)loaded window may follow.
+    if (live.ownerHostPid !== 0 && live.ownerHostPid !== deps.hostPid && deps.isAlive(live.ownerHostPid)) return; // another window follows it
     let adapter;
     try {
       adapter = deps.providers.get(s.provider);

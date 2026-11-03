@@ -595,9 +595,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // remaining output through the provider adapter from the persisted observer checkpoint (own
   // cursor, registered for retention), persisting requests before any completion/death transition.
   let observerTimer: ReturnType<typeof setInterval> | undefined;
+  let observerRunning = false; // passes never overlap: a tick is skipped while one is in flight
+  const runObserverPass = async (): Promise<void> => {
+    if (observerRunning || disposed) return;
+    observerRunning = true;
+    try {
+      await observeDetached();
+    } finally {
+      observerRunning = false;
+    }
+  };
   const startObserverTimer = (): void => {
     if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
-    observerTimer = setInterval(() => { if (!disposed) void observeDetached(); }, deps.observerTimerMs ?? 60_000);
+    observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
   };
   const persistRequest = (s: ChatSession, r: PersistedRequest): void => {
     const existing = s.pendingRequests ?? [];
@@ -626,12 +636,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (live.ownerHostPid === hostPid) continue; // this host's own live/followed turn: the lifecycle owns it
       if (deps.isAlive !== undefined && live.ownerHostPid !== 0 && deps.isAlive(live.ownerHostPid)) continue; // another live window owns it
       const turnId = live.cursor.turnId;
-      // The checkpoint is turn-scoped: a checkpoint of ANOTHER turn is never reused — the observer
-      // re-anchors from the liveTurn cursor instead.
+      // The checkpoint is turn-scoped: a checkpoint of ANOTHER turn is never reused. With no valid
+      // checkpoint the observer re-anchors to the TURN'S START (recoverTurn), never to the advanced
+      // transcript cursor with an empty decoder — a fresh full-turn replay is lossless (request ids
+      // dedupe), a mid-stream start could lose a split marker or reuse a selection id.
       const cpRaw = s.observerCheckpoint;
-      const cp = cpRaw !== undefined && cpRaw.turnId === turnId
-        ? cpRaw
-        : { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
+      let cp = cpRaw !== undefined && cpRaw.turnId === turnId ? cpRaw : undefined;
+      if (cp === undefined) {
+        try {
+          const rc = await out.recoverTurn(s.id, turnId);
+          if (rc !== undefined) cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
+        } catch { /* fall back to the liveTurn cursor */ }
+        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
+      }
       let ad;
       try {
         ad = deps.providers.get(s.provider);
@@ -650,6 +667,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         pins.push(cursor);
         const ctl = new AbortController();
         const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
+        // Budget watchdog: bounds the pass even while the followed process is idle and no events
+        // arrive (tail otherwise waits indefinitely), so a tick always ends and passes never overlap.
+        const watchdog = setTimeout(() => {
+          st.abortedByBudget = true;
+          ctl.abort();
+        }, deps.observerTickBudgetMs ?? 2000);
+        watchdog.unref?.();
         const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf };
         try {
           const events = resume(
@@ -690,6 +714,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           }
         } catch {
           if (!ctl.signal.aborted) st.threw = true; // the cursor stays; recovery below re-anchors
+        } finally {
+          clearTimeout(watchdog);
         }
         return { ...st, cursor };
       };
@@ -2646,7 +2672,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     postActive();
     startActiveTimer();
     startObserverTimer();
-    void observeDetached(); // one immediate pass on attach
+    void runObserverPass(); // one immediate pass on attach
   };
 
   return {

@@ -288,3 +288,26 @@ test('E202611031bd72813:S001 t5: a pinned generation replays its payload lossles
   await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });
+
+test('E202611031bd72813:S001 t5: pinned archives are discovered from disk by a RECREATED store (lossless recovery across reloads)', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5d-')), 'out');
+  const so1 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so1.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so1.endTurn('s1', 't1', { code: 0, signal: null });
+  so1.registerCursor(seg1.cursor);
+  await so1.beginTurn('s1', 't2'); // rolls gen 1 into previous
+  await so1.endTurn('s1', 't2', { code: 0, signal: null });
+  await so1.beginTurn('s1', 't3'); // rolls gen 1 out of previous -> archived on disk (pinned)
+  assert.ok(readdirSync(dir).some((f) => f === 's1.pinned.1.ndjson'), 'the pinned generation is archived on disk');
+  // a NEW store over the same root (window reload): its in-memory map starts empty
+  const so2 = createSessionOutput({ root: dir, pollMs: 5 });
+  const lines: string[] = [];
+  for await (const { line } of so2.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the recreated store discovers the on-disk archive and replays losslessly');
+  const rc = await so2.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined && rc.generation === seg1.cursor.generation, 'recoverTurn works on the recreated store too');
+  assert.equal(await so2.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldestRetainedGeneration sees the on-disk archive');
+  await so2.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});

@@ -1431,3 +1431,18 @@ test('E202611031bd72813:S001 t5: starting a new turn clears the observer checkpo
   await p;
   runs[0]!.proc.exitNow();
 });
+
+test('E202611031bd72813:S001 t5: detach orphans the saved turn (ownerHostPid 0) so the background observer reconciles it', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const p = h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  assert.equal(h.session.liveTurn?.ownerHostPid, 7, 'owned by this host while running');
+  await h.lc.detach();
+  runs[0]!.feed.push(delta('t1')); // the read in flight at detach ends with the next line
+  await p;
+  const live = h.session.liveTurn;
+  assert.ok(live !== undefined, 'the cursor stays saved after detach');
+  assert.equal(live!.ownerHostPid, 0, 'orphaned: owner 0 = no live window, any observer may follow');
+  runs[0]!.proc.exitNow();
+});

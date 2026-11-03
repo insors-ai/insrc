@@ -5706,3 +5706,25 @@ test('E202611031bd72813:S001 t2: Stop (cancel-turn) is a failure exit -> done', 
   fc.send(env('cancel-turn', {}));
   await waitFor(() => store.get(id)?.status === 'done', 5000, 'Stop -> done');
 });
+
+test('E202611031bd72813:S001 t2: an adapter failure (onError, not onTerminal) is a failure exit -> done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const failing: StreamAdapter = {
+    run: async function* (): AsyncIterable<TurnEvent> { throw new Error('adapter exploded'); },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: false },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: failing }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'boom' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => store.get(id)?.status === 'done', 5000, 'onError (adapter failure) -> done');
+});

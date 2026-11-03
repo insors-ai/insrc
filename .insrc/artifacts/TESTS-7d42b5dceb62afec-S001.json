@@ -4,7 +4,7 @@
     "epicHash": "7d42b5dceb62afec",
     "storyId": "S001",
     "createdAt": "2026-11-03T14:34:09.725Z",
-    "updatedAt": "2026-11-03T14:55:18.938Z",
+    "updatedAt": "2026-11-03T15:00:39.422Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.745Z",
     "epicSlug": "subsystem-pass-regroups-whole-repository-after"
@@ -144,6 +144,76 @@
               },
               {
                 "title": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1467e753a",
+        "ranAt": "2026-11-03T15:00:39.422Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: an edge written while the pass runs keeps its record entry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: an edge written while the pass runs keeps its record entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+                "title": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2320,
+            "titles": [
+              {
+                "title": "S001 t3: a fault in the publication transaction changes nothing, and the next pass converges",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: an edge written while the pass runs keeps its record entry",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
                 "result": "pass"
               }
             ],

@@ -54,3 +54,11 @@ fingerprinting; neither quantity is presented as isolated native allocator RSS.
 
 No successful 64MiB native write, power-loss durability, physical cleanup, migration,
 semantic worker or public recall performance is inferred from these measurements.
+
+The final sweep corrected two legacy regression test files not executed by this
+study: contracts.test.ts and queue-fault-matrix.test.ts. The original report remains
+unchanged. t16-test-source-compatibility.json records their exact studied/current
+hashes and reasons. The evidence audit permits only those recorded direct test-file
+changes; every production and executed resource-harness/fixture hash still matches.
+The affected regression tests are requalified separately; the hardware study is not
+repeated for a change outside its execution path.

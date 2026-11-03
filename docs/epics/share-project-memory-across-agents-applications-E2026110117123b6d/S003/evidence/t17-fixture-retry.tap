@@ -1,0 +1,46 @@
+TAP version 13
+# Subtest: public-v1-types-and-emitted-boundary
+ok 1 - public-v1-types-and-emitted-boundary
+  ---
+  duration_ms: 1789.81375
+  type: 'test'
+  ...
+# Subtest: pure-public-import-without-native-or-daemon
+ok 2 - pure-public-import-without-native-or-daemon
+  ---
+  duration_ms: 53.524459
+  type: 'test'
+  ...
+# Subtest: write-sync-rename-unlink-failure-fences-the-lane
+ok 3 - write-sync-rename-unlink-failure-fences-the-lane
+  ---
+  duration_ms: 2731.818917
+  type: 'test'
+  ...
+# Subtest: partial-bootstrap-header-and-event-writes-recover-explicitly
+ok 4 - partial-bootstrap-header-and-event-writes-recover-explicitly
+  ---
+  duration_ms: 277.732875
+  type: 'test'
+  ...
+# Subtest: maximum-qualified-identities-preserve-scope-and-epoch
+ok 5 - maximum-qualified-identities-preserve-scope-and-epoch
+  ---
+  duration_ms: 344.931459
+  type: 'test'
+  ...
+# Subtest: wall-clock-changes-preserve-sequence-and-clamp-age
+ok 6 - wall-clock-changes-preserve-sequence-and-clamp-age
+  ---
+  duration_ms: 103.410167
+  type: 'test'
+  ...
+1..6
+# tests 6
+# suites 0
+# pass 6
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3638.5945

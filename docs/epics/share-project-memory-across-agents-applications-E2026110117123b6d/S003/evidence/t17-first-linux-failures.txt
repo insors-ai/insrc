@@ -1,0 +1,44 @@
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5019172Z not ok 5 - public-v1-types-and-emitted-boundary
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5019650Z   ---
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5019826Z   duration_ms: 2122.835498
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5019961Z   type: 'test'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5020335Z   location: '/home/runner/work/_temp/project-memory/src/__tests__/contracts.test.ts:1:522'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5020821Z   failureType: 'testCodeFailure'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021049Z   error: 'apache-arrow'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021258Z   code: 'ERR_ASSERTION'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021459Z   name: 'AssertionError'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021664Z   expected: true
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021788Z   actual: false
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5021911Z   operator: '=='
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5022050Z   stack: |-
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5022319Z     TestContext.<anonymous> (/home/runner/work/_temp/project-memory/src/__tests__/contracts.test.ts:29:21)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5022620Z     Test.runInAsyncScope (node:async_hooks:214:14)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5022827Z     Test.run (node:internal/test_runner/test:1047:25)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5023030Z     Test.start (node:internal/test_runner/test:944:17)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5023271Z     startSubtestAfterBootstrap (node:internal/test_runner/harness:296:17)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:03.5023470Z   ...
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6803565Z not ok 40 - maximum-qualified-identities-preserve-scope-and-epoch
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6803822Z   ---
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6803954Z   duration_ms: 228.486266
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6804344Z   type: 'test'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6804603Z   location: '/home/runner/work/_temp/project-memory/src/__tests__/fixtures/node22.ts:1:890'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6804887Z   failureType: 'testCodeFailure'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6805060Z   error: 'Invalid memory source input.'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6805220Z   code: 'INVALID_REQUEST'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6805362Z   name: 'MemoryError'
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6805495Z   stack: |-
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6805738Z     invalid (/home/runner/work/_temp/project-memory/src/store/admission-policy.ts:7:38)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6806087Z     fields (/home/runner/work/_temp/project-memory/src/queue/shape.ts:6:143)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6806414Z     shape (/home/runner/work/_temp/project-memory/src/queue/shape.ts:10:3)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6806951Z     Object.validateInput (/home/runner/work/_temp/project-memory/src/store/admission-policy.ts:24:7)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6807541Z     QueueAdmission.append (/home/runner/work/_temp/project-memory/src/queue/admission.ts:59:25)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6808046Z     EmbeddedMemoryService.submit (/home/runner/work/_temp/project-memory/src/runtime.ts:105:69)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6808605Z     TestContext.<anonymous> (/home/runner/work/_temp/project-memory/src/__tests__/queue-fault-matrix.test.ts:82:35)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6808997Z     async Test.run (node:internal/test_runner/test:1054:7)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6809484Z     async Test.processPendingSubtests (node:internal/test_runner/test:744:7)
+linux-node22	Complete standalone package regression	2026-11-03T18:32:37.6809772Z   ...
+linux-node22	Complete standalone package regression	2026-11-03T18:33:18.5335503Z # pass 136
+linux-node22	Complete standalone package regression	2026-11-03T18:33:18.5335612Z # fail 2
+linux-node22	Complete standalone package regression	2026-11-03T18:33:18.5335893Z # cancelled 0
+linux-node22	Complete standalone package regression	2026-11-03T18:33:18.5336080Z # skipped 0
+linux-node22	Complete standalone package regression	2026-11-03T18:33:18.5336439Z # duration_ms 78901.603145

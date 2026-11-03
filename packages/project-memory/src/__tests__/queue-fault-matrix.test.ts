@@ -9,6 +9,7 @@ import { FileQueue } from '../queue/file-queue.js';
 import { QueueAdmission } from '../queue/admission.js';
 import { MemoryError } from '../errors.js';
 import { options } from './fixtures/options.js';
+import { attestHostEvent } from './fixtures/host-options.js';
 import { nativeTest } from './fixtures/node22.js';
 const limits = { maxEventBytes: 512, maxPendingBytes: 65536, segmentBytes: 512, modelTimeoutMs: 1 };
 const command = (id: string): MemoryCommand => ({ version: 1, scope: { projectId: 'p' }, source: { producerId: 'test', eventId: id, sessionId: 's', turnId: 't', sourceVersion: 'v1' }, kind: 'capture', payload: { text: 'private event' } });
@@ -76,9 +77,9 @@ nativeTest(import.meta.url, 'maximum-qualified-identities-preserve-scope-and-epo
   const id = '\u0001'.repeat(512); let epoch = '\u0002'.repeat(256), modelCalls = 0;
   const opts = options(root);
   const logs: unknown[] = [];
-  const service = await MemoryFactory.open({ ...opts, limits: { ...limits, maxEventBytes: 65536, segmentBytes: 65536, maxPendingBytes: 1024 * 1024 }, policy: { async bind(projectId) { return { projectId, root: '/project', scopeEpoch: epoch }; }, async admit(_binding, value) { return value; } }, models: { ...opts.models, async complete() { modelCalls++; return null; }, async embed() { modelCalls++; return [0, 1]; } }, logger: { write(level, event, fields) { logs.push({ level, event, fields }); } } });
+  const service = await MemoryFactory.open({ ...opts, limits: { ...limits, maxEventBytes: 65536, segmentBytes: 65536, maxPendingBytes: 1024 * 1024 }, policy: { async bind(projectId) { return { projectId, root: '/project', scopeEpoch: epoch }; }, async admit(_binding, value) { return attestHostEvent(value); } }, models: { ...opts.models, async complete() { modelCalls++; return null; }, async embed() { modelCalls++; return [0, 1]; } }, logger: { write(level, event, fields) { logs.push({ level, event, fields }); } } });
   try {
-    const c: MemoryCommand = { version: 1, scope: { projectId: id, sessionId: id, branch: id, environment: id }, source: { producerId: id, eventId: id, sessionId: 'different provenance', turnId: id, sourceVersion: '\u0003'.repeat(256) }, kind: 'capture', expectedRevision: id, payload: { text: 'secret payload' } };
+    const c: MemoryCommand = { version: 1, scope: { projectId: id, sessionId: id, branch: id, environment: id }, source: { producerId: id, eventId: id, sessionId: 'different provenance', turnId: id, sourceVersion: '\u0003'.repeat(256) }, kind: 'capture', expectedRevision: id, payload: { schemaVersion: 1, input: {}, source: { text: 'secret payload', reference: null, occurredAt: null } } };
     const receipt = await service.submit(c); assert.equal(receipt.state, 'accepted');
     assert.deepEqual(await service.submit(c), receipt);
     assert.deepEqual(await service.operation({ scope: c.scope, operationId: receipt.operationId }), receipt);

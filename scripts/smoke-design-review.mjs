@@ -16,6 +16,9 @@ const {buildInsrcMcpServerWithRegistry}=await import('../out/mcp/server.js');
 if(process.argv[2]==='mcp'){
  const server=buildInsrcMcpServerWithRegistry({review:{connect:()=>createConnection(process.argv[3]),resolveRepo:async()=>process.argv[4]}}).server;
  await server.connect(new StdioServerTransport());
+}else if(process.argv.includes('--recovery')){
+ assert.ok(!process.argv.includes('--live'),'Recovery qualification uses only isolated synthetic providers');
+ await import('./smoke-design-review-recovery.mjs');
 }else{
  const {IpcServer,directDispatch}=await import('../out/daemon/server.js');
  const {Router}=await import('../out/daemon/threads/router.js');

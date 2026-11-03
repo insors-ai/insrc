@@ -1,0 +1,644 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 8,
+        "contentHash": "0fb50be78a8af91718f32e167ea0a25e8f57d34c756ed87517e761fff4861492",
+        "at": "2026-11-03T11:20:17.712Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "createdAt": "2026-11-03T09:20:23.450Z",
+    "updatedAt": "2026-11-03T11:20:17.601Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "revision": 8
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "4f6cc9aa0",
+        "ranAt": "2026-11-03T09:20:23.450Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Strict phase/schema boundaries reject malformed identities, unknown fields/enums, noninitial S1 attempts and payload/size limit violations.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
+                "title": "strict design requests reject malformed identities, unknown fields, phases and noninitial attempts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Common daemon/controller assignment and result schema preserves typed workflow context and bounded progress cursor options.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
+                "title": "common review schemas preserve workflow context and bounded observation without accepting copied content",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 525,
+            "titles": [
+              {
+                "title": "strict design requests reject malformed identities, unknown fields, phases and noninitial attempts",
+                "result": "pass"
+              },
+              {
+                "title": "common review schemas preserve workflow context and bounded observation without accepting copied content",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "8159cc9a5",
+        "ranAt": "2026-11-03T09:30:31.396Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Table-driven Epic DEF/HLD/LLD, standalone feature/small LLD, sized ISSUE LLD and no-LLD small/trivial context requirements.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Missing required Epic HLD cannot become standalone; ISSUE root plus standalone flag/corrects link remains issue; missing optional references do not fail.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "workflow requirements do not downgrade broken Epics or turn correction links into ancestors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Canonical identity/paired marker, path containment, unknown party and missing/contradictory provenance are rejected before provider work.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "subject identity, containment and party are validated and only subject changes invalidate",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 754,
+            "titles": [
+              {
+                "title": "workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "workflow requirements do not downgrade broken Epics or turn correction links into ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "subject identity, containment and party are validated and only subject changes invalidate",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "64e2811ad",
+        "ranAt": "2026-11-03T09:39:07.584Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "DEF/HLD/LLD prompts contain policy/paths/trailing schema without artifact-body canary or copied baseline.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+                "title": "artifact-specific prompts contain live paths and trailing schema, never copied artifact content",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Coverage plan rejects omitted/unknown units, final-only coverage, cycles, duplicate ids and bad final consistency.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+                "title": "chunk plans reject missing units, final-only coverage, duplicate ids, cycles and bad final checks",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Required verification gaps cannot pass; HIGH/MED and incomplete precedence, LOW/advice separation and deterministic counts preserve findings.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+                "title": "required gaps cannot pass and consolidation preserves HIGH/MED, incomplete and advice semantics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 566,
+            "titles": [
+              {
+                "title": "artifact-specific prompts contain live paths and trailing schema, never copied artifact content",
+                "result": "pass"
+              },
+              {
+                "title": "chunk plans reject missing units, final-only coverage, duplicate ids, cycles and bad final checks",
+                "result": "pass"
+              },
+              {
+                "title": "required gaps cannot pass and consolidation preserves HIGH/MED, incomplete and advice semantics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "9cad5bba4",
+        "ranAt": "2026-11-03T09:48:46.054Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Atomic save faults preserve previous checkpoint and do not acknowledge incomplete durable results.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+                "title": "atomic checkpoint failure preserves the last accepted snapshot and cleans its own temporary file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "No-follow bounded loads refuse corrupt/foreign/oversize state without deletion.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+                "title": "bounded no-follow checkpoint loading retains corrupt foreign and oversized state",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+                "title": "accepted feedback cannot be rewritten and oversized stored results cannot bypass paging limits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Metadata polling and one-result cursor pages never expose baseline/history or trigger provider/activity renewal.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+                "title": "progress pages expose one result without baseline and polling does not renew activity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "atomic checkpoint failure preserves the last accepted snapshot and cleans its own temporary file",
+                "result": "pass"
+              },
+              {
+                "title": "bounded no-follow checkpoint loading retains corrupt foreign and oversized state",
+                "result": "pass"
+              },
+              {
+                "title": "progress pages expose one result without baseline and polling does not renew activity",
+                "result": "pass"
+              },
+              {
+                "title": "accepted feedback cannot be rewritten and oversized stored results cannot bypass paging limits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "56d00443b",
+        "ranAt": "2026-11-03T10:06:57.257Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Delayed fake provider proves durable short acknowledgement, exact duplicate-start idempotence and serial planning/chunk dispatch.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Early HIGH/MED/incomplete results continue remaining chunks; failed save prevents advancement and boundary mutation rejects stale candidate.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                "title": "findings and verification gaps continue chunks, while failed durability and mutation stop advancement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Submitter disconnect leaves native work active; activity options enforce no fixed deadline/internal retry/code-task grants.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 838,
+            "titles": [
+              {
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              },
+              {
+                "title": "findings and verification gaps continue chunks, while failed durability and mutation stop advancement",
+                "result": "pass"
+              },
+              {
+                "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c9208b46c",
+        "ranAt": "2026-11-03T10:10:08.980Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Actual trusted owner connection/execution/sequence gates controller plan/activity/result, with idempotent exact replay and conflicting replay refusal.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                "title": "trusted controller authority, execution sequence and durable exact replay are enforced",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Reviewing-controller disconnect retains completed chunks as interrupted with no automatic reassignment/recovery.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                "title": "controller disconnect preserves accepted chunks and never reassigns interrupted work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Equivalent native/controller feedback shares policy/schema and produces identical status/counts.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                "title": "controller results use the common schema and produce deterministic complete counts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 937,
+            "titles": [
+              {
+                "title": "trusted controller authority, execution sequence and durable exact replay are enforced",
+                "result": "pass"
+              },
+              {
+                "title": "controller disconnect preserves accepted chunks and never reassigns interrupted work",
+                "result": "pass"
+              },
+              {
+                "title": "controller results use the common schema and produce deterministic complete counts",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 818,
+            "titles": [
+              {
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              },
+              {
+                "title": "findings and verification gaps continue chunks, while failed durability and mutation stop advancement",
+                "result": "pass"
+              },
+              {
+                "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "2760fc272",
+        "ranAt": "2026-11-03T10:15:03.170Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Normal stdio MCP/Unix IPC start and progress reach one main owner; second observer cannot acquire reviewer authority or duplicate execution.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Schema discovery and steering expose current phases, bounded polling and wait-for-completion guidance.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+                "title": "repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Retired review/stream/resolve routes remain unavailable and current code-review registration/routing stays intact.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/review-unavailable.test.ts",
+                "title": "retired review operations throw the exact exception before parsing, providers or IO",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/task-review.test.ts",
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-call-audit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 573,
+            "titles": [
+              {
+                "title": "repo-call-audit.test.ts: every method of the handler registry and every step phase has an audit entry marked modifying, read-only or daemon-store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/design-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4086,
+            "titles": [
+              {
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
+              {
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/task-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2169,
+            "titles": [
+              {
+                "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+                "result": "pass"
+              },
+              {
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              },
+              {
+                "title": "normal controller connections are isolated and session close requires explicit resume",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/__tests__/review-unavailable.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1156,
+            "titles": [
+              {
+                "title": "retired review operations throw the exact exception before parsing, providers or IO",
+                "result": "pass"
+              },
+              {
+                "title": "current step tools reject retired input shapes before provider work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "cf5c7fcf0",
+        "ranAt": "2026-11-03T11:20:17.601Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Production build and compiled MCP/daemon fake-CLI smoke complete planning, chunks, incremental feedback and report retrieval.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Final npm run build: /tmp/dr-s1-t8-release-build.log (exit 0). Compiled stdio MCP -> Unix IPC -> main owner -> CliProvider synthetic binary: /tmp/dr-s1-t8-release-smoke.log and /tmp/insrc-design-smoke-odE0W2/evidence.json, planning/content/final serial, incremental saved feedback and passed report. Final compiled stored-progress latency and no baseline leakage: /tmp/dr-s1-t8-progress-latency.json. Fake CLI explicitly synthetic; no hosted claim."
+            }
+          },
+          {
+            "name": "Focused existing task-review schema/routing/owner regressions pass without hosted reruns or unrelated full sweep.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/dr-s1-t8-final-regressions.tap: 57 tests passed, 0 failed. /tmp/dr-s1-t8-focused-regressions.tap: 62 passed, 0 failed (earlier broader focused set, includes current code-review contracts/controller/activity/scope). /tmp/dr-s1-t8-activity-regressions.tap: 12 passed, including native actual inactivity clock/late output, exact reordered replay and concurrent controller activity-save failure. /tmp/dr-s1-t8-route-regressions.tap: 20 passed including method-class/registry/audit. No unrelated full sweep or extra hosted code-review round."
+            }
+          },
+          {
+            "name": "One meaningful independent design review via normal insrc_review_step records model, acknowledgement/chunk timing, scope, actual feedback and limits separately from fake fixtures.",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Execution completed with substantive limits as expressly permitted by this task; NOT design sign-off. Normal compiled stdio insrc_review_step, review-id design-live-1793702088378/attempt1, native configured claude-sonnet-5, 25ms ack, 9/9 chunks, 2020500ms elapsed. /tmp/insrc-design-smoke-6dIL8Q/evidence.json; /tmp/design-review-s1-live-timing.json; /tmp/design-review-s1-live-review-findings.json; immutable checkpoint .insrc/tmp/design-review/design-live-1793702088378.json. Actual linked DEF/HLD/SPEC/LLD and source inspected; 7 usable MED/3 LOW documentation findings; placeholder test-coverage f1 is unusable, and final consistency explicitly reported missing test-coverage inspection. Annotated refs caused conservative missing-declaration limits; companion not browser-rendered. Verdict INCOMPLETE prevents approval. Failed first run design-live-1793701031878 retained; latest diagnostic/policy fixes are deterministic-tested, not falsely claimed hosted-verified. Gate should assess these limits, not infer a clean review from execution completion."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

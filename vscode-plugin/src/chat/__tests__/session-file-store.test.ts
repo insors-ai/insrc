@@ -879,3 +879,25 @@ test('E202611031bd72813:S001 t1: file store setStatus persists status+lastActivi
   assert.equal(store.get(s.id)?.pendingRequests?.[0]?.requestId, 'r9', 'pendingRequests survive the stale write');
   store.setStatus('nope', 'working'); // unknown id: no-op, never throws
 });
+
+test('E202611031bd72813:S001 t3: file store activeChats applies the 30-min purge and skips old heads; evictBeyondCap never evicts active/unresolved sessions', () => {
+  const { store } = makeStore();
+  const active = store.create('claude' as never);
+  const doneRecent = store.create('claude' as never);
+  const doneOld = store.create('claude' as never);
+  store.setStatus(active.id, 'working');
+  store.setStatus(doneRecent.id, 'done');
+  store.save({ ...store.get(doneOld.id)!, status: 'done', lastActivityAt: Date.now() - 31 * 60 * 1000 });
+  const now = Date.now();
+  const ids = store.activeChats(now).map((x) => x.id).sort();
+  assert.deepEqual(ids, [active.id, doneRecent.id].sort(), 'done older than 30 min is purged from the list, row kept');
+  assert.equal(store.get(doneOld.id)?.status, 'done', 'history row untouched');
+  // eviction: with cap 2, an active session at the cap is not evicted
+  const { store: capped, fake } = (() => { const f = fakeSessionFs(); return { store: createFileChatSessionStore({ root: '/sessions', fs: f.fs, maxSessions: 2, genId: (() => { let n = 0; return () => `c${++n}`; })(), now: () => '2026-01-01T00:00:00.000Z' }), fake: f }; })();
+  const a1 = capped.create('claude' as never);
+  capped.setStatus(a1.id, 'waiting-input');
+  const a2 = capped.create('claude' as never);
+  const a3 = capped.create('claude' as never); // over cap: must not evict a1 (active)
+  assert.ok(capped.get(a1.id) !== undefined, 'active session survives cap eviction');
+  assert.ok(capped.get(a3.id) !== undefined, 'the session being saved is never evicted');
+});

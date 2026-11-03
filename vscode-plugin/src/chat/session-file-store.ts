@@ -27,10 +27,12 @@ import type { ProviderId } from './cli-adapter.js';
 import { sessionFileName } from './session-output.js';
 import {
   INDEX_KEY,
+  ACTIVE_PURGE_MS,
   SESSION_PREFIX,
   isSession,
   mergeActiveChatFields,
   updatedAtOf,
+  type ActiveChatEntry,
   type ChatSession,
   type ChatSessionStore,
   type ChatStatus,
@@ -296,6 +298,9 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     if (heads.length <= maxSessions) return;
     const oldestFirst = heads
       .filter((h) => h.id !== keepId)
+      // E202611031bd72813:S001 t3: never evict an active/waiting session or one with unresolved
+      // requests — only done chats are evictable (the list may stay over the cap meanwhile).
+      .filter((h) => (h.status === undefined || h.status === 'done') && !(h.pendingRequests ?? []).some((r) => !r.resolved))
       .sort((a, b) => (a.savedAt < b.savedAt ? -1 : a.savedAt > b.savedAt ? 1 : a.id < b.id ? -1 : 1));
     for (const head of oldestFirst.slice(0, heads.length - maxSessions)) {
       const p = paths(head.id);
@@ -412,6 +417,28 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
       save(s);
     },
     save,
+    activeChats(nowMs?: number): ReadonlyArray<ActiveChatEntry> {
+      const now = nowMs ?? Date.now();
+      const out: ActiveChatEntry[] = [];
+      let names: string[];
+      try {
+        names = fs.list(deps.root);
+      } catch {
+        return [];
+      }
+      for (const name of names) {
+        if (!name.endsWith(HEAD_SUFFIX)) continue;
+        try {
+          const head = readHead(fs, `${deps.root}/${name}`);
+          if (head === undefined || head.status === undefined) continue; // old heads are not-active
+          if (head.status === 'done' && (head.lastActivityAt === undefined || now - head.lastActivityAt >= ACTIVE_PURGE_MS)) continue;
+          out.push({ id: head.id, provider: head.provider, title: head.title, updatedAt: head.updatedAt, status: head.status, lastActivityAt: head.lastActivityAt });
+        } catch {
+          /* an unreadable head is left out */
+        }
+      }
+      return out;
+    },
     setStatus(id: string, status: ChatStatus): void {
       const s = get(id);
       if (s === undefined) return; // missing or damaged: a no-op, as in the Memento store

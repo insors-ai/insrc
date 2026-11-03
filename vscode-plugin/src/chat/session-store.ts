@@ -151,6 +151,15 @@ export interface ChatSession {
 /** E202611031bd72813:S001 — active-chat lifecycle status: working | waiting-input | done. */
 export type ChatStatus = 'working' | 'waiting-input' | 'done';
 
+/** E202611031bd72813:S001 t3: a done chat leaves the active list after this much inactivity. */
+export const ACTIVE_PURGE_MS = 30 * 60 * 1000;
+
+/** E202611031bd72813:S001 t3: one entry of the active-chats list (drives the chat panel dropdown). */
+export interface ActiveChatEntry extends ChatSummary {
+  readonly status: ChatStatus;
+  readonly lastActivityAt: number | undefined;
+}
+
 /**
  * E202611031bd72813:S001 — one persisted approval/selection request. Carries the full
  * actionable payload (QueuedApproval fields + batch/grant context for approvals; the complete
@@ -225,6 +234,11 @@ export interface ChatSessionStore {
    * with the current time (monotonic per session — callers must not move it backwards).
    */
   setStatus(id: string, status: ChatStatus): void;
+  /**
+   * E202611031bd72813:S001 t3: the active-chats list — working/waiting-input always; done only
+   * while inactivity < ACTIVE_PURGE_MS. Pure read: the purge is computed here, never destructive.
+   */
+  activeChats(nowMs?: number): ReadonlyArray<ActiveChatEntry>;
 }
 
 /** The slice of vscode.Memento this store needs (kept structural so the store is vscode-free). */
@@ -355,7 +369,17 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     reordered.push(session.id);
     if (reordered.length > maxSessions) {
       const cut = reordered.length - maxSessions;
-      for (const id of reordered.slice(0, cut)) {
+      // E202611031bd72813:S001 t3: never evict an active/waiting session or one with unresolved
+      // requests — evict only done chats, oldest first, up to the cut (the list may stay over the
+      // cap rather than drop an active chat).
+      const isEvictable = (id: string): boolean => {
+        if (id === session.id) return false;
+        const s = get(id);
+        return s !== undefined && (s.status === undefined || s.status === 'done') && !(s.pendingRequests ?? []).some((r) => !r.resolved);
+      };
+      const evicted = reordered.filter(isEvictable).slice(0, cut);
+      const evictedSet = new Set(evicted);
+      for (const id of evicted) {
         void memento.update(SESSION_PREFIX + id, undefined);
         try {
           deps.onEvict?.(id);
@@ -363,7 +387,7 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
           /* cleanup is best-effort; eviction itself has happened */
         }
       }
-      writeIndex(reordered.slice(cut));
+      writeIndex(reordered.filter((id) => !evictedSet.has(id)));
     } else {
       writeIndex(reordered);
     }
@@ -404,6 +428,17 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
       save(s);
     },
     save,
+    activeChats(nowMs?: number): ReadonlyArray<ActiveChatEntry> {
+      const now = nowMs ?? Date.now();
+      const out: ActiveChatEntry[] = [];
+      for (const id of readIndex()) {
+        const s = get(id);
+        if (s?.status === undefined) continue; // old rows are not-active
+        if (s.status === 'done' && (s.lastActivityAt === undefined || now - s.lastActivityAt >= ACTIVE_PURGE_MS)) continue;
+        out.push({ id: s.id, provider: s.provider, title: s.title, updatedAt: updatedAtOf(s), status: s.status, lastActivityAt: s.lastActivityAt });
+      }
+      return out;
+    },
     setStatus(id: string, status: ChatStatus): void {
       const s = get(id);
       if (s === undefined) return; // corrupt/missing -> no-op, never throw

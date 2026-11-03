@@ -1,0 +1,781 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793713762387-46cdvu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T13:50:16.265Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 53019,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s2",
+    "hldBaseRunId": "wf-1793694252789-heyhey",
+    "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 2
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S2 lets an interrupted design review continue from its accepted chunks and retries only the failed unit, with one persisted budget. It detects changes to the reviewed artifact during execution, stops that attempt, and requires user approval for a fresh full review. The existing coordinator/checkpoint remain authoritative for native and controller reviewers."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a small, design-specific background coordinator; reuse the existing LLMProvider activity-mode review session, role routing, IPC/session routing and artifact store/history. Do not generalize or migrate the working task-review coordinator. New production code belongs under a dedicated design-review subdirectory of the existing src/workflow/review boundary (proposed location, not an existing module claim). Normal insrc_review_step and daemon design-review routes delegate to it; removed claim/judge/autofix execution stays removed. [[c1]] [[c2]]\n\nA review has one canonical subject and sequential attempts. Each attempt owns its baseline, semantic chunk plan, accepted completed results and terminal summary. Current review prompts contain policy, subject/related document paths, chunk assignment and output schema, never the artifact body. Prior feedback and impact baselines are accessible by checkpoint/history references rather than repeated full input. Read-only reviewers inspect live artifact paths and any necessary code; the daemon validates structure and completeness without inventing semantic judgments. Shared substantive policy assesses correctness against requirements/upstream designs, functional completeness, contracts and ownership/cardinality, errors/test coverage where relevant, consistency, applicable conventions, and necessary linked diagrams/UX artifacts. Report unavailable verification honestly; optional advice does not become a false blocking or unverified finding.",
+      "ownedContracts": [
+        {
+          "id": "sc3",
+          "name": "Change invalidation and bounded technical recovery",
+          "purpose": "Keep mutation, interruption, technical retries and user decisions distinct without losing completed work.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "interface DesignFailure { readonly unitId: string; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'publication'; readonly code: string; readonly summary: string; readonly retriesUsed: number; }\ninterface DesignRecoveryState { readonly attempt: number; readonly status: 'interrupted' | 'paused' | 'invalidated'; readonly reason: 'connection_lost' | 'daemon_restarted' | 'technical_retry_exhausted' | 'artifact_changed'; readonly failedUnit?: DesignFailure | undefined; readonly completedChunkIds: readonly string[]; readonly requiresUserInput: boolean; }\ninterface DesignRecoveryAction { readonly operation: 'resume' | 'restart_full' | 'retry_publication'; readonly reviewId: string; readonly attempt: number; readonly userDecision?: { readonly action: string; readonly reason: string; readonly recordedAt: string; } | undefined; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Design review subject, policy and semantic chunk contract",
+          "purpose": "One minimal subject request, common substantive policy and coherent chunk plans for both reviewer parties.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignArtifactKind = 'DEF' | 'HLD' | 'LLD';\ninterface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ninterface DesignReviewSubject { readonly artifactId: string; readonly kind: DesignArtifactKind; readonly documentPath: string; readonly canonicalPath: string; readonly reviewer: 'daemon' | 'controller'; }\ninterface DesignChunk { readonly id: string; readonly title: string; readonly selectors: readonly string[]; readonly concerns: readonly string[]; readonly dependsOn: readonly string[]; readonly purpose: 'substantive' | 'consistency'; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Durable review attempts, feedback and progress",
+          "purpose": "Persist one source of review state and expose completed feedback without a long-lived request.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignBaseline { readonly subjectFingerprints: Readonly<Record<string,string>>; readonly reviewedContent: unknown; readonly capturedAt: string; }\ninterface DesignFinding { readonly id: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly location: string; readonly message: string; readonly evidenceReferences: readonly string[]; }\ninterface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignAttempt { readonly number: number; readonly status: DesignReviewStatus; readonly baseline: DesignBaseline; readonly plan?: DesignChunkPlan | undefined; readonly completedChunks: readonly DesignChunkResult[]; readonly summary?: string | undefined; }\ninterface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Own interruption/recovery transitions, reviewed-subject monitoring, cancellation/late-response rejection, the single retry budget and user-decision pause. Native activity integration is private; callers consume recovery state/actions, not process internals. Preserve sc1/sc2 semantics and no external-file invalidation."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Deliver the first useful normal-entrypoint review: latest-subject resolution, opposite-party execution, shared artifact-specific policy, reviewer chunk planning, sequential inspection, durable completed results, visible progress and a retrievable consolidated report. Keep prompt construction, native/controller exchange and checkpoint IO private; no shared-engine migration. Produce real narrow hosted-review evidence as well as deterministic fixtures."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own reviewer-led direct/indirect impact assessment, old/new plan mapping, conservative full-review fallback, retained coverage and finding reconciliation. Its document comparison/selection implementation stays private; expose only auditable scope reasoning and provenance, not a generic dependency engine."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own lifecycle version-aware record publication/readers, normal approval integration, history-preserving cleanup, multi-session routing qualification and final compiled/live verification. Keep cleanup fence and publication retries internal. No new review dashboard, activation state or legacy compatibility execution."
+        }
+      ],
+      "rolloutPhase": "B — controlled recovery",
+      "nonFunctional": {
+        "performance": "Initial acknowledgement and progress are model-independent short operations; target <=2 seconds on an idle local daemon, measured separately from filesystem/model time. Review calls remain sequential per review; independent subjects may run concurrently. Bound checkpoint size and payloads explicitly in LLD; reject exceeded limits without silent truncation or loss of coverage. Persist completed chunks before advancing and coalesce activity-only progress writes.",
+        "security": "Daemon owns state/store access. Canonical registered repo and artifact identity, no-follow bounded checkpoint reads, literal review IDs and private file modes follow existing patterns. Native review uses read-only grants with no code-task command grant. Opposite reviewer party derives from trusted host/session context and artifact metadata, not request claims. No cloud REST, trust-key service or raw reasoning/prompt archive.",
+        "observability": "Expose review/attempt/chunk identity, phase, elapsed times, accepted completed feedback, current technical retry count, paused reason, user-input requirement, activity/tool state and publication state. Polling observes only. Separate optional advice from findings and unavailable evidence. Controller reports progress but does not edit or resolve intermediate findings.",
+        "durability": "Atomic validated checkpoint snapshots and completed-chunk flushes; immutable prior attempts and idempotent history publication. Reviewer disconnect, daemon restart, publication interruption and approval cleanup have explicit recovery cases. Permanent history retains baselines/impact/feedback and technical attempt summaries, not native transcripts. Never delete a checkpoint until every attempt is preserved and approval succeeded."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DesignReviewCoordinator",
+          "signature": "interface DesignReviewCoordinator { recover(input: DesignRecoveryAction & { readonly phase: 'recover'; readonly repo: string; readonly actionId: string }, context?: DesignStartContext): Promise<DesignReviewAcknowledgement>; start(input: unknown, context?: DesignStartContext): Promise<DesignReviewAcknowledgement>; progress(project: string, reviewId: string, attempt: number, options?: { includeResult?: boolean | undefined; afterCompletedChunk?: number | undefined }): Promise<DesignObservation>; exchange(input: unknown, owner: DesignControllerOwner): Promise<unknown>; }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "DesignRecoveryAction & { readonly phase: 'recover'; readonly repo: string; readonly actionId: string }",
+              "purpose": "Strict phase=recover envelope: repo/reviewId/attempt/actionId plus operation resume|restart_full|retry_publication; attempt is the source/current attempt. actionId is a literal idempotency key; optional userDecision is bounded action/reason/recordedAt. No prompt/document bodies, caller-selected party or commits. Required wire phase:'recover' is separate from operation. Extend DesignRequestSchemas, DESIGN_REVIEW_PHASES, MCP schema/guide and designReviewOperation with recover/failure; register/audit both short unary methods as main-owned. designReviewStep routes recover before the exchange-only owner guard: native resolves provider as start does; controller requires the actual live recovering connection.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "DesignStartContext",
+              "purpose": "Existing trusted connection identity/signal and review-role provider factory; reviewer is derived from subject, not request.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DesignReviewAcknowledgement>",
+            "meaning": "Existing acknowledgement fields reviewId/attempt/artifactId/reviewer/status/checkpointPath. Durable admission precedes acknowledgement and dispatch. resume keeps attempt; restart_full acknowledges source attempt+1."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewInputError",
+              "condition": "Strict schema, unsupported phase/action, malformed identifiers, invalid expected attempt or limits."
+            },
+            {
+              "type": "DesignReviewConflictError",
+              "condition": "Conflicting actionId replay, active foreign controller/subject, skipped/stale attempt or terminal state not resumable."
+            },
+            {
+              "type": "DesignReviewError",
+              "condition": "artifact_changed (sticky invalidation); user_decision_required; retry_budget_exhausted; wrong_owner; publication_unavailable (S4 owns publisher). Requests with unknown actions never reach provider. Also missing_checkpoint, missing_attempt, checkpoint_too_large, foreign_checkpoint and immutable_history remain concrete domain codes and never trigger model retries."
+            },
+            {
+              "type": "DesignReviewPersistenceError",
+              "condition": "Admission/reservation/invalidation/result save cannot be made durable; retain prior snapshot and fence execution."
+            }
+          ],
+          "preconditions": [
+            "Registered canonical project and matching checkpoint subject; same-attempt resume validates stored subject fingerprints without revalidating changed external references.",
+            "Resume only interrupted work (or paused with explicit retry_failed_unit decision). No auto startup scan/recovery. Duplicate actionId with identical action returns stored acknowledgement; changed body conflicts.",
+            "restart_full requires invalidated source attempt plus userDecision.action=restart_full; fresh subject preparation re-derives author/reviewer/workflow references. No retained chunks, plan or retry budget.",
+            "retry_publication is a typed sc3 seam for S4 and returns publication_unavailable in S2; never reruns model work."
+          ],
+          "postconditions": [
+            "One active job per subject, independent subjects may run concurrently; resume deduplication and admission use the same coordinator serial ownership as start.",
+            "Persist action reservation, unit generation/counters and recoverable state before acknowledging. Controller recovery binds the actual new connection only after old execution has ended; stale owner/generation responses cannot commit.",
+            "Native work survives requesting MCP disconnect; reviewing-controller disconnect is interrupted. Neither disconnect nor daemon restart creates an automatic retry loop.",
+            "No lifecycle approval/history writes in S2; accepted checkpoint report retrieval is retained."
+          ]
+        },
+        {
+          "name": "loadDesignCheckpoint",
+          "signature": "loadDesignCheckpoint(project: string, reviewId: string): Promise<DesignReviewCheckpoint | undefined>",
+          "parameters": [
+            {
+              "name": "project",
+              "type": "string",
+              "purpose": "Canonical registered project",
+              "optional": false
+            },
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Existing literal review identity",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<DesignReviewCheckpoint | undefined>",
+            "meaning": "Existing bounded no-follow checkpoint with optional S2 recovery metadata. Old S1 checkpoints remain readable; interrupted old current execution conservatively counts as its already-reserved initial dispatch, never as zero work."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Existing foreign/corrupt/oversized checkpoint checks plus inconsistent unit counters/actions/history."
+            }
+          ],
+          "preconditions": [
+            "No automatic schema migration or startup dispatch."
+          ],
+          "postconditions": [
+            "Read does not mutate or renew activity; old failed terminal attempts remain terminal, not silently upgraded into retryable work."
+          ]
+        },
+        {
+          "name": "saveDesignCheckpoint",
+          "signature": "saveDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void>",
+          "parameters": [
+            {
+              "name": "project",
+              "type": "string",
+              "purpose": "Canonical project",
+              "optional": false
+            },
+            {
+              "name": "input",
+              "type": "DesignReviewCheckpoint",
+              "purpose": "Validated bounded snapshot with monotonically evolving active recovery state",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Existing atomic fsync/rename persistence; no second journal."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewPersistenceError",
+              "condition": "Filesystem I/O failure normalized at saveDesignCheckpoint boundary; preserve prior snapshot and fence execution."
+            },
+            {
+              "type": "DesignReviewError",
+              "condition": "Domain/schema failure including checkpoint_too_large, foreign_checkpoint, immutable_history, decreasing counters or noncontiguous attempts; preserve concrete error code."
+            }
+          ],
+          "preconditions": [
+            "Older attempts are fully immutable once a later attempt exists; current accepted baseline/plan/completed feedback stay immutable."
+          ],
+          "postconditions": [
+            "Retry/action reservations and accepted result writes are serialized, monotonic and durable; failed save preserves prior accepted snapshot.",
+            "S2 explicitly changes coordinator commit(): preserve/rethrow existing DesignReviewError (including DesignReviewPersistenceError), wrap only untyped filesystem/unknown errors. saveDesignCheckpoint normalizes filesystem errors at its own boundary. All failed saves fence work without technical model retry."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DesignRecoveryAction",
+        "change": "new",
+        "details": "Own sc3 action type: operation resume|restart_full|retry_publication; reviewId; source attempt; optional userDecision {action,reason,recordedAt}. Strict recover request adds repo and actionId (literal <=128 chars) for durable exact replay. User-decision metadata is an audit record supplied by the controller after explicit in-chat approval, not a new trust-key service. resume after interruption needs explicit controller request but no extra human approval; restart_full and retry after exhaustion require matching userDecision. An exhausted user-directed resume authorizes ONE additional launch of that failed unit, with no renewed automatic budget. Conflicting reuse of actionId is rejected. Wire request additionally requires phase:'recover', independently strict-validated from operation. Add recover/failure dispatch and main-owned routes; recover precedes the unconditional controller-exchange guard.",
+        "schemaDiff": "type DesignRecoveryAction = { operation: 'resume'|'restart_full'|'retry_publication'; reviewId: string; attempt: number; userDecision?: { action: 'restart_full'|'retry_failed_unit'; reason: string; recordedAt: string } | undefined };\ntype DesignRecoveryRequest = DesignRecoveryAction & { readonly phase: 'recover'; readonly repo: string; readonly actionId: string };",
+        "callSites": [
+          "src/daemon/design-review-rpc.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
+      },
+      {
+        "entity": "DesignRecoveryState",
+        "change": "new",
+        "details": "Own sc3 projection: attempt/status interrupted|paused|invalidated, reason connection_lost|daemon_restarted|technical_retry_exhausted|artifact_changed, optional failedUnit, completedChunkIds, requiresUserInput. Existing progress adds optional recovery field, active generation, retriesUsed and failed-unit diagnostic; default page remains metadata-only. Stored pending/running without live job projects interrupted(daemon_restarted); progress never persists a synthetic retry or starts work.",
+        "schemaDiff": "interface DesignFailure { unitId: string; phase: 'planning'|'impact'|'chunk_review'|'publication'; code: string; summary: string; retriesUsed: number; }\ninterface DesignRecoveryState { attempt: number; status: 'interrupted'|'paused'|'invalidated'; reason: 'connection_lost'|'daemon_restarted'|'technical_retry_exhausted'|'artifact_changed'; failedUnit?: DesignFailure | undefined; completedChunkIds: readonly string[]; requiresUserInput: boolean; }",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/progress.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
+      },
+      {
+        "entity": "DesignAttempt",
+        "change": "field-add",
+        "details": "Consume sc2, add optional recovery metadata in schemaVersion1: one unit {unitId,phase,executionId,dispatches,retriesUsed,diagnostics}, recovery state, and actions [{actionId,signature,operation,sourceAttempt,resultAttempt,userDecision?,acceptedAt}]. One checkpoint owns 1..128 attempts; one attempt owns 0..1 active unit, 0..128 completed chunks, 0..128 action records. Counters are safe integers; automatic dispatches for a unit <=4, retriesUsed<=3. Up to four bounded diagnostic summaries (<=8192 chars each) for that unit, not raw output/transcripts. Explicit extra dispatches are covered by distinct durable one-launch action records, not resets. Keep overall64MiB checkpoint and1MiB result caps; reject rather than truncate review scope/history. Prior attempts freeze entirely on append. Initial submitted identity remains unchanged; actions link later attempts. Retain one sealed unitSummary per completed planning/chunk unit (at most129), with unitId/phase, automaticDispatches, retriesUsed, userDirectedDispatches, up to four automatic diagnostic summaries and recovery actionId links. Current unit.dispatches means automaticDispatches only. Extra one-launch actions each retain one bounded outcome code/summary, filled once; their input identity remains immutable. Seal summary before replacing current unit. This preserves earlier units' retry/failure summaries for S4 without a per-invocation/event ledger. Counters are monotonic per unitId, not across distinct units; sealed summaries and filled outcomes cannot change.",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/checkpoint.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
+      },
+      {
+        "entity": "DesignUnitAssignment",
+        "change": "field-add",
+        "details": "Consume sc1, add optional pointed previousTechnicalFeedback, retriesUsed and operation state; use fresh executionId and reset response sequence for each unit dispatch, never repeat accepted generation. Add strict controller failure exchange with existing review/attempt/executionId/sequence and bounded code/summary; host classifies allowed technical failures. Semantic HIGH/MED/incomplete accepted feedback is not retryable. Structurally valid but semantically rejected plan/result uses the same coordinator technical-output failure path as native; identity/sequence/schema-invalid requests remain request errors and do not spend retry budget or close a healthy owner.",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/mcp/design-review/handler.ts"
+        ]
+      },
+      {
+        "entity": "DesignReviewCoordinator",
+        "change": "invariant-change",
+        "details": "Execution algorithm: recover accepted plan or plan only if absent; traverse persisted plan in dependency order, skip completed prefix and retain accepted feedback byte-for-byte; final consistency reruns only if unfinished. Reserve initial dispatch or next technical retry before launching. Completed unit save precedes next unit. A crash after reservation counts that dispatch conservatively; explicit resume relaunches unfinished unit with next generation/remaining budget, never assumes a reserved execution did not happen. Initial+3 retries maximum absent explicit one-launch user action. Retry technical transport/process/inactivity/invalid output failures only; unsupported provider, storage errors, malformed requests/context and artifact change fail/stop without automatic retry. No retry on coverage incomplete or substantive findings. Abort per-unit session for retry, separate from whole-job stop. Native/controller share classification, state and policy; native internalRetry:false. Planning follows same bounded policy; impact/publication phase types are seams for S3/S4, not implemented engines. Explicitly normalize I/O errors as DesignReviewPersistenceError at save boundary; keep domain/schema/size/history DesignReviewError codes through coordinator commit(), rather than its existing unconditional persistence_failed wrapping. Both categories stop execution; missing checkpoint returns missing_checkpoint before admission.",
+        "callSites": [
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/shared/review-activity.ts",
+          "src/shared/review-diagnostics.ts"
+        ]
+      },
+      {
+        "entity": "DesignReviewSubject",
+        "change": "invariant-change",
+        "details": "Consume sc1 unchanged. During active work use parent-directory fs.watch hints filtered to canonical JSON/document filenames, plus non-overlapping1-second fallback checks. Recheck at admission/recovery, before/after each unit and just before checkpoint report commit. Re-arm watches after rename; monitor only these two subject paths, not upstream docs/code. On observed changed/unreadable/noncanonical subject latch artifact_changed, abort unit and whole-job, immediately queue durable invalidation, reject late generations and never clear on byte restoration. Same-attempt recovery uses admitted workflow context (external reference changes ignored); restart_full runs fresh workflow-aware subject preparation for Epic/Standalone/Issue. Polling/progress never renews activity. Monitoring is observation-based; direct writes bypassing the artifact store cannot provide atomic filesystem compare-and-publish; S4 owns normal store serialization and approval identity checks.",
+        "callSites": [
+          "src/workflow/review/design-review/subject.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Keep S1 subject/workflow matrix, policy, chunk schemas and reviewer derivation. Only extend trusted assignment metadata/recovery phases; do not redesign review semantics."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Use current bounded atomic checkpoint/progress and accepted reports; add optional recovery records and enforce monotonic immutability. No new storage format/file."
+      },
+      {
+        "contractId": "sc3",
+        "role": "implements",
+        "howDetails": "Own explicit recovery actions/state, sticky subject invalidation, per-unit technical retry budget, durable pause and user-decision resumes. S3 impact and S4 artifact publication implement their own phase work later."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Reviewed canonical JSON or document changes, disappears or becomes noncanonical",
+          "detection": "Subject-only watch hints plus one-second nonoverlapping checks and admission/unit/final-commit fingerprint checks detect mismatch or read failure.",
+          "response": "Latch artifact_changed before cancelling execution; queue durable invalidated state, reject late output even if bytes restored, require user-approved restart_full with fresh baseline/plan and no reused chunks.",
+          "userImpact": "Controller notifies user and waits; completed feedback remains visible as historical invalidated evidence.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Native technical process/transport/inactivity/output failure or explicit controller technical failure",
+          "detection": "Typed provider error/ReviewOutputFailureError, unit monitor, semantic plan/result validator or trusted generation-bound failure exchange; host classification excludes findings and incomplete coverage.",
+          "response": "Persist bounded pointed diagnostic and next dispatch reservation, retire failed unit generation, then retry only that unit up to three times after initial dispatch. On exhausted budget persist paused and stop all subsequent units.",
+          "userImpact": "Visible retry count and failed-unit reason; completed chunks are preserved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Reviewing controller disconnect or daemon restart",
+          "detection": "Trusted connection abort; alternatively stored pending/running checkpoint has no corresponding live job.",
+          "response": "Persist/project interrupted, preserve accepted chunks and reserved dispatch counters. No startup or observation dispatch. Explicit resume validates unchanged subject and binds new actual owner only after old execution ended.",
+          "userImpact": "Controller can retrigger unfinished work without repeating completed chunks.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid recovery action or stale/foreign response",
+          "detection": "Strict schema, canonical checkpoint identity, source attempt/status, trusted owner, action signature, execution generation and sequence checks.",
+          "response": "Reject without provider invocation, budget consumption or healthy-owner closure; exact action/response replay returns prior durable acknowledgement.",
+          "userImpact": "Action must match current recovery state; foreign sessions cannot replace review work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Checkpoint save/reservation failure or corrupt/oversized checkpoint",
+          "detection": "Existing bounded no-follow schema/identity validation and atomic write errors; monotonically checked counters/history.",
+          "response": "Fail closed, abort live work and refuse any advance/retry; retain last accepted snapshot and expose persistence_failed/uncertain state. Do not spend model calls trying to repair storage. Normalize filesystem errors at save boundary; preserve domain codes through coordinator commit().",
+          "userImpact": "Evidence stays recoverable; operator must resolve storage failure before explicit recovery.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Resume after budget exhaustion lacks explicit user decision",
+          "detection": "Persisted paused reason and no matching retry_failed_unit decision on recovery action.",
+          "response": "Return user_decision_required, keep paused. An approved unique action grants one additional dispatch only; preserve exhausted automatic budget and all prior decisions.",
+          "userImpact": "No repeated cost or remaining-chunk work without user direction.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Subject changes while final checkpoint report is being prepared",
+          "detection": "Sticky monitor signal and final freshness comparison inside the serialized checkpoint commit boundary.",
+          "response": "Suppress a valid report and persist invalidated instead. S2 does not perform artifact lifecycle publication; S4 owns store-write serialization and approval-time revision comparison.",
+          "userImpact": "No S2 checkpoint report can be represented as lifecycle-approved review coverage.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Named review checkpoint does not exist",
+          "detection": "loadDesignCheckpoint returns undefined for canonical reviewId.",
+          "response": "Return DesignReviewError code missing_checkpoint before action reservation/provider invocation.",
+          "userImpact": "Correct identity or start a new review; no invented recovery state.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Completed HIGH/MED findings or honest incomplete coverage",
+          "expected": "Accept completed chunk and continue remaining plan; do not call these technical failures or retry semantic judgment."
+        },
+        {
+          "input": "Crash after dispatch reservation but before observable model start/result",
+          "expected": "Keep reservation consumed conservatively; explicit resume uses new generation and remaining budget. After exhaustion require a recorded one-launch decision."
+        },
+        {
+          "input": "All chunks already accepted but process died before checkpoint report save",
+          "expected": "Explicit resume only re-consolidates and saves the report; zero provider calls."
+        },
+        {
+          "input": "Referenced HLD/DEF/ISSUE/source changes, subject itself unchanged",
+          "expected": "Ignore for invalidation and same-attempt recovery; retain admitted workflow references. Fresh restart re-prepares context under Epic/Standalone/Issue rules."
+        },
+        {
+          "input": "Long-running active tool outlasts 30 minutes",
+          "expected": "No fixed task deadline. Coordinator keeps active tool identity/elapsed state separately and defers inactivity expiry while a verified tool remains in flight; after completion the ordinary 30-minute model-wait grace applies. Implement a design-local timer policy around the existing activity monitor rather than changing code-review behavior. Polls/heartbeats/process presence never renew grace; process exit/tool failure remains actionable."
+        },
+        {
+          "input": "Duplicate resume/restart request after lost acknowledgement",
+          "expected": "Same actionId/body returns recorded resulting attempt/status and never dispatches again; changed body conflicts."
+        },
+        {
+          "input": "S1 checkpoint has no S2 fields",
+          "expected": "Load additively. An interrupted saved current execution counts as one already-reserved dispatch; do not automatically recover old failed or completed terminal attempts."
+        },
+        {
+          "input": "Controller submits a semantically invalid but structurally valid review result",
+          "expected": "Treat as technical invalid-output unit failure under the same budget as native. Rotate executionId; old correction responses become stale. Schema-invalid/foreign/sequence-invalid envelopes are request errors."
+        },
+        {
+          "input": "Two sessions recover same review; independent subjects recover concurrently",
+          "expected": "Single active subject/action admission yields one execution; trusted owner cannot be stolen. Different subject jobs retain independent sequential loops."
+        },
+        {
+          "input": "128 attempts/actions or64MiB checkpoint reached",
+          "expected": "Explicit limit error with intact history, no silent pruning or partial approval; no provider dispatch."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Consume S1 contracts and preserve accepted baseline/inventory/plan/chunk feedback; prior attempts freeze fully when a new attempt is appended.",
+          "source": "c1"
+        },
+        {
+          "text": "Normal native/controller policy and workflow-aware subject derivation remain identical; retired review APIs stay unavailable, no code-review engine migration.",
+          "source": "c1"
+        },
+        {
+          "text": "All cloud calls remain CliProvider-based and serial within each review; no fixed deadline, native internalRetry:false, coordinator is the sole retry owner.",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Node node:test + node:assert/strict in tracked *.test.ts files run with Node22 and tsx; direct source inspection supplements broad/incomplete analyzer test lookup. No hosted calls or real 30-minute sleeps in deterministic tests.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove sc3 state/retry/action rules and S1 preservation using existing fixtures and injected clock/save/provider dependencies.",
+          "subjects": [
+            "Resume unchanged interrupted native/controller reviews without repeating accepted chunks or planning; report-only recovery makes zero model calls.",
+            "Automatic technical retry budget is initial plus three, scoped to one failed planning/chunk unit; diagnostics propagate and semantic findings/incomplete results never retry.",
+            "Crash-safe reservation and exact recovery replay preserve counters; exhausted recovery needs one-launch user direction and cannot reset automatic budget.",
+            "Subject monitor invalidates during a stalled model/tool and after rename; restored bytes cannot revive a latched attempt; late output and final-report races are fenced.",
+            "External-reference/source edits are ignored; Epic/Standalone/Issue recovery preserves admitted context and full restart resolves current proper prerequisites.",
+            "Activity policy has no fixed deadline, ignores polling/heartbeats/liveness, tolerates separately tracked long-running tools and expires true idle waits at30minutes.",
+            "Bounded checkpoint schema and immutability reject foreign/corrupt/oversized state, decreasing counters, missing action decisions and changed prior attempts.",
+            "Completed-unit retry summaries survive later successful units/full restart; one-launch action outcomes fill once and remain immutable."
+          ],
+          "fixturesNeeded": [
+            "Existing design-review fixtureRepo and fake sequential providers",
+            "Fault injection at reserve/dispatch/result/report saves",
+            "Virtual monotonic clock and activity/tool events",
+            "Subject file mutations/renames and independent external files"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Validate strict additive request/checkpoint/progress schemas and native/controller technical-failure parity.",
+          "subjects": [
+            "recover/failure phase shapes, valid actionId replay and invalid enum/decision/identity/attempt/size inputs",
+            "S1 checkpoint compatibility; new optional sc3 state and bounded metadata-only progress",
+            "Identical accepted outputs and retry/pause transitions across both reviewer parties",
+            "recover wire discriminator and operation are independent; native recover routes before exchange owner guard, controller recovery requires trusted identity; direct save/commit preserve domain-vs-I/O errors and missing_checkpoint."
+          ],
+          "fixturesNeeded": [
+            "Saved S1-style checkpoint and new multi-attempt snapshots",
+            "Equivalent native/controller execution scripts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the actual MCP/IPC main-owner routes and restart recovery without real models.",
+          "subjects": [
+            "Normal stdio MCP/Unix IPC recover/failure routes remain main-owned; native request disconnect survives, controller disconnect requires explicit trusted rebind.",
+            "Interrupted job reconstruction with preserved completed chunks and final report retrieval",
+            "Two-session recovery conflicts, request-independent native execution and stale owner refusal"
+          ],
+          "fixturesNeeded": [
+            "Existing real stdio MCP and Unix IPC harness",
+            "Fake CLI subprocess, disposable project/home/socket and fresh coordinator after simulated daemon loss"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Qualify compiled normal entrypoint without repeatedly spending hosted tokens.",
+          "subjects": [
+            "Compiled fake-CLI interrupted review recovery, technical retries/exhaustion/user action, subject invalidation and zero duplicate accepted-chunk calls"
+          ],
+          "fixturesNeeded": [
+            "Extend scripts/smoke-design-review.mjs isolated compiled harness; record fake versus hosted explicitly",
+            "Production build and captured JSON/TAP evidence under /tmp"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Resume unchanged interrupted native/controller reviews without repeating accepted chunks or planning; report-only recovery makes zero model calls.",
+            "Crash-safe reservation and exact recovery replay preserve counters; exhausted recovery needs one-launch user direction and cannot reset automatic budget.",
+            "Normal stdio MCP/Unix IPC recover/failure routes remain main-owned; native request disconnect survives, controller disconnect requires explicit trusted rebind.",
+            "Integration reconstruction and result/report-save crash matrix"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Automatic technical retry budget is initial plus three, scoped to one failed planning/chunk unit; diagnostics propagate and semantic findings/incomplete results never retry.",
+            "Crash-safe reservation and exact recovery replay preserve counters; exhausted recovery needs one-launch user direction and cannot reset automatic budget.",
+            "Controller failure exchange follows same four-dispatch cap and pointed native schema-failure diagnostics"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Subject monitor invalidates during a stalled model/tool and after rename; restored bytes cannot revive a latched attempt; late output and final-report races are fenced.",
+            "Explicit restart_full requires decision, appends fresh attempt, and retains old attempt byte-for-byte"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "External-reference/source edits are ignored; Epic/Standalone/Issue recovery preserves admitted context and full restart resolves current proper prerequisites."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Activity policy has no fixed deadline, ignores polling/heartbeats/liveness, tolerates separately tracked long-running tools and expires true idle waits at30minutes.",
+            "Virtual active tool lasts beyond30minutes without model-wait grace renewal; on completion ordinary grace applies; native and controller match"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "Crash-safe reservation and exact recovery replay preserve counters; exhausted recovery needs one-launch user direction and cannot reset automatic budget.",
+            "Repeated observation/start/resume without approved exhaustion decision starts no provider/chunk; one approved action authorizes one dispatch only"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Extend the existing attempt with a bounded recovery record",
+        "oneLineSummary": "One coordinator and checkpoint; explicit recovery actions, durable unit counters and a subject-only monitor.",
+        "approach": "Consume S1 subject/plan/result/checkpoint APIs. Add sc3 recovery state/actions plus one current-unit execution record, bounded technical diagnostics and append-only user decisions within each attempt. Keep one active owner per subject; resume skips accepted chunks, restart appends a fresh attempt, coordinator owns all retries. Reuse ReviewActivityMonitor and existing native/controller execution paths; monitor only canonical subject JSON and document.",
+        "pros": [
+          "Smallest shape that covers all S2 criteria without another engine or file",
+          "Existing atomic checkpoint and generation fences remain authoritative",
+          "Same recovery/retry policy for native and controller reviewers"
+        ],
+        "cons": [
+          "Coordinator must explicitly separate execution aborts from whole-attempt invalidation",
+          "Current-unit metadata needs careful crash-safe reservation and replay checks"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Nested durable execution ledger per unit",
+        "oneLineSummary": "Store a complete execution row for each planning/chunk invocation inside the same checkpoint.",
+        "approach": "Keep sc1/sc2 and coordinator ownership, but make each unit own an append-only array of invocation records, outcomes and decisions. Derive retry and recovery state by folding those records; retain S1 completed chunk results as authority. No new store or shared-engine migration.",
+        "pros": [
+          "Every attempted dispatch is separately inspectable",
+          "Crash/retry ordering can be reconstructed from durable rows"
+        ],
+        "cons": [
+          "Duplicates state already represented by accepted results and progress",
+          "Larger schema and folding logic than S2 requires",
+          "More checkpoint growth and invariants without added user-visible recovery capability"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Capable but additional records/folding duplicate state and increase validation surface with no required capability gain."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "s2-recovery-and-retry",
+      "narrative": "This flow shows explicit recovery, durable dispatch ordering, and a technical retry that preserves accepted chunks. Mutation invalidation and exhausted-budget user decisions are distinct stop paths, described in the contract and error table.",
+      "participants": [
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Requests recovery and conveys explicit user decisions; observes completed feedback without corrective action mid-review."
+        },
+        {
+          "id": "owner",
+          "label": "Design coordinator",
+          "description": "Sole owner of subject/job state, retry budget and generation fences."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Private checkpoint",
+          "description": "Existing atomic snapshot retains accepted chunks, unit reservations and action replay identity."
+        },
+        {
+          "id": "reviewer",
+          "label": "Independent reviewer",
+          "description": "Native CLI or trusted controller receives the same policy, assignment and pointed prior technical feedback."
+        },
+        {
+          "id": "subject",
+          "label": "Subject monitor",
+          "description": "Watches only reviewed canonical JSON/document and latches detected changes."
+        }
+      ],
+      "messages": [
+        {
+          "from": "controller",
+          "to": "owner",
+          "label": "recover(resume, actionId, current attempt)",
+          "description": "Explicit retrigger only; no recovery from polls or daemon startup."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Load/validate unchanged subject and accepted state",
+          "description": "Preserve admitted workflow context; do not revalidate external reference changes."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Save action plus next unit generation/budget reservation",
+          "description": "Persist before acknowledgement or provider dispatch; exact action replay is idempotent."
+        },
+        {
+          "from": "owner",
+          "to": "controller",
+          "label": "Short durable acknowledgement",
+          "kind": "return",
+          "description": "Same attempt continues; requesting native client can disconnect safely."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "Dispatch only unfinished unit",
+          "description": "Skip accepted chunks and retain their feedback unchanged; shared activity policy applies."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "label": "Technical failure with pointed diagnostic",
+          "kind": "return",
+          "description": "This illustrative retry branch excludes substantive findings and honest incomplete coverage."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Save diagnostic and reserve retry ordinal",
+          "description": "Initial execution plus at most three automatic retries; exhaustion instead saves paused state."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "New generation, same failed unit only",
+          "description": "Fresh generation rejects late prior responses; native internal retries stay disabled."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "label": "Valid completed feedback",
+          "kind": "return",
+          "description": "Coverage/feedback schema and semantic validation use existing S1 contracts."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Persist accepted feedback before next unit",
+          "description": "No completion is acknowledged or advanced past a failed save."
+        },
+        {
+          "from": "subject",
+          "to": "owner",
+          "label": "Independent stop branch: subject changed",
+          "description": "At any active stage, latch invalidation and cancel execution; this branch is not a required post-success event."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Persist invalidated; refuse late output",
+          "description": "Historical completed chunks remain but cannot validate changed content."
+        },
+        {
+          "from": "owner",
+          "to": "controller",
+          "label": "requiresUserInput: approved full restart needed",
+          "kind": "return",
+          "description": "Never silently restart; external changes outside the subject do not cause this branch."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S002/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/HLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/shared/review-activity.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "step-output",
+      "ref": "s4"
+    },
+    {
+      "id": "c6",
+      "kind": "step-output",
+      "ref": "s5"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s6"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/DEF.md"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/subject.ts"
+    }
+  ]
+}

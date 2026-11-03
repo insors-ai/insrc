@@ -92,7 +92,7 @@ Run at 2026-11-03T09:24:10.156Z on commit `ce8e0bb81`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-03T10:35:11.596Z on commit `ad5d5b68c`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T10:55:14.119Z on commit `814a8ce0f`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it**
 

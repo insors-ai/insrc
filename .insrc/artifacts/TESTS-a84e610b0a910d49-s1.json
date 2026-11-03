@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "e5044d7f2b0116776a7c6c0e4a60bfc111a65ddb363aefbde9bdb1cecb2af811",
-        "at": "2026-11-03T10:35:11.838Z",
+        "number": 10,
+        "contentHash": "fa4f684bd7736df7569fe8739f392e893875123b87565302103d5359fd9c87f5",
+        "at": "2026-11-03T10:55:14.236Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "a84e610b0a910d49",
     "storyId": "s1",
     "createdAt": "2026-11-03T09:17:31.517Z",
-    "updatedAt": "2026-11-03T10:35:11.596Z",
+    "updatedAt": "2026-11-03T10:55:14.119Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-03T08:51:40.235Z",
     "epicSlug": "make-code-review-s-documents-review",
-    "revision": 9
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -243,8 +243,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "ad5d5b68c",
-        "ranAt": "2026-11-03T10:35:11.596Z",
+        "commit": "814a8ce0f",
+        "ranAt": "2026-11-03T10:55:14.119Z",
         "testsPassed": true,
         "tests": [
           {
@@ -305,7 +305,7 @@
             "file": "src/daemon/__tests__/task-review-plan-path.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 676,
+            "durationMs": 698,
             "titles": [
               {
                 "title": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none",
@@ -318,7 +318,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 920,
+            "durationMs": 881,
             "titles": [
               {
                 "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",

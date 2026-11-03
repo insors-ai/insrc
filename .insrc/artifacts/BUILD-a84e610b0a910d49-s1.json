@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "4d446b3bf960464b106dd0e5d785f7a25e5cdd7c888c866277bae8662717dcc9",
-        "at": "2026-11-03T10:37:04.755Z",
+        "number": 10,
+        "contentHash": "664e2b978bd2986364a67148857b4e971f79d8505e5e7c609688cc4e3a511537",
+        "at": "2026-11-03T10:57:44.097Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "a84e610b0a910d49",
     "storyId": "s1",
-    "revision": 9,
-    "updatedAt": "2026-11-03T10:35:11.596Z",
+    "revision": 10,
+    "updatedAt": "2026-11-03T10:55:14.119Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "make-code-review-s-documents-review"
@@ -62,7 +62,7 @@
         "passed": true
       }
     ],
-    "summary": "Closed the one gap the daemon code review raised on t4 (attempt 2, MED): route-admission.test.ts now also admits a Story with only a BUILD through the real readStoryRoute and admission (the no-document route, check = BUILD focus), and requires the story role for a Story whose epic has a DEF (admitted with story, lld and plan; refused without story; refused with a story for a Story with no DEF). route-source.ts and the rest are unchanged; breaking the DEF detection makes the test fail. Otherwise as before: admission builds the route from the Story's stored artifacts and keeps the derived epic and unit in header.derived; startTaskReview runs the plan-path identity check only when the packet carries a plan document.",
+    "summary": "Closed the MED finding the daemon code review raised on t4 in attempt 3: task-review-plan-path.test.ts now proves the plan-path check is skipped when the packet has no plan document by asserting the request is refused by the route rule (a TaskReviewInputError with field documents and the message \"Expected the documents none for this Story's route, got lld\"), not by a documents.plan check; restoring the older explicit \"Expected a plan document\" requirement makes it fail. Earlier on t4: route-admission.test.ts admits the BUILD-only route and requires the story role when a DEF exists through the real route reader. Production code unchanged: admission builds the route from the Story's stored artifacts and keeps the derived epic and unit in header.derived; startTaskReview runs the plan-path identity check only when the packet carries a plan document.",
     "testRecord": {
       "md": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/TESTS.md"
     },
@@ -72,241 +72,241 @@
           "file": "src/daemon/task-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/packet.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/route.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/assessment.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/task-review-plan-path.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/publication.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/route-source.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/prompts/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SWEEP.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-a84e610b0a910d49.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-a84e610b0a910d49.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-a84e610b0a910d49-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-a84e610b0a910d49-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-a84e610b0a910d49-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-a84e610b0a910d49-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a84e610b0a910d49-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-a84e610b0a910d49-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SELF-REVIEW.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T10:35:11.596Z"
+        "timestamp": "2026-11-03T10:55:14.119Z"
       }
     ],
-    "commit": "b1e1d3f03"
+    "commit": "814a8ce0f"
   },
   "citations": []
 }

@@ -51,6 +51,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	'codeReview.freshness': { kind: 'read-only', evidence: 'handler-runtime.ts:624 throws PENDING REVIEW RE-IMPLEMENTATION' },
 	'codeReview.grounding': { kind: 'read-only', evidence: 'handler-runtime.ts:615 throws PENDING REVIEW RE-IMPLEMENTATION' },
 	'codeReview.run': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'code-review-rpc.ts persists the CR record of a story; the engine is removed (PENDING REVIEW RE-IMPLEMENTATION), the contract is kept' },
+ 'codeReview.task.cleanup': {kind:'modifying',repoParam:'repo',pathParams:[],evidence:'task-review-rpc.ts cleanupApprovedTaskReviews deletes approved story checkpoints under the explicit repository'},
 	'codeReview.task.activity': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'task-review-rpc.ts exchangeControllerTask* write controller activity into the review checkpoint of the repository' },
 	'codeReview.task.assignment': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'task-review-rpc.ts exchangeControllerTask* write the assignment into the review checkpoint of the repository' },
 	'codeReview.task.progress': { kind: 'read-only', evidence: 'task-review-rpc.ts readTaskReviewProgress reads a checkpoint' },
@@ -167,6 +168,12 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 };
 
 export const STEP_PHASE_AUDIT: Readonly<Record<string, AuditEntry>> = {
+ 'design-review-step.start': {kind:'modifying',repoParam:'repo',pathParams:['artifactPath'],evidence:'design-review-rpc.ts start persists the design checkpoint under the explicit project'},
+ 'design-review-step.progress': {kind:'read-only',evidence:'design-review-rpc.ts progress observes the main owner without model execution'},
+ 'design-review-step.assignment': {kind:'read-only',evidence:'design-review-rpc.ts assignment observes the main owner without model execution'},
+ 'design-review-step.plan': {kind:'modifying',repoParam:'repo',pathParams:[],evidence:'design-review-rpc.ts plan persists the design checkpoint under the explicit project'},
+ 'design-review-step.activity': {kind:'modifying',repoParam:'repo',pathParams:[],evidence:'design-review-rpc.ts activity persists the design checkpoint under the explicit project'},
+ 'design-review-step.result': {kind:'modifying',repoParam:'repo',pathParams:[],evidence:'design-review-rpc.ts result persists the design checkpoint under the explicit project'},
 	'workflow-step.start': { kind: 'modifying', repoParam: 'repo', pathParams: [], evidence: 'phases/start.ts:44 resolves the repo (explicit, then the caller\'s workspace or INSRC_REPO) and settles signoff, preflights questions and starts a run that writes run records' },
 	'workflow-step.plan': { kind: 'modifying', repoParam: 'repo', pathParams: [], repoFromRunToken: true, evidence: 'phases/plan.ts continues a run by its state token; writes the run state' },
 	'workflow-step.step': { kind: 'modifying', repoParam: 'repo', pathParams: [], repoFromRunToken: true, evidence: 'phases/step.ts continues a run by its state token (state.ts decodeState)' },

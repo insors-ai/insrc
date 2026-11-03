@@ -163,7 +163,7 @@ export class DesignReviewCoordinator {
   requireDesign(job?.owner?.id===owner.id,'wrong_owner','Not the reviewing connection');
   requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
   const unit=job.controller;
-  if(request.phase==='assignment')return{assignment:unit?.assignment??null,progress:job.tracker.snapshot()};
+  if(request.phase==='assignment')return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};
   requireDesign(unit,'stale_execution','No active controller assignment');
   requireDesign('executionId' in request&&request.executionId===unit.assignment.executionId,'stale_execution','Wrong execution generation');
   requireDesign(request.sequence===unit.sequence+1,'invalid_sequence','Expected the next response sequence');

@@ -18,11 +18,9 @@ test('retired review operations throw the exact exception before parsing, provid
  assert.throws(() => reviewArtifactStream({artifactPath:'/missing'}, {timeoutMs:1}), {message});
  assert.throws(() => codeReviewStream({repo:'/missing',epicHash:'missing',storyId:'s1'}, {timeoutMs:1}), {message});
 });
-test('both old step tools reject start and continuation without a review provider', async () => {
- const table = stepToolTable();
- for (const name of ['insrc_review_step','insrc_code_review_step']) {
-  for (const phase of ['start','claims','verdicts','findings','judgements']) {
-   await assert.rejects(table[name]!({phase},new AbortController().signal), {message});
-  }
+test('current step tools reject retired input shapes before provider work', async () => {
+ const table=stepToolTable();
+ for(const name of ['insrc_review_step','insrc_code_review_step'])for(const phase of ['start','claims','verdicts','findings','judgements']){
+  await assert.rejects(table[name]!({phase},new AbortController().signal));
  }
 });

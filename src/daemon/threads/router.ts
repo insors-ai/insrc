@@ -120,7 +120,7 @@ export class Router {
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
 			|| MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method)
-			|| request.method === 'step.call' && (request.params as { tool?: unknown } | null)?.tool === 'insrc_code_review_step'
+			|| request.method === 'step.call' && ['insrc_code_review_step','insrc_review_step'].includes(String((request.params as { tool?: unknown } | null)?.tool))
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);
 		if (target !== undefined && this.ports.has(target.threadId)) return this.send(target.threadId, request, deliver);

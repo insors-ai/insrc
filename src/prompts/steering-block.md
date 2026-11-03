@@ -313,12 +313,38 @@ require an ERD for isolated class edits. Builders keep affected artifacts aligne
 <!-- insrc:guide:build:end -->
 
 <!-- insrc:guide:review:start -->
-## review — unavailable (`insrc_review_step`)
+## review — evolving design artifacts (`insrc_review_step`)
 
-The previous design-review engine has been removed. Calls throw
-`PENDING REVIEW RE-IMPLEMENTATION`. Do not retry through another transport.
-Design-review redesign is a separate future epic. Approval gates still require
-an explicit user-authorized override when no usable independent review exists.
+Read `insrc_schema({ tool: 'insrc_review_step', phase })` for exact input fields.
+Use `start` with repo, unique reviewId, attempt 1 and canonical artifactPath.
+DEF/HLD/LLD only: the owner derives Epic, standalone or ISSUE workflow context;
+missing required ancestors are errors, and ISSUE/SPEC/PLAN are not review subjects.
+The party that did not author the artifact reviews it: controller-authored artifacts
+go to the daemon; daemon-authored artifacts go to the live controller. Unknown
+provenance is refused. No self-review fallback or retired review protocol.
+
+Start returns a durable short acknowledgement; native work runs in the background.
+Poll `progress` conservatively (about every 10–30 seconds), show meaningful status
+and completed-chunk progress to the user, and wait for full completion before corrections
+or approval. Default polling returns metadata only. Set includeResult true and use
+afterCompletedChunk/nextCompletedChunk to retrieve one completed chunk per page.
+Polling does not renew activity or execute model calls. The checkpoint path is returned.
+
+For a controller reviewer, `assignment` returns the current planning or chunk prompt,
+schema and executionId. Submit `plan` or `result` using that executionId and the next
+positive sequence; `activity` uses the same response sequence and real session/tool
+events. Assignment includes the latest accepted sequence. Keep the same live MCP
+session: observers cannot become reviewer. Semantic rejection does not transfer
+ownership. Do not manufacture activity merely to keep a review alive.
+
+Prompts contain guidelines and live document paths, never copied artifact bodies.
+The reviewer may inspect anything in the codebase. Plan coherent artifact-specific
+chunks covering every inventory unit, then a final consistency chunk. Findings and
+verification gaps do not skip later chunks. Completed feedback is saved before
+advancement. A subject change invalidates this review; external changes are ignored.
+S1 supports initial attempts only: failures/interruption require user input and never
+automatically reassign, retry or resume. Later stories add retry/recovery and approval
+publication; a checkpoint result alone is not an approval record.
 
 <!-- insrc:guide:review:end -->
 

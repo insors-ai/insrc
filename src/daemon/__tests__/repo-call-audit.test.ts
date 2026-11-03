@@ -9,6 +9,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DESIGN_REVIEW_PHASES } from '../../workflow/review/design-review/contracts.js';
 import { RPC_AUDIT, STEP_PHASE_AUDIT } from '../repo-call-audit.js';
 
 const DAEMON = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +22,7 @@ function registeredMethods(): string[] {
 
 /** The step phases, from the phase files of each step folder (a file name with a hyphen becomes the phase name with an underscore). */
 function stepPhases(): string[] {
-	const out: string[] = [];
+	const out: string[] = DESIGN_REVIEW_PHASES.map(phase=>`design-review-step.${phase}`);
 	const steps = join(DAEMON, 'steps');
 	for (const step of readdirSync(steps, { withFileTypes: true })) {
 		const dir = join(steps, step.name, 'phases');

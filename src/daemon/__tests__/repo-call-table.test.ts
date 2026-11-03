@@ -9,6 +9,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DESIGN_REVIEW_PHASES } from '../../workflow/review/design-review/contracts.js';
 import { RPC_AUDIT, STEP_PHASE_AUDIT } from '../repo-call-audit.js';
 import { FILE_MODIFYING_METHODS } from '../repo-call-gate.js';
 
@@ -18,7 +19,7 @@ const registeredMethods = (): string[] =>
 	[...new Set([...readFileSync(join(DAEMON, 'handler-runtime.ts'), 'utf8').matchAll(/^\s*'([a-zA-Z]+(?:\.[a-zA-Z]+)+)':\s*(?:async|\()/gm)].map(m => m[1]!))].sort();
 
 function stepPhases(): string[] {
-	const out: string[] = [];
+	const out: string[] = DESIGN_REVIEW_PHASES.map(phase=>`design-review-step.${phase}`);
 	const steps = join(DAEMON, 'steps');
 	for (const step of readdirSync(steps, { withFileTypes: true })) {
 		const dir = join(steps, step.name, 'phases');

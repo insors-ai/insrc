@@ -19,7 +19,7 @@ import type { TrustedRpcContext } from '../request-context.js';
  *     request itself was malformed.
  */
 
-import { reviewUnavailable } from '../../workflow/review-unavailable.js';
+import { handleDesignReviewStep } from './design-review-step.js';
 import { registerLocalReviewOwner } from '../review-request-owner.js';
 import { createReviewOwnerContext } from '../../shared/review-owner-context.js';
 import type { StreamHandler } from '../server.js';
@@ -78,7 +78,7 @@ export function stepToolTable(opts: StepHostOptions = {}): Record<string, StepTo
 		insrc_analyze_step:     (args, _signal, _progress, execution) => handleAnalyzeStep(args, execution),
 		insrc_workflow_step:    (args) => handleWorkflowStep(args),
 		insrc_build_step:       (args) => handleBuildStep(args),
-		insrc_review_step:      async () => reviewUnavailable(),
+		insrc_review_step: (args, _signal, _progress, _execution, trusted) => handleDesignReviewStep(args, trusted),
 		insrc_code_review_step: (args, _signal, _progress, _execution, trusted) => handleTaskReviewStep(args, trusted),
 		insrc_triage:           (args) => handleTriageStep(args),
 	};
@@ -102,7 +102,7 @@ function contextOf(raw: unknown): StepCallContext | string {
 }
 
 /** The step tools whose phases are in the repo gate's table, and the name their table rows carry. */
-const GATED_STEP_TOOLS: Readonly<Record<string, string>> = { insrc_workflow_step: 'workflow-step', insrc_build_step: 'build-step' };
+const GATED_STEP_TOOLS: Readonly<Record<string, string>> = { insrc_workflow_step: 'workflow-step', insrc_build_step: 'build-step', insrc_review_step: 'design-review-step' };
 
 /** What the step host needs beyond the tool table. */
 export interface StepCallHandlerOptions {

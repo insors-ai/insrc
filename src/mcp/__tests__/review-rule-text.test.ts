@@ -63,10 +63,11 @@ for (const [name, text] of TEXTS) {
 	});
 }
 
-test('T13 design-review guidance remains explicitly unavailable', () => {
+test('T13 design-review guidance describes durable review without retired fallback', () => {
  const g = guide('review');
- assert.match(g, /PENDING REVIEW RE-IMPLEMENTATION/);
- assert.match(g, /Do not retry through another transport/);
+ assert.match(g, /background/);
+ assert.match(g, /wait for full completion before corrections/);
+ assert.match(g, /No self-review fallback/);
 });
 
 test('T13 current code-review guidance preserves both parties and explicit task protocol', () => {
@@ -92,8 +93,9 @@ test('T13 the steering tool table describes both review tools by the other-party
 	assert.match(s, /\| `insrc_code_review_step` \| Post-build code review by the party that did not write the code/);
 });
 
-test('T13 design-review tool remains unavailable', () => {
- assert.equal(description('insrc_review_step'), 'PENDING REVIEW RE-IMPLEMENTATION');
+test('T13 design-review tool routes the other party with live paths', () => {
+ assert.match(description('insrc_review_step'), /party that did not author/);
+ assert.match(description('insrc_review_step'), /live artifact paths/);
 });
 
 test('T13 current code-review description routes both parties without retired protocol', () => {

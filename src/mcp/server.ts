@@ -1,6 +1,7 @@
 import { CODE_REVIEW_INPUT, CODE_REVIEW_PHASES } from './code-review/schema.js';
 import { CodeReviewConnections } from './code-review/handler.js';
-import { reviewUnavailable } from '../workflow/review-unavailable.js';
+import { DESIGN_REVIEW_INPUT, DESIGN_REVIEW_PHASES } from './design-review/schema.js';
+import { DesignReviewConnections } from './design-review/handler.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -83,6 +84,7 @@ const TOOL_SCHEMA_META: Readonly<Record<string, { phases?: string[]; dynamicNote
 			'Multi-turn: the per-phase payload the run hands back is authoritative — ' +
 			'this is the fixed OUTER call envelope.',
 	},
+	insrc_review_step: { phases: [...DESIGN_REVIEW_PHASES] },
 	insrc_code_review_step: { phases: [...CODE_REVIEW_PHASES] },
 	insrc_triage: {
 		phases: ['start', 'classify'],
@@ -613,18 +615,17 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	);
 
 	// -------------------------------------------------------------------
-	// insrc_review_step — review of a design artifact by the OTHER PARTY.
-	//
-	// The party that did not author the work reviews it, in both directions.
-	// The tool routes by the artifact's author: work the daemon authored is
-	// reviewed HERE by the controller (the MCP client model) — the server does
-	// the DETERMINISTIC parts (read artifact, gather evidence, assemble +
-	// persist the report) and the controller emits the claims + verdicts.
-	// Work the controller authored, or whose author is not recorded, is sent
-	// to the daemon (`workflow.review`) and its verdict returned. The same
-	// model on both sides is acceptable; the party is what must differ.
+	// Design review uses live artifact paths and durable coherent chunk feedback.
+ const designReviews=new DesignReviewConnections(options.review);
+ const priorDesignClose=server.server.onclose;
+ server.server.onclose=()=>{designReviews.close();priorDesignClose?.();};
+ registerAndRecord('insrc_review_step',{
+  title:'Review evolving design artifacts',
+  description:'Review DEF/HLD/LLD by the party that did not author it. Controller-authored artifacts go to the daemon; daemon-authored artifacts go to the live controller. Start acknowledges durable background work; poll progress, retrieve one completed chunk per cursor page, and wait for full completion before corrections. Reviewers read live artifact paths and may inspect the codebase; coherent chunks and final consistency are mandatory. No retired protocol or self-review fallback.',
+  inputSchema:DESIGN_REVIEW_INPUT,
+ },async(args,extra)=>designReviews.call(args,detectClient(server.server.getClientVersion()?.name),extra.signal));
+
 	// -------------------------------------------------------------------
-	registerAndRecord('insrc_review_step', { title: 'Review unavailable', description: 'PENDING REVIEW RE-IMPLEMENTATION', inputSchema: {} }, async () => reviewUnavailable());
 
 	// -------------------------------------------------------------------
 	// Current task review is asynchronous; persistent transport preserves live controller authority.

@@ -4,17 +4,18 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 24 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
+**Totals:** 27 pass, 0 fail, 0 skipped, 0 not found; 3 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-03T09:20:23.450Z on commit `4f6cc9aa0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T12:43:57.530Z on commit `78c166c89`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Strict phase/schema boundaries reject malformed identities, unknown fields/enums, noninitial S1 attempts and payload/size limit violations.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | strict design requests reject malformed identities, unknown fields, phases and noninitial attempts | `src/workflow/review/design-review/__tests__/contracts.test.ts` |
+| pass | result payload has its own one-MiB boundary inside the larger request envelope | `src/workflow/review/design-review/__tests__/contracts.test.ts` |
 
 **unit: Common daemon/controller assignment and result schema preserves typed workflow context and bounded progress cursor options.**
 
@@ -26,7 +27,7 @@ Run at 2026-11-03T09:20:23.450Z on commit `4f6cc9aa0`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/contracts.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/workflow/review/design-review/__tests__/contracts.test.ts` | 0 | 3 | 0.5 s |  |
 
 ## t2
 
@@ -143,13 +144,15 @@ Run at 2026-11-03T10:06:57.257Z on commit `56d00443b`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-03T10:10:08.980Z on commit `c9208b46c`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T12:45:53.307Z on commit `78c166c89`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Actual trusted owner connection/execution/sequence gates controller plan/activity/result, with idempotent exact replay and conflicting replay refusal.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | trusted controller authority, execution sequence and durable exact replay are enforced | `src/workflow/review/design-review/__tests__/controller.test.ts` |
+| pass | observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance | `src/workflow/review/design-review/__tests__/controller.test.ts` |
+| pass | failed controller activity persistence fences a concurrently submitted valid plan | `src/workflow/review/design-review/__tests__/controller.test.ts` |
 
 **integration: Reviewing-controller disconnect retains completed chunks as interrupted with no automatic reassignment/recovery.**
 
@@ -168,8 +171,8 @@ Run at 2026-11-03T10:10:08.980Z on commit `c9208b46c`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/controller.test.ts` | 0 | 3 | 0.9 s |  |
-| `src/workflow/review/design-review/__tests__/coordinator.test.ts` | 0 | 3 | 0.8 s |  |
+| `src/workflow/review/design-review/__tests__/controller.test.ts` | 0 | 5 | 0.8 s |  |
+| `src/workflow/review/design-review/__tests__/coordinator.test.ts` | 0 | 8 | 2 s |  |
 
 ## t7
 

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "0fb50be78a8af91718f32e167ea0a25e8f57d34c756ed87517e761fff4861492",
-        "at": "2026-11-03T11:20:17.712Z",
+        "number": 10,
+        "contentHash": "eef690b23a54a1fd893f907bf69e6778c12e86b1d9d7bdd21010556ce42e18c1",
+        "at": "2026-11-03T12:45:53.336Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s1",
     "createdAt": "2026-11-03T09:20:23.450Z",
-    "updatedAt": "2026-11-03T11:20:17.601Z",
+    "updatedAt": "2026-11-03T12:45:53.307Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 8
+    "revision": 10
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "4f6cc9aa0",
-        "ranAt": "2026-11-03T09:20:23.450Z",
+        "commit": "78c166c89",
+        "ranAt": "2026-11-03T12:43:57.530Z",
         "testsPassed": true,
         "tests": [
           {
@@ -44,6 +44,11 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
                 "title": "strict design requests reject malformed identities, unknown fields, phases and noninitial attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
+                "title": "result payload has its own one-MiB boundary inside the larger request envelope",
                 "result": "pass"
               }
             ],
@@ -68,7 +73,7 @@
             "file": "src/workflow/review/design-review/__tests__/contracts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 525,
+            "durationMs": 471,
             "titles": [
               {
                 "title": "strict design requests reject malformed identities, unknown fields, phases and noninitial attempts",
@@ -76,6 +81,10 @@
               },
               {
                 "title": "common review schemas preserve workflow context and bounded observation without accepting copied content",
+                "result": "pass"
+              },
+              {
+                "title": "result payload has its own one-MiB boundary inside the larger request envelope",
                 "result": "pass"
               }
             ],
@@ -374,8 +383,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "c9208b46c",
-        "ranAt": "2026-11-03T10:10:08.980Z",
+        "commit": "78c166c89",
+        "ranAt": "2026-11-03T12:45:53.307Z",
         "testsPassed": true,
         "tests": [
           {
@@ -386,6 +395,16 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
                 "title": "trusted controller authority, execution sequence and durable exact replay are enforced",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                "title": "observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                "title": "failed controller activity persistence fences a concurrently submitted valid plan",
                 "result": "pass"
               }
             ],
@@ -428,7 +447,7 @@
             "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 937,
+            "durationMs": 842,
             "titles": [
               {
                 "title": "trusted controller authority, execution sequence and durable exact replay are enforced",
@@ -441,6 +460,14 @@
               {
                 "title": "controller results use the common schema and produce deterministic complete counts",
                 "result": "pass"
+              },
+              {
+                "title": "failed controller activity persistence fences a concurrently submitted valid plan",
+                "result": "pass"
+              },
+              {
+                "title": "observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -449,7 +476,7 @@
             "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 818,
+            "durationMs": 2026,
             "titles": [
               {
                 "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
@@ -461,6 +488,26 @@
               },
               {
                 "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              },
+              {
+                "title": "contradictory native status fails with pointed details and never silently retries or normalizes",
+                "result": "pass"
+              },
+              {
+                "title": "native schema failures retain pointed diagnostic corrections without raw output or retry",
+                "result": "pass"
+              },
+              {
+                "title": "slow progress persistence coalesces activity instead of accumulating checkpoint writes",
+                "result": "pass"
+              },
+              {
+                "title": "native inactivity is supervised by the owner and observation never renews its grace",
+                "result": "pass"
+              },
+              {
+                "title": "a native provider returning after inactivity cannot publish a late valid plan",
                 "result": "pass"
               }
             ],

@@ -32,8 +32,6 @@ export function findBlock(text: string): { start: number; end: number } | undefi
 	return { start, end };
 }
 
-export const hasBlock = (text: string): boolean => findBlock(text) !== undefined;
-
 const errorReason = (error: unknown): string => {
 	const e = error as NodeJS.ErrnoException;
 	return e.code !== undefined ? `${e.code}: ${e.message}` : String(error);

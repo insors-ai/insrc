@@ -85,9 +85,17 @@ test('src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves
 		assert.match(byName['post-rewrite'].reason, /EISDIR/);
 		assert.deepEqual(f.flags, [true], 'the setting records the partial install');
 		assert.ok(existsSync(f.hook('post-merge')));
+		// installing over a foreign hook that ends early flags it in the result
+		rmSync(f.hook('post-rewrite'), { recursive: true });
+		writeFileSync(f.hook('post-rewrite'), '#!/bin/sh\necho mine\nexit 0\n', { mode: 0o755 });
+		const over = await f.hooks.handlers['repo.gitHooks.install']!({ repo: f.repo }) as any;
+		const rewrite = over.hooks.find((x: any) => x.name === 'post-rewrite');
+		assert.deepEqual([rewrite.installed, rewrite.foreign, rewrite.earlyExit], [true, true, true]);
+		assert.equal(over.hooks.find((x: any) => x.name === 'post-merge').foreign, undefined, 'a hook with no other content is not flagged');
+		rmSync(f.hook('post-rewrite')); f.flags.length = 0; f.flags.push(true);
 		// nothing installed at all is an error and sets nothing
-		rmSync(f.hook('post-merge')); writeFileSync(join(f.root, 'x'), '');
-		mkdirSync(f.hook('post-merge'));
+		rmSync(f.hook('post-merge'));
+		mkdirSync(f.hook('post-merge')); mkdirSync(f.hook('post-rewrite'));
 		const none = await f.hooks.handlers['repo.gitHooks.install']!({ repo: f.repo }) as any;
 		assert.deepEqual([none.ok, none.error.code], [false, 'hooks-failed']);
 		assert.deepEqual(f.flags, [true]);

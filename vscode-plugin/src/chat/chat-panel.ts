@@ -966,7 +966,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             if (session === s) reportCards();
             else postLive(ev, rowIndex);
           } else postLive(ev, rowIndex);
-          if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+          if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) approvals.endTurn(ev.turnId); // t2: observation failure is not terminal
         }
       },
       onEnd: (outcome) => {
@@ -978,7 +978,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           for (const turnId of followedTurns) approvals.endTurn(turnId);
           runCompletedBatch();
           postHistory();
-          setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
+          reevaluateChatStatus(s); // E202611031bd72813:S001 t2: same precedence on follow end
         }
       },
     });
@@ -1706,8 +1706,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
     }
-    // E202611031bd72813:S001 t2: turn starts -> working (after the first save, so the draft exists in the store)
-    setChatStatus(s, 'working');
+    // E202611031bd72813:S001 t2: turn starts -> working (after the first save, so the draft exists in the store);
+    // a continuation started while other requests remain unresolved stays waiting-input
+    setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'working');
 
     const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
     // The session's attachments directory is readable on this turn and on every later one (a grant
@@ -1788,7 +1789,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           } else postLive(ev, rowIndex);
         }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
-        if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+        if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) approvals.endTurn(ev.turnId); // E202611031bd72813:S001 t2: an observation failure is not terminal
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
@@ -1838,9 +1839,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           else if (ev.kind === 'done' && !ev.ok) q.error = ev.message ?? 'the turn ended with an error';
         }
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
-        // E202611031bd72813:S001 t2: terminal with pending cards stays waiting-input, else done — set AFTER
-        // runCompletedBatch so a continuation it starts keeps 'working'.
-        setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
+        // E202611031bd72813:S001 t2: re-evaluate AFTER runCompletedBatch — a continuation it starts
+        // keeps 'working'; pending cards keep waiting-input; otherwise done.
+        reevaluateChatStatus(s);
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         // Story E20261013b2e8109f:S001: the last check runs here; its rows are saved as they arrive,
         // and the turn's diff state ends when it is done.

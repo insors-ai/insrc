@@ -4,7 +4,8 @@
  * the real per-file resolver: a SQL fixture yields the document, table and
  * view entities and their REFERENCES (ac2); the document entity is the one the
  * artifact reader writes for the same file; a CTE name is not a reference and
- * quoted identifiers are unquoted; a reference to a table of another file
+ * names compare by the SQL name rule (ISSUE-0f3376a0 S001 t1: double-quoted
+ * exactly, the rest case-insensitively); a reference to a table of another file
  * stays pending; a fixture with a syntax error still yields the declarations
  * outside the broken region.
  *
@@ -54,22 +55,22 @@ test('s9 t8: a SQL fixture yields the document, table and view entities and thei
 	assert.equal(getParser(FILE), sqlParser, '.sql files are read by the SQL reader, not the artifact reader');
 	const r = parse(SOURCE);
 	assert.deepEqual(of(r, 'document'), ['schema.sql']);
-	assert.deepEqual(of(r, 'table'), ['Orders', 'app.users']);
+	assert.deepEqual(of(r, 'table'), ['"Orders"', 'app.users'], '"Orders" keeps the quotes that make it case-sensitive');
 	assert.deepEqual(of(r, 'view'), ['active_users', 'nested']);
 	assert.ok(r.entities.every(e => e.language === 'sql'));
 
 	const fileId = makeEntityId(REPO, FILE, 'file', FILE);
 	const defined = r.relations.filter(x => x.kind === 'DEFINES' && x.from === fileId).map(x => r.entities.find(e => e.id === x.to)!.name).sort();
-	assert.deepEqual(defined, ['Orders', 'active_users', 'app.users', 'nested', 'schema.sql']);
+	assert.deepEqual(defined, ['"Orders"', 'active_users', 'app.users', 'nested', 'schema.sql']);
 
 	assert.deepEqual(refs(r), [
-		'Orders -> app.users',                 // a FOREIGN KEY constraint
-		'active_users -> Orders',              // read inside the CTE's own query
+		'"Orders" -> app.users',               // a FOREIGN KEY constraint
+		'active_users -> "Orders"',            // read inside the CTE's own query, quoted as declared
 		'active_users -> app.users',
 		'active_users -> pending audit.log',
 		'app.users -> pending orgs',           // a column REFERENCES
-		'nested -> Orders',                    // unquoted names match case-insensitively
-		'nested -> app.users',                 // through a subquery in WHERE
+		'nested -> app.users',                 // unquoted APP.USERS folds to app.users, through a subquery in WHERE
+		'nested -> pending orders',            // unquoted orders is not the case-sensitive "Orders"
 	]);
 });
 
@@ -95,10 +96,14 @@ test('s9 t8: the document entity is the one the artifact reader writes for the s
 	assert.deepEqual(parse(huge).entities, []);
 });
 
-test('s9 t8: a CTE name is not a reference, and quoted identifiers are unquoted', () => {
+test('s9 t8: a CTE name is not a reference, and pending names keep their meaningful quotes', () => {
 	const r = parse(`CREATE VIEW "Report" AS WITH "Totals" AS (SELECT 1 AS n FROM [Sales]) SELECT * FROM Totals JOIN \`app\`.\`Ledger\` ON true;`);
-	assert.deepEqual(of(r, 'view'), ['Report']);
-	assert.deepEqual(refs(r), ['Report -> pending Sales', 'Report -> pending app.Ledger']);
+	assert.deepEqual(of(r, 'view'), ['"Report"']);
+	// FROM Totals folds to totals, not the case-sensitive CTE "Totals"; [Sales] is read as Sales by the grammar.
+	assert.deepEqual(refs(r), ['"Report" -> pending Sales', '"Report" -> pending Totals', '"Report" -> pending app.Ledger']);
+	// FROM "Totals" is the CTE, and an unquoted CTE answers any unquoted or lower-case quoted spelling.
+	assert.deepEqual(refs(parse('CREATE VIEW r AS WITH "Totals" AS (SELECT 1) SELECT * FROM "Totals";')), []);
+	assert.deepEqual(refs(parse('CREATE VIEW r AS WITH totals AS (SELECT 1) SELECT * FROM TOTALS JOIN "totals" ON true;')), []);
 
 	// A relation read twice is one reference.
 	assert.deepEqual(refs(parse('CREATE VIEW twice AS SELECT * FROM t a JOIN t b ON a.id = b.id;')), ['twice -> pending t']);

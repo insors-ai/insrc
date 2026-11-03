@@ -9,16 +9,19 @@
  *    artifact reader wrote them (same ids, names and flags), so retrieval and
  *    the vectors already stored for SQL documents are unaffected
  *  - CREATE TABLE -> table, CREATE [OR REPLACE] VIEW -> view, named by the
- *    unquoted, schema-qualified name (`app.users`); DEFINES from the file
+ *    schema-qualified name (`app.users`), each identifier written unquoted
+ *    unless its double quotes change its meaning (`"Users"`, `"a.b"`; see
+ *    sql-names.ts); DEFINES from the file
  *  - REFERENCES from a table to each table its REFERENCES clauses name, and
  *    from a view to each relation it selects from (FROM, JOIN, subqueries);
  *    a name the view's own WITH clause defines is a CTE, not a reference
  *  - a reference to a table or view of this file is resolved here (the
  *    resolver marks it 'extracted'); one to another file is written pending
- *    by name -- the cross-file pass does not match SQL names in this Story
- *    (user decision 2026-11-02; a recorded pending item)
+ *    under its name, written the same way, for the cross-file pass
  *
- * Unquoted names match case-insensitively, as SQL compares them. A file over
+ * Names compare by the SQL name rule (ISSUE-0f3376a0): a double-quoted
+ * identifier exactly, any other case-insensitively, so "Orders" and orders are
+ * different names and the quoted single name "a.b" is not a.b. A file over
  * the artifact reader's size limit is skipped, as it was before. When the
  * grammar cannot load, a .sql file is still stored as its document.
  *
@@ -33,6 +36,7 @@ import { makeEntityId } from './base.js';
 import type { Entity, Language, Relation } from '../../shared/types.js';
 import { loadReader, registerParser } from './registry.js';
 import { setSqlReferenceReader } from '../../db/relations.js';
+import { sqlNameKey, sqlStoredIdentifier } from './sql-names.js';
 
 type SyntaxNode = import('tree-sitter').SyntaxNode;
 
@@ -41,12 +45,15 @@ const MAX_SIZE = 256 * 1024;
 const MAX_BODY = 8192;
 const truncate = (text: string): string => text.length <= MAX_BODY ? text : text.slice(0, MAX_BODY) + '\n… (truncated)';
 
-/** An identifier without its quotes: "Orders", `Orders` and [Orders] are Orders. */
-const unquote = (text: string): string => text.replace(/^"(.*)"$|^`(.*)`$|^\[(.*)\]$/s, (_m, a, b, c) => a ?? b ?? c);
+const identifiers = (ref: SyntaxNode): string[] => ref.namedChildren.filter(c => c.type === 'identifier').map(c => c.text);
 
-/** The dotted, unquoted name an object_reference names (`app.users`). */
-const objectName = (ref: SyntaxNode): string =>
-	ref.namedChildren.filter(c => c.type === 'identifier').map(c => unquote(c.text)).join('.');
+/**
+ * The name an object_reference is stored under, for a definition and a
+ * reference alike: `app.users`, `"Orders"`, `app."Ledger"` -- each identifier
+ * unquoted unless its double quotes change its meaning, so it reads back to
+ * the key the reference was written with.
+ */
+const sqlName = (ref: SyntaxNode): string => identifiers(ref).map(sqlStoredIdentifier).join('.');
 
 /** Every node of `type` under `root`, in source order. */
 function descendants(root: SyntaxNode, type: string): SyntaxNode[] {
@@ -65,20 +72,20 @@ function tableReferences(stmt: SyntaxNode): string[] {
 	const names: string[] = [];
 	for (const kw of descendants(stmt, 'keyword_references')) {
 		const ref = kw.nextNamedSibling;
-		if (ref !== null && ref.type === 'object_reference') names.push(objectName(ref));
+		if (ref !== null && ref.type === 'object_reference') names.push(sqlName(ref));
 	}
 	return names;
 }
 
-/** The relations a view selects from, without the names its WITH clause defines. */
+/** The relations a view selects from, without the names its WITH clause defines (matched by key). */
 function viewReferences(stmt: SyntaxNode): string[] {
-	const ctes = new Set(descendants(stmt, 'cte').map(c => c.namedChildren.find(n => n.type === 'identifier')?.text).filter(n => n !== undefined).map(n => unquote(n).toLowerCase()));
+	const ctes = new Set(descendants(stmt, 'cte').map(c => c.namedChildren.find(n => n.type === 'identifier')?.text).filter(n => n !== undefined).map(n => sqlNameKey(sqlStoredIdentifier(n))));
 	const names: string[] = [];
 	for (const rel of descendants(stmt, 'relation')) {
 		const ref = rel.namedChildren.find(c => c.type === 'object_reference');
 		if (ref === undefined) continue;
-		const name = objectName(ref);
-		if (!ctes.has(name.toLowerCase())) names.push(name);
+		const name = sqlName(ref);
+		if (!ctes.has(sqlNameKey(name))) names.push(name);
 	}
 	return names;
 }
@@ -100,9 +107,10 @@ export class SqlParser implements CodeParser {
 	}
 
 	/**
-	 * The names a CREATE TABLE / VIEW statement references, read as this reader
-	 * reads them when it parses the file (a view's CTE names are not
-	 * references; strings, comments and aliases are not names), or undefined
+	 * The names a CREATE TABLE / VIEW statement references, written as this
+	 * reader stores them (meaningful double quotes kept) and read as it reads them when it parses the file (a
+	 * view's CTE names are not references; strings, comments and aliases are
+	 * not names), or undefined
 	 * without a grammar or when the text holds no such statement.
 	 */
 	referencesIn(statement: string): string[] | undefined {
@@ -136,7 +144,7 @@ export class SqlParser implements CodeParser {
 		for (const stmt of root === undefined ? [] : [...descendants(root, 'create_table'), ...descendants(root, 'create_view')]) {
 			const ref = stmt.namedChildren.find(c => c.type === 'object_reference');
 			if (ref === undefined) continue;
-			const objName = objectName(ref);
+			const objName = sqlName(ref);
 			if (objName === '') continue;
 			const kind = stmt.type === 'create_table' ? 'table' : 'view';
 			const id = makeEntityId(repo, filePath, kind, objName);
@@ -147,13 +155,16 @@ export class SqlParser implements CodeParser {
 				signature: `${kind} ${objName}`,
 			});
 			relations.push({ kind: 'DEFINES', from: fileId, to: id, resolved: true });
-			byName.set(objName.toLowerCase(), id);
+			byName.set(sqlNameKey(objName), id);
 			defs.push({ id, refs: kind === 'table' ? tableReferences(stmt) : viewReferences(stmt) });
 		}
 
 		for (const d of defs) {
-			for (const target of new Set(d.refs)) {
-				const local = byName.get(target.toLowerCase());
+			// One reference per name key, under the first way it is written.
+			const byKey = new Map<string, string>();
+			for (const target of d.refs) if (!byKey.has(sqlNameKey(target))) byKey.set(sqlNameKey(target), target);
+			for (const [key, target] of byKey) {
+				const local = byName.get(key);
 				relations.push(local !== undefined
 					? { kind: 'REFERENCES', from: d.id, to: local, resolved: true }
 					: { kind: 'REFERENCES', from: d.id, to: target, resolved: false, meta: { file: filePath, repo } });

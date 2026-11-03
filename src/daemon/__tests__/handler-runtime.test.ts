@@ -69,12 +69,14 @@ const RECORDED_STREAM = [
 	'todos.subscribe', 'understanding.watch', 'workflow.review', 'workflow.run',
 ];
 
-/** Methods the tables gained after the move: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync. */
+/** Methods the tables gained after the move: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync, task code review. */
 const ADDED_RPC = [
 	'approval.answer', 'artifact.feedback.add', 'artifact.feedback.list', 'identity.declare', 'identity.show', 'repo.convert',
 	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
+	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
+	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
 ];
 const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
 
@@ -97,10 +99,14 @@ test('the runtime function builds the handler tables with stub indexing dependen
 	}
 });
 
-test('src/daemon/__tests__/handler-runtime.test.ts: the recorded handler key sets are unchanged because no method is added', () => {
+test('src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the eight task ones, with no duplicate or renamed method', () => {
 	// codeReview.freshness queues file jobs from its existing handler: no method was added for it
 	assert.ok(RECORDED_RPC.includes('codeReview.freshness'));
-	assert.ok(!ADDED_RPC.some(m => m.startsWith('codeReview.')) && !ADDED_STREAM.some(m => m.startsWith('codeReview.')));
+	assert.deepEqual(
+		ADDED_RPC.filter(m => m.startsWith('codeReview.')).sort(),
+		['activity', 'assignment', 'cleanup', 'progress', 'publish', 'result', 'scope', 'start'].map(m => `codeReview.task.${m}`),
+	);
+	assert.ok(!ADDED_STREAM.some(m => m.startsWith('codeReview.')));
 	assert.equal(new Set([...RECORDED_RPC, ...ADDED_RPC]).size, RECORDED_RPC.length + ADDED_RPC.length, 'no duplicate or renamed method');
 });
 

@@ -6,8 +6,8 @@ import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
 import type { LLMProvider } from '../../../shared/types.js';
-import type { ReviewActivityMonitorDeps } from '../../../shared/review-activity.js';
-import { requireReviewActivity, REVIEW_INACTIVITY_MS, ReviewActivityMonitor } from '../../../shared/review-activity.js';
+import type { ReviewActivityMonitorDeps, ReviewActivityMonitor } from '../../../shared/review-activity.js';
+import { requireReviewActivity, REVIEW_INACTIVITY_MS } from '../../../shared/review-activity.js';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult, DesignRecoveryRequest } from './contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from './subject.js';
@@ -20,6 +20,7 @@ import { nextDesignUnit, reserveDesignUnit, sealDesignUnit } from './recovery-st
 import { designTechnicalFailure, recordDesignFailure, finishDirectedExecution } from './technical-failure.js';
 import { DesignSubjectMonitor } from './subject-monitor.js';
 import type { DesignSubjectMonitorDeps } from './subject-monitor.js';
+import { createDesignActivityMonitor } from './activity-monitor.js';
 
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
@@ -266,7 +267,7 @@ export class DesignReviewCoordinator {
    return new Promise<unknown>((resolve,reject)=>{
     let accept!:()=>void,fail!:(reason:unknown)=>void;
     const accepted=new Promise<void>((yes,no)=>{accept=yes;fail=no;});void accepted.catch(()=>{});
-    const monitor=new ReviewActivityMonitor(cause=>{const error=new DesignReviewError('review_inactive',cause.message);if(job.controller?.assignment.executionId===assignment.executionId)job.controller.retired=true;reject(error);},this.deps.activity);
+    const monitor=createDesignActivityMonitor(cause=>{const error=new DesignReviewError('review_inactive',cause.message);if(job.controller?.assignment.executionId===assignment.executionId)job.controller.retired=true;reject(error);},this.deps.activity);
     job.controller={assignment,resolve,reject,accepted,accept,fail,monitor,sequence:0,validate};
    });
   }
@@ -274,7 +275,7 @@ export class DesignReviewCoordinator {
   let candidateError:unknown,inactivityError:unknown;
   const unitAbort=new AbortController();job.unitAbort=unitAbort;
   const stop=()=>unitAbort.abort(job.abort.signal.reason);job.abort.signal.addEventListener('abort',stop,{once:true});if(job.abort.signal.aborted)stop();
-  const monitor=new ReviewActivityMonitor(cause=>{inactivityError=new DesignReviewError('review_inactive',cause.message);unitAbort.abort(inactivityError);},this.deps.activity);
+  const monitor=createDesignActivityMonitor(cause=>{inactivityError=new DesignReviewError('review_inactive',cause.message);unitAbort.abort(inactivityError);},this.deps.activity);
   try{
    const value=await provider.runReviewSession!(assignment.prompt,assignment.schema,{mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,signal:unitAbort.signal,internalRetry:false,
     onActivity:event=>{if(!job.closed&&!unitAbort.signal.aborted&&currentDesignAttempt(job.checkpoint).current?.executionId===assignment.executionId&&monitor.observe(event)&&job.tracker.activity(event))this.scheduleProgress(job);},
@@ -307,7 +308,7 @@ export class DesignReviewCoordinator {
   if(job.abort.signal.aborted)throw job.abort.signal.reason??new DesignReviewError('review_stopped','Review execution has stopped');
   requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
   const unit=job.controller;
-  if(request.phase==='assignment'){this.checkControllerSubject(job);return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};}
+  if(request.phase==='assignment'){this.checkControllerSubject(job);return{assignment:unit&&!unit.retired?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};}
   requireDesign(unit,'stale_execution','No active controller assignment');
   requireDesign(!unit.retired,'stale_execution','Execution generation has ended');
   requireDesign('executionId' in request&&request.executionId===unit.assignment.executionId,'stale_execution','Wrong execution generation');

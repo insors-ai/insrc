@@ -88,3 +88,26 @@ test('slow progress persistence coalesces activity instead of accumulating check
  for(let sequence=3;sequence<=5;sequence++){await opts.onActivity({sessionId:'slow-write',sequence,kind:'model_output'});await pause(300);}
  releaseSave();releaseProvider();assert.equal((await terminal(coordinator,f)).status,'passed');assert.equal(progressWrites,1);
 });
+
+test('native inactivity is supervised by the owner and observation never renews its grace',async t=>{
+ const f=designFixture(t);let now=0,wake:(()=>void)|undefined,grace=0,calls=0;
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async(_prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
+  calls++;await opts.onActivity({sessionId:'native-clock',sequence:1,kind:'session_started'});await opts.onActivity({sessionId:'native-clock',sequence:2,kind:'tool_started',toolId:'read-design'});
+  await new Promise<void>((_resolve,reject)=>opts.signal.addEventListener('abort',()=>reject(opts.signal.reason),{once:true}));
+ }} as unknown as LLMProvider;
+ const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'fake'}),activity:{now:()=>now,pressure:()=>({}),timer:(callback,ms)=>{wake=callback;grace=ms;return()=>{if(wake===callback)wake=undefined;};}}});
+ await coordinator.start(input(f));for(let i=0;i<100&&!calls;i++)await pause(5);
+ assert.equal(grace,1800000);assert.equal((await coordinator.progress(f.repo,'review-1',1)).activeToolCount,1);
+ now=1799999;for(let i=0;i<3;i++)await coordinator.progress(f.repo,'review-1',1);assert.equal(grace,1800000);
+ now=1800001;assert.ok(wake);wake();const view=await terminal(coordinator,f);assert.equal(view.status,'failed');assert.equal(view.failure?.code,'review_inactive');assert.match(view.failure!.summary,/30 minutes/);assert.equal(calls,1);
+});
+
+test('a native provider returning after inactivity cannot publish a late valid plan',async t=>{
+ const f=designFixture(t);let now=0,wake:(()=>void)|undefined,release!:(value:unknown)=>void;
+ const wait=new Promise<unknown>(r=>release=r);let started=false;
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{started=true;return wait;}} as unknown as LLMProvider;
+ const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'late fake'}),activity:{now:()=>now,pressure:()=>({}),timer:callback=>{wake=callback;return()=>{};}}});
+ await coordinator.start(input(f));for(let i=0;i<100&&!started;i++)await pause(5);now=1800001;wake!();
+ release({chunks:[{id:'content',title:'Content',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'Complete',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))});
+ const view=await terminal(coordinator,f);assert.equal(view.status,'failed');assert.equal(view.failure?.code,'review_inactive');assert.equal(view.totalChunks,0);
+});

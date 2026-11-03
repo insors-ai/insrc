@@ -6,6 +6,7 @@ import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
 import type { LLMProvider } from '../../../shared/types.js';
+import type { ReviewActivityMonitorDeps } from '../../../shared/review-activity.js';
 import { requireReviewActivity, REVIEW_INACTIVITY_MS, ReviewActivityMonitor } from '../../../shared/review-activity.js';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult } from './contracts.js';
@@ -23,6 +24,7 @@ export interface DesignCoordinatorDeps {
  readonly prepare?:typeof prepareDesignSubject;
  readonly save?:typeof saveDesignCheckpoint;
  readonly load?:typeof loadDesignCheckpoint;
+ readonly activity?:ReviewActivityMonitorDeps|undefined;
 }
 export interface DesignControllerOwner { readonly id:string; readonly signal:AbortSignal; }
 export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; readonly owner?:DesignControllerOwner|undefined; }
@@ -132,21 +134,22 @@ export class DesignReviewCoordinator {
    return new Promise<unknown>((resolve,reject)=>{
     let accept!:()=>void,fail!:(reason:unknown)=>void;
     const accepted=new Promise<void>((yes,no)=>{accept=yes;fail=no;});void accepted.catch(()=>{});
-    const monitor=new ReviewActivityMonitor(error=>{job.abort.abort(error);reject(error);});
+    const monitor=new ReviewActivityMonitor(cause=>{const error=new DesignReviewError('review_inactive',cause.message);job.abort.abort(error);reject(error);},this.deps.activity);
     job.controller={assignment,resolve,reject,accepted,accept,fail,monitor,sequence:0,replay:new Map(),validate};
    });
   }
   requireDesign(provider,'missing_provider','Review provider unavailable');
-  let candidateError:unknown;
+  let candidateError:unknown,inactivityError:unknown;
+  const monitor=new ReviewActivityMonitor(cause=>{inactivityError=new DesignReviewError('review_inactive',cause.message);job.abort.abort(inactivityError);},this.deps.activity);
   try{
    const value=await provider.runReviewSession!(assignment.prompt,assignment.schema,{mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,signal:job.abort.signal,internalRetry:false,
-    onActivity:event=>{if(!job.closed&&currentDesignAttempt(job.checkpoint).current?.executionId===assignment.executionId&&job.tracker.activity(event))this.scheduleProgress(job);},
-    onCandidate:async input=>{if(job.closed||currentDesignAttempt(job.checkpoint).current?.executionId!==assignment.executionId)return{accepted:false};try{validate(input);return{accepted:true};}catch(error){candidateError=error;throw error;}}});
-   if(job.storageError)throw job.storageError;if(candidateError)throw candidateError;
+    onActivity:event=>{if(!job.closed&&currentDesignAttempt(job.checkpoint).current?.executionId===assignment.executionId&&monitor.observe(event)&&job.tracker.activity(event))this.scheduleProgress(job);},
+    onCandidate:async input=>{if(job.closed||job.abort.signal.aborted||currentDesignAttempt(job.checkpoint).current?.executionId!==assignment.executionId)return{accepted:false};try{validate(input);return{accepted:true};}catch(error){candidateError=error;throw error;}}});
+   if(job.storageError)throw job.storageError;if(candidateError)throw candidateError;if(inactivityError)throw inactivityError;if(job.abort.signal.aborted)throw job.abort.signal.reason;
    assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
    return validate(value);
-  }catch(error){throw job.storageError??candidateError??error;}
-  finally{this.stopProgress(job);}
+  }catch(error){throw job.storageError??candidateError??inactivityError??error;}
+  finally{monitor.stop();this.stopProgress(job);}
  }
  private acceptController(job:DesignJob):void{
   const unit=job.controller;if(!unit)return;unit.monitor.stop();unit.accept();job.controller=undefined;

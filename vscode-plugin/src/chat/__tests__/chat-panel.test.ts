@@ -5760,3 +5760,30 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
   }, 5000, 'the timer repost purges the aged done chat from the LATEST active-list');
   assert.equal(store.get(id)?.status, 'done', 'purge is list-level: the row keeps its status');
 });
+
+test('E202611031bd72813:S001 t4: selecting an active-chat entry (open-chat { chatId }) opens that chat exactly like the history dropdown', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const a = store.create('claude' as never);
+  store.append(a.id, { role: 'user', text: 'chat A', at: '2026-01-01T00:00:00.000Z' });
+  const b = store.create('claude' as never);
+  store.append(b.id, { role: 'user', text: 'chat B', at: '2026-01-02T00:00:00.000Z' });
+  store.setStatus(a.id, 'waiting-input');
+  store.setStatus(b.id, 'working');
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  // the active dropdown is fed with both active chats
+  const lists = fc.posted.filter((m) => m.payload.type === 'active-list');
+  assert.ok(lists.length >= 1, 'active-list posted on open');
+  const ids = (lists.at(-1)!.payload as { chats: { id: string }[] }).chats.map((c) => c.id).sort();
+  assert.deepEqual(ids, [a.id, b.id].sort(), 'both active chats listed');
+  // selecting one (the same open-chat message the history dropdown posts) restores that chat
+  fc.send(env('open-chat', { chatId: b.id }));
+  const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').at(-1);
+  assert.equal((restored?.payload as { sessionId: string }).sessionId, b.id, 'the active-chat selection opened chat B like history would');
+});

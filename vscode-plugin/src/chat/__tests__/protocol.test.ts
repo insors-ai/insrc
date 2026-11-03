@@ -241,3 +241,14 @@ test('protocol allowlist includes open-link and open-code-ref', () => {
   assert.deepEqual([link.type, ref.type, bare.type], ['open-link', 'open-code-ref', 'open-code-ref']);
   assert.deepEqual(Object.keys(bare), ['type', 'path']);
 });
+
+test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/status/lastActivityAt; open-chat stays the only open message', () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('active-list'), "'active-list' is listed as host->webview");
+  const entry: ActiveChatEntry = { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 123 };
+  const msg: HostToWebview = { type: 'active-list', chats: [entry] };
+  assert.equal(msg.type, 'active-list');
+  assert.deepEqual(msg.chats[0], { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 123 });
+  // selection reuses the existing open-chat { chatId } — no new webview->host kind was added
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-chat'));
+  assert.ok(!WEBVIEW_TO_HOST_TYPES.includes('open-active' as WebviewToHostType));
+});

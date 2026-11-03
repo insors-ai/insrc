@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2f41b01a-b1fa-4e7a-bf17-7cc7085377bd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.882Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the install, uninstall and status daemon methods",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "92a930912f81a9821c44478c060758be4c34d2cd37f5ae953fb95fe25a09948d",
+        "at": "2026-11-03T14:11:36.885Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.886Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the install, uninstall and status daemon methods",
+    "summary": "Add repo.gitHooks.install, repo.gitHooks.uninstall and repo.gitHooks.status: each refuses an unregistered repository, resolves the hooks directory with the typed git_rev_parse gitPath input, applies, removes or inspects the blocks for post-merge and post-rewrite through the block module, sets the gitHooks setting through the daemon's settings handler, and returns data without throwing. Register them in the handler table, the method-class table and the repository-call audit and extend the recorded handler key-set test.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "An unregistered repository and a path that is not a git repository are refused with a reason and nothing is written",
+      "Install writes both blocks and sets gitHooks true, a hook file that fails leaves the other installed and is reported, and uninstall removes the blocks and sets it false",
+      "The hooks directory comes from git_rev_parse and honours core.hooksPath, the three methods are in all three registries, and handler-runtime.test.ts records them"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

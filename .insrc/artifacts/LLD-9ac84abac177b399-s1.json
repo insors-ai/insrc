@@ -43,7 +43,39 @@
         "rationale": "User accepted the recommendation; self-review findings F1, F2, F4 and F5 carried as plan requirements.",
         "resolvedAt": "2026-11-03T13:21:32.496Z"
       }
-    }
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fcd01a6a33377d4b480fddecde8f767cb460e6e6ba2d251498c0657bc0c83450",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:05:58.208Z",
+        "override": {
+          "reason": "Design review tool is a stub (PENDING REVIEW RE-IMPLEMENTATION). Controller self-review in docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/SELF-REVIEW.md (warn, two MED findings F1 and F2 carried into the plan as requirements); approved by the user with this override on 2026-11-03."
+        }
+      }
+    },
+    "rangeBase": "ecfaa2dc31badbf333b9a89fa51af957c9550d4c"
   },
   "body": {
     "summary": {

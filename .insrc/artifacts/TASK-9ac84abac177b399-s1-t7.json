@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b3d7f486-b45e-4336-b038-8c9b7e5066ed",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.887Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prove real git runs the hooks, document the feature and run the affected suites",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9ac84abac177b399-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "69f95fa2ec6e69e45ec0af9da9d13291bc03edb41f4f1ddb5dcac1f3611a5275",
+        "at": "2026-11-03T14:11:36.890Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.890Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove real git runs the hooks, document the feature and run the affected suites",
+    "summary": "Add the integration cases where a real git pull and a real git pull --rebase in a temporary repository run the installed hooks and exit 0 even when the entry or the daemon is missing, document the feature and its limits in docs/plans/team-workflow.md, then run the affected suites once in the foreground by area and record the comparison with a clean base checkout.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "A real pull and a real pull --rebase run the post-merge and post-rewrite hooks and git exits 0 with the entry missing and with the daemon down",
+      "docs/plans/team-workflow.md states the feature, the terminal-push gap, the hook managers that regenerate files and the explicit refresh",
+      "The tracker, daemon method, settings and handler-runtime suites pass or fail identically to a clean base checkout, recorded in a sweep file"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

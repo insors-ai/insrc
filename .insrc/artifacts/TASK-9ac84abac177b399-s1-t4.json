@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-2fa44b52-b54d-49f0-8d06-9c22769db967",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.874Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Write and remove the marked hook block",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b371c7fb5913beb05ea4c76daaaba6a0bfefddc30156bf4774f34a408257705c",
+        "at": "2026-11-03T14:11:36.877Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.877Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Write and remove the marked hook block",
+    "summary": "Add the module that builds the marked hook block for a given hook entry path, applies it to a hook file of any starting shape (absent, empty, husky-style, user-written, already carrying the block) through a temporary file and a rename keeping or setting the executable mode, and removes only the marked block, deleting a file that held nothing else.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The block is written into an absent, an empty, a husky-style and a user-written file and the existing content is kept byte for byte",
+      "Applying twice leaves one block, removing leaves the original content, and a file that held only the block is deleted",
+      "A file that cannot be written is reported with its reason and left unchanged, and the file mode is kept or made executable"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

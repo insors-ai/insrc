@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ccc26d1c-cb19-4410-8838-de20f1239e9b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.865Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the gitHooks setting row",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fbaee8d928b75fb9ecb0611ebbc0c29df616b4b2b0deebf7cc8725187d1f053e",
+        "at": "2026-11-03T14:11:36.868Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.869Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the gitHooks setting row",
+    "summary": "Add the boolean gitHooks row (default false) to the repository tracker fields and the gitHooks key to GithubEntry, and extend the settings, completeness and round-trip tests so a configuration file written with the key reads back and one without it reads false.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "repo.settings.get returns false for a repository whose entry has no gitHooks key, and repo.settings.set accepts true and false and refuses a non-boolean",
+      "A github.json written with gitHooks true reads back with it and keeps every other key",
+      "The Repos pane completeness test and the settings tests pass with the new row"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/daemon/__tests__/repo-settings.test.ts: the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

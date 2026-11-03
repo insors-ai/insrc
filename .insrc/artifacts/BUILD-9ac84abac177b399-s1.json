@@ -1,0 +1,253 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "7453f8faf0307f794d7866c7a6b64bc58c269afdaede83b57a58f9d7c35efede",
+        "at": "2026-11-03T14:53:46.431Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-18cc3180-5cbe-483c-9995-4c403adb4ea0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:13:12.532Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-03T14:53:10.577Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "install-git-hooks-refresh-tracker-status"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      }
+    ],
+    "summary": "Added src/daemon/__tests__/git-hooks-real-git.test.ts: a temporary remote and two clones, hooks installed through repo.gitHooks.install; a real merging git pull runs post-merge and a real git pull --rebase runs post-rewrite (the recording stand-in entry gets the repository root and hook name and exits 1), git exits 0 each time, and with the entry file deleted a pull --rebase still exits 0 and status still shows both blocks. Documented the feature and its limits (terminal push gap, hook managers, foreign early exit, worktrees, moved daemon, explicit refresh) in docs/plans/team-workflow.md. The sweep ran by area against a clean base worktree (52c23f143) and is recorded in S001/SWEEP.md: identical failures except repo-call-audit and repo-call-table, which fail only on the other session's design-review-step.recover/failure phases; the gitHooks methods they first reported were fixed by listing them in handler-runtime.ts text.",
+    "testRecord": {
+      "md": "docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/tracker-sync-method.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tracker-setup-handlers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/__tests__/settings-modal.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/fixtures/repo-fields-catalog.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/repo-fields.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/config/repo-fields.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/repo-settings.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/config/github.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/__tests__/insrc-git-hook.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/bin/insrc-git-hook.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/git-hooks/hook-block.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/git-hooks/hook-inspect.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/git-hooks-methods.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/git-hooks-methods.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-call-audit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-settings.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-workflow.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/git-hooks-real-git.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/SWEEP.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:53:10.577Z"
+      }
+    ],
+    "commit": "616eb489b"
+  },
+  "citations": []
+}

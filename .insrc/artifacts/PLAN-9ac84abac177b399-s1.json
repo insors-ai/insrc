@@ -1,0 +1,349 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793714758728-aac3iv",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:08:17.909Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 137615,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "epicSlug": "install-git-hooks-refresh-tracker-status",
+    "storyId": "s1",
+    "lldRunId": "wf-1793710750491-eyso0w",
+    "lldEffectiveHash": "9ac84abac177b3994f6ce66bb602a3b730a06bd1d9fc2350891f17661782eeba",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d52df7ac02b3773d9e74d0dbd2d938b4937078361ed7c37776404e061562be5c",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.486Z"
+      }
+    },
+    "rangeBase": "52c23f14387b8a7cfad37b5de5e71af9201737f4"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story makes the tracker refresh callable for a whole repository with a guard against overlap, adds the opt-in setting and a tiny hook program that never fails git, writes and removes the marked hook blocks safely on files of any shape, and exposes install, uninstall and status as daemon methods that resolve the hooks directory through the typed git tool. A final task proves real git runs the hooks, documents the feature and its limits, and compares the affected suites with a clean checkout.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Make tracker.sync repository-wide with an in-flight guard",
+        "summary": "Let handleTrackerSync accept a call without an epicHash and refresh every Epic through refreshTrackerStatus, summarising the report in the existing result shape; a second repository-wide call for the same repository while one runs returns a skipped result at once. A call with an epicHash is unchanged.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "tracker.sync with an epicHash returns exactly what it returned before",
+          "tracker.sync without an epicHash refreshes every Epic once and summarises synced, skipped or failed with the joined reasons",
+          "A second repository-wide call for the same repository while one is running returns a skipped result without starting another, and a call after the first ends runs normally"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/tracker-sync-method.test.ts: tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the gitHooks setting row",
+        "summary": "Add the boolean gitHooks row (default false) to the repository tracker fields and the gitHooks key to GithubEntry, and extend the settings, completeness and round-trip tests so a configuration file written with the key reads back and one without it reads false.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "repo.settings.get returns false for a repository whose entry has no gitHooks key, and repo.settings.set accepts true and false and refuses a non-boolean",
+          "A github.json written with gitHooks true reads back with it and keeps every other key",
+          "The Repos pane completeness test and the settings tests pass with the new row"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/__tests__/repo-settings.test.ts: the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Add the hook entry program",
+        "summary": "Add the small non-interactive program under src/bin that calls the daemon's tracker.sync with the repository path and no epicHash over the shared rpc client with a short timeout and always exits 0; list it with the other bins so the build compiles it into out/bin.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The entry exits 0 when the daemon is not running, when the call times out, when the daemon answers an error and when the repository is not registered",
+          "The entry imports only the rpc client and the paths module and runs one rpc call with a timeout",
+          "The build compiles the entry into out/bin and package.json lists it"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Write and remove the marked hook block",
+        "summary": "Add the module that builds the marked hook block for a given hook entry path, applies it to a hook file of any starting shape (absent, empty, husky-style, user-written, already carrying the block) through a temporary file and a rename keeping or setting the executable mode, and removes only the marked block, deleting a file that held nothing else.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "The block is written into an absent, an empty, a husky-style and a user-written file and the existing content is kept byte for byte",
+          "Applying twice leaves one block, removing leaves the original content, and a file that held only the block is deleted",
+          "A file that cannot be written is reported with its reason and left unchanged, and the file mode is kept or made executable"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else"
+          },
+          {
+            "level": "unit",
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Inspect a hook file",
+        "summary": "Add the inspection the status method uses: for a hook file report whether our block is present, whether other content is present, whether the last non-empty line of foreign content exits early, and whether the entry path recorded in our block differs from the current one.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Inspection reports present, absent and foreign-only files correctly",
+          "A foreign last line that is an exit or an exec is flagged",
+          "A block whose recorded entry path differs from the current one is reported as stale"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Add the install, uninstall and status daemon methods",
+        "summary": "Add repo.gitHooks.install, repo.gitHooks.uninstall and repo.gitHooks.status: each refuses an unregistered repository, resolves the hooks directory with the typed git_rev_parse gitPath input, applies, removes or inspects the blocks for post-merge and post-rewrite through the block module, sets the gitHooks setting through the daemon's settings handler, and returns data without throwing. Register them in the handler table, the method-class table and the repository-call audit and extend the recorded handler key-set test.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "An unregistered repository and a path that is not a git repository are refused with a reason and nothing is written",
+          "Install writes both blocks and sets gitHooks true, a hook file that fails leaves the other installed and is reported, and uninstall removes the blocks and sets it false",
+          "The hooks directory comes from git_rev_parse and honours core.hooksPath, the three methods are in all three registries, and handler-runtime.test.ts records them"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Prove real git runs the hooks, document the feature and run the affected suites",
+        "summary": "Add the integration cases where a real git pull and a real git pull --rebase in a temporary repository run the installed hooks and exit 0 even when the entry or the daemon is missing, document the feature and its limits in docs/plans/team-workflow.md, then run the affected suites once in the foreground by area and record the comparison with a clean base checkout.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "A real pull and a real pull --rebase run the post-merge and post-rewrite hooks and git exits 0 with the entry missing and with the daemon down",
+          "docs/plans/team-workflow.md states the feature, the terminal-push gap, the hook managers that regenerate files and the explicit refresh",
+          "The tracker, daemon method, settings and handler-runtime suites pass or fail identically to a clean base checkout, recorded in a sweep file"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c7",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "the hook block is written into an absent, an empty, a husky-style and a user-written hook file and an existing hook's content is kept byte for byte",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "install is idempotent and uninstall removes only the marked block and deletes a file that held nothing else",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hook file that cannot be written leaves the other hook installed and the failing one reported with its reason",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "a real git pull and a real git pull --rebase in a temporary repository run the installed post-merge and post-rewrite hooks and git exits 0 even when the hook entry is missing or the daemon is down",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: handleTrackerSync and refreshTrackerStatus, the repository-wide refresh"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: tracker.sync (epicHash now optional), and the overlapping-refresh error case"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: REPO_TRACKER_FIELDS (the gitHooks row)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration step 2, backward compatibility, and self-review F2"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: Hook entry (src/bin, compiled into out/bin)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: rpc, and the daemon-not-running error case"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: Git hook block (post-merge, post-rewrite)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths: unwritable hook file, dropped block, early-exit foreign content, and self-review F5"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: Daemon install, uninstall and status methods (repo.gitHooks.*)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration step 4, and self-review F1 and F4"
+    }
+  ]
+}

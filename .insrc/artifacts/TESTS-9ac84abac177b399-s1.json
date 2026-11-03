@@ -1,0 +1,380 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "9eeba2a18330baa989248e41503f56eedfc746c69b8d69a6ac0687f1f98563b0",
+        "at": "2026-11-03T14:53:10.800Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "createdAt": "2026-11-03T14:13:12.532Z",
+    "updatedAt": "2026-11-03T14:53:10.577Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "epicSlug": "install-git-hooks-refresh-tracker-status",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "62e30ff08",
+        "ranAt": "2026-11-03T14:13:12.532Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/tracker-sync-method.test.ts: tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+                "title": "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1165,
+            "titles": [
+              {
+                "title": "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "e6d9b40d7",
+        "ranAt": "2026-11-03T14:17:29.094Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/repo-settings.test.ts: the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "title": "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 688,
+            "titles": [
+              {
+                "title": "buildRepoSettings values, resolved target and policy rows",
+                "result": "pass"
+              },
+              {
+                "title": "sign-in mapping for every whoAmI outcome",
+                "result": "pass"
+              },
+              {
+                "title": "repo identity uses the exact registered path",
+                "result": "pass"
+              },
+              {
+                "title": "get returns what set wrote and shows an outside write",
+                "result": "pass"
+              },
+              {
+                "title": "set refuses read-only, unknown, invalid and unregistered inputs and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "only the signed-in-user read runs through s1's adapter",
+                "result": "pass"
+              },
+              {
+                "title": "malformed files return github-json-unreadable and keep their bytes",
+                "result": "pass"
+              },
+              {
+                "title": "get reads once, never writes, and resolves from the git remote when there is no own target",
+                "result": "pass"
+              },
+              {
+                "title": "ensure writes the five keys once and concurrent sets both land",
+                "result": "pass"
+              },
+              {
+                "title": "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "21e4a78f3",
+        "ranAt": "2026-11-03T14:21:14.409Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/bin/__tests__/insrc-git-hook.test.ts",
+                "title": "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/bin/__tests__/insrc-git-hook.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 529,
+            "titles": [
+              {
+                "title": "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "e6e71257f",
+        "ranAt": "2026-11-03T14:25:39.591Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 474,
+            "titles": [
+              {
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a8b015b2c",
+        "ranAt": "2026-11-03T14:26:59.144Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+                "title": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 424,
+            "titles": [
+              {
+                "title": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "f176f357b",
+        "ranAt": "2026-11-03T14:34:13.832Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 658,
+            "titles": [
+              {
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "616eb489b",
+        "ranAt": "2026-11-03T14:53:10.577Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "title": "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/git-hooks-real-git.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 886,
+            "titles": [
+              {
+                "title": "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

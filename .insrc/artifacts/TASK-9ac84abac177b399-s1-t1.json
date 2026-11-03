@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fbf3238c-6c6b-43eb-b98f-16e9a562c7e6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.860Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make tracker.sync repository-wide with an in-flight guard",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c9db6b4914cf712aca2651c93e7cfeb32e05071789fd405f6f4cf37fddb30202",
+        "at": "2026-11-03T14:11:36.863Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.864Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make tracker.sync repository-wide with an in-flight guard",
+    "summary": "Let handleTrackerSync accept a call without an epicHash and refresh every Epic through refreshTrackerStatus, summarising the report in the existing result shape; a second repository-wide call for the same repository while one runs returns a skipped result at once. A call with an epicHash is unchanged.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "tracker.sync with an epicHash returns exactly what it returned before",
+      "tracker.sync without an epicHash refreshes every Epic once and summarises synced, skipped or failed with the joined reasons",
+      "A second repository-wide call for the same repository while one is running returns a skipped result without starting another, and a call after the first ends runs normally"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/tracker-sync-method.test.ts: tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

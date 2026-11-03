@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0d1e1dfa-acc6-4561-ab62-3e2d7e4614c5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:36.870Z",
+    "epicCreatedAt": "2026-11-03T13:03:39.032Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9ac84abac177b399",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the hook entry program",
+      "parent": {
+        "entityId": "STORY-9ac84abac177b399-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9ac84abac177b399-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2acbbf1c4270c1e7ab2f2303bae6a77fda9baf2fa830763fa4564e91c5c8eb87",
+        "at": "2026-11-03T14:11:36.873Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:36.873Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the hook entry program",
+    "summary": "Add the small non-interactive program under src/bin that calls the daemon's tracker.sync with the repository path and no epicHash over the shared rpc client with a short timeout and always exits 0; list it with the other bins so the build compiles it into out/bin.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The entry exits 0 when the daemon is not running, when the call times out, when the daemon answers an error and when the repository is not registered",
+      "The entry imports only the rpc client and the paths module and runs one rpc call with a timeout",
+      "The build compiles the entry into out/bin and package.json lists it"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

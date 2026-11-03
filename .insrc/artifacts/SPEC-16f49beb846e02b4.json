@@ -1,0 +1,183 @@
+{
+  "meta": {
+    "workflow": "brainstorm",
+    "runId": "wf-1793689905265-kxncnn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T08:06:32.787Z",
+    "epicCreatedAt": "2026-11-03T08:06:32.787Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 3287522,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "specHash": "16f49beb846e02b4",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fb36dcf3ac01b202f99bc27f04b3173e1d39366d93ba5ca8841afeae15570954",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T08:11:14.605Z"
+      }
+    }
+  },
+  "body": {
+    "title": "Review evolving designs with durable checkpoints",
+    "category": "design",
+    "intent": "Replace the removed DEF/HLD/LLD design-review engine with background, independent, read-only reviews of latest artifacts. Confirmed by user: replace removed design-review framework from blank slate. Prompt contains guidelines and artifact paths, not copied artifact content; reviewer may inspect any codebase content. Latest artifact, no commit pinning. Artifact change mid-review stops/invalidates attempt; controller notifies user and obtains approval before fresh full restart. External changes ignored for invalidation. Background execution and polling. Reviewer plans coherent chunks: DEF capability/requirements/stories/constraints/acceptance together plus cross-chunk consistency; HLD subsystem/contracts/ownership/dependencies/interactions plus system integration; LLD implementation responsibility/interfaces/logic/errors/test coverage plus story/HLD end-to-end check. Completed chunks checkpointed, feedback visible immediately, controller no intermediate corrective action before full review. Continue all chunks despite findings. Technical failures get at most three automatic retries of only failed chunk; after exhaustion pause for user input, preserve completed chunks. No fixed deadline; 30-minute inactivity grace with active tools separately tracked. Subsequent corrected attempts analyze direct and implicit impact, review affected chunks, expand full artifact if scope uncertain; previous review history available. Read-only reviewer. HIGH/MED block, LOW allows approval. Independent party routing daemon/controller opposite author, identical guidelines. Checkpoints retained until artifact approval, permanent consolidated review and attempt history preserved before cleanup. Reuse infrastructure relationship NOT decided; do not impose shared engine extraction, legacy compatibility, activation qualification, trust-key or evidence machinery. No implementation yet. User explicitly confirmed all this scope.",
+    "scopeBoundary": "Design-artifact review only. Working task-based code review remains operational. No replacement implementation is authorized by this specification alone; implementation follows approved epic, designs and build stages. Infrastructure reuse is an implementation design choice, not a confirmed shared-engine extraction requirement. Preserve historical artifacts and normal explicit approval discipline.",
+    "nonGoals": [
+      "Embedding artifact content in review prompts",
+      "Commit-pinned design reviews",
+      "Automatic restart after artifact changes",
+      "Reusing completed chunks after a mid-review artifact change",
+      "Restarting because inspected references or source files change",
+      "Holding MCP requests open for review completion",
+      "Fixed review deadlines",
+      "Arbitrary size-only splits",
+      "Intermediate controller corrections",
+      "Stopping remaining chunks because of HIGH/MED findings",
+      "Repeating completed chunks on technical retries",
+      "Continuing automatically after retry exhaustion",
+      "Always repeating the entire review after corrections",
+      "Reviewing only explicitly edited chunks without impact analysis",
+      "Reviewer auto-fixes",
+      "Same-party independent review",
+      "Deleting checkpoints before artifact approval",
+      "Deleting permanent review history",
+      "Restoring removed legacy review engines, flags or compatibility execution paths",
+      "Reworking working code-review semantics",
+      "Token accounting implementation",
+      "Activation-proof, trust-key or native qualification machinery"
+    ],
+    "decisions": [
+      {
+        "chosen": "Guidelines and document paths in prompts; no copied artifact content; reviewer can access the entire codebase.",
+        "ruledOut": [
+          "Embedding artifact content in review prompts"
+        ],
+        "reason": "User explicitly chose document access over prompt copies."
+      },
+      {
+        "chosen": "Review latest artifact without commit pinning. Artifact changes stop and invalidate the attempt; notify user and obtain explicit approval before restarting the entire review.",
+        "ruledOut": [
+          "Commit-pinned design reviews",
+          "Automatic restart after artifact changes",
+          "Reusing completed chunks after a mid-review artifact change"
+        ],
+        "reason": "User requires latest designs and approval before repeating work."
+      },
+      {
+        "chosen": "Ignore changes outside the reviewed artifact for restart purposes.",
+        "ruledOut": [
+          "Restarting because inspected references or source files change"
+        ],
+        "reason": "User wants to prevent restart loops."
+      },
+      {
+        "chosen": "Background execution with controller polling, no fixed deadline, 30-minute inactivity grace, active tools tracked separately.",
+        "ruledOut": [
+          "Holding MCP requests open for review completion",
+          "Fixed review deadlines"
+        ],
+        "reason": "User confirmed code-review-style background operation and inactivity policy."
+      },
+      {
+        "chosen": "Reviewer plans coherent DEF capability chunks, HLD subsystem chunks and LLD implementation-responsibility chunks; finish with cross-chunk checks.",
+        "ruledOut": [
+          "Arbitrary size-only splits"
+        ],
+        "reason": "User requires explicit artifact-specific chunking guidelines."
+      },
+      {
+        "chosen": "Checkpoint completed chunks and expose findings immediately; controller takes no corrective actions until the full review finishes; findings do not stop remaining chunks.",
+        "ruledOut": [
+          "Intermediate controller corrections",
+          "Stopping remaining chunks because of HIGH/MED findings"
+        ],
+        "reason": "User wants complete review feedback before changes."
+      },
+      {
+        "chosen": "For technical failures retry only the failed chunk up to three times automatically; after exhaustion pause for user direction and preserve completed chunks.",
+        "ruledOut": [
+          "Repeating completed chunks on technical retries",
+          "Continuing automatically after retry exhaustion"
+        ],
+        "reason": "User explicitly specified bounded retries followed by user input."
+      },
+      {
+        "chosen": "Subsequent corrected attempts analyze direct and implicit impacts, review affected chunks with previous feedback, and expand to full-artifact review when impact cannot be bounded confidently.",
+        "ruledOut": [
+          "Always repeating the entire review after corrections",
+          "Reviewing only explicitly edited chunks without impact analysis"
+        ],
+        "reason": "User requires proper analysis of non-obvious impact."
+      },
+      {
+        "chosen": "Read-only reviewer, HIGH/MED block approval and LOW permits approval; opposite party reviews author with identical daemon/controller guidelines.",
+        "ruledOut": [
+          "Reviewer auto-fixes",
+          "Same-party independent review"
+        ],
+        "reason": "User confirmed read-only independent reviews and severity policy."
+      },
+      {
+        "chosen": "Keep checkpoints until artifact approval; preserve consolidated review and attempt history permanently before deletion.",
+        "ruledOut": [
+          "Deleting checkpoints before artifact approval",
+          "Deleting permanent review history"
+        ],
+        "reason": "User confirmed durable history and approval-triggered cleanup."
+      }
+    ],
+    "openItems": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "step-output",
+      "ref": "s1"
+    },
+    {
+      "id": "c2",
+      "kind": "stakeholder",
+      "ref": "Current chat: sequential design-review decisions and final user confirmation",
+      "quotedText": "confirmed"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "plans/design-review-redesign.future-work.json"
+    }
+  ]
+}

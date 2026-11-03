@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-80f82722-473f-4dfa-a681-b4afe1950d2a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.428Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Persist completed chunks and expose bounded progress",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7c9d4a2e05795bc7f4b5961eaf351b4d3cb906ca87cf7c6b3c242275b00cf7c0",
+        "at": "2026-11-03T09:15:47.428Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.429Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist completed chunks and expose bounded progress",
+    "summary": "Implement proposed checkpoint.ts and progress projection for one private validated atomic JSON state per review, durable accepted chunk boundaries and final report retention. Poll metadata by default and allow one completed-result page without repeated baseline transfer.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Private temp-file write/fsync/rename/directory durability publishes complete validated snapshots; no partial JSON.",
+      "Size/schema/disk faults preserve last accepted state and prevent next-unit advancement; unknown/corrupt/foreign/symlink checkpoints are retained and refused.",
+      "Progress polling never starts models, renews inactivity or claims a saved orphaned execution is live.",
+      "Final report stays in checkpoint and is retrievable; S1 performs no permanent lifecycle stamp or checkpoint deletion.",
+      "Default poll returns metadata only; optional cursor read returns at most one <=1MiB completed result plus next cursor, with no baseline/prompt/history retransmission. Elapsed/activity metadata distinguishes real reviewer/tool activity from observation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Atomic save faults preserve previous checkpoint and do not acknowledge incomplete durable results."
+      },
+      {
+        "level": "unit",
+        "name": "No-follow bounded loads refuse corrupt/foreign/oversize state without deletion."
+      },
+      {
+        "level": "unit",
+        "name": "Metadata polling and one-result cursor pages never expose baseline/history or trigger provider/activity renewal."
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

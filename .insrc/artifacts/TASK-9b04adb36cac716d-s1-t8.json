@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-197d01ab-0af7-4d15-9b91-0d42e2b203ee",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.434Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify compiled integration and one useful live design review",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "94baf041c6ff3a738ff196df4d793f51ae8228318132367d102ab0588403cece",
+        "at": "2026-11-03T09:15:47.434Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.435Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify compiled integration and one useful live design review",
+    "summary": "Add reproducible compiled transport smoke and focused route/coverage regressions, then run one meaningful independent hosted review through the normal MCP interface. Record complete evidence, limitations and documentation; distinguish deterministic fake-provider tests from hosted review.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Production build and compiled normal MCP/daemon smoke pass with clearly labeled fake CLI output; code-review focused regressions remain healthy.",
+      "Epic, Standalone and Issue fixture matrix proves different required artifacts and negative branch-confusion behavior.",
+      "One real independent review through normal insrc_review_step reads linked current design/code, emits coherent chunks and finishes with retrievable feedback; no raw internal RPC substitute.",
+      "Record review-id/attempt, model identity, timing, plan/chunk outcomes, test execution results and limits. A blocked live run is reported as outstanding, not counted as passing or replaced with author self-review.",
+      "No unrelated full test sweep, sibling-story implementation or new activation/qualification system is added; normal deployment/restart if needed is documented as execution prerequisite.",
+      "Record acknowledgement latency, per-chunk timing and when completed feedback became visible. A useful completed execution may report design findings or explicit substantive verification limits; do not rerun hosted reviews merely to obtain a clean design verdict. Technical failure or no substantive inspection remains outstanding."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Production build and compiled MCP/daemon fake-CLI smoke complete planning, chunks, incremental feedback and report retrieval."
+      },
+      {
+        "level": "smoke",
+        "name": "Focused existing task-review schema/routing/owner regressions pass without hosted reruns or unrelated full sweep."
+      },
+      {
+        "level": "live",
+        "name": "One meaningful independent design review via normal insrc_review_step records model, acknowledgement/chunk timing, scope, actual feedback and limits separately from fake fixtures."
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

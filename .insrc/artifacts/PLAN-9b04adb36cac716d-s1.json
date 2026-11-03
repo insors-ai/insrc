@@ -1,0 +1,528 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793696931994-eagfg1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:05.526Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 370701,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s1",
+    "lldRunId": "wf-1793695514430-59qpx5",
+    "lldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "81dde8995f29463cc364bd84a5b50d9d5d07f308f60bd791b6aca9cd683b7ad8",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:46.939Z"
+      }
+    },
+    "rangeBase": "4e2ad9162ea9d540cedd071fa06f07cafd52933f"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build a dedicated design-review path from validated contracts and workflow-aware subject resolution through coherent review policy, durable checkpoints and independent reviewer execution. Wire the normal MCP/daemon interface, then verify compiled integration and one useful real review while preserving working code review. Recovery, automatic retries, impact-based attempts and approval cleanup remain later stories."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Define strict design-review contracts and bounded inputs",
+        "summary": "Add proposed design-review sc1/sc2 schemas and typed errors under src/workflow/review/design-review/contracts.ts. Cover trimmed phase envelopes, workflow context, chunk inventory/plan/results, private attempt/checkpoint and bounded progress/result pages. Keep old task-review domain contracts separate.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Strict phase/schema validation rejects unknown fields, bad review ids/attempts, invalid enums and exceeded limits before provider calls.",
+          "S1 start admits attempt 1 only; observation includes typed cursor/includeResult and never exposes baseline or full history by default.",
+          "Subject/plan/result/progress/checkpoint schemas share one versioned authority for daemon and controller; optional fields meet strict TypeScript conventions."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Strict phase/schema boundaries reject malformed identities, unknown fields/enums, noninitial S1 attempts and payload/size limit violations."
+          },
+          {
+            "level": "unit",
+            "name": "Common daemon/controller assignment and result schema preserves typed workflow context and bounded progress cursor options."
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Resolve current subjects and workflow-specific required context",
+        "summary": "Implement proposed subject.ts using current canonical path/identity/root helpers, with Epic/Standalone/Issue requirements from the approved LLD matrix. Build a deterministic reviewable inventory and one private baseline. No commit pins, future build artifacts, synthetic Epic parents or corrections-link workflow switching.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "DEF, HLD and Epic-story LLD resolve applicable upstream requirements; standalone feature/small LLD works without DEF/HLD; sized issue LLD uses originating ISSUE.",
+          "Small issue/trivial no-LLD routes are not given invented design subjects or passing reviews; ISSUE/SPEC/PLAN are not added as mandatory review kinds.",
+          "Wrong identity, path escape, unknown author, contradictory root and missing required provenance fail explicitly; missing not-applicable context is not an error and broken Epic chains cannot silently become standalone.",
+          "Workflow derives from canonical root/provenance, including ISSUE root plus standalone layout/flag and correction links; no caller-supplied duplicate workflow discriminator.",
+          "Inventory covers reviewable sections/ids/citations/visual references and baseline checks compare only subject representations, not external context."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Table-driven Epic DEF/HLD/LLD, standalone feature/small LLD, sized ISSUE LLD and no-LLD small/trivial context requirements."
+          },
+          {
+            "level": "unit",
+            "name": "Missing required Epic HLD cannot become standalone; ISSUE root plus standalone flag/corrects link remains issue; missing optional references do not fail."
+          },
+          {
+            "level": "unit",
+            "name": "Canonical identity/paired marker, path containment, unknown party and missing/contradictory provenance are rejected before provider work."
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Implement common reviewer policy and complete chunk/result validation",
+        "summary": "Add proposed policy.ts and results.ts for guidelines+paths prompts, coherent DEF/HLD/LLD chunking, full inventory mapping and final consistency checks. Validate results and derive final status/counts from accepted feedback without another re-verdict model call.",
+        "size": "L",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Prompt uses live subject/context/checkpoint paths and trailing schema; artifact-body canary and baseline are absent.",
+          "Plans reject missing/unknown units, final-only coverage, duplicate ids, cycles, bad ordering and missing final consistency.",
+          "DEF/HLD/LLD guidelines retain appropriate semantic concerns, and final alignment uses real Epic, standalone scope or ISSUE context.",
+          "Assigned required coverage is inspected or named as unverified/incomplete; HIGH/MED, LOW/advice and incomplete precedence are consistent across reviewer parties.",
+          "Consolidation preserves all accepted results, counts finding IDs consistently and does not manufacture evidence or run another review call."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "DEF/HLD/LLD prompts contain policy/paths/trailing schema without artifact-body canary or copied baseline."
+          },
+          {
+            "level": "unit",
+            "name": "Coverage plan rejects omitted/unknown units, final-only coverage, cycles, duplicate ids and bad final consistency."
+          },
+          {
+            "level": "unit",
+            "name": "Required verification gaps cannot pass; HIGH/MED and incomplete precedence, LOW/advice separation and deterministic counts preserve findings."
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Persist completed chunks and expose bounded progress",
+        "summary": "Implement proposed checkpoint.ts and progress projection for one private validated atomic JSON state per review, durable accepted chunk boundaries and final report retention. Poll metadata by default and allow one completed-result page without repeated baseline transfer.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Private temp-file write/fsync/rename/directory durability publishes complete validated snapshots; no partial JSON.",
+          "Size/schema/disk faults preserve last accepted state and prevent next-unit advancement; unknown/corrupt/foreign/symlink checkpoints are retained and refused.",
+          "Progress polling never starts models, renews inactivity or claims a saved orphaned execution is live.",
+          "Final report stays in checkpoint and is retrievable; S1 performs no permanent lifecycle stamp or checkpoint deletion.",
+          "Default poll returns metadata only; optional cursor read returns at most one <=1MiB completed result plus next cursor, with no baseline/prompt/history retransmission. Elapsed/activity metadata distinguishes real reviewer/tool activity from observation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Atomic save faults preserve previous checkpoint and do not acknowledge incomplete durable results."
+          },
+          {
+            "level": "unit",
+            "name": "No-follow bounded loads refuse corrupt/foreign/oversize state without deletion."
+          },
+          {
+            "level": "unit",
+            "name": "Metadata polling and one-result cursor pages never expose baseline/history or trigger provider/activity renewal."
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Run native background reviews through the dedicated owner",
+        "summary": "Implement proposed coordinator.ts with one main-daemon owner, subject reservations, short durable acknowledgement, reviewer planning and serial chunk execution over existing review-role activity sessions. Keep accepted feedback and substantive continuations durable.",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Durable admission precedes acknowledgement/provider dispatch; exact duplicate start is idempotent, conflicting reuse is refused and one subject cannot execute twice.",
+          "Native review survives submitter disconnect and uses existing core review role, activity mode 1800000ms, internalRetry:false and no code-task command grants.",
+          "Save completed feedback before next chunk; early HIGH/MED and honest incomplete results do not stop later chunks/final consistency.",
+          "Boundary subject change rejects stale candidates and marks invalidated; technical/schema/persistence errors are explicit, with no hidden S1 retry, legacy fallback or recovery.",
+          "Completed state/report are deterministic and model-free to retrieve; no raw reasoning/transcript archive."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Delayed fake provider proves durable short acknowledgement, exact duplicate-start idempotence and serial planning/chunk dispatch."
+          },
+          {
+            "level": "integration",
+            "name": "Early HIGH/MED/incomplete results continue remaining chunks; failed save prevents advancement and boundary mutation rejects stale candidate."
+          },
+          {
+            "level": "integration",
+            "name": "Submitter disconnect leaves native work active; activity options enforce no fixed deadline/internal retry/code-task grants."
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Support the independent controller reviewer with identical semantics",
+        "summary": "Add controller plan/activity/result exchange to the design-review owner, binding authority to the actual trusted session and issued execution generation/sequence. Use the same assignments, schemas, coverage and result assessment as native review, without extracting task-review internals.",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Opposite party derives from artifact author; unknown author and caller-forged party are refused.",
+          "Only actual active reviewer connection can submit plans/activity/results; observers can query without acquiring authority.",
+          "Exact response replay is idempotent; foreign, stale or conflicting submissions do not replace accepted results or close a healthy owner merely for semantic errors.",
+          "Controller disconnect exposes interrupted state and preserves completed chunks; S1 does not automatically reassign/resume.",
+          "Identical valid native/controller results produce identical final status/counts and use the same policy/schema."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Actual trusted owner connection/execution/sequence gates controller plan/activity/result, with idempotent exact replay and conflicting replay refusal."
+          },
+          {
+            "level": "integration",
+            "name": "Reviewing-controller disconnect retains completed chunks as interrupted with no automatic reassignment/recovery."
+          },
+          {
+            "level": "unit",
+            "name": "Equivalent native/controller feedback shares policy/schema and produces identical status/counts."
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Wire the normal MCP and daemon design-review interface",
+        "summary": "Add proposed design-review MCP schema/adapter, daemon RPC and step handler; update normal MCP registration/schema/guide and main-thread/repo authorization routing. Preserve working code review and exact retired-route failures.",
+        "size": "L",
+        "order": 7,
+        "dependsOn": [
+          "t5",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Normal insrc_review_step advertises start/progress/assignment/plan/activity/result and routes via short main-owner operations with trusted controller context.",
+          "MCP uses generic persistent IPC where needed; native work is independent of observer lifetime and controller ownership lasts across sequential exchanges.",
+          "Repo authorization/audit and worker/session routing cannot create a second coordinator; independent subjects can progress without duplicate same-subject execution.",
+          "Retired workflow.review, workflow.reviewArtifact, workflow.resolveFinding and old stream/claim/judge helpers remain unavailable; current code-review tool/schema/routes stay intact.",
+          "Steering tells controller to poll, expose progress and wait for full review before corrections; no backward-compatibility flag or activation switch."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Normal stdio MCP/Unix IPC start and progress reach one main owner; second observer cannot acquire reviewer authority or duplicate execution."
+          },
+          {
+            "level": "integration",
+            "name": "Schema discovery and steering expose current phases, bounded polling and wait-for-completion guidance."
+          },
+          {
+            "level": "unit",
+            "name": "Retired review/stream/resolve routes remain unavailable and current code-review registration/routing stays intact."
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Verify compiled integration and one useful live design review",
+        "summary": "Add reproducible compiled transport smoke and focused route/coverage regressions, then run one meaningful independent hosted review through the normal MCP interface. Record complete evidence, limitations and documentation; distinguish deterministic fake-provider tests from hosted review.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Production build and compiled normal MCP/daemon smoke pass with clearly labeled fake CLI output; code-review focused regressions remain healthy.",
+          "Epic, Standalone and Issue fixture matrix proves different required artifacts and negative branch-confusion behavior.",
+          "One real independent review through normal insrc_review_step reads linked current design/code, emits coherent chunks and finishes with retrievable feedback; no raw internal RPC substitute.",
+          "Record review-id/attempt, model identity, timing, plan/chunk outcomes, test execution results and limits. A blocked live run is reported as outstanding, not counted as passing or replaced with author self-review.",
+          "No unrelated full test sweep, sibling-story implementation or new activation/qualification system is added; normal deployment/restart if needed is documented as execution prerequisite.",
+          "Record acknowledgement latency, per-chunk timing and when completed feedback became visible. A useful completed execution may report design findings or explicit substantive verification limits; do not rerun hosted reviews merely to obtain a clean design verdict. Technical failure or no substantive inspection remains outstanding."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Production build and compiled MCP/daemon fake-CLI smoke complete planning, chunks, incremental feedback and report retrieval."
+          },
+          {
+            "level": "smoke",
+            "name": "Focused existing task-review schema/routing/owner regressions pass without hosted reruns or unrelated full sweep."
+          },
+          {
+            "level": "live",
+            "name": "One meaningful independent design review via normal insrc_review_step records model, acknowledgement/chunk timing, scope, actual feedback and limits separately from fake fixtures."
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Canonical DEF/HLD/standalone LLD resolution; wrong marker/type/party/path refusal before provider call.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Host inventory and semantic plan mapping for all three artifact kinds, missing-unit/final-only/cycle/duplicate rejection.",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Prompt contains policy, live paths, chunk metadata and trailing output schema but not a unique artifact-body canary or repeated baseline.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Accepted result requires assigned inspected references or explicit limitations; HIGH/MED/incomplete precedence, LOW advice separation and count deduplication.",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "Atomic-save fault injection preserves prior checkpoint and prevents next-unit dispatch; unknown/corrupt/oversize state retained.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Table-driven required references: DEF without future artifacts; HLD with DEF; Epic LLD with DEF/HLD/story; standalone feature/small LLD with no DEF/HLD; sized issue LLD with ISSUE and no fabricated HLD; no-design-review small issue/trivial route.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Negative branch confusion: missing required Epic HLD does not silently become standalone; ISSUE root plus standalone flag/corrects link remains issue; declared missing SPEC differs from optional absent SPEC; LLD review never requires future PLAN/TASKS/BUILD/CR.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Opposite-party selection for both authors, refusal of unknown author.",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Controller owner/execution/sequence binding, exact replay idempotence and conflicting replay refusal.",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native/controller equivalent chunk feedback produces identical consolidated status/counts.",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Progress request and bounded result-page request never call a provider or renew inactivity.",
+        "coveredByTaskIds": [
+          "t4",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native options are activity mode 1800000ms, internalRetry:false and absent codeTaskCommands.",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Real local Unix IPC/stdio MCP start acknowledges before delayed fake reviewer completion; independent poll sees saved feedback.",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "One review serializes chunks; duplicate start from another session dispatches no additional planning/chunk work.",
+        "coveredByTaskIds": [
+          "t5",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Submitting MCP disconnect does not abort native review; reviewing-controller disconnect marks interrupted and preserves completed chunks.",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "HIGH/MED first chunk and incomplete second chunk both permit later substantive/final consistency work; no corrective artifact writes.",
+        "coveredByTaskIds": [
+          "t3",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Progress pages expose completed findings without retransmitting baseline; exact failed save prevents advancing.",
+        "coveredByTaskIds": [
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retired workflow.review/legacy stream and resolver routes still throw exact unavailable exception; code-review normal path remains unchanged.",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Build with npm run build; compiled MCP schema discovery exposes only current design phases and correct guide.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Compiled daemon/main-thread route starts one fake native review, polls feedback and retrieves completed report.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Compiled code-review registration and focused routing regression remain healthy.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Controller-authored meaningful current DEF/HLD/LLD is reviewed by the daemon via normal insrc_review_step, not internal RPC fallback.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reviewer reads linked artifact/code, returns coherent plan and substantive feedback, all chunks complete and checkpoint/result remain retrievable.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Record model identity, review/attempt, timestamps, chunk/status/findings and any optional execution/visual verification limits. No test fixture output is claimed as hosted assessment.",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S001/LLD.md#2-contract-details"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S001/LLD.md#3-data-model-changes"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S001/LLD.md#7-test-strategy"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S001/LLD.md#6-error-paths"
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6eafdfe2-e721-4526-92b9-58ac34457402",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.432Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Wire the normal MCP and daemon design-review interface",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9b5519b6f89e3cd2db0a4902cb3dc540d896229d627c2861c8d1d8b0d38789ab",
+        "at": "2026-11-03T09:15:47.433Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.433Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Wire the normal MCP and daemon design-review interface",
+    "summary": "Add proposed design-review MCP schema/adapter, daemon RPC and step handler; update normal MCP registration/schema/guide and main-thread/repo authorization routing. Preserve working code review and exact retired-route failures.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Normal insrc_review_step advertises start/progress/assignment/plan/activity/result and routes via short main-owner operations with trusted controller context.",
+      "MCP uses generic persistent IPC where needed; native work is independent of observer lifetime and controller ownership lasts across sequential exchanges.",
+      "Repo authorization/audit and worker/session routing cannot create a second coordinator; independent subjects can progress without duplicate same-subject execution.",
+      "Retired workflow.review, workflow.reviewArtifact, workflow.resolveFinding and old stream/claim/judge helpers remain unavailable; current code-review tool/schema/routes stay intact.",
+      "Steering tells controller to poll, expose progress and wait for full review before corrections; no backward-compatibility flag or activation switch."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Normal stdio MCP/Unix IPC start and progress reach one main owner; second observer cannot acquire reviewer authority or duplicate execution."
+      },
+      {
+        "level": "integration",
+        "name": "Schema discovery and steering expose current phases, bounded polling and wait-for-completion guidance."
+      },
+      {
+        "level": "unit",
+        "name": "Retired review/stream/resolve routes remain unavailable and current code-review registration/routing stays intact."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

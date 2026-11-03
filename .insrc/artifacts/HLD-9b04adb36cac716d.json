@@ -1,0 +1,469 @@
+{
+  "meta": {
+    "workflow": "design.epic",
+    "runId": "wf-1793694252789-heyhey",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T08:34:57.622Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 642364,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "3a90ccc0b255e605ca61089709d330854ed78d3fd015fafbb4bb6444d0b52d15",
+        "at": "2026-11-03T08:39:49.010Z",
+        "by": {
+          "id": "codex:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T08:45:07.912Z",
+        "override": {
+          "reason": "User explicitly approved the presented HLD with review override and proceeding to S1 LLD. Design-review engine intentionally removed pending this epic; author self-review found no outstanding HIGH/MED, contract ownership/rollout checks passed and sequence diagram visually verified. No independent review claimed."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A dedicated design-review coordinator runs coherent reviews of current DEF, HLD and LLD documents through existing model and artifact services. It persists completed chunks, reports progress and pauses for user decisions when retries are exhausted or the artifact changes. Corrected designs receive impact-based follow-up reviews, and normal approval preserves review history before temporary state is removed."
+    },
+    "frameworkSummary": "Choose a1: a small, design-specific background coordinator; reuse the existing LLMProvider activity-mode review session, role routing, IPC/session routing and artifact store/history. Do not generalize or migrate the working task-review coordinator. New production code belongs under a dedicated design-review subdirectory of the existing src/workflow/review boundary (proposed location, not an existing module claim). Normal insrc_review_step and daemon design-review routes delegate to it; removed claim/judge/autofix execution stays removed. [[c1]] [[c2]]\n\nA review has one canonical subject and sequential attempts. Each attempt owns its baseline, semantic chunk plan, accepted completed results and terminal summary. Current review prompts contain policy, subject/related document paths, chunk assignment and output schema, never the artifact body. Prior feedback and impact baselines are accessible by checkpoint/history references rather than repeated full input. Read-only reviewers inspect live artifact paths and any necessary code; the daemon validates structure and completeness without inventing semantic judgments. Shared substantive policy assesses correctness against requirements/upstream designs, functional completeness, contracts and ownership/cardinality, errors/test coverage where relevant, consistency, applicable conventions, and necessary linked diagrams/UX artifacts. Report unavailable verification honestly; optional advice does not become a false blocking or unverified finding.",
+    "architectureShape": "## Components and ownership\nThe existing MCP/daemon adapters perform schema validation and route short operations to one design-review coordinator owned by the main daemon, independently of the submitting request. No second worker/thread-local coordinator may start the same review. A coordinator registry excludes duplicate review-id or overlapping review of the same artifact while allowing independent artifacts to run concurrently. Native review sessions and controller exchanges share policies, schemas and state transitions; the artifact's existing authoredBy/party helper chooses the opposite reviewer. No direct cloud REST, code-task shell grants or new trust/activation machinery. [[c2]] [[c3]]\n\n## Review and artifact relationships\nCanonical artifact -> design review: one artifact has zero or more review histories; each review names exactly one artifact, never inferred by title. Review -> attempt: one-to-many ordered ownership, positive contiguous attempt numbers. Attempt -> chunk plan: exactly one accepted plan per attempt after planning; plan -> chunks: one-to-many owned coherent assignments, including a final consistency chunk. Chunk -> execution: one initial execution plus up to three technical retries; at most one accepted substantive result per chunk per attempt. Subsequent attempts may reference unaffected prior coverage explicitly; prior results are never overwritten or silently copied as fresh review. Review -> permanent artifact-history entries: one-to-many append-only records; an artifact lifecycle review references the applicable completed record. Historical legacy report readers continue to read old records; no legacy executable engine is restored and new chunks are not translated into fake legacy claim/judge rounds.\n\n| Owner / source | Target | Cardinality and meaning |\n| --- | --- | --- |\n| Canonical artifact | Design review | 0..many histories; each review has exactly one subject. |\n| Design review | Attempt | 1..many ordered owned attempts. |\n| Attempt | Accepted chunk plan | 0 while planning, exactly 1 once accepted. |\n| Chunk plan | Chunk | 1..many coherent assignments, including final consistency. |\n| Chunk | Accepted feedback | 0..1 owned result; technical retries do not create extra accepted results. |\n| Current chunk | Prior feedback | 0..many references only after impact analysis; no ownership transfer or rewriting. |\n| Review | Artifact-history publication | 0..many immutable entries; lifecycle references the applicable complete entry. |\n\nThe relationship table is authoritative here. An ER companion is omitted because the current generator draws all to-many lower bounds as zero, which would misstate the one-or-more attempt relationship. The sequence diagram remains useful and verified.\n\n## Subject admission and change detection\nResolve canonical registered project and DEF/HLD/LLD identity from the artifact path; derive document kind, party and related document paths from existing artifacts. Admission reads the current canonical artifact and document representation, validates that they identify the same artifact, and captures an attempt-local baseline and subject fingerprints. This is change detection and later impact evidence, not a commit pin: active review always reads the latest live document path. Store the baseline once per attempt in private checkpoint data; never duplicate it per chunk or embed it into the review prompt. Missing/contradictory subject representations are errors, not guessed versions. Monitor only the reviewed artifact's canonical JSON and document representation. Recheck before/after planning, impact analysis, every chunk, recovery, publication and approval. Persist a detected change immediately, abort the active session, reject late responses, and mark invalidated with requiresUserInput; no result from that attempt can pass the changed artifact. Source/reference changes outside that subject are ignored for invalidation. Polling/process heartbeats do not count as review activity. The final compare-and-publish is serialized with normal artifact-store writes; detect direct-file changes before release, with subsequent approval checking current reviewed content. Review-generated lifecycle metadata/report rendering after successful compare is an internal publication update, not an automatic review restart.\n\n## Planning and substantive review\nThe reviewer first reads the live document and proposes bounded coherent chunks with stable ids, titles, artifact section/element selectors, covered requirements/concerns and dependencies. The host rejects malformed or incomplete inventories; the reviewer must cover the entire artifact and explain shared concerns rather than rely on blind token or line splits. DEF groups capabilities plus associated requirements/stories/constraints/acceptance; HLD groups architectural responsibilities plus contracts/ownership/dependencies/interactions; LLD groups implementation responsibilities plus interfaces/logic/errors/test coverage. Each plan includes an explicit final cross-chunk/upstream-alignment check. Very large coherent groups may be split by responsibility while retaining named cross-references and shared-context paths. A single ordered chunk runs at a time per review; its prompt contains guidelines and links, not a preassembled dump. Accepted feedback is persisted before the next chunk starts. HIGH/MED findings do not stop later chunks. Missing mandatory coverage or inaccessible necessary evidence is represented as incomplete/unverified, never falsely passed; advice is separate. All completed chunk feedback is visible to the controller immediately, but corrective editing, resolving findings or restarting because of findings waits for whole-review completion. Technical pause/restart notifications and user decisions remain permitted.\n\n## Recovery, failures and activity\nUse one private JSON checkpoint at <project>/.insrc/tmp/design-review/<review-id>.json, with a header, submitted paths/metadata, ordered attempts, baseline, plan, completed chunk results, pointed technical diagnostics and bounded progress. Save atomically with schema validation and fsync before advancing; readers see a complete snapshot. Daemon request/MCP disconnection does not cancel daemon-native work. A controller-authored response exchange is tied to its actual session; loss of that reviewing controller marks unfinished work interrupted, preserves completed chunks and requires explicit controller recovery. Daemon restart similarly resumes only on explicit recovery, after artifact identity/change checks, never by automatically rerunning old checkpoints.\n\nTechnical retries are owned only by the coordinator: initial execution plus three retries of the failed unit, with internal provider retries disabled. Do not multiply the budget in MCP, provider or schema adapters; pass concise previous technical feedback into the next execution. Planning and impact-analysis failures use the same bounded technical policy before any new substantive chunk work. An invalid request/foreign checkpoint is rejected without retry. Retry exhaustion persists paused(reason=technical_retry_exhausted), exposes the failed unit and waits for user direction; no remaining chunk starts until explicit direction. Same-attempt recovery retains the retry count; additional execution after exhaustion needs a recorded user-directed recovery action, not an automatic counter reset. Substantive HIGH/MED feedback is not a technical failure. A reviewer omission produces an honest incomplete result rather than silently retried semantic judgment. All native sessions use activity mode with 1800000ms inactivity, active tools tracked separately and no fixed deadline. Long active tools follow existing provider activity semantics; mere process liveness and polling never refresh grace. Terminal states are passed, changes_requested, incomplete, failed and invalidated; interrupted/paused are recoverable states. Invalidated always requires a new, user-authorized full attempt.\n\n## Impact-based subsequent attempts\nAn ordinary correction after a completed review starts a new sequential attempt, preserving all prior feedback. The reviewer reads the latest subject and previous baseline/history by path and analyzes structural/textual changes, requirement/constraint ownership, shared interfaces, dependencies, tests and cross-section implications. Its impact assessment names changed concerns, directly and indirectly affected chunk ids, the reasoning for exclusions, old-to-new chunk mapping when sections move/split/merge, and required consistency checks. A simple edited-section list is not sufficient. Uncertain scope, missing baseline or untraceable mapping expands to a full review. Newly introduced/deleted content must be accounted for explicitly. Unaffected coverage references a specific prior attempt/result; unresolved earlier HIGH/MED cannot disappear unless rechecked as addressed or explicitly carried forward as blocking. The full/selected plan and reasoning are visible before execution. Mutation while planning or reviewing follows invalidation, not selective review. External changes alone do not add restart triggers or proactive impact scans.\n\n## Publication, approval and cleanup\nFinalization requires the complete applicable plan, accepted coverage for every selected chunk and explicit provenance for retained coverage, plus a completed final consistency check. Failed/paused/interrupted/invalidated work is never a complete pass; mandatory coverage gaps yield incomplete. HIGH/MED -> changes_requested and lifecycle block; fully reviewed LOW-only/clear -> passed. Publish a versioned design-review history entry through existing queued artifact history/store facilities, carrying review-id, attempt, subject revision/content identity, reviewer party/model, scope/impact reasoning, all chunk feedback, limitations, retry/pause history and baseline needed for future impact analysis. Keep consolidation and publication idempotent by review-id/attempt so a crash can retry persistence without model calls. Store this content in the artifact's history, not new event arrays in the artifact head and not temporary docs in epic folders. Lifecycle receives only the normal compact review reference/counts/verdict, with a version-aware reader for the new record kind. Never synthesize legacy claims. Verify current subject before setting a revision-bound review; publication metadata must not change authored content. Report progress/result paths even if publication is pending and allow explicit publication retry.\n\nNormal DEF/HLD/LLD approvals require an applicable complete independent review of the current artifact, with existing explicit override semantics retained and recorded. For LOW-only/clear review, ordinary approval is unchanged. After successful artifact approval, hold a short per-artifact start/publication fence, verify every saved attempt is permanently represented, and delete only its safe inactive checkpoint. If active, malformed, foreign or unpreserved data exists, retain it with an explicit cleanup reason without silently dropping history. A failed approval performs no cleanup. Final result remains retrievable from permanent artifact history after checkpoint deletion. No second scheduler/database, separate activation gate, transcript archive or raw model reasoning store is introduced.",
+    "sharedContracts": [
+      {
+        "id": "sc1",
+        "name": "Design review subject, policy and semantic chunk contract",
+        "purpose": "One minimal subject request, common substantive policy and coherent chunk plans for both reviewer parties.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "interfaceSketch": "type DesignArtifactKind = 'DEF' | 'HLD' | 'LLD';\ninterface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ninterface DesignReviewSubject { readonly artifactId: string; readonly kind: DesignArtifactKind; readonly documentPath: string; readonly canonicalPath: string; readonly reviewer: 'daemon' | 'controller'; }\ninterface DesignChunk { readonly id: string; readonly title: string; readonly selectors: readonly string[]; readonly concerns: readonly string[]; readonly dependsOn: readonly string[]; readonly purpose: 'substantive' | 'consistency'; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc2",
+        "name": "Durable review attempts, feedback and progress",
+        "purpose": "Persist one source of review state and expose completed feedback without a long-lived request.",
+        "ownedByStory": "s1",
+        "consumedByStories": [
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "interfaceSketch": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignBaseline { readonly subjectFingerprints: Readonly<Record<string,string>>; readonly reviewedContent: unknown; readonly capturedAt: string; }\ninterface DesignFinding { readonly id: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly location: string; readonly message: string; readonly evidenceReferences: readonly string[]; }\ninterface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignAttempt { readonly number: number; readonly status: DesignReviewStatus; readonly baseline: DesignBaseline; readonly plan?: DesignChunkPlan | undefined; readonly completedChunks: readonly DesignChunkResult[]; readonly summary?: string | undefined; }\ninterface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc3",
+        "name": "Change invalidation and bounded technical recovery",
+        "purpose": "Keep mutation, interruption, technical retries and user decisions distinct without losing completed work.",
+        "ownedByStory": "s2",
+        "consumedByStories": [
+          "s3",
+          "s4"
+        ],
+        "interfaceSketch": "interface DesignFailure { readonly unitId: string; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'publication'; readonly code: string; readonly summary: string; readonly retriesUsed: number; }\ninterface DesignRecoveryState { readonly attempt: number; readonly status: 'interrupted' | 'paused' | 'invalidated'; readonly reason: 'connection_lost' | 'daemon_restarted' | 'technical_retry_exhausted' | 'artifact_changed'; readonly failedUnit?: DesignFailure | undefined; readonly completedChunkIds: readonly string[]; readonly requiresUserInput: boolean; }\ninterface DesignRecoveryAction { readonly operation: 'resume' | 'restart_full' | 'retry_publication'; readonly reviewId: string; readonly attempt: number; readonly userDecision?: { readonly action: string; readonly reason: string; readonly recordedAt: string; } | undefined; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc4",
+        "name": "Impact-selected attempt and retained coverage",
+        "purpose": "Make selective re-review defensible and preserve unresolved feedback and coverage provenance.",
+        "ownedByStory": "s3",
+        "consumedByStories": [
+          "s4"
+        ],
+        "interfaceSketch": "interface DesignImpactAssessment { readonly baselineAttempt: number; readonly mode: 'affected_chunks' | 'full'; readonly changes: readonly string[]; readonly directChunkIds: readonly string[]; readonly indirectChunkIds: readonly string[]; readonly rationale: string; readonly uncertainReason?: string | undefined; readonly chunkMapping: readonly { readonly priorIds: readonly string[]; readonly currentIds: readonly string[]; readonly explanation: string; }[]; readonly retainedCoverage: readonly { readonly chunkId: string; readonly fromAttempt: number; readonly fromChunkId: string; readonly justification: string; }[]; readonly carriedFindingIds: readonly string[]; readonly consistencyChunkIds: readonly string[]; }",
+        "assumptions": []
+      },
+      {
+        "id": "sc5",
+        "name": "Permanent review publication and approval cleanup",
+        "purpose": "Bind complete independent feedback to artifact approval and preserve all history before removing temporary state.",
+        "ownedByStory": "s4",
+        "consumedByStories": [],
+        "interfaceSketch": "interface PermanentDesignReview { readonly kind: 'design-chunk-review'; readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly reviewer: 'daemon' | 'controller'; readonly attempts: readonly DesignAttempt[]; readonly applicableAttempt: number; readonly status: DesignReviewStatus; readonly impact?: DesignImpactAssessment | undefined; }\ninterface DesignPublication { readonly reviewId: string; readonly attempt: number; readonly state: 'pending' | 'complete'; readonly artifactHistoryEntryId?: string | undefined; readonly reportReference?: string | undefined; }\ninterface DesignCleanupResult { readonly deleted: readonly string[]; readonly retained: readonly { readonly path: string; readonly reason: string; }[]; }",
+        "assumptions": []
+      }
+    ],
+    "storyBoundaries": [
+      {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Deliver the first useful normal-entrypoint review: latest-subject resolution, opposite-party execution, shared artifact-specific policy, reviewer chunk planning, sequential inspection, durable completed results, visible progress and a retrievable consolidated report. Keep prompt construction, native/controller exchange and checkpoint IO private; no shared-engine migration. Produce real narrow hosted-review evidence as well as deterministic fixtures."
+      },
+      {
+        "storyId": "s2",
+        "owns": [
+          "sc3"
+        ],
+        "depends": [
+          "sc1",
+          "sc2"
+        ],
+        "internal": "Own interruption/recovery transitions, reviewed-subject monitoring, cancellation/late-response rejection, the single retry budget and user-decision pause. Native activity integration is private; callers consume recovery state/actions, not process internals. Preserve sc1/sc2 semantics and no external-file invalidation."
+      },
+      {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own reviewer-led direct/indirect impact assessment, old/new plan mapping, conservative full-review fallback, retained coverage and finding reconciliation. Its document comparison/selection implementation stays private; expose only auditable scope reasoning and provenance, not a generic dependency engine."
+      },
+      {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Own lifecycle version-aware record publication/readers, normal approval integration, history-preserving cleanup, multi-session routing qualification and final compiled/live verification. Keep cleanup fence and publication retries internal. No new review dashboard, activation state or legacy compatibility execution."
+      }
+    ],
+    "nonFunctional": {
+      "performance": "Initial acknowledgement and progress are model-independent short operations; target <=2 seconds on an idle local daemon, measured separately from filesystem/model time. Review calls remain sequential per review; independent subjects may run concurrently. Bound checkpoint size and payloads explicitly in LLD; reject exceeded limits without silent truncation or loss of coverage. Persist completed chunks before advancing and coalesce activity-only progress writes.",
+      "security": "Daemon owns state/store access. Canonical registered repo and artifact identity, no-follow bounded checkpoint reads, literal review IDs and private file modes follow existing patterns. Native review uses read-only grants with no code-task command grant. Opposite reviewer party derives from trusted host/session context and artifact metadata, not request claims. No cloud REST, trust-key service or raw reasoning/prompt archive.",
+      "observability": "Expose review/attempt/chunk identity, phase, elapsed times, accepted completed feedback, current technical retry count, paused reason, user-input requirement, activity/tool state and publication state. Polling observes only. Separate optional advice from findings and unavailable evidence. Controller reports progress but does not edit or resolve intermediate findings.",
+      "durability": "Atomic validated checkpoint snapshots and completed-chunk flushes; immutable prior attempts and idempotent history publication. Reviewer disconnect, daemon restart, publication interruption and approval cleanup have explicit recovery cases. Permanent history retains baselines/impact/feedback and technical attempt summaries, not native transcripts. Never delete a checkpoint until every attempt is preserved and approval succeeded."
+    },
+    "rolloutOverview": {
+      "phases": [
+        {
+          "name": "A — useful design review",
+          "includesStories": [
+            "s1"
+          ],
+          "rationale": "Deliver the actual normal-entrypoint read-only review, artifact-specific chunk planning, checkpointed feedback and visible results. Demonstrate at least one useful independent native review before adding resilience features.",
+          "backwardCompat": "Keep working code review and historical report readers unchanged; no retired design engine fallback.",
+          "featureFlag": null
+        },
+        {
+          "name": "B — controlled recovery",
+          "includesStories": [
+            "s2"
+          ],
+          "rationale": "Add explicit interruption recovery, reviewed-artifact invalidation, bounded technical retries and user-input pauses over accepted chunk state.",
+          "backwardCompat": "Preserve phase A request/result identities; validate checkpoint schema explicitly and do not silently replay unknown records.",
+          "featureFlag": null
+        },
+        {
+          "name": "C — impact-aware corrections",
+          "includesStories": [
+            "s3"
+          ],
+          "rationale": "Add auditable direct/indirect impact scope and prior coverage references after recovery/invalidation semantics exist.",
+          "backwardCompat": "Existing full-review histories remain usable; missing impact baseline produces explicit full review rather than guessed selective reuse.",
+          "featureFlag": null
+        },
+        {
+          "name": "D — approval and closeout",
+          "includesStories": [
+            "s4"
+          ],
+          "rationale": "Integrate version-aware permanent publication and approval cleanup, then verify compiled normal MCP/daemon/controller paths and live design review without an additional activation system.",
+          "backwardCompat": "Existing artifact lifecycle/approval overrides and historical report data remain readable. No compatibility execution path for retired engines; code-review contracts remain intact.",
+          "featureFlag": null
+        }
+      ],
+      "orderingRationale": "s1 -> s2 -> s3 -> s4 exactly follows approved Story dependencies. sc1/sc2 land in s1 before all consumers; sc3 in s2 before s3/s4; sc4 in s3 before s4; sc5 is private publication/cleanup ownership of s4. No contract extraction or activation epic precedes the useful review.",
+      "riskyBits": [
+        {
+          "area": "Mutation detection and publication/approval races",
+          "why": "Current document reads can span changes, and publication metadata itself must not trigger an invalidation loop or certify changed content.",
+          "mitigation": "Watch only the subject, compare before/after each phase, fence queued publication/approval, reject late responses, and test direct edits plus metadata-only self-publication separately."
+        },
+        {
+          "area": "Selective review omits indirect effects or unresolved feedback",
+          "why": "Text changes do not reveal all requirement/interface implications; moved chunks and missing baselines can make prior coverage unreliable.",
+          "mitigation": "Require explicit reviewer impact reasoning, chunk mapping and carried findings, final consistency checks, and full-review fallback for uncertainty or unavailable baseline."
+        },
+        {
+          "area": "Hidden retries, lost progress or divergent reviewer parties",
+          "why": "Provider/MCP retry stacking can exceed the agreed budget, disconnection can repeat completed work, and legacy readers may misinterpret new records.",
+          "mitigation": "One coordinator owns retry counters and durable completed states, native internal retries disabled, parity tests for daemon/controller, idempotent versioned history publication and cleanup retained on uncertainty. Test with deterministic failure fixtures and clearly distinguished live evidence."
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Dedicated design-review coordinator over existing provider and artifact services",
+        "oneLineSummary": "Own latest-artifact and chunk semantics locally; reuse provider activity and artifact history interfaces.",
+        "approach": "Use a focused daemon-owned background coordinator for design-review attempts, chunk planning, completed feedback and recovery. It reads current artifact documents, gives independent reviewers policy plus paths, and persists a single checkpoint per review with append-only attempt sections. The provider session interface and normal artifact-store lifecycle/history remain shared services.\n\nMCP and daemon paths delegate to this coordinator, with daemon-native execution or controller exchange using the same policies and validation. Existing code-review coordinator remains a separate consumer of generic services; no task packet, commit pin or BUILD semantics enter design review.",
+        "pros": [
+          "No required changes to code-review packet, committed-scope or recovery contracts.",
+          "A single design-review owner handles mutation checks, retries, progress, publication and cleanup.",
+          "Reuses existing provider activity and queued artifact history facilities without a new scheduler or persistence system."
+        ],
+        "cons": [
+          "Design and code review have separate domain coordinators, so shared policy conventions need parity tests.",
+          "Some small checkpoint/progress orchestration patterns will be similar until proven common utility extraction is justified."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": []
+      },
+      {
+        "id": "a2",
+        "name": "Extract a shared review-job engine first",
+        "oneLineSummary": "Move both review kinds onto a generalized background job lifecycle with domain adapters.",
+        "approach": "Generalize existing task-review execution into a reusable job engine that owns scheduling, sessions, progress, retries and persistence. Code and design reviews each implement domain adapters, with the design adapter adding latest-artifact fingerprints, coherent chunks and selective impact analysis.\n\nBoth flows migrate to shared lifecycle contracts before or alongside design review. This centralizes orchestration but requires proving that committed task recovery and mutable artifact invalidation remain independent despite shared state transitions.",
+        "pros": [
+          "Centralized orchestration can reduce duplicate lifecycle implementation if both domains genuinely share the same transition model.",
+          "Uniform monitoring and checkpoint mechanics can be exercised through shared infrastructure tests."
+        ],
+        "cons": [
+          "Requires migration and regression qualification of working code review before design-review value is delivered.",
+          "Generalization must accommodate conflicting commit-pinned and latest-artifact recovery rules, increasing contract surface."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [],
+        "reasonRejected": "Partial on k11: requires migrating the working code-review engine before design review."
+      },
+      {
+        "id": "a3",
+        "name": "Extend task-review coordinator with design-review variants",
+        "oneLineSummary": "Add design payload variants to the working code-review lifecycle.",
+        "approach": "Add design-review discriminators and chunk variants to the existing task-review coordinator and checkpoint contracts. Design chunks stand in for tasks while additional branches implement current-artifact invalidation and impact-selected attempts.\n\nOne coordinator then handles both committed code task reviews and current design artifacts. Provider and routing code are reused directly, but every execution, completion, reuse and cleanup branch must distinguish the two review meanings.",
+        "pros": [
+          "Directly reuses the existing in-process owner and controller exchange scaffolding.",
+          "Avoids introducing a second top-level domain coordinator."
+        ],
+        "cons": [
+          "Introduces design-specific variants throughout task packet admission, task history reuse, BUILD completion and cleanup paths.",
+          "Couples design-review rollout to the tested code-review implementation and makes invalid reuse of committed-task assumptions easier."
+        ],
+        "costEstimate": "L",
+        "assumptionsRelied": [],
+        "reasonRejected": "Partial on k2/k8/k10/k11: mixes latest artifact invalidation/impact/cleanup with committed-task semantics."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "background-design-review",
+      "narrative": "Shows short acknowledgement, reviewer-created chunk planning, durable incremental feedback and final publication. Artifact mutation or exhausted technical retries pauses execution for user direction instead of automatically restarting or editing the design.",
+      "participants": [
+        {
+          "id": "user",
+          "label": "User",
+          "description": "Approves restarts and supplies direction after retry exhaustion."
+        },
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Starts and observes review; waits for complete feedback before corrections."
+        },
+        {
+          "id": "coordinator",
+          "label": "Design-review coordinator",
+          "description": "Owns background review, subject checks, retries and durable progress."
+        },
+        {
+          "id": "reviewer",
+          "label": "Independent reviewer",
+          "description": "Reads live document paths/code and returns coherent plan and chunk feedback."
+        },
+        {
+          "id": "state",
+          "label": "Checkpoint / artifact history",
+          "description": "Temporary chunk state, then permanent consolidated history through existing artifact store."
+        }
+      ],
+      "messages": [
+        {
+          "from": "controller",
+          "to": "coordinator",
+          "label": "Start review using artifact path and review identity",
+          "description": "No copied artifact body or required commit pointer."
+        },
+        {
+          "from": "coordinator",
+          "to": "state",
+          "label": "Save current-subject baseline and attempt",
+          "description": "Capture change-detection and later impact evidence, not a commit pin."
+        },
+        {
+          "from": "coordinator",
+          "to": "controller",
+          "kind": "return",
+          "label": "Short acknowledgement with review/checkpoint identity",
+          "description": "Native review continues independently of this request."
+        },
+        {
+          "from": "coordinator",
+          "to": "reviewer",
+          "label": "Plan coherent chunks from guidelines and document paths",
+          "description": "Opposite reviewer party inspects live document and any relevant code."
+        },
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "kind": "return",
+          "label": "Chunk plan including final consistency check",
+          "description": "Host validates shape and coverage inventory."
+        },
+        {
+          "from": "coordinator",
+          "to": "reviewer",
+          "label": "Review next coherent chunk",
+          "description": "One chunk at a time per review; bounded technical retries repeat only failed work."
+        },
+        {
+          "from": "reviewer",
+          "to": "coordinator",
+          "kind": "return",
+          "label": "Findings, coverage, limits and advice",
+          "description": "Read-only result; HIGH/MED findings do not stop remaining chunks."
+        },
+        {
+          "from": "coordinator",
+          "to": "state",
+          "label": "Persist completed chunk before advancing",
+          "description": "Atomic completed checkpoint; no partial result silently treated as complete."
+        },
+        {
+          "from": "controller",
+          "to": "coordinator",
+          "label": "Poll progress and completed findings",
+          "description": "Observation starts no model work and causes no intermediate corrections."
+        },
+        {
+          "from": "coordinator",
+          "to": "controller",
+          "kind": "return",
+          "label": "Progress, findings or requires-user-input state",
+          "description": "If artifact changed or retries exhausted, do not advance automatically."
+        },
+        {
+          "from": "controller",
+          "to": "user",
+          "label": "When paused: notify and request direction",
+          "description": "A changed artifact requires explicit user approval for a fresh full attempt."
+        },
+        {
+          "from": "coordinator",
+          "to": "state",
+          "label": "When complete: compare subject and publish consolidated history",
+          "description": "Only after every applicable chunk/final check completes; old feedback remains traceable."
+        },
+        {
+          "from": "coordinator",
+          "to": "controller",
+          "kind": "return",
+          "label": "Final result and permanent report reference",
+          "description": "Controller can now act on full feedback and ask for artifact approval."
+        },
+        {
+          "from": "controller",
+          "to": "coordinator",
+          "label": "After explicit artifact approval: cleanup",
+          "description": "Existing approval flow triggers short artifact-local cleanup fence."
+        },
+        {
+          "from": "coordinator",
+          "to": "state",
+          "label": "Verify preserved attempts, remove safe inactive checkpoint",
+          "description": "Retain malformed/foreign/active/unpreserved state with a reason; permanent history remains."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "functional-coverage",
+        "diagram-sequence"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1: Review module inventory and MCP boundary"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: Provider, lifecycle, import and convention discovery"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/review-evolving-designs-durable-checkpoints-E2026110316f49beb/SPEC.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/types.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    }
+  ]
+}

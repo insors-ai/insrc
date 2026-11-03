@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-63f7a37d-9c7e-43b1-9125-c45318d6375e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.423Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Define strict design-review contracts and bounded inputs",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "826d65f497e2ffdace9349d163c1530c611d5b76ff970ecf9b89058b463d1efa",
+        "at": "2026-11-03T09:15:47.423Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.424Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define strict design-review contracts and bounded inputs",
+    "summary": "Add proposed design-review sc1/sc2 schemas and typed errors under src/workflow/review/design-review/contracts.ts. Cover trimmed phase envelopes, workflow context, chunk inventory/plan/results, private attempt/checkpoint and bounded progress/result pages. Keep old task-review domain contracts separate.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Strict phase/schema validation rejects unknown fields, bad review ids/attempts, invalid enums and exceeded limits before provider calls.",
+      "S1 start admits attempt 1 only; observation includes typed cursor/includeResult and never exposes baseline or full history by default.",
+      "Subject/plan/result/progress/checkpoint schemas share one versioned authority for daemon and controller; optional fields meet strict TypeScript conventions."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Strict phase/schema boundaries reject malformed identities, unknown fields/enums, noninitial S1 attempts and payload/size limit violations."
+      },
+      {
+        "level": "unit",
+        "name": "Common daemon/controller assignment and result schema preserves typed workflow context and bounded progress cursor options."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

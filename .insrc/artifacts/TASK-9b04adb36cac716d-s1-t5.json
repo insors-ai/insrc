@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-37f0ba1e-452f-4565-840b-360f561e0c34",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.430Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run native background reviews through the dedicated owner",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0dc4e2d4e451d92b906a0411f036caf510e42799c6efdb3677ce57ff47cbbaff",
+        "at": "2026-11-03T09:15:47.430Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.430Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run native background reviews through the dedicated owner",
+    "summary": "Implement proposed coordinator.ts with one main-daemon owner, subject reservations, short durable acknowledgement, reviewer planning and serial chunk execution over existing review-role activity sessions. Keep accepted feedback and substantive continuations durable.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Durable admission precedes acknowledgement/provider dispatch; exact duplicate start is idempotent, conflicting reuse is refused and one subject cannot execute twice.",
+      "Native review survives submitter disconnect and uses existing core review role, activity mode 1800000ms, internalRetry:false and no code-task command grants.",
+      "Save completed feedback before next chunk; early HIGH/MED and honest incomplete results do not stop later chunks/final consistency.",
+      "Boundary subject change rejects stale candidates and marks invalidated; technical/schema/persistence errors are explicit, with no hidden S1 retry, legacy fallback or recovery.",
+      "Completed state/report are deterministic and model-free to retrieve; no raw reasoning/transcript archive."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Delayed fake provider proves durable short acknowledgement, exact duplicate-start idempotence and serial planning/chunk dispatch."
+      },
+      {
+        "level": "integration",
+        "name": "Early HIGH/MED/incomplete results continue remaining chunks; failed save prevents advancement and boundary mutation rejects stale candidate."
+      },
+      {
+        "level": "integration",
+        "name": "Submitter disconnect leaves native work active; activity options enforce no fixed deadline/internal retry/code-task grants."
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

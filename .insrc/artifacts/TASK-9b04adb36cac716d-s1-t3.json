@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f3c3c9fd-f2e8-41db-a104-9c17eab55fa7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.427Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement common reviewer policy and complete chunk/result validation",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a9863633c0ddd978eecd380a1a241181c5d071b13a6b48a3a51004ef9877e1da",
+        "at": "2026-11-03T09:15:47.427Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.428Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement common reviewer policy and complete chunk/result validation",
+    "summary": "Add proposed policy.ts and results.ts for guidelines+paths prompts, coherent DEF/HLD/LLD chunking, full inventory mapping and final consistency checks. Validate results and derive final status/counts from accepted feedback without another re-verdict model call.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Prompt uses live subject/context/checkpoint paths and trailing schema; artifact-body canary and baseline are absent.",
+      "Plans reject missing/unknown units, final-only coverage, duplicate ids, cycles, bad ordering and missing final consistency.",
+      "DEF/HLD/LLD guidelines retain appropriate semantic concerns, and final alignment uses real Epic, standalone scope or ISSUE context.",
+      "Assigned required coverage is inspected or named as unverified/incomplete; HIGH/MED, LOW/advice and incomplete precedence are consistent across reviewer parties.",
+      "Consolidation preserves all accepted results, counts finding IDs consistently and does not manufacture evidence or run another review call."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "DEF/HLD/LLD prompts contain policy/paths/trailing schema without artifact-body canary or copied baseline."
+      },
+      {
+        "level": "unit",
+        "name": "Coverage plan rejects omitted/unknown units, final-only coverage, cycles, duplicate ids and bad final consistency."
+      },
+      {
+        "level": "unit",
+        "name": "Required verification gaps cannot pass; HIGH/MED and incomplete precedence, LOW/advice separation and deterministic counts preserve findings."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

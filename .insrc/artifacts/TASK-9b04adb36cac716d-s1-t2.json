@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-12a31e74-9fd2-47a4-a05b-26f8f8b16904",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.425Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Resolve current subjects and workflow-specific required context",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "05f80bf0064dc1ba5ada9638350f46603b84bd241eb7befbd5e3515dd82facbc",
+        "at": "2026-11-03T09:15:47.425Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.426Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve current subjects and workflow-specific required context",
+    "summary": "Implement proposed subject.ts using current canonical path/identity/root helpers, with Epic/Standalone/Issue requirements from the approved LLD matrix. Build a deterministic reviewable inventory and one private baseline. No commit pins, future build artifacts, synthetic Epic parents or corrections-link workflow switching.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "DEF, HLD and Epic-story LLD resolve applicable upstream requirements; standalone feature/small LLD works without DEF/HLD; sized issue LLD uses originating ISSUE.",
+      "Small issue/trivial no-LLD routes are not given invented design subjects or passing reviews; ISSUE/SPEC/PLAN are not added as mandatory review kinds.",
+      "Wrong identity, path escape, unknown author, contradictory root and missing required provenance fail explicitly; missing not-applicable context is not an error and broken Epic chains cannot silently become standalone.",
+      "Workflow derives from canonical root/provenance, including ISSUE root plus standalone layout/flag and correction links; no caller-supplied duplicate workflow discriminator.",
+      "Inventory covers reviewable sections/ids/citations/visual references and baseline checks compare only subject representations, not external context."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Table-driven Epic DEF/HLD/LLD, standalone feature/small LLD, sized ISSUE LLD and no-LLD small/trivial context requirements."
+      },
+      {
+        "level": "unit",
+        "name": "Missing required Epic HLD cannot become standalone; ISSUE root plus standalone flag/corrects link remains issue; missing optional references do not fail."
+      },
+      {
+        "level": "unit",
+        "name": "Canonical identity/paired marker, path containment, unknown party and missing/contradictory provenance are rejected before provider work."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

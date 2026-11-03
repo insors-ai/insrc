@@ -1,0 +1,985 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793695514430-59qpx5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:04:42.869Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1163109,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793694252789-heyhey",
+    "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8732b2f6bf3d08553be73509d30bffac2822982db6ec9a8838407c5d3d464bd1",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:08:48.588Z",
+        "override": {
+          "reason": "User explicitly approved the presented S1 LLD with review override and proceeding to PLAN. Independent design review intentionally unavailable pending this epic. Author self-review found no outstanding HIGH/MED; workflow-specific Epic/Standalone/Issue requirements and regressions included, sequence diagram rendered and visually verified. No independent review claimed."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S1 restores a useful design-review entry point for current DEF, HLD and LLD documents. A dedicated daemon owner routes to the independent reviewer, validates a coherent chunk plan, saves each completed result and exposes progress plus a consolidated report. It does not yet add recovery, automatic retries, impact-selected attempts or approval cleanup."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a small, design-specific background coordinator; reuse the existing LLMProvider activity-mode review session, role routing, IPC/session routing and artifact store/history. Do not generalize or migrate the working task-review coordinator. New production code belongs under a dedicated design-review subdirectory of the existing src/workflow/review boundary (proposed location, not an existing module claim). Normal insrc_review_step and daemon design-review routes delegate to it; removed claim/judge/autofix execution stays removed. [[c1]] [[c2]]\n\nA review has one canonical subject and sequential attempts. Each attempt owns its baseline, semantic chunk plan, accepted completed results and terminal summary. Current review prompts contain policy, subject/related document paths, chunk assignment and output schema, never the artifact body. Prior feedback and impact baselines are accessible by checkpoint/history references rather than repeated full input. Read-only reviewers inspect live artifact paths and any necessary code; the daemon validates structure and completeness without inventing semantic judgments. Shared substantive policy assesses correctness against requirements/upstream designs, functional completeness, contracts and ownership/cardinality, errors/test coverage where relevant, consistency, applicable conventions, and necessary linked diagrams/UX artifacts. Report unavailable verification honestly; optional advice does not become a false blocking or unverified finding.",
+      "ownedContracts": [
+        {
+          "id": "sc1",
+          "name": "Design review subject, policy and semantic chunk contract",
+          "purpose": "One minimal subject request, common substantive policy and coherent chunk plans for both reviewer parties.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignArtifactKind = 'DEF' | 'HLD' | 'LLD';\ninterface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ninterface DesignReviewSubject { readonly artifactId: string; readonly kind: DesignArtifactKind; readonly documentPath: string; readonly canonicalPath: string; readonly reviewer: 'daemon' | 'controller'; }\ninterface DesignChunk { readonly id: string; readonly title: string; readonly selectors: readonly string[]; readonly concerns: readonly string[]; readonly dependsOn: readonly string[]; readonly purpose: 'substantive' | 'consistency'; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Durable review attempts, feedback and progress",
+          "purpose": "Persist one source of review state and expose completed feedback without a long-lived request.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignBaseline { readonly subjectFingerprints: Readonly<Record<string,string>>; readonly reviewedContent: unknown; readonly capturedAt: string; }\ninterface DesignFinding { readonly id: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly location: string; readonly message: string; readonly evidenceReferences: readonly string[]; }\ninterface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignAttempt { readonly number: number; readonly status: DesignReviewStatus; readonly baseline: DesignBaseline; readonly plan?: DesignChunkPlan | undefined; readonly completedChunks: readonly DesignChunkResult[]; readonly summary?: string | undefined; }\ninterface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [
+          "sc1",
+          "sc2"
+        ],
+        "depends": [],
+        "internal": "Deliver the first useful normal-entrypoint review: latest-subject resolution, opposite-party execution, shared artifact-specific policy, reviewer chunk planning, sequential inspection, durable completed results, visible progress and a retrievable consolidated report. Keep prompt construction, native/controller exchange and checkpoint IO private; no shared-engine migration. Produce real narrow hosted-review evidence as well as deterministic fixtures."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own interruption/recovery transitions, reviewed-subject monitoring, cancellation/late-response rejection, the single retry budget and user-decision pause. Native activity integration is private; callers consume recovery state/actions, not process internals. Preserve sc1/sc2 semantics and no external-file invalidation."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own reviewer-led direct/indirect impact assessment, old/new plan mapping, conservative full-review fallback, retained coverage and finding reconciliation. Its document comparison/selection implementation stays private; expose only auditable scope reasoning and provenance, not a generic dependency engine."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own lifecycle version-aware record publication/readers, normal approval integration, history-preserving cleanup, multi-session routing qualification and final compiled/live verification. Keep cleanup fence and publication retries internal. No new review dashboard, activation state or legacy compatibility execution."
+        }
+      ],
+      "rolloutPhase": "A — useful design review",
+      "nonFunctional": {
+        "performance": "Initial acknowledgement and progress are model-independent short operations; target <=2 seconds on an idle local daemon, measured separately from filesystem/model time. Review calls remain sequential per review; independent subjects may run concurrently. Bound checkpoint size and payloads explicitly in LLD; reject exceeded limits without silent truncation or loss of coverage. Persist completed chunks before advancing and coalesce activity-only progress writes.",
+        "security": "Daemon owns state/store access. Canonical registered repo and artifact identity, no-follow bounded checkpoint reads, literal review IDs and private file modes follow existing patterns. Native review uses read-only grants with no code-task command grant. Opposite reviewer party derives from trusted host/session context and artifact metadata, not request claims. No cloud REST, trust-key service or raw reasoning/prompt archive.",
+        "observability": "Expose review/attempt/chunk identity, phase, elapsed times, accepted completed feedback, current technical retry count, paused reason, user-input requirement, activity/tool state and publication state. Polling observes only. Separate optional advice from findings and unavailable evidence. Controller reports progress but does not edit or resolve intermediate findings.",
+        "durability": "Atomic validated checkpoint snapshots and completed-chunk flushes; immutable prior attempts and idempotent history publication. Reviewer disconnect, daemon restart, publication interruption and approval cleanup have explicit recovery cases. Permanent history retains baselines/impact/feedback and technical attempt summaries, not native transcripts. Never delete a checkpoint until every attempt is preserved and approval succeeded."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DesignReviewRequest",
+          "signature": "interface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ntype DesignReviewPhase = 'start' | 'progress' | 'assignment' | 'plan' | 'activity' | 'result';\ninterface DesignReviewStart extends DesignReviewRequest { readonly phase: 'start'; }\ninterface DesignReviewQuery { readonly phase: 'progress' | 'assignment'; readonly repo: string; readonly reviewId: string; readonly attempt: number; readonly afterCompletedChunk?: number | undefined; readonly includeResult?: boolean | undefined; }",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Canonical registered project; MCP may resolve it using the existing workspace helper before daemon admission.",
+              "optional": false
+            },
+            {
+              "name": "artifactPath",
+              "type": "string",
+              "purpose": "Canonical artifact JSON or matching docs markdown path; no artifact body, kind, author, commit set or section text supplied.",
+              "optional": false
+            },
+            {
+              "name": "reviewId",
+              "type": "string",
+              "purpose": "Literal project-scoped review identity, 1..128 ASCII letters/digits/underscore/hyphen, initial character alphanumeric.",
+              "optional": false
+            },
+            {
+              "name": "attempt",
+              "type": "number",
+              "purpose": "S1 admits exactly attempt 1; subsequent/recovery operations remain unsupported until their owning stories.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DesignReviewAcknowledgement",
+            "meaning": "Short acknowledgement with reviewId, attempt, canonical artifactId, reviewer party, status and checkpoint path. Daemon-native execution continues after requester disconnect; controller direction receives an assignment path."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewInputError",
+              "condition": "Unknown phase, unsupported artifact kind, invalid identity/path/schema, unknown author, unregistered project or attempt other than 1."
+            },
+            {
+              "type": "DesignReviewConflictError",
+              "condition": "Review identity already exists with different subject/input or subject already has active review."
+            },
+            {
+              "type": "DesignReviewPersistenceError",
+              "condition": "Initial validated checkpoint cannot be durably saved; no model call is started."
+            }
+          ],
+          "preconditions": [
+            "Canonical registered repo and valid DEF/HLD/LLD head/document identity.",
+            "Existing authorPartyOf resolves one known author; reviewer is otherParty, never caller-chosen.",
+            "Main daemon is the single owner of the coordinator; no task-review packet or database access in MCP."
+          ],
+          "postconditions": [
+            "Initial state is durable before acknowledgement/model dispatch.",
+            "No old workflow.review streaming request is translated or resurrected; current MCP routes through new short daemon operations.",
+            "A duplicate identical start returns existing status/acknowledgement without another model call; conflicting reuse is rejected.",
+            "Resolve workflow-specific required references before dispatch; missing not-applicable artifacts never cause missing-HLD or missing-PLAN failures."
+          ]
+        },
+        {
+          "name": "DesignChunkPlan",
+          "signature": "interface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; readonly coverage: readonly { readonly unitId: string; readonly chunkIds: readonly string[]; }[]; }\ninterface DesignReviewPlanSubmission { readonly phase: 'plan'; readonly repo: string; readonly reviewId: string; readonly attempt: number; readonly executionId: string; readonly sequence: number; readonly plan: DesignChunkPlan; }",
+          "parameters": [
+            {
+              "name": "plan",
+              "type": "DesignChunkPlan",
+              "purpose": "Reviewer-created coherent assignment map against the host inventory accessible by checkpoint path.",
+              "optional": false
+            },
+            {
+              "name": "executionId",
+              "type": "string",
+              "purpose": "Daemon-issued current planning execution identity, bound to actual controller connection when applicable.",
+              "optional": false
+            },
+            {
+              "name": "sequence",
+              "type": "number",
+              "purpose": "Strict positive response sequence for replay/conflict detection within that execution.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DesignReviewAssignment | DesignReviewProgress",
+            "meaning": "Accepted plan is atomically saved before first chunk assignment. Invalid plan receives pointed validation errors; S1 makes no automatic corrective call."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewPlanError",
+              "condition": "Missing/duplicate/unknown unit or chunk, empty substantive coverage, cycle/order violation, missing final consistency chunk or exceeded bounds."
+            },
+            {
+              "type": "DesignReviewOwnerError",
+              "condition": "Wrong reviewer party, stale execution or foreign controller connection."
+            }
+          ],
+          "preconditions": [
+            "Reviewer has guidelines, live document and checkpoint/history paths; artifact body is not copied into the assignment prompt.",
+            "Planning unit is current and only one execution for that review is active."
+          ],
+          "postconditions": [
+            "Entire reviewable inventory maps to substantive chunks, with exactly one final consistency chunk last and dependent on all substantive chunks.",
+            "A self-reported coverage explanation alone cannot override missing deterministic inventory coverage.",
+            "Final consistency alone cannot substitute for substantive coverage of a unit."
+          ]
+        },
+        {
+          "name": "DesignChunkResult",
+          "signature": "interface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignReviewResultSubmission { readonly phase: 'result'; readonly repo: string; readonly reviewId: string; readonly attempt: number; readonly executionId: string; readonly sequence: number; readonly result: DesignChunkResult; }",
+          "parameters": [
+            {
+              "name": "result",
+              "type": "DesignChunkResult",
+              "purpose": "Accepted read-only feedback for the current assigned chunk, including explicit evidence/coverage limits.",
+              "optional": false
+            },
+            {
+              "name": "executionId",
+              "type": "string",
+              "purpose": "Must identify the issued active chunk execution; never accepts late output for another chunk.",
+              "optional": false
+            },
+            {
+              "name": "sequence",
+              "type": "number",
+              "purpose": "Monotonic response sequence; exact duplicate final submissions are idempotent, conflicting payloads rejected.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DesignReviewProgress | DesignReviewCompleted",
+            "meaning": "Result is persisted before progressing. Final status/counts are host-derived from accepted results; no extra model call re-verdicts findings."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewResultError",
+              "condition": "Unknown/missing fields, inconsistent severity/status, absent required coverage evidence, oversized result or result for a non-current chunk."
+            },
+            {
+              "type": "DesignReviewChangedError",
+              "condition": "Current subject differs at boundary check; no stale result is accepted or reported passing."
+            }
+          ],
+          "preconditions": [
+            "Current unit is an assigned chunk and supplied chunkId matches it.",
+            "Native/controller response goes through the same strict schema and assessment."
+          ],
+          "postconditions": [
+            "HIGH/MED requires changes_requested unless required verification remains incomplete; LOW-only can pass only with no mandatory coverage gap.",
+            "incomplete takes precedence over changes_requested, then passed; terminal technical failure remains failed, never a review pass.",
+            "Findings and completed chunk results remain immutable; remaining chunks continue after substantive findings or honest incomplete coverage."
+          ]
+        },
+        {
+          "name": "DesignReviewProgress",
+          "signature": "interface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }\ninterface DesignReviewActivitySubmission { readonly phase: 'activity'; readonly repo: string; readonly reviewId: string; readonly attempt: number; readonly executionId: string; readonly sequence: number; readonly event: ReviewActivityEvent; }",
+          "parameters": [
+            {
+              "name": "reviewId/attempt",
+              "type": "{ readonly reviewId: string; readonly attempt: number; }",
+              "purpose": "Read the requested existing attempt; no start/resume/inference side effect.",
+              "optional": false
+            },
+            {
+              "name": "event",
+              "type": "ReviewActivityEvent",
+              "purpose": "Controller reviewer reports validated substantive/tool activity on its actual owner connection. Native provider events come directly to the coordinator.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DesignReviewProgress & { readonly completedResults: readonly DesignChunkResult[]; readonly nextCompletedChunk?: number | undefined; readonly report?: Pick<DesignReviewConsolidated, 'reviewId' | 'attempt' | 'artifactId' | 'status' | 'counts' | 'reviewer' | 'reviewedContentIdentity'> | undefined; }",
+            "meaning": "Default poll is bounded metadata/counts with available-result cursor and final report metadata/reference. includeResult=true returns at most one <=1MiB completed result after afterCompletedChunk and a next cursor. Full consolidated chunks remain in checkpoint; baseline never appears in poll output."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewNotFoundError",
+              "condition": "Review/attempt missing, foreign, malformed or unsupported checkpoint."
+            },
+            {
+              "type": "DesignReviewOwnerError",
+              "condition": "A controller activity submission is not from the active reviewer connection/execution."
+            }
+          ],
+          "preconditions": [
+            "Progress query is observation only and may run from a different session.",
+            "Only actual reviewing controller may submit planning/activity/results; submitter does not acquire reviewer authority."
+          ],
+          "postconditions": [
+            "Polling and process-only heartbeats do not renew inactivity or cause model calls.",
+            "Progress includes explicit guidance to wait for full review before corrections, resolving findings or new attempts.",
+            "Native review uses existing activity mode with 30-minute inactivity, active tools separate and internalRetry:false; S1 does not add automatic technical retries."
+          ]
+        },
+        {
+          "name": "DesignReviewCheckpoint",
+          "signature": "interface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewConsolidated { readonly reviewId: string; readonly attempt: number; readonly artifactId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete' | 'failed' | 'invalidated'; readonly counts: { readonly HIGH: number; readonly MED: number; readonly LOW: number; }; readonly chunks: readonly DesignChunkResult[]; readonly limitations: readonly string[]; readonly reviewer: 'daemon' | 'controller'; readonly reviewedContentIdentity: string; }",
+          "parameters": [
+            {
+              "name": "checkpoint",
+              "type": "DesignReviewCheckpoint",
+              "purpose": "One schema-validated JSON authority at <project>/.insrc/tmp/design-review/<review-id>.json, containing one S1 attempt.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "State publication succeeds only after private temp-file write, file fsync, rename and directory durability; no intermediate partial JSON is observable."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewPersistenceError",
+              "condition": "No-follow load, bounded input, schema, disk or atomic-save operation fails."
+            }
+          ],
+          "preconditions": [
+            "Literal validated review id and canonical repo; directories mode0700 and files mode0600.",
+            "Mutation serialized on this review owner; checkpoint is not a DB connection or a new artifact head."
+          ],
+          "postconditions": [
+            "Completed result is flushed before next unit, final consolidated report retained inside checkpoint and retrievable without model work.",
+            "No native transcript, raw reasoning or repeated prompt archive; one subject baseline per attempt only.",
+            "S1 never removes checkpoints or stamps lifecycle approval/review. Permanent history and approval cleanup remain S4."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DesignReviewSubject and baseline",
+        "change": "new",
+        "details": "sc1 subject derives canonical identity/type/author/current document paths from existing artifact marker, ArtifactIds and store readers. JSON path resolves only to that canonical head; markdown is contained in docs via resolveDocsMarkdown and must carry the same marker. Resolve the corresponding generated document from canonical artifact placement, not filename guessing; reject missing or mismatched paired representation. Capture bytes/fingerprints of subject JSON and markdown and one structured body/citations/document baseline privately in sc2. Current native reads use live paths, not this baseline; no git state or commit pointer is admitted. S1 compares at admission completion, before/after planning, before/after each chunk and before consolidation; mismatch yields invalidated/requiresUserInput and discards stale candidate. Continuous watch, immediate cancellation/restart and recovery belong to S2. External references/source are never part of the invalidation set.",
+        "callSites": [
+          "src/workflow/artifact-content.ts",
+          "src/workflow/storage.ts",
+          "src/workflow/review/party.ts",
+          "src/daemon/workflow-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "DesignChunkPlan and host coverage inventory",
+        "change": "new",
+        "details": "Host creates a deterministic inventory of reviewable canonical body sections, stable functional requirement/story/contract ids, citations and authored visual definitions/companion links, plus document-only sections if any. Each inventory unit has a stable id, JSON pointer or document heading/range, kind and title; no model-authored analysis is treated as a host fact. Inventory lives in checkpoint and is accessed by path; it is not copied wholesale into prompts. The plan maps every host unit to one or more substantive chunks with named dependencies; all selectors must resolve within current inventory. Final consistency chunk is unique, last, depends on every substantive chunk and checks whole-artifact/upstream coherence. Duplicated shared concern coverage is explicit rather than an excuse for unassigned units. Exactly one accepted plan per attempt; malformed plan is not partially committed. Inventory and final consistency use the workflow-specific matrix; Epic-only sections/contracts are not invented for standalone or issue LLDs.",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/artifact-content.ts",
+          "src/mcp/server.ts"
+        ],
+        "schemaDiff": "interface CoverageUnit { readonly id: string; readonly selector: string; readonly title: string; readonly kind: 'section' | 'requirement' | 'story' | 'contract' | 'citation' | 'visual'; }\ninterface DesignReviewInventory { readonly units: readonly CoverageUnit[]; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; readonly coverage: readonly { readonly unitId: string; readonly chunkIds: readonly string[]; }[]; }"
+      },
+      {
+        "entity": "Artifact-specific read-only policy",
+        "change": "new",
+        "details": "One common review policy examines actual document correctness, functional completeness and traceability, scope/non-goals, requirements/acceptance, contracts and data relationships, errors/test coverage where relevant, dependency/order feasibility, citations, internal/cross-document consistency and appropriate diagrams/UX. DEF chunks bind capability requirements, related stories, constraints and acceptance; HLD chunks bind subsystem contracts/ownership/dependencies/interactions; LLD chunks bind responsibility interfaces/logic/errors/test coverage. Shared concerns may be referenced across chunks; size alone cannot define unrelated piles. The final consistency chunk reconciles shared contracts, cross-chunk contradictions, missing requirements and upstream alignment. Native and controller reviewers receive the same immutable policy version, chunk assignment and structural schema at the prompt tail. No fixed chunk token size is imposed; reviewer chooses coherent scope within declared validation bounds. Reviewer inspects referenced companions as needed and distinguishes unavailable verification from a defect or optional advice.",
+        "callSites": [
+          "src/shared/types.ts",
+          "src/mcp/server.ts",
+          "src/workflow/review/party.ts"
+        ]
+      },
+      {
+        "entity": "DesignAttempt and consolidated feedback",
+        "change": "new",
+        "details": "Extend the sc2 type sketches into a strict versioned schema: attempt number/status, immutable submitted path metadata, subject baseline and coverage inventory, optional accepted plan, ordered completed chunk results, current unit/execution generation and sequence, reviewer/model provenance, timestamps/pointed technical failure, bounded progress and optional consolidated report. One review owns one artifact and S1 exactly one attempt; plan owns one-or-more chunks; each chunk has zero-or-one accepted result. Controller exchange stores actual trusted connection identity only in memory, not reusable authority in JSON. Chunk and finding IDs are unique within an attempt; evidence references are inspected paths/selectors, limitations identify missing required checks and advice never changes severity counts. Count every finding once; final status derives from chunk results with incomplete precedence, not a separate model-judged summary. Optional consolidation prose can be deterministic from accepted summaries; do not add another hosted review call.",
+        "callSites": [
+          "src/daemon/steps/host.ts",
+          "src/shared/ipc-client.ts",
+          "src/mcp/code-review/handler.ts",
+          "src/workflow/review/party.ts"
+        ],
+        "schemaDiff": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignUnitAssignment { readonly kind: 'planning' | 'chunk'; readonly executionId: string; readonly sequence: number; readonly chunkId?: string | undefined; readonly prompt: string; readonly schema: StructuredSchema; }\ninterface DesignReviewAcknowledgement { readonly reviewId: string; readonly attempt: number; readonly artifactId: string; readonly reviewer: 'daemon' | 'controller'; readonly status: DesignReviewStatus; readonly checkpointPath: string; }"
+      },
+      {
+        "entity": "Private checkpoint persistence and limits",
+        "change": "new",
+        "details": "One canonical JSON file per review under .insrc/tmp/design-review, no raw reasoning/prompts/transcripts and no per-chunk copied baseline. Bounded admission: each subject file <=8MiB; checkpoint <=64MiB; <=8192 coverage units; <=128 chunks including consistency; <=256 findings per chunk; each result <=1MiB; individual summary/message/limitation text <=8192 characters and path/reference <=2048. Validate before acceptance; limits cause explicit errors, never truncation or silent omitted scope. Candidate that cannot fit is not committed and no next chunk starts. Atomic save uses private sibling temp then fsync/rename/directory sync; failed save leaves last accepted snapshot intact and reports durable-state failure. Preserve old files on corrupt/unknown version and reject their reuse. After daemon restart, progress reads saved completed data with freshness interrupted, not live; S1 returns recovery_not_supported rather than restarting unfinished inference. S2 adds explicit recovery.",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/shared/ipc-client.ts",
+          "src/daemon/workflow-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Normal MCP and main-daemon routing",
+        "change": "invariant-change",
+        "details": "Register the new strict insrc_review_step schema and guide phases start/progress/assignment/plan/activity/result in the normal MCP server; replace only that tool's unavailable handler. Add a dedicated design-review MCP adapter using generic createPersistentIpcClient. Planning/result/activity require the active trusted controller-review connection; observation may reconnect freely. Route step.call for this tool and new short designReview.* methods to the main daemon owner using existing method-class/router conventions, including repo authorization/audit tables. Keep legacy workflow.review, workflow.reviewArtifact, workflow.resolveFinding and removed stream/helpers throwing PENDING REVIEW RE-IMPLEMENTATION; no shape translation or old claim/judge pipeline. Existing code-review handler/provider contracts are not generalized or modified. Daemon uses review role/core floor through existing router and runReviewSession in activity mode, no codeTaskCommands and internalRetry:false. Existing normal approval behavior stays unchanged until S4 version-aware history integration; S1 report is useful and retrievable but is not fabricated into a legacy gate record.",
+        "callSites": [
+          "src/mcp/server.ts",
+          "src/mcp/code-review/handler.ts",
+          "src/shared/ipc-client.ts",
+          "src/daemon/steps/host.ts",
+          "src/daemon/handler-runtime.ts",
+          "src/daemon/workflow-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Proposed implementation placement",
+        "change": "new",
+        "details": "Proposed new paths, not existing-source claims: src/workflow/review/design-review/contracts.ts (sc1/sc2 schemas), subject.ts (canonical live subject/inventory), policy.ts (common/type-specific guidelines), checkpoint.ts (validated atomic IO), coordinator.ts (one owner and serial unit dispatch), results.ts (result assessment/consolidation); src/mcp/design-review/schema.ts and handler.ts; src/daemon/design-review-rpc.ts and src/daemon/steps/design-review-step.ts. Keep helpers private to this domain and reuse generic provider/activity/IPC interfaces. Existing integration edits are limited to normal MCP registration/schema discovery/steering, step host, main-thread routing and RPC repo contract registries. No new DB, scheduler, shared review engine, flags or code-review-domain dependency.",
+        "callSites": [
+          "src/mcp/server.ts",
+          "src/daemon/steps/host.ts",
+          "src/daemon/handler-runtime.ts"
+        ]
+      },
+      {
+        "entity": "Workflow-specific subject context and reference requirements",
+        "change": "new",
+        "details": "Resolve workflow from canonical root and existing provenance, not filename, hash spelling, standalone flag alone or caller-supplied kind. Existing readEpicDefinitionCore, ArtifactIds and explicit relationships establish root; validate root records before fallback. ISSUE root takes precedence over a standalone storage/layout flag. corrects/parentRef targets are context, not a replacement workflow root. Contradictory or missing required provenance is a context error, never a silent downgrade.\n\n| Workflow / subject | Required current context | Conditional or optional | Not required |\n| --- | --- | --- | --- |\n| Epic DEF | Current DEF and captured scope | SPEC when explicitly seeded/referenced | HLD, LLD, PLAN, TASKS, BUILD, CR |\n| Epic HLD | Current HLD and approved DEF | Declared seed SPEC/linked context | LLD, PLAN, TASKS, BUILD, CR |\n| Epic story LLD | Current LLD, approved DEF containing its story, applicable approved HLD | Referenced stories/contracts | Future PLAN/TASKS/BUILD/CR; no separate STORY JSON when story is in DEF |\n| Standalone feature/small LLD | Current standalone LLD and captured scope/requirements | SPEC when explicitly seeded/referenced; available repo/design context | DEF, parent HLD, sibling story set, future PLAN/TASKS/BUILD/CR |\n| Sized issue LLD | Current LLD and originating approved ISSUE: reproduction, root cause, fix intent, resolved via canonical ISSUE root or explicit provenance | Available corrected-artifact/design references | Synthetic DEF/HLD or correction target's entire Epic chain; future PLAN/TASKS/BUILD/CR |\n| Small issue / trivial direct build | No design-review subject on route | Existing references as context | Invented LLD/HLD/DEF or mandatory review of ISSUE/SPEC/PLAN |\n\nA missing declared required reference is a context error; an optional/not-applicable artifact absent by design is not incomplete review. Necessary substantive evidence that cannot be verified remains an honest review limitation. ISSUE/SPEC/PLAN/BUILD are not new review subject kinds. Direct review of an ineligible root returns design_review_not_applicable with no checkpoint/model call, not a fabricated passing review. Caller still supplies only artifactPath; daemon derives kind/root/context. Final consistency checks actual upstream requirements: Epic DEF/HLD, standalone scope or originating ISSUE.",
+        "schemaDiff": "type DesignWorkflowKind = 'epic' | 'standalone' | 'issue';\ninterface DesignWorkflowContext { readonly kind: DesignWorkflowKind; readonly rootArtifactId: string; readonly requiredReferences: readonly { readonly role: string; readonly artifactId: string; readonly path: string; }[]; readonly availableReferences: readonly { readonly role: string; readonly path: string; }[]; readonly notApplicableRoles: readonly string[]; }\ninterface DesignReviewSubjectContext { readonly subject: DesignReviewSubject; readonly workflow: DesignWorkflowContext; }",
+        "callSites": [
+          "src/workflow/storage.ts",
+          "src/workflow/runners/design-story/standalone.ts",
+          "src/workflow/runners/design-story/index.ts",
+          "src/workflow/bugfix/next-after-issue.ts",
+          "src/workflow/bugfix/admit.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc1",
+        "role": "implements",
+        "howDetails": "Own minimal path-based subject request, derive kind/party, common strict chunk plan and artifact-specific policy. Coverage inventory/maps refine the HLD sketch additively without changing its meaning or importing sibling contracts."
+      },
+      {
+        "contractId": "sc2",
+        "role": "implements",
+        "howDetails": "Own schema-versioned checkpoint, immutable accepted completed feedback, progress and deterministic consolidation. S1 supports initial attempt only; later status names are reserved contract values, not a hidden implementation of sc3/sc4/sc5. No permanent lifecycle stamp/cleanup until S4."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Unsupported subject, wrong marker, path escape, malformed schema or unknown author",
+          "detection": "Canonical path containment/no-follow checks, ArtifactIds parsing, paired document marker comparison, strict request decoding and authorPartyOf fail before admission.",
+          "response": "Return typed input error and make no checkpoint/model call; never choose a reviewer by guessing.",
+          "userImpact": "Caller corrects subject/path or author metadata without paying for a review.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Duplicate or conflicting start",
+          "detection": "Main owner checks review-id checkpoint and active artifact reservation before provider dispatch.",
+          "response": "Exact same immutable submitted input returns existing acknowledgement; different input or active overlapping subject returns conflict. No overwritten checkpoint or duplicate call.",
+          "userImpact": "Safe transport retry does not repeat model work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Chunk plan omits units, hides them in the final check, duplicates IDs, has cycles or exceeds limits",
+          "detection": "Strict schema plus host inventory set comparison, selector resolution, DAG/order and final-check validation fail.",
+          "response": "Do not accept or partially save the plan; surface pointed validation details. S1 technical failure is explicit and does not automatically retry; S2 owns bounded retry behavior.",
+          "userImpact": "Incomplete scope is visible and cannot produce a passing report.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Required inspection or verification omitted from feedback",
+          "detection": "Every assigned inventory selector must be represented by inspectedReferences or an explicit unit-named limitation; result normalization checks pass status against limitations and mandatory coverage. Semantic truth remains the reviewer's responsibility.",
+          "response": "Missing mandatory coverage is an incomplete substantive result, not a clean pass. Save honest incomplete feedback and continue remaining chunks. Reject malformed response shape separately as technical failure.",
+          "userImpact": "User sees review limitations and remaining chunks are still reviewed.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Provider fails, CLI rejects output or candidate is structurally invalid",
+          "detection": "Provider throws/exits, structured schema decoding fails or candidate validator identifies wrong chunk/fields/status. Candidate rejection terminates that S1 unit instead of allowing hidden retries.",
+          "response": "Record concise code/summary, preserve prior completed chunks and mark failed. No automatic retry in S1; no legacy transport fallback or manufactured review findings.",
+          "userImpact": "Report distinguishes execution failure from a defect in the artifact.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Subject differs at an execution boundary",
+          "detection": "Re-read current subject JSON/document fingerprint and compare to admitted baseline before/after plan/chunk and before final consolidation.",
+          "response": "Reject late/stale candidate and mark invalidated with requiresUserInput. Do not restart or re-use completed chunks. Continuous monitoring, immediate cancellation and user-authorized restart mechanics belong to S2.",
+          "userImpact": "No known changed design receives a stale passing report.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Checkpoint write cannot complete or candidate exceeds storage bounds",
+          "detection": "Pre-serialization size/schema validation or private-temp write/fsync/rename/directory sync fails.",
+          "response": "Do not advance to another chunk or acknowledge the candidate as durable. Preserve last valid snapshot, report persistence failure and cleanup only own temporary file. If final failed status itself cannot be saved, expose error in live response/log and never claim it persisted.",
+          "userImpact": "Completed durable feedback is retained; state uncertainty is explicit.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Foreign, stale or conflicting controller submission",
+          "detection": "Trusted connection identity, review/attempt, execution generation, sequence and candidate digest differ from issued assignment or accepted submission.",
+          "response": "Reject without changing active authority or accepted feedback. Identical replay is idempotent; conflicting replay is an error.",
+          "userImpact": "Another observer/session cannot replace the independent reviewer's output.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Reviewing controller disconnects or daemon process restarts",
+          "detection": "Trusted owner connection closes or no live in-memory execution matches saved running state.",
+          "response": "Preserve completed results and expose interrupted/freshness-not-live. Do not automatically retrigger; S1 reports recovery_not_supported. Native daemon review is unaffected by loss of its submitting/observing connection.",
+          "userImpact": "User can retrieve completed work without an accidental rerun.",
+          "recoverable": false
+        },
+        {
+          "scenario": "Polling asks for a nonexistent attempt or invalid result cursor",
+          "detection": "Checkpoint identity/schema lookup and cursor bounds check fail before any execution path.",
+          "response": "Return not-found/input error; polling remains model-free and never creates a review.",
+          "userImpact": "Observation errors do not spend model work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing or contradictory required workflow context",
+          "detection": "Canonical root/provenance and reference matrix disagree, required root/upstream cannot be read, or Epic LLD has no valid DEF/HLD/story.",
+          "response": "Return DesignReviewContextError before provider call with missing role/identity. Do not reinterpret Epic as standalone, infer ISSUE by title or require parent Epic chain from correction links. Ineligible roots return design_review_not_applicable without a pass.",
+          "userImpact": "Real missing inputs are named without false requirements from another workflow.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Small artifact fits one coherent substantive chunk",
+          "expected": "Allow that chunk plus the final consistency chunk; do not force arbitrary extra splits."
+        },
+        {
+          "input": "Large artifact has shared contracts spanning multiple responsibilities",
+          "expected": "Reviewer creates coherent chunks with explicit shared references and coverage; final consistency checks their integration. No fixed token-size chopping."
+        },
+        {
+          "input": "Many completed chunks or large feedback",
+          "expected": "Progress defaults to bounded metadata/counts and completed-result availability; optional cursor-based completed feedback pages contain at most one <=1MiB result, with next cursor. This preserves immediate access without retransmitting the entire checkpoint on every poll. The strict progress query admits optional afterCompletedChunk and includeResult fields; no full baseline/prompt content is included."
+        },
+        {
+          "input": "HIGH/MED finding appears early",
+          "expected": "Persist it, expose it and continue all remaining chunks; controller waits for full review before corrections."
+        },
+        {
+          "input": "LOW-only advice and no verification gaps",
+          "expected": "Pass with LOW counts as applicable; optional advice is a separate list and does not invent a finding or block."
+        },
+        {
+          "input": "A necessary diagram or upstream requirement cannot be inspected",
+          "expected": "Name the affected unit and verification limit, mark incomplete where required, continue other chunks and never claim visual verification."
+        },
+        {
+          "input": "Standalone LLD or unusual but registered artifact placement",
+          "expected": "Resolve through canonical artifact identity/placement and derive upstream references that exist; absent optional context is distinguished from missing required context."
+        },
+        {
+          "input": "Exact replay of accepted plan/result after a response was lost",
+          "expected": "Return existing accepted state without re-dispatching; replay with changed body is refused."
+        },
+        {
+          "input": "External source/reference changes during review",
+          "expected": "No invalidation trigger; reviewer uses available current external context and reports limitations if relevant."
+        },
+        {
+          "input": "No model activity but repeated progress polling",
+          "expected": "Polling does not reset the existing 30-minute inactivity grace; active tool execution is tracked independently."
+        },
+        {
+          "input": "Issue-root LLD is stored as standalone and links to an Epic artifact it corrects",
+          "expected": "Remain issue via root/provenance; require originating ISSUE and treat correction target as available context, not mandatory full Epic chain."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Only current insrc_review_step is restored; retired workflow.review and legacy stream/claim/resolve execution remain unavailable. Working task-based code-review schemas and behavior remain intact.",
+          "source": "c1"
+        },
+        {
+          "text": "Cloud review uses existing CLI provider OAuth and model role floor; no direct REST, no code-task shell grants and no new trust/activation system.",
+          "source": "c2"
+        },
+        {
+          "text": "One accepted checkpoint authority, one baseline per attempt, one accepted result per chunk, and one native unit at a time per review.",
+          "source": "c1"
+        },
+        {
+          "text": "S1 does not implement sibling-owned recovery/retry/impact/permanent approval cleanup; these remain explicit unavailable operations until their owning stories land.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test and node:assert/strict with tsx, matching directly inspected src/workflow/__tests__/review-unavailable.test.ts, src/mcp/__tests__/task-review.test.ts and provider activity/session fixtures. Analyzer test retrieval was off-topic, so those direct reads ground the choice. Live hosted test is explicit/opt-in and reported separately from deterministic fake sessions.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Validate real subject identity, plan coverage, status semantics, prompt boundaries and durable IO.",
+          "subjects": [
+            "Canonical DEF/HLD/standalone LLD resolution; wrong marker/type/party/path refusal before provider call.",
+            "Host inventory and semantic plan mapping for all three artifact kinds, missing-unit/final-only/cycle/duplicate rejection.",
+            "Prompt contains policy, live paths, chunk metadata and trailing output schema but not a unique artifact-body canary or repeated baseline.",
+            "Accepted result requires assigned inspected references or explicit limitations; HIGH/MED/incomplete precedence, LOW advice separation and count deduplication.",
+            "Atomic-save fault injection preserves prior checkpoint and prevents next-unit dispatch; unknown/corrupt/oversize state retained.",
+            "Table-driven required references: DEF without future artifacts; HLD with DEF; Epic LLD with DEF/HLD/story; standalone feature/small LLD with no DEF/HLD; sized issue LLD with ISSUE and no fabricated HLD; no-design-review small issue/trivial route.",
+            "Negative branch confusion: missing required Epic HLD does not silently become standalone; ISSUE root plus standalone flag/corrects link remains issue; declared missing SPEC differs from optional absent SPEC; LLD review never requires future PLAN/TASKS/BUILD/CR."
+          ],
+          "fixturesNeeded": [
+            "Temporary canonical artifact JSON+markdown pairs for DEF/HLD/LLD with requirements, shared concerns and diagrams.",
+            "Fault-injectable filesystem write/fsync/rename and fake provider; no model call for validators.",
+            "Separate Epic-root, LLD-root, ISSUE-root and no-LLD fixtures, including absent legacy standalone flag, contradictory metadata and correction links."
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "Prove daemon and controller consume identical policy/schema and reject forged or replay-conflicting submissions.",
+          "subjects": [
+            "Opposite-party selection for both authors, refusal of unknown author.",
+            "Controller owner/execution/sequence binding, exact replay idempotence and conflicting replay refusal.",
+            "Native/controller equivalent chunk feedback produces identical consolidated status/counts.",
+            "Progress request and bounded result-page request never call a provider or renew inactivity.",
+            "Native options are activity mode 1800000ms, internalRetry:false and absent codeTaskCommands."
+          ],
+          "fixturesNeeded": [
+            "Trusted connection fixtures and captured assignment/candidate envelopes; same inputs for native/controller paths."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise actual MCP to step host to main daemon routing, checkpoint updates and observer lifetime.",
+          "subjects": [
+            "Real local Unix IPC/stdio MCP start acknowledges before delayed fake reviewer completion; independent poll sees saved feedback.",
+            "One review serializes chunks; duplicate start from another session dispatches no additional planning/chunk work.",
+            "Submitting MCP disconnect does not abort native review; reviewing-controller disconnect marks interrupted and preserves completed chunks.",
+            "HIGH/MED first chunk and incomplete second chunk both permit later substantive/final consistency work; no corrective artifact writes.",
+            "Progress pages expose completed findings without retransmitting baseline; exact failed save prevents advancing.",
+            "Retired workflow.review/legacy stream and resolver routes still throw exact unavailable exception; code-review normal path remains unchanged."
+          ],
+          "fixturesNeeded": [
+            "Temporary registered repo, isolated daemon socket and fake CLI/provider only for deterministic transport test.",
+            "Baseline regression fixtures for existing task review without rerunning hosted reviews."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Verify compiled shipping entrypoint and normal tool registration without model costs.",
+          "subjects": [
+            "Build with npm run build; compiled MCP schema discovery exposes only current design phases and correct guide.",
+            "Compiled daemon/main-thread route starts one fake native review, polls feedback and retrieves completed report.",
+            "Compiled code-review registration and focused routing regression remain healthy."
+          ],
+          "fixturesNeeded": [
+            "Fake native CLI shim with activity/output records, isolated HOME/socket/config and registered sample artifacts."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Demonstrate one genuinely useful independent design review through the supported interface after deployment.",
+          "subjects": [
+            "Controller-authored meaningful current DEF/HLD/LLD is reviewed by the daemon via normal insrc_review_step, not internal RPC fallback.",
+            "Reviewer reads linked artifact/code, returns coherent plan and substantive feedback, all chunks complete and checkpoint/result remain retrievable.",
+            "Record model identity, review/attempt, timestamps, chunk/status/findings and any optional execution/visual verification limits. No test fixture output is claimed as hosted assessment."
+          ],
+          "fixturesNeeded": [
+            "Explicit hosted-run opt-in and normal installed CLI OAuth/provider routing.",
+            "Use S1's real LLD or an agreed meaningful current artifact; no unrelated full repository test sweep."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit canonical identity/party refusal tests",
+            "contract opposite-party and native/controller policy/schema parity",
+            "prompt canary and live-path assertions",
+            "Workflow/reference matrix and negative branch-confusion tests across Epic, Standalone and Issue."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit DEF/HLD/LLD coherent policy fixtures with host inventory coverage",
+            "plan rejects missing units, final-only coverage, cycles and duplicate IDs",
+            "live reviewer plan inspection plus final consistency coverage",
+            "Final consistency uses actual upstream: Epic DEF/HLD, standalone scope, or ISSUE reproduction/root cause/fix intent."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "real IPC/MCP delayed reviewer acknowledgement and polling test",
+            "native submitter disconnect with continued execution and durable completed feedback",
+            "bounded cursor-based completed feedback test with zero provider calls on poll"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration early HIGH/MED and incomplete feedback continues remaining chunks",
+            "result assessment verifies mandatory gaps cannot pass and advice stays separate",
+            "assert artifact content unchanged throughout read-only review"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "compiled normal MCP/daemon smoke with fake CLI clearly labeled",
+            "one meaningful live independent review with retained result evidence",
+            "focused existing task-review routing/schema/ownership regressions and retired-route exception checks"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One shared plan/result envelope with artifact-specific review policy",
+        "oneLineSummary": "Use one strict subject/checkpoint and chunk/result schema for all three artifact kinds.",
+        "approach": "Resolve the existing artifact identity from a path and use the same validated request, plan, chunk feedback and progress envelopes for DEF, HLD and LLD. Artifact-specific policy defines coherent grouping and review expectations; host-owned unit inventory and coverage checks enforce complete assignment without embedding document content in prompts.\n\nA single coordinator state snapshot owns all accepted results and derives consolidated status/counts deterministically. Native and controller reviewers use identical assignments and schemas. Baseline content is private checkpoint data for later impact work, not commit-pinned scope or a prompt copy.",
+        "pros": [
+          "One plan/result validator and one set of reviewer-party parity fixtures cover all artifact types.",
+          "Minimal client request derives kind/author/documents from canonical artifacts.",
+          "Final status/counts derive from accepted chunk results, avoiding two independent verdict sources."
+        ],
+        "cons": [
+          "Kind-specific substantive quality remains primarily reviewer policy; deterministic validation cannot prove semantic correctness.",
+          "Detailed per-kind unit inventories must preserve selectors and explain complete coverage without expanding into a legacy claim pipeline."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Artifact-specific plan and result variants",
+        "oneLineSummary": "Use DEF/HLD/LLD-specific response variants inside the common checkpoint.",
+        "approach": "Keep the same path-based request and single checkpoint, but define separate plan and chunk-feedback variants for each artifact kind. Native/controller assignment schemas select the corresponding variant, with a common projected progress/result view.\n\nVariants explicitly name requirements, architectural contracts or implementation/error/test concerns. They still refer to live document paths, preserve sequential chunk execution and avoid task-review domain contracts, but grow the schema and projection surface before a demonstrated need for distinct payloads.",
+        "pros": [
+          "Each plan schema can require artifact-specific fields directly.",
+          "Kind-specific output structure may make targeted UI presentation easier later without parsing prose."
+        ],
+        "cons": [
+          "Three validators and projections must remain behaviorally aligned across both reviewer parties.",
+          "Adds fields and client variants beyond the confirmed path-based review contract; common coverage still needs its own validation."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Both satisfy ac1-ac5/sc1/sc2, but three artifact-specific schema variants add parity and projection work without a confirmed outcome benefit."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "design-review-s1",
+      "narrative": "S1's normal background review: derive workflow-specific context, acknowledge promptly, validate a reviewer-created complete chunk plan, persist each result and expose a final checkpoint report. Recovery, technical retries, selective follow-ups and approval cleanup are later stories.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "MCP controller",
+          "description": "Starts review and polls; if selected as opposite reviewer, supplies the same typed plan/results on its actual connection."
+        },
+        {
+          "id": "owner",
+          "label": "Main-daemon review owner",
+          "description": "Owns single review execution and validates current subject, plan, results and durable progress."
+        },
+        {
+          "id": "subject",
+          "label": "Current artifact + workflow context",
+          "description": "Canonical DEF/HLD/LLD and actual Epic/Standalone/Issue references; no universal full-chain assumption."
+        },
+        {
+          "id": "reviewer",
+          "label": "Independent reviewer",
+          "description": "Daemon native session or controller, read-only, using policy and live paths."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Private checkpoint",
+          "description": "One schema-validated JSON authority with baseline, completed chunks and report."
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "owner",
+          "label": "start: artifact path, review-id, attempt 1",
+          "description": "No copied artifact body, workflow flag or commit packet."
+        },
+        {
+          "from": "owner",
+          "to": "subject",
+          "label": "Resolve current identity, workflow and required references",
+          "description": "Epic, Standalone and Issue requirements differ; unavailable optional context is not an admission error."
+        },
+        {
+          "from": "subject",
+          "to": "owner",
+          "kind": "return",
+          "label": "Subject paths, independent party and reviewable inventory",
+          "description": "Derive from canonical roots/provenance; never turn a broken Epic into standalone."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Save admitted attempt and baseline",
+          "description": "Durable save precedes acknowledgement and provider work."
+        },
+        {
+          "from": "owner",
+          "to": "client",
+          "kind": "return",
+          "label": "Acknowledgement + checkpoint path",
+          "description": "Native execution lifetime is independent of submitting request."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "Guidelines + document/inventory paths + plan schema",
+          "description": "No artifact dump in prompt; reviewer may inspect any necessary code."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "kind": "return",
+          "label": "Coherent plan and coverage map",
+          "description": "All host units map to substantive chunks plus final consistency."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Validate and persist accepted plan",
+          "description": "Reject omitted units, cycles, duplicate ids and final-only coverage."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "Issue next chunk assignment",
+          "description": "One unit at a time; native and controller use identical policy/schema."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "kind": "return",
+          "label": "Findings, inspected references, limitations and advice",
+          "description": "HIGH/MED or honest incomplete coverage do not stop later chunks."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Check current subject, save completed result",
+          "description": "No advance if validation or durable write fails."
+        },
+        {
+          "from": "client",
+          "to": "owner",
+          "label": "Poll metadata or one completed-result page",
+          "description": "Polling starts no model calls, sends no baseline and causes no corrective edit."
+        },
+        {
+          "from": "owner",
+          "to": "client",
+          "kind": "return",
+          "label": "Current progress and requested completed feedback",
+          "description": "Final status derived after all chunks and final consistency check."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Persist consolidated report",
+          "description": "Status/counts derive from accepted results; no extra re-verdict model call."
+        },
+        {
+          "from": "owner",
+          "to": "client",
+          "kind": "return",
+          "label": "Final report metadata and checkpoint reference",
+          "description": "S1 retains checkpoint and does not fabricate lifecycle approval evidence."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "functional-coverage",
+        "diagram-sequence"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/HLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1: S1 subject/provider/transport signatures and direct-read test fallback"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "Additional Story-context discovery: Epic, Standalone and Issue workflow requirements"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/standalone.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/bugfix/next-after-issue.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/storage.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "stakeholder",
+      "ref": "Current chat: workflow branches and differing artifact requirements",
+      "quotedText": "workflow are different for Epics/Standalone/Issues. the artifact requirements are also different."
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/DEF.md"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/shared/types.ts"
+    }
+  ]
+}

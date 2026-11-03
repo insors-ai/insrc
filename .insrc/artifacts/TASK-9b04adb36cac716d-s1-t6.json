@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-98ada8e2-4eea-4c8d-9ac0-26b8644b331e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:47.431Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Support the independent controller reviewer with identical semantics",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "92fd476305bae83d74f1c227accb2dc4d36e74602d2e00515d47d330fe7981b0",
+        "at": "2026-11-03T09:15:47.431Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:47.432Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Support the independent controller reviewer with identical semantics",
+    "summary": "Add controller plan/activity/result exchange to the design-review owner, binding authority to the actual trusted session and issued execution generation/sequence. Use the same assignments, schemas, coverage and result assessment as native review, without extracting task-review internals.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Opposite party derives from artifact author; unknown author and caller-forged party are refused.",
+      "Only actual active reviewer connection can submit plans/activity/results; observers can query without acquiring authority.",
+      "Exact response replay is idempotent; foreign, stale or conflicting submissions do not replace accepted results or close a healthy owner merely for semantic errors.",
+      "Controller disconnect exposes interrupted state and preserves completed chunks; S1 does not automatically reassign/resume.",
+      "Identical valid native/controller results produce identical final status/counts and use the same policy/schema."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Actual trusted owner connection/execution/sequence gates controller plan/activity/result, with idempotent exact replay and conflicting replay refusal."
+      },
+      {
+        "level": "integration",
+        "name": "Reviewing-controller disconnect retains completed chunks as interrupted with no automatic reassignment/recovery."
+      },
+      {
+        "level": "unit",
+        "name": "Equivalent native/controller feedback shares policy/schema and produces identical status/counts."
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

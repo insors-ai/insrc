@@ -397,6 +397,11 @@ test('E202611031bd72813:S001 t1: setStatus persists status+lastActivityAt; old r
   const fourth = store.get(s.id);
   assert.equal(fourth?.status, 'waiting-input');
   assert.ok(fourth!.lastActivityAt! >= first);
+  // an older EXPLICIT status must not overwrite a newer one either (working@old over waiting-input@new)
+  store.save({ ...fourth!, status: 'working', lastActivityAt: first - 1000 });
+  const fifth = store.get(s.id);
+  assert.equal(fifth?.status, 'waiting-input', 'newer persisted status wins over an older explicit one');
+  assert.equal(fifth?.pendingRequests?.[0]?.requestId, 'r1', 'pendingRequests not dropped by a stale write');
   // unknown id: no-op, never throws
   store.setStatus('nope', 'done');
 });

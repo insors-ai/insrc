@@ -266,6 +266,35 @@ export function isSession(v: unknown): v is ChatSession {
   );
 }
 
+/**
+ * E202611031bd72813:S001 — merge the active-chat fields of an incoming session with the
+ * persisted record, so a stale object saved by another writer can neither regress nor drop
+ * them: the record with the newer `lastActivityAt` owns `status`; `lastActivityAt` is the max;
+ * `pendingRequests`/`observerCheckpoint` fall back to the persisted values when absent.
+ * Returns the incoming object itself when nothing needs preserving (callers key bookkeeping
+ * off object identity).
+ */
+export function mergeActiveChatFields(incoming: ChatSession, existing: ChatSession | undefined): ChatSession {
+  if (existing === undefined) return incoming;
+  const incAt = incoming.lastActivityAt ?? 0;
+  const exAt = existing.lastActivityAt ?? 0;
+  const staleWrite = exAt > incAt;
+  const status = staleWrite ? existing.status : (incoming.status ?? existing.status);
+  const lastActivityAt = Math.max(incAt, exAt);
+  const pendingRequests = incoming.pendingRequests ?? existing.pendingRequests;
+  const observerCheckpoint = incoming.observerCheckpoint ?? existing.observerCheckpoint;
+  if (status === incoming.status && lastActivityAt === incAt && pendingRequests === incoming.pendingRequests && observerCheckpoint === incoming.observerCheckpoint) {
+    return incoming;
+  }
+  return {
+    ...incoming,
+    ...(status !== undefined ? { status } : {}),
+    ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
+    ...(pendingRequests !== undefined ? { pendingRequests } : {}),
+    ...(observerCheckpoint !== undefined ? { observerCheckpoint } : {}),
+  };
+}
+
 /** When a session last changed: its last row's time, or its creation time when it has no row. */
 export function updatedAtOf(s: ChatSession): string {
   const last = s.transcript[s.transcript.length - 1];
@@ -308,21 +337,8 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
   };
 
   const save = (session: ChatSession): void => {
-    // E202611031bd72813:S001: never regress the active-chat fields — a stale session object
-    // saved by another writer must not drop a newer status or move lastActivityAt backwards.
-    const existing = get(session.id);
-    let toWrite = session;
-    if (existing !== undefined) {
-      const status = session.status ?? existing.status;
-      const lastActivityAt = Math.max(session.lastActivityAt ?? 0, existing.lastActivityAt ?? 0);
-      if (status !== session.status || (lastActivityAt > 0 && lastActivityAt !== session.lastActivityAt)) {
-        toWrite = {
-          ...session,
-          ...(status !== undefined ? { status } : {}),
-          ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
-        };
-      }
-    }
+    // E202611031bd72813:S001: never regress or drop the active-chat fields on a stale write.
+    const toWrite = mergeActiveChatFields(session, get(session.id));
     void memento.update(SESSION_PREFIX + toWrite.id, toWrite);
     const ids = readIndex();
     if (maxSessions === undefined) {

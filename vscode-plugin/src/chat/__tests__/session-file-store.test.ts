@@ -873,8 +873,9 @@ test('E202611031bd72813:S001 t1: file store setStatus persists status+lastActivi
   const reloaded = createFileChatSessionStore({ root: ROOT, fs: fake.fs, genId: () => 'other', now: () => '2026-01-02T00:00:00.000Z' });
   assert.equal(reloaded.get(s.id)?.status, 'working');
   assert.equal(reloaded.get(s.id)?.pendingRequests?.[0]?.multi, true);
-  // backwards timestamp: a stale object saved later must not regress status/lastActivityAt
+  // backwards timestamp: a stale object saved later must not regress status/lastActivityAt or drop pendingRequests
   store.save({ ...s, title: 'stale write' });
   assert.equal(store.get(s.id)?.status, 'working');
+  assert.equal(store.get(s.id)?.pendingRequests?.[0]?.requestId, 'r9', 'pendingRequests survive the stale write');
   store.setStatus('nope', 'working'); // unknown id: no-op, never throws
 });

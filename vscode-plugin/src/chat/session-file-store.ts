@@ -29,6 +29,7 @@ import {
   INDEX_KEY,
   SESSION_PREFIX,
   isSession,
+  mergeActiveChatFields,
   updatedAtOf,
   type ChatSession,
   type ChatSessionStore,
@@ -315,24 +316,12 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
   };
 
   const save = (incoming: ChatSession): void => {
-    // E202611031bd72813:S001: never regress the active-chat fields — a stale session object
-    // saved by another writer must not drop a newer status or move lastActivityAt backwards.
+    // E202611031bd72813:S001: never regress or drop the active-chat fields on a stale write.
     // Read the existing HEAD directly: a side-effect-free read, so the rowsSeen/cache bookkeeping
     // below is untouched.
     const p0 = paths(incoming.id);
     const existingHead = readHead(fs, p0.head);
-    let s = incoming;
-    if (existingHead !== undefined) {
-      const status = incoming.status ?? existingHead.status;
-      const lastActivityAt = Math.max(incoming.lastActivityAt ?? 0, existingHead.lastActivityAt ?? 0);
-      if (status !== incoming.status || (lastActivityAt > 0 && lastActivityAt !== incoming.lastActivityAt)) {
-        s = {
-          ...incoming,
-          ...(status !== undefined ? { status } : {}),
-          ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
-        };
-      }
-    }
+    const s = mergeActiveChatFields(incoming, existingHead as ChatSession | undefined);
     const p = paths(s.id);
     fs.mkdir(deps.root);
     const t = tracked.get(s);

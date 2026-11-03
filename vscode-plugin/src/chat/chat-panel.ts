@@ -641,7 +641,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       const ctl = new AbortController();
       const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
-      let sawTerminal = false;
+      let sawTerminal = false; // a REAL terminal (done, or a non-observation error)
+      let sawObservationFailure = false;
+      let abortedByBudget = false;
       let lastCursor = cursor;
       let ingestedAny = false;
       try {
@@ -651,7 +653,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             signal: ctl.signal,
             onProgress: (cur) => {
               lastCursor = { ...cursor, offset: cur.offset };
-              if (Date.now() > deadline) ctl.abort(); // per-tick budget: pause, never discard
+              if (Date.now() > deadline && !ctl.signal.aborted) {
+                abortedByBudget = true;
+                ctl.abort(); // per-tick budget: pause, never discard
+              }
             },
           },
         );
@@ -663,41 +668,41 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           } else if (ev.kind === 'selection-request') {
             persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
             setChatStatus(s, 'waiting-input');
-          } else if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+          } else if (ev.kind === 'error') {
+            if (ev.observationFailure === true) sawObservationFailure = true;
+            else sawTerminal = true;
+          } else if (ev.kind === 'done') {
             sawTerminal = true;
           }
-          if (Date.now() > deadline) ctl.abort();
+          if (Date.now() > deadline && !ctl.signal.aborted) {
+            abortedByBudget = true;
+            ctl.abort();
+          }
         }
       } catch {
         // SegmentGone or an adapter throw: the cursor stays; next tick replays from the oldest
         // retained generation (retention above keeps it readable while registered).
       }
+      // caught up = the iterator drained to the end of the available output without a budget abort
+      // and without an observation failure
+      const caughtUp = ingestedAny && !abortedByBudget && !sawObservationFailure;
       // persist the checkpoint (own cursor + decoder progress)
       try {
         s.observerCheckpoint = { generation: lastCursor.generation, offset: lastCursor.offset, selectionSeq: cp.selectionSeq };
         deps.store.save(s);
       } catch { /* best-effort */ }
       out.unregisterCursor(cursor);
-      // transitions: requests ingested BEFORE completion/death; death->done only when caught up
-      if (!ingestedAny || sawTerminal || deps.isAlive === undefined || !deps.isAlive(live.pid ?? 0)) {
-        // process verified dead (or terminal seen) and ingestion caught up to the end
-      }
-      if (sawTerminal) {
-        // real terminal observed: clear the cursor and go done unless requests remain
-        try {
-          delete s.liveTurn;
-          deps.store.save(s);
-        } catch { /* best-effort */ }
-        setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
-      } else if ((deps.isAlive === undefined || live.pid === undefined || !deps.isAlive(live.pid)) && ingestedAny) {
-        // verified process death with the observer caught up (iterator drained): done unless requests remain
+      // transitions: requests were ingested BEFORE any completion/death transition; done requires a
+      // real terminal, or verified process death WITH a caught-up observer; budget exhaustion and
+      // observation failures keep the last known status
+      const pidDead = live.pid === undefined || deps.isAlive === undefined || !deps.isAlive(live.pid);
+      if (sawTerminal || (pidDead && caughtUp)) {
         try {
           delete s.liveTurn;
           deps.store.save(s);
         } catch { /* best-effort */ }
         setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
       }
-      // else: still running or budget exhausted — keep the last known status
     }
   };
 

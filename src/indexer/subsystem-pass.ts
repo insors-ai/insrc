@@ -319,7 +319,7 @@ export async function runSubsystemPass(opts: { readonly db: DbClient; readonly r
 	log.info({ repo: repoPath, generation, mode, filesRead: computed.size, files: rows.size, subsystems, elapsedMs }, 'subsystem pass: grouped');
 
 	const summaries = await summarise(db, repoPath, generation, entities, opts);
-	log.info({ repo: repoPath, generation, mode, filesRead: computed.size, elapsedMs, subsystems, ...summaries }, 'subsystem pass: done');
+	log.info({ repo: repoPath, generation, mode, filesRead: computed.size, elapsedMs, startedAt, subsystems, ...summaries }, 'subsystem pass: done');
 	return {
 		ran: groups !== undefined, ...(groups === undefined && { reason: 'up-to-date' as const }),
 		generation, subsystems, ...summaries, mode, filesRead: computed.size, elapsedMs, startedAt,

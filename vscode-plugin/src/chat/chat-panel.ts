@@ -960,6 +960,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             followedTurns.add(ev.turnId);
             enqueueApproval(ev);
             setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2
+          } else if (ev.kind === 'selection-request') {
+            pendingSelections.set(ev.requestId, { options: ev.options });
+            setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2: followed selection request
+            if (session === s) reportCards();
+            else postLive(ev, rowIndex);
           } else postLive(ev, rowIndex);
           if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         }
@@ -1825,8 +1830,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           }
         : {}),
       onTerminal: (ev) => {
-        // E202611031bd72813:S001 t2: terminal with pending cards stays waiting-input, else done.
-        setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
         if (q !== undefined) {
           q.terminal = ev.kind;
           if (ev.kind === 'error') q.error = ev.message;
@@ -1835,6 +1838,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           else if (ev.kind === 'done' && !ev.ok) q.error = ev.message ?? 'the turn ended with an error';
         }
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
+        // E202611031bd72813:S001 t2: terminal with pending cards stays waiting-input, else done — set AFTER
+        // runCompletedBatch so a continuation it starts keeps 'working'.
+        setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         // Story E20261013b2e8109f:S001: the last check runs here; its rows are saved as they arrive,
         // and the turn's diff state ends when it is done.

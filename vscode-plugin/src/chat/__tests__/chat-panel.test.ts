@@ -5600,3 +5600,59 @@ test('E202611031bd72813:S001 t2: mid-turn approval-request -> waiting-input; ter
   fc.send(env('permission-decision', { requestId: 'req-w', decision: 'deny' }));
   await waitFor(() => store.get(id)?.status === 'done', 5000); // resolving the last request after terminal -> done
 });
+
+test('E202611031bd72813:S001 t2: an error terminal is a failure exit -> done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [{ kind: 'error', turnId: 't1', message: 'adapter blew up' }];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'error'));
+  await waitFor(() => store.get(id)?.status === 'done', 5000, 'error terminal -> done');
+});
+
+test('E202611031bd72813:S001 t2: two pending requests keep waiting-input until BOTH are decided; selection-request also waits', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'r1', title: 'A', detail: 'd' },
+    { kind: 'selection-request', turnId: 't1', requestId: 'sel-1', prompt: 'pick one', options: [{ id: 'a', label: 'A' }, { id: 'b', label: 'B' }] },
+    { kind: 'approval-request', turnId: 't1', requestId: 'r2', title: 'B', detail: 'd' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 's1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { gateBeforeDone: gate }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-request'));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'selection request also waits');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'terminal with 2 approvals + 1 selection pending stays waiting-input');
+  fc.send(env('permission-decision', { requestId: 'r1', decision: 'deny' }));
+  await waitFor(() => turnEvents(fc).length >= 0, 100);
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'one of two approvals resolved: still waiting');
+  fc.send(env('permission-decision', { requestId: 'r2', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'approvals done but selection still pending');
+  fc.send(env('selection-decision', { requestId: 'sel-1', selected: ['a'] }));
+  // a selection decision starts a continuation runTurn -> the chat leaves waiting-input (working)
+  await waitFor(() => store.get(id)?.status !== undefined && store.get(id)?.status !== 'waiting-input', 5000, 'all requests resolved -> continuation starts (working), no longer waiting-input');
+});

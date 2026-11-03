@@ -1788,3 +1788,20 @@ test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effo
     assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output-format=stream-json', '--verbose', '--', 'hi']);
   }
 });
+
+test('E202611031bd72813:S001 t2: resume() marks an output-read failure as observationFailure, not a real terminal', async () => {
+  const brokenTail = {
+    beginTurn: async () => { throw new Error('x'); },
+    endTurn: async () => {},
+    tail: async function* (): AsyncIterable<never> { throw new Error('disk full'); },
+    errTail: () => '',
+    remove: async () => {},
+    sweep: async () => {},
+  };
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput: brokenTail as never, livenessPollMs: 5 }).get('claude');
+  const evs = await collect(adapter.resume({ cursor: { sessionId: 's1', turnId: 't1', generation: 1, offset: 0 }, pid: undefined, startedAt: null }));
+  const err = evs.find((e) => e.kind === 'error');
+  assert.ok(err !== undefined && err.kind === 'error', 'an error event is yielded');
+  assert.equal(err.observationFailure, true, 'the read failure is marked observationFailure');
+  assert.match(err.message, /could not be read/);
+});

@@ -359,8 +359,27 @@ No new failure: every failing test name also fails in the tree before s9 (src/wo
 - The smoke test of the LLD ran on 2026-11-02 against the sandbox repository `subhagho/insrc-test` (private, registered with the daemon, tracker entry written by `repo.trackerConfig.ensure`, no team policy), with the daemon built from this branch. A `define` run wrote the first draft and the draft hook created the Epic issue `subhagho/insrc-test#1` (`issueReadiness` ready, created true). The issue was then closed on GitHub, `git_pull` was run through the daemon (`tools.call`), and `meta.tracker` of the Define read `{ adapter: github, epicStatus: closed, storyStatus: {}, lastSyncedAt: 2026-11-02T08:57:50Z }` with the pull a success and no `hookFailures`. The run is reported (not run by the build gate).
 - Finding from the smoke run: the label create of the draft hook (`gh_label` with `force: true`) is a destructive-class call and always asks for approval. In a workflow driven through MCP there is no answer unless a client (the `insrc` TUI) is connected and watched: with none the draft write fails with "gh_label was denied (no-client)", and an unanswered prompt fails with "(timed-out)" after 5 minutes. The Define draft is written either way; the stage reports the denial as an error. Before s9 this only happened for team repos and at the terminal approve (where the TUI answers). Candidate follow-up, to be triaged on its own: create the labels without `force`, so the draft hook needs no approval.
 - `AMD-315d510cb28100e2-31` and `-32` were approved on 2026-11-02 together with the BUILD (override: controller self-review, `S009/SELF-REVIEW.md`); `-29` and `-30` are stale duplicates and stay drafts.
-- A git-hook installer for git run outside the daemon's tools is a later Story (decision 1 above).
+- The git-hook installer for git run outside the daemon's tools was built as its own Story (see "Git hooks for git run outside the daemon" below).
 - The rules read the registered repositories at each call; the refresh runs inside the git tool's result, so a slow tracker holds the tool result for up to the 120-second budget plus one call's own limit.
+
+## Git hooks for git run outside the daemon (2026-11-03)
+
+Story `9ac84abac177b399/s1` (standalone). It answers decision 1 above: git typed in a terminal or an IDE can now refresh the Epics' issue status too, by an opt-in per repository.
+
+**What it does.** `repo.gitHooks.install` writes a marked block into two hooks of the repository, `post-merge` (a `git pull` or merge) and `post-rewrite` (a `git pull --rebase` or rebase). The block starts the compiled hook entry (`out/bin/insrc-git-hook.js`) in the background with the repository root and the hook name, discards its output and ends in `exit 0`. The entry makes one `tracker.sync` call with the repository path and no `epicHash`, which refreshes every Epic of the repository, and exits 0 whatever happens (daemon not running, timeout, error answer, unregistered repository). `repo.gitHooks.uninstall` removes only the marked block and deletes a hook file that held nothing else. `repo.gitHooks.status` reports per hook whether the block is present, whether other content is present, whether that content ends in an `exit` or `exec` (an appended block would never run), and whether the recorded entry path differs from the current one (the daemon moved).
+
+**The setting.** `gitHooks` (Settings, group Tracker, default off) equals what is installed. Setting it through `repo.settings.set` installs or removes the blocks and writes the key only if that worked; the install and uninstall methods set it themselves. A partial install (one hook file could not be written) sets it true and reports the failing hook with its reason.
+
+**`tracker.sync` is repository-wide without `epicHash`.** It keeps a per-repository in-flight marker: a call that finds a refresh running returns a skipped result at once, so a burst of hooks costs one refresh. Sequential duplicates (a daemon `git_pull` rule, then the hook) are harmless; the refresh is idempotent.
+
+**Limits.**
+- **A terminal `git push` is not covered.** Git has no post-push hook; only the daemon's `git_push` rule refreshes after a push. After a push typed in a terminal, run the explicit refresh (`insrc workflow sync <epic-hash>`, or `tracker.sync` for the repository).
+- **Hook managers that regenerate their files** (husky and similar) can drop the block. `status` then reports the hook as not installed while the setting says opted in; install repairs it. With `core.hooksPath` set, the block goes into the directory git names (`git rev-parse --git-path hooks`).
+- **A foreign hook that ends early** (`exit 0`, `exec ...`) keeps the appended block from running; the install result flags it and the user has to reorder the file.
+- **Linked worktrees** share the hooks directory with the main repository, and a hook fired in a worktree names the worktree root, which is not a registered repository root, so the daemon refuses it and nothing is refreshed.
+- **A moved daemon** leaves blocks pointing at a path that no longer exists. Git is unaffected (the block exits 0) and the refresh silently stops; `status` shows it as stale and install repairs it.
+- The hooks are not run for the daemon's own isolated git reads (`core.hooksPath=/dev/null`), so only mutating daemon git calls and the user's own git fire them.
+- The installed daemon only gets the methods after the clone is updated and the daemon restarted.
 
 ## Revise writers: gating the remaining content writers (2026-11-02)
 

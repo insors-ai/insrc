@@ -96,6 +96,15 @@ export function outer(ns: number[]): void {
 	const innerArrow = (): void => { ns.find(Boolean); registry.create({}); };
 	innerArrow();
 }
+export const namedExpr = function ns(): void { ns.find(1); registry.create({}); };
+export function defaults(value: any): void {
+	const { x = ns, k: y = registry, [cfg.parse('k')]: z } = value;
+	const [a = st] = value;
+	ns.find(1);
+	registry.create({});
+	cfg.resolve('r');
+	st.push(1);
+}
 export function blockScoped(): void {
 	{ const ns = [1]; ns.map(x => x); }
 	for (const registry of [[1]]) registry.push(1);
@@ -111,6 +120,8 @@ export function blockScoped(): void {
 	assert.deepEqual(calls(r, 'shadowedByDeclaration'), [], 'nor a nested function or class declaration');
 	assert.deepEqual(calls(r, 'varHoisted'), ['inner'], 'a var in a block shadows the import for the whole function');
 	assert.deepEqual(calls(r, 'innerArrow'), ['create'], "a closure extracted on its own still sees its outer function's parameter shadowing the import");
+	assert.deepEqual(calls(r, 'namedExpr'), ['create'], "a named function expression's own name shadows the import inside it");
+	assert.deepEqual(calls(r, 'defaults'), ['create', 'find', 'parse', 'push', 'resolve'], 'names in destructuring defaults and computed keys are not declared');
 	assert.deepEqual(calls(r, 'blockScoped'), ['create', 'find'], "a block's or loop's local shadows the import only inside it");
 });
 

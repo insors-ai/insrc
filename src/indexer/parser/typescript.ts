@@ -886,6 +886,18 @@ function collectPatternIdentifiers(node: SyntaxNode, out: Set<string>): void {
     if (pat) collectPatternIdentifiers(pat, out);
     return;
   }
+  // A default value (`{ x = d }`, `[a = d]`) and a renamed key (`{ [k]: v }`)
+  // bind only the target name, never the names in the default or the key.
+  if (node.type === 'assignment_pattern' || node.type === 'object_assignment_pattern') {
+    const left = node.childForFieldName('left');
+    if (left) collectPatternIdentifiers(left, out);
+    return;
+  }
+  if (node.type === 'pair_pattern') {
+    const value = node.childForFieldName('value');
+    if (value) collectPatternIdentifiers(value, out);
+    return;
+  }
   for (const c of node.namedChildren) collectPatternIdentifiers(c, out);
 }
 
@@ -912,6 +924,11 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   for (const field of ['parameters', 'parameter']) {
     const bound = scope.childForFieldName(field);
     if (bound) collectPatternIdentifiers(bound, declared);
+  }
+  // A named function expression binds its own name inside itself.
+  if (scope.type === 'function_expression' || scope.type === 'generator_function') {
+    const name = scope.childForFieldName('name');
+    if (name) declared.add(name.text);
   }
   // A function's frame also holds every `var` in its body, whatever block it is in.
   const body = FUNCTION_SCOPE_TYPES.has(scope.type) ? scope.childForFieldName('body') : null;

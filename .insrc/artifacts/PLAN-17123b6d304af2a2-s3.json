@@ -1,0 +1,910 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793705944353-v5k8v8",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T11:44:32.028Z",
+    "epicCreatedAt": "2026-11-01T12:02:01.501Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 327644,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "17123b6d304af2a2",
+    "epicSlug": "share-project-memory-across-agents-applications",
+    "storyId": "s3",
+    "lldRunId": "wf-1793701629778-6xhp87",
+    "lldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Build the independent authoritative memory store behind the existing durable queue, with atomic effects/receipts, scoped revision and deletion guards, and coherent bounded reads. Native APFS/ext4 crash qualification gates production host wiring; the plan also preserves source trust, error codes, embedding compatibility and verified shutdown. Run focused tests per task, then the complete sweep after all implementation work, while keeping later-story maintenance and integration coverage explicitly pending."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Pin standalone native dependencies and preserve package boundaries",
+        "summary": "Declare exact Lance0.40.0/Arrow18.1.0 dependencies in packages/project-memory/package.json and regenerate workspace package-lock.json; preserve fs-ext, public exports and lazy import behavior. Inventory packaged outputs without introducing backend imports. Update packed.test.ts's existing exact dependency assertion in this task; output requirements for not-yet-built modules remain t14.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Package build succeeds with unchanged public exports and Node22 engine contract.",
+          "Pinned dependencies resolve in an isolated consumer; importing package does not load native SDK or touch disk.",
+          "Existing exact packed dependency check is updated with the manifest, not deferred across unrelated tasks."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "store-runtime-package-qualification"
+          },
+          {
+            "level": "smoke",
+            "name": "store-existing-packed-allowlists-and-native-absence"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Implement strict persisted codecs and embedding profile",
+        "summary": "Add approved private store types/codecs and embedding-profile constant; validate discriminated rows, canonical identities, nullable vectors, full lineage/outcomes and explicit model/dimension/normalizationVersion metadata.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Reject missing/extra/invalid fields and envelope/payload disagreements before mutation.",
+          "Golden text/Float32 profile tests distinguish semantic normalizer from embedding preprocessing and reject incompatible plan metadata."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "store-row-codec-and-effect-reservations"
+          },
+          {
+            "level": "unit",
+            "name": "store-persisted-payload-v1-required-fields"
+          },
+          {
+            "level": "unit",
+            "name": "store-embedding-normalization-profile-v1"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Qualify native single-table primitives under crashes",
+        "summary": "Build an isolated native qualification harness using real pinned Lance/Arrow, one records table and parent-observed process barriers. Exercise mixed nullable vectors, one-version publication, pinned readers, close/reopen and SIGKILL around commit on APFS/ext4; no production host wiring. Extend .github/workflows/project-memory.yml with narrowly selected SDK/store qualification scopes where required, preserving full/queue modes and separate macOS local execution.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Record exact Node/platform/filesystem/SDK/source fingerprints and observed process-kill outcomes; skipped platforms do not qualify.",
+          "Mixed effects/receipt/control must be old or complete at each boundary; any atomicity or profile incompatibility stops for HLD amendment.",
+          "Focused Linux qualification records the installed dependency graph and platform proof without automatically running full package/backend suites during task iteration."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-runtime-package-qualification"
+          },
+          {
+            "level": "integration",
+            "name": "store-one-mutation-effects-receipt-generation"
+          },
+          {
+            "level": "integration",
+            "name": "store-null-vectors-version-pinned-reads"
+          },
+          {
+            "level": "integration",
+            "name": "store-macos-apfs-linux-ext4-qualification"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Implement owned store initialization and safe reopen",
+        "summary": "Add lazy native connection/table management under DirectoryOwnership, durable format intent/ready metadata, root control and profile/UUID validation; preserve recognized interrupted init and reject non-pristine missing/corrupt stores.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2",
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Only pristine roots initialize; existing S2 queue-only roots retain every byte and return explicit unavailable status.",
+          "Missing/mismatched marker/root/runtime profile refuses before queue recovery; partial native handles close or owner remains held."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-directory-separation-and-no-empty-replacement"
+          },
+          {
+            "level": "integration",
+            "name": "store-startup-rollback-every-open-boundary"
+          },
+          {
+            "level": "integration",
+            "name": "store-embedding-profile-reopen-plan-query-compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Implement plan, reference and lifecycle guards",
+        "summary": "Validate bounded immutable CommitPlan provenance, generation/per-target revisions, scope authority, IDs, immutable history, acyclic supersession and full evidence/source relationships.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Allowed/forbidden lifecycle matrix and stale revision tests enforce exact predecessor/current-pointer rules.",
+          "Duplicate keys, dangling/cross-scope references, oversized rows and reserved generated kinds fail before native mutation."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "store-row-codec-and-effect-reservations"
+          },
+          {
+            "level": "unit",
+            "name": "store-scope-epoch-predicate-escaping"
+          },
+          {
+            "level": "unit",
+            "name": "store-revision-tombstone-reference-guards"
+          },
+          {
+            "level": "unit",
+            "name": "store-persisted-payload-v1-required-fields"
+          },
+          {
+            "level": "unit",
+            "name": "store-lifecycle-transition-matrix"
+          },
+          {
+            "level": "unit",
+            "name": "store-embedding-profile-reopen-plan-query-compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Implement the sole atomic writer and uncertain-write fence",
+        "summary": "Serialize commits, reconcile exact existing receipts before stale-generation checks, bind queueId on first event, generate receipt/control and publish one standard merge; fence unknown native outcomes until settlement/reconciliation.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "One event publishes effects+receipt+generation in one version; exact retry adds no version/effects.",
+          "No-effect failed/quarantined/cleanup-pending outcomes have validated semantics; native rejection/timeouts never authorize blind retry or owner release."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-one-mutation-effects-receipt-generation"
+          },
+          {
+            "level": "integration",
+            "name": "store-generation-revision-conflicts-and-exact-retry"
+          },
+          {
+            "level": "integration",
+            "name": "store-native-uncertain-writes-fence"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Implement authoritative queue receipt and retirement proofs",
+        "summary": "Implement unchanged ReceiptVerifier facade and minimal public receipt projection over immutable stored outcomes, with strict retained-frame matching and proof verification after queue recycling.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Retained conflicting retry regression remains enforced for pending/terminal states.",
+          "Unavailable/duplicate/malformed authority is never absent; retirement confirms exact retained digests without content leakage or store-to-queue callback."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-proof-port-retained-and-recycled"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Implement broad forget barriers and frame eligibility guard",
+        "summary": "Add qualified memory/source/subject/session/conversation/project tombstones, queue cutoff/closed-lifecycle guards, bounded source-dependency invalidation and private read-only pre-inference eligibility; commit always rechecks protection.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Unseen IDs from an older pending event cannot reactivate after broad forget; blocked work gets only a no-effect failed proof.",
+          "Higher sequence alone cannot resume an old lifecycle; explicit host-authorized new identities are distinct, and old proofs/tombstones remain effective."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-revision-tombstone-reference-guards"
+          },
+          {
+            "level": "integration",
+            "name": "store-broad-forget-selector-and-closed-lifecycle"
+          },
+          {
+            "level": "integration",
+            "name": "store-replay-forget-no-resurrection-scoped"
+          },
+          {
+            "level": "integration",
+            "name": "store-broad-forget-unseen-pending-event"
+          },
+          {
+            "level": "integration",
+            "name": "store-forget-after-plan-before-commit"
+          },
+          {
+            "level": "integration",
+            "name": "store-closed-lifecycle-explicit-new-activity"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Implement bounded coherent read snapshots",
+        "summary": "Create distinct pinned reader leases and current/receipt projections with exact scope/epoch/profile/source/tombstone/validity predicates, final freshness validation and bounded work/results; leave ranking/packing/public semantic reads to S5.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t4",
+          "t6",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A concurrent forget, binding change, generation change or expiry prevents stale content from returning.",
+          "Lease/dependency/result limits fail explicitly without truncation, and no native handles escape the private facade."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-scope-epoch-predicate-escaping"
+          },
+          {
+            "level": "integration",
+            "name": "store-null-vectors-version-pinned-reads"
+          },
+          {
+            "level": "integration",
+            "name": "store-reader-expiry-delete-race"
+          },
+          {
+            "level": "integration",
+            "name": "store-embedding-profile-reopen-plan-query-compatibility"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Prove real queue/store crash and replay integration",
+        "summary": "Compose owner, real S2 queue and private store directly in a test harness. Qualify receipt-before-ACK recovery, broad-forget unknown-ID races, exact retries, recycling and uncertain settlement on macOS/APFS and Linux/ext4 before production service wiring.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Require actual SIGKILL and parent-observed acceptance/commit barriers; assert old-or-complete effects and proof/control coherence after recovery.",
+          "Both platforms produce passing fingerprinted evidence for all required boundaries; fake proofs and the earlier clean-exit probe do not close this gate."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-proof-port-retained-and-recycled"
+          },
+          {
+            "level": "integration",
+            "name": "store-one-mutation-effects-receipt-generation"
+          },
+          {
+            "level": "integration",
+            "name": "store-generation-revision-conflicts-and-exact-retry"
+          },
+          {
+            "level": "integration",
+            "name": "store-replay-forget-no-resurrection-scoped"
+          },
+          {
+            "level": "integration",
+            "name": "store-reader-expiry-delete-race"
+          },
+          {
+            "level": "integration",
+            "name": "store-native-uncertain-writes-fence"
+          },
+          {
+            "level": "integration",
+            "name": "store-commit-kill-before-after-receipt-ack"
+          },
+          {
+            "level": "integration",
+            "name": "store-broad-forget-unseen-pending-event"
+          },
+          {
+            "level": "integration",
+            "name": "store-forget-after-plan-before-commit"
+          },
+          {
+            "level": "integration",
+            "name": "store-macos-apfs-linux-ext4-qualification"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Implement trusted admission transforms and public error boundaries",
+        "summary": "Add pure source/provenance input/output transforms and optional package-private QueueAdmission constructor seam. Execute module hooks and persist outside original HostPolicy catch; preserve unchanged host sanitization, S2 formats and no-hook behavior.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t2",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Public-submit integration returns INVALID_REQUEST for protected raw fields and REVISION_CONFLICT for changed retained/terminal identity, with queue bytes unchanged.",
+          "Host-thrown same-named errors remain sanitized; source hash/span/time and deterministic retry/attestation tests pass without model calls."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-admitted-provenance-v1-derivation"
+          },
+          {
+            "level": "integration",
+            "name": "store-closed-lifecycle-explicit-new-activity"
+          },
+          {
+            "level": "integration",
+            "name": "store-admission-policy-wrapper-through-real-queue"
+          },
+          {
+            "level": "integration",
+            "name": "store-public-submit-module-errors-outside-policy-catch"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Implement store OwnedWork and rollback lifecycle",
+        "summary": "Add the private store lifecycle adapter with admission stop, pending accounting, native/read drain and idempotent close; exercise queue-before-store resource release and every partially opened startup handle.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t6",
+          "t7",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "Queue proof lookups stay available through queue drain/close; two-participant tests prove no lane inversion or false pending zero.",
+          "Timeout/cancellation/failed close never releases ownership before native settlement, and startup rollback attempts all allocated resources."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-no-lane-inversion-drain-ownership"
+          },
+          {
+            "level": "integration",
+            "name": "store-native-uncertain-writes-fence"
+          },
+          {
+            "level": "integration",
+            "name": "store-owned-work-two-participant-shutdown"
+          },
+          {
+            "level": "integration",
+            "name": "store-startup-rollback-every-open-boundary"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Wire qualified store into the Node service host",
+        "summary": "Update host-node composition to owner -> qualified store -> queue with proof facade -> recovery -> service, supply admission transforms and [queue,storeOwnedWork]; update deterministic attesting host fixtures and unsupported capability behavior.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t10",
+          "t11",
+          "t12"
+        ],
+        "acceptanceChecks": [
+          "Production composition is enabled only after native/platform gate evidence passes; unsupported hosts/profiles fail explicitly.",
+          "Submit remains durable accepted, status reconciles receipts and public context/search/inspect remain NOT_READY until S5; host ports remain usable after close."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-no-lane-inversion-drain-ownership"
+          },
+          {
+            "level": "integration",
+            "name": "store-owned-work-two-participant-shutdown"
+          },
+          {
+            "level": "integration",
+            "name": "store-startup-rollback-every-open-boundary"
+          },
+          {
+            "level": "integration",
+            "name": "store-admission-policy-wrapper-through-real-queue"
+          },
+          {
+            "level": "integration",
+            "name": "store-public-submit-module-errors-outside-policy-catch"
+          },
+          {
+            "level": "smoke",
+            "name": "store-host-readiness-status-and-not-ready-public-reads"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Complete isolated tarball and native-absence verification",
+        "summary": "Update strict packed.test.ts dependency/output assertions, require intended private modules and test real external Node22 consumers, pure imports, missing fs-ext/Lance bindings, crash/reopen and lifecycle with no backend sources or new public exports.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "All existing packed subjects pass with narrow dist/store allowlist and exact dependencies.",
+          "Isolated install/consumer uses only packaged resources, exits naturally without leaked handles, and verifies native-open failures preserve ownership safety."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "store-runtime-package-qualification"
+          },
+          {
+            "level": "smoke",
+            "name": "store-standalone-packed-node22-consumer"
+          },
+          {
+            "level": "smoke",
+            "name": "store-existing-packed-allowlists-and-native-absence"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Verify memory/index/queue isolation and record supporting-story gates",
+        "summary": "Test real isolated backend index rebuild/reset against committed memory and pending queue events; implement only S3 internal non-destructive cleanup target preflight and overlap/alias/identity refusal. Record S7 host overlap and S9 real cleanup completion scenarios as pending support gates.",
+        "size": "M",
+        "order": 15,
+        "dependsOn": [
+          "t10",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Actual index rebuild preserves logical memory/protection/proofs and exact pending event bytes/status; a sentinel alone is insufficient.",
+          "Unsafe internal paths fail before destructive action; no S3 reset API, S7 registry implementation or S9 purge/migration is introduced or falsely marked complete."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "store-directory-separation-and-no-empty-replacement"
+          },
+          {
+            "level": "integration",
+            "name": "store-index-reset-rebuild-preserves-memory"
+          },
+          {
+            "level": "integration",
+            "name": "store-cleanup-target-overlap-refusal"
+          },
+          {
+            "level": "integration",
+            "name": "store-memory-cleanup-preserves-index-and-queue"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Measure bounded store resources and latency",
+        "summary": "Add reproducible native/JS resource and latency study with approved corpus/safety boundaries, history/tombstones, batches, leases and overflow cases; record dependency footprint and exact hardware/source/profile metadata.",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t9",
+          "t10",
+          "t13"
+        ],
+        "acceptanceChecks": [
+          "Report p50/p95 open/commit/current, disk/receipt/control bytes, heap and native RSS; validate bounds without changing semantics or silently truncating.",
+          "Measurements disclose fixture limits, do not claim production SLO or power-loss proof, and any needed bound/design change is explicit."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "store-resource-and-latency-study"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Run final sweep and assemble code-review handoff",
+        "summary": "After all implementation tasks, run root/package builds, complete package regression and full backend sweep on stable source, archive APFS/ext4 proof/resource/packaging/isolation evidence and map all S3 criteria before independent story code review.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t14",
+          "t15",
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "During prior tasks run only relevant tests; now run full sweep once after all tasks, repeating only for changed/failing scope.",
+          "Build/coverage/evidence distinguish native platform qualifications and S7/S9-dependent AC29 gates; no fabricated S2 formal completion, full-AC29 pass, review or approval.",
+          "Archive final-source APFS/ext4 complete package/crash qualification alongside source/LLD/profile/dependency fingerprints; earlier t3/t10 snapshots alone cannot count as final evidence."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "store-macos-apfs-linux-ext4-qualification"
+          },
+          {
+            "level": "smoke",
+            "name": "final-source-package-and-backend-full-sweep-and-evidence-handoff"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "store-row-codec-and-effect-reservations",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-scope-epoch-predicate-escaping",
+        "coveredByTaskIds": [
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-revision-tombstone-reference-guards",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-persisted-payload-v1-required-fields",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-lifecycle-transition-matrix",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-admitted-provenance-v1-derivation",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-broad-forget-selector-and-closed-lifecycle",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-embedding-normalization-profile-v1",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-runtime-package-qualification",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-proof-port-retained-and-recycled",
+        "coveredByTaskIds": [
+          "t7",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-one-mutation-effects-receipt-generation",
+        "coveredByTaskIds": [
+          "t3",
+          "t6",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-null-vectors-version-pinned-reads",
+        "coveredByTaskIds": [
+          "t3",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-generation-revision-conflicts-and-exact-retry",
+        "coveredByTaskIds": [
+          "t6",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-replay-forget-no-resurrection-scoped",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-reader-expiry-delete-race",
+        "coveredByTaskIds": [
+          "t9",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-directory-separation-and-no-empty-replacement",
+        "coveredByTaskIds": [
+          "t4",
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-no-lane-inversion-drain-ownership",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-native-uncertain-writes-fence",
+        "coveredByTaskIds": [
+          "t6",
+          "t10",
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-commit-kill-before-after-receipt-ack",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-owned-work-two-participant-shutdown",
+        "coveredByTaskIds": [
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-startup-rollback-every-open-boundary",
+        "coveredByTaskIds": [
+          "t4",
+          "t12",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-index-reset-rebuild-preserves-memory",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-cleanup-target-overlap-refusal",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-broad-forget-unseen-pending-event",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-forget-after-plan-before-commit",
+        "coveredByTaskIds": [
+          "t8",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-closed-lifecycle-explicit-new-activity",
+        "coveredByTaskIds": [
+          "t8",
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-admission-policy-wrapper-through-real-queue",
+        "coveredByTaskIds": [
+          "t11",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-public-submit-module-errors-outside-policy-catch",
+        "coveredByTaskIds": [
+          "t11",
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-embedding-profile-reopen-plan-query-compatibility",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-standalone-packed-node22-consumer",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-macos-apfs-linux-ext4-qualification",
+        "coveredByTaskIds": [
+          "t3",
+          "t10",
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-resource-and-latency-study",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-existing-packed-allowlists-and-native-absence",
+        "coveredByTaskIds": [
+          "t1",
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "store-memory-cleanup-preserves-index-and-queue",
+        "coveredByTaskIds": [
+          "t15"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md"
+    }
+  ]
+}

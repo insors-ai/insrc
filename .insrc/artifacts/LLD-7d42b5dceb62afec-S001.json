@@ -38,9 +38,9 @@
      "item": "fix-targets-defect",
      "kind": "semantic",
      "severity": "LOW",
-     "premise": "Incremental contributions and returning summary failures to the queue owner target both root causes stated in the ISSUE.",
-     "evidence": "The ISSUE identifies repeated whole-repository grouping and missing automatic retries. runSubsystemPass calls 'listEntitiesForRepo(db, repoPath)' before scanning grouping edges, while IndexerService.subsystemPass merely awaits the result. SummaryRunner currently resolves replies with 'p?.resolve()', discarding outcomes. The proposed contribution cache and outcome propagation address these mechanisms. [files: docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/ISSUE.md, src/indexer/subsystem-pass.ts, src/indexer/index.ts, src/daemon/threads/summary-link.ts]",
-     "action": "Retain this approach, subject to the cache invalidation and pacing corrections below.",
+     "premise": "Incremental contributions, pacing and scheduled summary retries target both root causes stated in the ISSUE.",
+     "evidence": "The ISSUE requires avoiding whole-repository work for unchanged grouping inputs and retrying failed summaries without edits. runSubsystemPass currently calls 'listEntitiesForRepo(db, repoPath)' when generations differ; IndexerService.subsystemPass awaits the result without retaining summariesFailed. The proposed contribution cache and outcome-driven retry address these mechanisms. [files: docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/ISSUE.md, src/indexer/subsystem-pass.ts, src/indexer/index.ts]",
+     "action": "Retain this approach while correcting the concurrency gaps below.",
      "fixability": "manual",
      "outcome": "holds"
     },
@@ -50,9 +50,9 @@
      "item": "current-behaviour",
      "kind": "semantic",
      "severity": "LOW",
-     "premise": "New generations trigger full grouping, queued duplicates alone collapse, and failed summaries await another externally scheduled pass.",
-     "evidence": "runSubsystemPass skips grouping only when 'stored.computedAtGeneration === generation'; otherwise it reads every repository entity and eligible source's out-neighbours. commitFile increments 'row.generation++'. enqueueSubsystemsIfComplete immediately enqueues on graphComplete. Queue deduplication checks 'queue.some(...)', and drain removes the running job with 'lane.jobs.shift()'. Summary failures increment failed and continue; the indexer neither examines that count nor schedules retries. [files: src/indexer/subsystem-pass.ts, src/db/entities.ts, src/indexer/index.ts, src/daemon/queue.ts]",
-     "action": "No correction needed to this description of current behaviour.",
+     "premise": "Generation changes cause full regrouping, queued duplicates alone collapse, and failed summaries have no automatic retry timer.",
+     "evidence": "runSubsystemPass skips grouping only when 'stored.computedAtGeneration === generation'; otherwise it enumerates repository entities and grouping edges and calls writeSubsystems. Queue deduplication uses 'queue.some(j => j.kind === ...)' over waiting jobs; drain shifts a job before processing it. enqueueSubsystemsIfComplete immediately enqueues for a complete graph, and subsystemPass discards the returned failure count. Reading the scheduling and worker paths found no subsystem retry timer. [files: src/indexer/subsystem-pass.ts, src/indexer/index.ts, src/daemon/queue.ts, src/daemon/threads/summary-link.ts, src/daemon/threads/indexing-worker.ts]",
+     "action": "No correction needed to this description of current behavior.",
      "fixability": "manual",
      "outcome": "holds"
     },
@@ -61,48 +61,48 @@
      "ref": "change-sites",
      "item": "change-sites",
      "kind": "semantic",
-     "severity": "HIGH",
-     "premise": "Recording commits and grouping-edge mutations completely covers file-set changes, including a full index within an already-running daemon.",
-     "evidence": "fullIndex first calls 'deleteEntitiesForRepo(...)', then commits only files selected from disk. deleteEntitiesForRepo invokes detachDeleteEntities, whose entity removal calls 'removeEntityRowInTxn(...)' independently of commitFile. An old code file with no incident grouping edges that disappears before this rebuild produces neither a new commit nor a grouping-edge dirty entry. Its cached entityCount can remain positive. Section 2.1 has no full-index invalidation trigger, despite section 7.1 mentioning full mode after a full index. Existing groups also survive deleteEntitiesForRepo, so computedAtGeneration need not become null. [files: src/indexer/index.ts, src/db/entities.ts, src/db/subsystems.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
-     "action": "Specify a transactional full-index cache invalidation path, or record every removed code file at the entity-removal layer even when it has no grouping edges. Reconcile the full-mode contracts and include the responsible functions in the change sites.",
+     "severity": "LOW",
+     "premise": "The proposed hooks identify the production grouping-edge mutation sites and the worker result path that must change.",
+     "evidence": "Production outEdge/inEdge writes are confined to putEdgeInTxn, deleteResolvedRelations, returnInferredSqlReferencesToPending, sweepOutgoingEdges and sweepIncomingEdges, all identified by the design's call sites. commitFile replaces outgoing edges and removes obsolete entities through detachDeleteEntitiesInTxn. SummaryRunner currently resolves successful replies with 'p?.resolve()', while SummaryWorkerLink posts a successful reply without a result; these are the result-transport endpoints the design proposes changing. [files: src/db/relations.ts, src/db/entities.ts, src/daemon/threads/summary-link.ts, src/daemon/threads/summary-worker.ts, src/daemon/index.ts, src/daemon/threads/indexing-worker.ts]",
+     "action": "Ensure the hook at sweepIncomingEdges records surviving source files for every deletion caller, including cleanup outside commitFile.",
      "fixability": "manual",
-     "outcome": "does-not-hold"
+     "outcome": "holds"
     },
     {
      "claimId": "preserved-behaviour.1",
      "ref": "preserved-behaviour",
      "item": "preserved-behaviour",
      "kind": "semantic",
-     "severity": "HIGH",
-     "premise": "Pacing by the last enqueue time guarantees at least 60 seconds between pass starts.",
-     "evidence": "The queue waits while '!this.isIndexIdle' before taking a summary job, then removes it with 'lane.jobs.shift()'. Thus enqueue and start times can differ substantially. For example, a pass queued at t=0 can start at t=59 after code work drains; the trailing timer can enqueue another at t=60 while the first is running, and queued-only deduplication permits it. The second can start immediately after the first, violating the design's 'At most one pass starts per repository per 60 s'. [files: src/daemon/queue.ts, src/daemon/threads/summary-link.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
-     "action": "Enforce the interval at execution admission using actual start times, or defer another pass until its start is eligible. Preserve trailing requests and code-work priority.",
+     "severity": "LOW",
+     "premise": "For a stable store with complete invalidation, the contribution representation preserves the existing file graph and membership-based summary retention.",
+     "evidence": "The current fileOfU64 includes CODE_KINDS and file entities only in code-bearing files; edges require a different mapped target file and accumulate kind \u00d7 evidence weights. Retaining additional target-file contributions and filtering both endpoints against entityCount > 0 reproduces that rule. directoryHubs depends on the file set. writeSubsystems preserves summaries through 'previous.get(g.id)', and groupSubsystems hashes sorted member paths. Section 3 documents repository/file ownership, edge direction, multiplicity and compatibility adequately in prose; no companion visual is needed to resolve these relationships. [files: src/indexer/subsystem-pass.ts, src/indexer/subsystems.ts, src/db/subsystems.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
+     "action": "Preserve these endpoint filters, weights and membership identifiers.",
      "fixability": "manual",
-     "outcome": "does-not-hold"
+     "outcome": "holds"
     },
     {
      "claimId": "preserved-behaviour.2",
      "ref": "preserved-behaviour",
      "item": "preserved-behaviour",
      "kind": "semantic",
-     "severity": "LOW",
-     "premise": "The proposed contribution representation can preserve the existing file-graph endpoints and weighting.",
-     "evidence": "The current fileOfU64 includes CODE_KINDS and file entities only in codeFiles; edges require distinct eligible files. KIND_WEIGHT and EVIDENCE_WEIGHT supply the stated weights, and cross-file rewiring emits 'kind: IMPORTS' between file entities. Keeping directed contributions to currently ineligible target files, then filtering both endpoints by entityCount at grouping time, preserves this rule when bookkeeping is complete. Sections 3.1\u20133.3 document repository ownership, source-to-target direction, row cardinality and compatibility adequately in prose; no linked generated companion requires rendering verification. [files: src/indexer/subsystem-pass.ts, src/indexer/cross-file-resolver.ts, src/indexer/subsystems.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
-     "action": "Preserve these endpoint and weighting rules in both bootstrap and incremental contribution construction.",
+     "severity": "HIGH",
+     "premise": "Deleting contribution rows during a full index guarantees the next pass rebuilds fully, even when an earlier pass is still computing.",
+     "evidence": "IndexQueue explicitly runs independent lane loops and states 'A summary already running is not stopped.' fullIndex calls 'await markFullIndexUnfinished(repoPath)' and then deleteEntitiesForRepo while that pass may continue. The proposed publication transaction checks dirty-entry stamps but has no repository-reset or generation validity guard. A pass can read isolated file A, pause, then publish A's positive contribution after the full-index deletion cleared contributions and dirty entries. If A disappeared from disk, rebuilding never commits A. Contributions are nonempty again, so the subsequent incremental pass can retain phantom A indefinitely; conditional dirty deletion does not prevent this stale insertion. [files: src/daemon/queue.ts, src/indexer/index.ts, src/db/entities.ts, src/db/index-state.ts, src/indexer/subsystem-pass.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
+     "action": "Specify a publication-time guard, checked inside the write transaction, that rejects work invalidated by a repository reset. Preserve the requirement for a full rebuild until a valid post-reset pass publishes.",
      "fixability": "manual",
-     "outcome": "holds"
+     "outcome": "does-not-hold"
     },
     {
      "claimId": "preserved-behaviour.3",
      "ref": "preserved-behaviour",
      "item": "preserved-behaviour",
      "kind": "semantic",
-     "severity": "LOW",
-     "premise": "Atomic replacement with membership-based summary retention and sequential, code-prioritized summarisation are real existing invariants.",
-     "evidence": "writeSubsystems replaces rows inside one withWriteTxn and retains 'summary: kept?.summary ?? null' by group id. summarise awaits each subsystem and each model call, checks shouldStop and generation, and waits for code idle. SummaryWorkerLink serializes jobs through its serial promise. The proposed publication transaction and queue-owner retry retain these mechanisms. [files: src/db/subsystems.ts, src/indexer/subsystem-pass.ts, src/daemon/threads/summary-link.ts, src/daemon/queue.ts]",
-     "action": "Keep summary writes after publication and retain the existing stop, generation and idle checks.",
+     "severity": "HIGH",
+     "premise": "Reporting starts from the queue driver guarantees actual subsystem passes start at least 60 seconds apart.",
+     "evidence": "SummaryRunner.run can wait at 'this.port ?? await this.connected'. On the receiving side, SummaryWorkerLink serializes jobs and invokes them through 'withBackgroundHold(() => run(m.params as IndexJob))'. Thus queue-driver dispatch precedes actual execution by an unbounded worker-reconnection or maintenance wait. If dispatch is recorded at t=0, execution begins at t=120 and finishes at t=121, the proposed scheduler may immediately dispatch another requested pass because 60 seconds elapsed since dispatch. Actual grouping starts can then be only seconds apart. [files: src/daemon/threads/summary-link.ts, src/daemon/threads/indexing-worker.ts, src/shared/locks/maintenance-lock.ts, src/daemon/threads/__tests__/summary-link.test.ts, docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md]",
+     "action": "Define and communicate the actual execution start after worker and maintenance waits, or use a conservative pacing rule that still guarantees the required separation. Keep dispatch/in-flight tracking separate from execution timing.",
      "fixability": "manual",
-     "outcome": "holds"
+     "outcome": "does-not-hold"
     },
     {
      "claimId": "tests.1",
@@ -110,9 +110,9 @@
      "item": "tests",
      "kind": "semantic",
      "severity": "MED",
-     "premise": "The proposed tests sufficiently prove pacing and convergence acceptance criteria ac2 and ac3.",
-     "evidence": "The ac2 mapping asserts enqueue counts and timer timing, which can pass despite the delayed-start counterexample above. The ac3 sequence tests file deletions through commits but does not specify rebuilding an already-cached repository after an isolated file disappears without a watcher commit. fullIndex deletes repository entities before walking disk, so that case exercises a different mutation path and can leave a phantom contribution while the listed tests pass. [files: docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md, src/indexer/__tests__/subsystem-pass.test.ts, src/indexer/__tests__/subsystems-job.test.ts, src/indexer/index.ts, src/daemon/queue.ts]",
-     "action": "Add a blocked-summary-lane test asserting actual pass-start separation, including a first pass still running when the timer fires. Add a same-process full-index regression: populate contributions, remove an isolated code file without processing its watcher event, rebuild, and compare files, counts, groups and contributions with a forced full pass. The proposed ac1, ac4 and ac5 tests otherwise address their stated goals; they remain planned validation, not executed evidence.",
+     "premise": "The planned ac2 and ac3 tests sufficiently establish pacing and convergence across the supported concurrency paths.",
+     "evidence": "Section 5 tests delayed starts caused by queued code work, but not delays after driver dispatch. Existing summary-link tests demonstrate that a dispatched job can wait for a replacement worker or maintenance. The planned full-index regression runs after contributions are populated, without holding an earlier pass before publication; its interleaving test inserts an edge rather than resetting the repository. Consequently both confirmed counterexamples above can survive the specified tests. [files: docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/LLD.md, src/daemon/threads/__tests__/summary-link.test.ts, src/indexer/__tests__/subsystem-pass.test.ts, src/indexer/__tests__/subsystems-job.test.ts, src/daemon/queue.ts, src/indexer/index.ts]",
+     "action": "Add two deterministic regressions: hold execution after driver dispatch and assert real start separation; hold a pass before publication, fully reindex after deleting an isolated file, release the stale pass, and verify subsequent groups and contributions equal a forced full pass. The other acceptance mappings provide useful planned checks; they are not executed validation evidence.",
      "fixability": "manual",
      "outcome": "does-not-hold"
     }
@@ -124,7 +124,7 @@
     "unverified": 0
    },
    "template": "design-issue",
-   "reviewedAt": "2026-11-03T13:38:17.593Z",
+   "reviewedAt": "2026-11-03T13:43:55.227Z",
    "model": "cli-codex:gpt-6.1-sol",
    "reviewedBy": "daemon"
   }
@@ -164,7 +164,7 @@
      ],
      "returns": {
       "type": "SubsystemPassResult",
-      "meaning": "As today, plus mode: 'full' | 'incremental' | 'unchanged' (how the groups were obtained), filesRead: number (files whose contributions were computed), elapsedMs: number (the pass's grouping work, before summaries). ran stays true only when groups were rewritten; reason 'up-to-date' also covers mode 'unchanged'."
+      "meaning": "As today, plus mode: 'full' | 'incremental' | 'unchanged' (how the groups were obtained), filesRead: number (files whose contributions were computed), elapsedMs: number (the pass's grouping work, before summaries). ran stays true only when groups were rewritten; reason 'up-to-date' also covers mode 'unchanged'. It also carries startedAt: the wall-clock time the pass itself began (inside runSubsystemPass, after any worker hand-over or maintenance wait), which pacing uses."
      },
      "errors": [
       {
@@ -181,14 +181,14 @@
       "Mode 'full' when there are no contribution rows for the repository (first pass, a store written before this change, or a whole-repository entity delete such as the start of a full index, which drops them -- see deleteEntitiesForRepo), when the stored groups have computedAtGeneration null, or on the first pass for the repository in this daemon process: today's whole-repository read, which also writes every code file's contribution row and consumes the repository's changed-file record.",
       "Otherwise mode 'incremental' or 'unchanged'. Each recorded file is recomputed from the store: its code and file entities through the entity_by_file index, their grouping-kind out-neighbours with evidence, each target's file and kind from its entity row. A contribution keeps every edge to a code or file entity of another file of the repository WHATEVER that file's code status, so a target that later gains (or loses) its first code entity needs no recompute of the unchanged files pointing at it. A recorded file with no code entity left gets entityCount 0 (its row is kept while other rows may point at it, and its own out-edges are dropped).",
       "Regroup: the file set is the files whose row has entityCount > 0; an edge counts only when both ends are in that set (the full pass's rule, applied when grouping instead of when reading), weighted as today; directoryHubs and groupSubsystems run over that set. Mode 'unchanged' when every recomputed row equals the stored one AND the file set is unchanged; mode 'incremental' otherwise.",
-      "Publication is one write transaction: the recomputed contribution rows, the groups (the replacement writeSubsystems performs, in an in-transaction form) or, in mode 'unchanged', the restamp of computedAtGeneration, and the conditional consumption of the record entries read (each deleted only if its stamp is still the one read). A failure anywhere before or in that transaction leaves contributions, groups and the record exactly as they were, so the next pass recomputes the same files and publishes.",
+      "Publication is one write transaction: the recomputed contribution rows, the groups (the replacement writeSubsystems performs, in an in-transaction form) or, in mode 'unchanged', the restamp of computedAtGeneration, and the conditional consumption of the record entries read (each deleted only if its stamp is still the one read). A failure anywhere before or in that transaction leaves contributions, groups and the record exactly as they were, so the next pass recomputes the same files and publishes. Reset guard: the pass reads the repository's reset counter (see the subsystem file contribution table) when it starts, and the publication transaction first re-reads it; if it changed -- a whole-repository delete such as a full index ran meanwhile -- the transaction publishes nothing (no contribution rows, no groups, no record consumption), so the repository keeps no contribution rows and its next pass is mode 'full'. The guard applies in every mode, a full pass included.",
       "The groups any mode stores equal what mode 'full' would compute from the same store (same file set, same pair weights and kind counts, same hubs, so the same ids and kept summaries).",
       "Summaries for groups without one are then written as today (one call at a time, after code work)."
      ]
     },
     {
      "name": "IndexerService.subsystemPass",
-     "signature": "protected subsystemPass(repoPath: string): Promise<{ summariesFailed: number; stopped: boolean }>",
+     "signature": "protected subsystemPass(repoPath: string): Promise<{ summariesFailed: number; stopped: boolean; startedAt: number }>",
      "parameters": [
       {
        "name": "repoPath",
@@ -198,14 +198,14 @@
       }
      ],
      "returns": {
-      "type": "Promise<{ summariesFailed: number; stopped: boolean }>",
+      "type": "Promise<{ summariesFailed: number; stopped: boolean; startedAt: number }>",
       "meaning": "Runs runSubsystemPass and resolves its outcome, which IndexerService.processJob resolves for a subsystems job. It schedules nothing itself: with daemon threads it runs on the document-summary worker, whose IndexerService has no queue it may enqueue to (SummaryWorkerLink.enqueue throws)."
      },
      "errors": [],
      "preconditions": [],
      "postconditions": [
       "Logs mode, filesRead, elapsedMs, subsystems, summariesWritten and summariesFailed in one line.",
-      "Resolves { summariesFailed, stopped } from the pass's result."
+      "Resolves { summariesFailed, stopped, startedAt } from the pass's result."
      ]
     },
     {
@@ -228,10 +228,10 @@
       "Called after a full index, a clean-up, a settle, or by the retry timer."
      ],
      "postconditions": [
-      "Runs on the IndexerService that owns the index queue (the code-indexing worker's, or the daemon's when threads are off): the one scheduling owner of subsystems jobs. Its per-repository state is whether a subsystems job is queued or running, the time the last one STARTED, the pacing timer, the consecutive-failure count and the retry timer. Start and finish are reported by the queue driver (src/daemon/index.ts:350, src/daemon/threads/indexing-worker.ts:161-164) when it begins and ends a subsystems job, in both modes.",
+      "Runs on the IndexerService that owns the index queue (the code-indexing worker's, or the daemon's when threads are off): the one scheduling owner of subsystems jobs. Its per-repository state: whether a subsystems job is queued or in flight (from the moment the queue driver hands it over until its outcome or failure is back), the actual start time of the last pass (the outcome's startedAt -- not the hand-over time, which can precede the real start by a worker reconnection or a maintenance wait), the pacing timer, the consecutive-failure count and the retry timer. A job that fails without an outcome (the summary worker went) counts as having started when its failure arrived (conservative).",
       "Graph not complete: nothing queued, as today.",
-      "A job queued or running for the repository: nothing queued now; one pacing request is remembered, and when that job finishes the scheduler arms the pacing timer for the remainder of the interval from its start (or queues at once if the interval has passed).",
-      "None queued or running, and the last start at least 60 s ago (or none): the job is queued now. Because a job is queued only then, every pass starts at least 60 s after the previous pass started, however long the summary lane holds a job back for code work.",
+      "A job queued or in flight for the repository: nothing queued now; one pacing request is remembered, and when that job's outcome (or failure) arrives the scheduler arms the pacing timer for the remainder of the interval from its actual start (or queues at once if the interval has passed).",
+      "None queued or in flight, and the last actual start at least 60 s ago (or none): the job is queued now. Since a job is queued only when no other is queued or in flight and 60 s have passed since the previous pass's actual start, and a pass cannot start before it is queued, consecutive actual pass starts are at least 60 s apart, whatever the summary lane, worker hand-over or maintenance waits add.",
       "None queued or running but the last start less than 60 s ago: the pacing timer is armed (if none is) for the remainder; requests in the meantime are absorbed by it. When it fires it re-applies these rules.",
       "A timer that fires while the queue is stopping does nothing. Pacing and retry timers are unref'd and are cleared by the scheduler's dispose, called from both stop paths (src/daemon/index.ts:351, src/daemon/threads/indexing-worker.ts:167-172). They never call the model."
      ]
@@ -249,7 +249,7 @@
      ],
      "returns": {
       "type": "Promise<unknown>",
-      "meaning": "The job's outcome: for a subsystems job, { summariesFailed, stopped }, whether it ran here (processJob) or on the summary worker (SummaryRunner.run)."
+      "meaning": "The job's outcome: for a subsystems job, { summariesFailed, stopped, startedAt }, whether it ran here (processJob) or on the summary worker (SummaryRunner.run)."
      },
      "errors": [
       {
@@ -367,7 +367,7 @@
      "errors": [],
      "preconditions": [],
      "postconditions": [
-      "In the transaction that deletes the repository's entities, the repository's subsystem_file rows and subsystem_dirty entries are deleted, so its next subsystem pass is mode 'full' over what the full index commits (the stored groups are kept until that pass replaces them, as today)."
+      "In the transaction that deletes the repository's entities, the repository's subsystem_file rows and subsystem_dirty entries are deleted and its reset counter is incremented, so its next subsystem pass is mode 'full' over what the full index commits, and a pass that was already running when the delete happened publishes nothing (the stored groups are kept until a valid pass replaces them, as today)."
      ]
     }
    ]
@@ -394,7 +394,7 @@
    {
     "entity": "subsystem file contribution (new store table subsystem_file)",
     "change": "new",
-    "details": "Key repoId u32 BE ++ repository-relative file path; value: { entityCount: number (its code entities); out: Array<{ to: string (repository-relative file); weight: number; kinds: Partial<Record<RelationKind, number>> }> } -- the file's outgoing edges from its code and file entities to code or file entities of other files of the repository, aggregated per target file as the full pass aggregates byPair (kind weight x evidence weight, per-kind counts), kept whatever the target file's code status. Written in the pass's publication transaction (all rows in mode 'full', the recomputed rows otherwise). When grouping, only files with entityCount > 0 are nodes and only edges between two such files count -- the full pass's codeFiles / fileOfU64 rule. A file with entityCount 0 and no edges into it is removed. Ownership: one row per (repository, file), owned by the subsystem pass; direction: from the row's file to each target file. Deleted whole for a repository by deleteEntitiesForRepo (a full index), which makes the next pass mode 'full'.",
+    "details": "Key repoId u32 BE ++ repository-relative file path; value: { entityCount: number (its code entities); out: Array<{ to: string (repository-relative file); weight: number; kinds: Partial<Record<RelationKind, number>> }> } -- the file's outgoing edges from its code and file entities to code or file entities of other files of the repository, aggregated per target file as the full pass aggregates byPair (kind weight x evidence weight, per-kind counts), kept whatever the target file's code status. Written in the pass's publication transaction (all rows in mode 'full', the recomputed rows otherwise). When grouping, only files with entityCount > 0 are nodes and only edges between two such files count -- the full pass's codeFiles / fileOfU64 rule. A file with entityCount 0 and no edges into it is removed. Ownership: one row per (repository, file), owned by the subsystem pass; direction: from the row's file to each target file. Deleted whole for a repository by deleteEntitiesForRepo (a full index), which makes the next pass mode 'full'. The table also holds one reserved row per repository, key repoId u32 BE ++ 0x00 (no file path begins with NUL), value: the repository's reset counter, incremented by deleteEntitiesForRepo in its deleting transaction and read by the pass at its start and inside its publication transaction.",
     "callSites": [
      "src/indexer/subsystem-pass.ts:164",
      "src/indexer/subsystem-pass.ts:172-201",
@@ -456,6 +456,13 @@
      "detection": "SummaryRunner.run rejects ('the document-summary worker is gone'); the queue driver catches the failure",
      "response": "Counted as a failed pass by the scheduler: the retry timer is armed with the back-off, and the replacement worker runs the retried job.",
      "userImpact": "Summaries are retried without an edit or a restart.",
+     "recoverable": true
+    },
+    {
+     "scenario": "A subsystem pass is running (it has read its files) when a full index of the same repository starts and deletes the repository's entities; a file it read was removed from disk and is never committed again",
+     "detection": "The publication transaction re-reads the repository's reset counter and finds it differs from the value the pass read at its start",
+     "response": "The transaction publishes nothing. The repository has no contribution rows (the delete dropped them), so the next pass is mode 'full' over the files the full index committed; the removed file cannot reappear as a phantom contribution.",
+     "userImpact": "None: the groups are rebuilt by the next pass.",
      "recoverable": true
     }
    ],
@@ -519,6 +526,10 @@
     {
      "input": "An isolated code file (no grouping edges) deleted from disk while the daemon was stopped, then a full index",
      "expected": "The full index's whole-repository delete drops the contribution rows; the next pass is mode 'full' and the file is gone from the groups. Without a full index, its entity's removal (a clean-up) records its file at removeEntityRowInTxn."
+    },
+    {
+     "input": "A job handed to the summary worker at t=0 that waits for a replacement worker or maintenance and actually starts at t=120, finishing at t=121, while settles keep arriving",
+     "expected": "Its outcome reports startedAt=120; the next job is queued no earlier than t=180, so actual starts are 60 s apart."
     }
    ],
    "invariantsToPreserve": [
@@ -574,7 +585,7 @@
     },
     {
      "level": "integration",
-     "purpose": "Publication is atomic: a fault injected after the contributions are computed and during the publication transaction (a failing write in the in-transaction writeSubsystems) leaves contributions, groups and the changed-file record exactly as before; the next pass publishes groups equal to the full pass's. An edge written between the pass's read and its publication keeps its record entry (stamp check).",
+     "purpose": "Publication is atomic: a fault injected after the contributions are computed and during the publication transaction (a failing write in the in-transaction writeSubsystems) leaves contributions, groups and the changed-file record exactly as before; the next pass publishes groups equal to the full pass's. An edge written between the pass's read and its publication keeps its record entry (stamp check). Reset regression: a pass is held after it has read its files and before publication; meanwhile an isolated code file is deleted from disk and the repository is fully re-indexed (deleteEntitiesForRepo runs); releasing the held pass publishes nothing; the next pass is mode 'full' and its groups and contribution rows equal a forced full pass, with the deleted file absent.",
      "subjects": [
       "runSubsystemPass publication",
       "the subsystem changed-file record"
@@ -585,7 +596,7 @@
     },
     {
      "level": "integration",
-     "purpose": "Pacing and retry across the worker boundary: with the real SummaryRunner and summary-worker link over a MessageChannel (the summary side runs runSubsystemPass with an injected provider), the queue-owning IndexerService queues one subsystems job for two settles within the interval and one more after it; a pass whose summaries fail returns its outcome through the reply and the scheduler arms the retry (60 s, 120 s, 240 s, capped at 30 min, driven by mock timers); the summary side never enqueues; a job rejected because the summary worker went is retried; dispose (both stop paths) clears every timer and a timer firing while the queue is stopping queues nothing. The same scheduling is checked with threads off (one IndexerService). Pacing is asserted on actual pass STARTS: with the summary lane blocked by queued code work, a first pass that starts late and is still running when further settles arrive is followed by a second whose start is at least 60 s after the first's start, and no second job is queued while the first is queued or running.",
+     "purpose": "Pacing and retry across the worker boundary: with the real SummaryRunner and summary-worker link over a MessageChannel (the summary side runs runSubsystemPass with an injected provider), the queue-owning IndexerService queues one subsystems job for two settles within the interval and one more after it; a pass whose summaries fail returns its outcome through the reply and the scheduler arms the retry (60 s, 120 s, 240 s, capped at 30 min, driven by mock timers); the summary side never enqueues; a job rejected because the summary worker went is retried; dispose (both stop paths) clears every timer and a timer firing while the queue is stopping queues nothing. The same scheduling is checked with threads off (one IndexerService). Pacing is asserted on actual pass STARTS: with the summary lane blocked by queued code work, a first pass that starts late and is still running when further settles arrive is followed by a second whose start is at least 60 s after the first's start, and no second job is queued while the first is queued or running. A dispatch-delay regression: the summary side holds a handed-over job (as a worker reconnection or a maintenance wait would) before runSubsystemPass begins; the next job is queued only at least 60 s after the reported actual start, so measured actual starts are at least 60 s apart; a job rejected without an outcome counts as starting at its rejection.",
      "subjects": [
       "enqueueSubsystemsIfComplete",
       "runIndexJob",
@@ -624,7 +635,8 @@
     {
      "criterionId": "ac2",
      "provingTests": [
-      "integration: with the summary lane held back by code work, consecutive pass starts are at least 60 s apart, and no job is queued while one is queued or running"
+      "integration: with the summary lane held back by code work, consecutive pass starts are at least 60 s apart, and no job is queued while one is queued or running",
+      "integration: with a held hand-over (worker reconnection / maintenance wait) the next pass's actual start is at least 60 s after the previous pass's actual start"
      ]
     },
     {
@@ -636,7 +648,8 @@
       "integration: a fault in the publication transaction leaves contributions, groups and the record unchanged, and the next pass converges",
       "integration: an unchanged importer stays correct while its target gains, loses and regains code entities",
       "integration: a same-process full index after an isolated file vanished without a watcher event converges to the forced full pass",
-      "integration: entity-row removal on every path records its file"
+      "integration: entity-row removal on every path records its file",
+      "integration: a pass held before publication across a full index publishes nothing, and the next (full) pass equals a forced full pass with the deleted file absent"
      ]
     },
     {

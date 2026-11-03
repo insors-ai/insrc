@@ -211,12 +211,12 @@ export function encodeRow(row: StoreRow, profile: EmbeddingProfile): EncodedRow 
   const checked = validateRow(row, profile);
   return Object.freeze({ ...checked, payload: snapshotJson(checked.payload, STORE_LIMITS.maxBytes).text });
 }
-export function decodeRow(input: unknown, profile: EmbeddingProfile): StoreRow {
-  const raw = snapshotJson(input, STORE_LIMITS.maxBytes).value;
+export function decodeRow(input: unknown, profile: EmbeddingProfile, maxBytes: number = STORE_LIMITS.maxBytes, reservation?: Reservation): StoreRow {
+  const raw = snapshotJson(input, maxBytes, reservation).value;
   const r = object(raw, ROW_FIELDS); if (typeof r.payload !== 'string') invalid();
   let parsed: unknown; try { parsed = JSON.parse(r.payload); } catch { invalid(); }
-  if (snapshotJson(parsed, STORE_LIMITS.maxBytes).text !== r.payload) invalid();
-  return validateRow({ ...r, payload: parsed }, profile);
+  if (snapshotJson(parsed, maxBytes, reservation).text !== r.payload) invalid();
+  return validateRow({ ...r, payload: parsed }, profile, maxBytes, reservation);
 }
 /** Reserve the complete canonical effect batch before any native mutation. */
 export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number, reservation?: Reservation): { readonly rows: readonly StoreRow[]; readonly bytes: number } {

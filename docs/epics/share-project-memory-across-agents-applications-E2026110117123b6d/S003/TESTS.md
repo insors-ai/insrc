@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 71 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -247,3 +247,55 @@ Run at 2026-11-03T14:35:41.123Z on commit `38bc67cfe`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 6 | 4.7 s |  |
 | `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 4.9 s |  |
+
+## t8
+
+Run at 2026-11-03T14:57:31.085Z on commit `ef702f35b`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-revision-tombstone-reference-guards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**integration: store-broad-forget-selector-and-closed-lifecycle**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**integration: store-replay-forget-no-resurrection-scoped**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**integration: store-broad-forget-unseen-pending-event**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**integration: store-forget-after-plan-before-commit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**integration: store-closed-lifecycle-explicit-new-activity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+| pass | store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project | `packages/project-memory/src/__tests__/store-barriers.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-barriers.test.ts` | 0 | 7 | 8.6 s |  |

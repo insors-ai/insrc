@@ -1,4 +1,4 @@
-import type { Json, MemoryFailureCode, Scope, SourceIdentity } from '../types.js';
+import type { Json, MemoryFailureCode, MemoryView, Scope, SourceIdentity } from '../types.js';
 import type { QueueFrame } from '../queue/types.js';
 
 /** Package-private sc4 storage types. No native SDK or public wire additions. */
@@ -102,4 +102,15 @@ export interface CommitPlan extends CommitPlanRows {
   readonly commandHash: string; readonly frame: QueueFrame; readonly expectedGeneration: string;
   readonly expectedRevisions: Readonly<Record<string, string | null>>;
   readonly disposition: CommitDisposition; readonly processingVersion: ProcessingVersion;
+}
+/** Opaque by registration, not by hiding these harmless immutable metadata fields. */
+export interface CommittedSnapshot {
+  readonly version: number; readonly generation: string; readonly scopeDigest: string;
+  readonly scopeEpoch: string; readonly eligibleAt: number;
+}
+export interface CurrentProjection {
+  readonly items: readonly MemoryView[]; readonly generation: string;
+  readonly scopeEpoch: string; readonly evaluatedAt: number; readonly nextValidityBoundary: number | null;
+  /** Same order as items; future ranking constrains these qualified IDs first. */
+  readonly eligibleRowIds: readonly string[];
 }

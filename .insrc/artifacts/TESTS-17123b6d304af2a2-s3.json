@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T14:35:41.123Z",
+    "updatedAt": "2026-11-03T14:57:31.085Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -882,6 +882,161 @@
               },
               {
                 "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "ef702f35b",
+        "ranAt": "2026-11-03T14:57:31.085Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-revision-tombstone-reference-guards",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-broad-forget-selector-and-closed-lifecycle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-replay-forget-no-resurrection-scoped",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-broad-forget-unseen-pending-event",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-forget-after-plan-before-commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-closed-lifecycle-explicit-new-activity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-barriers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 8598,
+            "titles": [
+              {
+                "title": "store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening",
+                "result": "pass"
+              },
+              {
+                "title": "store-barriers-protection-overflow-is-explicit-before-partial-matching",
                 "result": "pass"
               }
             ],

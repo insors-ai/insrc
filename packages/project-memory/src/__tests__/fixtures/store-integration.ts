@@ -10,6 +10,7 @@ import type { QueueFrame } from '../../queue/types.js';
 import type { Json, MemoryCommand, Scope } from '../../types.js';
 import { MemoryError } from '../../errors.js';
 import { OwnedLanceStore } from '../../store/lance-store.js';
+import type { StoreOpenHooks } from '../../store/lance-store.js';
 import { logicalId, makeRow, namespaceKey } from '../../store/codec.js';
 import { admittedPayload, evidenceId, sourceOccurrenceId } from '../../store/plan.js';
 import type { CommitPlan, ForgetSelector, StoreRow } from '../../store/types.js';
@@ -43,7 +44,7 @@ export function forgetPlan(frame: QueueFrame, generation: string, now: number, s
   const marker = makeRow('tombstone', scope, frame.scopeEpoch, { schemaVersion: 1, tombstoneId: logicalId('tombstone', ns, [selector as unknown as Json, frame.operationId]), selector, namespaceKey: ns, scopeEpoch: frame.scopeEpoch, invalidFromGeneration: next, queueId: frame.queueId, cutoffSequence: frame.sequence, mode: 'closed-lifecycle', createdByOperationId: frame.operationId, createdAt: now }, profile);
   return { operationId: frame.operationId, scope, scopeEpoch: frame.scopeEpoch, commandHash: frame.payloadHash, frame, expectedGeneration: generation, expectedRevisions: {}, processingVersion, rows: [marker], disposition: { state: 'cleanup-pending', errorCode: null, rejectedByTombstoneIds: [] } };
 }
-export async function integrationFixture() {
+export async function integrationFixture(hooks: StoreOpenHooks = {}) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'memory-integration-'))), owner = await acquireOwnership(options(root));
   let now = 100;
   const epochs = new Map([[scope.projectId, epoch], ['other-project', epoch]]);
@@ -58,7 +59,7 @@ export async function integrationFixture() {
       return event;
     },
   };
-  let store = await OwnedLanceStore.open(owner, profile, { now: () => now }, integrationLimits);
+  let store = await OwnedLanceStore.open(owner, profile, { ...hooks, now: () => now }, integrationLimits, policy);
   let queue = new FileQueue(owner, root, integrationLimits, {}, store.receiptVerifier()); await queue.start();
   let admission = new QueueAdmission(queue, policy);
   async function append(command: MemoryCommand) {
@@ -70,7 +71,7 @@ export async function integrationFixture() {
     root, owner, get store() { return store; }, get queue() { return queue; }, get admission() { return admission; }, get now() { return now; },
     clock(value: number) { now = value; }, register(producer: string, session: string) { registered.add(producer + '/' + session); }, epoch(project: string, value: string) { epochs.set(project, value); }, append,
     async rows() { const db = await openNative(root); try { return (await db.table.query().toArray()).map(row => decodedNative(row)); } finally { db.close(); } },
-    async reopen() { await queue.close(); await store.close(); store = await OwnedLanceStore.open(owner, profile, { now: () => now }, integrationLimits); queue = new FileQueue(owner, root, integrationLimits, {}, store.receiptVerifier()); await queue.start(); admission = new QueueAdmission(queue, policy); },
+    async reopen() { await queue.close(); await store.close(); store = await OwnedLanceStore.open(owner, profile, { ...hooks, now: () => now }, integrationLimits, policy); queue = new FileQueue(owner, root, integrationLimits, {}, store.receiptVerifier()); await queue.start(); admission = new QueueAdmission(queue, policy); },
     async close() { await queue.close(); await store.close(); await owner.close(); await rm(root, { recursive: true, force: true }); },
   };
 }

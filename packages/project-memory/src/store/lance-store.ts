@@ -2,7 +2,7 @@ import { mkdir, lstat, readdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { Connection, Table } from '@lancedb/lancedb';
 import type { DirectoryOwnership } from '../ownership.js';
-import type { MemoryLimits, OperationReceipt } from '../types.js';
+import type { HostPolicy, MemoryLimits, MemoryView, OperationReceipt, Scope } from '../types.js';
 import type { ReceiptVerifier } from '../queue/types.js';
 import { MemoryError } from '../errors.js';
 import { errno } from '../configuration.js';
@@ -15,14 +15,17 @@ import { forgetTarget, frameProtection, loadProtections } from './barriers.js';
 import type { FrameEligibility } from './barriers.js';
 import type { GuardLookup } from './guards.js';
 import type { WriterHooks } from './writer.js';
+import { ReadLeases } from './reads.js';
+import type { ReadHooks } from './reads.js';
+import { NativePinnedReader } from './native-reads.js';
 import { admittedPayload, rowIdPredicate, snapshotAdmittedFrame } from './plan.js';
 import { decimal, validateQueueLimits } from '../queue/codec.js';
-import type { EmbeddingProfile, RootPayload, StoreRow } from './types.js';
+import type { CommittedSnapshot, CurrentProjection, EmbeddingProfile, RootPayload, StoreRow } from './types.js';
 
 /** Private deterministic fault boundaries; not supplied by MemoryOptions/IPC. */
-export type StoreOpenPoint = 'intent' | 'load' | 'connect' | 'table' | 'schema' | 'control' | 'ready' | 'before-write' | 'after-write' | 'close-table' | 'close-connection';
-export interface StoreOpenHooks extends WriterHooks { readonly point?: ((point: StoreOpenPoint) => void | Promise<void>) | undefined; }
-interface Resources { connection?: Connection | undefined; table?: Table | undefined; }
+export type StoreOpenPoint = 'intent' | 'load' | 'connect' | 'table' | 'schema' | 'control' | 'ready' | 'before-write' | 'after-write' | 'read-open' | 'read-pinned' | 'read-before-final' | 'read-close' | 'close-table' | 'close-connection';
+export interface StoreOpenHooks extends WriterHooks, ReadHooks { readonly point?: ((point: StoreOpenPoint) => void | Promise<void>) | undefined; }
+interface Resources { connection?: Connection | undefined; table?: Table | undefined; readers: Set<NativePinnedReader>; }
 // Failed native cleanup must not become an implicit GC-based release.
 const retained = new Set<Resources>();
 const activeOwners = new WeakSet<DirectoryOwnership>();
@@ -60,9 +63,10 @@ export class OwnedLanceStore {
   readonly #receipts: ReceiptVerifier;
   readonly #guard: GuardLookup;
   readonly #maxEventBytes: number;
+  readonly #reads: ReadLeases;
   #observedVersion: number | undefined;
   #closing: Promise<void> | undefined;
-  private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits) {
+  private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits, policy: Pick<HostPolicy, 'bind'> | undefined) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
     this.#maxEventBytes = limits.maxEventBytes;
     const table = () => { if (!resources.table) unavailable(); return resources.table; };
@@ -116,6 +120,34 @@ export class OwnedLanceStore {
       identity: hash => receiptWhere('identityDigest', hash), operation: hash => receiptWhere('operationId', hash),
       root: () => this.#authorityRoot(),
     }, profile);
+    const head = () => this.#writer.orderedRead(async () => {
+      await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion();
+      return { version: await table().version(), root: await this.#authorityRoot() };
+    });
+    this.#reads = new ReadLeases({
+      accepting: () => !this.#closing && this.#writer.accepting(),
+      binding: scope => { if (!policy) return Promise.reject(new MemoryError('NOT_READY', 'Memory read binding is not configured.')); return policy.bind(scope.projectId, scope.sessionId); },
+      head,
+      capture: () => this.#writer.orderedRead(async () => {
+        await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion();
+        const version = await table().version(), root = await this.#authorityRoot();
+        const connection = resources.connection; if (!connection) unavailable();
+        const native = await connection.openTable('records');
+        const reader = new NativePinnedReader(native, profile, version, () => this.#checkIdentity(), async () => { await hooks.point?.('read-close'); }, handle => resources.readers.delete(handle));
+        resources.readers.add(reader);
+        try {
+          await hooks.point?.('read-open'); await native.checkout(version); await this.#checkIdentity();
+          let copied = 0;
+          const pinned = await reader.get(ROOT_ROW_ID, { charge(n) { copied += n; if (copied > 65_536) unavailable(); }, release() {} }, 65_536);
+          if (pinned?.rowKind !== 'control' || pinned.payload.kind !== 'root' || JSON.stringify(pinned.payload) !== JSON.stringify(root)) unavailable();
+          await hooks.point?.('read-pinned'); return { version, root, reader };
+        } catch (error) {
+          try { await reader.close(); } catch { throw new UnverifiedCleanup(); }
+          if (error instanceof MemoryError) throw error; unavailable();
+        }
+      }),
+      point: async () => { await hooks.point?.('read-before-final'); },
+    }, profile, limits, hooks);
   }
   /** Package-private composition barrier. Recovery cannot run against unverified authority.
    * The recovery callback owns rollback of its own partial resources. Host wiring is separate.
@@ -125,13 +157,14 @@ export class OwnedLanceStore {
     try { return { store, recovered: await recover(store) }; }
     catch (error) { await store.close(); throw error; }
   }
-  static async open(owner: DirectoryOwnership, supplied: EmbeddingProfile, hooks: StoreOpenHooks = {}, limits: MemoryLimits = DEFAULT_LIMITS): Promise<OwnedLanceStore> {
+  static async open(owner: DirectoryOwnership, supplied: EmbeddingProfile, hooks: StoreOpenHooks = {}, limits: MemoryLimits = DEFAULT_LIMITS, policy?: Pick<HostPolicy, 'bind'>): Promise<OwnedLanceStore> {
     validateProfile(supplied); const profile = embeddingProfile(supplied.model, supplied.dimension); requireProfile(supplied, profile);
     validateQueueLimits(limits);
     if (hooks.timeoutMs !== undefined && (!Number.isSafeInteger(hooks.timeoutMs) || hooks.timeoutMs < 1 || hooks.timeoutMs > 2_147_483_647)) throw new MemoryError('INVALID_REQUEST', 'Invalid native write timeout.');
+    if (hooks.leaseMs !== undefined && (!Number.isSafeInteger(hooks.leaseMs) || hooks.leaseMs < 1 || hooks.leaseMs > STORE_LIMITS.leaseMs)) throw new MemoryError('INVALID_REQUEST', 'Invalid private read lease duration.');
     if (activeOwners.has(owner)) throw new MemoryError('OWNERSHIP_CONFLICT', 'Memory store already has an active native owner.');
     activeOwners.add(owner);
-    const resources: Resources = {}; let nativeWriteUncertain = false;
+    const resources: Resources = { readers: new Set() }; let nativeWriteUncertain = false;
     try {
       const marker = await loadFormat(owner, profile); await hooks.point?.('intent');
       const path = join(owner.directory, STORE_DIRECTORY);
@@ -173,7 +206,7 @@ export class OwnedLanceStore {
           nativeWriteUncertain = false;
         } else if (count !== 1 || version !== 2) unavailable();
       }
-      const store = new OwnedLanceStore(owner, profile, marker.storeId, resources, identity, hooks, limits);
+      const store = new OwnedLanceStore(owner, profile, marker.storeId, resources, identity, hooks, limits, policy);
       const control = await store.readRoot();
       if (marker.state === 'initializing' && (control.generation !== '0' || control.queueId !== null)) unavailable();
       await hooks.point?.('control');
@@ -235,21 +268,26 @@ export class OwnedLanceStore {
     const root = await this.#readRoot(); let receipts = 0n;
     // Stream narrow metadata, rather than retaining the database's history in JS.
     // Per-ID native counts detect duplicates without an unbounded JS uniqueness set.
-    for await (const batch of table.query().select(['rowId', 'rowKind', 'namespaceKey', 'scopeEpoch', 'generation', 'operationId', 'identityDigest'])) {
+    const metadataFields = ['rowId', 'rowKind', 'namespaceKey', 'scopeEpoch', 'generation', 'operationId', 'identityDigest'];
+    const metadata = new Map<string, string>(metadataFields.map(field => [field, field])); metadata.set('payloadBytes', 'octet_length(payload)');
+    for await (const batch of table.query().select(metadata)) {
       for (const item of batch) {
         const row = { ...item } as Record<string, unknown>;
         if (typeof row['rowId'] !== 'string' || typeof row['rowKind'] !== 'string' || !['current', 'revision', 'source', 'evidence', 'receipt', 'tombstone', 'control'].includes(row['rowKind']) || typeof row['namespaceKey'] !== 'string' || !/^[a-f0-9]{64}$/.test(row['namespaceKey']) || typeof row['scopeEpoch'] !== 'string' || !row['scopeEpoch'].length || Buffer.byteLength(row['scopeEpoch']) > 512) unavailable();
         if (!row['rowId'].startsWith(row['rowKind'] + ':')) unavailable();
         let predicate: string; try { predicate = rowIdPredicate(row['rowId']); } catch { unavailable(); }
         if (await table.countRows(predicate) !== 1) unavailable();
+        const payloadBytes = Number(row['payloadBytes']);
+        if (!Number.isSafeInteger(payloadBytes) || payloadBytes < 1 || payloadBytes > STORE_LIMITS.maxBytes) unavailable();
+        // Every scalar used by eligibility filters must agree with its payload
+        // before trusting the open version. Otherwise corrupt status/namespace
+        // columns could hide memory or protection before a targeted decode.
+        const stored = await table.query().where(predicate).limit(2).toArray();
+        if (stored.length !== 1 || this.#decodeNative(stored[0]).rowKind !== row['rowKind']) unavailable();
         if (row['generation'] !== null && (!decimal(row['generation']) || BigInt(row['generation']) > BigInt(root.generation))) unavailable();
         if (row['rowKind'] === 'receipt') {
           if (!decimal(row['generation']) || row['generation'] === '0' || typeof row['identityDigest'] !== 'string' || !/^[a-f0-9]{64}$/.test(row['identityDigest'])) unavailable();
           if (await table.countRows("rowKind = 'receipt' AND generation = '" + row['generation'] + "'") !== 1 || await table.countRows("rowKind = 'receipt' AND identityDigest = '" + row['identityDigest'] + "'") !== 1) unavailable();
-          // Validate payload against all lookup columns before trusting the open
-          // version baseline. A corrupt filter column must not hide old proof.
-          const stored = await table.query().where(predicate).limit(2).toArray();
-          if (stored.length !== 1 || this.#decodeNative(stored[0]).rowKind !== 'receipt') unavailable();
           receipts++;
         }
         if (row['operationId'] !== null) {
@@ -267,10 +305,16 @@ export class OwnedLanceStore {
     if (this.#closing) return Promise.reject(new MemoryError('NOT_READY', 'Memory store is closing.'));
     return this.#writer.commit(plan);
   }
-  stopAdmission(): void { this.#writer.stopAdmission(); }
+  stopAdmission(): void { this.#writer.stopAdmission(); this.#reads.stopAdmission(); }
   pendingWrites(): number { return this.#writer.pending(); }
   drainWrites(): Promise<void> { return this.#writer.drain(); }
   receiptVerifier(): ReceiptVerifier { return this.#receipts; }
+  snapshot(scope: Scope): Promise<CommittedSnapshot> { return this.#reads.snapshot(scope); }
+  currentProjection(scope: Scope, snapshot: CommittedSnapshot): Promise<CurrentProjection> { return this.#reads.current(scope, snapshot); }
+  async current(scope: Scope, snapshot: CommittedSnapshot): Promise<readonly MemoryView[]> { return (await this.currentProjection(scope, snapshot)).items; }
+  releaseSnapshot(snapshot: CommittedSnapshot): Promise<void> { return this.#reads.release(snapshot); }
+  prepareEmbeddingQuery(input: unknown, snapshot: CommittedSnapshot) { return this.#reads.prepareQuery(input, snapshot, this.#maxEventBytes); }
+  pendingReadLeases(): number { return this.#reads.pending(); }
   async validateFrameEligibility(input: unknown): Promise<FrameEligibility> {
     try {
       if (this.#closing || !this.#writer.accepting()) unavailable();
@@ -290,7 +334,8 @@ export class OwnedLanceStore {
   }
   close(): Promise<void> {
     this.#closing ??= (async () => {
-      this.#writer.stopAdmission(); await this.#writer.drain();
+      this.stopAdmission(); await this.#reads.drain(); await this.#writer.drain();
+      for (const reader of this.#resources.readers) await reader.close();
       if (!await closeResources(this.#resources, this.#hooks)) throw new UnverifiedCleanup();
       activeOwners.delete(this.#owner);
     })();

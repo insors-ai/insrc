@@ -82,7 +82,7 @@ nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', asy
   for (const module of ['types', 'shape', 'codec', 'io', 'checkpoint', 'index-record', 'recovery', 'receipts', 'retirement', 'file-queue', 'admission']) {
     assert.ok(files.includes('dist/queue/' + module + '.js')); assert.ok(files.includes('dist/queue/' + module + '.d.ts'));
   }
-  for (const module of ['types', 'codec', 'embedding-profile', 'format', 'lance-store', 'plan', 'guards', 'writer', 'receipts', 'barriers']) {
+  for (const module of ['types', 'codec', 'embedding-profile', 'format', 'lance-store', 'plan', 'guards', 'writer', 'receipts', 'barriers', 'reads', 'native-reads']) {
     assert.ok(files.includes('dist/store/' + module + '.js')); assert.ok(files.includes('dist/store/' + module + '.d.ts'));
   }
   const manifest = JSON.parse(await readFile(join(dir, 'node_modules/@insrc/project-memory/package.json'), 'utf8'));

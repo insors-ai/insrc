@@ -12,11 +12,36 @@ import { refreshTrackerStatus } from '../workflow/tracker/sync.js';
 import type { SyncResult } from '../workflow/tracker/sync.js';
 import type { RpcHandler } from './server.js';
 
-/** `tracker.sync` {repoPath, epicHash}. */
-export async function handleTrackerSync(params: unknown): Promise<SyncResult | { error: string }> {
+/** What a repository-wide `tracker.sync` answers: how many Epics were refreshed, or why none was or all were not. */
+export type RepoSyncResult =
+	| { readonly status: 'synced';  readonly refreshed: number }
+	| { readonly status: 'skipped'; readonly reason: string }
+	| { readonly status: 'failed';  readonly reason: string };
+
+/** The repositories a repository-wide refresh is running for; a second call for one of them is skipped, not queued. */
+const refreshing = new Set<string>();
+
+async function syncRepository(repoPath: string): Promise<RepoSyncResult> {
+	if (refreshing.has(repoPath)) return { status: 'skipped', reason: 'a refresh of this repository is already running' };
+	refreshing.add(repoPath);
+	try {
+		const report = await refreshTrackerStatus(repoPath);
+		if (report.results.length === 0) return { status: 'skipped', reason: 'nothing to refresh' };
+		const reason = report.warnings.join('; ');
+		if (report.results.some(entry => entry.result.status === 'failed')) return { status: 'failed', reason };
+		if (report.results.some(entry => entry.result.status === 'skipped')) return { status: 'skipped', reason };
+		return { status: 'synced', refreshed: report.results.length };
+	} finally {
+		refreshing.delete(repoPath);
+	}
+}
+
+/** `tracker.sync` {repoPath, epicHash?}: one Epic, or every Epic of the repository when epicHash is left out. */
+export async function handleTrackerSync(params: unknown): Promise<SyncResult | RepoSyncResult | { error: string }> {
 	const p = (params ?? {}) as { repoPath?: unknown; epicHash?: unknown };
 	if (typeof p.repoPath !== 'string' || p.repoPath.length === 0) return { error: 'tracker.sync: `repoPath` is required' };
-	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'tracker.sync: `epicHash` is required' };
+	if (p.epicHash === undefined) return syncRepository(p.repoPath);
+	if (typeof p.epicHash !== 'string' || p.epicHash.length === 0) return { error: 'tracker.sync: `epicHash` must be a non-empty string when given' };
 	const entry = (await refreshTrackerStatus(p.repoPath, { epicHash: p.epicHash })).results[0];
 	return entry?.result ?? { status: 'skipped', reason: 'nothing to refresh' };
 }

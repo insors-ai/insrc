@@ -72,7 +72,7 @@ const RECORDED_STREAM = [
 /** Methods the tables gained after the move: approval, team hand-over, feedback and identity, repo settings and conversion, tracker attach and sync, task code review. */
 const ADDED_RPC = [
 	'approval.answer', 'artifact.feedback.add', 'artifact.feedback.list', 'identity.declare', 'identity.show', 'repo.convert',
-	'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
+	'repo.gitHooks.install', 'repo.gitHooks.status', 'repo.gitHooks.uninstall', 'repo.settings.get', 'repo.settings.set', 'repo.trackerConfig.ensure', 'team.claim', 'team.park', 'team.refresh', 'team.release', 'team.resume', 'team.settle',
 	'tracker.attach', 'tracker.setup', 'tracker.sync', 'tracker.syncComments', 'workflow.approvePipeline',
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
 	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',

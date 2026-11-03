@@ -78,6 +78,8 @@ export type EnsureResult =
 export interface RepoSettingsDeps {
 	/** The registered repo paths, exactly as `repo.add` stored them. */
 	readonly registeredRepos: () => Promise<readonly string[]>;
+	/** Installs or removes the git hooks; when given, setting `gitHooks` drives it and the key is written only if it succeeded. */
+	readonly applyGitHooks?: ((repo: string, enabled: boolean) => Promise<{ ok: true } | { ok: false; error: { message: string } }>) | undefined;
 	readonly configPath?: () => string;
 	readonly readPolicy?: PolicyReader;
 	/** Builds the tracker adapter; only `whoAmI` is ever called. */
@@ -200,6 +202,12 @@ export function createRepoSettingsHandlers(deps: RepoSettingsDeps): RpcHandlers 
 			if (typeof repo !== 'string') return repo;
 			const checked = validateRepoSetting(typeof p.key === 'string' ? p.key : '', p.value);
 			if (!checked.ok) return fail(checked.code, checked.message);
+			if (p.key === 'gitHooks' && deps.applyGitHooks !== undefined) {
+				// the installer sets the key itself once the files match, so the setting never says more than is installed
+				const applied = await deps.applyGitHooks(repo, checked.value === true);
+				if (!applied.ok) return fail('write-failed', applied.error.message);
+				return await payloadFor(repo);
+			}
 			const written = await writeKeys(repo, { [p.key as string]: checked.value }, configPath());
 			const failed = asData(written);
 			if (failed !== null) {

@@ -80,6 +80,7 @@ import { applyConfigWrite } from './config-write.js';
 import { getModelRegistry } from './model-registry.js';
 import { searchConfig, resolveTemplate } from '../config/search.js';
 import * as todosRpc from './todos-rpc.js';
+import { createGitHooks } from './git-hooks-methods.js';
 import { createRepoSettingsHandlers } from './repo-settings.js';
 import { handoffRpcHandlers } from './steps/workflow-step/handoff-rpc.js';
 import { approvalAnswer, approvalSubscribe } from './approval.js';
@@ -306,7 +307,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 	// The request handler maps, built once: the IpcServer serves them over the
 	// socket, and the step handlers call the same functions in-process through
 	// the in-daemon client (Epic c2ba6fa6, Story s11), never over a loopback.
-	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: async () => (await listRepos(db)).map(r => r.path) });
+	const registeredRepoPaths = async () => (await listRepos(db)).map(r => r.path);
+	const gitHooks = createGitHooks({ registeredRepos: registeredRepoPaths });
+	const repoSettingsHandlers = createRepoSettingsHandlers({ registeredRepos: registeredRepoPaths, applyGitHooks: (repo, enabled) => gitHooks.apply(repo, enabled) });
 	/** The registered repositories' paths, read for each file-modifying call (the repo gate refuses a call whose registry cannot be read). */
 	const registeredRepos = deps.registeredRepos ?? (async (): Promise<ReadonlySet<string>> => new Set((await listRepos(db)).map(r => r.path)));
 	let stepCallHandler: StreamHandler | undefined;
@@ -1267,6 +1270,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
 		// ~/.insrc/github.json, so every client edits it through these methods.
 		...repoSettingsHandlers,
+		...gitHooks.handlers,
 
 		// docgen: generate a self-contained HTML document from the code graph
 		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +

@@ -1,0 +1,49 @@
+{
+  "kind": "manual-self-review",
+  "reviewer": "implementation-author/controller",
+  "independent": false,
+  "createdAt": "2026-11-03T08:27:32.046540+00:00",
+  "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
+  "findings": [
+    {
+      "severity": "HIGH",
+      "status": "fixed",
+      "subject": "Authoritative receipt conflicts with retained identity",
+      "regression": "retained-identity-rejects-conflicting-authoritative-receipt",
+      "before": "failed with Missing expected rejection",
+      "after": "passes payload/scope changes in pending/terminal cases"
+    }
+  ],
+  "unresolvedBlockingFindings": 0,
+  "sourceSha256": {
+    "packages/project-memory/benchmarks/queue-cost.mjs": "633ff43c62b1ee77c06bcd89097401c43f2d978f67612429e4c4654020bcdc23",
+    "packages/project-memory/src/__tests__/queue-retirement.test.ts": "9961e0d4af24436984d7ce7b1ef5d853b14a142c927d219217f3e46c9b6f9efa",
+    "packages/project-memory/src/configuration.ts": "c9648b79eb9ef2721a069373b8381a7e4418ec35a163c92bfe1e0f4bdde83a26",
+    "packages/project-memory/src/errors.ts": "4ef853da3c18fc4db41a4b304948a9340b694a42b14ed62c1e746a9032a8147e",
+    "packages/project-memory/src/host-node.ts": "7f6bb7888a5100e24c0360e47769a257fb8f4b625d3699ba0d1f6614ed863622",
+    "packages/project-memory/src/index.ts": "4b93dd63f2fbf4619eaa41abb1dd862b4f115e77899e7c9aec9f4a6eaaab19b4",
+    "packages/project-memory/src/model-dispatcher.ts": "9d89796744663b6c8504844f3dd2ae93e3fac53ac202d45d6d09ead35853deaf",
+    "packages/project-memory/src/native.ts": "375bb260295a539f17be429c1562895296a325a4f0961632b4b98ba58b5bb5c1",
+    "packages/project-memory/src/ownership.ts": "82d7ff424fffa5cd2648baef797903412506b059719c2736d4b441b30207e06c",
+    "packages/project-memory/src/private-file.ts": "478d8e394efa5e08f8ffddad2be6fdfb8755f977817a59b20ceb43b41def4d67",
+    "packages/project-memory/src/queue/admission.ts": "64e8c969790bf6eedce7fc28fd84f001228ac10bd107f921867098646e6e7cf3",
+    "packages/project-memory/src/queue/checkpoint.ts": "b518be35f5e2f58c51788acd2a117d1b28841928d06bec5ba95cbf32e0525b56",
+    "packages/project-memory/src/queue/codec.ts": "386cf261abd834c980b37abea183785c06f295e36caa3a579e73aa963573d6b3",
+    "packages/project-memory/src/queue/file-queue.ts": "4c6aaaaba0f37237905705a327476babd10808f83bdf41f0321ddd6a77f60050",
+    "packages/project-memory/src/queue/index-record.ts": "199b90ac36b3d0719fab98d51ba429818b17805062cf44400b04ccab951fe891",
+    "packages/project-memory/src/queue/io.ts": "58a7fe9c2c5f55afbf1e4f41dfee0d47afb2532f44f3e833c473e8657a5cd987",
+    "packages/project-memory/src/queue/receipts.ts": "de4d11a4cf29ced5f410103b0340d1eaa72612920cd4abe5a9e02fc4f038c498",
+    "packages/project-memory/src/queue/recovery.ts": "e47ef6fda4ff3cd70c84a599fc56086feb92e319f3ea42024220555066f3745e",
+    "packages/project-memory/src/queue/retirement.ts": "080ee26c70d91256d59c4afa764a3305b8721f05fe731a9a8e72a965a9ebf139",
+    "packages/project-memory/src/queue/shape.ts": "da1a098b4484f2d7ecd6baba917ebe2cf3d3a600771fdecc49bf8df134611b7d",
+    "packages/project-memory/src/queue/types.ts": "6699597b9f011f9d73bd7eeec75da471cf382831dd9d1b449bef7033aace8f31",
+    "packages/project-memory/src/runtime.ts": "6daf69d8aa4e2a187ea897f0a2e9b7424f0cf398cc8998dcec94f2bb51447856",
+    "packages/project-memory/src/types.ts": "30567525504ff5ca9095337f4589797a5ad1d1c51e5b4ad87d6685e0db942b09"
+  },
+  "limits": [
+    "Self-review, no independent-review stamp",
+    "No current clean backend-wide sweep",
+    "No Lance atomicity, semantic-worker or hardware power-loss qualification"
+  ],
+  "configurationChanged": false
+}

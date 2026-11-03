@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -171,7 +171,7 @@ Run at 2026-11-02T08:10:27.157Z on commit `08549be1f`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-02T08:17:35.066Z on commit `6a3cd8936`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T08:20:27.094Z on commit `a0d1fe628`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: sc3-receipt-verifier-proof-and-causal-order-contract**
 
@@ -180,12 +180,14 @@ Run at 2026-11-02T08:17:35.066Z on commit `6a3cd8936`. Tests check: **passed**. 
 | pass | sc3-receipt-verifier-proof-and-causal-order-contract | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
 | pass | invalid-and-nonterminal-proofs-never-resolve-or-delete | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
 | pass | queue-only-mode-cannot-ack-terminal-state | `packages/project-memory/src/__tests__/queue-receipts.test.ts` |
+| pass | retained-identity-rejects-conflicting-authoritative-receipt | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/queue-receipts.test.ts` | 0 | 3 | 1.6 s |  |
+| `packages/project-memory/src/__tests__/queue-receipts.test.ts` | 0 | 3 | 1.5 s |  |
+| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 6 | 4.7 s |  |
 
 ## t9
 
@@ -309,7 +311,7 @@ Run at 2026-11-02T11:51:06.132Z on commit `8e9b2be7d`. Tests check: **passed**. 
 
 ## t14
 
-Run at 2026-11-02T11:08:20.448Z on commit `522ed6083`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-03T08:28:52.463Z on commit `74dd4e383`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **smoke: packed-external-submit-crash-reopen-and-operation**
 
@@ -328,11 +330,11 @@ Run at 2026-11-02T11:08:20.448Z on commit `522ed6083`. Tests check: **passed**. 
 
 **smoke: package-suite-root-build-and-current-source-ci-evidence**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: S002/evidence/backend/local-validation.json and backend/full-sweep.json: root build passed and local project-memory 62/62 passed, 55 real SIGKILL boundaries. Full Linux Node22/ext4 CI https://github.com/insors-ai/insrc/actions/runs/41430621597 succeeded at 2befc2d (current package source unchanged): native 14, packed 4, queue 44 passed, no skips; archived evidence/linux. Backend full sweep completed 7337 cases: 7179 pass,18 fail,2 cancelled,135 skipped,3 todo, and parallel S8 advanced HEAD during run; explicitly NOT a clean fixed-revision backend qualification. Unrelated backend failures recorded separately; no off-ledger production fixes.
+Reported by the builder, not run by the gate: **pass**. Evidence: S002/evidence/backend/local-validation.json, root-build.log and SELF-REVIEW.md: source0f4ee7724 full local memory suite63/63; Linux full CI https://github.com/insors-ai/insrc/actions/runs/41602463831 passed14 lifecycle+4 packed+45 queue, no skips,55 actual SIGKILL boundaries on each platform. Current-source Mac/Linux/performance proof tests3/3 pass; benchmark rerun and root build pass. Prior backend full-sweep.json remains separately disclosed with18 failures,2 cancellations and source-change caveat; no clean current backend-wide pass is claimed.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/contracts.test.ts` | 0 | 2 | 1.6 s |  |
-| `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 4 | 18.4 s |  |
+| `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 4 | 19.3 s |  |

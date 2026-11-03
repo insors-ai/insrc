@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-02T11:51:06.132Z",
+    "updatedAt": "2026-11-03T08:28:52.463Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -464,8 +464,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "6a3cd8936",
-        "ranAt": "2026-11-02T08:17:35.066Z",
+        "commit": "a0d1fe628",
+        "ranAt": "2026-11-03T08:20:27.094Z",
         "testsPassed": true,
         "tests": [
           {
@@ -487,6 +487,11 @@
                 "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
                 "title": "queue-only-mode-cannot-ack-terminal-state",
                 "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
               }
             ],
             "files": []
@@ -497,7 +502,7 @@
             "file": "packages/project-memory/src/__tests__/queue-receipts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1615,
+            "durationMs": 1502,
             "titles": [
               {
                 "title": "sc3-receipt-verifier-proof-and-causal-order-contract",
@@ -509,6 +514,39 @@
               },
               {
                 "title": "queue-only-mode-cannot-ack-terminal-state",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4684,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
                 "result": "pass"
               }
             ],
@@ -922,8 +960,8 @@
       },
       {
         "taskId": "t14",
-        "commit": "522ed6083",
-        "ranAt": "2026-11-02T11:08:20.448Z",
+        "commit": "74dd4e383",
+        "ranAt": "2026-11-03T08:28:52.463Z",
         "testsPassed": true,
         "tests": [
           {
@@ -975,7 +1013,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "S002/evidence/backend/local-validation.json and backend/full-sweep.json: root build passed and local project-memory 62/62 passed, 55 real SIGKILL boundaries. Full Linux Node22/ext4 CI https://github.com/insors-ai/insrc/actions/runs/41430621597 succeeded at 2befc2d (current package source unchanged): native 14, packed 4, queue 44 passed, no skips; archived evidence/linux. Backend full sweep completed 7337 cases: 7179 pass,18 fail,2 cancelled,135 skipped,3 todo, and parallel S8 advanced HEAD during run; explicitly NOT a clean fixed-revision backend qualification. Unrelated backend failures recorded separately; no off-ledger production fixes."
+              "evidence": "S002/evidence/backend/local-validation.json, root-build.log and SELF-REVIEW.md: source0f4ee7724 full local memory suite63/63; Linux full CI https://github.com/insors-ai/insrc/actions/runs/41602463831 passed14 lifecycle+4 packed+45 queue, no skips,55 actual SIGKILL boundaries on each platform. Current-source Mac/Linux/performance proof tests3/3 pass; benchmark rerun and root build pass. Prior backend full-sweep.json remains separately disclosed with18 failures,2 cancellations and source-change caveat; no clean current backend-wide pass is claimed."
             }
           }
         ],
@@ -984,7 +1022,7 @@
             "file": "packages/project-memory/src/__tests__/contracts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1622,
+            "durationMs": 1570,
             "titles": [
               {
                 "title": "public-v1-types-and-emitted-boundary",
@@ -1001,7 +1039,7 @@
             "file": "packages/project-memory/src/__tests__/packed.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18368,
+            "durationMs": 19277,
             "titles": [
               {
                 "title": "packed-isolated-node22-consumer",

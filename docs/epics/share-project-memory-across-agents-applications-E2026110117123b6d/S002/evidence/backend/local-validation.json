@@ -1,10 +1,10 @@
 {
-  "capturedAt": "2026-11-02T11:42:32.605624+00:00",
-  "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99",
+  "capturedAt": "2026-11-03T08:25:47.854403+00:00",
+  "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
   "rootBuild": "pass",
   "memoryPackage": {
-    "tests": 62,
-    "pass": 62,
+    "tests": 63,
+    "pass": 63,
     "fail": 0,
     "skip": 0,
     "actualSigkillScenarios": 55
@@ -65,14 +65,14 @@
   },
   "linuxQualification": {
     "status": "pass",
-    "run": "https://github.com/insors-ai/insrc/actions/runs/41438637297",
-    "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99",
-    "tests": 62,
-    "pass": 62,
+    "run": "https://github.com/insors-ai/insrc/actions/runs/41602463831",
+    "sourceCommit": "0f4ee7724215c3661e2193d761338c290a1b99e9",
+    "tests": 63,
+    "pass": 63,
     "fail": 0,
     "skipped": 0,
     "actualSigkillScenarios": 55,
-    "note": "Full job on separate validation branch after maintainability refactor; native 14, packed 4, queue 44 all pass. No main push."
+    "note": "Full job on separate validation branch after the receipt-consistency self-review fix; native 14, packed 4, queue 45 all pass. No main push."
   },
   "refactorValidation": {
     "relevantTests": 16,
@@ -81,6 +81,17 @@
     "fail": 0,
     "skipped": 0,
     "rootBuildLog": "root-build.log",
-    "note": "First sandboxed package attempt failed only npm cache EPERM; permitted full rerun passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim."
+    "note": "First sandboxed package attempt failed only npm cache EPERM; permitted full rerun passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim.",
+    "historical": true,
+    "sourceCommit": "2688289f7562b99be0e55f411bb591b61ef81c99"
+  },
+  "manualReviewValidation": {
+    "relevantTests": 11,
+    "packageTests": 63,
+    "pass": 63,
+    "fail": 0,
+    "skipped": 0,
+    "rootBuildLog": "root-build.log",
+    "note": "Failing-before/passing-after regression proves retained receipt conflict protection; full permitted package run passed. The backend sweep remains the prior recorded result; no new clean backend-wide claim."
   }
 }

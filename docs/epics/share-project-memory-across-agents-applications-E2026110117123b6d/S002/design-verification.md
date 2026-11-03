@@ -31,12 +31,12 @@ Measured on Apple M3 Pro, Node 22.23.2, APFS/macOS. Full data and runtime-source
 
 | Profile | Result | p50 ms | p95 ms | Fresh-process recovery ms |
 | --- | --- | ---: | ---: | ---: |
-| empty 1024 bytes | accepted; 20 samples | 18.77 | 21.71 | 17.62 |
-| empty 65536 bytes | accepted; 20 samples | 21.02 | 23.80 | 21.16 |
-| empty 1048576 bytes | accepted; 20 samples | 42.67 | 44.86 | 50.30 |
-| backlog-1k | accepted; 20 samples | 29.80 | 34.00 | 179.21 |
-| metadata-cap | rejected at 16,351-frame metadata cap | 0.07 | 0.09 | 1107.47 |
-| 16MiB-safety | accepted in 348.76 ms; one-byte excess rejected | — | — | 408.96 |
+| empty 1024 bytes | accepted; 20 samples | 20.73 | 24.04 | 17.87 |
+| empty 65536 bytes | accepted; 20 samples | 21.57 | 24.16 | 24.18 |
+| empty 1048576 bytes | accepted; 20 samples | 41.42 | 49.86 | 50.26 |
+| backlog-1k | accepted; 20 samples | 29.96 | 31.94 | 112.71 |
+| metadata-cap | rejected at 16,351-frame metadata cap | 0.07 | 0.09 | 1082.33 |
+| 16MiB-safety | accepted in 347.87 ms; one-byte excess rejected | — | — | 399.60 |
 
 Durability steps remain enabled. Backlog fixtures are constructed by a private measurement helper and fully validated by production recovery; fixture construction is not reported as ingestion latency. Recovery starts a new Node process with the OS file cache warm. Physical segment/control bytes, active/durable counters and RSS/heap snapshots are recorded; snapshots are lower bounds on peaks. Semantic commit is unimplemented, and these results do not qualify Lance atomicity or hardware power-loss durability.
 

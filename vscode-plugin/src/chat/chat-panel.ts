@@ -691,7 +691,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const reevaluateChatStatus = (s: ChatSession): void => {
     if (unresolvedRequests()) setChatStatus(s, 'waiting-input');
     else if (turns.busy()) setChatStatus(s, 'working');
-    else setChatStatus(s, 'done');
+    // E202611031bd72813:S001 t2: done is reserved for observed completion — a session whose turn
+    // is still unfinished (liveTurn cursor kept, e.g. after an observation failure) keeps its last
+    // known active status instead of being marked done.
+    else if (s.liveTurn === undefined) setChatStatus(s, 'done');
   };
 
   const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {

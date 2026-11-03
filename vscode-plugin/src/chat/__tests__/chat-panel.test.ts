@@ -5601,6 +5601,37 @@ test('E202611031bd72813:S001 t2: mid-turn approval-request -> waiting-input; ter
   await waitFor(() => store.get(id)?.status === 'done', 5000); // resolving the last request after terminal -> done
 });
 
+test('E202611031bd72813:S001 t2: resolving the last request while the turn is still unfinished (liveTurn kept, e.g. after observation failure) does NOT mark done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'd', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 's1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { gateBeforeDone: gate }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  // simulate an unfinished turn (cursor kept after an observation failure)
+  const cur = store.get(id)!;
+  cur.liveTurn = { cursor: { turnId: 't1', generation: 1, offset: 10 }, ownerHostPid: process.pid };
+  store.save(cur);
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 300));
+  assert.notEqual(store.get(id)?.status, 'done', 'unfinished turn: keeps last known status, never done');
+  assert.equal(store.get(id)?.status, 'waiting-input');
+});
+
 test('E202611031bd72813:S001 t2: an error terminal is a failure exit -> done', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();

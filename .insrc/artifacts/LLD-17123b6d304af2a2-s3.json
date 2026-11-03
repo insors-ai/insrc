@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "design.story",
-    "runId": "wf-1793696992461-871ily",
+    "runId": "wf-1793698968830-k9qf4e",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-03T09:13:18.879Z",
+    "createdAt": "2026-11-03T09:48:01.977Z",
     "attribution": {
       "outputs": [
         {
@@ -14,7 +14,7 @@
         }
       ]
     },
-    "elapsedMs": 206370,
+    "elapsedMs": 313115,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
@@ -548,6 +548,45 @@
           "packages/project-memory/src/types.ts",
           "packages/project-memory/src/queue/types.ts"
         ]
+      },
+      {
+        "entity": "PersistedPayloadV1",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/types.ts",
+          "packages/project-memory/src/queue/types.ts"
+        ],
+        "details": "Normative private storage schema for S3; public v1 types do not change. Each physical row has exactly one discriminated payload below. Codec rejects unknown fields, unknown enums, missing required fields, unsafe numbers, duplicate set members, envelope/payload disagreements and unresolved references. Optional values are explicit null in canonical JSON, not undefined. All IDs are bounded nonempty strings (at most512 UTF-8 bytes), hashes are lowercase SHA256 hex64; generation/revision counters are canonical uint64 decimal strings. Text is nonempty and all strings/arrays remain within the existing canonical depth/node and batch byte/row limits; no silent truncation. Times are safe integer epoch milliseconds, createdAt<=updatedAt and validity is [validFrom,validUntil), with either bound null. IDs of all referenced domain rows include their namespace/epoch. A row cannot reference another namespace even when project IDs match. The tuple source identity is the admitted S2 identity; store derives attribution only from the policy-admitted QueueFrame. S4 chooses assertion meaning/authority classification, S3 validates these storage shapes and trusted provenance.\n\nCommon definitions: Lifecycle = candidate|active|conflicted|superseded|expired|deleted; Kind = directive|fact|decision|progress|lesson; ProcessingVersion = {processor:string, normalizer:string|null, prompt:string|null, schema:1}, with all version strings bounded/nonempty when present. Normalizer/prompt may be null only for deterministic non-LLM operations; capture/correct/resolve that emit memory revisions require both. Authority = {origin:user|host-policy|artifact|assistant|tool|document, sourceIds:string[], policyVersion:string}; sourceIds must name admitted source rows backing the claimed origin and policyVersion is admitted metadata, never inferred from confidence. Assertion = {subject:string, category:string, predicate:string, value:Json, polarity:positive|negative, conditions:Json[]}; value/conditions are bounded canonical structured data supplied by S4, whose domain interpretation is versioned, not arbitrary envelope keys. No scalar authority score is a privilege grant. Source references in memory are derived from Evidence, not independent mutable counters.\n\nCurrent payload = {schemaVersion:1, memoryId:string, kind:Kind, assertion:Assertion, text:string, scope:Scope, authority:Authority, status:Lifecycle, revisionId:string, createdAt:number, updatedAt:number, validFrom:number|null, validUntil:number|null, sourceIds:string[], relatedMemoryIds:string[], supersedesMemoryId:string|null}. Revision payload = {schemaVersion:1, revisionId:string, memoryId:string, predecessorRevisionId:string|null, mutationReason:{code:create|evidence-added|correct|conflict|resolve|supersede|expire|forget, explanation:string}, sourceEvent:{operationId:string, identityDigest:string, payloadHash:string}, processingVersion:ProcessingVersion, committedGeneration:string, createdAt:number, snapshot:CurrentPayload}. The revision snapshot must equal its corresponding new current payload; first revision predecessor is null, later predecessor is exactly the guarded previous revision. History rows are immutable; duplicate existing revision IDs must be byte-identical or fail. Text/assertion/authority/related IDs and sources in a revision are complete values, never partial patches. Revision counters are not used as revision identity.\n\nSource payload = {schemaVersion:1, sourceId:string, identity:{producerId:string,eventId:string,sessionId:string,turnId:string,sourceVersion:string}, operationId:string, contentHash:string, attribution:{origin:Authority.origin, policyVersion:string}, span:{unit:utf8-byte|line, start:number, end:number}, location:{kind:admitted-excerpt, text:string}|{kind:durable-reference, reference:string}, occurredAt:number, admittedAt:number, validFrom:number|null, validUntil:number|null}. Span bounds are safe integers with 0<=start<end; excerpt spans fit the admitted UTF-8 content; durable references are inert locators, never fetched by S3. ContentHash/attribution/time are checked against admitted provenance; source records are immutable. Evidence payload = {schemaVersion:1, evidenceId:string, memoryId:string, revisionId:string, sourceId:string, sourceContentHash:string, relation:supports|contradicts, createdByOperationId:string}. Each Evidence references exactly one matching revision and one source; each revision and each source can have zero or many Evidence rows. Key is deterministic over qualified revision/source/relation, so reprocessing an occurrence cannot multiply support. Every sourceId on a current/revision/authority must be represented in its Evidence set; each Evidence's sourceContentHash must equal the referenced Source. Authority sources must be a subset of the revision's provenance. Lifecycle-only revisions carry new Evidence rows for the carried sources; no implicit history reference suppresses eligibility validation.\n\nReceipt payload = {schemaVersion:1, operationId:string, eventId:string, identityDigest:string, payloadHash:string, scope:Scope, scopeEpoch:string, state:committed|failed|quarantined|cleanup-pending, generation:string, queueTerminal:true, affectedRevisions:{memoryId:string, previousRevisionId:string|null, revisionId:string}[], sourceIds:string[], tombstoneIds:string[], processingVersion:ProcessingVersion, errorCode:MemoryFailureCode|null, committedAt:number}. Store derives affectedRevisions from exactly the current/revision changes, and sourceIds/tombstoneIds from inserted effects, sorts by qualified ID, rejects duplicates and verifies all in-batch or already-committed dependencies. committed requires errorCode null; failed/quarantined require an error code and no domain effects; cleanup-pending denotes successful logical forgetting/maintenance with tombstones, not native uncertainty. New captures never claim cleanup-pending. The public OperationReceipt is a minimal projection; no authority/provenance/payload leaks. Terminal receipt is immutable and survives later revisions/deletion; affectedRevisions are historical references, not a requirement that their content remain recallable. Accepted/processing are queue/runtime states, never fabricated terminal storage receipts.\n\nTombstone payload = {schemaVersion:1, tombstoneId:string, selector:{kind:memory, memoryId:string}|{kind:source, sourceId:string}|{kind:subject, subjectKeyHash:string}, namespaceKey:string, scopeEpoch:string, invalidFromGeneration:string, createdByOperationId:string, createdAt:number}. Exactly one selector; store derives the subject hash using the versioned canonical subject/category tuple and qualifies it by the authorized namespace. No forgotten text, reason prose or raw assertion is persisted in the marker. Markers are monotone/immutable. Subject markers cover that authorized namespace subtree without broadening scope. A different lifecycle must have a different qualified identifier and explicit admitted authority; delayed events cannot recreate a tombstoned identity.\n\nControl payload is a strict union: root = {schemaVersion:1, kind:root, storeId:string, generation:string, embeddingModel:string, embeddingDimension:number, createdAt:number}; namespace = {schemaVersion:1, kind:namespace, namespaceKey:string, scope:Scope, scopeEpoch:string, createdAt:number}. Root has one deterministic row ID; namespace identity is immutable and a changed host epoch creates a different namespace, never rewrites prior authorization. Only store-generated control/receipts are accepted. Delivery payload has no v1 accepted schema in S3: reads/writes of delivery domain data return NOT_READY until S8. Unsupported schemaVersion returns UNSUPPORTED_VERSION without mutation. The initialization marker contains only {format:insrc-project-memory-store, version:1, storeId:string, embeddingModel:string, embeddingDimension:number, state:initializing|ready}; the database control is the sole generation authority. [c1,c3,c5,c14]"
+      },
+      {
+        "entity": "LifecycleTransitionV1",
+        "change": "new",
+        "callSites": [
+          "packages/project-memory/src/types.ts",
+          "packages/project-memory/src/queue/types.ts"
+        ],
+        "details": "Allowed current-memory transitions are explicit. Absent->candidate or active only with create reason and an admitted capture/correct/resolve event, source provenance and no matching tombstone; the first revision predecessor is null. candidate->candidate/active/conflicted/superseded/expired/deleted; active->active/conflicted/superseded/expired/deleted; conflicted->conflicted/active/superseded/expired/deleted. The terminal statuses superseded/expired/deleted never return to an eligible status under the same memory lifecycle; deleted has a matching monotone tombstone. An unchanged terminal row is permitted only as an exact no-op replay, never a new material revision. Every material transition including active->active produces an immutable revision and advances the current pointer atomically. Reasons are checked: create only on absent; evidence-added preserves assertion/text/authority/status except derived source set; correct requires kind correct and an eligible prior target plus revision guard; conflict sets conflicted; resolve requires kind resolve and candidate/conflicted target; supersede sets superseded and has a valid acyclic replacement link; expire sets expired only at/past validUntil; forget sets deleted and publishes target/source/subject tombstone. A forget may cover multiple eligible states; already terminal content can receive a tombstone without rewriting its immutable history. A no-op exact receipt retry bypasses new transition guards, not tombstone visibility. Scope/authority may never be promoted implicitly; changed lifecycle/scope requires a separately admitted new identity. Expiry eligibility is time-based immediately even before a maintenance event materializes expired status. Malformed transition rejects before mutation; S4 supplies the chosen semantic action and S9 supplies future maintenance commands through the same private writer. [c1,c3,c5,c14]"
+      },
+      {
+        "entity": "OwnedStoreWorkAndStartupRollback",
+        "change": "invariant-change",
+        "callSites": [
+          "packages/project-memory/src/host-node.ts",
+          "packages/project-memory/src/runtime.ts",
+          "packages/project-memory/src/queue/file-queue.ts"
+        ],
+        "details": "Add a private StoreOwnedWork adapter in proposed packages/project-memory/src/store/lifecycle.ts implementing existing runtime OwnedWork without changing public MemoryStore. host-node.ts composes [queue, storeOwnedWork], in that dependency order. stopAdmission(): synchronous/idempotent; reject new commit/snapshot/current requests, stop lease creation and signal cancellation to active facade reads; already admitted native writes and receipt-proof operations remain tracked until actual settlement. Queue-facing ReceiptVerifier remains callable during queue drain/close so a held queue lane can complete; stopping store mutation admission never makes receipt reads falsely absent. pending(): count queued/active writes, in-flight receipt/native reads and unreleased reader leases once each; never report zero while native work or close is unverified. drain(): wait writer-tail and all admitted reads; promptly release idle leases, await active queries before closing their handles, and enforce lease deadlines; no new commits, queue callback or owner release. close(): after queue.close, stop new receipt proof admission, wait any proof already started, close all remaining read/table/connection handles exactly once. Reject STORE_UNAVAILABLE on any uncertain settlement; do not release S1 ownership. A drain timeout is only a caller deadline and never authorizes closing/releasing an in-flight writer.\n\nExisting runtime.ts already stops all participants, drains them serially, waits models and closes in array order while retaining ownership on failures. Preserve that order: stop queue ingress -> stop new store mutations/leases -> queue drain (proofs still available) -> store drain -> models idle -> queue.close (may seal) -> store.close -> owner.close. Model ports remain host-owned. No runtime algorithm change is currently required; constructor composition/comments and lifecycle tests must explicitly cover two participants and failure paths. Store adapter depends only on OwnedWork type; never import backend runtime. The same package runtime remains valid for S1/S2 tests.\n\nhost-node.ts must retain both partial queue and store handles from the moment each is created. On failure before queue allocation: stop/drain/close the partial store. On queue construction/start/recovery or later composition failure: stop queue admission and store mutation admission, attempt queue drain/close while store proof facade is alive, then drain/close the store even if queue cleanup failed. Only release owner if every allocated participant cleanup is verified; preserve original typed initialization error when cleanup succeeds, otherwise return STORE_UNAVAILABLE and retain guard. Store open must expose partial-resource rollback internally: dynamic load/connect/open/metadata failures close every created handle before rejecting, or report unverified cleanup to host so owner cannot be released. No store object may be lost across a rejecting await with live resources. Add startup fault cases at connect, table/control validation, queue.start and constructor handoff. [c4,c7,c15,c16]"
+      },
+      {
+        "entity": "StandalonePackagingChangeInventory",
+        "change": "invariant-change",
+        "callSites": [
+          "packages/project-memory/package.json",
+          "package-lock.json",
+          "packages/project-memory/src/__tests__/packed.test.ts",
+          "packages/project-memory/src/host-node.ts"
+        ],
+        "details": "S3 changes packages/project-memory/package.json dependencies to the exact set {fs-ext:2.1.1, @lancedb/lancedb:0.40.0, apache-arrow:18.1.0}; regenerate root package-lock.json via the existing npm workspace and commit lock changes including platform native optional packages. Root backend's versions/exports are not rewritten. Existing packed.test.ts tarball-public-dependency-and-asset-allowlist must update its exact dependency assertion to that three-package set, expand only the emitted-path allowlist to dist/store/*.js, .d.ts and corresponding .map files (in addition to existing root/queue outputs), and require each intended store module including lifecycle. Preserve exports exactly ['.','./node']; private store modules may be packaged but have no public subpath export. New tests stay outside dist; no broad recursive file allowlist. Existing packed-isolated-node22-consumer and packed-external-submit-crash-reopen-and-operation continue against pristine S3 roots and recognized S3 reopen. Extend missing-native import/open checks independently for fs-ext and Lance's native binding: pure import stays safe without either, explicit open fails NOT_READY and verifies cleanup. Store SDK loading must remain lazy in host open, not top-level export import. The new packed store smoke exercises actual private store commit/read/receipt through an in-package test helper supplied by the harness, not a new production export; tarball installed in an external temp app has no backend source/node_modules or NODE_PATH. Track native dependency disk size in evidence rather than claim a tiny module. [c1,c17,c18]"
       }
     ],
     "interactionWithShared": [
@@ -577,7 +616,7 @@
         {
           "scenario": "Incomplete/corrupt or absent store under an existing module root",
           "detection": "Recognized S3 marker UUID/schema/embedding metadata fails to match the Lance control row, table is missing/corrupt, or a non-pristine root lacks the complete S3 initialization evidence.",
-          "response": "STORE_UNAVAILABLE/NOT_READY; preserve all native and queue bytes, never create an empty replacement, downgrade receipts to absent, or auto-delete old files. This supersedes the provisional s4 auto-upgrade phrase: existing S2 queue-only roots require explicit S9-owned migration.",
+          "response": "STORE_UNAVAILABLE/NOT_READY; preserve all native and queue bytes, never create an empty replacement, downgrade receipts to absent, or auto-delete old files. Existing S2 queue-only roots require explicit S9-owned migration.",
           "userImpact": "Previously accepted work is preserved, but readiness requires repair/migration.",
           "recoverable": true
         },
@@ -657,6 +696,20 @@
           "response": "UNSUPPORTED_VERSION/NOT_READY without automatic re-embedding, schema change or S8 delivery interpretation. Maintenance/migration is S9-owned.",
           "userImpact": "Explicit upgrade required; existing state preserved.",
           "recoverable": true
+        },
+        {
+          "scenario": "Partial startup or shutdown with queue proof reads and native store work",
+          "detection": "OwnedWork adapter pending/drain/close and startup rollback barriers identify allocated handles, active native tasks, read leases and queue proof calls; failure at any startup handoff or resource release.",
+          "response": "Stop new queue/store mutation admission, preserve store proof reads until queue drain/close; attempt every participant release in queue-then-store order. Owner release requires every cleanup verified. Deadline/cancellation never means native settlement. Return STORE_UNAVAILABLE and retain guard when uncertain.",
+          "userImpact": "Service may remain unavailable, but no competing writer or leaked replay authority is admitted.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid persisted payload/status transition or missing lineage/outcome fields",
+          "detection": "Strict per-kind schema plus referential/transition guards reject omitted predecessor, mutation reason, source event, processing versions, mismatched affected revisions or illegal terminal transition.",
+          "response": "INVALID_REQUEST/UNSUPPORTED_VERSION before mutation. No raw Json may bypass discriminated validation; exact immutable retry must match prior bytes/outcome.",
+          "userImpact": "Malformed processing result remains pending until an explicit valid disposition; history is not partially published.",
+          "recoverable": true
         }
       ],
       "edgeCases": [
@@ -687,6 +740,10 @@
         {
           "input": "Read/commit limit, integer generation/version exhaustion or ignored native cancellation",
           "expected": "Explicit typed failure before overflow/mutation where possible; do not wrap counters or release the sole writer early. Measure logical and native resource use separately."
+        },
+        {
+          "input": "Attempted memory reset or overlapping memory/index/queue cleanup path",
+          "expected": "S3 has no reset endpoint; non-destructive internal path preflight rejects unsafe targets. Real memory cleanup and cross-host index guards are S9/S7 support gates; coverage stays explicitly pending until those operations exist and pass the full bidirectional isolation oracle."
         }
       ],
       "invariantsToPreserve": [
@@ -729,12 +786,15 @@
           "subjects": [
             "store-row-codec-and-effect-reservations",
             "store-scope-epoch-predicate-escaping",
-            "store-revision-tombstone-reference-guards"
+            "store-revision-tombstone-reference-guards",
+            "store-persisted-payload-v1-required-fields",
+            "store-lifecycle-transition-matrix"
           ],
           "fixturesNeeded": [
             "Canonical -0/Unicode/unsafe getters/depth/byte cases",
             "Duplicate IDs/reserved kinds, qualifier injection strings, changed epoch/model/vector dimension",
-            "Valid current/revision/source/evidence/failure disposition fixtures with exact before/after expectations"
+            "Valid current/revision/source/evidence/failure disposition fixtures with exact before/after expectations",
+            "Every row-kind strict schema: omit/tamper each required field, unknown field/version/enum, invalid predecessor/reason/normalizer/prompt/schema/affected-revision lists and mismatched envelope; assert exact INVALID_REQUEST/UNSUPPORTED_VERSION before native mutation. Exhaustive allowed/forbidden status-transition table, immutable history, source/evidence many-to-many and exact replay preserving original receipt."
           ]
         },
         {
@@ -762,14 +822,20 @@
             "store-directory-separation-and-no-empty-replacement",
             "store-no-lane-inversion-drain-ownership",
             "store-native-uncertain-writes-fence",
-            "store-commit-kill-before-after-receipt-ack"
+            "store-commit-kill-before-after-receipt-ack",
+            "store-owned-work-two-participant-shutdown",
+            "store-startup-rollback-every-open-boundary",
+            "store-index-reset-rebuild-preserves-memory",
+            "store-cleanup-target-overlap-refusal"
           ],
           "fixturesNeeded": [
             "New temp APFS/ext4 owned module directory and independent index sentinel directory",
             "Concurrent calls to one writer plus independent read handles (never independent native writers)",
             "Observable child barriers before execute/after native commit/before reply/before queue ACK/during recovery; require SIGKILL signal and parent-observed receipts",
             "Failure injection around native calls plus real process crashes; distinguish simulated failure from platform durability evidence",
-            "Failing plan and proof tampering without changing trusted host policy"
+            "Failing plan and proof tampering without changing trusted host policy",
+            "Two-participant runtime fixture uses the actual EmbeddedMemoryService with [queue,storeOwnedWork]. Hold a queue proof lookup and a real native commit/query barrier during drain; verify new commits/snapshots rejected, existing proof settles, no queue/store lane inversion, no false pending zero, deadline does not release ownership, and actual order queue.close -> store.close -> owner.close. Fail each participant's close, still attempt the other close and retain OS guard.",
+            "Startup fault matrix after SDK load/connect/table open/control validation, queue allocation/start/recovery and service handoff. Assert every allocated handle is closed or ownership remains held, proof facade stays alive until queue rollback ends, store-open rejection cannot leak an untracked handle, and a second process cannot acquire while cleanup is uncertain."
           ]
         },
         {
@@ -778,13 +844,32 @@
           "subjects": [
             "store-standalone-packed-node22-consumer",
             "store-macos-apfs-linux-ext4-qualification",
-            "store-resource-and-latency-study"
+            "store-resource-and-latency-study",
+            "store-existing-packed-allowlists-and-native-absence"
           ],
           "fixturesNeeded": [
             "npm-pack tarball installed in a minimal external app with no backend source, daemon or index DB",
             "macOS/arm64 APFS and Linux/x64 ext4 Node22 with exact dependency/lockfile/source fingerprints",
             "Named hardware/corpus: empty,1k/10k current records,large history/tombstones,4096 effect rows,64MiB safety edge,16 read leases and eligibility overflow; record p50/p95 commit/current/open, physical store/control bytes, observed native/JS RSS and heap",
-            "No production default/latency or hardware power-loss claim from this study"
+            "No production default/latency or hardware power-loss claim from this study",
+            "Run all existing packed.test.ts subjects after updating the narrow dist/store emitted-file allowlist and exact fs-ext/Lance/Arrow dependency assertion. Independently remove fs-ext and the installed platform Lance native binding: pure imports succeed, open fails NOT_READY, cleanup/ownership are verified; original public export set is unchanged. Native package files, licenses, dependency footprint and isolated Node22 consumer proof are recorded."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "AC29/ac3 isolation scenario matrix with explicit S3 evidence and supporting-story completion gates; no new reset API.",
+          "subjects": [
+            "store-index-reset-rebuild-preserves-memory",
+            "store-memory-cleanup-preserves-index-and-queue",
+            "store-cleanup-target-overlap-refusal"
+          ],
+          "fixturesNeeded": [
+            "Common oracle: two independently owned temporary databases at canonical sibling paths, a real S3 committed memory/revision/source/receipt/tombstone set and one real accepted unacknowledged S2 queue frame. Record logical row IDs/payload digests/generation/receipt proofs and exact pending-frame identity/hash/bytes; record unrelated graph/vector entities in a temporary index. Reopen both sides after every operation; compare logical data, not mutable Lance directory mtimes.",
+            "S3/backend test-only harness exercises the existing Indexer full rebuild path (which deletes repository entities via deleteEntitiesForRepo) against a tiny registered temporary repository and isolated test storage. Assert committed memory generation/content/deletion guards/proofs and pending frame digest/accepted status survive, while expected index rows are rebuilt. Also exercise the existing isolated index-store reset/removal helper where available, then rebuild/reopen and repeat the memory/queue oracle. Never import backend storage into the standalone package runtime, and never touch the user's live index. A sentinel alone is insufficient.",
+            "Memory-side S3 owns qualified path authority and store reopen/refusal, not memory reset/physical purge. S3 tests exercise a private, non-destructive cleanup-target preflight with memory.lance as candidate; root, queue, parent/child overlap, symlink aliases, changed inode and unknown/foreign paths reject before any unlink. Canonical absolute target must be strictly inside the owned root, equal to the owned memory.lance database, and disjoint in both containment directions from root metadata and queue files. Control/receipt guards still forbid actually deleting memory.lance as an S3 operation. This private preflight is not a public reset endpoint or permission to erase replay protection.",
+            "S9 support gate defines the real memory reset/cleanup scenario: use only its approved queued maintenance path, preserve/recreate required receipt/tombstone replay barriers atomically, retain the admitted pending event, verify unrelated index graph/vector contents unchanged, and reopen/replay without duplicate effects. Run with committed content plus history, receipts and pending work. Until S9 implements and passes this scenario, full AC29 is explicitly pending; S3 must not report reset/physical cleanup or full epic AC29 complete.",
+            "Cross-host overlap support gate (S1/S7 host binding): actual index directory may not be known to standalone MemoryOptions. Backend host must reject equal, ancestor, descendant and symlink-equivalent memory/index/queue cleanup roots before open/destruction, then recheck canonical identity before cleanup. S3 proves internal memory/queue separation and exposes no index deletion operation; S7 tests the actual backend guard, and S9 invokes it for cleanup. Document both pending integration gates in S3 completion evidence rather than turn an index sentinel into an AC29 pass.",
+            "Each scenario records platform/source/SDK fingerprints, operation invoked, pre/post logical memory+index state and pending-event receipt/hash. Unsupported future operation is NOT_READY/pending coverage, never a skip counted as a pass. AC3 mapping is complete as a plan; closure evidence must distinguish S3-qualified behavior from S1/S7/S9-dependent AC29 coverage."
           ]
         }
       ],
@@ -816,7 +901,10 @@
           "provingTests": [
             "store-directory-separation-and-no-empty-replacement",
             "store-standalone-packed-node22-consumer",
-            "store-runtime-package-qualification"
+            "store-runtime-package-qualification",
+            "store-index-reset-rebuild-preserves-memory",
+            "store-memory-cleanup-preserves-index-and-queue",
+            "store-cleanup-target-overlap-refusal"
           ]
         }
       ]
@@ -861,7 +949,7 @@
     "openQuestions": [],
     "erDefinition": {
       "id": "memory-s3-store-relationships",
-      "narrative": "Logical relationships live as typed rows in one physical Lance table. The visual separates immutable provenance and replay/deletion protection from the current memory pointer; references never create a second authoritative database.",
+      "narrative": "Typed rows share one physical table. Each Revision and each SourceSpan has zero or many Evidence rows; each Evidence holds exactly one required revisionId and sourceId. Parent-to-child edges are drawn once, and scalar foreign-key fields state exact endpoints without contradictory one-to-one reverse edges. CurrentRevisionId selects one entry from the memory's immutable history. [c1,c14]",
       "classes": {
         "StoreControl": {
           "description": "One root schema/generation control row per owned physical memory database.",
@@ -924,21 +1012,20 @@
               "identifier": true,
               "required": true
             },
-            "currentRevision": {
-              "description": "Exactly one current immutable revision.",
-              "range": "Revision",
-              "required": true
-            },
             "revisions": {
               "description": "Owned immutable revision history.",
               "range": "Revision",
               "multivalued": true,
               "minimum_cardinality": 1
             },
-            "supersedes": {
-              "description": "Optional same-namespace predecessor; validated acyclic.",
-              "range": "CurrentMemory",
-              "required": false
+            "currentRevisionId": {
+              "range": "string",
+              "required": true,
+              "description": "Exactly one current Revision ID; must name a revision in this memory's owned history."
+            },
+            "supersedesMemoryId": {
+              "range": "string",
+              "description": "Optional same-namespace predecessor ID; acyclic. Multiple replacements may reference one historical memory; not a one-to-one relation."
             }
           }
         },
@@ -967,6 +1054,12 @@
               "range": "string",
               "identifier": true,
               "required": true
+            },
+            "evidence": {
+              "range": "Evidence",
+              "multivalued": true,
+              "minimum_cardinality": 0,
+              "description": "A source supports zero or many Evidence rows; each row has exactly one sourceId. Independent of revision ownership."
             }
           }
         },
@@ -979,15 +1072,15 @@
               "identifier": true,
               "required": true
             },
-            "revision": {
-              "description": "Exactly one referenced revision.",
-              "range": "Revision",
-              "required": true
+            "revisionId": {
+              "range": "string",
+              "required": true,
+              "description": "Required foreign key to exactly one same-namespace Revision; validated against Revision.evidence ownership."
             },
-            "source": {
-              "description": "Exactly one referenced source occurrence.",
-              "range": "SourceSpan",
-              "required": true
+            "sourceId": {
+              "range": "string",
+              "required": true,
+              "description": "Required foreign key to exactly one same-namespace SourceSpan; validated against SourceSpan.evidence inverse collection."
             }
           }
         },
@@ -1016,13 +1109,10 @@
               "identifier": true,
               "required": true
             },
-            "memory": {
-              "description": "Optional exact memory target; selector is exclusive with source/subject target.",
-              "range": "CurrentMemory"
-            },
-            "source": {
-              "description": "Optional source target hiding its dependent views.",
-              "range": "SourceSpan"
+            "selector": {
+              "range": "string",
+              "required": true,
+              "description": "Exclusive qualified memory/source/subject selector; many tombstones may protect a lifecycle. Payload union is authoritative."
             }
           }
         }
@@ -1030,7 +1120,7 @@
     },
     "sequenceDefinition": {
       "id": "memory-s3-commit-replay",
-      "narrative": "S3 opens the authoritative store before queue recovery and publishes event effects, receipt and generation in one mutation. Queue acknowledgement follows release of the store lane; pinned reads check freshness before returning.",
+      "narrative": "S3 opens the authoritative store before queue recovery and publishes event effects, receipt and generation in one mutation. Queue acknowledgement follows release of the store lane; pinned reads check freshness before returning. Shutdown stops new mutations but keeps proof reads alive until the queue is drained/closed; partial startup uses the same dependency order.",
       "participants": [
         {
           "id": "host",
@@ -1147,6 +1237,30 @@
           "to": "reader",
           "label": "Authorize return or require retry",
           "description": "No old deleted content passes a final check after deletion completion."
+        },
+        {
+          "from": "host",
+          "to": "queue",
+          "label": "Stop queue admission; drain proof-dependent work",
+          "description": "Service OwnedWork array is [queue,storeAdapter]; host also stops new store mutations/leases. Existing receipt callbacks remain available."
+        },
+        {
+          "from": "host",
+          "to": "store",
+          "label": "Drain native writes and reader leases",
+          "description": "No deadline or cancellation counts as native settlement; pending remains nonzero until work/handles settle."
+        },
+        {
+          "from": "host",
+          "to": "queue",
+          "label": "Close queue before store proof admission",
+          "description": "Seal and close the queue with receipt facade still usable. Startup rollback follows this same order."
+        },
+        {
+          "from": "host",
+          "to": "store",
+          "label": "Close all store handles; then release owner",
+          "description": "Reject new proofs, settle in-flight reads and close native handles. Attempt both participants' cleanup; retain guard if either is uncertain."
         }
       ]
     },
@@ -1235,6 +1349,41 @@
       "id": "c13",
       "kind": "doc",
       "ref": "https://lance.org/format/table/transaction/"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/reqs/shared-project-memory.html"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "packages/project-memory/src/runtime.ts"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "packages/project-memory/src/host-node.ts"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "packages/project-memory/src/__tests__/packed.test.ts"
+    },
+    {
+      "id": "c18",
+      "kind": "convention",
+      "ref": "packages/project-memory/package.json"
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/indexer/index.ts"
+    },
+    {
+      "id": "c20",
+      "kind": "doc",
+      "ref": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review-round1.json"
     }
   ]
 }

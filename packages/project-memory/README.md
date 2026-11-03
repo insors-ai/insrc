@@ -1,14 +1,14 @@
 # @insrc/project-memory
 
-Independent Node 22 ESM project-memory module. S2 provides durable, policy-bound
-submission and scoped operation status through the embedded API. Eligible events
-are accepted only after their journal data and acceptance checkpoint are synced.
-Lance storage, semantic processing, recall and the IPC executable remain later
-stories. `context`, `search` and `inspect` currently reject `NOT_READY`.
+Independent Node 22 ESM project-memory module. S3 adds an owned authoritative
+Lance store, atomic private commits and receipt-backed queue recovery. Embedded
+submission remains durable and policy-bound: events are accepted only after their
+journal data and acceptance checkpoint are synced. Semantic processing, recall
+and the IPC executable remain later stories. `context`, `search` and `inspect` currently reject `NOT_READY`.
 
 The public import performs no I/O or native loading. Supply host policy, models,
 logging, explicit limits and a dedicated directory. No daemon, index store or
-backend source is required. The only runtime dependency is `fs-ext` 2.1.1.
+backend source is required. Runtime dependencies are pinned to `fs-ext` 2.1.1, LanceDB 0.40.0 and Arrow 18.1.0.
 
 Use the public entry in an ESM host:
 
@@ -17,7 +17,7 @@ import { MemoryFactory } from '@insrc/project-memory';
 
 const memory = await MemoryFactory.open({
   dataDirectory: '/absolute/private/project-memory',
-  models, // Host-owned complete/embed port and embedding metadata; unused in S2
+  models, // Host-owned complete/embed port and embedding metadata; unused during S3 ingestion
   policy, // bind(projectId, sessionId?) and admit(binding, event)
   logger, // write(level, event, fields)
   limits: {
@@ -36,7 +36,9 @@ const receipt = await memory.submit({
     sessionId: 'source-session', turnId: 'source-turn', sourceVersion: '1',
   },
   kind: 'capture',
-  payload: { text: 'Project context to process later' },
+  payload: { schemaVersion: 1, input: {}, source: {
+    text: 'Project context to process later', reference: null, occurredAt: null,
+  } },
 });
 const status = await memory.operation({
   scope: { projectId: 'project-id' }, operationId: receipt.operationId,
@@ -56,7 +58,7 @@ and the producer/event namespace before persistence; it may redact payload but
 cannot change command identity, scope, kind or revision. Policy receives an
 immutable snapshot; return a new JSON command when redacting. There is no permissive
 fallback. All policy and append work shares invocation FIFO order. The module
-never logs event payloads or calls a model during S2 ingestion.
+never logs event payloads or calls a model during ingestion.
 
 Use stable project/producer/event IDs for retries. The same admitted command and
 epoch return the same operation without another event. Changed content, source
@@ -72,7 +74,7 @@ visibility. Hidden and unknown operations produce the same `INVALID_REQUEST`.
 
 ## Files and limits
 
-### S3 admission refinement (private; host composition follows in task 13)
+### S3 trusted admission refinement
 
 The S3-capable host uses a strict producer payload:
 `{schemaVersion:1,input:Json,source:{text,reference,occurredAt}|null}`.
@@ -103,10 +105,12 @@ fixed messages. Failed validation does not append queue bytes. Direct private S2
 QueueAdmission construction without the transforms retains generic JSON behavior.
 This adds no public options, model calls, normalization worker or read capability.
 
-A new directory contains `layout.json`, the persistent `.owner.lock`, and a
-separate `queue/` subtree. It contains versioned format metadata, numbered framed
+A new directory contains `layout.json`, the persistent `.owner.lock`,
+`store-format.json`, a dedicated `memory.lance/records.lance` table and a separate
+`queue/` subtree. The store is validated before queue recovery. It contains versioned format metadata, numbered framed
 JSONL segments, current/prior checkpoints and bounded recovery diagnostics.
-Lance files are not created in S2. Caller input is copied before policy waits;
+Existing queue-only S2 directories are refused without replacement; migration belongs
+to S9. Caller input is copied before policy waits;
 only bounded plain JSON is accepted, without accessors, cycles, malformed Unicode
 or ambiguous envelope fields.
 
@@ -127,11 +131,12 @@ bounded frames, promotes valid complete unacknowledged suffixes, and repairs
 only a qualified incomplete unaccepted tail. Accepted-prefix corruption,
 complete bad lines and missing accepted files stop startup and preserve evidence.
 
-S2 has no semantic worker or authoritative receipt store: accepted events stay
-pending and consume quota. Future store-backed processing can acknowledge and
-recycle only verified terminal work. Recycling removes an unpinned resolved
-prefix under a durable intent and receipt-capability barrier. Queue-only hosts
-cannot reopen a recycled directory without authoritative receipt support. This
+S3 has no semantic worker: accepted events stay pending and consume quota until
+a later-story worker processes them. The private authoritative store supplies
+immutable receipts for cold recovery/status; queue ACK and recycling require
+verified terminal work. Recycling removes an unpinned resolved
+prefix under a durable intent and receipt-capability barrier. Queue-only hosts cannot reopen a recycled directory without authoritative receipt
+support; the S3 factory supplies that support. This
 is not a second permanent receipt ledger or a claim of physical memory purge.
 
 ## Ownership and lifecycle

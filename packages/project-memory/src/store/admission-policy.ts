@@ -19,6 +19,7 @@ function source(value: unknown, kind: MemoryCommand['kind'], reject: () => never
 export function admissionTransforms(maxEventBytes: number): AdmissionTransforms {
   return Object.freeze<AdmissionTransforms>({
     validateInput(command: MemoryCommand): void {
+      if (command.kind === 'delivery') throw new MemoryError('NOT_READY', 'Memory delivery is not available.');
       const payload = command.payload;
       shape(invalid, payload, ['schemaVersion', 'input', 'source']);
       if (payload.schemaVersion !== 1) invalid();

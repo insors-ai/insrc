@@ -309,6 +309,7 @@ export class OwnedLanceStore {
     return this.#writer.commit(plan);
   }
   stopAdmission(): void { this.#writer.stopAdmission(); this.#reads.stopAdmission(); }
+  isAvailable(): boolean { return !this.#closing && this.#writer.accepting(); }
   pendingWrites(): number { return this.#writer.pending(); }
   drainWrites(): Promise<void> { return this.#writer.drain(); }
   receiptVerifier(): ReceiptVerifier { return this.#receipts; }

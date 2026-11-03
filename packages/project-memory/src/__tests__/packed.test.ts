@@ -35,9 +35,9 @@ import { MemoryFactory } from '@insrc/project-memory';
 import type { MemoryFactory as Factory, MemoryOptions } from '@insrc/project-memory';
 const factory: Factory = MemoryFactory;
 let calls = 0;
-const opts: MemoryOptions = { dataDirectory: process.argv[2]!, models: { embeddingModel: 'test', embeddingDimension: 1, async complete() { calls++; return null; }, async embed() { calls++; return [1]; } }, policy: { async bind(projectId) { return { projectId, root: '/host', scopeEpoch: '1' }; }, async admit(_b, event) { return event; } }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } };
+const opts: MemoryOptions = { dataDirectory: process.argv[2]!, models: { embeddingModel: 'test', embeddingDimension: 1, async complete() { calls++; return null; }, async embed() { calls++; return [1]; } }, policy: { async bind(projectId) { return { projectId, root: '/host', scopeEpoch: '1' }; }, async admit(_b, event) { const c = event as { [key: string]: import('@insrc/project-memory').Json }; return { ...c, payload: { ...(c.payload as { [key: string]: import('@insrc/project-memory').Json }), policyAttestation: { version: 1, origin: 'user', policyVersion: 'packed-fixture-v1', occurrenceTimeVerified: false } } }; } }, logger: { write() {} }, limits: { maxEventBytes: 32768, segmentBytes: 32768, maxPendingBytes: 2097152, modelTimeoutMs: 1000 } };
 const service = await factory.open(opts); await service.ready();
-const command = { version: 1 as const, scope: { projectId: 'packed' }, source: { producerId: 'consumer', eventId: 'stable-event', sessionId: 'session', turnId: 'turn', sourceVersion: '1' }, kind: 'capture' as const, payload: { text: 'durable evidence' } };
+const command = { version: 1 as const, scope: { projectId: 'packed' }, source: { producerId: 'consumer', eventId: 'stable-event', sessionId: 'session', turnId: 'turn', sourceVersion: '1' }, kind: 'capture' as const, payload: { schemaVersion: 1, input: {}, source: { text: 'durable evidence', reference: null, occurredAt: null } } };
 const receipt = await service.submit(command); assert.equal(receipt.state, 'accepted');
 if (process.argv[3] === 'crash') {
   process.stdout.write(JSON.stringify(receipt) + '\\n', () => process.kill(process.pid, 'SIGKILL'));

@@ -7,7 +7,7 @@ let service;
 receive(async message => {
   try {
     if (message === 'open') {
-      service = await MemoryFactory.open({ dataDirectory: config.path, models: { embeddingModel: 'local', embeddingDimension: 2, async complete() { throw Error('unexpected provider call'); }, async embed() { throw Error('unexpected provider call'); } }, policy: { async bind() { throw Error('unexpected policy call'); }, async admit() { throw Error('unexpected policy call'); } }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } });
+      service = await MemoryFactory.open({ dataDirectory: config.path, models: { embeddingModel: 'local-test', embeddingDimension: 2, async complete() { throw Error('unexpected provider call'); }, async embed() { throw Error('unexpected provider call'); } }, policy: { async bind() { throw Error('unexpected policy call'); }, async admit() { throw Error('unexpected policy call'); } }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } });
       send({ event: 'ready' });
     } else if (message === 'close') {
       await service?.close(); service = undefined; send({ event: 'released' });

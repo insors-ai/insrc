@@ -250,6 +250,8 @@ ArtifactStore gains an adopt(id, actor) that, under the queue, appends an 'updat
   - **resolved**: Verify now via targeted grep/Read — Checked: src/workflow/artifact-core/types.ts defines ChangeLogEntry (line 58) with a free-text outcome.result, so the adopted entry needs no type change; types.ts is a reference, not a file to edit. _(2026-11-03T07:14:14.107Z)_
 - `q3845a9c6` — The Story carries no formal acceptance criteria: ac1 to ac4 and the constraints that the alternatives were scored against are derived from the approved issue's fix intent.
   - **resolved**: Adopt issue-derived ACs as-is — ac1 to ac4 come from the approved ISSUE-7e0f65fc1a518722 fix intent; the PLAN cites it. _(2026-11-03T07:15:05.768Z)_
+- `q8179f5a1` — The adopted entry carries the time and actor (insrc:system) of the adoption, not of the raw write; confirm that this is acceptable for the history, or have the raw writers log at write time in a later change.
+  - **resolved**: Accept as designed — The LLD you approved states that the adopted entry carries the adoption time and insrc:system; it is recorded in the entry's outcome. Logging at write time stays a possible later change, not tracked here. _(2026-11-03T07:15:38.832Z)_
 
 ## Citations
 

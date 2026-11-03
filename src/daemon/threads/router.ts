@@ -613,7 +613,7 @@ export class Router {
 			...(onAck !== undefined ? { onAck } : {}),
 		});
 		this.began(threadId, request);
-		try { port.postMessage(wireRequest(owned, onAck !== undefined ? { ack: true } : {}));
+		try { port.postMessage(wireRequest(owned, onAck !== undefined ? { ack: true } : {})); }
 		catch {
 			if (reviewOwner) retireReviewOwner(reviewOwner);
 			this.pending.delete(request.requestId);

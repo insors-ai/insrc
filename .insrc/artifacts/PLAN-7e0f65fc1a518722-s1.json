@@ -1,0 +1,263 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793690146788-jtnsdo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T07:17:47.774Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 118896,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0f65fc1a518722",
+    "epicSlug": "keep-artifact-log-step-raw-content",
+    "storyId": "s1",
+    "lldRunId": "wf-1793687550721-3iahoq",
+    "lldEffectiveHash": "cc7b166644d5ed4dea1ca40bf5b18287f86a95eaa2b53f8e3d7092f74123fe9d",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build is one change in LifecycleService.apply, with its unit cases in a new lifecycle-adopt test file beside the existing integrity tests, then integration cases through the daemon approve path and the two real raw writers, then the notes in the plans and one sweep. No writer and no stored data changes."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Adopt a raw content write in LifecycleService.apply, with its unit cases",
+        "summary": "In LifecycleService.apply (src/workflow/artifact-core/lifecycle-service.ts), where checkIntegrity runs for approve, review and complete inside the store.updateAndLog callback: when it answers head-ahead-of-log, checkHeadIntegrity is ok and the head's content hash differs from the last revision-bearing entry's, append an 'update' entry for the head's revision and hash by insrc:system with outcome result 'adopted' through store.history.appendLog, then check again with the entry in the log and go on. The member check of a unit's completion (the same file, the member path) uses the same rule. Decide and test the order against a later failure of the same apply (an adoption stays in the log, which is in step with the head). Add the unit cases to lifecycle-service.test.ts with the store-kit and lifecycle-kit fixtures.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A head moved one revision past its log by a raw writeArtifact content change is approved, reviewed and completed; the log ends with one adopted update by insrc:system at the head's revision and hash, then the operation's own entry",
+          "A hand-edited revision number (content hash equal to the last logged one), a hash-mismatch head, a log-ahead-of-head head and a raw write that restores the logged content are refused as before, with nothing written or logged",
+          "A head with no revision-bearing log entry is approved with no adopted entry; two raw writes in a row give one adopted entry at the last revision",
+          "An adopted entry whose append fails (a History that throws) fails the operation, writes no head and leaves a later attempt able to adopt",
+          "A Story completed with a member that has a raw content write is adopted or refused for the same reasons as a single head, shown by one unit case",
+          "The existing integrity cases of lifecycle-service.test.ts pass unchanged, and checkIntegrity, ArtifactStore.write and writeArtifact are not changed"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head moved past its log by a raw content write is approved with one adopted entry before the approve"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: the same head is reviewed and then completed with the same adoption"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a hand-edited number, a hash mismatch, a log ahead of the head and restored content are refused with nothing written or logged"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head with no revision-bearing entry is approved with no adopted entry and two raw writes give one adopted entry"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: an adopted entry that cannot be appended fails the operation and a later attempt adopts"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a Story completed with a member that has a raw content write follows the same rule"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts: the integrity cases pass unchanged"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Integration cases: the daemon approve path and the real raw writers",
+        "summary": "Add cases to src/daemon/__tests__/lifecycle-wiring.test.ts and the tests of the real raw writers: an approved artifact redrafted by a raw content write is approved again through the daemon approve handler and reviewed through the review-decision step, with the adopted entry in the log; the design-run writer's redraft of an approved LLD (the synthesize path) and a resolve-comment revise are carried through approval.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "An approved artifact redrafted by a raw content write is approved again through the daemon approve handler; the log holds the adopted entry and the head is approved at the new revision",
+          "The review-decision step records its review on a redrafted head at the new revision, with no head-ahead-of-log",
+          "A redraft by the design-run writer and a revise by resolve-comment each end approved through the service"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: an approved artifact redrafted by a raw content write is approved again through the daemon approve handler"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: the review-decision step reviews a redrafted head at the new revision"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: a redraft by the design-run writer and a revise by resolve-comment each end approved through the service"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Record the decision and run the affected suites",
+        "summary": "Record in docs/plans/core-data-model.md item 3 and the open item of docs/plans/team-workflow.md that the service adopts a raw content write, with the limit (the entry carries the time and actor of the adoption), and update the note of the raw content writers in src/workflow/artifact-write-inventory.ts. Run the artifact-core, the daemon lifecycle and the workflow suites once, in a clean checkout of the head and of the base, and compare the failing titles.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "core-data-model.md item 3 and team-workflow.md say that the service adopts a raw content write and name the limit",
+          "The write inventory test still passes with the updated note",
+          "The artifact-core, daemon lifecycle and workflow suites, run in a clean checkout of the head and of the base with the failing titles compared, show no failure that the change added"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the write inventory test passes with the updated note"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "a head that a raw writeArtifact content change moved one revision past its log is approved: the log ends with an update by insrc:system with outcome result adopted at the head's revision and hash, followed by the approve at the same revision, and the head is approved",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "the same head is reviewed and then completed through apply with the same adoption, one adopted entry per raw write",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a head whose number alone was raised by hand (content hash equal to the last logged one) is refused with head-ahead-of-log and nothing is written or logged",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a hash-mismatch head and a log-ahead-of-head head are refused as before, with no adopted entry",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a head with no revision-bearing log entry is approved with no adopted entry",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "two raw content writes in a row are adopted as one entry at the last revision",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "a raw write that restores the logged content (revision 3, the revision-1 hash) is refused, not adopted",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "an adopted entry whose append fails (a History that throws) fails the operation, writes no head and leaves the next attempt able to adopt",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "lifecycle-wiring: an approved artifact is redrafted by a raw content write and approved again through the daemon approve handler; the approval succeeds and the log holds the adopted entry",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "a redraft by the design-run writer (synthesize writes the head with writeArtifact content) on an approved LLD, then insrc approval of the new draft, ends approved at the new revision",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "the review-decision step reviews a redrafted head: the review is recorded at the new revision (no head-ahead-of-log)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "lifecycle-service.test.ts keeps its head-ahead-of-log case for a hand-edited number, and its hash-mismatch and log-ahead-of-head cases, unchanged",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle-service.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/history.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/lifecycle-wiring.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/core-data-model.md"
+    }
+  ]
+}

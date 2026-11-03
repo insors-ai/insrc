@@ -8,6 +8,8 @@ import { validatePlanRows } from '../../tasks/pure.js';
 import { parsePacket, requireReview } from './contracts.js';
 import type { CommittedDocument, ReviewPacket, SubmittedTestDetail } from './contracts.js';
 import type { PinnedBlob, ReviewSources } from './sources.js';
+import { DOCUMENT_ROLES, requiredDocumentRoles } from './route.js';
+import type { DocumentRole, StoryRoute } from './route.js';
 
 const utf8 = (blob: PinnedBlob): string => new TextDecoder('utf-8', { fatal: true }).decode(blob.bytes);
 export interface SelectedChange {
@@ -17,7 +19,7 @@ export interface SelectedChange {
 }
 export interface PreparedReviewPacket {
  readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly SelectedChange[]; readonly tasks: readonly PlanTask[];
- readonly documents: Readonly<Record<'story' | 'lld' | 'plan', string>>;
+ readonly documents: Readonly<Partial<Record<DocumentRole, string>>>;
 }
 function head(text: string): Record<string, unknown> {
  let value: unknown;
@@ -38,8 +40,10 @@ async function document(ref: CommittedDocument, sources: ReviewSources): Promise
  requireReview(canonical, 'documents', 'Commit the referenced canonical artifact JSON with its document');
  return { text, head: head(utf8(canonical)) };
 }
-export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false): Promise<PreparedReviewPacket> {
- const packet = parsePacket(input, historical);
+type LoadedDocument = { text: string; head: Record<string, unknown> };
+const WORKFLOW_OF: Readonly<Record<DocumentRole, string>> = { story: 'define', lld: 'design.story', plan: 'plan', issue: 'issue' };
+/** The story, LLD and Plan every packet pinned before routes existed: all three, from one epic and one story. */
+async function pinnedTriple(packet: ReviewPacket, sources: ReviewSources) {
  const { story: storyRef, lld: lldRef, plan: planRef } = packet.documents;
  requireReview(storyRef && lldRef && planRef, 'documents', 'Expected story, lld and plan documents');
  const docs = { story: await document(storyRef, sources), lld: await document(lldRef, sources), plan: await document(planRef, sources) };
@@ -56,18 +60,49 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
  const storyMeta = docs.story.head['meta'] as Record<string, unknown>;
  const storyBody = docs.story.head['body'] as { stories?: { id?: string }[] } | undefined;
  requireReview(storyMeta['storyId'] === storyId || storyBody?.stories?.some(s => s.id === storyId), 'documents.story', 'Story definition does not contain this story');
- const body = plan['body'] as { tasks?: unknown } | undefined;
- // Reuse the Plan runner's strict row schema; tests are checked separately.
- const rows = Array.isArray(body?.tasks) ? body.tasks : [];
- requireReview(rows.every(row => row && typeof row === 'object' && !Array.isArray(row)), 'documents.plan', 'Expected task objects');
- const coreRows = rows.map(row => { const { tests: _tests, ...core } = row as PlanTask; return core; });
- const core = validateAgainstSchema<{ tasks: Omit<PlanTask, 'tests'>[] }>(tasksEnumerateSchema, { tasks: coreRows });
- requireReview(core.ok && rows.every(r => Array.isArray((r as PlanTask).tests) && (r as PlanTask).tests.every(t => t && ['unit', 'integration', 'live', 'smoke'].includes(t.level) && typeof t.name === 'string' && t.name.trim())), 'documents.plan', 'Malformed Plan tasks');
- requireReview(isCitationArray(plan['citations']), 'documents.plan', 'Plan citations are malformed');
- const tasks = rows as PlanTask[];
- const issues = validatePlanRows(tasks, plan['citations']);
- requireReview(issues.length === 0 && tasks.length > 0, 'documents.plan', issues.join('; ') || 'No Plan tasks');
- requireReview(!packet.taskId || tasks.some(t => t.id === packet.taskId), 'taskId', 'Task is not in the committed Plan');
+ return { docs: docs as Partial<Record<DocumentRole, LoadedDocument>>, hash, storyId };
+}
+const list = (roles: readonly string[]): string => roles.length ? roles.join(', ') : 'none';
+/** Exactly the documents the Story's route produced, each a committed canonical artifact of this epic and story. */
+async function routedDocuments(packet: ReviewPacket, route: StoryRoute, sources: ReviewSources) {
+ const { epicHash: hash, storyId } = route;
+ requireReview(packet.storyId === storyId || packet.storyId === `STORY-${hash}-${storyId}`, 'storyId', 'Packet belongs to another story');
+ const required = requiredDocumentRoles(route), supplied = DOCUMENT_ROLES.filter(role => packet.documents[role] !== undefined);
+ requireReview(required.length === supplied.length && required.every(role => supplied.includes(role)), 'documents', `Expected the documents ${list(required)} for this Story's route, got ${list(supplied)}`);
+ const docs: Partial<Record<DocumentRole, LoadedDocument>> = {};
+ for (const role of supplied) {
+  const doc = await document(packet.documents[role]!, sources);
+  const m = doc.head['meta'] as Record<string, unknown> | undefined;
+  requireReview(m?.['workflow'] === WORKFLOW_OF[role], `documents.${role}`, `Expected a ${WORKFLOW_OF[role]} artifact`);
+  requireReview(m[role === 'issue' ? 'issueHash' : 'epicHash'] === hash, `documents.${role}`, 'Document belongs to another epic');
+  if (role === 'lld' || role === 'plan') requireReview(m['storyId'] === storyId, `documents.${role}`, `${role === 'lld' ? 'LLD' : 'Plan'} belongs to another story`);
+  if (role === 'story') {
+   const body = doc.head['body'] as { stories?: { id?: string }[] } | undefined;
+   requireReview(body?.stories?.some(s => s.id === storyId), 'documents.story', 'Story definition does not contain this story');
+  }
+  docs[role] = doc;
+ }
+ return { docs, hash, storyId };
+}
+export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute): Promise<PreparedReviewPacket> {
+ const packet = parsePacket(input, historical);
+ const { docs, hash } = route ? await routedDocuments(packet, route, sources) : await pinnedTriple(packet, sources);
+ const plan = docs.plan?.head;
+ let tasks: PlanTask[] = [];
+ if (plan) {
+  const body = plan['body'] as { tasks?: unknown } | undefined;
+  // Reuse the Plan runner's strict row schema; tests are checked separately.
+  const rows = Array.isArray(body?.tasks) ? body.tasks : [];
+  requireReview(rows.every(row => row && typeof row === 'object' && !Array.isArray(row)), 'documents.plan', 'Expected task objects');
+  const coreRows = rows.map(row => { const { tests: _tests, ...core } = row as PlanTask; return core; });
+  const core = validateAgainstSchema<{ tasks: Omit<PlanTask, 'tests'>[] }>(tasksEnumerateSchema, { tasks: coreRows });
+  requireReview(core.ok && rows.every(r => Array.isArray((r as PlanTask).tests) && (r as PlanTask).tests.every(t => t && ['unit', 'integration', 'live', 'smoke'].includes(t.level) && typeof t.name === 'string' && t.name.trim())), 'documents.plan', 'Malformed Plan tasks');
+  requireReview(isCitationArray(plan['citations']), 'documents.plan', 'Plan citations are malformed');
+  tasks = rows as PlanTask[];
+  const issues = validatePlanRows(tasks, plan['citations']);
+  requireReview(issues.length === 0 && tasks.length > 0, 'documents.plan', issues.join('; ') || 'No Plan tasks');
+  requireReview(!packet.taskId || tasks.some(t => t.id === packet.taskId), 'taskId', 'Task is not in the committed Plan');
+ }
  const changes: SelectedChange[] = [];
  for (const pointer of packet.reviewSet) {
   const parents = await sources.commit(pointer.commit);
@@ -112,7 +147,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
   requireReview(found, 'tests', 'Test file is absent from the supplied committed source');
  }
- return { epicHash: hash, packet, changes, tasks, documents: { story: docs.story.text, lld: docs.lld.text, plan: docs.plan.text } };
+ return { epicHash: hash, packet, changes, tasks, documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }

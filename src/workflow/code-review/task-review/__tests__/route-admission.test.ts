@@ -14,7 +14,7 @@ import { saveCheckpoint } from '../checkpoint.js';
 import { prepareReviewPacket } from '../packet.js';
 
 registerGitTools();
-const ISSUE_ONLY = '1111111111111111', LLD_ONLY = '2222222222222222', PLAN_STORY = '3333333333333333', NO_BUILD = '4444444444444444';
+const ISSUE_ONLY = '1111111111111111', LLD_ONLY = '2222222222222222', PLAN_STORY = '3333333333333333', NO_BUILD = '4444444444444444', BUILD_ONLY = '6666666666666666', DEF_STORY = '7777777777777777';
 const artifact = (name: string) => `.insrc/artifacts/${name}.json`;
 
 /** A repository with four Stories on different routes, their artifacts committed and stored in .insrc/artifacts. */
@@ -28,7 +28,11 @@ function fixture() {
 	put(artifact(`ISSUE-${ISSUE_ONLY}`), { meta: { workflow: 'issue', issueHash: ISSUE_ONLY }, body: { title: 'Defect', fixIntent: 'Fix it' } }); build(ISSUE_ONLY);
 	lld(LLD_ONLY); build(LLD_ONLY);
 	lld(PLAN_STORY); build(PLAN_STORY);
-	put(artifact(`PLAN-${PLAN_STORY}-s1`), { meta: { epicHash: PLAN_STORY, storyId: 's1', workflow: 'plan' }, body: { tasks: [{ id: 't1', title: 'T', summary: 'S', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['Holds'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'N' }] }] }, citations: [{ id: 'c1', kind: 'stakeholder', ref: 'Fixture' }] });
+	const plan = (hash: string) => put(artifact(`PLAN-${hash}-s1`), { meta: { epicHash: hash, storyId: 's1', workflow: 'plan' }, body: { tasks: [{ id: 't1', title: 'T', summary: 'S', size: 'S', order: 1, dependsOn: [], acceptanceChecks: ['Holds'], derivedFrom: ['c1'], tests: [{ level: 'unit', name: 'N' }] }] }, citations: [{ id: 'c1', kind: 'stakeholder', ref: 'Fixture' }] });
+	plan(PLAN_STORY);
+	build(BUILD_ONLY); // a trivial Story: a BUILD and nothing else
+	lld(DEF_STORY); plan(DEF_STORY); build(DEF_STORY); // an epic Story: its epic has a DEF
+	put(artifact(`DEF-${DEF_STORY}`), { meta: { epicHash: DEF_STORY, workflow: 'define' }, body: { stories: [{ id: 's1' }] } });
 	put(artifact(`ISSUE-${NO_BUILD}`), { meta: { workflow: 'issue', issueHash: NO_BUILD }, body: { title: 'Defect', fixIntent: 'Fix it' } });
 	put('src/a.ts', 'first\nsecond\n');
 	git('add', '.'); git('commit', '-qm', 'base'); const base = git('rev-parse', 'HEAD');
@@ -55,6 +59,14 @@ test('src/workflow/code-review/task-review/__tests__/route-admission.test.ts: ad
 		assert.equal(lld.prepared.tasks.length, 1);
 		const plan = await f.admit(f.packetWith({ lld: f.at(`LLD-${PLAN_STORY}-s1`), plan: f.at(`PLAN-${PLAN_STORY}-s1`) }), PLAN_STORY);
 		assert.deepEqual(plan.prepared.tasks.map(task => task.id), ['t1']);
+		const trivial = await f.admit(f.packetWith({}), BUILD_ONLY);
+		assert.deepEqual(trivial.prepared.tasks.map(task => task.id), ['s1'], 'a Story with only a BUILD admits the no-document route');
+		assert.deepEqual(trivial.prepared.tasks[0]!.acceptanceChecks, ['Change the behaviour'], 'its check is the BUILD focus');
+		await refused(f.admit(f.packetWith({ lld: f.at(`LLD-${BUILD_ONLY}-s1`) }), BUILD_ONLY), /Expected the documents none .* got lld/);
+		const epic = await f.admit(f.packetWith({ story: f.at(`DEF-${DEF_STORY}`), lld: f.at(`LLD-${DEF_STORY}-s1`), plan: f.at(`PLAN-${DEF_STORY}-s1`) }), DEF_STORY);
+		assert.deepEqual(epic.prepared.tasks.map(task => task.id), ['t1'], 'a Story whose epic has a DEF admits the story role');
+		await refused(f.admit(f.packetWith({ lld: f.at(`LLD-${DEF_STORY}-s1`), plan: f.at(`PLAN-${DEF_STORY}-s1`) }), DEF_STORY), /Expected the documents story, lld, plan .* got lld, plan/);
+		await refused(f.admit(f.packetWith({ story: f.at(`DEF-${DEF_STORY}`), lld: f.at(`LLD-${PLAN_STORY}-s1`), plan: f.at(`PLAN-${PLAN_STORY}-s1`) }), PLAN_STORY), /Expected the documents lld, plan .* got story, lld, plan/);
 		await refused(f.admit(f.packetWith({}), ISSUE_ONLY), /Expected the documents issue .* got none/);
 		await refused(f.admit(f.packetWith({ lld: f.at(`LLD-${LLD_ONLY}-s1`), issue: f.at(`ISSUE-${ISSUE_ONLY}`) }), LLD_ONLY), /Expected the documents lld .* got lld, issue/);
 		await refused(f.admit(f.packetWith({ lld: f.at(`LLD-${PLAN_STORY}-s1`) }), PLAN_STORY), /Expected the documents lld, plan .* got lld/);

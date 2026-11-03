@@ -656,9 +656,7 @@ Run at 2026-11-03T18:25:42.152Z on commit `107b8526f`. Tests check: **passed**. 
 
 ## t17
 
-Run at 2026-11-03T19:06:12.399Z on commit `3d675e1b8`. Tests check: **failed**. 1 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
-
-reported as failed by the builder: final-source-package-and-backend-full-sweep-and-evidence-handoff
+Run at 2026-11-03T19:30:32.391Z on commit `08544844a`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **smoke: store-macos-apfs-linux-ext4-qualification**
 
@@ -668,7 +666,7 @@ reported as failed by the builder: final-source-package-and-backend-full-sweep-a
 
 **smoke: final-source-package-and-backend-full-sweep-and-evidence-handoff**
 
-Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md; t17-backend-results.json; unchanged t17-source-before.json / t17-source-after.json; commit 3d675e1b8
+Reported by the builder, not run by the gate: **pass**. Evidence: Qualification/evidence HANDOFF accepted under explicit user deferral, not backend-suite success. Full sweep remains FAIL, preserved in t17-backend-results.json and initial failed gate 96cd0d2df. User authorization and issue https://github.com/insors-ai/insrc/issues/98 recorded in docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-deferral.json and t17.md; diagnosis t17-analysis.json, commit 08544844a. Assess the task's run/archive/handoff checks against that user decision without treating raw backend tests as passed.
 
 **Files run**
 

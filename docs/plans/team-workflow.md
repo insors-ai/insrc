@@ -401,6 +401,6 @@ No new failure: every failing test name also fails in the tree before the Story,
 **Open items.**
 - A non-holder reviewer cannot record comments while a stage is in signoff (decision 3); a reviewer carve-out is a possible later change.
 - A comment outside signoff claims an unassigned stage (decision 4); that side effect is tested, not designed away.
-- The head-ahead-of-log defect of raw design-run writes (`synthesize.ts`, core-data-model.md item 3) was not in this Story; it was fixed afterwards (2026-11-03) in `LifecycleService`.
+- The head-ahead-of-log defect of raw design-run writes (`synthesize.ts`, core-data-model.md item 3) was not in this Story; it was fixed afterwards (2026-11-03): `LifecycleService` adopts a raw content write, logging the redrafted head as an update by `insrc:system` with outcome `adopted` before it approves, reviews or completes it, so a revise or a redraft in a team repo no longer blocks approval. The limit: the adopted entry carries the time and actor of the adoption, not of the raw write (core-data-model.md, "Raw content writers and the log").
 - The tracker label create of the draft hook (`gh_label` with `force`) always asks for approval, so a first draft in a repo with the tracker on needs a connected client: a separate bugfix, not started.
 - The build has no independent code review (the tool is unavailable): the approval needs a controller self-review override.

@@ -86,6 +86,12 @@ export function shadowedByDeclaration(): void {
 	ns.find(1);
 	registry.find(1);
 }
+export function varHoisted(): void {
+	{ var ns = [1]; }
+	ns.find(1);
+	const inner = () => { if (true) { var registry = [1]; } registry.find(1); };
+	inner();
+}
 export function blockScoped(): void {
 	{ const ns = [1]; ns.map(x => x); }
 	for (const registry of [[1]]) registry.push(1);
@@ -99,6 +105,7 @@ export function blockScoped(): void {
 	assert.deepEqual(calls(r, 'shadowedParam'), [], 'nor is a parameter');
 	assert.deepEqual(calls(r, 'shadowedDestructured'), [], 'nor a destructured local or a for-of binding');
 	assert.deepEqual(calls(r, 'shadowedByDeclaration'), [], 'nor a nested function or class declaration');
+	assert.deepEqual(calls(r, 'varHoisted'), ['inner'], 'a var in a block shadows the import for the whole function');
 	assert.deepEqual(calls(r, 'blockScoped'), ['create', 'find'], "a block's or loop's local shadows the import only inside it");
 });
 

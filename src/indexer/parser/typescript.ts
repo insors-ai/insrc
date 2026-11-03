@@ -755,6 +755,7 @@ function extractCalls(
       const bound = fn.childForFieldName(field);
       if (bound) collectPatternIdentifiers(bound, bodyFrame.declared);
     }
+    collectVarNames(bodyNode, bodyFrame.declared);
   }
   const axiosScopes: AxiosScope[] = [
     { declared: fileImportBindings, axios: new Set(), user: fileImportBindings },
@@ -850,6 +851,26 @@ const SCOPE_NODE_TYPES = new Set([
   'statement_block', 'for_statement', 'for_in_statement',
 ]);
 
+/** The scopes a `var` belongs to: the nearest function, not the block (hoisting). */
+const FUNCTION_SCOPE_TYPES = new Set([
+  'function_declaration', 'function_expression', 'arrow_function',
+  'method_definition', 'generator_function', 'generator_function_declaration',
+]);
+
+/** Add the names `var` declares anywhere inside `node`, stopping at nested functions. */
+function collectVarNames(node: SyntaxNode, out: Set<string>): void {
+  for (const c of node.namedChildren) {
+    if (FUNCTION_SCOPE_TYPES.has(c.type)) continue;
+    if (c.type === 'variable_declaration') {                 // `var` (let/const are lexical_declaration)
+      for (const d of c.namedChildren) {
+        const name = d.type === 'variable_declarator' ? d.childForFieldName('name') : null;
+        if (name) collectPatternIdentifiers(name, out);
+      }
+    }
+    collectVarNames(c, out);
+  }
+}
+
 /** Declarations that bind their own name in the scope that contains them. */
 const NAMED_DECLARATION_TYPES = new Set(['function_declaration', 'generator_function_declaration', 'class_declaration']);
 
@@ -895,6 +916,9 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     const bound = scope.childForFieldName(field);
     if (bound) collectPatternIdentifiers(bound, declared);
   }
+  // A function's frame also holds every `var` in its body, whatever block it is in.
+  const body = FUNCTION_SCOPE_TYPES.has(scope.type) ? scope.childForFieldName('body') : null;
+  if (body) collectVarNames(body, declared);
   if (scope.type === 'for_in_statement' && scope.childForFieldName('kind')) {
     const left = scope.childForFieldName('left');        // for (const x of / in ...)
     if (left) collectPatternIdentifiers(left, declared);

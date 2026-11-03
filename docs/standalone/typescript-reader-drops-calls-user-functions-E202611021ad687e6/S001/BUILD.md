@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-11-03T08:06:43.031Z  ·  **Updated:** 2026-11-03T08:53:08.139Z
+**Standalone:** yes  ·  **Created:** 2026-11-03T08:06:43.031Z  ·  **Updated:** 2026-11-03T09:18:02.279Z
 
-**Commit:** 260c75e0e
+**Commit:** 3b63278e4
 
 ## Summary
 
@@ -20,8 +20,8 @@ The resolution integration test shows a bare imported parse, a namespace-import 
 
 ## Changes
 
-- `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` — **insrc-build** (2026-11-03T08:53:08.139Z)
-- `src/indexer/parser/typescript.ts` — **insrc-build** (2026-11-03T08:53:08.139Z)
 - `src/indexer/__tests__/builtin-named-calls-resolution.test.ts` — **insrc-build** (2026-11-03T08:53:08.139Z)
 - `docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/full-sweep-t3.txt` — **insrc-build** (2026-11-03T08:53:08.139Z)
 - `docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/smoke-t3.md` — **insrc-build** (2026-11-03T08:53:08.139Z)
+- `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` — **insrc-build** (2026-11-03T09:18:02.279Z)
+- `src/indexer/parser/typescript.ts` — **insrc-build** (2026-11-03T09:18:02.279Z)

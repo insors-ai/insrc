@@ -4,11 +4,16 @@
     "epicHash": "1ad687e69c9218de",
     "storyId": "S001",
     "createdAt": "2026-11-03T08:06:43.031Z",
-    "updatedAt": "2026-11-03T08:53:08.139Z",
+    "updatedAt": "2026-11-03T09:18:02.279Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.712Z",
-    "epicSlug": "typescript-reader-drops-calls-user-functions"
+    "epicSlug": "typescript-reader-drops-calls-user-functions",
+    "approvedAt": "2026-11-03T09:19:28.186Z",
+    "reviewOverride": {
+      "reason": "manual code review by an independent reviewer agent (code-review framework being rewritten); 3 rounds: block (perf + false edges, fixed @4fbee4eb3), warn (package-import callables + arrow constants, fixed @3b63278e4), pass; deviation from the LLD recorded (only file-declared or relative-import classes/interfaces prove a receiver)",
+      "at": "2026-11-03T09:19:28.186Z"
+    }
   },
   "body": {
     "tasks": [
@@ -32,20 +37,6 @@
     "changeLog": [
       {
         "target": {
-          "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:53:08.139Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/parser/typescript.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:53:08.139Z"
-      },
-      {
-        "target": {
           "file": "src/indexer/__tests__/builtin-named-calls-resolution.test.ts"
         },
         "author": "insrc-build",
@@ -64,8 +55,24 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T08:53:08.139Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts",
+          "version": "3b63278e4"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:18:02.279Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/typescript.ts",
+          "version": "3b63278e4"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:18:02.279Z"
       }
     ],
-    "commit": "260c75e0e"
+    "commit": "3b63278e4"
   }
 }

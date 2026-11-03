@@ -744,22 +744,19 @@ function extractCalls(
   // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
   // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks
   // as walkForCalls descends into / leaves nested function/arrow/method scopes.
-  // ISSUE-1ad687e6: the file's import bindings are the outermost frame, so a
-  // receiver named by an import is a user object unless a nearer scope shadows it.
-  // The body's frame also holds the enclosing function's parameters, which
-  // collectScopeFrame reads only from the function node itself.
-  const bodyFrame = collectScopeFrame(bodyNode);
-  const fn = bodyNode.parent;
-  if (fn && SCOPE_NODE_TYPES.has(fn.type) && fn.childForFieldName('body')?.startIndex === bodyNode.startIndex) {
-    for (const field of ['parameters', 'parameter']) {
-      const bound = fn.childForFieldName(field);
-      if (bound) collectPatternIdentifiers(bound, bodyFrame.declared);
-    }
-    collectVarNames(bodyNode, bodyFrame.declared);
+  // ISSUE-1ad687e6: the stack starts with the file's import bindings, then a
+  // frame for every scope enclosing the body, outermost first (a closure
+  // extracted as its own entity still sees its outer function's parameters and
+  // locals), then the body's own frame; a name resolves to the nearest frame
+  // that declares it.
+  const enclosing: AxiosScope[] = [];
+  for (let a = bodyNode.parent; a !== null; a = a.parent) {
+    if (SCOPE_NODE_TYPES.has(a.type)) enclosing.unshift(collectScopeFrame(a));
   }
   const axiosScopes: AxiosScope[] = [
     { declared: fileImportBindings, axios: new Set(), user: fileImportBindings },
-    bodyFrame,
+    ...enclosing,
+    collectScopeFrame(bodyNode),
   ];
   walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes, skip);
 }

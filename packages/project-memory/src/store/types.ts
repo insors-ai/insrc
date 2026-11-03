@@ -1,4 +1,5 @@
 import type { Json, MemoryFailureCode, Scope, SourceIdentity } from '../types.js';
+import type { QueueFrame } from '../queue/types.js';
 
 /** Package-private sc4 storage types. No native SDK or public wire additions. */
 export type Lifecycle = 'candidate' | 'active' | 'conflicted' | 'superseded' | 'expired' | 'deleted';
@@ -91,4 +92,14 @@ export type EncodedRow = RowEnvelope & { readonly rowKind: RowKind; readonly pay
 export interface CommitPlanRows {
   readonly rows: readonly StoreRow[];
   readonly embeddingProfile?: EmbeddingProfile | undefined;
+}
+export interface CommitDisposition {
+  readonly state: ReceiptPayload['state']; readonly errorCode: MemoryFailureCode | null;
+  readonly rejectedByTombstoneIds: readonly string[];
+}
+export interface CommitPlan extends CommitPlanRows {
+  readonly operationId: string; readonly scope: Scope; readonly scopeEpoch: string;
+  readonly commandHash: string; readonly frame: QueueFrame; readonly expectedGeneration: string;
+  readonly expectedRevisions: Readonly<Record<string, string | null>>;
+  readonly disposition: CommitDisposition; readonly processingVersion: ProcessingVersion;
 }

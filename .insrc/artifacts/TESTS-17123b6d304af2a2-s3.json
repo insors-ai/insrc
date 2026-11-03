@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T13:31:34.831Z",
+    "updatedAt": "2026-11-03T13:39:59.021Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -300,8 +300,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "dc79c4151",
-        "ranAt": "2026-11-03T13:31:34.831Z",
+        "commit": "ad4f1b289",
+        "ranAt": "2026-11-03T13:39:59.021Z",
         "testsPassed": true,
         "tests": [
           {
@@ -327,6 +327,11 @@
               {
                 "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
                 "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
                 "result": "pass"
               }
             ],
@@ -367,7 +372,12 @@
               },
               {
                 "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
-                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
                 "result": "pass"
               }
             ],
@@ -379,8 +389,16 @@
             "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 6156,
+            "durationMs": 7357,
             "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
               {
                 "title": "store-initialization-fresh-profile-and-read-only-reopen",
                 "result": "pass"

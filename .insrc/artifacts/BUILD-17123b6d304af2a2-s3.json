@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T12:27:33.196Z",
+    "updatedAt": "2026-11-03T12:32:31.653Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -17,7 +17,7 @@
       },
       {
         "id": "t2",
-        "passed": false
+        "passed": true
       }
     ],
     "summary": "Pinned standalone dependencies and implemented private persisted row codecs, explicit Arrow schema and a versioned embedding profile. Native store publication and qualification are not implemented yet.",
@@ -30,128 +30,135 @@
           "file": ".insrc/artifacts/PLAN-17123b6d304af2a2-s3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t1-packed-sandbox.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t1-packed.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t1.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "package-lock.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/package.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/packed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2-consumer-retry.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2-packed-first-attempt.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2-packed.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2-tests.tap"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/fixtures/store-rows.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/store-codec.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/store/codec.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/store/embedding-profile.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
       },
       {
         "target": {
           "file": "packages/project-memory/src/store/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T12:27:33.196Z"
+        "timestamp": "2026-11-03T12:32:31.653Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t2-gate-first.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T12:32:31.653Z"
       }
     ],
-    "commit": "1e0058f24"
+    "commit": "6028061ce"
   }
 }

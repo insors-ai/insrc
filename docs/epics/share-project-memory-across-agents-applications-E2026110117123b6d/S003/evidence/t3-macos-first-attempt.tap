@@ -1,0 +1,25 @@
+TAP version 13
+# Subtest: native-store-primitives-process-crash-and-runtime-qualification
+not ok 1 - native-store-primitives-process-crash-and-runtime-qualification
+  ---
+  duration_ms: 4403.001
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:890'
+  failureType: 'testCodeFailure'
+  error: 'No observed native SIGKILL boundary: race: '
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    ChildProcess.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/store-native.test.ts:35:19)
+    Object.onceWrapper (node:events:634:26)
+    ChildProcess.emit (node:events:519:28)
+    ChildProcess._handle.onexit (node:internal/child_process:293:12)
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 0
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4671.546166

@@ -15,13 +15,13 @@ export function node22(): string {
   throw new Error('Node 22 is required; set INSRC_MEMORY_NODE22 to its executable.');
 }
 
-export function nativeTest(file: string, name: string, run: (context: TestContext) => unknown | Promise<unknown>): void {
+export function nativeTest(file: string, name: string, run: (context: TestContext) => unknown | Promise<unknown>, childTimeoutMs = 60_000): void {
   if (process.versions.node.split('.')[0] === '22') { test(name, run); return; }
   test(name, () => {
     const pattern = '^' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$';
     const env = { ...process.env };
     delete env['NODE_TEST_CONTEXT'];
-    const output = execFileSync(node22(), ['--import', 'tsx', '--test', '--test-reporter=tap', '--test-name-pattern', pattern, fileURLToPath(file)], { env, encoding: 'utf8', timeout: 60_000, maxBuffer: 2_000_000 });
+    const output = execFileSync(node22(), ['--import', 'tsx', '--test', '--test-reporter=tap', '--test-name-pattern', pattern, fileURLToPath(file)], { env, encoding: 'utf8', timeout: childTimeoutMs, maxBuffer: 2_000_000 });
     assert.match(output, /# pass [1-9][0-9]*\b/, 'the supported-runtime child must actually execute a passing test');
   });
 }

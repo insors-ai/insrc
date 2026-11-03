@@ -7,7 +7,7 @@ on:
       suite:
         description: Qualification scope
         type: choice
-        options: [full, queue]
+        options: [full, queue, store-sdk]
         default: full
 
 permissions:
@@ -49,14 +49,16 @@ jobs:
           cd "$RUNNER_TEMP/project-memory"
           npm install --no-audit --no-fund 2>&1 | tee "$RUNNER_TEMP/memory-evidence/install.log"
           npm run build
+          npm ls --all --json > "$RUNNER_TEMP/memory-evidence/dependency-graph.json"
+          cp package-lock.json "$RUNNER_TEMP/memory-evidence/package-lock.json"
       - name: Native ownership and lifecycle qualification
-        if: inputs.suite != 'queue'
+        if: inputs.suite == 'full'
         shell: bash
         run: |
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-reporter=tap src/__tests__/native.test.ts src/__tests__/configuration.test.ts src/__tests__/ownership.test.ts src/__tests__/runtime.test.ts src/__tests__/contention.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/native-lifecycle.tap"
       - name: Packed consumer and natural exit qualification
-        if: inputs.suite != 'queue'
+        if: inputs.suite == 'full'
         shell: bash
         env:
           CXXFLAGS: -std=c++17
@@ -64,12 +66,21 @@ jobs:
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-reporter=tap src/__tests__/packed.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/packed-consumer.tap"
       - name: Durable queue and process crash qualification
+        if: inputs.suite != 'store-sdk'
         shell: bash
         env:
           INSRC_MEMORY_CRASH_EVIDENCE: ${{ runner.temp }}/memory-evidence/queue-crash.json
         run: |
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-reporter=tap src/__tests__/queue-*.test.ts src/__tests__/runtime.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/queue-suite.tap"
+      - name: Native store SDK and process crash qualification
+        if: inputs.suite != 'queue'
+        shell: bash
+        env:
+          INSRC_MEMORY_STORE_PRIMITIVE_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-sdk.json
+        run: |
+          cd "$RUNNER_TEMP/project-memory"
+          node --import tsx --test --test-reporter=tap src/__tests__/store-codec.test.ts src/__tests__/store-embedding-profile.test.ts src/__tests__/store-native.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/store-sdk.tap"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T12:27:33.196Z",
+    "updatedAt": "2026-11-03T12:32:31.653Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -92,8 +92,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "1e0058f24",
-        "ranAt": "2026-11-03T12:27:33.196Z",
+        "commit": "6028061ce",
+        "ranAt": "2026-11-03T12:32:31.653Z",
         "testsPassed": true,
         "tests": [
           {
@@ -143,6 +143,11 @@
             "source": "mapping",
             "cases": [
               {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-vector-bearing-plan-requires-compatible-embedding-metadata",
+                "result": "pass"
+              },
+              {
                 "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
                 "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
                 "result": "pass"
@@ -166,7 +171,7 @@
             "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 758,
+            "durationMs": 596,
             "titles": [
               {
                 "title": "store-codec-canonical-roundtrip-all-row-kinds",
@@ -187,6 +192,10 @@
               {
                 "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
                 "result": "pass"
+              },
+              {
+                "title": "store-codec-vector-bearing-plan-requires-compatible-embedding-metadata",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -195,7 +204,7 @@
             "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 552,
+            "durationMs": 449,
             "titles": [
               {
                 "title": "store-embedding-profile-preserves-text-and-converts-float32-once",

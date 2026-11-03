@@ -506,3 +506,8 @@ Filled while resolving CRITICAL-2 (decision D2: v2's review framework overrides 
 ## Residual main review-engine files (merged cleanly, dead after D2)
 
 Added or changed by main without a textual conflict and belonging to the dropped review engine; to be removed or ported in the post-merge commits (listed by tsc and by `git diff --name-only 6378146c7 origin/main -- src/**/review* src/**/code-review*` filtered against v2's deletions): `src/daemon/code-review-operations.ts`, `src/shared/controller-review.ts`, `src/mcp/controller-review.ts`, `src/workflow/code-review/input-fingerprint.ts`, `src/workflow/review-pipeline/*` added by main, `src/agent/providers/bounded-input.ts`, `src/workflow/approval-owner.ts` (kept? see the writer-lock note in the log), and their tests.
+
+## Deferred (get back to these)
+
+- **BUILD writer lock (decided 2026-11-03 to defer).** main's `src/workflow/approval-owner.ts` (`withBuildWriter`, a cross-process ownership lock for BUILD ledger and approval writes, commit `e777060ff`) is not carried into v2. It wraps a synchronous stamp-write that v2 replaced with the async lifecycle service. If cross-process BUILD write ownership is still wanted, add an async variant of `withBuildWriter` around the lifecycle approve for BUILD records, with a test that two concurrent approvals of one BUILD do not both write. Until then v2 relies on the lifecycle service's own journalled writes. Owner: user to decide when to schedule it; track it as its own Story through triage.
+- **ISSUE-7fa297efd4bd1c59 approval** (approved on main 2026-11-01, draft in v2's converted record): re-approve through the lifecycle with the user.

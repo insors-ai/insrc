@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c05cc3cd-3501-493c-abb2-62fd2c3728d7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T07:29:34.238Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0f65fc1a518722",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Integration cases: the daemon approve path and the real raw writers",
+      "parent": {
+        "entityId": "STORY-7e0f65fc1a518722-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0f65fc1a518722-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-7e0f65fc1a518722-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0a33ad1eac2a07e0c121bfa2053b581af019519f42d0ff84698c4d0b606b3382",
+        "at": "2026-11-03T07:29:34.238Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T07:29:34.239Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Integration cases: the daemon approve path and the real raw writers",
+    "summary": "Add cases to src/daemon/__tests__/lifecycle-wiring.test.ts and the tests of the real raw writers: an approved artifact redrafted by a raw content write is approved again through the daemon approve handler and reviewed through the review-decision step, with the adopted entry in the log; the design-run writer's redraft of an approved LLD (the synthesize path) and a resolve-comment revise are carried through approval.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "An approved artifact redrafted by a raw content write is approved again through the daemon approve handler; the log holds the adopted entry and the head is approved at the new revision",
+      "The review-decision step records its review on a redrafted head at the new revision, with no head-ahead-of-log",
+      "A redraft by the design-run writer and a revise by resolve-comment each end approved through the service"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: an approved artifact redrafted by a raw content write is approved again through the daemon approve handler"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: the review-decision step reviews a redrafted head at the new revision"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: a redraft by the design-run writer and a revise by resolve-comment each end approved through the service"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

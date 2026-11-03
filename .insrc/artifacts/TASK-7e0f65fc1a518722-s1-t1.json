@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9ae75cc-92c3-4a8d-8a9e-90243cf74707",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T07:29:34.236Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0f65fc1a518722",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Adopt a raw content write in LifecycleService.apply, with its unit cases",
+      "parent": {
+        "entityId": "STORY-7e0f65fc1a518722-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-7e0f65fc1a518722-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b90af42539eb7151cccbc5425e5ec5b094e46d3a9345225e6cf572407071c56d",
+        "at": "2026-11-03T07:29:34.236Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T07:29:34.237Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Adopt a raw content write in LifecycleService.apply, with its unit cases",
+    "summary": "In LifecycleService.apply (src/workflow/artifact-core/lifecycle-service.ts), where checkIntegrity runs for approve, review and complete inside the store.updateAndLog callback: when it answers head-ahead-of-log, checkHeadIntegrity is ok and the head's content hash differs from the last revision-bearing entry's, append an 'update' entry for the head's revision and hash by insrc:system with outcome result 'adopted' through store.history.appendLog, then check again with the entry in the log and go on. The member check of a unit's completion (the same file, the member path) uses the same rule. Decide and test the order against a later failure of the same apply (an adoption stays in the log, which is in step with the head). Add the unit cases to lifecycle-service.test.ts with the store-kit and lifecycle-kit fixtures.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "A head moved one revision past its log by a raw writeArtifact content change is approved, reviewed and completed; the log ends with one adopted update by insrc:system at the head's revision and hash, then the operation's own entry",
+      "A hand-edited revision number (content hash equal to the last logged one), a hash-mismatch head, a log-ahead-of-head head and a raw write that restores the logged content are refused as before, with nothing written or logged",
+      "A head with no revision-bearing log entry is approved with no adopted entry; two raw writes in a row give one adopted entry at the last revision",
+      "An adopted entry whose append fails (a History that throws) fails the operation, writes no head and leaves a later attempt able to adopt",
+      "A Story completed with a member that has a raw content write is adopted or refused for the same reasons as a single head, shown by one unit case",
+      "The existing integrity cases of lifecycle-service.test.ts pass unchanged, and checkIntegrity, ArtifactStore.write and writeArtifact are not changed"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head moved past its log by a raw content write is approved with one adopted entry before the approve"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: the same head is reviewed and then completed with the same adoption"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a hand-edited number, a hash mismatch, a log ahead of the head and restored content are refused with nothing written or logged"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head with no revision-bearing entry is approved with no adopted entry and two raw writes give one adopted entry"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: an adopted entry that cannot be appended fails the operation and a later attempt adopts"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a Story completed with a member that has a raw content write follows the same rule"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts: the integrity cases pass unchanged"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

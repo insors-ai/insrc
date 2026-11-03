@@ -1,0 +1,338 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "8bbd6ca025b48d896b2a4f8d39c9ebe3f5f56eb50a5c3b95db8474caa4165b16",
+        "at": "2026-11-03T07:52:03.009Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "7e0f65fc1a518722",
+    "storyId": "s1",
+    "createdAt": "2026-11-03T07:32:39.956Z",
+    "updatedAt": "2026-11-03T07:52:02.933Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "epicSlug": "keep-artifact-log-step-raw-content",
+    "revision": 5
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e6f0ed2af",
+        "ranAt": "2026-11-03T07:32:39.956Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head moved past its log by a raw content write is approved with one adopted entry before the approve",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "a head moved past its log by a raw content write is approved with one adopted entry before the approve",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: the same head is reviewed and then completed with the same adoption",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "the same head is reviewed and then completed with the same adoption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a hand-edited number, a hash mismatch, a log ahead of the head and restored content are refused with nothing written or logged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "a hand-edited number, a hash mismatch, a log ahead of the head and restored content are refused with nothing written or logged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a head with no revision-bearing entry is approved with no adopted entry and two raw writes give one adopted entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "a head with no revision-bearing entry is approved with no adopted entry and two raw writes give one adopted entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: an adopted entry that cannot be appended fails the operation and a later attempt adopts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "an adopted entry that cannot be appended fails the operation and a later attempt adopts",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts: a Story completed with a member that has a raw content write follows the same rule",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+                "title": "a Story completed with a member that has a raw content write follows the same rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts: the integrity cases pass unchanged",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts",
+                "title": "apply refuses approve, review and complete on each Integrity reason and writes nothing, while unhashed and unlogged heads are approved normally",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 638,
+            "titles": [
+              {
+                "title": "a head moved past its log by a raw content write is approved with one adopted entry before the approve",
+                "result": "pass"
+              },
+              {
+                "title": "the same head is reviewed and then completed with the same adoption",
+                "result": "pass"
+              },
+              {
+                "title": "a hand-edited number, a hash mismatch, a log ahead of the head and restored content are refused with nothing written or logged",
+                "result": "pass"
+              },
+              {
+                "title": "a head with no revision-bearing entry is approved with no adopted entry and two raw writes give one adopted entry",
+                "result": "pass"
+              },
+              {
+                "title": "an adopted entry that cannot be appended fails the operation and a later attempt adopts",
+                "result": "pass"
+              },
+              {
+                "title": "a Story completed with a member that has a raw content write follows the same rule",
+                "result": "pass"
+              },
+              {
+                "title": "LifecycleService adopts a raw content write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-service.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 554,
+            "titles": [
+              {
+                "title": "apply refuses approve, review and complete on each Integrity reason and writes nothing, while unhashed and unlogged heads are approved normally",
+                "result": "pass"
+              },
+              {
+                "title": "a review is logged with its verdict and counts",
+                "result": "pass"
+              },
+              {
+                "title": "LifecycleService.apply integrity",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "23c984c80",
+        "ranAt": "2026-11-03T07:41:18.167Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: an approved artifact redrafted by a raw content write is approved again through the daemon approve handler",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/lifecycle-adopt-wiring.test.ts",
+                "title": "an approved artifact redrafted by a raw content write is approved again through the daemon approve handler",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: the review-decision step reviews a redrafted head at the new revision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/lifecycle-adopt-wiring.test.ts",
+                "title": "the review-decision step approves a redrafted head at the new revision, with no head-ahead-of-log",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/lifecycle-wiring.test.ts: a redraft by the design-run writer and a revise by resolve-comment each end approved through the service",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/lifecycle-adopt-wiring.test.ts",
+                "title": "a redraft by the design-run writer and a revise by resolve-comment each end approved through the service",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/lifecycle-adopt-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 762,
+            "titles": [
+              {
+                "title": "an approved artifact redrafted by a raw content write is approved again through the daemon approve handler",
+                "result": "pass"
+              },
+              {
+                "title": "the review-decision step approves a redrafted head at the new revision, with no head-ahead-of-log",
+                "result": "pass"
+              },
+              {
+                "title": "a redraft by the design-run writer and a revise by resolve-comment each end approved through the service",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "a2486c15e",
+        "ranAt": "2026-11-03T07:52:02.933Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/__tests__/artifact-write-inventory.test.ts: the write inventory test passes with the updated note",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/__tests__/artifact-write-inventory.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1599,
+            "titles": [
+              {
+                "title": "every writer file is inventoried, annotated and classified as the design says",
+                "result": "pass"
+              },
+              {
+                "title": "the detector flags raw, aliased and injected writers and accepts the positive controls",
+                "result": "pass"
+              },
+              {
+                "title": "the detector reports appendFileSync in every form, an unlisted appendSidecarLine and a store write, and every newly flagged file has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the lifecycle service file has an entry and a caller of ArtifactStore.update is recognised",
+                "result": "pass"
+              },
+              {
+                "title": "the sidecar files, the journal folder and the changed round writers are classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the identity file writer is classified and appendSidecarLine remains the one raw append for history",
+                "result": "pass"
+              },
+              {
+                "title": "the binding writer is listed as a meta-only writer of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "the write inventory lists the binding and attach writers as meta-only writers of meta.envelope and every production writer file still has an entry",
+                "result": "pass"
+              },
+              {
+                "title": "every content entry and site names a gatedBy entry point or an exemption with a reason, including appendStoryToDefine",
+                "result": "pass"
+              },
+              {
+                "title": "a content writer with neither a gate nor an exemption is reported",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

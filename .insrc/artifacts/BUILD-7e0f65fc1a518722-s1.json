@@ -1,0 +1,118 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "06010937eaaeb80873c4222b55d63dafa1fb9895723e42366ae8eac7df9de5fb",
+        "at": "2026-11-03T07:53:46.572Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-dff410d2-2cf9-464f-9b30-90eea4432bf4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T07:32:39.956Z",
+    "epicCreatedAt": "2026-11-02T14:12:18.721Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7e0f65fc1a518722",
+    "storyId": "s1",
+    "revision": 5,
+    "updatedAt": "2026-11-03T07:52:02.933Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "keep-artifact-log-step-raw-content"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "The decision, the approve-path finding, the ordering rule and the limit are recorded in docs/plans/core-data-model.md and team-workflow.md; the write inventory notes of the three raw content writers say the service adopts a redraft. The suites were run once in clean checkouts of the head and the base and the failing titles compared: no failure was added.",
+    "testRecord": {
+      "md": "docs/standalone/keep-artifact-log-step-raw-content-E202611027e0f65fc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-adopt.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle-service.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/lifecycle-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/gates.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/lifecycle-adopt-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/core-data-model.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "docs/plans/team-workflow.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-write-inventory.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T07:52:02.933Z"
+      }
+    ],
+    "commit": "a2486c15e"
+  },
+  "citations": []
+}

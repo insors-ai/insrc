@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { Type } from '@sinclair/typebox';
-import type { Static, TSchema } from '@sinclair/typebox';
+import type { Static, TSchema, TLiteral, TUnion } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 
 export const DESIGN_LIMITS = {
@@ -9,7 +9,7 @@ export const DESIGN_LIMITS = {
  units: 8192, chunks: 128, findings: 256, text: 8192, path: 2048,
 } as const;
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
-const enumeration = <const T extends readonly string[]>(values: T) => Type.Union(values.map(value => Type.Literal(value)));
+const enumeration = <const T extends readonly string[]>(values: T): TUnion<TLiteral<T[number]>[]> => Type.Union(values.map(value => Type.Literal(value as T[number])));
 const text = Type.String({ minLength: 1, maxLength: DESIGN_LIMITS.text });
 const path = Type.String({ minLength: 1, maxLength: DESIGN_LIMITS.path });
 const id = Type.String({ minLength: 1, maxLength: 128, pattern: '^[a-zA-Z0-9][a-zA-Z0-9_-]*$' });

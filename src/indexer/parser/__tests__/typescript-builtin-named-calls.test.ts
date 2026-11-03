@@ -80,12 +80,26 @@ export function shadowedDestructured(value: any): void {
 	for (const st of value) st.push(1);
 	for (const [cfg] of value) cfg.parse('x');
 }
+export function shadowedByDeclaration(): void {
+	function ns(): void {}
+	class registry {}
+	ns.find(1);
+	registry.find(1);
+}
+export function blockScoped(): void {
+	{ const ns = [1]; ns.map(x => x); }
+	for (const registry of [[1]]) registry.push(1);
+	ns.find(1);
+	registry.create({});
+}
 `);
 	assert.deepEqual(calls(r, 'all'), ['emit', 'find', 'process']);
 	assert.deepEqual(calls(r, 'viaImports'), ['create', 'parse', 'push', 'resolve']);
 	assert.deepEqual(calls(r, 'shadowed'), [], 'a local named like an import is not the import');
 	assert.deepEqual(calls(r, 'shadowedParam'), [], 'nor is a parameter');
 	assert.deepEqual(calls(r, 'shadowedDestructured'), [], 'nor a destructured local or a for-of binding');
+	assert.deepEqual(calls(r, 'shadowedByDeclaration'), [], 'nor a nested function or class declaration');
+	assert.deepEqual(calls(r, 'blockScoped'), ['create', 'find'], "a block's or loop's local shadows the import only inside it");
 });
 
 test('S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file', () => {

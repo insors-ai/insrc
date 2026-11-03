@@ -750,7 +750,7 @@ function extractCalls(
   // collectScopeFrame reads only from the function node itself.
   const bodyFrame = collectScopeFrame(bodyNode);
   const fn = bodyNode.parent;
-  if (fn && !SCOPE_NODE_TYPES.has(bodyNode.type) && SCOPE_NODE_TYPES.has(fn.type)) {
+  if (fn && SCOPE_NODE_TYPES.has(fn.type) && fn.childForFieldName('body')?.startIndex === bodyNode.startIndex) {
     for (const field of ['parameters', 'parameter']) {
       const bound = fn.childForFieldName(field);
       if (bound) collectPatternIdentifiers(bound, bodyFrame.declared);
@@ -845,7 +845,13 @@ const SCOPE_NODE_TYPES = new Set([
   'function_declaration', 'function_expression', 'arrow_function',
   'method_definition', 'generator_function', 'generator_function_declaration',
   'catch_clause',
+  // Blocks and loops scope their const/let bindings (ISSUE-1ad687e6), so a
+  // block's local shadows an outer name only inside the block.
+  'statement_block', 'for_statement', 'for_in_statement',
 ]);
+
+/** Declarations that bind their own name in the scope that contains them. */
+const NAMED_DECLARATION_TYPES = new Set(['function_declaration', 'generator_function_declaration', 'class_declaration']);
 
 /** Collect the identifier names bound by a parameter / catch / destructuring
  *  pattern (never a default-value expression: `required_parameter`/
@@ -889,10 +895,18 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     const bound = scope.childForFieldName(field);
     if (bound) collectPatternIdentifiers(bound, declared);
   }
+  if (scope.type === 'for_in_statement' && scope.childForFieldName('kind')) {
+    const left = scope.childForFieldName('left');        // for (const x of / in ...)
+    if (left) collectPatternIdentifiers(left, declared);
+  }
   const stack: SyntaxNode[] = [];
   for (const c of scope.namedChildren) stack.push(c);
   while (stack.length > 0) {
     const n = stack.pop()!;
+    if (NAMED_DECLARATION_TYPES.has(n.type)) {
+      const name = n.childForFieldName('name');          // function ns() {} / class ns {}
+      if (name) declared.add(name.text);
+    }
     if (SCOPE_NODE_TYPES.has(n.type)) continue;  // nested scope: its own frame
     if (n.type === 'variable_declarator') {
       const nameNode = n.childForFieldName('name');
@@ -906,9 +920,6 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
       } else if (nameNode) {
         collectPatternIdentifiers(nameNode, declared);   // const { a, b } = ... / const [a] = ...
       }
-    } else if (n.type === 'for_in_statement' && n.childForFieldName('kind')) {
-      const left = n.childForFieldName('left');           // for (const x of / in ...)
-      if (left) collectPatternIdentifiers(left, declared);
     }
     for (const c of n.namedChildren) stack.push(c);
   }

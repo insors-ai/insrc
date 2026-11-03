@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { appendFileSync } from 'node:fs';
 import { setTimeout as pause } from 'node:timers/promises';
+import { ReviewOutputFailureError } from '../../../../shared/review-diagnostics.js';
 import type { LLMProvider, ActivityReviewSessionOpts } from '../../../../shared/types.js';
 import type { DesignChunkPlan } from '../contracts.js';
 import { DesignReviewCoordinator } from '../coordinator.js';
@@ -64,4 +65,26 @@ test('contradictory native status fails with pointed details and never silently 
  await coordinator.start(input(f));const view=await terminal(coordinator,f);
  assert.equal(view.status,'failed');assert.equal(view.completedChunks,0);assert.deepEqual(native.calls,['planning','content']);
  assert.equal(view.failure?.code,'invalid_result');assert.match(view.failure!.summary,/received changes_requested, expected incomplete; limitations=1/);
+});
+
+test('native schema failures retain pointed diagnostic corrections without raw output or retry',async t=>{
+ const f=designFixture(t);let calls=0;
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{calls++;throw new ReviewOutputFailureError('Native schema rejected feedback',{provider:'codex',issues:[{code:'MISSING_REQUIRED_FIELD',field:'/findings',correction:'Include findings as an array.',occurrences:1}],lastRejectedFeedback:{preview:'RAW_OUTPUT_CANARY',truncated:false}});}} as unknown as LLMProvider;
+ const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'fake'})});await coordinator.start(input(f));const view=await terminal(coordinator,f);
+ assert.equal(view.status,'failed');assert.equal(calls,1);assert.match(view.failure!.summary,/MISSING_REQUIRED_FIELD \/findings: Include findings as an array/);assert.ok(!view.failure!.summary.includes('RAW_OUTPUT_CANARY'));
+});
+
+test('slow progress persistence coalesces activity instead of accumulating checkpoint writes',async t=>{
+ const f=designFixture(t);let releaseProvider!:()=>void,releaseSave!:()=>void,entered!:()=>void;
+ const providerWait=new Promise<void>(r=>releaseProvider=r),saveWait=new Promise<void>(r=>releaseSave=r),saving=new Promise<void>(r=>entered=r);
+ const native=fake(f,{before:stage=>stage==='planning'?providerWait:undefined});let progressWrites=0;
+ const coordinator=new DesignReviewCoordinator({provider:()=>({provider:native.provider,model:'fake'}),save:async(project,cp)=>{
+  const attempt=cp.attempts[0]!;
+  if(attempt.current?.kind==='planning'&&attempt.progress.lastMeaningfulActivityAt){progressWrites++;if(progressWrites===1){entered();await saveWait;}}
+  await saveDesignCheckpoint(project,cp);
+ }});
+ await coordinator.start(input(f));for(let i=0;i<100&&!native.sessions.length;i++)await pause(5);
+ const opts=native.sessions[0]!;await opts.onActivity({sessionId:'slow-write',sequence:1,kind:'session_started'});await opts.onActivity({sessionId:'slow-write',sequence:2,kind:'model_output'});await pause(300);await saving;
+ for(let sequence=3;sequence<=5;sequence++){await opts.onActivity({sessionId:'slow-write',sequence,kind:'model_output'});await pause(300);}
+ releaseSave();releaseProvider();assert.equal((await terminal(coordinator,f)).status,'passed');assert.equal(progressWrites,1);
 });

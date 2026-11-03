@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
+import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
 import type { LLMProvider } from '../../../shared/types.js';
 import { requireReviewActivity, REVIEW_INACTIVITY_MS, ReviewActivityMonitor } from '../../../shared/review-activity.js';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
@@ -34,7 +35,7 @@ interface ControllerUnit {
 interface DesignJob {
  checkpoint:DesignReviewCheckpoint; tracker:DesignProgressTracker; abort:AbortController;
  serial:Promise<void>; done:Promise<void>; providerFactory:()=>DesignProvider;
- progressTimer?:ReturnType<typeof setTimeout>|undefined; storageError?:unknown;
+ progressTimer?:ReturnType<typeof setTimeout>|undefined; progressWritePending?:boolean; storageError?:unknown;
  closed:boolean; owner?:DesignControllerOwner|undefined; controller?:ControllerUnit|undefined; disconnect?:(()=>void)|undefined;
 }
 /** Main-daemon owner. Request disconnection is deliberately not an execution signal. */
@@ -111,10 +112,11 @@ export class DesignReviewCoordinator {
  }
  private stopProgress(job:DesignJob):void{if(job.progressTimer)clearTimeout(job.progressTimer);job.progressTimer=undefined;}
  private scheduleProgress(job:DesignJob):void{
-  if(job.closed||job.progressTimer)return;
+  if(job.closed||job.progressTimer||job.progressWritePending)return;
   job.progressTimer=setTimeout(()=>{
    job.progressTimer=undefined;if(job.closed)return;
-   void this.commit(job,()=>{}).catch(error=>{job.storageError=error;job.abort.abort(error);});
+   job.progressWritePending=true;
+   void this.commit(job,()=>{}).catch(error=>{job.storageError=error;job.abort.abort(error);}).finally(()=>{job.progressWritePending=false;});
   },250);job.progressTimer.unref();
  }
  private async unit(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
@@ -201,7 +203,8 @@ export class DesignReviewCoordinator {
    await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();delete a.current;});
   }catch(error){
    job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
-   const summary=(error instanceof Error?error.message:'Design review failed').slice(0,DESIGN_LIMITS.text);
+   const issues=error instanceof ReviewOutputFailureError?error.diagnostic.issues.map(issue=>`${issue.code} ${issue.field}: ${issue.correction}`).join('; '):'';
+   const summary=[error instanceof Error?error.message:'Design review failed',issues].filter(Boolean).join('; ').slice(0,DESIGN_LIMITS.text);
    const status=code==='artifact_changed'?'invalidated':code==='controller_disconnected'?'interrupted':'failed';job.tracker.status(status);
    try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();delete a.current;});}
    catch{this.uncertain.set(key,{code:'persistence_failed',summary:`Terminal result could not be persisted: ${summary}`.slice(0,DESIGN_LIMITS.text)});}

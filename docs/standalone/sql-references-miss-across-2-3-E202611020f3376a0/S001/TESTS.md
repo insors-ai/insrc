@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -103,3 +103,13 @@ Run at 2026-11-03T11:57:25.736Z on commit `b31641ec1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/sql-name-resolution.test.ts` | 0 | 7 | 2.7 s |  |
+
+## t5
+
+Run at 2026-11-03T12:49:42.542Z on commit `fb01c6804`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: S001 t5: the installed daemon resolves qualified and quoted SQL references and re-checks an inferred edge on a new definition**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/smoke-t5.md

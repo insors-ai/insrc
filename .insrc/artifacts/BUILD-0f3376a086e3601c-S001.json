@@ -4,7 +4,7 @@
     "epicHash": "0f3376a086e3601c",
     "storyId": "S001",
     "createdAt": "2026-11-03T10:37:50.308Z",
-    "updatedAt": "2026-11-03T11:57:25.736Z",
+    "updatedAt": "2026-11-03T12:49:42.542Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.736Z",
@@ -27,9 +27,13 @@
       {
         "id": "t4",
         "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
       }
     ],
-    "summary": "@b31641ec1: recheckSqlReferences runs at the start of Pass 2 in settle mode (before the selection, so the rows it writes are marked and selected): for each table/view defined in a committed .sql file it takes the folded last segment (sqlFoldedLastSegment: unquoted text, lower-cased), targets every stored table/view in index groups whose key folds to it (committed definitions included), and calls the new store op returnInferredSqlReferencesToPending(targets, holders-in-committed-files): per inbound REFERENCES edge with evidence 'inferred' and a holder not excluded, it writes sqlByNameRows' rows (holder names meeting by key or folded text, never a locally answered name, marked) and removes the edge; when no name fits the edge is left as it is; extracted edges are never touched; the repo generation is advanced. Mutation check: 7 mutants, 6 caught. The survivor drops the resolver's holder exclusion set; it is not observable through a settle because a committed file's own outgoing edges are swept by its commit, so a committed holder never holds an inferred edge at settle time -- the exclusion is kept as the LLD requires and is pinned at the store level (excluded holder keeps its edge).",
+    "summary": "Pushed through e68162aa7; the installed daemon updated to e68162aa and restarted (the restart waited on a macOS Keychain prompt). Smoke on the installed daemon: qualified, quoted and folded SQL references resolve on the first index, and saving a same-named definition makes the settle re-check the inferred edges (targets=2, returned=2), re-resolving one and leaving the other ambiguous (smoke-t5.md). The full sweep ran per directory at e68162aa7: 7346 tests, 35 failures, none in indexer (451/451), db (658/658) or any SQL suite; each failure is classified in full-sweep-t5.md (pre-existing in earlier sweeps, other sessions' connection-management and steering work, the test daemon's Keychain hang, and a threads-boot load flake that also flakes at the pre-change commit).",
     "testRecord": {
       "md": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/TESTS.md"
     },
@@ -39,51 +43,65 @@
           "file": "src/indexer/parser/__tests__/sql-names.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/__tests__/sql.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/sql-names.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/sql.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/db/relations.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/indexer/__tests__/sql-name-resolution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
       },
       {
         "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T11:57:25.736Z"
+        "timestamp": "2026-11-03T12:49:42.542Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/full-sweep-t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T12:49:42.542Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/smoke-t5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T12:49:42.542Z"
       }
     ],
-    "commit": "b31641ec1"
+    "commit": "fb01c6804"
   }
 }

@@ -4,7 +4,7 @@
     "epicHash": "0f3376a086e3601c",
     "storyId": "S001",
     "createdAt": "2026-11-03T10:37:50.308Z",
-    "updatedAt": "2026-11-03T11:57:25.736Z",
+    "updatedAt": "2026-11-03T12:49:42.542Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.736Z",
     "epicSlug": "sql-references-miss-across-2-3"
@@ -323,6 +323,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "fb01c6804",
+        "ranAt": "2026-11-03T12:49:42.542Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t5: the installed daemon resolves qualified and quoted SQL references and re-checks an inferred edge on a new definition",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/smoke-t5.md"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

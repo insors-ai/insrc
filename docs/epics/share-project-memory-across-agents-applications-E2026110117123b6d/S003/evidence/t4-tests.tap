@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 1 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 1211.235209
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+ok 2 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 110.070375
+  type: 'test'
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 3 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 102.977792
+  type: 'test'
+  ...
+# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+ok 4 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+  ---
+  duration_ms: 124.40275
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 5 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 204.218583
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 6 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 75.071958
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 7 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 339.805666
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 8 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 918.856583
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3419.7295

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T12:32:31.653Z",
+    "updatedAt": "2026-11-03T12:58:15.256Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -216,6 +216,81 @@
               },
               {
                 "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "5cd990bd1",
+        "ranAt": "2026-11-03T12:58:15.256Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-runtime-package-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-one-mutation-effects-receipt-generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-null-vectors-version-pinned-reads",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-macos-apfs-linux-ext4-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-native.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3997,
+            "titles": [
+              {
+                "title": "native-store-primitives-process-crash-and-runtime-qualification",
                 "result": "pass"
               }
             ],

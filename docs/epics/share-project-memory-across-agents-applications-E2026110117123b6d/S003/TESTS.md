@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -65,3 +65,37 @@ Run at 2026-11-03T12:32:31.653Z on commit `6028061ce`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-codec.test.ts` | 0 | 6 | 0.6 s |  |
 | `packages/project-memory/src/__tests__/store-embedding-profile.test.ts` | 0 | 3 | 0.4 s |  |
+
+## t3
+
+Run at 2026-11-03T12:58:15.256Z on commit `5cd990bd1`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-runtime-package-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native-store-primitives-process-crash-and-runtime-qualification | `packages/project-memory/src/__tests__/store-native.test.ts` |
+
+**integration: store-one-mutation-effects-receipt-generation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native-store-primitives-process-crash-and-runtime-qualification | `packages/project-memory/src/__tests__/store-native.test.ts` |
+
+**integration: store-null-vectors-version-pinned-reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native-store-primitives-process-crash-and-runtime-qualification | `packages/project-memory/src/__tests__/store-native.test.ts` |
+
+**integration: store-macos-apfs-linux-ext4-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native-store-primitives-process-crash-and-runtime-qualification | `packages/project-memory/src/__tests__/store-native.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-native.test.ts` | 0 | 1 | 4 s |  |

@@ -308,7 +308,10 @@ export function pageCssFor(mode: ThemeMode): string {
  * branded page chrome cannot drift between rendering paths.
  */
 export function pageStyleTags(structuralCss: string): string {
-	const fonts = fontFaceCssForArtifacts();
+	// Fonts are mode-agnostic, so they live in their own always-on tag; the
+	// boot script toggles only style[data-iv-mode]. Raw CSS outside a <style>
+	// element in <head> is dropped by the parser, so the fonts must be wrapped.
+	const fonts = `<style data-iv-fonts>${fontFaceCssForArtifacts()}</style>`;
 	const light = `<style data-iv-mode="light">${pageCssFor('light')}${structuralCss}</style>`;
 	const dark = `<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${structuralCss}</style>`;
 	const overrides = `<style>${DIAGRAM_OVERRIDES_CSS}</style>`;

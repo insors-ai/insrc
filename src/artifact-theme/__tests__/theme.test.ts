@@ -129,12 +129,12 @@ test('theme.test.ts: legendSlotHtml wraps both modes for the boot script to togg
 
 test('theme.test.ts: pageStyleTags is the one shared page-style composition for every shell (R1)', () => {
 	const tags = pageStyleTags('.my-structural{}');
-	assert.match(tags, /@font-face\{font-family:'Poppins'/);
+	assert.match(tags, /<style data-iv-fonts>@font-face\{font-family:'Poppins'/);
 	assert.match(tags, /<style data-iv-mode="light">/);
 	assert.match(tags, /<style data-iv-mode="dark" disabled>/);
 	assert.ok(tags.indexOf('<style data-iv-mode="light">') < tags.indexOf('<style data-iv-mode="dark"'), 'light before dark');
 	// both mode tags carry pageCssFor(mode) AND the caller's structural CSS
-	const light = tags.slice(tags.indexOf('<style data-iv-mode="light">'), tags.indexOf('</style>'));
+	const light = tags.slice(tags.indexOf('<style data-iv-mode="light">'), tags.indexOf('</style>', tags.indexOf('<style data-iv-mode="light">')));
 	assert.ok(light.includes('.my-structural{}'), 'structural CSS inside the light variant');
 	assert.ok(light.includes('--iv-bg:'), 'brand surface tokens inside the light variant');
 	assert.match(tags, /<style>\.insrc-viewer-diagram/, 'diagram overrides appended once');

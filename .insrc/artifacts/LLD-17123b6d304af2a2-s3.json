@@ -24,7 +24,168 @@
     "hldBaseRunId": "wf-1793536573467-3p0dt6",
     "hldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S3 designs its upstream crash/replay, lifecycle-protection and storage-isolation acceptance criteria without claiming later maintenance capabilities are complete.",
+          "evidence": "DEF §6.3 requires complete-or-prior crash outcomes, replay-safe correction/deletion and bidirectional index/memory isolation. The LLD supplies atomic receipts, revision guards, broad forgetting barriers and a concrete isolation matrix. Its explicit S7/S9 completion gates agree with the HLD's supporting-story allocation for AC29; they are not presented as completed S3 evidence. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, src/indexer/index.ts]",
+          "action": "Retain the distinction between S3 component evidence and final integrated AC29 closure in the build record.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The relationship and interaction documentation adequately explains the proposed store model.",
+          "evidence": "Inspected both HTML Mermaid sources and the recorded review4 PNG renders. Revision→Evidence and SourceSpan→Evidence show one-to-many ownership, while prose specifies exactly one revision/source per evidence row and the current revision pointer. The sequence shows store-before-queue startup, one effects/receipt/generation mutation, lane release before ACK and final read freshness validation. The recorded renders visibly contain these structures without diagram errors. Live browser interaction was not exercised. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/er-model.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/sequence-diagram.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review4-er.png, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review4-sequence.png]",
+          "action": "Keep companions synchronized with implementation changes; no additional UX mock is necessary for this internal store design.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Current QueueAdmission sanitizes host callback failures separately from module validation and persistence failures.",
+          "evidence": "Read append(), bind(), sameEnvelope() and policyFailure(), plus FileQueue.persist(). The callback alone is wrapped by `try { output = await this.#policy.admit(...) } catch ...`; snapshotting, sameEnvelope and persist run afterward. policyFailure preserves only UNBOUND_PROJECT/POLICY_DENIED and otherwise returns NOT_READY. The proposed transform placement accurately preserves this boundary. [files: packages/project-memory/src/queue/admission.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/codec.ts]",
+          "action": "Implement the hooks at the specified boundaries and retain separate callback-origin versus module-origin error tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing runtime supports ordered multiple OwnedWork participants and retains ownership when quiescence or release fails.",
+          "evidence": "Read the complete runtime lifecycle and its tests. stopAdmission visits every participant; quiesce drains serially then waits for models; after successful quiescence close attempts every participant release in array order and releases the owner only when all succeed. The existing three-participant failure test asserts ordered closes and retained ownership. Drain rejection intentionally prevents entry into resource release. [files: packages/project-memory/src/runtime.ts, packages/project-memory/src/__tests__/runtime.test.ts]",
+          "action": "Add the planned real queue/store two-participant tests; preserve the existing requirement that release follows verified quiescence.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The authoritative store is new, while S1 ownership and S2 receipt verification are reusable with the stated roles.",
+          "evidence": "Package source inspection found no MemoryStore/CommitPlan implementation; host-node currently constructs only FileQueue and QueueAdmission. DirectoryOwnership provides canonical directory, assertOwned and close. FileQueue already accepts an optional ReceiptVerifier and uses byIdentity, byOperation and confirmRetirement for admission, status, acknowledgment and recycling. S3 supplying the optional retirement method does not require changing that interface. [files: packages/project-memory/src/host-node.ts, packages/project-memory/src/ownership.ts, packages/project-memory/src/queue/types.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/retirement.ts]",
+          "action": "Reuse these ports without importing backend database singletons or adding a second receipt authority.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design identifies the production and packaging changes required to introduce the store and trusted admission transforms.",
+          "evidence": "Checked host composition, QueueAdmission construction, public types, README and the full packed test. Current exports are exactly `.` and `./node`, dependencies exactly fs-ext 2.1.1, and the tarball regex permits root/queue emitted modules only. The LLD explicitly updates dependencies, lockfile, store allowlist, module assertions, lazy loading, constructor hooks, host rollback, policy fixtures and README while retaining public signatures. [files: packages/project-memory/package.json, packages/project-memory/src/index.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/queue/admission.ts, packages/project-memory/src/types.ts, packages/project-memory/src/__tests__/packed.test.ts, packages/project-memory/README.md]",
+          "action": "Apply the inventory as written, including lifecycle, admission-policy and embedding-profile in the narrow packaged-module assertions.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing queue-only directories and incompatible store/profile metadata are explicitly preserved rather than silently upgraded.",
+          "evidence": "Current host open creates an S1 layout followed by a queue; configuration.classifyLayout recognizes an existing layout without asserting that it contains an S3 store. The proposed store-open check therefore adds a necessary separate pristine-root decision. The LLD refuses queue-only roots, requires complete initialization evidence, and checks marker/root/runtime model, dimension and normalizationVersion without defaults or automatic re-embedding. [files: packages/project-memory/src/configuration.ts, packages/project-memory/src/ownership.ts, packages/project-memory/src/host-node.ts, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md]",
+          "action": "Keep refusal non-destructive and verify table version, marker and pending queue bytes remain unchanged on each mismatch.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Receipt retention and replay matching remain compatible with S2 after acknowledgment, recycling and logical forgetting.",
+          "evidence": "Read receipt validation, matchProof, persist, markResolved and retirement. S2 checks operation/identity/hash/scope/epoch/event/generation and distinguishes unavailable proof from absence. persist also checks a found receipt against any retained accepted identity. The proposed immutable minimal proof projection and digest-based retirement confirmation preserve these fields, while retaining receipts beyond logical deletion and segment unlink. [files: packages/project-memory/src/queue/receipts.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/retirement.ts, packages/project-memory/src/queue/types.ts]",
+          "action": "Exercise the existing retained-conflicting-retry regression against the real S3 facade, not only mocked receipts.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S3 refines sc4 without taking ownership of semantic reconciliation, retrieval ranking, transport or physical maintenance.",
+          "evidence": "Compared HLD sc4 and adjacent story boundaries with the LLD and current public interfaces. S3 supplies storage validation, private proof/admission integration and committed projections; S4 retains semantic decisions, S5 ranking/context, S8 delivery semantics and S9 purge/migration. Generic S2 construction omits the new private hooks, QueueFrame remains unchanged, and public submit/read/model signatures remain intact. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md, packages/project-memory/src/types.ts, packages/project-memory/src/queue/types.ts, packages/project-memory/src/runtime.ts]",
+          "action": "Preserve NOT_READY for unsupported delivery and public semantic reads until their owning stories implement them.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed admission and queue/store ordering make validation failures and uncertain outcomes detectable without silently repeating effects.",
+          "evidence": "Current queue persistence, proof matching and acknowledgment support the proposed reconciliation order. The LLD specifies module validation outside host sanitization, reservation release on pre-persist failure, immutable historical conflicts, store fencing on uncertainty, proof availability during queue close, partial-open rollback and owner retention when settlement is unverified. It prohibits store-to-queue callbacks and places ACK after lane release. [files: packages/project-memory/src/queue/admission.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/receipts.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/runtime.ts]",
+          "action": "Implement and run the planned failure-injection and lock-order tests before wiring production processing.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The pinned native SDK path can satisfy the required crash-durable atomic publication contract on both supported platforms.",
+          "evidence": "Inspected lance-probe.mjs and qualification-probe.json. They establish a one-version merge, nullable vectors, pinned reads and normal-exit reopen on Darwin Node 22.23.2, but explicitly exclude crash/fsync and Linux qualification. The official [Table API](https://lancedb.github.io/lancedb/js/classes/Table/) and [merge API](https://lancedb.github.io/lancedb/js/classes/MergeInsertBuilder/) describe the operations, not this exact platform durability proof. No S3 crash qualification results were available; the design correctly leaves this as a mandatory gate. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/lance-probe.mjs, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/qualification-probe.json]",
+          "action": "Keep production wiring blocked until real Node22/APFS and ext4 SIGKILL/recovery tests establish complete-or-prior outcomes, receipt/control coherence and safe uncertain-write handling.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each S003 acceptance criterion maps to concrete tests grounded in existing repository mechanisms.",
+          "evidence": "Compared DEF ac1/ac2/ac3 with the test matrix and read the current native fixture, packed tests, runtime tests and index rebuild deletion path. ac1 maps to real commit/kill/ACK and exact-retry cases; ac2 to transition, lineage, tombstone, freshness and status cases; ac3 to logical memory/index/queue oracles using the actual Indexer rebuild path. The plan explicitly distinguishes future S9 cleanup coverage from executed S3 evidence and requires unsupported hosts not to count as qualification. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, packages/project-memory/src/__tests__/fixtures/node22.ts, packages/project-memory/src/__tests__/packed.test.ts, packages/project-memory/src/__tests__/runtime.test.ts, src/indexer/index.ts]",
+          "action": "Record actual results and platform/source fingerprints during build. The new subjects are planned tests, not evidence that implementation already passes.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-03T10:30:23.547Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

@@ -593,3 +593,23 @@ Keep one table and single writer, but encode current/revision/source/evidence/re
 - **[[c21]]** `doc` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review-round2.json`
 - **[[c22]]** `code` `packages/project-memory/src/queue/admission.ts`
 - **[[c23]]** `doc` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review-round3.json`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⚠️ Review `WARN` — design.story (design.story)
+
+**0 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-11-03T10:30:23.547Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+_None._
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| error-paths | The pinned native SDK path can satisfy the required crash-durable atomic publication contract on both supported platforms. | Inspected lance-probe.mjs and qualification-probe.json. They establish a one-version merge, nullable vectors, pinned reads and normal-exit reopen on Darwin Node 22.23.2, but explicitly exclude crash/fsync and Linux qualification. The official [Table API](https://lancedb.github.io/lancedb/js/classes/Table/) and [merge API](https://lancedb.github.io/lancedb/js/classes/MergeInsertBuilder/) describe the operations, not this exact platform durability proof. No S3 crash qualification results were available; the design correctly leaves this as a mandatory gate. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/lance-probe.mjs, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/qualification-probe.json] | Keep production wiring blocked until real Node22/APFS and ext4 SIGKILL/recovery tests establish complete-or-prior outcomes, receipt/control coherence and safe uncertain-write handling. |

@@ -57,6 +57,33 @@ nativeTest(import.meta.url, 'verified-terminal-ack-retirement-and-reader-pins', 
   } finally { await reopened?.close(); await f.close(); }
 });
 
+nativeTest(import.meta.url, 'retained-identity-rejects-conflicting-authoritative-receipt', async () => {
+  for (const terminal of [false, true]) {
+    for (const change of ['payload', 'scope'] as const) {
+      const f = await fixture();
+      try {
+        const original = command('one'), accepted = await f.admission.append(original);
+        if (terminal) await f.terminal('one');
+        const changed: MemoryCommand = change === 'payload'
+          ? { ...original, payload: { text: 'different memory' } }
+          : { ...original, scope: { ...original.scope, branch: 'other' } };
+        const snapshot = snapshotCommand(changed, limits.maxEventBytes), generation = 'conflicting';
+        const proof: TerminalProof = {
+          operationId: snapshot.operationId, identityDigest: snapshot.identityDigest,
+          payloadHash: snapshot.payloadHash, scope: changed.scope, scopeEpoch: 'epoch', generation,
+          receipt: { operationId: snapshot.operationId, eventId: 'one', state: 'committed', generation }, queueTerminal: true,
+        };
+        await writeFile(join(f.root, 'test-authoritative-receipts.json'), JSON.stringify([proof]), { mode: 0o600 });
+        const before = f.queue.writer.current;
+        await assert.rejects(f.admission.append(changed), (e: unknown) => e instanceof MemoryError && e.code === 'REVISION_CONFLICT', `${change}, terminal=${terminal}`);
+        assert.equal(f.queue.writer.current, before, 'a conflicting receipt must not publish a checkpoint');
+        assert.equal(f.queue.index.get(accepted.operationId)?.payloadHash, snapshotCommand(original, limits.maxEventBytes).payloadHash);
+        assert.equal(f.queue.isAvailable(), true, 'a receipt conflict must not fence valid pending work');
+      } finally { await f.close(); }
+    }
+  }
+});
+
 nativeTest(import.meta.url, 'recycled-identity-requires-authoritative-receipt-capability', async () => {
   const f = await fixture(); let downgrade: FileQueue | undefined;
   try {

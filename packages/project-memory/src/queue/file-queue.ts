@@ -77,6 +77,10 @@ export class FileQueue {
       const lookup = await readReceipt(() => this.verifier!.byIdentity(snapshot.identity));
       if (lookup.status === 'found') {
         matchProof(lookup.proof, { operationId: snapshot.operationId, identityDigest: snapshot.identityDigest, payloadHash: snapshot.payloadHash, scope: snapshot.command.scope, scopeEpoch, eventId: snapshot.command.source.eventId });
+        // An authoritative result cannot replace an already accepted identity's
+        // content/scope, even when it matches the caller's conflicting retry.
+        const retained = this.index.get(snapshot.operationId);
+        if (retained) matchProof(lookup.proof, { ...retained, operationId: snapshot.operationId });
         return lookup.proof.receipt;
       }
     }

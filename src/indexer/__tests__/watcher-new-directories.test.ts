@@ -11,6 +11,7 @@ import { chmodSync, mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, w
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { createFileFilter } from '../file-filter.js';
 import { Watcher } from '../watcher.js';
 import type { FileEvent, SubscribeFn } from '../watcher.js';
 import { getLogger } from '../../shared/logger.js';
@@ -29,7 +30,9 @@ async function harness(ignore?: readonly string[], subscribe?: SubscribeFn): Pro
   const watcher = subscribe === undefined ? new Watcher() : new Watcher(subscribe);
   const events: FileEvent[] = [];
   watcher.onEvents(e => { events.push(...e); });
-  if (ignore === undefined) await watcher.addRepo(root); else await watcher.addRepo(root, ignore);
+  // The ignore rules are the repository's FileFilter (a .gitignore here), not a list of directory names.
+  if (ignore === undefined) await watcher.addRepo(root);
+  else { writeFileSync(join(root, '.gitignore'), ignore.map(n => `${n}/`).join('\n') + '\n'); await watcher.addRepo(root, createFileFilter(root)); }
   cleanups.push(async () => { await watcher.close(); rmSync(base, { recursive: true, force: true }); });
   const h: Harness = {
     root, watcher, events,
@@ -102,7 +105,7 @@ test('src/indexer/__tests__/watcher-new-directories.test.ts: a directory tree wi
 });
 
 test('src/indexer/__tests__/watcher-new-directories.test.ts: files inside a new directory whose name is on the ignore list (node_modules) and inside an ignored subdirectory of a new directory yield no events, at creation and when written later', async () => {
-  const h = await harness();
+  const h = await harness(['node_modules', 'out']);
   const ignoredTop = join(h.root, 'node_modules', 'pkg', 'lib');
   mkdirSync(ignoredTop, { recursive: true });
   writeFileSync(join(ignoredTop, 'in-node-modules.ts'), 'x\n');

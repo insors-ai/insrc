@@ -3,7 +3,7 @@ import { lstatSync, readdirSync } from 'node:fs';
 import { join, sep } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
-import { changedIgnoreFile, nativelyIgnoredPaths, refreshFileFilter, type FileFilter } from './file-filter.js';
+import { changedIgnoreFile, excludesDirectory, nativelyIgnoredPaths, refreshFileFilter, type FileFilter } from './file-filter.js';
 
 export type FileEventType = 'create' | 'update' | 'delete';
 export interface FileEvent { type: FileEventType; path: string }
@@ -176,11 +176,14 @@ export class Watcher {
     void release.finally(() => this.releasing.delete(release));
   }
 
-  /** Whether the repository's FileFilter leaves a path out. A repository without one (a config dir) ignores nothing. */
-  private isIgnored(repoPath: string, path: string): boolean {
+  /** Whether the repository's FileFilter leaves a path out. A repository without one (a config dir) ignores nothing.
+   *  A directory is judged by the rules that prune a walk (excludesDirectory), not by includes(): a directory that
+   *  just appeared has nothing tracked or included under it yet, and includes() would call it excluded. */
+  private isIgnored(repoPath: string, path: string, directory = false): boolean {
     const watched = this.subscriptions.get(repoPath);
     if (watched === undefined) return true;
-    return watched.filter !== undefined && !watched.filter.includes(path);
+    if (watched.filter === undefined) return false;
+    return directory ? excludesDirectory(watched.filter, path) : !watched.filter.includes(path);
   }
 
   /**
@@ -189,7 +192,7 @@ export class Watcher {
    */
   private async adoptDirectory(repoPath: string, dir: string): Promise<void> {
     try {
-      if (this.dirSubscriptions.has(dir) || this.isIgnored(repoPath, dir)) return;
+      if (this.dirSubscriptions.has(dir) || this.isIgnored(repoPath, dir, true)) return;
       if (!lstatSync(dir).isDirectory()) return;          // lstat: a symbolic link is not a directory here
       const watched = this.subscriptions.get(repoPath);
       if (watched !== undefined && this.hasWatchableSubdirectory(repoPath, dir)) {
@@ -229,7 +232,7 @@ export class Watcher {
   private hasWatchableSubdirectory(repoPath: string, dir: string): boolean {
     try {
       return readdirSync(dir, { withFileTypes: true })
-        .some(e => e.isDirectory() && !this.isIgnored(repoPath, join(dir, e.name)));
+        .some(e => e.isDirectory() && !this.isIgnored(repoPath, join(dir, e.name), true));
     } catch { return false; }
   }
 
@@ -243,7 +246,7 @@ export class Watcher {
     }
     for (const e of entries) {
       const path = join(dir, e.name);
-      if (e.isSymbolicLink() || this.isIgnored(repoPath, path)) continue;
+      if (e.isSymbolicLink() || this.isIgnored(repoPath, path, e.isDirectory())) continue;
       if (e.isDirectory()) files.push(...this.filesUnder(repoPath, path));
       else if (e.isFile()) files.push(path);
     }

@@ -294,8 +294,8 @@ export async function ensureNonEmptyClosure(
 		empty = !(await deps.repoHasAnyEntity(best.path));
 	} else {
 		const entities = deps !== undefined
-			? await deps.listEntitiesForRepo(best.path)
-			: await listEntitiesForRepo(null, best.path);
+			? await deps.listEntitiesForRepo(best.path, { limit: 1 })   // existence only: the first row is enough
+			: await listEntitiesForRepo(null, best.path, { limit: 1 });
 		empty = entities.length === 0;
 		entityCount = entities.length;
 	}

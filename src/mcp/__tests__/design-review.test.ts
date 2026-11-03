@@ -12,6 +12,8 @@ import { DESIGN_REVIEW_PHASES,DESIGN_REVIEW_INPUT } from '../design-review/schem
 import { handleInsrcSchema } from '../schema/handler.js';
 import { readWorkflowGuide } from '../../daemon/guide-sections.js';
 import { createStepCallHandler,stepToolTable } from '../../daemon/steps/host.js';
+import { rpc } from '../../shared/ipc-client.js';
+import { designReviewOperation } from '../../daemon/design-review-rpc.js';
 import { handleDesignReviewStep } from '../../daemon/steps/design-review-step.js';
 import { Router } from '../../daemon/threads/router.js';
 import { TargetRegistry } from '../../daemon/threads/registry.js';
@@ -24,7 +26,7 @@ async function until(fn:()=>boolean|Promise<boolean>){for(let i=0;i<500;i++){if(
 async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider){
  writeFileSync(join(f.repo,'.insrc/schema.json'),JSON.stringify({version:2}));const path=join(f.repo,'design.sock');
  const table=stepToolTable({tools:{insrc_review_step:(args,_signal,_progress,_execution,trusted)=>handleDesignReviewStep(args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})}});
- const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch({}, {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
+ const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch(Object.fromEntries(DESIGN_REVIEW_PHASES.map(phase=>[`designReview.${phase}`,(args:unknown,trusted:Parameters<typeof designReviewOperation>[2])=>designReviewOperation(phase,args,trusted)])), {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
  const ipc=new IpcServer(router.forward,Date.now,path);await ipc.listen();return{ipc,path};
 }
 async function stdio(path:string,repo:string){
@@ -38,8 +40,9 @@ test('normal stdio MCP and Unix IPC preserve native background work and controll
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{calls++;await barrier;const chunk=prompt.match(/Chunk assignment: (.+)\n/)?.[1];const value=chunk?{chunkId:JSON.parse(chunk).id,status:'passed',summary:'Fake CLI feedback',findings:[],inspectedReferences:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path],limitations:[],advice:[]}:plan;assert.equal((await opts.onCandidate(value)).accepted,true);return value;}} as unknown as LLMProvider;
  const h=await host(f,provider);let client=await stdio(h.path,f.repo);const base={repo:f.repo,reviewId:'review-1',attempt:1};
  try{
+  const forged=await client.callTool({name:'insrc_review_step',arguments:{phase:'start',...base,artifactPath:f.json,reviewer:'controller'}}).catch(()=>({isError:true}));assert.equal(forged.isError,true);assert.equal(calls,0);
   const ack=decode(await client.callTool({name:'insrc_review_step',arguments:{phase:'start',...base,artifactPath:f.json}}));assert.equal(ack.status,'pending');
-  await until(()=>calls===1);await client.close();client=await stdio(h.path,f.repo);
+  await until(()=>calls===1);const observed=await rpc<{status:string}>('designReview.progress',base,()=>createConnection(h.path));assert.equal(observed.status,'running');await rpc('designReview.start',{...base,artifactPath:f.json},()=>createConnection(h.path));assert.equal(calls,1);await client.close();client=await stdio(h.path,f.repo);
   assert.equal(decode(await client.callTool({name:'insrc_review_step',arguments:{phase:'progress',...base}})).status,'running');assert.equal(calls,1);
   await client.callTool({name:'insrc_review_step',arguments:{phase:'start',...base,artifactPath:f.json}});assert.equal(calls,1);
   release();await until(async()=>!!decode(await client.callTool({name:'insrc_review_step',arguments:{phase:'progress',...base}})).report);

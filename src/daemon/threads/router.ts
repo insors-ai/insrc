@@ -24,7 +24,7 @@ import type { IpcStreamMessage } from '../../shared/types.js';
 import type { RequestLifetime } from '../request-context.js';
 import type { DeliverEnvelope, ForwardRequest } from '../server.js';
 import type { CancelEnvelope, FrameEnvelope, MethodClass, ReplyEnvelope, LocalRequestEnvelope } from './channel.js';
-import { MAIN_DAEMON_TASK_REVIEW_METHODS, MAIN_DAEMON_CONNECTION_METHODS } from './method-class.js';
+import { MAIN_DAEMON_DESIGN_REVIEW_METHODS, MAIN_DAEMON_TASK_REVIEW_METHODS, MAIN_DAEMON_CONNECTION_METHODS } from './method-class.js';
 import { wireRequest } from './channel.js';
 import { holdingForward } from './maintenance-entry.js';
 import type { TargetRegistry } from './registry.js';
@@ -119,7 +119,7 @@ export class Router {
 
 	private dispatch(cls: MethodClass | undefined, request: LocalRequestEnvelope, deliver: DeliverEnvelope): () => void {
 		if (request.trustedContext?.connectionSession !== undefined || request.trustedContext?.connectionExecution?.mode === 'session-memory'
-			|| MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method)
+			|| MAIN_DAEMON_TASK_REVIEW_METHODS.has(request.method) || MAIN_DAEMON_DESIGN_REVIEW_METHODS.has(request.method)
 			|| request.method === 'step.call' && ['insrc_code_review_step','insrc_review_step'].includes(String((request.params as { tool?: unknown } | null)?.tool))
 			|| MAIN_DAEMON_CONNECTION_METHODS.has(request.method) || cls === undefined || !this.opts.routed.has(cls)) return this.local(request, deliver);
 		const target = this.opts.registry.targetFor(cls);

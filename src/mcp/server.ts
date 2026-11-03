@@ -188,7 +188,9 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 		config: { description?: string; inputSchema?: ZodRawShape },
 		...rest: unknown[]
 	) => {
-		const result = (registerTool as (...a: unknown[]) => unknown)(name, config, ...rest);
+		// The design protocol rejects unknown top-level fields rather than letting Zod strip them.
+		const runtimeConfig=name==='insrc_review_step'?{...config,inputSchema:z.object(config.inputSchema??{}).strict()}:config;
+		const result = (registerTool as (...a: unknown[]) => unknown)(name, runtimeConfig, ...rest);
 		const meta = TOOL_SCHEMA_META[name] ?? {};
 		schemaRecords.set(name, {
 			name,

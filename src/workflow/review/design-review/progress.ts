@@ -26,7 +26,7 @@ export class DesignProgressTracker {
   this.value.phase=phase;this.value.completedChunks=completed;this.value.totalChunks=total;this.touch();
  }
  status(status:DesignReviewStatus):void{
-  this.value.status=status;this.value.requiresUserInput=status==='paused'||status==='invalidated';
+  this.value.status=status;this.value.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(status);
   if(status!=='running'){this.tools.clear();this.value.activeToolCount=0;delete this.value.activeChunkId;this.value.phase='complete';}
   this.touch();
  }
@@ -54,6 +54,7 @@ export class DesignProgressTracker {
 }
 export type DesignReportMetadata=Pick<DesignReviewConsolidated,'reviewId'|'attempt'|'artifactId'|'status'|'counts'|'reviewer'|'reviewedContentIdentity'>;
 export interface DesignObservation extends DesignReviewProgress {
+ readonly guidance:string;
  readonly completedResults: readonly DesignChunkResult[];
  readonly nextCompletedChunk:number;
  readonly report?:DesignReportMetadata|undefined;
@@ -68,5 +69,7 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  progress.completedChunks=attempt.completedChunks.length;progress.totalChunks=attempt.plan?.chunks.length??0;
  const completedResults=options.includeResult?attempt.completedChunks.slice(cursor,cursor+1):[];
  const report=attempt.report;
- return {...progress,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
+ progress.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(progress.status);
+ const guidance=['pending','running'].includes(progress.status)?'Review in progress. Show progress and wait for full completion before corrections, resolution or approval.':progress.requiresUserInput?'Review stopped. Await user input; S1 does not automatically retry, resume or reassign.':'Review complete. Read all completed feedback before taking action; checkpoint feedback alone does not approve the artifact.';
+ return {...progress,guidance,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
 }

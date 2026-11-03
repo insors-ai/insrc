@@ -14,6 +14,8 @@ for the architecture see
 
 For the explicit task-review execution policy and controller activity protocol,
 see [Task review execution](task-review-execution.md).
+For current design-review execution and its initial-attempt limits, see
+[Design review execution](design-review-execution.md).
 
 ## Concepts
 

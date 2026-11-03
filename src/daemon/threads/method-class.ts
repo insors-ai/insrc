@@ -87,6 +87,12 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['codeAnalyzer.diffRuns', 'session', false],
 	['codeReview.freshness', 'session', false],
 	['codeReview.grounding', 'session', false],
+	['designReview.start', 'session', false],
+	['designReview.progress', 'session', false],
+	['designReview.assignment', 'session', false],
+	['designReview.plan', 'session', false],
+	['designReview.activity', 'session', false],
+	['designReview.result', 'session', false],
 	['codeReview.task.cleanup', 'session', false],
 	['codeReview.task.start', 'session', false],
 	['codeReview.task.progress', 'session', false],
@@ -298,4 +304,9 @@ export const MAIN_DAEMON_CONNECTION_METHODS:ReadonlySet<string>=new Set([
 export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
  'codeReview.task.cleanup', 'codeReview.task.start', 'codeReview.task.progress', 'codeReview.task.publish',
  'codeReview.task.assignment', 'codeReview.task.scope', 'codeReview.task.result', 'codeReview.task.activity',
+]);
+
+/** Design review execution and trusted connection authority are main-daemon owned. */
+export const MAIN_DAEMON_DESIGN_REVIEW_METHODS:ReadonlySet<string>=new Set([
+ 'designReview.start','designReview.progress','designReview.assignment','designReview.plan','designReview.activity','designReview.result',
 ]);

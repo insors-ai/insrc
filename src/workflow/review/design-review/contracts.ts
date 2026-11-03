@@ -1,4 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
+import { isAbsolute } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { Static, TSchema, TLiteral, TUnion } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
@@ -158,6 +159,7 @@ export function decodeDesign<T extends TSchema>(schema: T, input: unknown, maxBy
 export function parseDesignRequest(input: unknown): DesignReviewRequest {
  try {
   const request = decodeDesign(DesignRequestSchema, input, DESIGN_LIMITS.requestBytes);
+  requireDesign(isAbsolute(request.repo),'invalid_project','Expected an absolute project path');
   if (request.phase === 'result') decodeDesign(DesignResultSchema, request.result, DESIGN_LIMITS.resultBytes);
   return request;
  } catch (error) {

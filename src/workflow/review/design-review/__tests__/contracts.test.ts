@@ -6,7 +6,7 @@ import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignWorkflowSche
 test('strict design requests reject malformed identities, unknown fields, phases and noninitial attempts', () => {
  const start = {phase:'start',repo:'/project',reviewId:'review-1',attempt:1,artifactPath:'docs/DEF.md'};
  assert.deepEqual(parseDesignRequest(start),start);
- for (const patch of [{attempt:2},{attempt:0},{reviewId:'../escape'},{reviewId:''},{phase:'claims'},{commit:'abc'},{artifact:'copied body'},{repo:42}]) {
+ for (const patch of [{attempt:2},{attempt:0},{reviewId:'../escape'},{reviewId:''},{phase:'claims'},{commit:'abc'},{artifact:'copied body'},{repo:42},{repo:'relative-project'}]) {
   assert.throws(()=>parseDesignRequest({...start,...patch}));
  }
  assert.throws(()=>parseDesignRequest({...start,artifactPath:'x'.repeat(DESIGN_LIMITS.path+1)}));

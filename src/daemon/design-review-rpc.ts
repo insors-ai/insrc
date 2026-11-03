@@ -27,3 +27,11 @@ export async function designReviewStep(raw:unknown,trusted?:TrustedRpcContext,de
  if(request.phase==='progress')return coordinator.progress(repo,request.reviewId,request.attempt,{includeResult:request.includeResult,afterCompletedChunk:request.afterCompletedChunk});
  requireDesign(owner,'wrong_owner','Trusted controller connection is required');return coordinator.exchange(request,owner);
 }
+
+/** Short unary operations share the same owner as the normal MCP step host. */
+export async function designReviewOperation(phase:'start'|'progress'|'assignment'|'plan'|'activity'|'result',raw:unknown,trusted?:TrustedRpcContext):Promise<unknown>{
+ requireDesign(raw&&typeof raw==='object'&&!Array.isArray(raw),'invalid_request','Expected operation parameters');
+ const fields=raw as Record<string,unknown>;
+ requireDesign(fields['phase']===undefined||fields['phase']===phase,'invalid_phase','Operation and phase disagree');
+ return designReviewStep({...fields,phase},trusted);
+}

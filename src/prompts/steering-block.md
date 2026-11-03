@@ -389,7 +389,7 @@ fallback. A story with no valid independent whole-story review is withheld.
    and origins. Only a passing whole-story current BUILD binding permits completion.
 6. Present BUILD and CR and ask for human approval; never auto-approve. Story BUILD
    approval cleanup is handled by the host when available; retained/errors mean retry
-   cleanup explicitly without re-review. Design review remains unavailable.
+   cleanup explicitly without re-review. Design review uses its separate initial-attempt protocol; checkpoint feedback does not yet publish approval history.
 
 All phases require repo (or resolved project), epicHash, reviewId, attempt.
 The schemas advertise reused bounded packet/results; host validates semantic scope,

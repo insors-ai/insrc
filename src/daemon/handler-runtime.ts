@@ -614,6 +614,12 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// no-verdict reason (no approved contract / no build) rather than a
 		// verdict (ac2); on ok, grounding is structured entity summaries, never
 		// raw file text (ac3, k6).
+		'designReview.start': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('start', params, context),
+		'designReview.progress': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('progress', params, context),
+		'designReview.assignment': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('assignment', params, context),
+		'designReview.plan': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('plan', params, context),
+		'designReview.activity': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('activity', params, context),
+		'designReview.result': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('result', params, context),
 		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
 		'codeReview.task.progress': async params => (await import('./task-review-rpc.js')).readTaskReviewProgress(params),
 		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),
@@ -1684,9 +1690,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const mod = await import('./code-review-rpc.js');
 			return mod.codeReviewRunStart(params, send, signal);
 		},
-		// Daemon-side review of an EXISTING design artifact (DEF / HLD / LLD) the
-		// daemon did not author. `insrc_review_step` sends controller-authored
-		// work here; a daemon-authored artifact is refused with an `error` frame.
+		// Retired design-review transport remains unavailable; current review uses designReview.* / step.call.
 		'workflow.review': async (params, send, signal) => {
 			const mod = await import('./workflow-review-rpc.js');
 			const { lifecycleFor } = await import('./lifecycle-registry.js');

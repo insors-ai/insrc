@@ -597,6 +597,25 @@ export async function updateUnresolvedMetaBatch(
 	});
 }
 
+/**
+ * Remove one meta key from each listed pending row (ISSUE-0f3376a0: the SQL
+ * re-pend marker, once a settle has re-attempted the row). A row no longer
+ * pending, or without the key, is left as it is.
+ */
+export async function clearUnresolvedMetaKeyBatch(_db: DbClient, ids: readonly string[], key: string): Promise<void> {
+	assertNoSessionPersistence();
+	if (ids.length === 0) return;
+	await withWriteTxn(s => {
+		for (const id of ids) {
+			const row = getPendingRowInTxn(s, id);
+			if (row === undefined || !(key in row.meta)) continue;
+			const { [key]: _gone, ...meta } = row.meta;
+			void _gone;
+			s.unresolved.put(id, encodeUnresolvedRow({ ...row, meta }));
+		}
+	});
+}
+
 /** The relationship kind of an edge-key kind byte. */
 const KIND_OF_BYTE: ReadonlyMap<number, RelationKind> = new Map(
 	Object.entries(RELATION_KIND_BYTE).map(([kind, byte]) => [byte as number, kind as RelationKind]),

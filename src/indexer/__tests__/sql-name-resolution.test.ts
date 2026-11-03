@@ -9,6 +9,9 @@
  *    quoted names resolve to their own definitions; a removed definition's
  *    references return to pending by key or folded text, never for a name the
  *    holder's own file defines, and carry the re-pend marker.
+ *  - t3: a settle re-attempts only the pending SQL references its files can
+ *    affect (observed as the rows it selects), and a re-pended row's marker
+ *    is consumed by the next settle whatever its outcome.
  *
  * Run: npx tsx --test src/indexer/__tests__/sql-name-resolution.test.ts
  */
@@ -30,7 +33,7 @@ import { sqlParser } from '../parser/sql.js';
 import { makeEntityId } from '../parser/base.js';
 import { resolveRelations } from '../resolver.js';
 import { writeOfRelation } from '../../db/file-commit.js';
-import { runCrossFileResolver, type CrossFileMode } from '../cross-file-resolver.js';
+import { runCrossFileResolver, sqlReferencesForSettle, type CrossFileMode } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
 import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
 
@@ -82,6 +85,13 @@ async function edges(from: Entity, ...targets: Map<string, Entity>[]): Promise<s
 		.map(n => `${byU64.get(n.u64) ?? '?'}: ${n.evidence}`).sort();
 }
 const pendingOf = async (from: Entity) => (await listUnresolvedRelations(null, repo)).filter(r => r.fromEntity === from.id);
+/** The rawTo of the rows a settle for `files` would re-attempt beyond their own, as `<view> <rawTo>`. */
+async function selected(files: string[], ...holders: Map<string, Entity>[]): Promise<string[]> {
+	const names = new Map<string, string>();
+	for (const m of holders) for (const e of m.values()) names.set(e.id, e.name);
+	const rows = await sqlReferencesForSettle({ db: null as unknown as DbClient, repoRoot: repo, sourceRoots: detectSourceRoots(repo), mode: 'settle', committedFiles: files.map(at) });
+	return rows.map(r => `${names.get(r.fromEntity) ?? '?'} ${r.rawTo}`).sort();
+}
 const classes = async (from: Entity) => (await pendingOf(from)).map(r => `${r.rawTo}: ${String(r.meta['class'])}`).sort();
 
 test('S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions', async () => {
@@ -171,4 +181,68 @@ test('S001 t2: a removed definition\'s references return to pending by folded-or
 	await save('db/p.sql', '-- gone\n');
 	const yr = (await pendingOf(y.get('y')!)).map(r => [r.rawTo, r.meta['awaitsId'] === true, r.meta[SQL_REPEND_MARKER]]);
 	assert.deepEqual(yr.filter(([raw]) => raw === pay.id), [[pay.id, true, undefined]], 'audit.payments does not meet app.payments');
+});
+
+test('S001 t3: a settle selects only the pending SQL rows the saved files can affect', async () => {
+	await save('db/a.sql', 'CREATE TABLE app.users (id int);');
+	await save('db/b.sql', 'CREATE TABLE b.items (id int);');
+	await save('db/c.sql', 'CREATE TABLE c.items (id int);');
+	const v = await save('db/v.sql', [
+		'CREATE VIEW r1 AS SELECT * FROM ledger;',
+		'CREATE VIEW r2 AS SELECT * FROM unrelated;',
+		'CREATE VIEW r3 AS SELECT * FROM items;',
+		'CREATE VIEW r4 AS SELECT * FROM users;',
+		'CREATE VIEW r5 AS SELECT * FROM app."Ledger";',
+	].join('\n'));
+	await pass();
+	assert.deepEqual(await classes(v.get('r3')!), ['items: ambiguous']);
+	assert.equal((await edges(v.get('r4')!)).length, 1);
+
+	// A new definition selects only the rows with its last-segment key: "Ledger" selects app."Ledger", not ledger.
+	await save('db/q.sql', 'CREATE TABLE "Ledger" (id int);');
+	assert.deepEqual(await selected(['db/q.sql'], v), ['r5 app."Ledger"']);
+	await save('db/l.sql', 'CREATE TABLE app.ledger (id int);');
+	assert.deepEqual(await selected(['db/l.sql'], v), ['r1 ledger']);
+	// A removed candidate selects the ambiguous row it was a candidate of.
+	await save('db/c.sql', '-- items moved out\n');
+	assert.deepEqual(await selected(['db/c.sql'], v), ['r3 items']);
+	// A removed definition's re-pended (marked) reference is selected by any SQL settle -- as is r3,
+	// whose removed candidate holds until a settle re-attempts it.
+	await save('db/a.sql', '-- users removed\n');
+	assert.deepEqual(await selected(['db/a.sql'], v), ['r3 items', 'r4 users']);
+	assert.deepEqual(await selected(['db/l.sql'], v), ['r1 ledger', 'r3 items', 'r4 users']);
+	// No SQL file committed: no SQL reference is read.
+	assert.deepEqual(await selected(['src/a.ts'], v), []);
+
+	// The settle itself attempts exactly those: r2 keeps the attempt time it had.
+	const before = (await pendingOf(v.get('r2')!))[0]!.attemptedAt;
+	await pass('settle', ['db/l.sql', 'db/c.sql', 'db/a.sql']);
+	assert.deepEqual(await edges(v.get('r1')!, await save('db/l.sql', 'CREATE TABLE app.ledger (id int);')), ['app.ledger@db/l.sql: inferred']);
+	assert.deepEqual(await classes(v.get('r3')!), [], 'one candidate left: resolved');
+	assert.deepEqual(await classes(v.get('r4')!), ['users: no-candidate']);
+	assert.equal((await pendingOf(v.get('r2')!))[0]!.attemptedAt, before, 'the unrelated row was not re-attempted');
+});
+
+test('S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row', async () => {
+	await save('db/defs.sql', 'CREATE TABLE app.users (id int);\nCREATE TABLE app.orders (id int);');
+	const v = await save('db/v.sql', 'CREATE VIEW n AS SELECT * FROM users;\nCREATE VIEW m AS SELECT * FROM orders;');
+	await pass();
+	await save('db/defs.sql', '-- both removed\n');
+	// Two more definitions of orders appear with the removal: m's outcome is ambiguous, n's no-candidate.
+	await save('db/x.sql', 'CREATE TABLE x.orders (id int);');
+	await save('db/y.sql', 'CREATE TABLE y.orders (id int);');
+	const marked = async () => (await listUnresolvedRelations(null, repo)).filter(r => r.meta[SQL_REPEND_MARKER] === true).map(r => r.rawTo).sort();
+	assert.deepEqual(await marked(), ['orders', 'users']);
+
+	await pass('settle', ['db/defs.sql', 'db/x.sql', 'db/y.sql']);
+	assert.deepEqual(await classes(v.get('n')!), ['users: no-candidate']);
+	assert.deepEqual(await classes(v.get('m')!), ['orders: ambiguous']);
+	assert.deepEqual(await marked(), [], 'cleared whatever the outcome');
+
+	// An unrelated later save selects neither row, and its settle leaves them as they were.
+	await save('db/z.sql', 'CREATE TABLE zz (id int);');
+	assert.deepEqual(await selected(['db/z.sql'], v), []);
+	const before = (await listUnresolvedRelations(null, repo)).map(r => [r.rawTo, r.attemptedAt]).sort();
+	await pass('settle', ['db/z.sql']);
+	assert.deepEqual((await listUnresolvedRelations(null, repo)).map(r => [r.rawTo, r.attemptedAt]).sort(), before);
 });

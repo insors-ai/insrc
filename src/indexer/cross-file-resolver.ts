@@ -58,6 +58,8 @@ import {
   listUnresolvedRelations,
   promoteResolvedBatch,
   updateUnresolvedMetaBatch,
+  clearUnresolvedMetaKeyBatch,
+  SQL_REPEND_MARKER,
   type UnresolvedRelation,
 } from '../db/relations.js';
 import { inNeighbors, outNeighbors } from '../db/graph/edges.js';
@@ -524,7 +526,7 @@ async function runPass2(
   // map (one DB read each; per-row helpers below are pure-sync).
   const tList = Date.now();
   const unresolved = await rowsInScope(opts, mode);
-  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, unresolved));
+  if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, unresolved, index));
   log.info(
     { repo: opts.repoRoot, rows: unresolved.length, elapsedMs: Date.now() - tList },
     'cross-file Pass 2: listUnresolvedRelations done',
@@ -611,6 +613,10 @@ async function runPass2(
       'cross-file Pass 2: class batch flushed',
     );
   }
+  // A re-pended SQL reference has had its re-attempt: whatever came of it, a
+  // later settle selects it only if its own files can affect it (ISSUE-0f3376a0).
+  const promoted = new Set(promotes.map(p => p.unresolved.id));
+  await clearUnresolvedMetaKeyBatch(opts.db, unresolved.filter(r => r.meta[SQL_REPEND_MARKER] === true && !promoted.has(r.id)).map(r => r.id), SQL_REPEND_MARKER);
 
   return { resolved, ambiguous, stillUnresolved };
 }
@@ -814,21 +820,46 @@ function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): Resol
   return UNRESOLVED;
 }
 
+const isSqlDefinition = (e: Entity): boolean => e.language === 'sql' && (e.kind === 'table' || e.kind === 'view');
+
 /**
  * In settle mode: when a committed file is a SQL file (saved or removed), the
- * repository's pending SQL references beyond the rows already in scope. A
- * definition added, moved, renamed or removed can answer, disambiguate or
- * orphan a reference in a file that was not saved, so every one is
- * re-attempted. Reads nothing when no committed file is a SQL file.
+ * repository's pending SQL references beyond the rows already in scope that
+ * the committed files can affect (ISSUE-0f3376a0): a row whose last-segment
+ * key is that of a table or view now defined in a committed file (a new
+ * candidate), an ambiguous row one of whose candidates is no longer stored,
+ * and a row the store returned to pending by name (it carries
+ * SQL_REPEND_MARKER: a definition it met was moved, renamed or removed). Any
+ * other pending reference cannot change, so it is not re-attempted. Reads
+ * nothing when no committed file is a SQL file -- a marked row is written
+ * only by the commit of a SQL definition's file, which its settle lists.
  */
 async function sqlReferencesAwaitingCommitted(
   opts:    CrossFileResolveOpts,
   inScope: readonly UnresolvedRelation[],
+  index:   EntityIndex,
 ): Promise<UnresolvedRelation[]> {
   if (!(opts.committedFiles ?? []).some(f => f.toLowerCase().endsWith('.sql'))) return [];
+  const names = new Set<string>();
+  for (const file of opts.committedFiles ?? []) {
+    for (const e of index.byFile.get(file) ?? []) if (isSqlDefinition(e)) names.add(sqlLastSegmentKey(e.name));
+  }
+  const goneCandidate = (r: UnresolvedRelation): boolean =>
+    r.meta['class'] === 'ambiguous' && Array.isArray(r.meta['candidates']) && (r.meta['candidates'] as unknown[]).some(id => typeof id !== 'string' || !index.byId.has(id));
   const seen = new Set(inScope.map(r => r.id));
   return (await listUnresolvedRelations(opts.db, opts.repoRoot))
-    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id));
+    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id))
+    .filter(r => r.meta[SQL_REPEND_MARKER] === true || names.has(sqlLastSegmentKey(r.rawTo)) || goneCandidate(r));
+}
+
+/**
+ * The pending SQL references a settle for `opts.committedFiles` re-attempts
+ * beyond the committed files' own rows -- the selection Pass 2 makes, read
+ * without resolving anything (for diagnostics and tests).
+ */
+export async function sqlReferencesForSettle(opts: CrossFileResolveOpts): Promise<UnresolvedRelation[]> {
+  const index = buildEntityIndex(await listEntitiesForRepo(opts.db, opts.repoRoot));
+  return sqlReferencesAwaitingCommitted(opts, await rowsInScope(opts, 'settle'), index);
 }
 
 // ---------------------------------------------------------------------------

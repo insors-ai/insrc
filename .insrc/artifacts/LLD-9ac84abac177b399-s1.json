@@ -35,6 +35,13 @@
         "choice": "Accept the gap: a terminal push triggers no automatic refresh. The daemon's own git_push rule and the explicit refresh still cover pushes; the reference-transaction hook (alternative a2) is a later Story if the gap matters.",
         "rationale": "User accepted the recommendation.",
         "resolvedAt": "2026-11-03T13:21:16.277Z"
+      },
+      "qdb62da24": {
+        "question": "Should this Story expose install and uninstall in the Repos pane, or only as daemon methods? Recommendation: the daemon methods and the gitHooks setting row (which the Repos pane already shows and edits) are the contract; a dedicated install button is a small follow-up in the pane model and is left to the plan only if the setting row cannot trigger install, and the plan states which.",
+        "status": "resolved",
+        "choice": "The daemon methods and the gitHooks setting row are the contract; no dedicated Repos pane button in this Story. The plan states how the setting row relates to install (the setting records intent set by install and uninstall). Plan requirements from the self-review (SELF-REVIEW.md): resolve the hooks directory through the typed git_rev_parse gitPath input, never a spawn (F1); add gitHooks to GithubEntry and check the github.json reader accepts it (F2); give the three methods handler, method-class and repository-call-audit entries and extend the handler-runtime key-set test (F4); have status compare the recorded hook entry path with the current one (F5).",
+        "rationale": "User accepted the recommendation; self-review findings F1, F2, F4 and F5 carried as plan requirements.",
+        "resolvedAt": "2026-11-03T13:21:32.496Z"
       }
     }
   },

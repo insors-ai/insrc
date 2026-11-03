@@ -554,3 +554,26 @@ Keep one table and single writer, but encode current/revision/source/evidence/re
 - **[[c20]]** `doc` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review-round1.json`
 - **[[c21]]** `doc` `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review-round2.json`
 - **[[c22]]** `code` `packages/project-memory/src/queue/admission.ts`
+
+<!-- insrc:review -->
+
+## Review
+
+### ⛔ Review `BLOCK` — design.story (design.story)
+
+**2 do not hold · 1 could not be verified · 10 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-11-03T10:15:20.180Z
+
+Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
+
+#### Does not hold (blocks approval)
+
+| Check item | Severity | Premise | Evidence | Action |
+| --- | --- | --- | --- | --- |
+| error-paths | HIGH | The proposed policy-only wrapper can preserve INVALID_REQUEST and historical REVISION_CONFLICT through unchanged QueueAdmission. | QueueAdmission.append catches errors from '#policy.admit' and passes them to policyFailure. That helper preserves only UNBOUND_PROJECT and POLICY_DENIED; every other error becomes NOT_READY. A no-I/O execution of the real QueueAdmission with a minimal queue stub confirmed 'INVALID_REQUEST -> NOT_READY' and 'REVISION_CONFLICT -> NOT_READY'. Therefore the wrapper placement specified in §3.16 cannot deliver its promised forged-payload INVALID_REQUEST or policy-originated historical conflict while QueueAdmission remains unchanged. POLICY_DENIED does survive. [files: packages/project-memory/src/queue/admission.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/errors.ts, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md] | Correct the admission/error-boundary design and change inventory so module validation errors and historical conflicts reach callers with the specified codes, while retaining sanitization of host-policy failures. Add end-to-end public-submit assertions for both codes and unchanged queue bytes. |
+| data-compatibility | MED | The persisted embedding compatibility metadata covers the normalization version required upstream. | Requirements L-05 says 'Persist embedding model identity, dimension and normalization version.' The strict root payload and initialization marker in LLD §3.11 contain embeddingModel and embeddingDimension but no embedding-normalization version or defined equivalent. ProcessingVersion.normalizer describes per-revision processing and may be null for deterministic operations; the design never binds it to embedding preprocessing or checks it at store reopen. The existing ModelPort likewise exposes only model and dimension, so this requirement is not supplied implicitly by a consumed contract. [files: docs/reqs/shared-project-memory.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, packages/project-memory/src/types.ts] | Define and persist the embedding normalization/preprocessing version, or explicitly bind an existing version to that invariant. Specify reopen/plan compatibility checks and a mismatch test while preserving the public S1 interface. |
+
+#### Could not verify (does not block)
+
+| Check item | Premise | What was tried and what was missing | Action |
+| --- | --- | --- | --- |
+| change-sites | The current companion HTML can be freshly rendered and its interactive controls verified in this review environment. | Browser discovery failed with 'The browser access host is unavailable'. Both HTML Mermaid sources and the saved round-three rendered PNGs were inspected, but current HTML execution, fresh rendering and pan/zoom/theme controls could not be independently exercised. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/er-model.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/sequence-diagram.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review3-preparation.md] | Verify current HTML rendering and controls when browser access is available; the saved renders provide historical visual evidence only. |

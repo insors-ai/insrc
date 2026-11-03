@@ -24,7 +24,180 @@
     "hldBaseRunId": "wf-1793536573467-3p0dt6",
     "hldEffectiveHash": "18ac1fc6f9d6876c125e243762b023f8b6fc223d9c20904cdbbee1c8e5588af9",
     "hldAmendmentsApplied": [],
-    "authoredBy": "controller"
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers S003's atomic replay, lifecycle protection and storage-isolation acceptance criteria without introducing a reset implementation.",
+          "evidence": "DEF §6.3 requires complete-or-prior commits, replay-safe revision/deletion boundaries, and independent memory/index reset or rebuild. The LLD designs atomic effects/receipt/generation, persistent broad-forget barriers, stale-read rejection and isolation tests. It explicitly retains S003's acceptance responsibility while identifying S7/S9-dependent cleanup evidence as pending. The actual Indexer.fullIndex path calls deleteEntitiesForRepo, which deletes graph entities and repository vectors; the proposed rebuild test therefore targets a real destructive index path. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, src/indexer/index.ts, src/db/entities.ts]",
+          "action": "Keep full ac3/AC-29 closure pending until the documented supporting-story scenarios pass.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The existing runtime can compose queue and store participants in the stated shutdown order without an algorithm change.",
+          "evidence": "EmbeddedMemoryService stops every participant, serially executes 'for (const work of this.#work) await work.drain()', waits for model settlement, then attempts each quiescent participant's close in array order. Any close failure prevents owner.close. The existing multi-participant test verifies all releases are attempted after a close failure and ownership remains held. This supports the proposed [queue, storeOwnedWork] composition; drain failures deliberately retain ownership without proceeding to resource closure. [files: packages/project-memory/src/runtime.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/__tests__/runtime.test.ts]",
+          "action": "Add the proposed queue-proof/native-work integration cases to establish that the new adapter satisfies this existing contract.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The recorded Lance probe establishes basic SDK compatibility rather than crash or cross-platform durability.",
+          "evidence": "qualification-probe.json records Node 22.23.2 on darwin, one merge-version increment, nullable scalar vectors, pinned-reader behavior and normal reopen. lance-probe.mjs performs those assertions and closes normally; it contains no SIGKILL or Linux qualification. Its explicit limit is 'No crash/fsync, Linux, concurrent-reader-under-kill or power-loss qualification'. Installed 0.40.0 declarations also expose checkout, checkoutLatest, mergeInsert and orderBy, consistent with the documented [Table API](https://lancedb.github.io/lancedb/js/classes/Table/). [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/qualification-probe.json, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/lance-probe.mjs, node_modules/@lancedb/lancedb/dist/table.d.ts, node_modules/@lancedb/lancedb/dist/query.d.ts]",
+          "action": "Retain the mandatory native/platform build gates; do not treat this report as their completion.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The dedicated authoritative store is new, while the receipt-verifier integration port already exists with the stated proof fields.",
+          "evidence": "The package currently composes FileQueue without a store. ReceiptVerifier already provides byIdentity, byOperation and optional confirmRetirement; TerminalProof includes operationId, identityDigest, payloadHash, scope, scopeEpoch, generation, receipt and queueTerminal. FileQueue accepts the verifier as its fifth constructor argument and uses it for retry reconciliation and acknowledgement. Existing backend Lance access is a PATHS-bound singleton with backend ownership dependencies, supporting the choice to create a separate package-owned connection. [files: packages/project-memory/src/host-node.ts, packages/project-memory/src/queue/types.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/receipts.ts, packages/project-memory/src/queue/retirement.ts, src/db/lance/conn.ts]",
+          "action": "Implement the existing verifier port and retain the dedicated connection boundary.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The packaging and composition inventory identifies the existing assertions and fixtures affected by S3.",
+          "evidence": "packed.test.ts currently asserts dependencies exactly equal {'fs-ext':'2.1.1'}, exports exactly ['.','./node'], and permits only root/queue emitted modules. Its external consumer and shared options fixture use identity-echo policies and old payload shapes. The LLD explicitly updates these assertions, S3 host fixtures, README, workspace lockfile and narrow store-module allowlist, including lifecycle and admission-policy through its combined inventory. Root package.json already declares the npm workspace and package-first build. [files: packages/project-memory/package.json, packages/project-memory/src/__tests__/packed.test.ts, packages/project-memory/src/__tests__/fixtures/options.ts, packages/project-memory/src/host-node.ts, packages/project-memory/README.md, package.json, package-lock.json]",
+          "action": "Apply the inventory without broadening public exports or the tarball allowlist beyond intended modules.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed relationships and interactions have adequate documented endpoints, cardinality, ownership and companion content.",
+          "evidence": "The LLD specifies one current pointer, immutable revision history, evidence joining exactly one revision and source, namespace/epoch restrictions, and receipt retention. The ER HTML source represents revision/source-to-evidence relationships as one-to-many; the inspected review3-er.png visibly agrees. The sequence source and inspected review3-sequence.png show all seven participants, atomic publication, lane release before acknowledgement, pinned reads and queue-before-store closure. The prose supplies additional shutdown-admission details omitted from the simplified sequence. No UX flow is introduced. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/er-model.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/sequence-diagram.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review3-er.png, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review3-sequence.png]",
+          "action": "Maintain the prose and generated companions together when correcting the design.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The current companion HTML can be freshly rendered and its interactive controls verified in this review environment.",
+          "evidence": "Browser discovery failed with 'The browser access host is unavailable'. Both HTML Mermaid sources and the saved round-three rendered PNGs were inspected, but current HTML execution, fresh rendering and pan/zoom/theme controls could not be independently exercised. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/er-model.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/sequence-diagram.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/review3-preparation.md]",
+          "action": "Verify current HTML rendering and controls when browser access is available; the saved renders provide historical visual evidence only.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design explicitly preserves existing queue-only data and keeps S2 frame/proof formats unchanged.",
+          "evidence": "Current host-node.ts creates an S1-owned root and S2 queue without Lance. QueueIo.bootstrap persists queue format identity and segment/checkpoint state; QueueFrame already includes queueId, sequence, scopeEpoch and admittedAtMs. The LLD refuses automatic empty-store initialization in these existing roots, assigns migration to S9, and places admitted provenance within the existing Json payload rather than adding frame or proof fields. [files: packages/project-memory/src/host-node.ts, packages/project-memory/src/configuration.ts, packages/project-memory/src/queue/io.ts, packages/project-memory/src/queue/types.ts, packages/project-memory/src/queue/codec.ts, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md]",
+          "action": "Test refusal before queue bootstrap and compare existing queue bytes after every failed S3 open.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "MED",
+          "premise": "The persisted embedding compatibility metadata covers the normalization version required upstream.",
+          "evidence": "Requirements L-05 says 'Persist embedding model identity, dimension and normalization version.' The strict root payload and initialization marker in LLD §3.11 contain embeddingModel and embeddingDimension but no embedding-normalization version or defined equivalent. ProcessingVersion.normalizer describes per-revision processing and may be null for deterministic operations; the design never binds it to embedding preprocessing or checks it at store reopen. The existing ModelPort likewise exposes only model and dimension, so this requirement is not supplied implicitly by a consumed contract. [files: docs/reqs/shared-project-memory.html, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, packages/project-memory/src/types.ts]",
+          "action": "Define and persist the embedding normalization/preprocessing version, or explicitly bind an existing version to that invariant. Specify reopen/plan compatibility checks and a mismatch test while preserving the public S1 interface.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "S3 refines its owned sc4 storage contract while preserving adjacent story ownership and public wire signatures.",
+          "evidence": "HLD §6 assigns S3 physical encoding, receipt lookup, single-table commits, generation, revision checks and tombstone matching. The LLD keeps semantic classification in S4, ranking/public recall in S5, transport in S6, trusted host integrations in S7/S8 and migration/purge in S9. Existing MemoryCommand.payload is Json and HostPolicy.admit returns Json, permitting the explicitly documented payload refinement without a TypeScript signature or S2 frame-format change. Public context/search/inspect remain NOT_READY, matching runtime.ts. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, packages/project-memory/src/types.ts, packages/project-memory/src/queue/types.ts, packages/project-memory/src/runtime.ts]",
+          "action": "Keep the new writer and read handles private and retain the stated future-story gates.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The proposed policy-only wrapper can preserve INVALID_REQUEST and historical REVISION_CONFLICT through unchanged QueueAdmission.",
+          "evidence": "QueueAdmission.append catches errors from '#policy.admit' and passes them to policyFailure. That helper preserves only UNBOUND_PROJECT and POLICY_DENIED; every other error becomes NOT_READY. A no-I/O execution of the real QueueAdmission with a minimal queue stub confirmed 'INVALID_REQUEST -> NOT_READY' and 'REVISION_CONFLICT -> NOT_READY'. Therefore the wrapper placement specified in §3.16 cannot deliver its promised forged-payload INVALID_REQUEST or policy-originated historical conflict while QueueAdmission remains unchanged. POLICY_DENIED does survive. [files: packages/project-memory/src/queue/admission.ts, packages/project-memory/src/host-node.ts, packages/project-memory/src/errors.ts, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md]",
+          "action": "Correct the admission/error-boundary design and change inventory so module validation errors and historical conflicts reach callers with the specified codes, while retaining sanitization of host-policy failures. Add end-to-end public-submit assertions for both codes and unchanged queue bytes.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Receipt verification distinguishes unavailable proof from absence and prevents acknowledgement or retirement without matching authoritative proof.",
+          "evidence": "readReceipt converts thrown, malformed and explicit unavailable results into ReceiptUnavailableError. matchProof checks operation, identity, payload, scope, epoch, event and optional generation. FileQueue.markResolved requires a found matching proof before terminal checkpoint publication; retirement additionally confirms retained digest references before unlink. These real callers support the LLD's proof-preserving failure handling and store-before-queue-close dependency. [files: packages/project-memory/src/queue/receipts.ts, packages/project-memory/src/queue/file-queue.ts, packages/project-memory/src/queue/retirement.ts]",
+          "action": "Ensure the S3 adapter preserves these distinctions during fencing, draining and reopen.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each approved S003 acceptance criterion maps to concrete proposed tests using applicable repository harnesses.",
+          "evidence": "DEF ac1 maps to atomic publication, exact retry and real commit/ACK crash barriers; ac2 maps to transition, lineage, scope, expiry, stale-read and broad-forget replay scenarios; ac3 maps to actual index rebuild and bidirectional cleanup/isolation scenarios with explicit future gates. Existing node:test/assert tests, nativeTest/node22 fixtures, OS-ownership crash tests and isolated packed consumers support the proposed approach. The LLD correctly treats these store tests as proposed, requires the supported minor runtime explicitly, and does not count unsupported/skipped platforms as qualification. [files: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/DEF.md, docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md, packages/project-memory/src/__tests__/fixtures/node22.ts, packages/project-memory/src/__tests__/queue-admission.test.ts, packages/project-memory/src/__tests__/runtime.test.ts, packages/project-memory/src/__tests__/packed.test.ts]",
+          "action": "Preserve this mapping and add the error-code and embedding-normalization compatibility regressions identified above before implementation qualification.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 1,
+        "med": 1,
+        "low": 11,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-03T10:15:20.180Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
   },
   "body": {
     "summary": {

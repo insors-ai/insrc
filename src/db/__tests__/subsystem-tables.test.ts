@@ -45,7 +45,7 @@ const group = (id: string, files: string[], extra: Partial<SubsystemGroupRow> = 
 const ids = (s: { subsystems: readonly { id: string }[] }) => s.subsystems.map(x => x.id).sort();
 
 test('s8 t1: a v7 store opens at version 8 with the subsystem tables and its rows unchanged; a fresh store has them', async () => {
-	assert.equal(SCHEMA_VERSION, 8);
+	assert.equal(SCHEMA_VERSION, 9);
 	let store = await getGraphStore();
 	assert.ok(store.subsystem && store.subsystemByFile, 'a fresh store has both tables');
 	const repoId = (await lookupRepoId(A))!;
@@ -53,7 +53,7 @@ test('s8 t1: a v7 store opens at version 8 with the subsystem tables and its row
 	await closeGraphStore();
 
 	store = await getGraphStore();
-	assert.equal(store.meta.get('schema_version'), 8);
+	assert.equal(store.meta.get('schema_version'), 9);
 	assert.equal(await lookupRepoId(A), repoId, 'the existing repository row is unchanged');
 	assert.deepEqual(await readSubsystems(A), { computedAtGeneration: null, subsystems: [] }, 'no subsystems until a pass');
 });

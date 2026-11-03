@@ -72,7 +72,7 @@ test('s9 t1: a v6 store without the new namespace rows opens at version 7 holdin
 	await closeGraphStore();
 
 	const store = await getGraphStore();
-	assert.equal(store.meta.get('schema_version'), SCHEMA_VERSION, 'the chain runs on to the current version (8 since s8)');
+	assert.equal(store.meta.get('schema_version'), SCHEMA_VERSION, 'the chain runs on to the current version (9 since the v2 index repair)');
 	const rows = await sharedRows();
 	for (const [ns, id] of Object.entries(NEW)) assert.equal(rows.get(id), ns, ns);
 	assert.equal(rows.size, 7);

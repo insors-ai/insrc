@@ -1,0 +1,12 @@
+{
+  "date": "2026-11-04",
+  "authorization": "ok, log all of these failures as one issue in github, we will pick that up later. continue s3 approval",
+  "issue": "https://github.com/insors-ai/insrc/issues/98",
+  "scope": "All 21 backend sweep failures, grouped into ten causes, plus the unresolved diagnostic startup delay",
+  "backendSweepResult": "fail",
+  "standalonePackageResult": { "macosPass": 138, "linuxPass": 138, "fail": 0, "skip": 0 },
+  "qualificationHandoff": "User accepts deferred backend remediation and requests S3 validation/review/approval to continue; this is not a green backend sweep or a code-review override.",
+  "originalResults": ["t17-backend-results.json", "t17-analysis.json"],
+  "independentReview": "required before BUILD approval",
+  "configurationChanged": false
+}

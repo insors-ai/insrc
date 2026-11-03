@@ -212,6 +212,9 @@ export function viaLocals(): void {
 	const typed: Repo = make();
 	const untyped = make();
 	const builtin = new Map();
+	{ var hoisted = new Repo(); var hoistedTyped: Repo = make(); }
+	hoisted.resolve();
+	hoistedTyped.emit();
 	created.push();
 	typed.parse();
 	untyped.find();
@@ -220,7 +223,7 @@ export function viaLocals(): void {
 function make(): any { return null; }
 `);
 	assert.deepEqual(calls(r, 'viaParams'), ['create', 'find']);
-	assert.deepEqual(calls(r, 'viaLocals'), ['make', 'parse', 'push']);
+	assert.deepEqual(calls(r, 'viaLocals'), ['emit', 'make', 'parse', 'push', 'resolve'], 'a var declared in a block keeps its proof for the whole function');
 });
 
 test('S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules', () => {

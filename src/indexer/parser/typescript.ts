@@ -931,8 +931,9 @@ const FUNCTION_SCOPE_TYPES = new Set([
   'method_definition', 'generator_function', 'generator_function_declaration',
 ]);
 
-/** Add the names `var` declares anywhere inside `node`, stopping at nested functions. */
-function collectVarNames(node: SyntaxNode, out: Set<string>): void {
+/** Add the names `var` declares anywhere inside `node`, stopping at nested
+ *  functions, and to `user` those it declares with a user-class type or `new`. */
+function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>): void {
   for (const c of node.namedChildren) {
     if (FUNCTION_SCOPE_TYPES.has(c.type)) continue;
     if (c.type === 'for_in_statement' && c.childForFieldName('kind')?.text === 'var') {
@@ -943,9 +944,10 @@ function collectVarNames(node: SyntaxNode, out: Set<string>): void {
       for (const d of c.namedChildren) {
         const name = d.type === 'variable_declarator' ? d.childForFieldName('name') : null;
         if (name) collectPatternIdentifiers(name, out);
+        if (name?.type === 'identifier' && (typeProvesUser(d.childForFieldName('type')) || newProvesUser(d.childForFieldName('value')))) user.add(name.text);
       }
     }
-    collectVarNames(c, out);
+    collectVarNames(c, out, user);
   }
 }
 
@@ -1021,7 +1023,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   }
   // A function's frame also holds every `var` in its body, whatever block it is in.
   const body = FUNCTION_SCOPE_TYPES.has(scope.type) ? scope.childForFieldName('body') : null;
-  if (body) collectVarNames(body, declared);
+  if (body) collectVarNames(body, declared, user);
   if (scope.type === 'for_in_statement' && scope.childForFieldName('kind')) {
     const left = scope.childForFieldName('left');        // for (const x of / in ...)
     if (left) collectPatternIdentifiers(left, declared);

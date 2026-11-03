@@ -20,7 +20,6 @@ const timestamp = Type.String({ minLength: 20, maxLength: 30, pattern: '^\\d{4}-
 const digest = Type.String({ pattern: '^[a-f0-9]{64}$' });
 const texts = Type.Array(text, { maxItems: DESIGN_LIMITS.units });
 const refs = Type.Array(path, { maxItems: DESIGN_LIMITS.units });
-const ids = Type.Array(id, { maxItems: DESIGN_LIMITS.units });
 export const DesignStatusSchema = enumeration(['pending','running','interrupted','paused','invalidated','passed','changes_requested','incomplete','failed']);
 export type DesignReviewStatus = Static<typeof DesignStatusSchema>;
 export const DesignWorkflowSchema = object({

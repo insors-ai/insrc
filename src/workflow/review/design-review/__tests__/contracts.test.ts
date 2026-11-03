@@ -31,3 +31,17 @@ test('common review schemas preserve workflow context and bounded observation wi
  assert.equal(parseDesignRequest(request).phase,'result');
  assert.throws(()=>parseDesignRequest({...request,sequence:0}));
 });
+
+test('result payload has its own one-MiB boundary inside the larger request envelope',()=>{
+ const limit=1024*1024;
+ const result={chunkId:'chunk-1',status:'passed',summary:'Boundary fixture',findings:[],inspectedReferences:['/body/summary'],limitations:[],advice:Array.from({length:128},()=>'x'.repeat(8192))};
+ const excess=Buffer.byteLength(JSON.stringify(result))-limit;assert.ok(excess>0&&excess<8192);
+ result.advice[127]=result.advice[127]!.slice(0,8192-excess);
+ assert.equal(Buffer.byteLength(JSON.stringify(result)),limit);
+ const request={phase:'result',repo:'/project',reviewId:'review-1',attempt:1,executionId:'execution-1',sequence:1,result};
+ assert.ok(Buffer.byteLength(JSON.stringify(request))<DESIGN_LIMITS.requestBytes);
+ assert.equal(parseDesignRequest(request).phase,'result');
+ result.advice[127]=result.advice[127]!+'x';assert.equal(Buffer.byteLength(JSON.stringify(result)),limit+1);
+ assert.ok(Buffer.byteLength(JSON.stringify(request))<DESIGN_LIMITS.requestBytes);
+ assert.throws(()=>parseDesignRequest(request),(error:unknown)=>error instanceof Error&&'code' in error&&error.code==='input_too_large');
+});

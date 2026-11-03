@@ -160,6 +160,10 @@ export class DesignReviewCoordinator {
  private acceptController(job:DesignJob):void{
   const unit=job.controller;if(!unit)return;unit.monitor.stop();unit.accept();job.controller=undefined;
  }
+ private checkControllerSubject(job:DesignJob):void{
+  try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}
+  catch(error){job.abort.abort(error);job.controller?.reject(error);throw error;}
+ }
  /** Only a connection identity supplied by the IPC host grants reviewer authority. */
  async exchange(input:unknown,owner:DesignControllerOwner):Promise<unknown>{
   const request=parseDesignRequest(input);
@@ -175,11 +179,11 @@ export class DesignReviewCoordinator {
   requireDesign(!job.abort.signal.aborted,'review_stopped','Review execution has stopped');
   requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
   const unit=job.controller;
-  if(request.phase==='assignment')return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};
+  if(request.phase==='assignment'){this.checkControllerSubject(job);return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};}
   requireDesign(unit,'stale_execution','No active controller assignment');
   requireDesign('executionId' in request&&request.executionId===unit.assignment.executionId,'stale_execution','Wrong execution generation');
   requireDesign(request.sequence===unit.sequence+1,'invalid_sequence','Expected the next response sequence');
-  assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+  this.checkControllerSubject(job);
   if(request.phase==='activity'){
    requireDesign(unit.monitor.observe(request.event),'invalid_activity','Invalid or duplicate activity event');
    unit.sequence=request.sequence;job.tracker.activity(request.event);

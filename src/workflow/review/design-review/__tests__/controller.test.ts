@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync,writeFileSync,appendFileSync } from 'node:fs';
 import { setTimeout as pause } from 'node:timers/promises';
 import { DesignReviewCoordinator } from '../coordinator.js';
 import type { DesignControllerOwner } from '../coordinator.js';
@@ -22,6 +23,7 @@ test('trusted controller authority, execution sequence and durable exact replay 
  const x=setup(t);await x.start();const a=await assignment(x.c,x.f,x.owner);
  assert.ok(a.prompt.includes(x.f.md));assert.ok(!a.prompt.includes('The feature works'));assert.ok(a.schema);
  const request={phase:'plan',...x.base,executionId:a.executionId,sequence:1,plan:x.plan};
+ await assert.rejects(x.c.exchange({phase:'result',...x.base,executionId:a.executionId,sequence:1,result:x.result('content')},x.owner),(error:unknown)=>!!error&&typeof error==='object'&&'code' in error&&error.code==='invalid_phase');
  await assert.rejects(x.c.exchange(request,{id:'observer',signal:new AbortController().signal}),/reviewing connection/);
  await assert.rejects(x.c.exchange({...request,executionId:'stale'},x.owner),/generation/);
  await assert.rejects(x.c.exchange({...request,sequence:2},x.owner),/sequence/);
@@ -32,6 +34,7 @@ test('trusted controller authority, execution sequence and durable exact replay 
  assert.deepEqual(await x.c.exchange(reordered,x.owner),{accepted:true});
  await assert.rejects(x.c.exchange({...request,plan:{...x.plan,coverageExplanation:'Changed replay'}},x.owner),/Conflicting/);
  const chunk=await assignment(x.c,x.f,x.owner);assert.notEqual(chunk.executionId,a.executionId);
+ await assert.rejects(x.c.exchange({phase:'plan',...x.base,executionId:chunk.executionId,sequence:1,plan:x.plan},x.owner),(error:unknown)=>!!error&&typeof error==='object'&&'code' in error&&error.code==='invalid_phase');
  const event={phase:'activity',...x.base,executionId:chunk.executionId,sequence:1,event:{sessionId:'session',sequence:1,kind:'session_started'}};
  await x.c.exchange(event,x.owner);await x.c.exchange(event,x.owner);
  await assert.rejects(x.c.exchange({...event,sequence:2},x.owner),/activity/);
@@ -74,4 +77,20 @@ test('failed controller activity persistence fences a concurrently submitted val
  await assert.rejects(activity,/activity disk failure/);await assert.rejects(submission,/activity disk failure/);
  for(let i=0;i<100;i++){if((await c.progress(f.repo,'review-1',1)).status==='failed')break;await pause(5);}
  const view=await c.progress(f.repo,'review-1',1);assert.equal(view.status,'failed');assert.equal(view.totalChunks,0);assert.equal(view.completedChunks,0);assert.equal(view.failure?.code,'persistence_failed');assert.equal(abort.signal.aborted,false);abort.abort();
+});
+
+test('observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance',async t=>{
+ for(const phase of ['assignment','activity','plan','result'] as const){
+  const x=setup(t);await x.start();let a=await assignment(x.c,x.f,x.owner);
+  if(phase==='result'){
+   await x.c.exchange({phase:'plan',...x.base,executionId:a.executionId,sequence:1,plan:x.plan},x.owner);
+   a=await assignment(x.c,x.f,x.owner);
+  }
+  const original=readFileSync(x.f.md,'utf8');appendFileSync(x.f.md,'\nChanged during review');
+  const request=phase==='assignment'?{phase,...x.base}:phase==='activity'?{phase,...x.base,executionId:a.executionId,sequence:1,event:{sessionId:'session',sequence:1,kind:'session_started'}}:phase==='plan'?{phase,...x.base,executionId:a.executionId,sequence:1,plan:x.plan}:{phase,...x.base,executionId:a.executionId,sequence:1,result:x.result('content')};
+  await assert.rejects(x.c.exchange(request,x.owner),(error:unknown)=>!!error&&typeof error==='object'&&'code' in error&&error.code==='artifact_changed');
+  writeFileSync(x.f.md,original);await assert.rejects(x.c.exchange(request,x.owner));
+  for(let i=0;i<100;i++){if((await x.c.progress(x.f.repo,'review-1',1)).status==='invalidated')break;await pause(5);}
+  const view=await x.c.progress(x.f.repo,'review-1',1);assert.equal(view.status,'invalidated',phase);assert.equal(view.requiresUserInput,true);assert.equal(view.completedChunks,0);assert.equal(view.failure?.code,'artifact_changed');x.abort.abort();
+ }
 });

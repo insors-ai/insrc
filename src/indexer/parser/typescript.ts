@@ -768,7 +768,7 @@ function extractCalls(
     if (SCOPE_NODE_TYPES.has(a.type)) enclosing.unshift(scopeFrame(a));
   }
   const axiosScopes: AxiosScope[] = [
-    { declared: fileImportBindings, axios: new Set(), user: fileUserImports, callable: fileImportBindings },
+    { declared: fileImportBindings, axios: new Set(), user: fileUserImports, callable: fileUserImports },
     ...(fileRoot !== null && fileRoot !== bodyNode ? [scopeFrame(fileRoot)] : []),
     ...enclosing,
     scopeFrame(bodyNode),
@@ -1037,7 +1037,7 @@ const FUNCTION_SCOPE_TYPES = new Set([
 
 /** Add the names `var` declares anywhere inside `node`, stopping at nested
  *  functions, and to `user` those it declares with a user-class type or `new`. */
-function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>, axios: Set<string>): void {
+function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>, axios: Set<string>, callable: Set<string>): void {
   for (const c of node.namedChildren) {
     if (FUNCTION_SCOPE_TYPES.has(c.type)) continue;
     if (c.type === 'for_in_statement' && c.childForFieldName('kind')?.text === 'var') {
@@ -1052,9 +1052,10 @@ function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>, 
         const value = d.type === 'variable_declarator' ? d.childForFieldName('value') : null;
         const fn = value?.type === 'call_expression' ? value.childForFieldName('function') : null;
         if (name?.type === 'identifier' && fn && normalizeCallee(fn.text) === 'axios.create') axios.add(name.text);
+        if (name?.type === 'identifier' && value && FUNCTION_VALUE_TYPES.has(value.type)) callable.add(name.text);
       }
     }
-    collectVarNames(c, out, user, axios);
+    collectVarNames(c, out, user, axios, callable);
   }
 }
 
@@ -1145,7 +1146,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   }
   // A function's frame also holds every `var` in its body, whatever block it is in.
   const body = FUNCTION_SCOPE_TYPES.has(scope.type) ? scope.childForFieldName('body') : null;
-  if (body) collectVarNames(body, declared, user, axios);
+  if (body) collectVarNames(body, declared, user, axios, callable);
   if (scope.type === 'for_in_statement' && scope.childForFieldName('kind')) {
     const left = scope.childForFieldName('left');        // for (const x of / in ...)
     if (left) collectPatternIdentifiers(left, declared);
@@ -1165,6 +1166,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
         declared.add(nameNode.text);
         const value = n.childForFieldName('value');
         if (typeProvesUser(n.childForFieldName('type')) || newProvesUser(value)) user.add(nameNode.text);
+        if (value && FUNCTION_VALUE_TYPES.has(value.type)) callable.add(nameNode.text);   // const join = (...) => ...
         if (value?.type === 'call_expression') {
           const fn = value.childForFieldName('function');
           if (fn && normalizeCallee(fn.text) === 'axios.create') axios.add(nameNode.text);
@@ -1214,7 +1216,7 @@ function collectImportBindings(root: SyntaxNode): { all: Set<string>; user: Set<
     if (!clause) continue;
     // Only a relative specifier is the repository's own code; a package's
     // bindings shadow but never prove a user object (nothing in-repo to resolve to).
-    const inRepo = /^['"`]\.{1,2}\//.test(stmt.childForFieldName('source')?.text ?? '');
+    const inRepo = /^['"`]\.{1,2}(?:\/|['"`])/.test(stmt.childForFieldName('source')?.text ?? '');   // './x', '../x', '.', '..'
     const bind = (name: string): void => { all.add(name); if (inRepo) user.add(name); };
     for (const part of clause.namedChildren) {
       if (part.type === 'identifier') bind(part.text);                         // import x from
@@ -1425,6 +1427,7 @@ function isUserReceiver(obj: SyntaxNode | null, scopes: AxiosScope[]): boolean {
     return typeProvesUser(obj.namedChildren[0]?.namedChildren[0] ?? null) || isUserReceiver(obj.namedChildren[1] ?? null, scopes);
   }
   if (obj.type === 'this' || obj.type === 'super') return thisIsClassInstance(obj);
+  if (obj.type === 'new_expression') return newProvesUser(obj);                    // new Store().find()
   if (obj.type === 'identifier') return isProvenUser(obj.text, scopes);
   if (obj.type === 'member_expression' && obj.childForFieldName('object')?.type === 'this' && thisIsClassInstance(obj)) {
     return currentClassUserFields.has(`this.${obj.childForFieldName('property')?.text ?? ''}`);

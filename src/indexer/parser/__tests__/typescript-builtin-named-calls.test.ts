@@ -358,3 +358,24 @@ test('S001 review: a file of many nested functions parses in linear time', () =>
 	const ms = Date.now() - start;
 	assert.ok(ms < 3000, `400 nested functions took ${ms} ms (about 0.1 s with cached frames, 6.7 s without)`);
 });
+
+test('S001 review round 2: a bare call to a package import links to nothing; arrow-function constants are callable; "." and ".." imports are in-repo', () => {
+	const r = parse(`
+import { resolve, join } from 'node:path';
+import { Store } from '..';
+import * as here from '.';
+export class Loader { resolve(p: string): void {} join(): void {} load(f: string): void { join(resolve(f), 'x'); } }
+const call = (x: number): number => x;
+export function useArrows(a: string): void {
+	const parse = (s: string): string => s;
+	{ var reject = function (): void {}; }
+	parse(a);
+	reject();
+	call(1);
+	new Store().find();
+	here.parse('x');
+}
+`);
+	assert.deepEqual(calls(r, 'load'), [], 'join/resolve from node:path are not the class methods');
+	assert.deepEqual(calls(r, 'useArrows'), ['call', 'find', 'parse', 'reject'], 'arrow and function-expression constants are callable; "." and ".." imports prove');
+});

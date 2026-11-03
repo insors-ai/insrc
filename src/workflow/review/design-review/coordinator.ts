@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID,createHash } from 'node:crypto';
 import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
@@ -18,6 +18,11 @@ import { designPlanningPrompt, designChunkPrompt } from './policy.js';
 import { validateDesignPlan, assessDesignResult, consolidateDesignReview } from './results.js';
 
 const log=getLogger('design-review');
+// JSON object key order is not part of an immutable submission's identity.
+function requestSignature(value:unknown):string{
+ const canonical=JSON.stringify(value,(_key,item:unknown)=>item&&typeof item==='object'&&!Array.isArray(item)?Object.fromEntries(Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0)):item);
+ return createHash('sha256').update(canonical).digest('hex');
+}
 export interface DesignProvider { readonly provider:LLMProvider; readonly model:string; }
 export interface DesignCoordinatorDeps {
  readonly provider?:(subject:DesignReviewSubject)=>DesignProvider;
@@ -31,7 +36,7 @@ export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|un
 interface ControllerUnit {
  assignment:DesignUnitAssignment; resolve:(value:unknown)=>void; reject:(reason:unknown)=>void;
  accepted:Promise<void>; accept:()=>void; fail:(reason:unknown)=>void; monitor:ReviewActivityMonitor;
- sequence:number; replay:Map<number,{signature:string;completion:Promise<void>}>;
+ sequence:number;
  validate:(value:unknown)=>unknown;
 }
 interface DesignJob {
@@ -56,7 +61,7 @@ export class DesignReviewCoordinator {
  async start(input:unknown,context:DesignStartContext={}):Promise<DesignReviewAcknowledgement>{
   const decoded=parseDesignRequest(input);requireDesign(decoded.phase==='start','invalid_phase','Expected start');
   const request={...decoded,repo:await realpath(decoded.repo),artifactPath:resolve(await realpath(decoded.repo),decoded.artifactPath)};
-  const key=this.key(request.repo,request.reviewId),signature=JSON.stringify(request),existing=this.admitting.get(key);
+  const key=this.key(request.repo,request.reviewId),signature=requestSignature(request),existing=this.admitting.get(key);
   if(existing){if(existing.signature!==signature)throw new DesignReviewConflictError('Conflicting start during admission');return existing.promise;}
   const promise=this.admit(request,context);this.admitting.set(key,{signature,promise});
   try{return await promise;}finally{if(this.admitting.get(key)?.promise===promise)this.admitting.delete(key);}
@@ -135,7 +140,7 @@ export class DesignReviewCoordinator {
     let accept!:()=>void,fail!:(reason:unknown)=>void;
     const accepted=new Promise<void>((yes,no)=>{accept=yes;fail=no;});void accepted.catch(()=>{});
     const monitor=new ReviewActivityMonitor(cause=>{const error=new DesignReviewError('review_inactive',cause.message);job.abort.abort(error);reject(error);},this.deps.activity);
-    job.controller={assignment,resolve,reject,accepted,accept,fail,monitor,sequence:0,replay:new Map(),validate};
+    job.controller={assignment,resolve,reject,accepted,accept,fail,monitor,sequence:0,validate};
    });
   }
   requireDesign(provider,'missing_provider','Review provider unavailable');
@@ -160,7 +165,7 @@ export class DesignReviewCoordinator {
   requireDesign(!['start','progress'].includes(request.phase),'invalid_phase','Expected controller exchange');
   const project=await realpath(request.repo),key=this.key(project,request.reviewId),job=this.jobs.get(key);
   requireDesign(!owner.signal.aborted,'wrong_owner','Reviewer connection has ended');
-  const signature=JSON.stringify(request);
+  const signature=requestSignature(request);
   if('executionId' in request){
    const replay=this.replays.get(`${key}\0${request.executionId}\0${request.sequence}`);
    if(replay){requireDesign(replay.owner.id===owner.id,'wrong_owner','Not the reviewing connection');requireDesign(replay.signature===signature,'review_conflict','Conflicting response replay');await replay.completion;return{accepted:true};}

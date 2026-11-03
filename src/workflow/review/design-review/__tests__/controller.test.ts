@@ -28,6 +28,8 @@ test('trusted controller authority, execution sequence and durable exact replay 
  assert.deepEqual(await x.c.exchange(request,x.owner),{accepted:true});
  assert.ok((await loadDesignCheckpoint(x.f.repo,'review-1'))!.attempts[0]!.plan);
  assert.deepEqual(await x.c.exchange(request,x.owner),{accepted:true});
+ const reordered=Object.fromEntries(Object.entries({...request,plan:Object.fromEntries(Object.entries(x.plan).reverse())}).reverse());
+ assert.deepEqual(await x.c.exchange(reordered,x.owner),{accepted:true});
  await assert.rejects(x.c.exchange({...request,plan:{...x.plan,coverageExplanation:'Changed replay'}},x.owner),/Conflicting/);
  const chunk=await assignment(x.c,x.f,x.owner);assert.notEqual(chunk.executionId,a.executionId);
  const event={phase:'activity',...x.base,executionId:chunk.executionId,sequence:1,event:{sessionId:'session',sequence:1,kind:'session_started'}};

@@ -78,6 +78,8 @@ const ADDED_RPC = [
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
 	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
 	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
+	'designReview.activity', 'designReview.assignment', 'designReview.failure', 'designReview.plan', 'designReview.progress', 'designReview.recover',
+	'designReview.result', 'designReview.start',
 ];
 const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
 
@@ -219,6 +221,8 @@ test('handler-runtime.test.ts: mcp.register and mcp.status are served; mcp.regis
 	assert.equal(typeof runtime.rpcHandlers['mcp.status'], 'function');
 	assert.equal(methodClasses.classOf('mcp.register'), 'indexing');
 	assert.equal(methodClasses.classOf('mcp.status'), 'admin');
-	// A non-string path is refused by validateRepoPath before the repo store is read.
-	await assert.rejects(runtime.rpcHandlers['mcp.register']!({ path: 42 }), /Cannot register providers/);
+	// A non-string path is refused by the repo gate before the handler or the repo store is reached (the gate answers with data, not a throw).
+	const refused = await runtime.rpcHandlers['mcp.register']!({ path: 42 }) as { code?: string; error?: string };
+	assert.equal(refused.code, 'repo-missing');
+	assert.match(refused.error ?? '', /mcp\.register: `path`/);
 });

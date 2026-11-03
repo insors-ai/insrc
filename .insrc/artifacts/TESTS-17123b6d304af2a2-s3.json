@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T14:13:08.824Z",
+    "updatedAt": "2026-11-03T14:26:11.136Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -781,6 +781,107 @@
               },
               {
                 "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b68bff504",
+        "ranAt": "2026-11-03T14:26:11.136Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-proof-port-retained-and-recycled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4584,
+            "titles": [
+              {
+                "title": "verified-terminal-ack-retirement-and-reader-pins",
+                "result": "pass"
+              },
+              {
+                "title": "retained-identity-rejects-conflicting-authoritative-receipt",
+                "result": "pass"
+              },
+              {
+                "title": "recycled-identity-requires-authoritative-receipt-capability",
+                "result": "pass"
+              },
+              {
+                "title": "mixed-pending-prefix-keeps-later-terminal-segments",
+                "result": "pass"
+              },
+              {
+                "title": "retirement-resumes-after-intent-unlink-and-successor-creation",
+                "result": "pass"
+              },
+              {
+                "title": "full-terminal-active-segment-recycles-without-extra-headroom",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4279,
+            "titles": [
+              {
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
                 "result": "pass"
               }
             ],

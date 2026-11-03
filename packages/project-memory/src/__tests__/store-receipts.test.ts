@@ -105,7 +105,7 @@ nativeTest(import.meta.url, 'store-proof-scope-epoch-and-projection-do-not-leak-
   });
 });
 nativeTest(import.meta.url, 'store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent', async () => {
-  for (const corruption of ['duplicate', 'malformed', 'missing-root', 'missing-proof'] as const) await fixture(async f => {
+  for (const corruption of ['duplicate', 'malformed', 'identity-column', 'operation-column', 'both-lookup-columns', 'missing-root', 'missing-proof'] as const) await fixture(async f => {
     const command = planFixture().plan.frame.command, identity = snapshotCommand(command, limits.maxEventBytes).identity;
     await f.admission.append(command); const frame = await firstFrame(f.queue), receipt = await f.store.commit(queuePlan(frame));
     const db = await openNative(f.root);
@@ -113,6 +113,11 @@ nativeTest(import.meta.url, 'store-proof-unavailable-duplicate-malformed-and-mis
       const row = decodedNative((await db.table.query().where("rowKind = 'receipt'").toArray())[0]);
       if (corruption === 'duplicate') await db.table.add([{ ...encodeRow(row, profile) }]);
       if (corruption === 'malformed') await db.table.mergeInsert('rowId').whenMatchedUpdateAll().whenNotMatchedInsertAll().useLsm(false).execute([{ ...encodeRow(row, profile), payload: '{}' }]);
+      if (['identity-column', 'operation-column', 'both-lookup-columns'].includes(corruption)) await db.table.mergeInsert('rowId').whenMatchedUpdateAll().whenNotMatchedInsertAll().useLsm(false).execute([{
+        ...encodeRow(row, profile),
+        ...(corruption !== 'operation-column' ? { identityDigest: digest('hidden identity') } : {}),
+        ...(corruption !== 'identity-column' ? { operationId: digest('hidden operation') } : {}),
+      }]);
       if (corruption === 'missing-root') await db.table.delete("rowId = 'control:root'");
       if (corruption === 'missing-proof') await db.table.delete("rowKind = 'receipt'");
       assert.deepEqual(await f.store.receiptVerifier().byIdentity(identity), { status: 'unavailable' }, corruption);
@@ -123,6 +128,8 @@ nativeTest(import.meta.url, 'store-proof-unavailable-duplicate-malformed-and-mis
       const before = canonical(f.queue.writer.current);
       await assert.rejects(f.queue.markResolved(receipt.operationId, receipt.generation!), denied('STORE_UNAVAILABLE'));
       assert.equal(canonical(f.queue.writer.current), before); assert.equal(f.queue.isAvailable(), true);
+      await f.queue.close(); await f.store.close();
+      await assert.rejects(OwnedLanceStore.open(f.owner, profile, {}, limits), denied('STORE_UNAVAILABLE'), corruption + ' must fail cold authority validation too');
     } finally { db.close(); }
   });
 });

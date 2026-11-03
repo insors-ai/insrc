@@ -55,6 +55,7 @@ export class OwnedLanceStore {
   readonly #identity: { dev: bigint; ino: bigint };
   readonly #writer: AtomicWriter;
   readonly #receipts: ReceiptVerifier;
+  #observedVersion: number | undefined;
   #closing: Promise<void> | undefined;
   private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
@@ -72,9 +73,9 @@ export class OwnedLanceStore {
     };
     this.#writer = new AtomicWriter({
       get,
-      refresh: async () => { await this.#checkIdentity(); await table().checkoutLatest(); await this.#checkIdentity(); },
+      refresh: async () => { await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion(); await this.#checkIdentity(); },
       root: () => this.#authorityRoot(),
-      version: async () => { await this.#checkIdentity(); const version = await table().version(); await this.#checkIdentity(); return version; },
+      version: async () => { await this.#checkIdentity(); await this.#assertVersion(); const version = await table().version(); await this.#checkIdentity(); return version; },
       receiptByIdentity: hash => receiptWhere('identityDigest', hash),
       tombstones: async (project, epoch) => {
         // Project and epoch never enter SQL: match decoded metadata after a bounded
@@ -86,13 +87,25 @@ export class OwnedLanceStore {
       },
       publish: async rows => {
         await this.#checkIdentity(); await hooks.point?.('before-write'); await this.#checkIdentity();
-        await table().mergeInsert('rowId').whenMatchedUpdateAll().whenNotMatchedInsertAll().useLsm(false).execute(rows.map(row => ({ ...row })));
+        await table().checkoutLatest(); await this.#assertVersion();
+        const before = await table().version();
+        try { await table().mergeInsert('rowId').whenMatchedUpdateAll().whenNotMatchedInsertAll().useLsm(false).execute(rows.map(row => ({ ...row }))); }
+        catch (error) {
+          // This exact native promise has settled. Permit old/one-new-version
+          // reconciliation, never adopt an unrelated version as valid authority.
+          await table().checkoutLatest(); const actual = await table().version();
+          if (actual === before || actual === before + 1) this.#observedVersion = actual;
+          throw error;
+        }
+        const after = await table().version(); if (after !== before + 1) unavailable();
+        this.#observedVersion = after;
         await this.#checkIdentity(); await hooks.point?.('after-write'); await this.#checkIdentity();
+        await table().checkoutLatest(); await this.#assertVersion();
       },
     }, profile, limits, hooks);
     this.#receipts = receiptVerifier({
       read: run => this.#closing ? Promise.reject(new MemoryError('STORE_UNAVAILABLE', 'Memory proof admission has closed.')) : this.#writer.orderedRead(async () => {
-        await this.#checkIdentity(); await table().checkoutLatest(); await this.#checkIdentity(); return run();
+        await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion(); await this.#checkIdentity(); return run();
       }),
       identity: hash => receiptWhere('identityDigest', hash), operation: hash => receiptWhere('operationId', hash),
       root: () => this.#authorityRoot(),
@@ -179,7 +192,11 @@ export class OwnedLanceStore {
     if (now.dev !== this.#identity.dev || now.ino !== this.#identity.ino) unavailable();
   }
   async readRoot(): Promise<RootPayload> {
-    await this.assertOwned(); return this.#readRoot();
+    await this.assertOwned();
+    return this.#observedVersion === undefined ? this.#readRoot() : this.#writer.orderedRead(async () => {
+      const table = this.#resources.table; if (!table) unavailable();
+      await table.checkoutLatest(); await this.#assertVersion(); return this.#readRoot();
+    });
   }
   async #readRoot(): Promise<RootPayload> {
     await this.#checkIdentity(); const table = this.#resources.table; if (!table) unavailable();
@@ -193,7 +210,12 @@ export class OwnedLanceStore {
     const root = await this.#readRoot(), table = this.#resources.table; if (!table) unavailable();
     const count = await table.countRows("rowKind = 'receipt'"); await this.#checkIdentity();
     if (!Number.isSafeInteger(count) || BigInt(count) !== BigInt(root.generation)) unavailable();
+    await this.#assertVersion();
     return root;
+  }
+  async #assertVersion(): Promise<void> {
+    const table = this.#resources.table; if (!table) unavailable();
+    if (this.#observedVersion !== undefined && await table.version() !== this.#observedVersion) unavailable();
   }
   #decodeNative(value: Record<string, unknown>): StoreRow {
     const row = { ...value };
@@ -203,6 +225,7 @@ export class OwnedLanceStore {
   }
   async #auditMetadata(): Promise<void> {
     await this.#checkIdentity(); const table = this.#resources.table; if (!table) unavailable();
+    const version = await table.version();
     const root = await this.#readRoot(); let receipts = 0n;
     // Stream narrow metadata, rather than retaining the database's history in JS.
     // Per-ID native counts detect duplicates without an unbounded JS uniqueness set.
@@ -217,6 +240,10 @@ export class OwnedLanceStore {
         if (row['rowKind'] === 'receipt') {
           if (!decimal(row['generation']) || row['generation'] === '0' || typeof row['identityDigest'] !== 'string' || !/^[a-f0-9]{64}$/.test(row['identityDigest'])) unavailable();
           if (await table.countRows("rowKind = 'receipt' AND generation = '" + row['generation'] + "'") !== 1 || await table.countRows("rowKind = 'receipt' AND identityDigest = '" + row['identityDigest'] + "'") !== 1) unavailable();
+          // Validate payload against all lookup columns before trusting the open
+          // version baseline. A corrupt filter column must not hide old proof.
+          const stored = await table.query().where(predicate).limit(2).toArray();
+          if (stored.length !== 1 || this.#decodeNative(stored[0]).rowKind !== 'receipt') unavailable();
           receipts++;
         }
         if (row['operationId'] !== null) {
@@ -227,6 +254,8 @@ export class OwnedLanceStore {
     }
     if (receipts !== BigInt(root.generation)) unavailable();
     await this.#checkIdentity();
+    if (await table.version() !== version) unavailable();
+    this.#observedVersion = version;
   }
   commit(plan: unknown): Promise<OperationReceipt> {
     if (this.#closing) return Promise.reject(new MemoryError('NOT_READY', 'Memory store is closing.'));

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 59 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -226,3 +226,24 @@ Run at 2026-11-03T14:13:08.824Z on commit `40b1b5ab1`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 6.7 s |  |
+
+## t7
+
+Run at 2026-11-03T14:26:11.136Z on commit `b68bff504`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-proof-port-retained-and-recycled**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-proof-real-queue-retained-ack-recycle-and-cold-authority | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | store-proof-scope-epoch-and-projection-do-not-leak-domain-content | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | retained-identity-rejects-conflicting-authoritative-receipt | `packages/project-memory/src/__tests__/queue-retirement.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/queue-retirement.test.ts` | 0 | 6 | 4.6 s |  |
+| `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 4.3 s |  |

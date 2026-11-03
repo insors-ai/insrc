@@ -1,0 +1,196 @@
+TAP version 13
+# Subtest: sc3-receipt-verifier-proof-and-causal-order-contract
+ok 1 - sc3-receipt-verifier-proof-and-causal-order-contract
+  ---
+  duration_ms: 653.108625
+  type: 'test'
+  ...
+# Subtest: invalid-and-nonterminal-proofs-never-resolve-or-delete
+ok 2 - invalid-and-nonterminal-proofs-never-resolve-or-delete
+  ---
+  duration_ms: 216.029125
+  type: 'test'
+  ...
+# Subtest: queue-only-mode-cannot-ack-terminal-state
+ok 3 - queue-only-mode-cannot-ack-terminal-state
+  ---
+  duration_ms: 441.793333
+  type: 'test'
+  ...
+# Subtest: verified-terminal-ack-retirement-and-reader-pins
+ok 4 - verified-terminal-ack-retirement-and-reader-pins
+  ---
+  duration_ms: 1338.351125
+  type: 'test'
+  ...
+# Subtest: retained-identity-rejects-conflicting-authoritative-receipt
+ok 5 - retained-identity-rejects-conflicting-authoritative-receipt
+  ---
+  duration_ms: 796.17275
+  type: 'test'
+  ...
+# Subtest: recycled-identity-requires-authoritative-receipt-capability
+ok 6 - recycled-identity-requires-authoritative-receipt-capability
+  ---
+  duration_ms: 276.145917
+  type: 'test'
+  ...
+# Subtest: mixed-pending-prefix-keeps-later-terminal-segments
+ok 7 - mixed-pending-prefix-keeps-later-terminal-segments
+  ---
+  duration_ms: 558.78725
+  type: 'test'
+  ...
+# Subtest: retirement-resumes-after-intent-unlink-and-successor-creation
+ok 8 - retirement-resumes-after-intent-unlink-and-successor-creation
+  ---
+  duration_ms: 1577.149125
+  type: 'test'
+  ...
+# Subtest: full-terminal-active-segment-recycles-without-extra-headroom
+ok 9 - full-terminal-active-segment-recycles-without-extra-headroom
+  ---
+  duration_ms: 181.169166
+  type: 'test'
+  ...
+# Subtest: store-initialization-gates-real-queue-recovery-on-validated-authority
+ok 10 - store-initialization-gates-real-queue-recovery-on-validated-authority
+  ---
+  duration_ms: 1798.499916
+  type: 'test'
+  ...
+# Subtest: store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+ok 11 - store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+  ---
+  duration_ms: 128.691375
+  type: 'test'
+  ...
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 12 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 100.411959
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+ok 13 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 172.048834
+  type: 'test'
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 14 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 128.680459
+  type: 'test'
+  ...
+# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+ok 15 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+  ---
+  duration_ms: 209.546709
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 16 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 320.812959
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 17 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 105.741583
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 18 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 415.952041
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 19 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 728.888875
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-retained-ack-recycle-and-cold-authority
+ok 20 - store-proof-real-queue-retained-ack-recycle-and-cold-authority
+  ---
+  duration_ms: 2302.96925
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+ok 21 - store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+  ---
+  duration_ms: 501.8
+  type: 'test'
+  ...
+# Subtest: store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+ok 22 - store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+  ---
+  duration_ms: 232.791709
+  type: 'test'
+  ...
+# Subtest: store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+ok 23 - store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+  ---
+  duration_ms: 1549.716917
+  type: 'test'
+  ...
+# Subtest: store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+ok 24 - store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+  ---
+  duration_ms: 1877.665208
+  type: 'test'
+  ...
+# Subtest: store-writer-serial-generation-revisions-conflicts-and-retained-identity
+ok 25 - store-writer-serial-generation-revisions-conflicts-and-retained-identity
+  ---
+  duration_ms: 281.665583
+  type: 'test'
+  ...
+# Subtest: store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+ok 26 - store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+  ---
+  duration_ms: 197.051625
+  type: 'test'
+  ...
+# Subtest: store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+ok 27 - store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+  ---
+  duration_ms: 158.634416
+  type: 'test'
+  ...
+# Subtest: store-writer-native-rejection-fences-until-verified-close-and-reopen
+ok 28 - store-writer-native-rejection-fences-until-verified-close-and-reopen
+  ---
+  duration_ms: 318.602333
+  type: 'test'
+  ...
+# Subtest: store-writer-timeout-retains-lane-native-work-and-owner-through-close
+ok 29 - store-writer-timeout-retains-lane-native-work-and-owner-through-close
+  ---
+  duration_ms: 294.580916
+  type: 'test'
+  ...
+# Subtest: store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+ok 30 - store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+  ---
+  duration_ms: 469.945666
+  type: 'test'
+  ...
+# Subtest: store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+ok 31 - store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+  ---
+  duration_ms: 415.470167
+  type: 'test'
+  ...
+1..31
+# tests 31
+# suites 0
+# pass 31
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5072.360125

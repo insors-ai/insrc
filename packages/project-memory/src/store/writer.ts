@@ -42,6 +42,19 @@ export class AtomicWriter {
   pending(): number { return this.#budget.calls + (!this.#settlementVerified && this.#budget.calls === 0 ? 1 : 0); }
   async drain(): Promise<void> { await this.#tail; if (!this.#settlementVerified) throw unavailable(); }
   isFenced(): boolean { return this.#fenced; }
+  /** Queue proof reads remain admitted after mutation stop, until the store owner
+   * closes their facade. They share the lane but never call back into the queue. */
+  orderedRead<T>(read: () => Promise<T>): Promise<T> {
+    if (this.#fenced && !this.#settlementVerified) return Promise.reject(unavailable());
+    let lease: Reservation;
+    try { lease = this.#budget.reserve(); } catch (error) { return Promise.reject(error); }
+    const result = this.#tail.then(async () => {
+      if (!this.#settlementVerified) throw unavailable();
+      return read();
+    }).finally(() => lease.release());
+    this.#tail = result.then(() => {}, () => {});
+    return result;
+  }
   commit(input: unknown): Promise<OperationReceipt> {
     if (this.#stopped || this.#fenced) return Promise.reject(unavailable());
     let reservation: Reservation | undefined, prepared: PreparedPlan;

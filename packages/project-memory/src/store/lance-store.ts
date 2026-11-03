@@ -3,12 +3,14 @@ import { join } from 'node:path';
 import type { Connection, Table } from '@lancedb/lancedb';
 import type { DirectoryOwnership } from '../ownership.js';
 import type { MemoryLimits, OperationReceipt } from '../types.js';
+import type { ReceiptVerifier } from '../queue/types.js';
 import { MemoryError } from '../errors.js';
 import { errno } from '../configuration.js';
 import { arrowSchema, decodeRow, encodeRow, rootRow, ROOT_ROW_ID, STORE_LIMITS } from './codec.js';
 import { embeddingProfile, requireProfile, validateProfile } from './embedding-profile.js';
 import { loadFormat, STORE_DIRECTORY, writeFormat } from './format.js';
 import { AtomicWriter } from './writer.js';
+import { receiptVerifier } from './receipts.js';
 import type { WriterHooks } from './writer.js';
 import { rowIdPredicate } from './plan.js';
 import { decimal, validateQueueLimits } from '../queue/codec.js';
@@ -52,6 +54,7 @@ export class OwnedLanceStore {
   readonly #hooks: StoreOpenHooks;
   readonly #identity: { dev: bigint; ino: bigint };
   readonly #writer: AtomicWriter;
+  readonly #receipts: ReceiptVerifier;
   #closing: Promise<void> | undefined;
   private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
@@ -60,18 +63,19 @@ export class OwnedLanceStore {
       await this.#checkIdentity(); const rows = await table().query().where(rowIdPredicate(id)).limit(2).toArray(); await this.#checkIdentity();
       if (rows.length > 1) unavailable(); return rows.length ? this.#decodeNative(rows[0]) : null;
     };
+    const receiptWhere = async (column: 'identityDigest' | 'operationId', hash: string) => {
+      if (!/^[a-f0-9]{64}$/.test(hash)) unavailable();
+      await this.#checkIdentity(); const rows = await table().query().where("rowKind = 'receipt' AND " + column + " = '" + hash + "'").limit(2).toArray(); await this.#checkIdentity();
+      if (rows.length > 1) unavailable();
+      if (!rows.length) return null;
+      const row = this.#decodeNative(rows[0]); if (row.rowKind !== 'receipt') unavailable(); return row;
+    };
     this.#writer = new AtomicWriter({
       get,
       refresh: async () => { await this.#checkIdentity(); await table().checkoutLatest(); await this.#checkIdentity(); },
-      root: () => this.#readRoot(),
+      root: () => this.#authorityRoot(),
       version: async () => { await this.#checkIdentity(); const version = await table().version(); await this.#checkIdentity(); return version; },
-      receiptByIdentity: async hash => {
-        if (!/^[a-f0-9]{64}$/.test(hash)) unavailable();
-        await this.#checkIdentity(); const rows = await table().query().where("rowKind = 'receipt' AND identityDigest = '" + hash + "'").limit(2).toArray(); await this.#checkIdentity();
-        if (rows.length > 1) unavailable();
-        if (!rows.length) return null;
-        const row = this.#decodeNative(rows[0]); if (row.rowKind !== 'receipt') unavailable(); return row;
-      },
+      receiptByIdentity: hash => receiptWhere('identityDigest', hash),
       tombstones: async (project, epoch) => {
         // Project and epoch never enter SQL: match decoded metadata after a bounded
         // protection scan. Task 8 adds broad lifecycle matching, not raw SQL.
@@ -86,6 +90,13 @@ export class OwnedLanceStore {
         await this.#checkIdentity(); await hooks.point?.('after-write'); await this.#checkIdentity();
       },
     }, profile, limits, hooks);
+    this.#receipts = receiptVerifier({
+      read: run => this.#closing ? Promise.reject(new MemoryError('STORE_UNAVAILABLE', 'Memory proof admission has closed.')) : this.#writer.orderedRead(async () => {
+        await this.#checkIdentity(); await table().checkoutLatest(); await this.#checkIdentity(); return run();
+      }),
+      identity: hash => receiptWhere('identityDigest', hash), operation: hash => receiptWhere('operationId', hash),
+      root: () => this.#authorityRoot(),
+    }, profile);
   }
   /** Package-private composition barrier. Recovery cannot run against unverified authority.
    * The recovery callback owns rollback of its own partial resources. Host wiring is separate.
@@ -178,6 +189,12 @@ export class OwnedLanceStore {
     if (row.rowKind !== 'control' || row.payload.kind !== 'root' || row.payload.storeId !== this.storeId) unavailable();
     return row.payload;
   }
+  async #authorityRoot(): Promise<RootPayload> {
+    const root = await this.#readRoot(), table = this.#resources.table; if (!table) unavailable();
+    const count = await table.countRows("rowKind = 'receipt'"); await this.#checkIdentity();
+    if (!Number.isSafeInteger(count) || BigInt(count) !== BigInt(root.generation)) unavailable();
+    return root;
+  }
   #decodeNative(value: Record<string, unknown>): StoreRow {
     const row = { ...value };
     if (row.embedding !== null) row.embedding = Array.from(row.embedding as Iterable<number>);
@@ -218,6 +235,7 @@ export class OwnedLanceStore {
   stopAdmission(): void { this.#writer.stopAdmission(); }
   pendingWrites(): number { return this.#writer.pending(); }
   drainWrites(): Promise<void> { return this.#writer.drain(); }
+  receiptVerifier(): ReceiptVerifier { return this.#receipts; }
   close(): Promise<void> {
     this.#closing ??= (async () => {
       this.#writer.stopAdmission(); await this.#writer.drain();

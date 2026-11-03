@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -192,3 +192,37 @@ Run at 2026-11-03T13:57:17.082Z on commit `43b310c1b`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.4 s |  |
 | `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 6.6 s |  |
+
+## t6
+
+Run at 2026-11-03T14:13:08.824Z on commit `40b1b5ab1`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-one-mutation-effects-receipt-generation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-one-version-complete-effects-receipt-root-and-cold-replay | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+
+**integration: store-generation-revision-conflicts-and-exact-retry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-one-version-complete-effects-receipt-root-and-cold-replay | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-serial-generation-revisions-conflicts-and-retained-identity | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-bounds-admission-before-copy-and-drains-admitted-retries | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+
+**integration: store-native-uncertain-writes-fence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-native-rejection-fences-until-verified-close-and-reopen | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-timeout-retains-lane-native-work-and-owner-through-close | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 6.7 s |  |

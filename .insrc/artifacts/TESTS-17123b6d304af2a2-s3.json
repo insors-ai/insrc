@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T13:57:17.082Z",
+    "updatedAt": "2026-11-03T14:13:08.824Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -661,6 +661,126 @@
               },
               {
                 "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "40b1b5ab1",
+        "ranAt": "2026-11-03T14:13:08.824Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-one-mutation-effects-receipt-generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-generation-revision-conflicts-and-exact-retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-native-uncertain-writes-fence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6670,
+            "titles": [
+              {
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
                 "result": "pass"
               }
             ],

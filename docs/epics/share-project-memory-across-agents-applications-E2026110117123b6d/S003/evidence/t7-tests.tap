@@ -1,0 +1,136 @@
+TAP version 13
+# Subtest: sc3-receipt-verifier-proof-and-causal-order-contract
+ok 1 - sc3-receipt-verifier-proof-and-causal-order-contract
+  ---
+  duration_ms: 292.160292
+  type: 'test'
+  ...
+# Subtest: invalid-and-nonterminal-proofs-never-resolve-or-delete
+ok 2 - invalid-and-nonterminal-proofs-never-resolve-or-delete
+  ---
+  duration_ms: 165.397833
+  type: 'test'
+  ...
+# Subtest: queue-only-mode-cannot-ack-terminal-state
+ok 3 - queue-only-mode-cannot-ack-terminal-state
+  ---
+  duration_ms: 140.807917
+  type: 'test'
+  ...
+# Subtest: verified-terminal-ack-retirement-and-reader-pins
+ok 4 - verified-terminal-ack-retirement-and-reader-pins
+  ---
+  duration_ms: 628.308541
+  type: 'test'
+  ...
+# Subtest: retained-identity-rejects-conflicting-authoritative-receipt
+ok 5 - retained-identity-rejects-conflicting-authoritative-receipt
+  ---
+  duration_ms: 983.009458
+  type: 'test'
+  ...
+# Subtest: recycled-identity-requires-authoritative-receipt-capability
+ok 6 - recycled-identity-requires-authoritative-receipt-capability
+  ---
+  duration_ms: 213.282708
+  type: 'test'
+  ...
+# Subtest: mixed-pending-prefix-keeps-later-terminal-segments
+ok 7 - mixed-pending-prefix-keeps-later-terminal-segments
+  ---
+  duration_ms: 458.058084
+  type: 'test'
+  ...
+# Subtest: retirement-resumes-after-intent-unlink-and-successor-creation
+ok 8 - retirement-resumes-after-intent-unlink-and-successor-creation
+  ---
+  duration_ms: 1546.540584
+  type: 'test'
+  ...
+# Subtest: full-terminal-active-segment-recycles-without-extra-headroom
+ok 9 - full-terminal-active-segment-recycles-without-extra-headroom
+  ---
+  duration_ms: 151.151834
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-retained-ack-recycle-and-cold-authority
+ok 10 - store-proof-real-queue-retained-ack-recycle-and-cold-authority
+  ---
+  duration_ms: 2159.131667
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+ok 11 - store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+  ---
+  duration_ms: 436.353625
+  type: 'test'
+  ...
+# Subtest: store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+ok 12 - store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+  ---
+  duration_ms: 229.370458
+  type: 'test'
+  ...
+# Subtest: store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+ok 13 - store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+  ---
+  duration_ms: 898.94925
+  type: 'test'
+  ...
+# Subtest: store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+ok 14 - store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+  ---
+  duration_ms: 1819.47175
+  type: 'test'
+  ...
+# Subtest: store-writer-serial-generation-revisions-conflicts-and-retained-identity
+ok 15 - store-writer-serial-generation-revisions-conflicts-and-retained-identity
+  ---
+  duration_ms: 279.326042
+  type: 'test'
+  ...
+# Subtest: store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+ok 16 - store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+  ---
+  duration_ms: 184.444959
+  type: 'test'
+  ...
+# Subtest: store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+ok 17 - store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+  ---
+  duration_ms: 138.660208
+  type: 'test'
+  ...
+# Subtest: store-writer-native-rejection-fences-until-verified-close-and-reopen
+ok 18 - store-writer-native-rejection-fences-until-verified-close-and-reopen
+  ---
+  duration_ms: 284.490458
+  type: 'test'
+  ...
+# Subtest: store-writer-timeout-retains-lane-native-work-and-owner-through-close
+ok 19 - store-writer-timeout-retains-lane-native-work-and-owner-through-close
+  ---
+  duration_ms: 283.694666
+  type: 'test'
+  ...
+# Subtest: store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+ok 20 - store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+  ---
+  duration_ms: 406.888916
+  type: 'test'
+  ...
+# Subtest: store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+ok 21 - store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+  ---
+  duration_ms: 435.952583
+  type: 'test'
+  ...
+1..21
+# tests 21
+# suites 0
+# pass 21
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4248.385167

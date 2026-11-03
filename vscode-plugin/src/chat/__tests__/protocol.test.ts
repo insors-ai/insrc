@@ -253,9 +253,10 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   assert.ok(!WEBVIEW_TO_HOST_TYPES.includes('open-active' as WebviewToHostType));
   // in-panel document protocol is UNCHANGED: DocsDocumentTab keeps title/type/relPath, no presentKey;
   // docs-content/open-doc shapes unchanged (presentKey is panel-level, not a message field)
-  const tab: DocsDocumentTab = { title: 'LLD.md', type: 'md', relPath: undefined };
-  assert.deepEqual(Object.keys(tab).sort(), ['relPath', 'title', 'type']);
+  const tab: DocsDocumentTab = { title: 'LLD.md', type: 'markdown' };
+  assert.deepEqual(Object.keys(tab).sort(), ['title', 'type']);
   assert.ok(!('presentKey' in tab), 'DocsDocumentTab has no presentKey field');
-  const content = { type: 'docs-content', artifactId: 'a1', doc: tab, html: undefined, text: undefined, presented: ['a1'] } as unknown as HostToWebview;
+  const content: HostToWebview = { type: 'docs-content', artifactId: 'a1', markdown: '# LLD', openQuestions: [], blocked: false };
   assert.equal(content.type, 'docs-content');
+  if (content.type === 'docs-content') assert.equal(content.artifactId, 'a1');
 });

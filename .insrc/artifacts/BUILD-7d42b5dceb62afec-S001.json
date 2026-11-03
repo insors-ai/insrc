@@ -4,11 +4,16 @@
     "epicHash": "7d42b5dceb62afec",
     "storyId": "S001",
     "createdAt": "2026-11-03T14:34:09.725Z",
-    "updatedAt": "2026-11-03T17:04:51.021Z",
+    "updatedAt": "2026-11-03T17:13:56.491Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.745Z",
-    "epicSlug": "subsystem-pass-regroups-whole-repository-after"
+    "epicSlug": "subsystem-pass-regroups-whole-repository-after",
+    "approvedAt": "2026-11-03T17:13:57.495Z",
+    "reviewOverride": {
+      "reason": "User-approved override 2026-11-03: manual independent code review, 2 rounds (round 1 block on one MED, fixed in e2ecc4b9f; round 2 warn, LOW only). t5 gate deviations accepted: (1) the before measurement was taken in a harness on the same machine and 3774-file repository (old pass from 1a000fe9d), not on the installed daemon, whose summary-lane backlog prevented the old pass from running there; after-update smoke on the installed daemon shows unchanged 1 file 47 ms and incremental 1 file 248 ms; (2) the session-source inventory classifications for this Story's four subsystem files are kept. LLD deviation recorded: a file with no code entities has its contribution row deleted rather than kept at entityCount 0 (equivalent grouping).",
+      "at": "2026-11-03T17:13:57.495Z"
+    }
   },
   "body": {
     "tasks": [
@@ -172,6 +177,6 @@
         "timestamp": "2026-11-03T17:04:51.021Z"
       }
     ],
-    "commit": "3df2b56be"
+    "commit": "4e4d92298"
   }
 }

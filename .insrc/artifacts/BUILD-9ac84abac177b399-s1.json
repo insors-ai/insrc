@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 7,
         "contentHash": "7453f8faf0307f794d7866c7a6b64bc58c269afdaede83b57a58f9d7c35efede",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T15:45:32.677Z",
+        "override": {
+          "reason": "Controller self-review: docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/CODE-SELF-REVIEW.md. Daemon round 1 passed 6 of 7 units; the one incomplete unit's gap is fixed and tested; publication failed on the running daemon's old document rule. User approved with override on 2026-11-03."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-18cc3180-5cbe-483c-9995-4c403adb4ea0",

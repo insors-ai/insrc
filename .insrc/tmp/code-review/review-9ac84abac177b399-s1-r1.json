@@ -1,0 +1,1042 @@
+{
+  "schemaVersion": 1,
+  "reviewId": "review-9ac84abac177b399-s1-r1",
+  "project": "/home/subho/work/dev/insors/insrc",
+  "storyId": "s1",
+  "attempts": [
+    {
+      "header": {
+        "attempt": 1,
+        "reviewer": "daemon",
+        "status": "running",
+        "createdAt": "2026-11-03T14:55:07.628Z",
+        "selectedTaskIds": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7"
+        ],
+        "buildFingerprint": "405229c89f53c7d1866468f06ff51aaa395315a024e94be6e3322d93b38933c8",
+        "completedAt": "2026-11-03T15:22:09.672Z"
+      },
+      "submitted": {
+        "storyId": "s1",
+        "functionalSummary": "A registered repository can opt in (gitHooks setting, repo.gitHooks.install/uninstall/status) to post-merge and post-rewrite git hooks that ask the daemon to refresh the tracker status after git run outside the daemon; tracker.sync without an epicHash refreshes every Epic once with an in-flight guard; setting gitHooks drives the install.",
+        "documents": {
+          "lld": {
+            "path": ".insrc/artifacts/LLD-9ac84abac177b399-s1.json",
+            "commit": "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a"
+          },
+          "plan": {
+            "path": ".insrc/artifacts/PLAN-9ac84abac177b399-s1.json",
+            "commit": "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a"
+          }
+        },
+        "reviewSet": [
+          {
+            "commit": "62e30ff080fbdb1c33137784563fcbec8c516759",
+            "parent": "52c23f14387b8a7cfad37b5de5e71af9201737f4",
+            "files": [
+              {
+                "path": "src/daemon/__tests__/tracker-sync-method.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      56,
+                      56
+                    ]
+                  },
+                  {
+                    "after": [
+                      58,
+                      58
+                    ]
+                  },
+                  {
+                    "after": [
+                      65,
+                      120
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/tracker-setup-handlers.ts",
+                "segments": [
+                  {
+                    "after": [
+                      15,
+                      40
+                    ]
+                  },
+                  {
+                    "after": [
+                      43,
+                      44
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "e6d9b40d78496bb68a05f72de680cf46a4853c12",
+            "parent": "0e8caf5be479161c86656a0d4e95b775ee538dbf",
+            "files": [
+              {
+                "path": "src/cli/__tests__/settings-modal.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      139,
+                      139
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/config/__tests__/repo-fields.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      22,
+                      23
+                    ]
+                  },
+                  {
+                    "after": [
+                      144,
+                      144
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/config/repo-fields.ts",
+                "segments": [
+                  {
+                    "after": [
+                      90,
+                      94
+                    ]
+                  },
+                  {
+                    "after": [
+                      100,
+                      100
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/__tests__/repo-settings.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      16,
+                      16
+                    ]
+                  },
+                  {
+                    "after": [
+                      409,
+                      437
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/workflow/config/github.ts",
+                "segments": [
+                  {
+                    "after": [
+                      100,
+                      101
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "21e4a78f3625182b34399dd7c5fe9173463ed13e",
+            "parent": "e6d9b40d78496bb68a05f72de680cf46a4853c12",
+            "files": [
+              {
+                "path": "package.json",
+                "segments": [
+                  {
+                    "after": [
+                      12,
+                      12
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/bin/__tests__/insrc-git-hook.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      44
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/bin/insrc-git-hook.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      38
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1",
+            "parent": "594b26247b8a68cdb3657a85331a144890d0ef6e",
+            "files": [
+              {
+                "path": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      77
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/git-hooks/hook-block.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      94
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "a8b015b2ca2b595f6bb333a837e27c2bbfecb473",
+            "parent": "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1",
+            "files": [
+              {
+                "path": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      43
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/git-hooks/hook-block.ts",
+                "segments": [
+                  {
+                    "after": [
+                      25,
+                      25
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/git-hooks/hook-inspect.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      45
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "f176f357b06061513cf3e603d4aa39a758707d5d",
+            "parent": "a8b015b2ca2b595f6bb333a837e27c2bbfecb473",
+            "files": [
+              {
+                "path": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      95
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/__tests__/handler-runtime.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      75,
+                      75
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/git-hooks-methods.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      128
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/handler-runtime.ts",
+                "segments": [
+                  {
+                    "after": [
+                      83,
+                      83
+                    ]
+                  },
+                  {
+                    "after": [
+                      310,
+                      312
+                    ]
+                  },
+                  {
+                    "after": [
+                      1273,
+                      1273
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/repo-call-audit.ts",
+                "segments": [
+                  {
+                    "after": [
+                      109,
+                      111
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/repo-settings.ts",
+                "segments": [
+                  {
+                    "after": [
+                      81,
+                      82
+                    ]
+                  },
+                  {
+                    "after": [
+                      205,
+                      210
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/threads/method-class.ts",
+                "segments": [
+                  {
+                    "after": [
+                      247,
+                      249
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "3b77f023bf4ed52b649c4134f8098e04a6a3962a",
+            "parent": "53b3002208aa0a7bd7013402aef735191de01373",
+            "files": [
+              {
+                "path": "docs/plans/team-workflow.md",
+                "segments": [
+                  {
+                    "after": [
+                      362,
+                      362
+                    ]
+                  },
+                  {
+                    "after": [
+                      365,
+                      383
+                    ]
+                  }
+                ]
+              },
+              {
+                "path": "src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "segments": [
+                  {
+                    "after": [
+                      1,
+                      63
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "commit": "1119847fbfc17fe00924a798e76fecd2aa4dca18",
+            "parent": "3b77f023bf4ed52b649c4134f8098e04a6a3962a",
+            "files": [
+              {
+                "path": "src/daemon/handler-runtime.ts",
+                "segments": [
+                  {
+                    "after": [
+                      490,
+                      494
+                    ]
+                  },
+                  {
+                    "deletionAt": 1277
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "tests": [
+          {
+            "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+            "cases": [
+              "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/__tests__/tracker-sync-method.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/tracker-sync-method.test.ts"
+            ]
+          },
+          {
+            "file": "src/bin/__tests__/insrc-git-hook.test.ts",
+            "cases": [
+              "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository"
+            ],
+            "command": "npx tsx --test-force-exit src/bin/__tests__/insrc-git-hook.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/bin/__tests__/insrc-git-hook.test.ts"
+            ]
+          },
+          {
+            "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+            "cases": [
+              "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte",
+              "src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else",
+              "src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-block.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/__tests__/hook-block.test.ts"
+            ]
+          },
+          {
+            "file": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+            "cases": [
+              "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/__tests__/hook-inspect.test.ts"
+            ]
+          },
+          {
+            "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+            "cases": [
+              "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+              "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/__tests__/git-hooks-methods.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-methods.test.ts"
+            ]
+          },
+          {
+            "file": "src/daemon/__tests__/git-hooks-real-git.test.ts",
+            "cases": [
+              "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/__tests__/git-hooks-real-git.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-real-git.test.ts"
+            ]
+          },
+          {
+            "file": "src/daemon/__tests__/repo-settings.test.ts",
+            "cases": [
+              "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json"
+            ],
+            "command": "npx tsx --test-force-exit src/daemon/__tests__/repo-settings.test.ts",
+            "result": "pass",
+            "executionDetails": "Passed in the build gate and the builder run",
+            "evidenceReferences": [
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/repo-settings.test.ts"
+            ]
+          }
+        ]
+      },
+      "review-response": {
+        "summary": "All selected task assessments are terminal. CR publication pending.",
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "passed",
+            "summary": "The diff makes `handleTrackerSync` accept an omitted `epicHash` and refresh every Epic through a new `syncRepository` wrapper with a per-repository in-flight guard (`refreshing` Set), while leaving the single-Epic path byte-for-byte unchanged except the error message for an explicitly empty `epicHash`. The new test exercises the all-synced repo-wide path, the concurrent-call skip, post-completion re-run, and the unchanged single-Epic path; it passes, and the project typechecks clean. The implementation matches the LLD contract and the task's three acceptance checks exactly.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected both committed blocks (test file and tracker-setup-handlers.ts) in full at commit 62e30ff0, plus the prior version at parent 52c23f14 to isolate the actual diff. The added test (`tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged`) covers: (1) all-Epics-synced repo-wide call returning `{status:'synced', refreshed:2}` with exactly 4 issue reads (an Epic+Story pair per of 2 Epics); (2) a concurrent second repo-wide call via `Promise.all` returning `{status:'skipped', reason:'a refresh of this repository is already running'}` while reading no additional issues — verified this is deterministic (not flaky) because `refreshing.add(repoPath)` executes synchronously before any awaited I/O in `syncRepository`/`refreshTrackerStatus`/`syncTracker`, so the second array element of `Promise.all` always observes the guard set; (3) a normal run after the first ends; (4) the single-Epic path (`epicHash: HASH2`) returning the unchanged `SyncResult` shape. Ran the test file directly (`npx tsx --test-force-exit src/daemon/__tests__/tracker-sync-method.test.ts`) — both the new and the pre-existing test in that file pass, including the new empty-string-epicHash error case. Ran `npx tsc --noEmit -p .` — clean. The `syncRepository` wrapper's own `failed`/`skipped`-summarization branches (as opposed to the `synced` branch, which is exercised) are not directly exercised by a test at this level, but they only re-map fields (`status`, joined `warnings`) that are already behaviorally proven in the pre-existing, unmodified `src/workflow/tracker/__tests__/refresh.test.ts` (failed reads, skipped-with-reason, warnings array) — and the LLD's own acceptanceMapping (ac4) names only this one test for the repo-wide refresh, so the test scope matches the design's own strategy rather than an omission introduced by this task.",
+              "evidenceReferences": [
+                "62e30ff080fbdb1c33137784563fcbec8c516759:src/daemon/__tests__/tracker-sync-method.test.ts",
+                "62e30ff080fbdb1c33137784563fcbec8c516759:src/daemon/tracker-setup-handlers.ts",
+                "52c23f14387b8a7cfad37b5de5e71af9201737f4:src/daemon/tracker-setup-handlers.ts",
+                "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json",
+                "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran `npx tsx --test-force-exit src/daemon/__tests__/tracker-sync-method.test.ts` (pass, 2/2) and `npx tsc --noEmit -p .` (clean); attempts to also run the pre-existing `src/workflow/tracker/__tests__/refresh.test.ts` for a regression check were blocked by the review host's command-approval gate, so that run was not performed (it was not needed — that file is untouched by this task's diff and its own content was inspected directly).",
+              "Optional improvement: a small follow-up unit test asserting `syncRepository`'s `failed`/`skipped`-with-joined-reasons branches directly (e.g. one Epic synced, one failed) would make that mapping's behavior explicit rather than relying on the lower-level `refreshTrackerStatus` tests plus code reading — not required given the LLD's own test-strategy scope."
+            ],
+            "inspectedReferences": [
+              "62e30ff080fbdb1c33137784563fcbec8c516759:src/daemon/__tests__/tracker-sync-method.test.ts",
+              "62e30ff080fbdb1c33137784563fcbec8c516759:src/daemon/tracker-setup-handlers.ts",
+              "52c23f14387b8a7cfad37b5de5e71af9201737f4:src/daemon/tracker-setup-handlers.ts",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json",
+              "62e30ff080fbdb1c33137784563fcbec8c516759:src/workflow/tracker/sync.ts",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:src/workflow/tracker/__tests__/refresh.test.ts",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:src/daemon/handler-runtime.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/tracker-sync-method.test.ts",
+                "cases": [
+                  "tracker.sync without an epicHash refreshes every Epic once, a second call while one runs is skipped, and a call with an epicHash is unchanged",
+                  "tracker.sync runs refreshTrackerStatus for the one Epic and returns its SyncResult"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/__tests__/tracker-sync-method.test.ts",
+                "result": "pass",
+                "executionDetails": "Both tests in the file passed when run directly in this review session (2 pass, 0 fail, 605ms total).",
+                "evidenceReferences": [
+                  "62e30ff080fbdb1c33137784563fcbec8c516759:src/daemon/__tests__/tracker-sync-method.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t2",
+            "status": "passed",
+            "summary": "t2 adds a single generic-boolean `gitHooks` local row to REPO_TRACKER_FIELDS and the matching optional field on GithubEntry, with no special-casing needed because validateRepoSetting, ownValues and buildSettingsRows already handle `type: 'boolean'` generically. The new daemon test exercises absent-default read, boolean validation (true/false accepted, 'yes'/1 rejected), and a round-trip write that keeps the repo's other keys; the two existing editable-key assertions (settings-modal.test.ts, repo-fields.test.ts) were updated to include 'gitHooks' and match the new table exactly. Ran src/daemon/__tests__/repo-settings.test.ts live: 10/10 pass including the new test. The other two test files in scope were verified by full static trace against the current repo-fields.ts/github.ts (they were not independently executed because the sandbox's one-time Bash approval for this session only covered the repo-settings run; later distinct commands required a fresh approval I could not obtain mid-review) — the assertions line up exactly with REPO_TRACKER_FIELDS's actual local-key order and the generic row-building logic, so I have high confidence they pass. A sibling cross-client fixture file (repo-fields-catalog.json) was updated in the same commit outside the task's declared scope to keep an unrelated contract test (repo-fields-contract.test.ts) green; this is a necessary, correctly-made companion change, not a defect.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The new daemon test (src/daemon/__tests__/repo-settings.test.ts) directly covers all three stated acceptance checks: (1) absent key reads false via the row default and repo.settings.set validates booleans while rejecting 'yes' and 1; (2) a write of gitHooks:true round-trips through github.json and keeps the repo's other keys (type/owner/repo), verified with a direct file read and deepEqual; (3) the two 'editable keys' assertions in settings-modal.test.ts and repo-fields.test.ts were updated to append 'gitHooks' in the exact position it occupies in REPO_TRACKER_FIELDS, and I confirmed by reading repo-fields.ts that the array ends with ...branchPattern, gitHooks] in local-kind order, matching both tests. The unrelated ReposPane-completeness.test.ts (also named in the acceptance text) does not import repo-fields.ts at all, so it is unaffected by this change and continues to pass trivially. I executed the daemon test file live (10/10 pass, including the new case) and traced the other two test files' assertions by hand against the current REPO_TRACKER_FIELDS array and buildSettingsRows/validateRepoSetting implementations, which I also read in full; the match is exact and the logic paths (boolean validation, local-row default rendering) are both pre-existing and generic, with no special-casing left out for gitHooks.",
+              "evidenceReferences": [
+                "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/daemon/__tests__/repo-settings.test.ts",
+                "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/config/repo-fields.ts",
+                "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/cli/__tests__/settings-modal.test.ts",
+                "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/config/__tests__/repo-fields.test.ts",
+                "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/workflow/config/github.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I ran src/daemon/__tests__/repo-settings.test.ts live (10/10 pass). I attempted to also run src/config/__tests__/repo-fields.test.ts and src/cli/__tests__/settings-modal.test.ts but the sandbox required a fresh interactive approval for those exact command strings that I could not obtain mid-review; I instead verified their assertions by full static trace against the current REPO_TRACKER_FIELDS array and row-building logic.",
+              "The fixture file src/config/__tests__/fixtures/repo-fields-catalog.json was updated in the same commit but wasn't listed in the task's declared change scope; it's a necessary companion edit for the unrelated cross-client contract test (repo-fields-contract.test.ts), not something to flag as missing."
+            ],
+            "inspectedReferences": [
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/cli/__tests__/settings-modal.test.ts",
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/config/__tests__/repo-fields.test.ts",
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/config/repo-fields.ts",
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/daemon/__tests__/repo-settings.test.ts",
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/workflow/config/github.ts",
+              "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/config/__tests__/fixtures/repo-fields-catalog.json",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/repo-settings.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/cli/panes/repo-settings-model.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/cli/panes/RepoSettingsModal.tsx",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/cli/panes/__tests__/ReposPane-completeness.test.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/cli/__tests__/repo-fields-contract.test.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/repo-settings.test.ts",
+                "cases": [
+                  "the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/__tests__/repo-settings.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran live in the review sandbox against the current checkout (equal to the reviewed commit for this file); all 10 tests in the file passed, including the new gitHooks test.",
+                "evidenceReferences": [
+                  "e6d9b40d78496bb68a05f72de680cf46a4853c12:src/daemon/__tests__/repo-settings.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t3",
+            "status": "passed",
+            "summary": "Hook entry matches spec; test passes; package.json lists the bin.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Test covers all acceptance checks and was run directly and passed.",
+              "evidenceReferences": [
+                "21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/insrc-git-hook.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran the test and typecheck directly beyond requirement."
+            ],
+            "inspectedReferences": [
+              "21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/insrc-git-hook.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/bin/__tests__/insrc-git-hook.test.ts",
+                "cases": [
+                  "src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository"
+                ],
+                "command": "npx tsx --test-force-exit src/bin/__tests__/insrc-git-hook.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly; 1 pass.",
+                "evidenceReferences": [
+                  "21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/__tests__/insrc-git-hook.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t4",
+            "status": "passed",
+            "summary": "t4 implements hook-block.ts and its test. Verified correct against all acceptance checks; tests pass.",
+            "findings": [
+              {
+                "severity": "LOW",
+                "location": "src/daemon/git-hooks/hook-block.ts:35",
+                "message": "hasBlock is exported but unused.",
+                "rationale": "Minor dead code, non-blocking.",
+                "evidenceReferences": [
+                  "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Traced all test assertions against implementation; all map to acceptance checks; tests executed and passed.",
+              "evidenceReferences": [
+                "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts",
+                "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/__tests__/hook-block.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran the test file; all 3 cases passed."
+            ],
+            "inspectedReferences": [
+              "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts",
+              "e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/__tests__/hook-block.test.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "cases": [
+                  "src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-block.test.ts",
+                "result": "pass",
+                "executionDetails": "Reviewer-run; passed.",
+                "evidenceReferences": [
+                  "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/__tests__/hook-block.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t5",
+            "status": "passed",
+            "summary": "t5 adds `inspectHook()` (src/daemon/git-hooks/hook-inspect.ts) and exports `findBlock` from hook-block.ts for it to reuse. The function reads a hook file and reports present/foreign/earlyExit/recordedEntry/stale/unreadable, matching the PLAN's acceptance checks and the LLD's status-method design (including self-review requirement F5: compare the recorded entry path to the current one). Verified by git show against the committed version, confirmed current checkout matches exactly (no diff), ran the test file directly (passes), and typechecked the two source files (clean).",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The single test file covers all branches of inspectHook: absent file (ENOENT), a file holding only our block (present, not foreign, not stale), a foreign-only file then foreign+our-block, early-exit detection for both 'exit' and 'exec' terminal lines both before and after our block is appended, stale detection when the currentEntry differs from the recorded one (including verifying the shell-quote/unescape round trip for an entry path containing an apostrophe), and the unreadable-path case (directory passed as file). I traced the regex/quote-escaping logic (RECORDED regex + unescape of `'\\''`) by hand against the ENTRY fixture containing an apostrophe and confirmed it reproduces the original path, which is exactly what the `own.recordedEntry === ENTRY` assertion needs. I also ran the test directly against the current checkout (which is byte-identical to the committed version) and it passed, and typechecked both source files with no errors.",
+              "evidenceReferences": [
+                "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+                "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-inspect.ts",
+                "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-block.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran `npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-inspect.test.ts` directly against the current checkout (not just relying on the builder-reported run) — passed in ~12ms. Also ran `npx tsc --noEmit` scoped to these two files — clean.",
+              "Confirmed current working tree is byte-identical to commit a8b015b2c for all three changed files (git diff produced no output), so the pinned evidence and the live checkout are the same version."
+            ],
+            "inspectedReferences": [
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json",
+              "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+              "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-block.ts",
+              "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-inspect.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+                "cases": [
+                  "src/daemon/git-hooks/__tests__/hook-inspect.test.ts: inspection reports present, absent, foreign, early-exit and stale-entry files"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-inspect.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout (confirmed byte-identical to commit a8b015b2c); 1 test, 1 pass, 0 fail, duration ~15ms.",
+                "evidenceReferences": [
+                  "a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/__tests__/hook-inspect.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t6",
+            "status": "incomplete",
+            "summary": "t6 adds repo.gitHooks.install/uninstall/status (git-hooks-methods.ts), wires them into handler-runtime.ts, threads/method-class.ts and repo-call-audit.ts, and makes repo.settings.set('gitHooks') drive installation via repo-settings.ts's new applyGitHooks dependency. The included follow-up commit (1119847fb, \"list the repo.gitHooks methods in the handler table text\") correctly replaces a trailing `...gitHooks.handlers` spread with three explicit named entries near the other explicit handlers, which was required because repo-call-audit.test.ts / repo-call-table.test.ts statically scan handler-runtime.ts's source text for literal method-key strings — a fact independently corroborated by the Story's own SWEEP.md record. Verified the apply()/status() encoding logic (installed/foreign/earlyExit/stale semantics, partial-failure vs full-failure gating of the gitHooks setting, atomic hook-file writes via hook-block.ts) against the LLD's documented behavior and error paths, and confirmed defaultHooksDir's use of the read-only git_rev_parse tool (no approval needed, so the generic try/catch mapping to 'not-a-git-repository' is safe). Ran the task's declared test command directly against the current checkout; both cases pass.",
+            "findings": [
+              {
+                "severity": "LOW",
+                "location": "src/daemon/git-hooks-methods.ts:91",
+                "message": "On a successful install over a foreign hook file whose content already exits/execs early, apply() copies before.foreign/before.earlyExit into the returned HookReport, but no test (in this task or elsewhere) exercises that propagation path for a successful write — only hook-inspect.test.ts (prior task) tests the underlying detection, and git-hooks-methods.test.ts only exercises the unregistered/not-a-repo/custom-hooksPath/partial-failure paths.",
+                "rationale": "The LLD's error-path table documents this flag as part of the contract ('the install result flags a file whose last non-empty line is an exit or exec'), but ac1/ac2/ac3's proving tests (per LLD §5 acceptance mapping) don't cover it, so this specific new wiring in git-hooks-methods.ts has no direct assertion.",
+                "evidenceReferences": [
+                  "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/git-hooks-methods.ts"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "partial",
+              "explanation": "The two tests in git-hooks-methods.test.ts fully cover the Task's named acceptance checks: unregistered/non-git refusal with nothing written, install/uninstall round-trip with the gitHooks setting mirroring install state (including a real git_rev_parse call and a real core.hooksPath redirection, not mocked), a partial-failure install leaving the other hook installed and reporting the reason, and a full-failure install returning hooks-failed without touching the setting. handler-runtime.test.ts's ADDED_RPC update and the repo-call-audit.ts / method-class.ts additions are plain data-table entries with no independent logic to test beyond the key-set equality test (which I did not execute here as it isn't the Task's declared test command and is noted in the Story's own SWEEP.md as failing in both trees for an unrelated reason). The one real gap is the foreign/earlyExit propagation on a successful install, noted as a LOW finding — it is new code in this Task's file with no test anywhere asserting it, though the risk is low (diagnostic-only field, built from already-tested detection logic).",
+              "evidenceReferences": [
+                "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/__tests__/git-hooks-methods.test.ts",
+                "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/git-hooks-methods.ts",
+                "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-methods.test.ts"
+              ]
+            },
+            "limitations": [
+              "Required coverage remains partial: The two tests in git-hooks-methods.test.ts fully cover the Task's named acceptance checks: unregistered/non-git refusal with nothing written, install/uninstall round-trip with the gitHooks setting mirroring install state (including a real git_rev_parse call and a real core.hooksPath redirection, not mocked), a partial-failure install leaving the other hook installed and reporting the reason, and a full-failure install returning hooks-failed without touching the setting. handler-runtime.test.ts's ADDED_RPC update and the repo-call-audit.ts / method-class.ts additions are plain data-table entries with no independent logic to test beyond the key-set equality test (which I did not execute here as it isn't the Task's declared test command and is noted in the Story's own SWEEP.md as failing in both trees for an unrelated reason). The one real gap is the foreign/earlyExit propagation on a successful install, noted as a LOW finding — it is new code in this Task's file with no test anywhere asserting it, though the risk is low (diagnostic-only field, built from already-tested detection logic)."
+            ],
+            "advice": [
+              "Optional execution: I ran the Task's declared command (npx tsx --test-force-exit src/daemon/__tests__/git-hooks-methods.test.ts) directly against the current checkout; both cases passed. I did not run handler-runtime.test.ts or repo-call-audit.test.ts/repo-call-table.test.ts (not the declared target, and the sandbox required approval for that command) — relying instead on the Story's own SWEEP.md record showing those as fixed/unrelated-noise, which I cross-checked by reading the actual source at both commits.",
+              "Consider adding one assertion (in this test file or a follow-up) that installing over a foreign, early-exiting hook file surfaces foreign:true/earlyExit:true in the install HookReport, to lock in that documented diagnostic behavior."
+            ],
+            "inspectedReferences": [
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/__tests__/git-hooks-methods.test.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/__tests__/handler-runtime.test.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/git-hooks-methods.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/handler-runtime.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/repo-call-audit.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/repo-settings.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/threads/method-class.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/handler-runtime.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-methods.test.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/git-hooks/hook-block.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/git-hooks/hook-inspect.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/workflow/git-calls.ts",
+              "f176f357b06061513cf3e603d4aa39a758707d5d:src/daemon/tools/builtins/git/rev-parse.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "cases": [
+                  "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                  "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/__tests__/git-hooks-methods.test.ts",
+                "result": "pass",
+                "executionDetails": "Executed directly against the current checkout (HEAD 5be98972f, which contains both f176f357b and 1119847fb); both tests passed (2/2).",
+                "evidenceReferences": [
+                  "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-methods.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t7",
+            "status": "passed",
+            "summary": "t7 adds the real-git integration test (src/daemon/__tests__/git-hooks-real-git.test.ts) and the feature documentation section in docs/plans/team-workflow.md for the git-hooks Story. The test exercises createGitHooks against two real cloned repos, runs genuine `git pull` (merge) and `git pull --rebase` operations, and verifies post-merge/post-rewrite hooks fire the installed block and that git always exits 0 even when the stand-in entry fails or is deleted outright; it passes against the current checkout. The block format the test assumes (`node '<entry>' \"<toplevel>\" '<hookName>' ... ; exit 0`) matches buildBlock in hook-block.ts exactly, so the integration is faithful to production wiring, not a reimplementation. The documentation's claims were checked against the actual code: repository-wide tracker.sync and its per-repo in-flight guard (tracker-setup-handlers.ts), the gitHooks setting semantics and partial-install behavior (git-hooks-methods.ts apply()), uninstall's delete-if-empty behavior and status's foreign/earlyExit/stale reporting (hook-block.ts / hook-inspect.ts), the git-path resolution via `git rev-parse --git-path hooks` (defaultHooksDir), the repo-call-audit 'modifying' classification of tracker.sync/repo.gitHooks.* (the worktree-refusal claim), and the isolated-read core.hooksPath=/dev/null mechanism — all matched. All three of t7's PLAN acceptance checks are met: the real-git test (checked here), the documentation content (checked here), and the sweep-suite comparison, which is recorded in docs/standalone/.../S001/SWEEP.md (committed in a separate same-day commit for this task, not part of the diff under review but present in the current tree as corroborating evidence) and whose findings I independently reproduced by rerunning git-hooks-methods.test.ts and the new test itself.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The task's one named test maps 1:1 to the single test case added in git-hooks-real-git.test.ts; its title text matches exactly. I inspected the test body line-by-line: it installs real hooks via createGitHooks with a stand-in entry, runs a genuine git merge-pull and verifies the post-merge block fired (log line `<repo> post-merge`) with git exiting 0 despite the stand-in exiting 1; runs a genuine `git pull --rebase` and verifies post-rewrite fired the same way; then deletes the entry file entirely and reruns `git pull --rebase`, asserting git still exits 0 and repo.gitHooks.status still reports both hooks installed. This covers the acceptance check's two required scenarios (entry present-but-failing, as a stand-in for an RPC/daemon failure, and entry missing outright) against real git, which is exactly what unit-level tests of the entry program and the block/inspect modules (built in earlier tasks t3-t6) cannot exercise. I reran the test (passed, 333ms) and the adjacent git-hooks-methods.test.ts (passed, 2/2) to corroborate the SWEEP.md record referenced by acceptance check 3.",
+              "evidenceReferences": [
+                "3b77f023bf4ed52b649c4134f8098e04a6a3962a:src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "3b77f023bf4ed52b649c4134f8098e04a6a3962a:docs/plans/team-workflow.md"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: I ran the new test file directly (npx tsx --test-force-exit src/daemon/__tests__/git-hooks-real-git.test.ts) and it passed in 333ms; I also ran src/daemon/__tests__/git-hooks-methods.test.ts (2/2 passed) as a spot-check of the SWEEP.md record. I did not rerun the full tracker/settings/handler-runtime suites named in acceptance check 3 myself (the sandbox declined multi-file and some single-file test invocations outside the task's declared test); I relied on the already-committed docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/SWEEP.md for that comparison, which is present in the current tree (committed in a same-day follow-up commit for this task, outside the two files in this diff) and whose content I read and cross-checked against the audit table and handler registrations.",
+              "Non-blocking observation for context: the SWEEP.md record shows that at the literal point of the t7 commit (3b77f023b), running the handler key-set / repo-call-audit tests would still have reflected an un-updated handler-table text entry from t6, fixed by the very next commit (1119847fb) before the final sweep was recorded; this is the sweep task doing its job (catching a t6 gap) rather than a defect in t7's own files, so it is not raised as a finding."
+            ],
+            "inspectedReferences": [
+              "3b77f023bf4ed52b649c4134f8098e04a6a3962a:docs/plans/team-workflow.md",
+              "3b77f023bf4ed52b649c4134f8098e04a6a3962a:src/daemon/__tests__/git-hooks-real-git.test.ts",
+              "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json",
+              "616eb489b267642edaf399791cac027b18caed05:docs/standalone/install-git-hooks-refresh-tracker-status-E202611039ac84aba/S001/SWEEP.md",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks-methods.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/hook-block.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/hook-inspect.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/bin/insrc-git-hook.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/tracker-setup-handlers.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/repo-call-audit.ts",
+              "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/tools/git-isolation.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "cases": [
+                  "src/daemon/__tests__/git-hooks-real-git.test.ts: a real git pull and a real git pull --rebase run the installed hooks and git exits 0 even when the hook entry is missing or the daemon is down"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/__tests__/git-hooks-real-git.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly in this review session against the current checkout (passed in 333ms)",
+                "evidenceReferences": [
+                  "3b77f023bf4ed52b649c4134f8098e04a6a3962a:src/daemon/__tests__/git-hooks-real-git.test.ts"
+                ]
+              },
+              {
+                "file": "src/daemon/__tests__/git-hooks-methods.test.ts",
+                "cases": [
+                  "src/daemon/__tests__/git-hooks-methods.test.ts: repo.gitHooks.install, uninstall and status refuse an unregistered repository, write only through the daemon, and keep the gitHooks setting equal to what is installed",
+                  "src/daemon/__tests__/git-hooks-methods.test.ts: a failing hook file leaves the other hook installed and is reported with its reason"
+                ],
+                "command": "npx tsx --test-force-exit src/daemon/__tests__/git-hooks-methods.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly in this review session as a spot-check corroborating the SWEEP.md record (both cases passed)",
+                "evidenceReferences": [
+                  "1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/__tests__/git-hooks-methods.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "crPublication": "pending",
+        "failureDiagnostics": [
+          {
+            "phase": "assessment",
+            "taskId": "t2",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "taskId",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'taskId' ({\"missingProperty\":\"taskId\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "status",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'status' ({\"missingProperty\":\"status\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "summary",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'summary' ({\"missingProperty\":\"summary\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "testCoverage",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'testCoverage' ({\"missingProperty\":\"testCoverage\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "limitations",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'limitations' ({\"missingProperty\":\"limitations\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "advice",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'advice' ({\"missingProperty\":\"advice\"})",
+                  "occurrences": 1
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "inspectedReferences",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'inspectedReferences' ({\"missingProperty\":\"inspectedReferences\"})",
+                  "occurrences": 1
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{}",
+                "truncated": false
+              }
+            },
+            "resolved": true
+          },
+          {
+            "phase": "assessment",
+            "taskId": "t3",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "testCoverage",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'testCoverage' ({\"missingProperty\":\"testCoverage\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "limitations",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'limitations' ({\"missingProperty\":\"limitations\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "advice",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'advice' ({\"missingProperty\":\"advice\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "inspectedReferences",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'inspectedReferences' ({\"missingProperty\":\"inspectedReferences\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "executedTests",
+                  "correction": "Return the required field in the JSON object.",
+                  "message": "/: must have required property 'executedTests' ({\"missingProperty\":\"executedTests\"})",
+                  "occurrences": 3
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{\"taskId\":\"t3\",\"status\":\"passed\",\"summary\":\"src/bin/insrc-git-hook.ts matches the t3 LLD/PLAN contract: it reads only the repository-root argument, calls tracker.sync with { repoPath } and no epicHash via the shared rpc client with HOOK_TIMEOUT_MS=10s, swallows every rejection (daemon down, timeout, error answer, unregistered repo) and always sets exitCode=0. It imports only node:url and ../shared/ipc-client.js. package.json's bin map lists insrc-git-hook -> ./out/bin/insrc-git-hook.js, and src/bin/insrc-git-hook.ts is covered by tsconfig's standard src/**/*.ts include. The git hook block invokes the entry with (repoRoot, hookName); the entry correctly ignores the unused hookName, consistent with the repository-wide refresh design. All three acceptance checks hold, and the named unit test exists and passes (verified by direct execution), matching the builder's reported result.</summary>\\n<findings>[]</findings>\\n<testCoverage>{\\\"assessment\\\": \\\"verified\\\", \\\"explanation\\\": \\\"The single named test exercises every required behavior: it drives runGitHook through five outcome types (daemon-not-running throw, timeout throw, error-answer object, unregistered-repo throw, success) via an injected HookCall and asserts exactly one call to tracker.sync with { repoPath } and HOOK_TIMEOUT_MS each time, covering acceptance check 1 and the single-rpc-call part of check 2. It asserts no call happens with no repo arg. It spawns a real process (tsx on the .ts entry) against a fresh daemon-less HOME and asserts exit code 0 with empty stdout, proving the real entry point behaves as predicted. It regex-extracts the file's import lines and asserts they equal exactly node:url and ../shared/ipc-client.js, covering the import-restriction check. I ran the test directly and it passed, matching the builder-reported result. The compile/package.json acceptance check (not independently exercised by this unit test) was verified by inspecting package.json's bin map and tsconfig's include globs plus a clean tsc --noEmit run over the file.\\\", \\\"evidenceReferences\\\": [\\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/insrc-git-hook.ts\\\", \\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/__tests__/insrc-git-hook.test.ts\\\", \\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:package.json\\\", \\\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json\\\", \\\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json\\\"]}</testCoverage>\\n<limitations>[]</limitations>\\n<advice>[\\\"Optional execution: ran npx tsx --test-force-exit src/bin/__tests__/insrc-git-hook.test.ts directly (pass, matches builder report) and npx tsc --noEmit -p tsconfig.json (no errors for this file), beyond what the review mandates.\\\"]</advice>\\n<inspectedReferences>[\\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/insrc-git-hook.ts\\\", \\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/__tests__/insrc-git-hook.test.ts\\\", \\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:package.json\\\", \\\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json\\\", \\\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json\\\"]</inspectedReferences>\\n<executedTests>[{\\\"file\\\": \\\"src/bin/__tests__/insrc-git-hook.test.ts\\\", \\\"cases\\\": [\\\"src/bin/__tests__/insrc-git-hook.test.ts: the hook entry exits 0 when the daemon is not running, times out, answers an error or names an unregistered repository\\\"], \\\"command\\\": \\\"npx tsx --test-force-exit src/bin/__tests__/insrc-git-hook.test.ts\\\", \\\"result\\\": \\\"pass\\\", \\\"executionDetails\\\": \\\"Ran directly in review sandbox; 1 test, 1 pass, 0 fail, completed in ~126ms\\\", \\\"evidenceReferences\\\": [\\\"21e4a78f3625182b34399dd7c5fe9173463ed13e:src/bin/__tests__/insrc-git-hook.test.ts\\\"]}]</executedTests>\\n\"}",
+                "truncated": false
+              }
+            },
+            "resolved": true
+          },
+          {
+            "phase": "assessment",
+            "taskId": "t4",
+            "diagnostic": {
+              "provider": "claude",
+              "issues": [
+                {
+                  "code": "MISSING_REQUIRED_FIELD",
+                  "field": "findings",
+                  "correction": "Return findings as a top-level JSON array.",
+                  "message": "/: must have required property 'findings' ({\"missingProperty\":\"findings\"})",
+                  "occurrences": 3
+                },
+                {
+                  "code": "SCHEMA_CONSTRAINT",
+                  "field": "/inspectedReferences/5",
+                  "correction": "Return this field according to the supplied JSON schema.",
+                  "message": "/inspectedReferences/5: must NOT have fewer than 42 characters ({\"limit\":42})",
+                  "occurrences": 2
+                }
+              ],
+              "lastRejectedFeedback": {
+                "preview": "{\"taskId\":\"t4\",\"status\":\"passed\",\"summary\":\"t4 adds hook-block.ts (buildBlock/applyBlock/removeBlock) and its test file, the primitive that writes/replaces/removes the marked git-hook block. Tracing every test assertion against the implementation (new/empty/husky/user/no-trailing-newline files, idempotent re-apply, in-place block replacement, mode preservation vs forced-executable, block removal leaving original bytes, file deletion when only the block remained, and the unwritable-directory failure path reported without throwing) confirms it is correct in every branch. Re-running the test file against the current checkout (only a later, unrelated findBlock export addition from commit a8b015b2 sits on top) shows all 3 cases pass. All three of the Task's acceptanceChecks and the PLAN's t4 entry are satisfied, and the code matches the LLD's Git hook block data-model entry (temp-file+rename write, mode kept-or-executable, byte-for-byte preservation, delete-if-only-block).</summary>\\n<parameter name=\\\"findings\\\">[{\\\"severity\\\":\\\"LOW\\\",\\\"location\\\":\\\"src/daemon/git-hooks/hook-block.ts:35\\\",\\\"message\\\":\\\"hasBlock is exported but has no caller anywhere in the tree; hook-inspect.ts (t5) imports findBlock directly instead.\\\",\\\"rationale\\\":\\\"Dead exported code is a minor readability/maintenance smell, not a correctness defect, and is not covered by any of t4's acceptance checks, so it does not block.\\\",\\\"evidenceReferences\\\":[\\\"e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts\\\"]}]\",\"testCoverage\":{\"assessment\":\"verified\",\"explanation\":\"The three test cases in hook-block.test.ts map one to one onto the Task's three acceptanceChecks and the PLAN's t4 testStrategyCoverage entries. Tracing each assertion against the implementation confirms: (1) absent/empty files get a shebang plus block and are made executable; husky/user/no-trailing-newline files keep their original bytes verbatim with the block appended once, and the entry path is correctly shell-quoted including the embedded single-quote case; (2) re-applying with the same entry is a no-op (changed:false, byte-identical), re-applying with a different entry replaces the block in place leaving exactly one copy, file mode is preserved across replace, removeBlock restores the original bytes exactly, a second remove is a no-op, and a file holding only the auto-added shebang plus block is deleted on removal; (3) a write failure on a read-only directory is caught and reported via an EACCES/EPERM/EROFS-matching reason with the original file untouched and no temp file left, and an EISDIR read failure on a directory path is also reported rather than thrown. The test file was additionally run against the current checkout and all 3 tests passed, confirming the traced behavior empirically.\",\"evidenceReferences\":[\"e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts\",\"e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/__tests__/hook-block.test.ts\",\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json\",\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json\"]},\"limitations\":[],\"advice\":[\"Optional execution: ran npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-block.test.ts against the current checkout; all 3 cases passed (11.4ms, 1.9ms, 0.7ms), confirming the traced logic empirically.\",\"Optional improvement: consider dropping the unused hasBlock export, or wiring it into hook-inspect.ts in place of the separately exported findBlock, to avoid two overlapping presence-check entry points.\"],\"inspectedReferences\":[\"e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/hook-block.ts\",\"e6e71257f6f9f094367a4d6fb0b1b6e4a10802f1:src/daemon/git-hooks/__tests__/hook-block.test.ts\",\"a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-block.ts\",\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/LLD-9ac84abac177b399-s1.json\",\"cf18ecd8771379024ddf3c2e09c11d83fd2dc57a:.insrc/artifacts/PLAN-9ac84abac177b399-s1.json\",\"a8b015b2ca2b595f6bb333a837e27c2bbfecb473:src/daemon/git-hooks/hook-inspect.ts\"],\"executedTests\":[{\"file\":\"src/daemon/git-hooks/__tests__/hook-block.test.ts\",\"cases\":[\"src/daemon/git-hooks/__tests__/hook-block.test.ts: the hook block is written into an absent, an empty, a husky-style and a user-written hook file and the existing content is kept byte for byte\",\"src/daemon/git-hooks/__tests__/hook-block.test.ts: applying is idempotent and removing takes only the marked block and deletes a file that held nothing else\",\"src/daemon/git-hooks/__tests__/hook-block.test.ts: a hook file that cannot be written is reported with its reason and left unchanged\"],\"command\":\"npx tsx --test-force-exit src/daemon/git-hooks/__tests__/hook-block.test.ts\",\"result\":\"pass\",\"executionDetails\":\"Reviewer-run against current checkout; all 3 node:test cases passed (3 pass, 0 fail) in about 16.7ms total.\",\"evidenceReferences\":[\"1119847fbfc17fe00924a798e76fecd2aa4dca18:src/daemon/git-hooks/__tests__/hook-block.test.ts\"]}]}",
+                "truncated": false
+              }
+            },
+            "resolved": true
+          }
+        ],
+        "error": "CR publication failed: documents: Expected story, lld and plan documents"
+      },
+      "progress": {
+        "schemaVersion": 1,
+        "executionId": "c4833efa-6dab-4e02-9cd7-3a3e82b95ae7",
+        "sequence": 11613,
+        "phase": "error",
+        "task": {
+          "id": "t7",
+          "name": "Prove real git runs the hooks, document the feature and run the affected suites",
+          "position": 7,
+          "total": 7
+        },
+        "completedTasks": 7,
+        "reviewElapsedMs": 1622039,
+        "taskElapsedMs": 367149,
+        "observedAt": "2026-11-03T15:22:09.672Z",
+        "lastMeaningfulActivityAt": "2026-11-03T15:22:08.227Z",
+        "processState": "unknown",
+        "lastProcessObservedAt": "2026-11-03T15:22:08.227Z",
+        "activeToolCount": 0
+      }
+    }
+  ]
+}

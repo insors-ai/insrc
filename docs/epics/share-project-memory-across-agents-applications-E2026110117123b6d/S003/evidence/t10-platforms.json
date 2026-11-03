@@ -1,0 +1,8 @@
+{
+  "candidateCommit": "a4e040809abeaff4d966e79d6d1e4a639103654f",
+  "macPath": "t10-macos.json",
+  "linuxPath": "t10-linux/project-memory-linux-node22-a4e040809abeaff4d966e79d6d1e4a639103654f/store-integration.json",
+  "ciRecordPath": "t10-ci-run.json",
+  "ciRunId": 41675099082,
+  "ciRunUrl": "https://github.com/insors-ai/insrc/actions/runs/41675099082"
+}

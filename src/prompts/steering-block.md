@@ -327,8 +327,14 @@ an explicit user-authorized override when no usable independent review exists.
 
 Use `insrc_schema({ tool: 'insrc_code_review_step', phase })` for exact fields.
 Create the commit packet FIRST. Selected after-version segments (or deletion anchors)
-are the finding scope; commits are lookup pointers. Include pinned Story/LLD/Plan
-references and full test cases, commands, results and execution details. Never infer
+are the finding scope; commits are lookup pointers. Pin exactly the documents the
+Story's route produced, as committed canonical artifacts: a Story with a Plan pins its
+`lld` and `plan` (and its `story` definition when an epic DEF exists); a Story with only
+an LLD pins that `lld`; a bugfix with only an ISSUE pins that `issue`; a trivial change
+pins none and is reviewed against the BUILD's focus. The daemon reads the route from the
+Story's stored artifacts, refuses a packet whose set differs, and reviews a Story without
+a Plan as one unit, the BUILD's task. Include full test cases, commands, results and
+execution details. Never infer
 scope from HEAD or omit selected modules. Test-coverage inspection is mandatory;
 running tests/integration/build is optional and any skipped execution is advice.
 

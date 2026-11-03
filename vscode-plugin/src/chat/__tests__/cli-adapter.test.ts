@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
@@ -302,11 +302,21 @@ test('cancel() stops the process group and resolves only after the exit; the rea
 
   // Real spawner: the CLI leads its own process group, and kill() reaches the whole group.
   if (process.platform === 'win32') return t.diagnostic('process groups are POSIX-only');
+  if (!existsSync('/proc/self/stat')) return t.diagnostic('no procfs in this environment');
   const proc = nodeSpawner('sh', ['-c', 'sleep 30 & wait'], { cwd: process.cwd() });
   assert.equal(await proc.spawnError, undefined);
   const pid = proc.pid!;
   assert.ok(typeof pid === 'number', 'exposes the pid');
-  const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  // the child may not have a /proc stat yet (or be reaped already): retry briefly instead of racing it
+  let stat = '';
+  for (let i = 0; i < 50 && stat === ''; i++) {
+    try {
+      stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    } catch {
+      await tick(10);
+    }
+  }
+  assert.ok(stat !== '', 'the spawned CLI has a /proc stat');
   const pgrp = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[2]);
   assert.equal(pgrp, pid, 'detached: the CLI is its own process group leader');
   proc.kill('SIGTERM');

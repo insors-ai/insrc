@@ -5687,3 +5687,22 @@ test('E202611031bd72813:S001 t2: two pending requests keep waiting-input until B
   // a selection decision starts a continuation runTurn -> the chat leaves waiting-input (working)
   await waitFor(() => store.get(id)?.status !== undefined && store.get(id)?.status !== 'waiting-input', 5000, 'all requests resolved -> continuation starts (working), no longer waiting-input');
 });
+
+test('E202611031bd72813:S001 t2: Stop (cancel-turn) is a failure exit -> done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const evs: TurnEvent[] = [];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { hang: true }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hang' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => store.get(id)?.status === 'working', 5000);
+  fc.send(env('cancel-turn', {}));
+  await waitFor(() => store.get(id)?.status === 'done', 5000, 'Stop -> done');
+});

@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T16:09:45.971Z",
+    "updatedAt": "2026-11-03T16:35:37.180Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1206,6 +1206,325 @@
               },
               {
                 "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "eb6afe27e",
+        "ranAt": "2026-11-03T16:35:37.180Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-proof-port-retained-and-recycled",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-one-mutation-effects-receipt-generation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-generation-revision-conflicts-and-exact-retry",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-replay-forget-no-resurrection-scoped",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-reader-expiry-delete-race",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+                "title": "store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-native-uncertain-writes-fence",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-commit-kill-before-after-receipt-ack",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-broad-forget-unseen-pending-event",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-forget-after-plan-before-commit",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-macos-apfs-linux-ext4-qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/project-memory-platform-evidence.test.ts",
+                "title": "store-macos-apfs-linux-ext4-production-evidence-matches-current-source",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-crash.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11337,
+            "titles": [
+              {
+                "title": "production-store-queue-process-crash-replay-and-forget-qualification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-reads.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9006,
+            "titles": [
+              {
+                "title": "store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-binding-change-during-projection-is-rechecked-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-time-boundaries-expire-sources-without-a-generation-change",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-future-validity-is-published-as-a-cache-boundary",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-profile-query-text-float32-and-cold-current-projection-agree",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection",
+                "result": "pass"
+              },
+              {
+                "title": "store-reads-result-reference-and-byte-overflow-return-no-truncated-projection",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-receipts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7944,
+            "titles": [
+              {
+                "title": "store-proof-real-queue-retained-ack-recycle-and-cold-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-scope-epoch-and-projection-do-not-leak-domain-content",
+                "result": "pass"
+              },
+              {
+                "title": "store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-writer.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2745,
+            "titles": [
+              {
+                "title": "store-writer-one-version-complete-effects-receipt-root-and-cold-replay",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-serial-generation-revisions-conflicts-and-retained-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-native-rejection-fences-until-verified-close-and-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-timeout-retains-lane-native-work-and-owner-through-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-bounds-admission-before-copy-and-drains-admitted-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/shared/__tests__/project-memory-platform-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1027,
+            "titles": [
+              {
+                "title": "store-macos-apfs-linux-ext4-production-evidence-matches-current-source",
                 "result": "pass"
               }
             ],

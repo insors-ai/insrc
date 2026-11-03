@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 85 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 101 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -343,3 +343,83 @@ Run at 2026-11-03T16:09:45.971Z on commit `6a9165318`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 12 | 5.1 s |  |
+
+## t10
+
+Run at 2026-11-03T16:35:37.180Z on commit `eb6afe27e`. Tests check: **passed**. 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-proof-port-retained-and-recycled**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-proof-real-queue-retained-ack-recycle-and-cold-authority | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-one-mutation-effects-receipt-generation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-generation-revision-conflicts-and-exact-retry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-serial-generation-revisions-conflicts-and-retained-identity | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-replay-forget-no-resurrection-scoped**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-reader-expiry-delete-race**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-native-uncertain-writes-fence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-timeout-retains-lane-native-work-and-owner-through-close | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-native-rejection-fences-until-verified-close-and-reopen | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-commit-kill-before-after-receipt-ack**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-broad-forget-unseen-pending-event**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-forget-after-plan-before-commit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-macos-apfs-linux-ext4-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-macos-apfs-linux-ext4-production-evidence-matches-current-source | `src/shared/__tests__/project-memory-platform-evidence.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-crash.test.ts` | 0 | 1 | 11.3 s |  |
+| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 12 | 9 s |  |
+| `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 7.9 s |  |
+| `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 2.7 s |  |
+| `src/shared/__tests__/project-memory-platform-evidence.test.ts` | 0 | 1 | 1 s |  |

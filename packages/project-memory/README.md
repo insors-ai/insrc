@@ -72,6 +72,37 @@ visibility. Hidden and unknown operations produce the same `INVALID_REQUEST`.
 
 ## Files and limits
 
+### S3 admission refinement (private; host composition follows in task 13)
+
+The S3-capable host uses a strict producer payload:
+`{schemaVersion:1,input:Json,source:{text,reference,occurredAt}|null}`.
+Capture/correct/resolve require nonempty source text; references and occurrence
+times are explicit nullable values. Producers cannot supply `admitted`,
+`policyAttestation` or other top-level fields. Nested input remains untrusted JSON.
+
+The trusted `policy.admit` callback authenticates the origin, project authority,
+exact forget selector and registered source lifecycle. It returns the same command
+envelope with a payload containing `schemaVersion`, `input`, `source`, and
+`policyAttestation:{version:1,origin,policyVersion,occurrenceTimeVerified}`. Origin
+is one of user, host-policy, artifact, assistant, tool or document; it must derive
+from the authenticated capture route, never a producer name or quoted role.
+An identity-echo callback lacks attestation and is not S3-ready. The package cannot
+make a dishonest injected policy trustworthy and supplies no default authority.
+
+Private transforms replace the attestation with module-computed request/content
+hashes and admitted provenance. Content hashes cover exact whole UTF-8 text.
+Unverified occurrence times become null in both source and metadata; verified
+future timestamps remain unchanged. References are inert and never fetched here.
+Policy redaction, historical policy version and attribution must reproduce exactly
+on retries. Changed finalized bytes conflict with accepted or terminal identities.
+
+Module validation and queue identity conflicts retain INVALID_REQUEST and
+REVISION_CONFLICT. Host-thrown errors with those names remain sanitized NOT_READY;
+only existing POLICY_DENIED/UNBOUND_PROJECT codes survive the host boundary with
+fixed messages. Failed validation does not append queue bytes. Direct private S2
+QueueAdmission construction without the transforms retains generic JSON behavior.
+This adds no public options, model calls, normalization worker or read capability.
+
 A new directory contains `layout.json`, the persistent `.owner.lock`, and a
 separate `queue/` subtree. It contains versioned format metadata, numbered framed
 JSONL segments, current/prior checkpoints and bounded recovery diagnostics.

@@ -105,6 +105,20 @@ export function defaults(value: any): void {
 	cfg.resolve('r');
 	st.push(1);
 }
+export function moreBindings(xs: any[], k: number): void {
+	for (var ns of xs) {}
+	for (var cfg in xs) {}
+	abstract class registry {}
+	enum st { A }
+	ns.find(1);
+	cfg.parse('x');
+	registry.create({});
+	st.push(1);
+}
+export function switchScoped(k: number): void {
+	switch (k) { case 1: const ns = [1]; ns.map(x => x); }
+	ns.find(1);
+}
 export function blockScoped(): void {
 	{ const ns = [1]; ns.map(x => x); }
 	for (const registry of [[1]]) registry.push(1);
@@ -122,6 +136,8 @@ export function blockScoped(): void {
 	assert.deepEqual(calls(r, 'innerArrow'), ['create'], "a closure extracted on its own still sees its outer function's parameter shadowing the import");
 	assert.deepEqual(calls(r, 'namedExpr'), ['create'], "a named function expression's own name shadows the import inside it");
 	assert.deepEqual(calls(r, 'defaults'), ['create', 'find', 'parse', 'push', 'resolve'], 'names in destructuring defaults and computed keys are not declared');
+	assert.deepEqual(calls(r, 'moreBindings'), [], 'var loop headers, abstract classes and enums shadow imports');
+	assert.deepEqual(calls(r, 'switchScoped'), ['find'], "a switch's const shadows the import only inside the switch");
 	assert.deepEqual(calls(r, 'blockScoped'), ['create', 'find'], "a block's or loop's local shadows the import only inside it");
 });
 

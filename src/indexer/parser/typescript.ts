@@ -845,7 +845,7 @@ const SCOPE_NODE_TYPES = new Set([
   'catch_clause',
   // Blocks and loops scope their const/let bindings (ISSUE-1ad687e6), so a
   // block's local shadows an outer name only inside the block.
-  'statement_block', 'for_statement', 'for_in_statement',
+  'statement_block', 'for_statement', 'for_in_statement', 'switch_body',
 ]);
 
 /** The scopes a `var` belongs to: the nearest function, not the block (hoisting). */
@@ -858,6 +858,10 @@ const FUNCTION_SCOPE_TYPES = new Set([
 function collectVarNames(node: SyntaxNode, out: Set<string>): void {
   for (const c of node.namedChildren) {
     if (FUNCTION_SCOPE_TYPES.has(c.type)) continue;
+    if (c.type === 'for_in_statement' && c.childForFieldName('kind')?.text === 'var') {
+      const left = c.childForFieldName('left');           // for (var x of / in ...)
+      if (left) collectPatternIdentifiers(left, out);
+    }
     if (c.type === 'variable_declaration') {                 // `var` (let/const are lexical_declaration)
       for (const d of c.namedChildren) {
         const name = d.type === 'variable_declarator' ? d.childForFieldName('name') : null;
@@ -869,7 +873,10 @@ function collectVarNames(node: SyntaxNode, out: Set<string>): void {
 }
 
 /** Declarations that bind their own name in the scope that contains them. */
-const NAMED_DECLARATION_TYPES = new Set(['function_declaration', 'generator_function_declaration', 'class_declaration']);
+const NAMED_DECLARATION_TYPES = new Set([
+  'function_declaration', 'generator_function_declaration', 'class_declaration',
+  'abstract_class_declaration', 'enum_declaration', 'internal_module',
+]);
 
 /** Collect the identifier names bound by a parameter / catch / destructuring
  *  pattern (never a default-value expression: `required_parameter`/

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -135,3 +135,58 @@ Run at 2026-11-03T13:39:59.021Z on commit `ad4f1b289`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 7.4 s |  |
+
+## t5
+
+Run at 2026-11-03T13:53:44.987Z on commit `05870a034`. Tests check: **passed**. 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: store-row-codec-and-effect-reservations**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-snapshots-bounds-protected-kinds-frame-and-profile | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**unit: store-scope-epoch-predicate-escaping**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-scope-epoch-predicates-never-interpolate-untrusted-text | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**unit: store-revision-tombstone-reference-guards**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-exact-generation-predecessor-reference-and-history-guards | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-source-provenance-span-authority-and-evidence-sets | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-exact-tombstones-supersession-and-no-effect-dispositions | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-paired-supersession-is-atomic-and-acyclic | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-logical-forget-requires-exact-monotone-marker | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**unit: store-persisted-payload-v1-required-fields**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-snapshots-bounds-protected-kinds-frame-and-profile | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-source-provenance-span-authority-and-evidence-sets | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**unit: store-lifecycle-transition-matrix**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-lifecycle-complete-matrix-and-reason-constraints | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-carried-evidence-preserves-vectors-and-complete-lineage | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-paired-supersession-is-atomic-and-acyclic | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-logical-forget-requires-exact-monotone-marker | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**unit: store-embedding-profile-reopen-plan-query-compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-plan-snapshots-bounds-protected-kinds-frame-and-profile | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-plan-carried-evidence-preserves-vectors-and-complete-lineage | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.5 s |  |

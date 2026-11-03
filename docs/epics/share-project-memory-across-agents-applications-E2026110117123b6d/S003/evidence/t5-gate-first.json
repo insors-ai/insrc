@@ -1,0 +1,255 @@
+{
+  "next": "done",
+  "verdict": {
+    "taskId": "t5",
+    "passed": false,
+    "checks": [
+      {
+        "check": "Allowed/forbidden lifecycle matrix and stale revision tests enforce exact predecessor/current-pointer rules.",
+        "satisfied": true,
+        "evidence": "guards.ts enforces generation, expected revision, exact predecessor and matching current/revision snapshots. store-guards.test.ts:64–89 tests stale generations/revisions and missing history; lines 120–140 check all 42 lifecycle pairs and reason constraints. Daemon reports these tests passed."
+      },
+      {
+        "check": "Duplicate keys, dangling/cross-scope references, oversized rows and reserved generated kinds fail before native mutation.",
+        "satisfied": true,
+        "evidence": "snapshotPlan uses bounded row snapshots, rejects duplicate row IDs and reserves generated-row capacity; control/receipt effects are forbidden. guardEffects resolves references within the exact namespace/epoch and checks admitted scope. Tests exercise duplicate/oversized/reserved rows, missing dependencies and incompatible scopes. Both functions perform validation without native mutation."
+      },
+      {
+        "check": "unit: store-row-codec-and-effect-reservations",
+        "satisfied": true,
+        "evidence": "The mapped snapshot test exercises immutable copies, malformed rows, duplicate keys, generated control rows, byte/row bounds and incompatible profiles."
+      },
+      {
+        "check": "unit: store-scope-epoch-predicate-escaping",
+        "satisfied": true,
+        "evidence": "The mapped test supplies SQL-like project/branch/epoch strings, requires hash-only predicates, rejects malformed row IDs and checks scope/epoch mismatches."
+      },
+      {
+        "check": "unit: store-revision-tombstone-reference-guards",
+        "satisfied": true,
+        "evidence": "Mapped tests cover stale preconditions, missing references/history, altered immutable sources, provenance mismatches, exact tombstone protection, self-supersession rejection and required forget markers."
+      },
+      {
+        "check": "unit: store-persisted-payload-v1-required-fields",
+        "satisfied": true,
+        "evidence": "Mapped tests reject a missing source admittedAt field and unknown payload fields, and exercise source identity, attribution, timestamps, content hashes, spans and evidence completeness."
+      },
+      {
+        "check": "unit: store-lifecycle-transition-matrix",
+        "satisfied": true,
+        "evidence": "Mapped tests exercise the complete status matrix, reason restrictions, terminal-state rejection, carried evidence/vector preservation, paired supersession and logical forgetting."
+      },
+      {
+        "check": "unit: store-embedding-profile-reopen-plan-query-compatibility",
+        "satisfied": false,
+        "evidence": "The two daemon-mapped tests only exercise plan profile mismatches and evidence-only vector preservation. Neither reopens a store nor prepares or executes a query. A relevant test exists in store-initialization.test.ts ('store-initialization-reopened-profile-prepares-matching-plan-and-native-query'), but that file was not run in the supplied daemon results."
+      }
+    ],
+    "scopeRespected": true,
+    "reason": "The implementation satisfies both acceptance checks, but the required reopen/plan/query compatibility test is not established by the daemon-mapped tests.",
+    "testsPassed": true,
+    "typecheckClean": true,
+    "evidence": {
+      "typecheck": {
+        "ok": true,
+        "command": "npx tsc --noEmit\n(cd packages/project-memory && npx tsc --noEmit)",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 9144,
+        "outputTail": "# npx tsc --noEmit: clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n\n# (cd packages/project-memory && npx tsc --noEmit): clean\n\nnpm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\nnpm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n"
+      },
+      "tests": {
+        "ok": true,
+        "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-OYfDXj/report.tap packages/project-memory/src/__tests__/store-guards.test.ts",
+        "exitCode": 0,
+        "timedOut": false,
+        "durationMs": 512,
+        "outputTail": "TAP version 13\n# Subtest: store-plan-snapshots-bounds-protected-kinds-frame-and-profile\nok 1 - store-plan-snapshots-bounds-protected-kinds-frame-and-profile\n  ---\n  duration_ms: 14.052417\n  type: 'test'\n  ...\n# Subtest: store-plan-scope-epoch-predicates-never-interpolate-untrusted-text\nok 2 - store-plan-scope-epoch-predicates-never-interpolate-untrusted-text\n  ---\n  duration_ms: 4.822792\n  type: 'test'\n  ...\n# Subtest: store-plan-exact-generation-predecessor-reference-and-history-guards\nok 3 - store-plan-exact-generation-predecessor-reference-and-history-guards\n  ---\n  duration_ms: 14.110625\n  type: 'test'\n  ...\n# Subtest: store-plan-source-provenance-span-authority-and-evidence-sets\nok 4 - store-plan-source-provenance-span-authority-and-evidence-sets\n  ---\n  duration_ms: 3.547042\n  type: 'test'\n  ...\n# Subtest: store-plan-lifecycle-complete-matrix-and-reason-constraints\nok 5 - store-plan-lifecycle-complete-matrix-and-reason-constraints\n  ---\n  duration_ms: 1.340375\n  type: 'test'\n  ...\n# Subtest: store-plan-carried-evidence-preserves-vectors-and-complete-lineage\nok 6 - store-plan-carried-evidence-preserves-vectors-and-complete-lineage\n  ---\n  duration_ms: 5.336417\n  type: 'test'\n  ...\n# Subtest: store-plan-paired-supersession-is-atomic-and-acyclic\nok 7 - store-plan-paired-supersession-is-atomic-and-acyclic\n  ---\n  duration_ms: 11.340334\n  type: 'test'\n  ...\n# Subtest: store-plan-exact-tombstones-supersession-and-no-effect-dispositions\nok 8 - store-plan-exact-tombstones-supersession-and-no-effect-dispositions\n  ---\n  duration_ms: 6.790083\n  type: 'test'\n  ...\n# Subtest: store-plan-logical-forget-requires-exact-monotone-marker\nok 9 - store-plan-logical-forget-requires-exact-monotone-marker\n  ---\n  duration_ms: 4.930208\n  type: 'test'\n  ...\n1..9\n# tests 9\n# suites 0\n# pass 9\n# fail 0\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 68.935708\n# \n# npm warn Unknown project config \"target\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"runtime\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n# npm warn Unknown project config \"disturl\". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.\n",
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+            "command": "npx tsx --test-force-exit --test-reporter=tap --test-reporter-destination=/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-report-OYfDXj/report.tap packages/project-memory/src/__tests__/store-guards.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 512,
+            "titles": [
+              {
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-scope-epoch-predicates-never-interpolate-untrusted-text",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-generation-predecessor-reference-and-history-guards",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-lifecycle-complete-matrix-and-reason-constraints",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-tombstones-supersession-and-no-effect-dispositions",
+                "depth": 0,
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "depth": 0,
+                "result": "pass"
+              }
+            ],
+            "outputPath": "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-validate-output/packages_project-memory_src___tests___store-guards.test.ts.1793714024982.82821.tap"
+          }
+        ],
+        "namedTests": [
+          {
+            "name": "store-row-codec-and-effect-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-scope-epoch-predicate-escaping",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-scope-epoch-predicates-never-interpolate-untrusted-text",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-revision-tombstone-reference-guards",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-exact-generation-predecessor-reference-and-history-guards",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-exact-tombstones-supersession-and-no-effect-dispositions",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-persisted-payload-v1-required-fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-lifecycle-transition-matrix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-lifecycle-complete-matrix-and-reason-constraints",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-profile-reopen-plan-query-compatibility",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ]
+      },
+      "testRecord": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/TESTS.md"
+    }
+  },
+  "passed": false
+}

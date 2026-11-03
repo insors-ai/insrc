@@ -416,9 +416,13 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         let chunk: Buffer;
         try {
           chunk = await fs.readRange(file, offset + pending.length, READ_CHUNK);
-        } catch {
-          chunk = Buffer.alloc(0); // renamed away between resolve and read: re-resolve next iteration
+        } catch (e) {
+          if (errCode(e) === 'ENOENT') continue; // renamed away mid-resolve: loop re-resolves
+          throw e; // a real read failure propagates (resume reports it as an observation failure)
         }
+        // The path may have been REPLACED by a rollover between resolve and read: verify the file
+        // still holds this generation before trusting any byte of the chunk.
+        if ((await generationOf(file)) !== cursor.generation) continue;
         if (chunk.length > 0) {
           pending = pending.length === 0 ? chunk : Buffer.concat([pending, chunk]);
           for (let nl = pending.indexOf(0x0a); nl !== -1; nl = pending.indexOf(0x0a)) {

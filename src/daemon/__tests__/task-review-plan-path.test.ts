@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { TaskReviewInputError } from '../../workflow/code-review/task-review/contracts.js';
 import { _setRepoSchemaGuardForTests } from '../repo-schema-guard.js';
 import { startTaskReview } from '../task-review-rpc.js';
 
@@ -25,8 +26,11 @@ test('src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity
 			startTaskReview(request(repo, { lld: { path: 'lld.json', commit: oid }, plan: { path: 'docs/WRONG.json', commit: oid } })),
 			/documents\.plan: Plan identity must match review subject/,
 		);
+		// without a plan document the plan-path check is skipped and the request goes on to the route rule, which refuses it there:
+		// the empty repository has no stored artifacts, so the Story's route needs no documents and the lld is one too many
 		const skipped = await startTaskReview(request(repo, { lld: { path: 'lld.json', commit: oid } })).then(() => undefined, (error: unknown) => error);
-		assert.ok(!(skipped instanceof TypeError), 'a missing plan document is not dereferenced');
-		assert.doesNotMatch(String(skipped), /Plan identity must match review subject/, 'a packet without a plan document is not held to the plan identity');
+		assert.ok(skipped instanceof TaskReviewInputError, 'the request is refused with a review input error');
+		assert.equal(skipped.field, 'documents', 'by the route rule, not by a plan document check (documents.plan)');
+		assert.match(skipped.message, /Expected the documents none for this Story's route, got lld/);
 	} finally { _setRepoSchemaGuardForTests(); rmSync(repo, { recursive: true, force: true }); }
 });

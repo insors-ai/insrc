@@ -1,0 +1,713 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793697841311-bsjwgf",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T09:26:19.286Z",
+    "epicCreatedAt": "2026-11-02T11:44:58.736Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 137973,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0f3376a086e3601c",
+    "epicSlug": "sql-references-miss-across-2-3",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793697841311-bsjwgf",
+    "hldEffectiveHash": "952fdaafbdea56ae446df55b3f9c7314d28de7ae28b0705df7f1daa9407226c6",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "pass",
+      "findings": [
+        {
+          "claimId": "fix-targets-defect.1",
+          "ref": "fix-targets-defect",
+          "item": "fix-targets-defect",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed changes address all four root causes recorded in the ISSUE.",
+          "evidence": "The ISSUE identifies qualified-name misses, quote conflation, stale inferred edges and indiscriminate pending retries. Reading the parser, resolver and removal path confirms those causes. The shared key, suffix filter, inferred-edge re-pend and targeted selection each address the corresponding cause. [files: docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/ISSUE.md, src/indexer/parser/sql.ts, src/indexer/cross-file-resolver.ts, src/db/relations.ts]",
+          "action": "Implement the specified contracts, including the legacy folded-match trigger and marker cleanup.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Today's reader discards identifier delimiters, qualified references require exact names, and a SQL settle retries every pending REFERENCES name.",
+          "evidence": "objectName applies unquote to identifier children; local and CTE maps lower-case their names. sqlCandidates uses name.toLowerCase() against the full-name and qualified-last-segment maps. sqlReferencesAwaitingCommitted selects all REFERENCES rows outside scope that are not awaiting ids after any .sql commit. runPass2 processes pending rows, so existing inferred edges are not reconsidered. [files: src/indexer/parser/sql.ts, src/indexer/cross-file-resolver.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The identified parser, index, resolver and relation-store sites cover the required implementation boundaries.",
+          "evidence": "Read the complete extraction functions, buildEntityIndex, runPass2, sqlByNameRows, metadata writers and commitFile removal sequence. The named functions exist with the stated signatures. updatePendingMetaInTxn currently merges metadata, confirming the need for explicit deletion support. inNeighbors supports withEvidence, enabling inferred-only selection. The existing commit path already invokes returnEdgeToPendingInTxn for removed targets. [files: src/indexer/parser/sql.ts, src/indexer/cross-file-resolver.ts, src/db/relations.ts, src/db/entities.ts, src/db/graph/edges.ts, docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/LLD.md]",
+          "action": "Keep re-pend mutations and pending-count updates within the store transaction. Sections 2–3 adequately describe REFERENCES endpoints, candidate multiplicity, ownership and compatibility; an additional diagram is optional. No companion rendering was verified.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.1",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design preserves the resolver's ambiguity and self-exclusion rules and the reader's ownership of exact same-file links.",
+          "evidence": "resolveSqlReference excludes row.fromEntity, resolves exactly one candidate and records candidate ids for multiple matches. resolveRelations marks parser-resolved links 'extracted'; cross-file promotions use 'inferred'. The proposed inferred-only re-pend and local-name exclusion preserve that ownership distinction. [files: src/indexer/cross-file-resolver.ts, src/indexer/resolver.ts, src/indexer/parser/sql.ts, src/indexer/__tests__/cross-file-sql-references.test.ts]",
+          "action": "Retain the mixed-ownership regression and existing ambiguity/self-exclusion tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "preserved-behaviour.2",
+          "ref": "preserved-behaviour",
+          "item": "preserved-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Changed stored names can use the existing entity-removal path without changing the id algorithm or reader-unavailable fallback.",
+          "evidence": "makeEntityId hashes repo, file, kind and name. commitFile returns incoming edges to pending before deleting entities absent from the new parse. returnEdgeToPendingInTxn uses sqlByNameRows when available and otherwise retains the awaiting-id row. The proposed wider legacy match supplies the necessary trigger when quoting changes the stored name. [files: src/indexer/parser/base.ts, src/db/entities.ts, src/db/relations.ts]",
+          "action": "None.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The planned tests cover ac1–ac5 with assertions that distinguish the fix from current behavior.",
+          "evidence": "The plan tests bidirectional qualified suffixes, quote-sensitive identities, stale-edge ambiguity, exact settle selection, marker consumption and reader output. Existing sql.test.ts explicitly expects 'nested -> Orders' and suppresses Totals for a quoted CTE, confirming assertions requiring replacement. Existing integration tests cover removal, ambiguity, evidence and reader-unavailable fallback. Native grammar probes also confirmed the documented malformed-identifier limitations. [files: src/indexer/parser/__tests__/sql.test.ts, src/indexer/__tests__/cross-file-sql-references.test.ts, src/indexer/parser/sql.ts, docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/LLD.md]",
+          "action": "Implement the planned tests; pin concrete before-change outputs for grammar-limit fixtures. This assesses test design, not execution of the unimplemented suite.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 6,
+        "unverified": 0
+      },
+      "template": "design-issue",
+      "reviewedAt": "2026-11-03T10:05:25.542Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "SQL table and view references resolve the way SQL compares names. One shared name rule decides equality everywhere: a double-quoted part keeps its exact case, any other part compares case-insensitively. A reference meets a definition when one name ends with the other's parts (db.app.users and app.users), several fits stay ambiguous, and a longer reference meets a shorter definition only if that definition is qualified. When a saved file adds a definition, inferred links to other definitions of the same name are checked again, and a settle re-tries only the pending references the saved files can affect.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Resolve SQL references across name qualification, quoting and new candidates"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "SqlParser.parse",
+          "signature": "parse(filePath: string, source: string, repo: string, repoId: number): ParseResult",
+          "parameters": [
+            {
+              "name": "filePath",
+              "type": "string",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "source",
+              "type": "string",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "repoId",
+              "type": "number",
+              "purpose": "unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ParseResult",
+            "meaning": "Unchanged shape."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A table/view entity's stored name writes each double-quoted segment whose quoting matters (not all lower-case, or holding a dot or a space) in double quotes with its exact text; other segments are written as today. So ids are unchanged for definitions whose stored name does not change, and distinct definitions under the name rule (\"Users\" vs Users, \"a.b\" vs a.b) get distinct ids and are all kept. Names the grammar cannot read (brackets, escaped quotes, backticks with a dot) keep today's behaviour.",
+            "Same-file references and a view's CTE names are matched by the collision-free key, so a quoted single-segment name \"a.b\" never answers a qualified reference a.b.",
+            "A pending REFERENCES row's rawTo is the reference as written (quotes kept)."
+          ]
+        },
+        {
+          "name": "SqlParser.referencesIn",
+          "signature": "referencesIn(statement: string): string[] | undefined",
+          "parameters": [
+            {
+              "name": "statement",
+              "type": "string",
+              "purpose": "unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string[] | undefined",
+            "meaning": "The statement's references as written (quotes kept)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Names returned keep their quotes so the store compares them by key."
+          ]
+        },
+        {
+          "name": "sqlCandidates",
+          "signature": "function sqlCandidates(name: string, index: EntityIndex): Entity[]",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "purpose": "the reference as written",
+              "optional": false
+            },
+            {
+              "name": "index",
+              "type": "EntityIndex",
+              "purpose": "the pass's entity index",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Entity[]",
+            "meaning": "Every table/view whose name key segments match the reference's from the last segment back over the shorter length, excluding a shorter definition that is unqualified when the reference is qualified."
+          },
+          "errors": [],
+          "preconditions": [
+            "The index holds SQL tables/views by the key of their last segment."
+          ],
+          "postconditions": [
+            "users meets app.users and db.app.users; app.users meets app.users, db.app.users and (qualified) app.users only; db.app.users meets app.users and db.app.users; audit.users does not meet a bare users; \"Users\" meets only definitions whose last segment key is Users."
+          ]
+        },
+        {
+          "name": "resolveSqlReference",
+          "signature": "function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): ResolveIntent",
+          "parameters": [
+            {
+              "name": "row",
+              "type": "UnresolvedRelation",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "index",
+              "type": "EntityIndex",
+              "purpose": "unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ResolveIntent",
+            "meaning": "Unchanged rule over the new candidates: one resolves ('inferred'), several ambiguous with candidate ids, none unresolved."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": []
+        },
+        {
+          "name": "sqlReferencesAwaitingCommitted",
+          "signature": "async function sqlReferencesAwaitingCommitted(opts: CrossFileResolveOpts, inScope: readonly UnresolvedRelation[]): Promise<UnresolvedRelation[]>",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "CrossFileResolveOpts",
+              "purpose": "settle options with committedFiles",
+              "optional": false
+            },
+            {
+              "name": "inScope",
+              "type": "readonly UnresolvedRelation[]",
+              "purpose": "rows already in scope",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<UnresolvedRelation[]>",
+            "meaning": "Only the pending SQL REFERENCES rows the saved files can affect."
+          },
+          "errors": [],
+          "preconditions": [
+            "Runs only when a committed file is .sql (unchanged)."
+          ],
+          "postconditions": [
+            "Returns a pending SQL REFERENCES row (not in scope, not awaiting an id) when its last-segment key equals the last-segment key of a table/view now defined in a committed file, or it is ambiguous and a candidate id in its meta is no longer stored, or the commit returned it to pending by name (it carries the marker the re-pend writes).",
+            "After the settle's resolution pass, the re-pend marker is cleared on every row it selected because of the marker, whether the row resolved, stayed ambiguous or no-candidate, or kept its class."
+          ]
+        },
+        {
+          "name": "sqlByNameRows",
+          "signature": "function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined",
+          "parameters": [
+            {
+              "name": "s",
+              "type": "GraphStore",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "awaiting",
+              "type": "UnresolvedRow",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "fromU64",
+              "type": "bigint",
+              "purpose": "unchanged",
+              "optional": false
+            },
+            {
+              "name": "toU64",
+              "type": "bigint",
+              "purpose": "unchanged",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "UnresolvedRow[] | undefined",
+            "meaning": "By-name rows for the holder's written names that could mean the removed target, each carrying the re-pend marker."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A written name of the holder is kept when it meets the target under the sqlCandidates suffix rule by the new key, OR when its folded text (today's lower-cased comparison) meets the target's folded name -- the wider of the two, so a definition stored before the change under a lossy name (\"Users\" stored as Users) still returns its references to pending when its file is re-read and its id changes; resolution then decides by the key. Re-pending is only a trigger to re-attempt, so the wider match never creates an edge.",
+            "A written name is skipped when it matches (by key) a table/view defined in the holder's own file: the reader resolved it there (evidence extracted), and re-pending it would create a false pending row beside the kept local edge."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "SQL name key (shared helper used by the reader, the resolver and the store)",
+        "change": "new",
+        "details": "A pure function from a written SQL name, as the grammar gives it, to its segments and its comparison key. Segments: the object_reference's identifier children (the grammar already splits at dots outside double quotes); a double-quoted segment keeps its inner text exactly, a backticked segment is unquoted and lower-cased, a bare segment is lower-cased. The equality key is the JSON encoding of the folded segment array (e.g. [\"app\",\"users\"] vs [\"a.b\"]), so the quoted single segment \"a.b\" and the qualified name a.b never collide; suffix matching compares the segment arrays, and the index keys by the folded last segment. ANSI/PostgreSQL folding. Grammar limits (the installed @derekstride/tree-sitter-sql, probed 2026-11-03): it has no bracketed identifier (CREATE TABLE [Sales.Q1] parses as identifiers Sales and Q1 with the brackets as ERROR nodes, and REFERENCES [x] is skipped), no escaped double quote (\"a\"\"b\" parses as \"a\" plus an ERROR), and a backtick identifier holding a dot (`a.b`) parses as a broken identifier plus an ERROR. This Story does not recover text the grammar loses: such names keep exactly today's behaviour (the reader reads what the grammar gives), stated as a limitation and pinned by real-parser tests so the change cannot make them worse. Supported delimiters are double quotes (any text but an escaped quote, dots included) and backticks without a dot. Lives beside the SQL reader so the store and resolver import it without loading the grammar.",
+        "callSites": [
+          "src/indexer/parser/sql.ts:18-22",
+          "src/indexer/parser/sql.ts:150-156",
+          "src/indexer/cross-file-resolver.ts:798-801",
+          "src/db/relations.ts:645-661"
+        ]
+      },
+      {
+        "entity": "table/view entity name (and so its id) and pending REFERENCES rawTo",
+        "change": "field-modify",
+        "details": "The entity name carries every segment boundary and the quoting that changes meaning, so distinct definitions under the name rule get distinct ids and a stored name reads back to the same key as the reference that wrote it. Each segment is written as today (its unquoted text) unless it needs quoting: a double-quoted segment needs it when its text is not all lower-case or holds a character a bare identifier cannot (a dot, a space); it is then written in double quotes with its exact text. A backticked segment never needs it (backticks fold; a backtick name with a dot is a grammar limit, see the name key). So Users and \"Users\" are two entities (Users, \"Users\"); a.b and \"a.b\" are two (a.b, \"a.b\"); users, \"users\" and `users` stay users. Ids are unchanged for every definition whose stored name does not change; a definition whose stored name changes (meaningful quoting added, removed or changed by an edit) gets a new id, so commitFile removes the old entity and the existing removal path returns its incoming edges to pending by name -- no new commit-boundary logic. The resolver and the store read a definition's key from its stored name with the name rule. signature stays `${kind} ${name}`. A pending row's rawTo is the reference as written (quotes kept); its id changes for quoted references on the next read of the file. Legacy rows: a definition stored before the change under a lossy name keeps resolving as today until its file is read again; when it is, the old entity's incoming edges return to pending by name through the wider folded-or-key match of sqlByNameRows, and are re-resolved by key. A holder whose own pending rows were written before the change keeps unquoted rawTo until its file is read again; repo.reindex makes the whole repository consistent at once, and is the recommended step after the update.",
+        "callSites": [
+          "src/indexer/parser/sql.ts:18-22",
+          "src/indexer/parser/sql.ts:136-156",
+          "src/indexer/cross-file-resolver.ts:1007-1049",
+          "src/db/relations.ts:645-661"
+        ]
+      },
+      {
+        "entity": "entity index SQL maps",
+        "change": "field-modify",
+        "details": "sqlByName and sqlByLastSegment are replaced by one map from last-segment key to table/view entities (qualified or not); sqlCandidates filters it by the suffix rule.",
+        "callSites": [
+          "src/indexer/cross-file-resolver.ts:1007-1049",
+          "src/indexer/cross-file-resolver.ts:798-801"
+        ]
+      },
+      {
+        "entity": "inferred SQL REFERENCES edges on a settle that adds definitions",
+        "change": "invariant-change",
+        "details": "Before the settle's resolution pass, for each table/view defined in a committed file, the inbound inferred REFERENCES edges of EVERY stored table/view whose folded last segment (case-insensitive, quotes ignored) equals that definition's -- the committed definitions themselves included -- whose holder is not in a committed file are returned to pending by name (the same by-name rows sqlByNameRows writes, with the re-pend marker), then re-attempted in the same settle by key: one candidate re-resolves (inferred), several become ambiguous. Grouping by the folded last segment, and including the committed definitions, covers every case where a definition's meaning changes while its id survives: a quote-only edit, and a legacy file whose Users and \"Users\" were stored as one entity Users -- when re-read it keeps Users and adds \"Users\", and the edge an external \"Users\" reference had to Users is re-checked and re-resolves to \"Users\". The re-pend uses sqlByNameRows' rules: only the holder's names that could mean that target, never a name the holder's own file defines (resolved locally by the reader). Edges the reader resolved in its own file (evidence extracted) are never touched.",
+        "callSites": [
+          "src/indexer/cross-file-resolver.ts:526",
+          "src/db/relations.ts:645-661",
+          "src/db/graph/edges.ts:111-113"
+        ]
+      },
+      {
+        "entity": "re-pend marker on pending SQL REFERENCES rows",
+        "change": "new",
+        "details": "A meta flag set on every by-name row written by sqlByNameRows (a removed target) and by the settle's re-pend of inferred edges. Lifecycle: the next settle's sqlReferencesAwaitingCommitted selects a marked row, and after that settle's resolution pass the marker is cleared on every selected row whatever the outcome -- resolved rows leave the pending table; rows that stay ambiguous, no-candidate or unchanged in class get a metadata update that deletes the flag (a new change site beside updatePendingMetaInTxn / updateUnresolvedMetaBatch, which today only merge fields). So a marked row is retried exactly once, by the settle after the commit that marked it, and an unrelated later save does not select it again. A full index ignores and clears the flag.",
+        "callSites": [
+          "src/db/relations.ts:586",
+          "src/db/relations.ts:645-661",
+          "src/indexer/cross-file-resolver.ts:526",
+          "src/indexer/cross-file-resolver.ts:819-830"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A written name the key function cannot split (unbalanced quote, e.g. `\"Users`)",
+          "detection": "The segment splitter reaches the end inside an open quote",
+          "response": "The whole text is one unquoted segment, lower-cased (today's behaviour)",
+          "userImpact": "Compares as today; never crashes",
+          "recoverable": true
+        },
+        {
+          "scenario": "The SQL reader is not registered on the thread doing a removal (no grammar)",
+          "detection": "sqlReferenceReader is undefined (unchanged check)",
+          "response": "The reference awaits the id, as today",
+          "userImpact": "No by-name re-pend; unchanged",
+          "recoverable": true
+        },
+        {
+          "scenario": "A re-pend of inferred edges fails part-way in a settle",
+          "detection": "The store write throws inside its transaction",
+          "response": "The transaction does not commit; the settle reports the failure as other settle steps do, and the edges stay as they were",
+          "userImpact": "The stale edge stays until the next settle of that name; no data lost",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Definition app.users in a.sql; view in b.sql selects from db.app.users",
+          "expected": "Resolved to app.users (inferred)"
+        },
+        {
+          "input": "Definition db.app.users; reference app.users",
+          "expected": "Resolved to db.app.users"
+        },
+        {
+          "input": "Definition users (unqualified); reference audit.users",
+          "expected": "Unresolved: a qualified reference does not meet an unqualified definition"
+        },
+        {
+          "input": "Definitions app.users and audit.users; reference users",
+          "expected": "Ambiguous with both candidates (unchanged)"
+        },
+        {
+          "input": "Definitions \"Users\" and users; reference \"Users\"",
+          "expected": "Resolved to \"Users\" only; reference users resolves to users only; reference \"users\" resolves to users"
+        },
+        {
+          "input": "A view's CTE named \"Recent\" and a FROM recent",
+          "expected": "recent is not the CTE (key differs) and is a reference; FROM \"Recent\" is the CTE"
+        },
+        {
+          "input": "View v in b.sql resolved (inferred) to users in a.sql; then c.sql adding users is saved",
+          "expected": "The edge returns to pending and becomes ambiguous with both candidates"
+        },
+        {
+          "input": "Same, but c.sql adds orders",
+          "expected": "The edge to users is not touched"
+        },
+        {
+          "input": "A pending reference to sales.orders while a.sql (defining only users) is saved",
+          "expected": "Not re-attempted by that settle"
+        },
+        {
+          "input": "An ambiguous reference to users whose candidate in a.sql is removed by saving a.sql",
+          "expected": "Re-attempted: resolves to the remaining definition"
+        },
+        {
+          "input": "CREATE TABLE \"a.b\" (...) and a view in the same file selecting from a.b",
+          "expected": "Not linked: [\"a.b\"] and [\"a\",\"b\"] are different keys; a.b stays a pending reference"
+        },
+        {
+          "input": "A by-name row re-pended when users.sql removed users; the next settle re-attempts it and it stays no-candidate; later orders.sql is saved",
+          "expected": "The row is not re-attempted by the orders.sql settle: its marker was cleared by the first settle"
+        },
+        {
+          "input": "One file with CREATE TABLE Users, CREATE TABLE \"Users\", a view selecting from users and one from \"Users\"",
+          "expected": "Two table entities (Users, \"Users\"); the first view links to Users, the second to \"Users\""
+        },
+        {
+          "input": "One file with CREATE TABLE a.b and CREATE TABLE \"a.b\", views selecting from each",
+          "expected": "Two entities (a.b, \"a.b\"), each view linked to its own"
+        },
+        {
+          "input": "users.sql edited from CREATE TABLE Users to CREATE TABLE \"Users\"; another file's view selects from users and was linked (inferred)",
+          "expected": "The entity id changes; the old entity's incoming edge returns to pending by name and, with no definition matching users any more, stays no-candidate"
+        },
+        {
+          "input": "a.sql edited from CREATE TABLE a.b to CREATE TABLE \"a.b\"; another view selects from a.b",
+          "expected": "Same: the edge returns to pending; a.b no longer meets \"a.b\""
+        },
+        {
+          "input": "Entities stored before the change",
+          "expected": "Unquoted and lower-case-quoted definitions keep their names and ids; a definition whose quoting matters gets its quoted name (new id) when its file is read again or on repo.reindex"
+        },
+        {
+          "input": "Upgrade: a.sql stored before the change with CREATE TABLE \"Users\" (stored name Users); b.sql's view selects from \"Users\" and is linked; only a.sql is read again",
+          "expected": "The definition's id changes (name \"Users\"); b.sql's edge returns to pending by name through the folded match and re-resolves to \"Users\" by key"
+        },
+        {
+          "input": "A view in b.sql joins users (defined in b.sql, linked locally) and app.users (linked inferred to a.sql); then c.sql adds audit.users",
+          "expected": "Only the app.users reference is re-pended (it stays resolved to app.users: audit.users does not meet app.users); no pending users row is created for the locally linked users"
+        },
+        {
+          "input": "Upgrade: legacy a.sql declares CREATE TABLE Users and CREATE TABLE \"Users\" (stored as one entity Users); b.sql's view selects from \"Users\" and is linked to Users; only a.sql is read again",
+          "expected": "a.sql now has Users (same id) and \"Users\" (new); the settle re-checks Users' inbound inferred edge and b.sql's reference re-resolves to \"Users\""
+        },
+        {
+          "input": "Backticked `Users` definition",
+          "expected": "Folds like unquoted: meets users"
+        },
+        {
+          "input": "CREATE TABLE [Sales.Q1], CREATE TABLE \"a\"\"b\", CREATE TABLE `a.b` (grammar limits)",
+          "expected": "Exactly today's entities and references for these inputs (whatever the grammar yields); no crash, no new edge"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Ambiguity is never guessed: several candidates stay ambiguous with candidate ids.",
+          "source": "c2"
+        },
+        {
+          "text": "The from-entity is never its own target.",
+          "source": "c2"
+        },
+        {
+          "text": "Same-file references are resolved by the reader (evidence extracted) and are never re-pended by the settle.",
+          "source": "c1"
+        },
+        {
+          "text": "A removed target's references return pending by name only when the reader is registered.",
+          "source": "c4"
+        },
+        {
+          "text": "A table/view entity id is unchanged unless its stored name changes; a stored name changes only when the definition's meaningful quoting changes, and then the normal removal path returns its incoming edges to pending by name.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict via tsx, as in src/indexer/parser/__tests__/ and src/indexer/__tests__/",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The SQL name key and segment split: double-quoted exact, bare/backtick/bracket folded, dots inside quotes kept, unbalanced quotes degrade to one folded segment; the suffix rule.",
+          "subjects": [
+            "the SQL name key helper"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "The reader keeps raw names in signature and rawTo, matches same-file references and CTE names by key, and referencesIn returns names as written. Existing reader assertions that encode today's conflation are updated, not kept: in src/indexer/parser/__tests__/sql.test.ts the unquoted `orders` no longer links to CREATE TABLE \"Orders\" (it becomes a pending reference), FROM Totals is a reference when the CTE is WITH \"Totals\", and pending names keep their delimiters (\"Sales\", app.\"Ledger\"); positive counterparts are added (FROM \"Orders\" links, FROM \"Totals\" is the CTE). A quoted dotted identifier must not answer a qualified reference. Same-file regressions hold both members of each collision pair (Users / \"Users\", a.b / \"a.b\") with a reference to each, and assert two entities with distinct ids and each reference linked to its own. Grammar-limit regressions with the real parser: the entities and references produced for [Sales.Q1], \"a\"\"b\" and `a.b` (definitions, a view's FROM, REFERENCES, referencesIn) are the same before and after the change.",
+          "subjects": [
+            "SqlParser.parse and SqlParser.referencesIn"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Over a temporary store with real .sql files and the cross-file resolver: 2-/3-part suffix resolution, the qualified-vs-unqualified rule, quoted vs unquoted, ambiguity kept; a settle that adds a same-named definition makes an inferred edge ambiguous and leaves other names alone; a settle re-attempts only rows the saved files can affect (unrelated pending rows untouched, an ambiguous row whose candidate was removed re-resolves). The selection is observed directly (the rows sqlReferencesAwaitingCommitted returns), not inferred from outcomes; a two-settle sequence proves a re-pended row's marker is consumed by the first settle and an unrelated later save does not retry it. Update regressions: a quote-only edit (Users -> \"Users\") and a segment-boundary edit (a.b -> \"a.b\") of a definition return another file's inferred edge to pending. Upgrade regression: a store written with today's reader (lossy names), then only the definition file re-read with the new reader, keeps the other file's reference linked to the definition. Mixed-ownership regression: a holder with one locally resolved and one inferred reference, then a same-last-segment definition added, creates no pending row for the local name. Legacy-collision regression: a store written with today's reader from one file declaring both Users and \"Users\", then only that file re-read with the new reader, leaves an unchanged external \"Users\" reference linked to the \"Users\" entity.",
+          "subjects": [
+            "SQL reference resolution in full and settle modes"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: db.app.users meets app.users and app.users meets db.app.users; audit.users does not meet bare users; users with two qualified definitions stays ambiguous"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: name key folding and quoting",
+            "integration: \"Users\" and users resolve to their own definitions",
+            "unit: a quoted single-segment \"a.b\" does not answer a qualified a.b (key collision)",
+            "unit: Users and \"Users\", and a.b and \"a.b\", in one file are two entities with distinct ids, each reference linked to its own",
+            "unit (real parser): [Sales.Q1], \"a\"\"b\" and `a.b` produce the same entities and references as before the change"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "integration: a settle adding a same-named definition turns an inferred edge ambiguous; a different name leaves it",
+            "integration: a quote-only edit and a segment-boundary edit of a definition return another file's inferred edge to pending",
+            "integration: upgrade -- re-reading only the definition file keeps another file's reference linked",
+            "integration: mixed ownership -- re-pend never creates a pending row for a name the holder's file resolves locally",
+            "integration: legacy collision -- re-reading only the definition file moves an external \"Users\" reference to the new \"Users\" entity"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "integration: the rows selected by a settle are exactly those matching the saved files' names, ambiguous rows with a removed candidate, and marked rows",
+            "integration: two settles -- the marker is cleared by the first, so an unrelated second save does not select the row"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "unit: the reader keeps raw names and matches by key; the sql.test.ts assertions that encoded conflation (orders -> \"Orders\", Totals vs \"Totals\" CTE, unquoted pending names) are updated with positive and negative quoted cases",
+            "integration: the other existing cross-file-sql-references.test.ts cases still pass unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "SQL names are unquoted and compared lower-cased everywhere, qualified references meet only identical names, inferred edges are never re-checked, and any .sql save re-attempts every pending SQL reference (s1 bundles 1-4).",
+      "stateAfter": "One name key with ANSI quoting decides equality in the reader, resolver and store; qualified names meet by segment suffix; a settle that adds definitions re-checks same-named inferred edges; a settle re-attempts only rows its files can affect.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Ship the change; no schema or codec change.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Definitions whose quoting does not change meaning keep their names and ids; definitions with meaningful quoting (rare) get a quoted name and a new id when their file is read again, their old rows removed by the normal commit; quoted references' pending rows get new ids the same way.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Run repo.reindex once after the update so every definition and reference is read under the new rule at the same time (recommended). Without it the change is still safe: when a definition file is read again, the settle re-checks the inferred incoming edges of every same-named definition (its own included), and a removed one's edges return to pending through the wider folded-or-key match; a holder written before the change compares as unquoted, today's behaviour, until its file is read again.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No API, IPC or storage format change. Visible differences: more resolved SQL references (qualified names), quoted names no longer conflated, stale inferred edges become ambiguous when a second definition appears.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "One SQL name key + suffix matching + re-pend on a new candidate + targeted settle",
+        "oneLineSummary": "A shared name key (ANSI quoting) used by the reader, the resolver and the store; qualified names meet by segment suffix; a new definition returns same-named inferred edges to pending; a settle re-attempts only rows the saved files can affect.",
+        "approach": "A shared SQL name module defines the comparison key: names split into segments at dots outside quotes; a double-quoted segment keeps its exact text, any other segment (bare, backticked, bracketed) is lower-cased (ANSI / PostgreSQL folding). The reader keeps the raw declared name in each table/view entity's signature and in each pending row's rawTo, and matches same-file references and CTE names by key. The resolver indexes definitions by the key of their last segment and accepts a candidate whose segments match the reference's from the end over the shorter length, where a reference longer than the definition needs the definition to be qualified (db.app.users meets app.users; audit.users does not meet a bare users); several candidates stay ambiguous. The store's removal re-pend compares by key too. When a settle commits definitions, inferred REFERENCES edges into other definitions with the same last-segment key are returned to pending by name (the removal path's by-name rows) and re-attempted in the same settle, so a second candidate makes them ambiguous. The settle re-attempts only pending SQL rows whose last-segment key matches a definition in a committed file, ambiguous rows whose candidates include an entity no longer stored, and rows the commit returned to pending.",
+        "pros": [
+          "Each gap fixed with one consistent name rule used everywhere SQL names are compared",
+          "Never guesses: ambiguity stays ambiguous",
+          "Settle cost proportional to the names the saved files touch"
+        ],
+        "cons": [
+          "Quoting folds by ANSI/PostgreSQL rules; MySQL/SQL Server dialects that treat quoted identifiers case-insensitively are approximated",
+          "Entities of quoted objects get a signature with quotes; ids unchanged (names stay unquoted)",
+          "L1 covers SQL only; CALLS keeps its behaviour"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Fix L4 and L3 only; leave edges and settle as they are",
+        "oneLineSummary": "Name key and suffix matching; no re-check of inferred edges and no narrower settle.",
+        "approach": "The name key and suffix matching from a1, without the re-pend of inferred edges on a new candidate and without narrowing the settle re-scan.",
+        "pros": [
+          "Smaller change"
+        ],
+        "cons": [
+          "Leaves L1 (stale inferred edge) and L2 (whole-repository re-scan per .sql save) unfixed, contrary to the ISSUE's fix intent"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Violates fi-L1 and fi-L2."
+      },
+      {
+        "id": "a3",
+        "name": "Store canonical keys in new entity and row fields",
+        "oneLineSummary": "Add a nameKey field to table/view entities and pending rows instead of keeping raw names in signature and rawTo.",
+        "approach": "Extend the Entity and UnresolvedRelation records with a stored key computed at read time; the resolver and store compare keys without re-deriving them.",
+        "pros": [
+          "No re-parsing of raw names at resolution time"
+        ],
+        "cons": [
+          "A storage format change (codec fields) for every table/view and pending row, with a migration, for a value a pure function derives from the raw name in microseconds"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Same outcome as a1 with a storage migration it does not need."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/indexer/parser/sql.ts:150-156",
+      "quotedText": "byName.set(objName.toLowerCase(), id);"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:809-813",
+      "quotedText": "function resolveSqlReference(row: UnresolvedRelation, index: EntityIndex): ResolveIntent {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:819-830",
+      "quotedText": "if (!(opts.committedFiles ?? []).some(f => f.toLowerCase().endsWith('.sql'))) return [];"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/db/relations.ts:645-661",
+      "quotedText": "function sqlByNameRows(s: GraphStore, awaiting: UnresolvedRow, fromU64: bigint, toU64: bigint): UnresolvedRow[] | undefined {"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/indexer/cross-file-resolver.ts:798-801",
+      "quotedText": "const key = name.toLowerCase();"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/indexer/parser/sql.ts:18-22",
+      "quotedText": "const unquote = (text: string): string =>"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/ISSUE.md"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/db/relations.ts:586",
+      "quotedText": "export async function updateUnresolvedMetaBatch("
+    }
+  ]
+}

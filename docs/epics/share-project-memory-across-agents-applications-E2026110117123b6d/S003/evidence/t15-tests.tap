@@ -1,0 +1,532 @@
+TAP version 13
+# Subtest: store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion
+ok 1 - store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion
+  ---
+  duration_ms: 1527.601375
+  type: 'test'
+  ...
+# [17:11:17] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 162
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 8
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/index/graph.lmdb"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index started[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[lance-conn] lance connection initialised[39m
+#     [35mmodule[39m: "lance-conn"
+#     [35minitMs[39m: 1
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/index/lance"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: repository rows deleted[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mreturnedToPending[39m: 0
+#     [35mcarriedDocSummaries[39m: 0
+# [17:11:17] [33mWARN[39m: [36m[indexer:file-filter] proposeIgnoreFile: model call failed; writing fallback ignore file[39m
+#     [35mmodule[39m: "indexer:file-filter"
+#     [35mrepoPath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     err: "no cheap-tier model configured"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: root ignore file created[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35msource[39m: "fallback"
+#     [35mreason[39m: "the model call failed"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: files to process[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mtotal[39m: 2
+#     [35msupported[39m: 2
+#     [35mnotCode[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: progress[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mprogress[39m: "1/2"
+#     [35mfileCount[39m: 0
+#     [35mskipped[39m: 0
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/.gitignore"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/main.ts"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] no manifest dependencies[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[indexer] index clean-up inside full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mcompared[39m: 2
+#     [35mremovedAbsent[39m: 0
+#     [35mremovedIgnored[39m: 0
+#     [35mnotChecked[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver starting[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: loaded entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mentities[39m: 5
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: built entity index[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35melapsedMs[39m: 1
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 0 (awaited targets) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcandidates[39m: 0
+#     [35mpromoted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: enumerated module entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmodules[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: collected IMPORTS-to-module edges in repo[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mscopedRows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1 (IMPORTS rewire) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: listUnresolvedRelations done[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: prefetched file->file imports[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfiles[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: file-target rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mclassified[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: unattempted rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mclassified[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver pass complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcompletedById[39m: 0
+#     [35mimportsRewired[39m: 0
+#     [35mreExported[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35mpass2ElapsedMs[39m: 0
+#     [35melapsedMs[39m: 2
+# [17:11:17] [32mINFO[39m: [36m[indexer] cross-file pass after full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mcompletedById[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35melapsedMs[39m: 2
+# [17:11:17] [32mINFO[39m: [36m[indexer] external-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] messaging-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: carried document summaries written back[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mwritten[39m: 0
+#     [35mkeptGood[39m: 0
+#     [35mentityGone[39m: 0
+#     [35mbodyChanged[39m: 0
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] entity_vec HNSW index skipped (below threshold or already built)[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrowCount[39m: 1
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index complete[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfileCount[39m: 2
+#     [35mskipped[39m: 0
+#     [35melapsed[39m: "0.1s"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index started[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: repository rows deleted[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mreturnedToPending[39m: 0
+#     [35mcarriedDocSummaries[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: files to process[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mtotal[39m: 2
+#     [35msupported[39m: 2
+#     [35mnotCode[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: progress[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mprogress[39m: "1/2"
+#     [35mfileCount[39m: 0
+#     [35mskipped[39m: 0
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/.gitignore"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/main.ts"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] no manifest dependencies[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[indexer] index clean-up inside full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mcompared[39m: 2
+#     [35mremovedAbsent[39m: 0
+#     [35mremovedIgnored[39m: 0
+#     [35mnotChecked[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver starting[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: loaded entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mentities[39m: 5
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: built entity index[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 0 (awaited targets) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcandidates[39m: 0
+#     [35mpromoted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: enumerated module entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmodules[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: collected IMPORTS-to-module edges in repo[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mscopedRows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1 (IMPORTS rewire) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: listUnresolvedRelations done[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: prefetched file->file imports[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfiles[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: file-target rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mclassified[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file: unattempted rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mclassified[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver pass complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcompletedById[39m: 0
+#     [35mimportsRewired[39m: 0
+#     [35mreExported[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35mpass2ElapsedMs[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] cross-file pass after full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mcompletedById[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35melapsedMs[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] external-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] messaging-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index: carried document summaries written back[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mwritten[39m: 0
+#     [35mkeptGood[39m: 0
+#     [35mentityGone[39m: 0
+#     [35mbodyChanged[39m: 0
+# [17:11:17] [34mDEBUG[39m: [36m[indexer] entity_vec HNSW index skipped (below threshold or already built)[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrowCount[39m: 1
+# [17:11:17] [32mINFO[39m: [36m[indexer] full index complete[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfileCount[39m: 2
+#     [35mskipped[39m: 0
+#     [35melapsed[39m: "0.1s"
+# [17:11:17] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 2
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 8
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/index/graph.lmdb"
+# [17:11:18] [32mINFO[39m: [36m[graph-store] lmdb graph store initialised[39m
+#     [35mmodule[39m: "graph-store"
+#     [35minitMs[39m: 133
+#     [35mmapsizeGiB[39m: 1024
+#     [35mschemaVersion[39m: 8
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/index/graph.lmdb"
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index started[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:18] [32mINFO[39m: [36m[lance-conn] lance connection initialised[39m
+#     [35mmodule[39m: "lance-conn"
+#     [35minitMs[39m: 0
+#     [35mpath[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/index/lance"
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index: repository rows deleted[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mreturnedToPending[39m: 0
+#     [35mcarriedDocSummaries[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index: files to process[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mtotal[39m: 2
+#     [35msupported[39m: 2
+#     [35mnotCode[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index: progress[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mprogress[39m: "1/2"
+#     [35mfileCount[39m: 0
+#     [35mskipped[39m: 0
+# [17:11:18] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/.gitignore"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:18] [34mDEBUG[39m: [36m[indexer] indexed[39m
+#     [35mmodule[39m: "indexer"
+#     [35mfile[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo/main.ts"
+#     [35mentities[39m: 2
+#     [35mrelations[39m: 1
+#     [35mresolved[39m: 1
+# [17:11:18] [34mDEBUG[39m: [36m[indexer] no manifest dependencies[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:18] [32mINFO[39m: [36m[indexer] index clean-up inside full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mcompared[39m: 2
+#     [35mremovedAbsent[39m: 0
+#     [35mremovedIgnored[39m: 0
+#     [35mnotChecked[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver starting[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file: loaded entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mentities[39m: 5
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file: built entity index[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 0 (awaited targets) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcandidates[39m: 0
+#     [35mpromoted[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: enumerated module entities[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmodules[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1: collected IMPORTS-to-module edges in repo[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mscopedRows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 1 (IMPORTS rewire) complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: listUnresolvedRelations done[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrows[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file Pass 2: prefetched file->file imports[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfiles[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file: file-target rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mclassified[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file: unattempted rows classed[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mclassified[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[cross-file-resolver] cross-file resolver pass complete[39m
+#     [35mmodule[39m: "cross-file-resolver"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mmode[39m: "full"
+#     [35mcompletedById[39m: 0
+#     [35mimportsRewired[39m: 0
+#     [35mreExported[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35mpass2ElapsedMs[39m: 0
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] cross-file pass after full index[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mimportsRewired[39m: 0
+#     [35mresolved[39m: 0
+#     [35mambiguous[39m: 0
+#     [35mstillUnresolved[39m: 0
+#     [35mcompletedById[39m: 0
+#     [35mpendingByClass[39m: {
+#       "awaiting-target": 0,
+#       "ambiguous": 0,
+#       "no-candidate": 0,
+#       "external-endpoint": 0
+#     }
+#     [35melapsedMs[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] external-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] messaging-endpoint pass after cross-file resolve[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mendpoints[39m: 0
+#     [35medges[39m: 0
+#     [35mskipped[39m: 0
+#     [35mgcDeleted[39m: 0
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index: carried document summaries written back[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mwritten[39m: 0
+#     [35mkeptGood[39m: 0
+#     [35mentityGone[39m: 0
+#     [35mbodyChanged[39m: 0
+# [17:11:18] [34mDEBUG[39m: [36m[indexer] entity_vec HNSW index skipped (below threshold or already built)[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mrowCount[39m: 1
+# [17:11:18] [32mINFO[39m: [36m[indexer] full index complete[39m
+#     [35mmodule[39m: "indexer"
+#     [35mrepo[39m: "/private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-index-isolation-YZzFWN/repo"
+#     [35mfileCount[39m: 2
+#     [35mskipped[39m: 0
+#     [35melapsed[39m: "0.1s"
+# Subtest: project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue
+ok 2 - project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue
+  ---
+  duration_ms: 3175.088417
+  type: 'test'
+  ...
+# [{"operation":"IndexerService full rebuild via deleteEntitiesForRepo","memoryAndPendingBytesUnchanged":true},{"operation":"closed temporary graph/vector removal followed by registry and full rebuild","memoryAndPendingBytesUnchanged":true},{"operation":"non-destructive memory cleanup preflight only","indexAndQueueUnchanged":true,"physicalCleanup":"pending S9","hostOverlapGuard":"pending S7"}]
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3530.032958

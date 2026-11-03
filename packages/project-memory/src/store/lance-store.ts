@@ -312,6 +312,15 @@ export class OwnedLanceStore {
   }
   stopAdmission(): void { this.#writer.stopAdmission(); this.#reads.stopAdmission(); }
   isAvailable(): boolean { return !this.#closing && this.#writer.accepting(); }
+  /** S3 validates internal cleanup targeting only. This is not authorization to
+   * erase the database or its replay/deletion protections; S9 owns maintenance. */
+  async preflightCleanupTarget(target: unknown): Promise<void> {
+    if (typeof target !== 'string' || target !== join(this.#owner.directory, STORE_DIRECTORY)) throw new MemoryError('INVALID_REQUEST', 'Invalid memory cleanup target.');
+    // Exact canonical sibling targeting excludes root, queue, metadata, parents,
+    // descendants and lexical aliases. lstat/inode checks reject symlink or inode
+    // substitution; the guard also rechecks root/lock ownership. No unlink here.
+    await this.assertOwned(); await this.#checkIdentity();
+  }
   pendingWrites(): number { return this.#writer.pending(); }
   drainWrites(): Promise<void> { return this.#writer.drain(); }
   receiptVerifier(): ReceiptVerifier { return this.#receipts; }

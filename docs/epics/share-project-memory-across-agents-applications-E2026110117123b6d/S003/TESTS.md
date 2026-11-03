@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 144 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -564,3 +564,37 @@ Run at 2026-11-03T16:56:34.306Z on commit `be98c1fd8`. Tests check: **passed**. 
 | `packages/project-memory/src/__tests__/store-host.test.ts` | 0 | 1 | 1.2 s |  |
 | `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.4 s |  |
 | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.4 s |  |
+
+## t14
+
+Run at 2026-11-03T17:03:55.755Z on commit `3df2b56be`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: store-runtime-package-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tarball-public-dependency-and-asset-allowlist | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-isolated-node22-consumer | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: store-standalone-packed-node22-consumer**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | packed-isolated-node22-consumer | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-external-submit-crash-reopen-and-operation | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-store-private-commit-read-receipt-and-cold-public-status | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: store-existing-packed-allowlists-and-native-absence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tarball-public-dependency-and-asset-allowlist | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-native-missing-import-versus-open | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-lance-dependency-stays-lazy-on-import | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-lance-native-missing-import-safe-open-not-ready-and-owner-released | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 7 | 23.7 s |  |

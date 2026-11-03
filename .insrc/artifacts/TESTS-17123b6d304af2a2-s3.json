@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T16:56:34.306Z",
+    "updatedAt": "2026-11-03T17:03:55.755Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -2171,6 +2171,122 @@
               },
               {
                 "title": "store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "3df2b56be",
+        "ranAt": "2026-11-03T17:03:55.755Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-runtime-package-qualification",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-standalone-packed-node22-consumer",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-store-private-commit-read-receipt-and-cold-public-status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-existing-packed-allowlists-and-native-absence",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-lance-native-missing-import-safe-open-not-ready-and-owner-released",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 23698,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              },
+              {
+                "title": "packed-store-private-commit-read-receipt-and-cold-public-status",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-native-missing-import-safe-open-not-ready-and-owner-released",
                 "result": "pass"
               }
             ],

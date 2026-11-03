@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 144 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 151 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -598,3 +598,42 @@ Run at 2026-11-03T17:03:55.755Z on commit `3df2b56be`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 7 | 23.7 s |  |
+
+## t15
+
+Run at 2026-11-03T17:12:17.056Z on commit `cd32e73ed`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-directory-separation-and-no-empty-replacement**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+| pass | store-initialization-refuses-queue-only-and-unknown-roots-without-replacement | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**integration: store-index-reset-rebuild-preserves-memory**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+
+**integration: store-cleanup-target-overlap-refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+
+**integration: store-memory-cleanup-preserves-index-and-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` | 0 | 1 | 1.4 s |  |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.4 s |  |
+| `src/indexer/__tests__/project-memory-isolation.test.ts` | 0 | 1 | 2.8 s |  |

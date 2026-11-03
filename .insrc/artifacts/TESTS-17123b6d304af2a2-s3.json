@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T17:03:55.755Z",
+    "updatedAt": "2026-11-03T17:12:17.056Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -2287,6 +2287,158 @@
               },
               {
                 "title": "packed-lance-native-missing-import-safe-open-not-ready-and-owner-released",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "cd32e73ed",
+        "ranAt": "2026-11-03T17:12:17.056Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-directory-separation-and-no-empty-replacement",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-cleanup-target.test.ts",
+                "title": "store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-index-reset-rebuild-preserves-memory",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/project-memory-isolation.test.ts",
+                "title": "project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-cleanup-target-overlap-refusal",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-cleanup-target.test.ts",
+                "title": "store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/project-memory-isolation.test.ts",
+                "title": "project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-memory-cleanup-preserves-index-and-queue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/project-memory-isolation.test.ts",
+                "title": "project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-cleanup-target.test.ts",
+                "title": "store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-cleanup-target.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1405,
+            "titles": [
+              {
+                "title": "store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2421,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/__tests__/project-memory-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2779,
+            "titles": [
+              {
+                "title": "project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue",
                 "result": "pass"
               }
             ],

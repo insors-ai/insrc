@@ -4,8 +4,8 @@
  * and never makes a quoted single segment equal a qualified name; the reader
  * (the registered reader over the real @derekstride/tree-sitter-sql grammar)
  * stores a definition under its meaningful quoting, so collision pairs are two
- * entities, matches same-file references and CTE names by key, and writes
- * pending names and referencesIn the same way; names the grammar cannot read
+ * entities, matches same-file references and CTE names by key, and keeps
+ * pending names and referencesIn as written, quotes kept; names the grammar cannot read
  * give exactly the entities and references they gave before the rule (pinned
  * from the reader at HEAD 49b1d78f1).
  *
@@ -110,18 +110,20 @@ test('S001 t1: the reader keeps meaningful quoting in stored names, matches same
 	const lower = parse('CREATE TABLE "users" (id int);\nCREATE VIEW q AS SELECT * FROM users JOIN `Users` ON true JOIN "users" ON true;');
 	assert.deepEqual(defs(lower).map(([, n]) => n), ['users', 'q']);
 	assert.deepEqual(refs(lower), ['q -> users'], 'one reference per key');
+	// A quoted name keeps its written form where it reaches the pending row: "orders" stays "orders".
+	assert.deepEqual(refs(parse('CREATE VIEW q AS SELECT * FROM "orders" JOIN `Orders` ON true;')), ['q -> pending "orders"'], 'the first written form of one key');
 
 	// A view's CTE names are matched by key.
 	assert.deepEqual(refs(parse('CREATE VIEW c AS WITH "Recent" AS (SELECT 1) SELECT * FROM recent JOIN "Recent" ON true;')), ['c -> pending recent']);
 	assert.deepEqual(refs(parse('CREATE VIEW c AS WITH recent AS (SELECT 1) SELECT * FROM RECENT JOIN "recent" ON true;')), []);
 	assert.deepEqual(refs(parse('CREATE VIEW c AS WITH "a.b" AS (SELECT 1) SELECT * FROM a.b;')), ['c -> pending a.b']);
 
-	// Pending names and referencesIn write each name the way it is stored, meaningful quotes kept.
+	// Pending names and referencesIn keep each name as written, quotes kept.
 	const pending = parse('CREATE VIEW p AS SELECT * FROM app."Ledger" JOIN `app`.`Users` ON true JOIN "x.y" ON true JOIN "orders" ON true;');
 	const rawTo = pending.relations.filter(x => x.kind === 'REFERENCES' && !x.resolved).map(x => x.to).sort();
-	assert.deepEqual(rawTo, ['"x.y"', 'app."Ledger"', 'app.Users', 'orders']);
+	assert.deepEqual(rawTo, ['"orders"', '"x.y"', '`app`.`Users`', 'app."Ledger"']);
 	assert.deepEqual(sqlParser!.referencesIn('CREATE VIEW p AS SELECT * FROM app."Ledger" JOIN `app`.`Users` ON true JOIN "x.y" ON true;'),
-		['app."Ledger"', 'app.Users', '"x.y"']);
+		['app."Ledger"', '`app`.`Users`', '"x.y"']);
 	assert.deepEqual(sqlParser!.referencesIn('CREATE TABLE t (a int REFERENCES "Users" (id), b int REFERENCES app.users (id));'), ['"Users"', 'app.users']);
 });
 
@@ -139,6 +141,12 @@ test('S001 t1: names the grammar cannot read give the same entities and referenc
 			defs: [['table', 'a', '217904b301e5b0a620a4aa3f67368b2e'], ['view', 'qv', '6166811ecc79999ebb3cc9f02a55cec4']],
 			refs: ['qv -> a'],
 			referencesIn: [[], ['a']],
+		},
+		{   // the same, where the cut name is not lower-case: it stays unquoted as before, and so does a CTE's
+			source: 'CREATE TABLE "A""b" (id int);\nCREATE VIEW uv AS SELECT * FROM "A""b";\nCREATE VIEW cv AS WITH "C""d" AS (SELECT 1) SELECT * FROM "C""d";',
+			defs: [['table', 'A', 'f23aa183778c851c7d685a9badce5360'], ['view', 'cv', '80aab113000089bc10d820c5ce9239b7'], ['view', 'uv', '7c20fe80b87dc380f6fadc30b839e441']],
+			refs: ['uv -> A'],
+			referencesIn: [[], ['A'], []],
 		},
 		{   // a backticked name holding a dot
 			source: 'CREATE TABLE `a.b` (id int);\nCREATE VIEW bv AS SELECT * FROM `a.b`;\nCREATE TABLE bt (x int REFERENCES `a.b` (id));',

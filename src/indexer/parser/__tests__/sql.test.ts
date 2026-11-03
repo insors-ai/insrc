@@ -96,11 +96,11 @@ test('s9 t8: the document entity is the one the artifact reader writes for the s
 	assert.deepEqual(parse(huge).entities, []);
 });
 
-test('s9 t8: a CTE name is not a reference, and pending names keep their meaningful quotes', () => {
+test('s9 t8: a CTE name is not a reference, and pending names keep their delimiters', () => {
 	const r = parse(`CREATE VIEW "Report" AS WITH "Totals" AS (SELECT 1 AS n FROM [Sales]) SELECT * FROM Totals JOIN \`app\`.\`Ledger\` ON true;`);
 	assert.deepEqual(of(r, 'view'), ['"Report"']);
 	// FROM Totals folds to totals, not the case-sensitive CTE "Totals"; [Sales] is read as Sales by the grammar.
-	assert.deepEqual(refs(r), ['"Report" -> pending Sales', '"Report" -> pending Totals', '"Report" -> pending app.Ledger']);
+	assert.deepEqual(refs(r), ['"Report" -> pending Sales', '"Report" -> pending Totals', '"Report" -> pending `app`.`Ledger`']);
 	// FROM "Totals" is the CTE, and an unquoted CTE answers any unquoted or lower-case quoted spelling.
 	assert.deepEqual(refs(parse('CREATE VIEW r AS WITH "Totals" AS (SELECT 1) SELECT * FROM "Totals";')), []);
 	assert.deepEqual(refs(parse('CREATE VIEW r AS WITH totals AS (SELECT 1) SELECT * FROM TOTALS JOIN "totals" ON true;')), []);

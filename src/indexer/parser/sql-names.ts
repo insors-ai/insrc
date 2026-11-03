@@ -88,8 +88,7 @@ const unwrap = (identifier: string): { open: string; inner: string } | undefined
 };
 
 /**
- * How a stored name -- a definition's, or a reference's -- writes one
- * identifier the grammar gives. A
+ * How a definition's stored name writes one identifier the grammar gives. A
  * double-quoted identifier keeps its quotes only when they change its meaning
  * (its text is not all lower-case, or holds a dot, whitespace or a delimiter);
  * every other identifier is written unquoted, as before this rule. So

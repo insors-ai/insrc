@@ -17,7 +17,7 @@
  *    a name the view's own WITH clause defines is a CTE, not a reference
  *  - a reference to a table or view of this file is resolved here (the
  *    resolver marks it 'extracted'); one to another file is written pending
- *    under its name, written the same way, for the cross-file pass
+ *    under its name as written, quotes kept, for the cross-file pass
  *
  * Names compare by the SQL name rule (ISSUE-0f3376a0): a double-quoted
  * identifier exactly, any other case-insensitively, so "Orders" and orders are
@@ -45,15 +45,26 @@ const MAX_SIZE = 256 * 1024;
 const MAX_BODY = 8192;
 const truncate = (text: string): string => text.length <= MAX_BODY ? text : text.slice(0, MAX_BODY) + '\n… (truncated)';
 
-const identifiers = (ref: SyntaxNode): string[] => ref.namedChildren.filter(c => c.type === 'identifier').map(c => c.text);
+const identifiers = (ref: SyntaxNode): SyntaxNode[] => ref.namedChildren.filter(c => c.type === 'identifier');
 
 /**
- * The name an object_reference is stored under, for a definition and a
- * reference alike: `app.users`, `"Orders"`, `app."Ledger"` -- each identifier
- * unquoted unless its double quotes change its meaning, so it reads back to
- * the key the reference was written with.
+ * An identifier of `stmt` the grammar cannot read, unquoted as before the name
+ * rule -- a backticked identifier holding a dot, or a double-quoted one the
+ * grammar cut at an escaped quote ("a""b" reads as "a") -- or undefined.
  */
-const sqlName = (ref: SyntaxNode): string => identifiers(ref).map(sqlStoredIdentifier).join('.');
+function grammarLimit(id: SyntaxNode, stmt: SyntaxNode): string | undefined {
+	const t = id.text;
+	const cut = t.startsWith('"') && stmt.text[id.endIndex - stmt.startIndex] === '"';
+	return cut || (t.startsWith('`') && t.includes('.')) ? t.slice(1, -1) : undefined;
+}
+
+/** The name a definition's object_reference in `stmt` stores (`app.users`, `"Orders"`). */
+const storedName = (ref: SyntaxNode, stmt: SyntaxNode): string =>
+	identifiers(ref).map(c => grammarLimit(c, stmt) ?? sqlStoredIdentifier(c.text)).join('.');
+
+/** The name an object_reference in `stmt` is written with (`app."Ledger"`, `` `app`.`users` ``), quotes kept. */
+const writtenName = (ref: SyntaxNode, stmt: SyntaxNode): string =>
+	identifiers(ref).map(c => grammarLimit(c, stmt) ?? c.text).join('.');
 
 /** Every node of `type` under `root`, in source order. */
 function descendants(root: SyntaxNode, type: string): SyntaxNode[] {
@@ -72,19 +83,19 @@ function tableReferences(stmt: SyntaxNode): string[] {
 	const names: string[] = [];
 	for (const kw of descendants(stmt, 'keyword_references')) {
 		const ref = kw.nextNamedSibling;
-		if (ref !== null && ref.type === 'object_reference') names.push(sqlName(ref));
+		if (ref !== null && ref.type === 'object_reference') names.push(writtenName(ref, stmt));
 	}
 	return names;
 }
 
 /** The relations a view selects from, without the names its WITH clause defines (matched by key). */
 function viewReferences(stmt: SyntaxNode): string[] {
-	const ctes = new Set(descendants(stmt, 'cte').map(c => c.namedChildren.find(n => n.type === 'identifier')?.text).filter(n => n !== undefined).map(n => sqlNameKey(sqlStoredIdentifier(n))));
+	const ctes = new Set(descendants(stmt, 'cte').map(c => c.namedChildren.find(n => n.type === 'identifier')).filter(n => n !== undefined).map(n => sqlNameKey(grammarLimit(n, stmt) ?? n.text)));
 	const names: string[] = [];
 	for (const rel of descendants(stmt, 'relation')) {
 		const ref = rel.namedChildren.find(c => c.type === 'object_reference');
 		if (ref === undefined) continue;
-		const name = sqlName(ref);
+		const name = writtenName(ref, stmt);
 		if (!ctes.has(sqlNameKey(name))) names.push(name);
 	}
 	return names;
@@ -107,8 +118,8 @@ export class SqlParser implements CodeParser {
 	}
 
 	/**
-	 * The names a CREATE TABLE / VIEW statement references, written as this
-	 * reader stores them (meaningful double quotes kept) and read as it reads them when it parses the file (a
+	 * The names a CREATE TABLE / VIEW statement references, as written (quotes
+	 * kept) and read as this reader reads them when it parses the file (a
 	 * view's CTE names are not references; strings, comments and aliases are
 	 * not names), or undefined
 	 * without a grammar or when the text holds no such statement.
@@ -144,7 +155,7 @@ export class SqlParser implements CodeParser {
 		for (const stmt of root === undefined ? [] : [...descendants(root, 'create_table'), ...descendants(root, 'create_view')]) {
 			const ref = stmt.namedChildren.find(c => c.type === 'object_reference');
 			if (ref === undefined) continue;
-			const objName = sqlName(ref);
+			const objName = storedName(ref, stmt);
 			if (objName === '') continue;
 			const kind = stmt.type === 'create_table' ? 'table' : 'view';
 			const id = makeEntityId(repo, filePath, kind, objName);

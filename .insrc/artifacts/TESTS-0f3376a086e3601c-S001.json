@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "0f3376a086e3601c",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T10:37:50.308Z",
+    "updatedAt": "2026-11-03T10:41:55.428Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.736Z",
+    "epicSlug": "sql-references-miss-across-2-3"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "fe6acd85c",
+        "ranAt": "2026-11-03T10:41:55.428Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: the SQL name key folds bare and backtick segments, keeps double-quoted ones exact, and never collides",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/sql-names.test.ts",
+                "title": "S001 t1: the SQL name key folds bare and backtick segments, keeps double-quoted ones exact, and never collides",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: the reader keeps meaningful quoting in stored names, matches same-file references and CTEs by key, and keeps written names in rawTo and referencesIn",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/sql-names.test.ts",
+                "title": "S001 t1: the reader keeps meaningful quoting in stored names, matches same-file references and CTEs by key, and keeps written names in rawTo and referencesIn",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/parser/__tests__/sql.test.ts",
+                "title": "s9 t8: a CTE name is not a reference, and pending names keep their delimiters",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: names the grammar cannot read give the same entities and references as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/sql-names.test.ts",
+                "title": "S001 t1: names the grammar cannot read give the same entities and references as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/sql-names.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 698,
+            "titles": [
+              {
+                "title": "S001 t1: the SQL name key folds bare and backtick segments, keeps double-quoted ones exact, and never collides",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: the reader keeps meaningful quoting in stored names, matches same-file references and CTEs by key, and keeps written names in rawTo and referencesIn",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: names the grammar cannot read give the same entities and references as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/parser/__tests__/sql.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 663,
+            "titles": [
+              {
+                "title": "s9 t8: a SQL fixture yields the document, table and view entities and their REFERENCES (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: the document entity is the one the artifact reader writes for the same file",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a CTE name is not a reference, and pending names keep their delimiters",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a reference to a table defined in another file stays pending by name after the per-file resolver",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: a fixture with a syntax error still yields the declarations outside the broken region, and its file is marked",
+                "result": "pass"
+              },
+              {
+                "title": "s9 t8: definitions inside a transaction block are read",
+                "result": "pass"
+              },
+              {
+                "title": "s9 review: without the grammar a .sql file is still stored as its document, and SQL is not listed as read",
+                "result": "pass"
+              },
+              {
+                "title": "s9 review: a SQL grammar that fails to load registers the document-only fallback, which is not listed as SQL",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

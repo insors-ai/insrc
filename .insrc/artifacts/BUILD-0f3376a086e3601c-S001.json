@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "0f3376a086e3601c",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T10:37:50.308Z",
+    "updatedAt": "2026-11-03T10:41:55.428Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.736Z",
+    "epicSlug": "sql-references-miss-across-2-3"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "Added src/indexer/parser/sql-names.ts (segments, collision-free JSON key, folded last segment, folded text, stored-identifier writer) and moved the SQL reader onto it (@ce3a4f227, reworked @fe6acd85c after the first gate): definitions store meaningful double quotes (\"Users\", \"a.b\") with distinct ids, others unchanged; same-file references and CTEs match by key; references dedupe by key; pending rawTo and referencesIn keep names as written, quotes kept. Grammar-limit names (brackets read by the grammar as bare identifiers, a double-quoted identifier cut at an escaped quote, a dotted backtick) are unquoted exactly as before for definitions, references and CTEs, pinned against the reader at 49b1d78f1 (names, ids, references, referencesIn). The three sql.test.ts conflation assertions were updated. Mutation check: 18 mutants over both commits, all caught.",
+    "testRecord": {
+      "md": "docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/sql-names.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:41:55.428Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/sql.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:41:55.428Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/sql-names.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:41:55.428Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/sql.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:41:55.428Z"
+      }
+    ],
+    "commit": "fe6acd85c"
+  }
+}

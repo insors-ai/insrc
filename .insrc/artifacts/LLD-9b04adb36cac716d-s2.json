@@ -25,7 +25,38 @@
     "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 2
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "a3e5a464d8a5729034401af2b2d99a80163d81ee3b96728f662c9d99f58593d2",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:05:59.528Z",
+        "override": {
+          "reason": "User explicitly approved the presented S2 LLD with review override and proceeding to planning. Independent review design-s2-1793712709938 terminated technically at chunk 3/10 due invalid_result (changes_requested despite mandatory limitations requiring incomplete); only two chunks were accepted. Accepted 2 MED and 1 LOW findings were corrected in revision 2, alongside completed-unit retry-summary retention. Remaining scope and post-correction independent review are unverified. Evidence: /tmp/design-review-s2-review-summary.json. This is an explicit override, not a clean review."
+        }
+      }
+    }
   },
   "body": {
     "summary": {

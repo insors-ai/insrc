@@ -66,6 +66,13 @@
         "choice": "Verify now via targeted grep/Read",
         "rationale": "Checked: src/workflow/artifact-core/types.ts defines ChangeLogEntry (line 58) with a free-text outcome.result, so the adopted entry needs no type change; types.ts is a reference, not a file to edit.",
         "resolvedAt": "2026-11-03T07:14:14.107Z"
+      },
+      "q3845a9c6": {
+        "question": "The Story carries no formal acceptance criteria: ac1 to ac4 and the constraints that the alternatives were scored against are derived from the approved issue's fix intent.",
+        "status": "resolved",
+        "choice": "Adopt issue-derived ACs as-is",
+        "rationale": "ac1 to ac4 come from the approved ISSUE-7e0f65fc1a518722 fix intent; the PLAN cites it.",
+        "resolvedAt": "2026-11-03T07:15:05.768Z"
       }
     }
   },

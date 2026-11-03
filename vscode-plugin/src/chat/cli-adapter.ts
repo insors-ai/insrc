@@ -107,10 +107,21 @@ export interface ResumeRequest {
   readonly pid: number | undefined;
   /** That process's start time (processStartTime), so a reused pid is never mistaken for it. */
   readonly startedAt: number | null;
+  /**
+   * E202611031bd72813:S001 t5: the persisted decoder state for this cursor (selectionSeq counter +
+   * a split selection marker's buffer), so a resumed read never reuses a selection id or loses a
+   * marker that spans chunks. Absent -> an empty state (today's behaviour).
+   */
+  readonly decoderState?: { readonly selectionSeq?: number | undefined; readonly selectionBuffer?: string | undefined } | undefined;
 }
 
 export interface ResumeOptions {
   readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /**
+   * E202611031bd72813:S001 t5: the adapter's live decoder state after each ingested line, so the
+   * observer can persist it (checkpoint) and a later resume continues with the same ids/buffers.
+   */
+  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string }) => void) | undefined;
   /** Aborting it stops following; the process is left running. */
   readonly signal?: AbortSignal | undefined;
   /** Hands over the followed turn's process, so Stop can end it. */
@@ -1288,7 +1299,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     };
     opts?.onAttach?.(handle);
 
+    // E202611031bd72813:S001 t5: restore the persisted decoder state instead of starting empty, so a
+    // resumed read never reuses a selection id (sel-<turn>-<seq>) or loses a split marker.
     const state: TurnState = {};
+    if (req.decoderState?.selectionSeq !== undefined) state.selectionSeq = req.decoderState.selectionSeq;
+    if (req.decoderState?.selectionBuffer !== undefined) state.selectionBuffer = req.decoderState.selectionBuffer;
     const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
       kind: 'done',
       turnId,
@@ -1310,6 +1325,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           if (ev.kind === 'done' || ev.kind === 'error') return;
         }
         opts?.onProgress?.(cursor);
+        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
       }
     } catch (err) {
       if (err instanceof SegmentGone) {

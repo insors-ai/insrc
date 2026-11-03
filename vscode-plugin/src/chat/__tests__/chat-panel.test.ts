@@ -17,7 +17,8 @@ import { createFileChatSessionStore, ROWS_SUFFIX } from '../session-file-store.j
 import { fakeSessionFs } from './fake-session-fs.js';
 import { createAttachmentStore, MAX_ATTACHMENT_BYTES, type AttachmentStore } from '../attachment-store.js';
 import { fakeAttachmentFs, type FakeAttachmentFs } from './fake-attachment-fs.js';
-import type { ProviderId, StreamAdapter, ProviderRegistry, TurnRequest, RunOptions } from '../cli-adapter.js';
+import { createProviderRegistry, type ProviderId, type StreamAdapter, type ProviderRegistry, type TurnRequest, type RunOptions } from '../cli-adapter.js';
+import { createSessionOutput } from '../session-output.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
 import { fakeLiveProc, patchOf, waitFor, type FakeLiveProc } from './fixtures.js';
@@ -27,7 +28,7 @@ import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } fro
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 import { DatabaseSync } from 'node:sqlite';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
 
@@ -5835,4 +5836,53 @@ test('E202611031bd72813:S001 t5: the observer reconciles a detached chat with a 
   assert.equal(after.pendingRequests?.[0]?.requestId, 'req-d9', 'the request was persisted before the transition');
   assert.equal(after.pendingRequests?.[0]?.resolved, false, 'still unresolved');
   assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.offset > 0, 'checkpoint persisted');
+});
+
+test('E202611031bd72813:S001 t5 integration: observer ingests a REAL session-output file — a split select marker resolves to one persisted request with prompt+options, then done -> waiting-input kept', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    // real adapter over the real output store; the spawner is never used (resume only)
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn in this test'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    // the detached session's turn, with output already on disk: a SPLIT select marker + result.
+    // the output segment MUST live under the store session's own id — the observer cursors by s.id
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const selJson = JSON.stringify({ prompt: 'Pick one', options: [{ id: 'a', label: 'Alpha' }, { id: 'b', label: 'Beta' }], multi: true });
+    const marker = '```insrc:select\n' + selJson + '\n```';
+    const half = Math.floor(marker.length / 2);
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'system', subtype: 'init', session_id: 'n-obs' }) + '\n');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'choose:\n' + marker.slice(0, half) }] } }) + '\n');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(half) }] } }) + '\n');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'n-obs' }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: seg.cursor, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.status === 'waiting-input', 5000, 'split marker resolved to one request -> waiting-input');
+    const after = store.get(s.id)!;
+    const req = after.pendingRequests?.find((r) => r.kind === 'selection');
+    assert.ok(req, 'the selection request was persisted');
+    assert.equal(req!.prompt, 'Pick one', 'prompt preserved (not dropped)');
+    assert.deepEqual(req!.options, ['Alpha', 'Beta']);
+    assert.equal(req!.multi, true, 'multi preserved');
+    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.selectionSeq >= 1, 'decoder checkpoint carried selectionSeq');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

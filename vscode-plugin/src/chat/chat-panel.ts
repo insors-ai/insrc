@@ -627,6 +627,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (deps.isAlive !== undefined && live.ownerHostPid !== 0 && deps.isAlive(live.ownerHostPid)) continue; // another live window owns it
       const cp = s.observerCheckpoint ?? { generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
       const cursor = { sessionId: s.id, turnId: live.cursor.turnId, generation: cp.generation, offset: cp.offset };
+      let decoderSeq = cp.selectionSeq;
+      let decoderBuf = cp.selectionBuffer ?? '';
       out.registerCursor(cursor); // retention: this generation is not discarded under us
       let adapter;
       try {
@@ -648,7 +650,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       let ingestedAny = false;
       try {
         const events = adapter.resume(
-          { cursor, pid: live.pid, startedAt: live.startedAt ?? null },
+          { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: cp.selectionSeq, ...(cp.selectionBuffer !== undefined ? { selectionBuffer: cp.selectionBuffer } : {}) } },
           {
             signal: ctl.signal,
             onProgress: (cur) => {
@@ -657,6 +659,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
                 abortedByBudget = true;
                 ctl.abort(); // per-tick budget: pause, never discard
               }
+            },
+            onDecoderState: (ds) => {
+              decoderSeq = ds.selectionSeq;
+              decoderBuf = ds.selectionBuffer;
             },
           },
         );
@@ -688,7 +694,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const caughtUp = ingestedAny && !abortedByBudget && !sawObservationFailure;
       // persist the checkpoint (own cursor + decoder progress)
       try {
-        s.observerCheckpoint = { generation: lastCursor.generation, offset: lastCursor.offset, selectionSeq: cp.selectionSeq };
+        s.observerCheckpoint = { generation: lastCursor.generation, offset: lastCursor.offset, selectionSeq: decoderSeq, ...(decoderBuf !== '' ? { selectionBuffer: decoderBuf } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
       out.unregisterCursor(cursor);

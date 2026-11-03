@@ -17,7 +17,7 @@ from task validation or earlier source snapshots.
 | ac3: safe internal cleanup targeting | exact canonical owned memory.lance preflight, rejected root/queue/metadata/foreign/alias/child/inode substitutions; non-destructive graph/vector/queue preservation oracle |
 | Resource and latency limits | t16 method and completed hardware/source/profile report required; logical quotas and observed RSS must remain distinct |
 | Final current-source package/backend qualification | Package: 138/138 pass on APFS and ext4 at 0990b423e; t17-platforms.json and CI run 41695843142. Backend: 7,238 pass, 21 fail, 135 skipped, 3 todo; initial focused retry 26 pass/5 fail. See t17.md and t17-backend-results.json. Source unchanged across sweep. User explicitly deferred all backend failures to https://github.com/insors-ai/insrc/issues/98 on 2026-11-04; task 17 handoff validation accepted with clean typechecks and current-source platform audit. Independent review pending. Global sweep remains failed. |
-| Independent code review and story closure | Pending post-build review and explicit user BUILD approval |
+| Independent code review and story closure | First independent daemon review failed at its 12,600-second adherence limit after primary chunks and follow-up checks (last reported relation #487). No CR verdict was produced; see completion-review-attempt-1.json. BUILD approval remains pending. |
 
 Full epic AC29 remains pending S7/S9. S7 must qualify actual host index/memory/queue
 overlap and alias prevention; S9 must qualify real queued physical cleanup/reset

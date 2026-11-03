@@ -470,6 +470,7 @@ export class CliProvider implements LLMProvider {
 			},
 			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
 			opts?.internalRetry === false ? 1 : 3,
+			false,
 			opts?.connectionExecution,
 		);
 	}
@@ -591,6 +592,7 @@ export class CliProvider implements LLMProvider {
 	}
 
  private async activityReview<T>(prompt:string,schema:StructuredSchema,opts:ActivityReviewSessionOpts):Promise<T>{
+  if(this.kind==='vibe')throw new Error('review activity is not supported for the vibe CLI');
   const acceptedStop=new AbortController();
   const signal=AbortSignal.any([opts.signal,acceptedStop.signal]);
   const parser=new ReviewActivityStream<T>(this.kind,schema,opts,()=>acceptedStop.abort());

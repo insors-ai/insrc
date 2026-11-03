@@ -93,7 +93,7 @@ function contextOf(raw: unknown): StepCallContext | string {
 	if (c['envRepo'] !== undefined && typeof c['envRepo'] !== 'string') return '`context.envRepo` must be a string';
 	// The client's identity; the daemon maps it to a model family where a family is
 	// needed (familyForClient), so a client no family runs still reaches its tools.
-	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex') return "`context.client` must be 'claude' or 'codex'";
+	if (c['client'] !== undefined && c['client'] !== 'claude' && c['client'] !== 'codex' && c['client'] !== 'vibe') return "`context.client` must be 'claude', 'codex' or 'vibe'";
 	return {
 		cwd: c['cwd'],
 		...(typeof c['envRepo'] === 'string' ? { envRepo: c['envRepo'] } : {}),

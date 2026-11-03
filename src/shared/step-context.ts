@@ -56,11 +56,19 @@ export interface SessionConnectionExecution extends ConnectionExecutionBase {
 }
 export type ConnectionExecutionContext = SavedConnectionExecution | SessionConnectionExecution;
 
+export type ConnectionExecutionErrorCode = 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit';
+const executionErrorCodes = new WeakMap<object, ConnectionExecutionErrorCode>();
 export class ConnectionExecutionError extends Error {
-	constructor(readonly code: 'session-expired' | 'upgrade-required' | 'unsupported-temporary' | 'resource-limit') {
-		super(code);
-		this.name = 'ConnectionExecutionError';
+	readonly code: ConnectionExecutionErrorCode;
+	constructor(code: ConnectionExecutionErrorCode) {
+		const safe = code === 'session-expired' || code === 'upgrade-required' || code === 'resource-limit' ? code : 'unsupported-temporary';
+		super(safe); this.code = safe;
+		this.name = 'ConnectionExecutionError'; executionErrorCodes.set(this, safe);
 	}
+}
+/** Identity-only projection: no name/message/code getter or proxy trap is read. */
+export function connectionExecutionErrorCode(error: unknown): ConnectionExecutionErrorCode | undefined {
+	return error !== null && (typeof error === 'object' || typeof error === 'function') ? executionErrorCodes.get(error) : undefined;
 }
 
 const savedExecutions = new WeakSet<object>();
@@ -114,8 +122,8 @@ export function requireConnectionExecution(value: ConnectionExecutionContext | u
 }
 
 /** The calling client in its one form. The one-shot analyze converts it to
- *  'cli-claude' | 'cli-codex' for runWithClientProviderContext. */
-export type StepClient = 'claude' | 'codex';
+ *  'cli-claude' | 'cli-codex' | 'cli-vibe' for runWithClientProviderContext. */
+export type StepClient = 'claude' | 'codex' | 'vibe';
 
 export interface StepCallContext {
 	/** Trusted review request owner, never read from caller context JSON. */
@@ -180,3 +188,11 @@ export const STEP_TOOL_NAMES = [
 	'insrc_triage',
 ] as const;
 export type StepToolName = typeof STEP_TOOL_NAMES[number];
+
+/** Bind explicit Session execution only so omitted sink policy can deny, never downgrade.
+ * Genuine Saved callers retain their existing context and lazy entry behavior. */
+export function runWithConnectionExecution<T>(execution: ConnectionExecutionContext | undefined, fn: () => Promise<T>): Promise<T> {
+	assertExplicitConnectionExecution(execution);
+	if (execution?.mode !== 'session-memory' || currentStepContext()?.connectionExecution === execution) return fn();
+	return runInStepContext({ ...currentStepContext(), cwd: execution.connectionAccess.lookupRoot, connectionExecution: execution }, fn);
+}

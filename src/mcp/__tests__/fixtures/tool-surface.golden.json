@@ -512,7 +512,7 @@
 				},
 				"overrideReview": {
 					"type": "string",
-					"description": "Optional review-override reason — approves past a HIGH/MED review block and records the reason on the artifact."
+					"description": "Optional review-override reason — accepts a HIGH/MED review block with a recorded reason; cannot bypass stale fingerprinted review identity."
 				}
 			},
 			"$schema": "http://json-schema.org/draft-07/schema#"

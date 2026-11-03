@@ -73,36 +73,28 @@ export async function rpc<T = unknown>(
     const socket = connect();
     let   buffer = '';
     let   sent = false;
-    let   settled = false;
-    const settle = (fn: () => void): void => { if (!settled) { settled = true; fn(); } };
 
     // Opt-in deadline (Story s3). Without `timeoutMs` (or `closeAware`) nothing below changes the
-    // request: no timer, no extra listeners, no destroy. With `timeoutMs` the request also
-    // rejects on the deadline and on the socket ending or closing before a reply, and the
-    // socket is destroyed and the timer cleared on every outcome. `closeAware` (Story s10) is
-    // the same end and close handling with NO timer: a long call, such as an approval that waits
+    // request: no timer, no destroy. With `timeoutMs` the request also rejects on the deadline,
+    // and the socket is destroyed and the timer cleared on every outcome. `closeAware` (Story s10)
+    // is the same end and close handling with NO timer: a long call, such as an approval that waits
     // on a person, is never cut short, but a daemon that goes away is not waited for either.
     const timeoutMs = opts?.timeoutMs;
     const watched = timeoutMs !== undefined || opts?.closeAware === true;
     let settled = false;
     let timer: NodeJS.Timeout | undefined;
+    // The promise settles exactly once.
     const settle = (fn: () => void): void => {
-      if (!watched) { fn(); return; }
       if (settled) return;
       settled = true;
       if (timer !== undefined) clearTimeout(timer);
-      socket.destroy();
+      if (watched) socket.destroy();
       fn();
     };
     const resolve = (v: T): void => settle(() => resolveReply(v));
     const reject = (e: Error): void => settle(() => rejectReply(e));
 
-    if (watched) {
-      if (timeoutMs !== undefined) timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
-      const closed = (): void => reject(new Error('daemon closed the connection before replying (closed)'));
-      socket.on('end', closed);
-      socket.on('close', closed);
-    }
+    if (timeoutMs !== undefined) timer = setTimeout(() => reject(new Error(`daemon did not reply within ${timeoutMs} ms (timeout)`)), timeoutMs);
 
     socket.on('connect', () => {
       // Self-identify to the daemon's attached-client registry (Story s4).
@@ -121,26 +113,29 @@ export async function rpc<T = unknown>(
         try {
           const res = JSON.parse(line) as IpcResponse;
           socket.end();
-          if (res.error) settle(() => reject(new Error(res.error)));
-          else           settle(() => resolve(res.result as T));
+          if (res.error) reject(new Error(res.error));
+          else           resolve(res.result as T);
         } catch {
           socket.end();
-          settle(() => reject(new Error('invalid response from daemon')));
+          reject(new Error('invalid response from daemon'));
         }
       }
     });
 
     socket.on('error', (err: NodeJS.ErrnoException) => {
-      if (sent) settle(() => reject(new DaemonDisconnectedError(method, err)));
+      if (sent) reject(new DaemonDisconnectedError(method, err));
       else if (err.code === 'ENOENT' || err.code === 'ECONNREFUSED') {
-        settle(() => reject(new Error('daemon is not running — start it with: insrc daemon start')));
+        reject(new Error('daemon is not running — start it with: insrc daemon start'));
       } else {
-        settle(() => reject(err));
+        reject(err);
       }
     });
 
     // A connection that ends or closes with no reply would otherwise leave the promise pending forever.
-    const lost = (): void => settle(() => reject(sent ? new DaemonDisconnectedError(method) : new Error(`the daemon closed the connection before ${method} was sent`)));
+    // A watched call (a deadline or closeAware) keeps its own error text; any other is a disconnect.
+    const lost = (): void => reject(watched
+      ? new Error('daemon closed the connection before replying (closed)')
+      : sent ? new DaemonDisconnectedError(method) : new Error(`the daemon closed the connection before ${method} was sent`));
     socket.on('end', lost);
     socket.on('close', lost);
   });

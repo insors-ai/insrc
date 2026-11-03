@@ -1068,7 +1068,8 @@ export async function repoHasAnyEntity(_db: DbClient, repo: string): Promise<boo
 	return false;
 }
 
-export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<Entity[]> {
+/** `opts.limit` stops the range read early (an existence check needs one row); v2's bounded-readiness callers rely on it. */
+export async function listEntitiesForRepo(_db: DbClient, repo: string, opts: { readonly limit?: number | undefined } = {}): Promise<Entity[]> {
 	const store = await getGraphStore();
 	const repoId = lookupRepoIdInTxn(store, repo);
 	if (repoId === undefined) return [];
@@ -1084,6 +1085,7 @@ export async function listEntitiesForRepo(_db: DbClient, repo: string): Promise<
 		const stringId = lookupStringIdByU64(store, u64);
 		if (stringId === undefined) continue;
 		out.push(rowToDomainEntity(stringId, row, lookupRepoPath(store, row.repoId, repoCache)));
+		if (opts.limit !== undefined && out.length >= opts.limit) break;
 	}
 	return out;
 }

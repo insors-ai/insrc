@@ -64,8 +64,11 @@ export class OwnedLanceStore {
   readonly #guard: GuardLookup;
   readonly #maxEventBytes: number;
   readonly #reads: ReadLeases;
+  readonly #orphanReaders = new Set<NativePinnedReader>();
   #observedVersion: number | undefined;
   #closing: Promise<void> | undefined;
+  #closed = false;
+  #cleanupFailed = false;
   private constructor(owner: DirectoryOwnership, profile: EmbeddingProfile, storeId: string, resources: Resources, identity: { dev: bigint; ino: bigint }, hooks: StoreOpenHooks, limits: MemoryLimits, policy: Pick<HostPolicy, 'bind'> | undefined) {
     this.#owner = owner; this.profile = profile; this.storeId = storeId; this.#resources = resources; this.#identity = identity; this.#hooks = hooks;
     this.#maxEventBytes = limits.maxEventBytes;
@@ -123,7 +126,7 @@ export class OwnedLanceStore {
     const head = () => this.#writer.orderedRead(async () => {
       await this.#checkIdentity(); await table().checkoutLatest(); await this.#assertVersion();
       return { version: await table().version(), root: await this.#authorityRoot() };
-    });
+    }, true);
     this.#reads = new ReadLeases({
       accepting: () => !this.#closing && this.#writer.accepting(),
       binding: scope => { if (!policy) return Promise.reject(new MemoryError('NOT_READY', 'Memory read binding is not configured.')); return policy.bind(scope.projectId, scope.sessionId); },
@@ -133,7 +136,7 @@ export class OwnedLanceStore {
         const version = await table().version(), root = await this.#authorityRoot();
         const connection = resources.connection; if (!connection) unavailable();
         const native = await connection.openTable('records');
-        const reader = new NativePinnedReader(native, profile, version, () => this.#checkIdentity(), async () => { await hooks.point?.('read-close'); }, handle => resources.readers.delete(handle));
+        const reader = new NativePinnedReader(native, profile, version, () => this.#checkIdentity(), async () => { await hooks.point?.('read-close'); }, handle => { resources.readers.delete(handle); this.#orphanReaders.delete(handle); });
         resources.readers.add(reader);
         try {
           await hooks.point?.('read-open'); await native.checkout(version); await this.#checkIdentity();
@@ -142,10 +145,10 @@ export class OwnedLanceStore {
           if (pinned?.rowKind !== 'control' || pinned.payload.kind !== 'root' || JSON.stringify(pinned.payload) !== JSON.stringify(root)) unavailable();
           await hooks.point?.('read-pinned'); return { version, root, reader };
         } catch (error) {
-          try { await reader.close(); } catch { throw new UnverifiedCleanup(); }
+          try { await reader.close(); } catch { this.#orphanReaders.add(reader); throw new UnverifiedCleanup(); }
           if (error instanceof MemoryError) throw error; unavailable();
         }
-      }),
+      }, true),
       point: async () => { await hooks.point?.('read-before-final'); },
     }, profile, limits, hooks);
   }
@@ -315,6 +318,19 @@ export class OwnedLanceStore {
   releaseSnapshot(snapshot: CommittedSnapshot): Promise<void> { return this.#reads.release(snapshot); }
   prepareEmbeddingQuery(input: unknown, snapshot: CommittedSnapshot) { return this.#reads.prepareQuery(input, snapshot, this.#maxEventBytes); }
   pendingReadLeases(): number { return this.#reads.pending(); }
+  /** Reader capture/head lane operations are already owned by their read lease.
+   * A failed capture can leave a native handle outside the lease manager. */
+  pendingOwnedWork(): number {
+    const pending = this.#writer.pending() + this.#reads.pending() + this.#orphanReaders.size;
+    return (this.#cleanupFailed || this.#closing && !this.#closed) ? Math.max(1, pending) : pending;
+  }
+  async drainOwnedWork(): Promise<void> {
+    this.stopAdmission(); let failed = false;
+    try { await this.#reads.drain(); } catch { failed = true; }
+    try { await this.#writer.drain(); } catch { failed = true; }
+    for (const reader of this.#orphanReaders) try { await reader.close(); } catch { failed = true; }
+    if (failed) throw new UnverifiedCleanup();
+  }
   async validateFrameEligibility(input: unknown): Promise<FrameEligibility> {
     try {
       if (this.#closing || !this.#writer.accepting()) unavailable();
@@ -334,9 +350,14 @@ export class OwnedLanceStore {
   }
   close(): Promise<void> {
     this.#closing ??= (async () => {
-      this.stopAdmission(); await this.#reads.drain(); await this.#writer.drain();
-      for (const reader of this.#resources.readers) await reader.close();
-      if (!await closeResources(this.#resources, this.#hooks)) throw new UnverifiedCleanup();
+      let verified = true;
+      try { await this.drainOwnedWork(); } catch { verified = false; }
+      // drain awaits actual native settlement even when verification fails. Attempt
+      // every allocated handle; a failure retains resources and the owner guard.
+      for (const reader of this.#resources.readers) try { await reader.close(); } catch { verified = false; }
+      if (!await closeResources(this.#resources, this.#hooks)) verified = false;
+      if (!verified) { this.#cleanupFailed = true; retained.add(this.#resources); throw new UnverifiedCleanup(); }
+      this.#closed = true;
       activeOwners.delete(this.#owner);
     })();
     return this.#closing;

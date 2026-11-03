@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T16:35:37.180Z",
+    "updatedAt": "2026-11-03T16:41:37.530Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1525,6 +1525,153 @@
             "titles": [
               {
                 "title": "store-macos-apfs-linux-ext4-production-evidence-matches-current-source",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "34419fe94",
+        "ranAt": "2026-11-03T16:41:37.530Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-admitted-provenance-v1-derivation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-closed-lifecycle-explicit-new-activity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-host-registered-new-source-lifecycle-is-required-after-forget",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-admission-policy-wrapper-through-real-queue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-attestation-envelope-size-and-verified-time-fail-before-persist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-public-submit-module-errors-outside-policy-catch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2108,
+            "titles": [
+              {
+                "title": "store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-attestation-envelope-size-and-verified-time-fail-before-persist",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-host-registered-new-source-lifecycle-is-required-after-forget",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 515,
+            "titles": [
+              {
+                "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-scope-epoch-predicates-never-interpolate-untrusted-text",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-generation-predecessor-reference-and-history-guards",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-source-provenance-span-authority-and-evidence-sets",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-lifecycle-complete-matrix-and-reason-constraints",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-paired-supersession-is-atomic-and-acyclic",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-exact-tombstones-supersession-and-no-effect-dispositions",
+                "result": "pass"
+              },
+              {
+                "title": "store-plan-logical-forget-requires-exact-monotone-marker",
                 "result": "pass"
               }
             ],

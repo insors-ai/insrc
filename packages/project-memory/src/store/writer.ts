@@ -33,6 +33,7 @@ export class AtomicWriter {
   #stopped = false;
   #fenced = false;
   #settlementVerified = true;
+  #ownedReadCalls = 0;
   constructor(io: WriterIO, profile: EmbeddingProfile, limits: MemoryLimits, hooks: WriterHooks = {}) {
     const timeout = hooks.timeoutMs ?? 30_000;
     if (!Number.isSafeInteger(timeout) || timeout < 1 || timeout > 2_147_483_647) throw new MemoryError('INVALID_REQUEST', 'Invalid native write timeout.');
@@ -40,20 +41,21 @@ export class AtomicWriter {
     this.#budget = new IngressBudget(limits, STORE_LIMITS.maxBytes);
   }
   stopAdmission(): void { this.#stopped = true; }
-  pending(): number { return this.#budget.calls + (!this.#settlementVerified && this.#budget.calls === 0 ? 1 : 0); }
+  pending(): number { return this.#budget.calls - this.#ownedReadCalls + (!this.#settlementVerified && this.#budget.calls === 0 ? 1 : 0); }
   async drain(): Promise<void> { await this.#tail; if (!this.#settlementVerified) throw unavailable(); }
   isFenced(): boolean { return this.#fenced; }
   accepting(): boolean { return !this.#stopped && !this.#fenced; }
   /** Queue proof reads remain admitted after mutation stop, until the store owner
    * closes their facade. They share the lane but never call back into the queue. */
-  orderedRead<T>(read: () => Promise<T>): Promise<T> {
+  orderedRead<T>(read: () => Promise<T>, alreadyOwnedByReader = false): Promise<T> {
     if (this.#fenced && !this.#settlementVerified) return Promise.reject(unavailable());
     let lease: Reservation;
     try { lease = this.#budget.reserve(); } catch (error) { return Promise.reject(error); }
+    if (alreadyOwnedByReader) this.#ownedReadCalls++;
     const result = this.#tail.then(async () => {
       if (!this.#settlementVerified) throw unavailable();
       return read();
-    }).finally(() => lease.release());
+    }).finally(() => { if (alreadyOwnedByReader) this.#ownedReadCalls--; lease.release(); });
     this.#tail = result.then(() => {}, () => {});
     return result;
   }

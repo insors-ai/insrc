@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 101 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 108 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -423,3 +423,41 @@ Run at 2026-11-03T16:35:37.180Z on commit `eb6afe27e`. Tests check: **passed**. 
 | `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 7.9 s |  |
 | `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 2.7 s |  |
 | `src/shared/__tests__/project-memory-platform-evidence.test.ts` | 0 | 1 | 1 s |  |
+
+## t11
+
+Run at 2026-11-03T16:41:37.530Z on commit `34419fe94`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-admitted-provenance-v1-derivation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-plan-source-provenance-span-authority-and-evidence-sets | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**integration: store-closed-lifecycle-explicit-new-activity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-host-registered-new-source-lifecycle-is-required-after-forget | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**integration: store-admission-policy-wrapper-through-real-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-attestation-envelope-size-and-verified-time-fail-before-persist | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**integration: store-public-submit-module-errors-outside-policy-catch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-admission.test.ts` | 0 | 4 | 2.1 s |  |
+| `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.5 s |  |

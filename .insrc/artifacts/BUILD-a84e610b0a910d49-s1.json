@@ -1,0 +1,193 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "8ab5e32260967c99ced0e8891e9a7e88f919833ebc91c896d8b49cc348169f50",
+        "at": "2026-11-03T09:46:44.683Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-7fcd1c2d-aa99-4042-974a-05cd0b3c252f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:17:31.517Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "revision": 7,
+    "updatedAt": "2026-11-03T09:43:33.478Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "make-code-review-s-documents-review"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      }
+    ],
+    "summary": "Added derived-completion.test.ts and the sweep record docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SWEEP.md. The record lists the foreground runs by area and the failing titles compared with a clean checkout of the commit before this Story: task-review 115/115; the three daemon code-review files, 17 workflow-gate tests and 22 MCP tests that fail do so identically on the base (the base fails one more MCP test); no new failure.",
+    "testRecord": {
+      "md": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/route.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/task-review-plan-path.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/admission.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/route-source.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/steering-block.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SWEEP.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T09:43:33.478Z"
+      }
+    ],
+    "commit": "c2b737bf9"
+  },
+  "citations": []
+}

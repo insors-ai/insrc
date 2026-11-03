@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f0f23bb9-eb6f-4b2a-82d7-a8c408949f01",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:27.400Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the route and require exactly its document set in prepareReviewPacket",
+      "parent": {
+        "entityId": "STORY-a84e610b0a910d49-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a84e610b0a910d49-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0230711ea980fadd367e2bfd3831e344871328db195587beafb89c4ddbfa1652",
+        "at": "2026-11-03T09:15:27.400Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:27.401Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the route and require exactly its document set in prepareReviewPacket",
+    "summary": "Add the StoryRoute description (epicHash, storyId, whether a PLAN, LLD, ISSUE and DEF exist, the BUILD's task ids and focus) and make prepareReviewPacket take an optional route: with a route require exactly the set it implies (a Plan: lld and plan, plus story only when a DEF exists; only an LLD: lld; only an ISSUE: issue; otherwise none) and check each document's workflow, epicHash or issueHash and story. With a Plan keep all Plan validation, units and messages. A route without a Plan returns the validated documents and no units until the derived unit is added. Without a route, behave as today.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "With a Plan route the documents, units and error messages are exactly those of the existing tests, and without a route prepareReviewPacket re-reads a stored packet as it does today",
+      "An LLD-only, an ISSUE-only and a no-document route each accept exactly their set, and a Plan route whose Story has a DEF requires the story role while a standalone Plan route does not",
+      "A set that differs from the route, a document of the wrong workflow, epicHash, issueHash or story, and an ISSUE role supplied alongside an LLD or Plan are each refused with a message naming the roles or the document"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

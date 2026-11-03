@@ -1,0 +1,449 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 7,
+        "contentHash": "e4976533bfdba7f7b8e33fbae75ce26a9300d3bbefdc84b9a4f108c77f677fcf",
+        "at": "2026-11-03T09:43:33.579Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "createdAt": "2026-11-03T09:17:31.517Z",
+    "updatedAt": "2026-11-03T09:43:33.478Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "epicSlug": "make-code-review-s-documents-review",
+    "revision": 7
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "476719490",
+        "ranAt": "2026-11-03T09:17:31.517Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: any subset of the four document roles decodes and a fifth key is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: any subset of the four document roles decodes and a fifth key is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: a packet, checkpoint and review summary written before the change still decode",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: a packet, checkpoint and review summary written before the change still decode",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 539,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: any subset of the four document roles decodes and a fifth key is refused",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: a packet, checkpoint and review summary written before the change still decode",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "93bd88c86",
+        "ranAt": "2026-11-03T09:21:55.800Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 985,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "ce8e0bb81",
+        "ranAt": "2026-11-03T09:24:10.156Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: each Plan-less route derives one unit with the BUILD task id and checks from its design record",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: each Plan-less route derives one unit with the BUILD task id and checks from its design record",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: the unit size follows the number of selected changed files",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: the unit size follows the number of selected changed files",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: a Plan-less route with a multi-task BUILD is refused and all changes and tests attribute to the one unit",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: a Plan-less route with a multi-task BUILD is refused and all changes and tests attribute to the one unit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1248,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: each Plan-less route derives one unit with the BUILD task id and checks from its design record",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: the unit size follows the number of selected changed files",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: a Plan-less route with a multi-task BUILD is refused and all changes and tests attribute to the one unit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b602ed912",
+        "ranAt": "2026-11-03T09:29:09.212Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/task-review-plan-path.test.ts",
+                "title": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/task-review-plan-path.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 766,
+            "titles": [
+              {
+                "title": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 952,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "1f1584ab8",
+        "ranAt": "2026-11-03T09:33:03.516Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the advertised packet schema accepts the four optional roles and matches the stored schema",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the advertised packet schema accepts the four optional roles and matches the stored schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the guide text states the documents per route",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the guide text states the documents per route",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 771,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the advertised packet schema accepts the four optional roles and matches the stored schema",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the guide text states the documents per route",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "c2b737bf9",
+        "ranAt": "2026-11-03T09:43:33.478Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
+                "title": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 723,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

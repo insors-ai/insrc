@@ -1,0 +1,352 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793697093223-bo9kzh",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:13:49.440Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 133379,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "epicSlug": "make-code-review-s-documents-review",
+    "storyId": "s1",
+    "lldRunId": "wf-1793696217313-61tmtq",
+    "lldEffectiveHash": "612b71f624f3b52b5ff96cb05232d7e8333671618c0da26e10009f24c8feac6d",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "235284ec80dce1f4602e0c8c776e96cfddcd77e94fd18203317bcb7cd544d60a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:26.925Z"
+      }
+    },
+    "rangeBase": "4e2ad9162ea9d540cedd071fa06f07cafd52933f"
+  },
+  "body": {
+    "summary": {
+      "prose": "Building this Story loosens the review packet's stored document shape, teaches the packet validator to require exactly the documents a Story's route produced, derives one review unit for routes that have no Plan, and builds the route from the Story's stored artifacts when a review starts. The guide and the advertised schema then describe the route-dependent set, and an end-to-end case proves a no-Plan Story can complete through the existing gate. Plan-driven reviews and stored history stay exactly as they are.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Make the packet's document roles optional and add the issue role",
+        "summary": "Loosen StoredPacketSchema.documents so story, lld, plan and issue are each optional DocumentSchema with no other key allowed, keeping PacketSchema, the checkpoint schema and the review-summary scope in step; parsePacket still checks every present document path.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A packet with any subset of the four roles decodes, a packet with a fifth key is refused, and a packet with story, lld and plan decodes as before",
+          "A checkpoint and a review summary written before the change still decode and validate",
+          "The contracts, compatibility, admission and history tests in src/workflow/code-review/task-review/__tests__ pass unchanged"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: any subset of the four document roles decodes and a fifth key is refused"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts: a packet, checkpoint and review summary written before the change still decode"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the route and require exactly its document set in prepareReviewPacket",
+        "summary": "Add the StoryRoute description (epicHash, storyId, whether a PLAN, LLD, ISSUE and DEF exist, the BUILD's task ids and focus) and make prepareReviewPacket take an optional route: with a route require exactly the set it implies (a Plan: lld and plan, plus story only when a DEF exists; only an LLD: lld; only an ISSUE: issue; otherwise none) and check each document's workflow, epicHash or issueHash and story. With a Plan keep all Plan validation, units and messages. A route without a Plan returns the validated documents and no units until the derived unit is added. Without a route, behave as today.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "With a Plan route the documents, units and error messages are exactly those of the existing tests, and without a route prepareReviewPacket re-reads a stored packet as it does today",
+          "An LLD-only, an ISSUE-only and a no-document route each accept exactly their set, and a Plan route whose Story has a DEF requires the story role while a standalone Plan route does not",
+          "A set that differs from the route, a document of the wrong workflow, epicHash, issueHash or story, and an ISSUE role supplied alongside an LLD or Plan are each refused with a message naming the roles or the document"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Derive the single review unit for a route without a Plan",
+        "summary": "For a route without a Plan make prepareReviewPacket return one unit whose id is the BUILD's task id, with title, summary and acceptance checks taken from the route's design record (the LLD's acceptance mapping, the ISSUE's fix intent, or the BUILD focus) and size from the number of selected changed files (S for one or two, M for three to eight, L above); refuse a Plan-less route whose BUILD has more than one task.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "The unit's id is the BUILD task id and its checks come from the LLD acceptance mapping, the ISSUE fix intent or the BUILD focus for the three Plan-less routes",
+          "One or two selected files give size S, three to eight M and nine or more L",
+          "A Plan-less route whose BUILD has more than one task is refused, and every submitted change and test can be attributed to the unit by deriveTaskAssignments"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: each Plan-less route derives one unit with the BUILD task id and checks from its design record"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: the unit size follows the number of selected changed files"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: a Plan-less route with a multi-task BUILD is refused and all changes and tests attribute to the one unit"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Build the route from the Story's stored artifacts when a review starts",
+        "summary": "In the new-request branch of prepareReviewAdmission read the Story's PLAN, LLD, ISSUE, DEF and BUILD records from the project's artifacts with the existing artifact id helpers, build the route and pass it to prepareReviewPacket; refuse a Story with no BUILD record; make the plan-path identity check in startTaskReview run only when the packet carries a plan document. Resume and publication stay historical with no route.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Starting a review for a Story with only a BUILD, only an ISSUE and BUILD, or only an LLD and BUILD admits the matching packet, and a packet that omits a document the Story has or adds one it does not is refused",
+          "The route carries the BUILD's task ids and focus, and a Story with a DEF for its epicHash requires the story role while a standalone Story does not",
+          "A Story with no BUILD record is refused before anything is admitted",
+          "Resume and publication of a stored review do not read the route and behave as before, and the plan-path identity check still rejects a wrong plan document and is skipped when the packet has none"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route"
+          },
+          {
+            "level": "integration",
+            "name": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Describe the route-dependent documents in the guide and the advertised schema",
+        "summary": "Update the code-review guide text in src/prompts/steering-block.md and its mirror in the project instructions, and the advertised insrc_code_review_step packet schema once found through the schema registry, so they state which documents each route supplies.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "The guide and the project instructions describe the documents per route and no longer say every packet needs a Story, an LLD and a Plan",
+          "The advertised packet schema accepts the four optional roles and a contract test fails if it drifts from the stored schema"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the advertised packet schema accepts the four optional roles and matches the stored schema"
+          },
+          {
+            "level": "unit",
+            "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the guide text states the documents per route"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Prove a no-Plan Story can complete through the existing gate and run the affected suites",
+        "summary": "Add the end-to-end case where a derived-unit review of a no-Plan Story reaches a passing whole-story record and inspectTaskCompletion passes, plus the negative cases where it does not; then run the task-review, daemon task-review and workflow-gate suites once, in the foreground by area, and record the result.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t4",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "A passing whole-story review of a derived unit lets inspectTaskCompletion pass, and a task-only, non-passing or stale-fingerprint review does not",
+          "The task-review, daemon task-review and workflow-gate suites pass, with any failure compared against a clean base checkout"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass"
+          },
+          {
+            "level": "integration",
+            "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "prepareReviewPacket with a Plan route: documents, units and error messages unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareReviewPacket with an LLD-only route, an ISSUE-only route and a no-document route: accepted set and the single derived unit",
+        "coveredByTaskIds": [
+          "t2",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "prepareReviewPacket refusing a document set that differs from the route, and a document of the wrong workflow, epicHash or story",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "parsePacket and StoredPacketSchema accepting the four optional roles and rejecting any other key, and still decoding a packet written before this change",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "startTaskReview reading the Story's stored artifacts to build the route and refusing a missing BUILD",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "a full derived-unit review for a no-Plan Story run to a passing whole-story record, then inspectTaskCompletion passing, and failing when the review is not whole-story or the BUILD fingerprint differs",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "resume and publication re-reading a stored review without a route",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "the insrc_code_review_step packet schema the MCP server advertises",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "the code-review guide text",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: StoredPacketSchema.documents"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: prepareReviewPacket and parsePacket"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: StoryRoute"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: PlanTask derived review unit"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: deriveTaskAssignments and inspectTaskCompletion, and the completion error path"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model: Plan-identity check in startTaskReview, and migration steps 3 and 4"
+    }
+  ]
+}

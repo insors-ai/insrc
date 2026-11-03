@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d8e8bbc7-0092-4636-95a3-07aa82c6ef74",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:27.404Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Describe the route-dependent documents in the guide and the advertised schema",
+      "parent": {
+        "entityId": "STORY-a84e610b0a910d49-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a84e610b0a910d49-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f46aac4df2178aacc5d4ad209a072e475a3ec41945272c5dd6bb41f120a291b7",
+        "at": "2026-11-03T09:15:27.404Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:27.405Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Describe the route-dependent documents in the guide and the advertised schema",
+    "summary": "Update the code-review guide text in src/prompts/steering-block.md and its mirror in the project instructions, and the advertised insrc_code_review_step packet schema once found through the schema registry, so they state which documents each route supplies.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The guide and the project instructions describe the documents per route and no longer say every packet needs a Story, an LLD and a Plan",
+      "The advertised packet schema accepts the four optional roles and a contract test fails if it drifts from the stored schema"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the advertised packet schema accepts the four optional roles and matches the stored schema"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts: the guide text states the documents per route"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

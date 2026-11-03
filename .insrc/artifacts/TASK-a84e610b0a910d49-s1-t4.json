@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-128db65b-eb8b-4963-ba37-db738762e5a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:27.403Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the route from the Story's stored artifacts when a review starts",
+      "parent": {
+        "entityId": "STORY-a84e610b0a910d49-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a84e610b0a910d49-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7b00c8b25ac1152b0bde1378be9f279c996747efa1549bea4d961b2b5fac37f0",
+        "at": "2026-11-03T09:15:27.403Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:27.403Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the route from the Story's stored artifacts when a review starts",
+    "summary": "In the new-request branch of prepareReviewAdmission read the Story's PLAN, LLD, ISSUE, DEF and BUILD records from the project's artifacts with the existing artifact id helpers, build the route and pass it to prepareReviewPacket; refuse a Story with no BUILD record; make the plan-path identity check in startTaskReview run only when the packet carries a plan document. Resume and publication stay historical with no route.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Starting a review for a Story with only a BUILD, only an ISSUE and BUILD, or only an LLD and BUILD admits the matching packet, and a packet that omits a document the Story has or adds one it does not is refused",
+      "The route carries the BUILD's task ids and focus, and a Story with a DEF for its epicHash requires the story role while a standalone Story does not",
+      "A Story with no BUILD record is refused before anything is admitted",
+      "Resume and publication of a stored review do not read the route and behave as before, and the plan-path identity check still rejects a wrong plan document and is skipped when the packet has none"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: admission builds the route from the Story's stored artifacts and refuses a packet that does not match it"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: a Story with no BUILD record is refused before anything is admitted"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts: resume and publication of a stored review read no route"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/task-review-plan-path.test.ts: the plan-path identity check rejects a wrong plan document and is skipped when the packet has none"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

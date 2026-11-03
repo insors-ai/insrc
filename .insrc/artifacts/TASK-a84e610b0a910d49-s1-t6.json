@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8141cf62-d5d6-45ed-8ea7-6c9e7f657786",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:27.405Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Prove a no-Plan Story can complete through the existing gate and run the affected suites",
+      "parent": {
+        "entityId": "STORY-a84e610b0a910d49-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a84e610b0a910d49-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ca3bbc161964e6d5c1f28294af2fea10b8d29b9128252693e76f288fcc6e8c35",
+        "at": "2026-11-03T09:15:27.405Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:27.406Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Prove a no-Plan Story can complete through the existing gate and run the affected suites",
+    "summary": "Add the end-to-end case where a derived-unit review of a no-Plan Story reaches a passing whole-story record and inspectTaskCompletion passes, plus the negative cases where it does not; then run the task-review, daemon task-review and workflow-gate suites once, in the foreground by area, and record the result.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "A passing whole-story review of a derived unit lets inspectTaskCompletion pass, and a task-only, non-passing or stale-fingerprint review does not",
+      "The task-review, daemon task-review and workflow-gate suites pass, with any failure compared against a clean base checkout"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a passing whole-story review of a derived unit lets inspectTaskCompletion pass"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts: a task-only, non-passing or stale-fingerprint derived-unit review is withheld"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

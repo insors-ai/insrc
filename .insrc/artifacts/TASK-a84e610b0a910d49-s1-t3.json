@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f5f7f222-682b-42ab-8b64-3ed442c99c03",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T09:15:27.402Z",
+    "epicCreatedAt": "2026-11-03T08:51:40.235Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a84e610b0a910d49",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Derive the single review unit for a route without a Plan",
+      "parent": {
+        "entityId": "STORY-a84e610b0a910d49-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-a84e610b0a910d49-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-a84e610b0a910d49-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "beeec95b16ca9d827a3a29360b59c7e15508f1aefdf449c7505338a71371ef47",
+        "at": "2026-11-03T09:15:27.402Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T09:15:27.402Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Derive the single review unit for a route without a Plan",
+    "summary": "For a route without a Plan make prepareReviewPacket return one unit whose id is the BUILD's task id, with title, summary and acceptance checks taken from the route's design record (the LLD's acceptance mapping, the ISSUE's fix intent, or the BUILD focus) and size from the number of selected changed files (S for one or two, M for three to eight, L above); refuse a Plan-less route whose BUILD has more than one task.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "The unit's id is the BUILD task id and its checks come from the LLD acceptance mapping, the ISSUE fix intent or the BUILD focus for the three Plan-less routes",
+      "One or two selected files give size S, three to eight M and nine or more L",
+      "A Plan-less route whose BUILD has more than one task is refused, and every submitted change and test can be attributed to the unit by deriveTaskAssignments"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: each Plan-less route derives one unit with the BUILD task id and checks from its design record"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: the unit size follows the number of selected changed files"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts: a Plan-less route with a multi-task BUILD is refused and all changes and tests attribute to the one unit"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

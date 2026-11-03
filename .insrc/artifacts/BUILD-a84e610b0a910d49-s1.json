@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "8ab5e32260967c99ced0e8891e9a7e88f919833ebc91c896d8b49cc348169f50",
-        "at": "2026-11-03T09:46:44.683Z",
+        "number": 9,
+        "contentHash": "4d446b3bf960464b106dd0e5d785f7a25e5cdd7c888c866277bae8662717dcc9",
+        "at": "2026-11-03T10:37:04.755Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "a84e610b0a910d49",
     "storyId": "s1",
-    "revision": 7,
-    "updatedAt": "2026-11-03T09:43:33.478Z",
+    "revision": 9,
+    "updatedAt": "2026-11-03T10:35:11.596Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "make-code-review-s-documents-review"
@@ -62,7 +62,7 @@
         "passed": true
       }
     ],
-    "summary": "Added derived-completion.test.ts and the sweep record docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SWEEP.md. The record lists the foreground runs by area and the failing titles compared with a clean checkout of the commit before this Story: task-review 115/115; the three daemon code-review files, 17 workflow-gate tests and 22 MCP tests that fail do so identically on the base (the base fails one more MCP test); no new failure.",
+    "summary": "Closed the one gap the daemon code review raised on t4 (attempt 2, MED): route-admission.test.ts now also admits a Story with only a BUILD through the real readStoryRoute and admission (the no-document route, check = BUILD focus), and requires the story role for a Story whose epic has a DEF (admitted with story, lld and plan; refused without story; refused with a story for a Story with no DEF). route-source.ts and the rest are unchanged; breaking the DEF detection makes the test fail. Otherwise as before: admission builds the route from the Story's stored artifacts and keeps the derived epic and unit in header.derived; startTaskReview runs the plan-path identity check only when the packet carries a plan document.",
     "testRecord": {
       "md": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/TESTS.md"
     },
@@ -72,122 +72,241 @@
           "file": "src/daemon/task-review-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/packet.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/route.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/assessment.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/task-review-plan-path.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/publication.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/route-source.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/prompts/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
       },
       {
         "target": {
           "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SWEEP.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T09:43:33.478Z"
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a84e610b0a910d49.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a84e610b0a910d49.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-a84e610b0a910d49-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-a84e610b0a910d49-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-a84e610b0a910d49-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-a84e610b0a910d49-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t3.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t4.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t5.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASK-a84e610b0a910d49-s1-t6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a84e610b0a910d49-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/TASKS-a84e610b0a910d49-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/SELF-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T10:35:11.596Z"
       }
     ],
-    "commit": "c2b737bf9"
+    "commit": "b1e1d3f03"
   },
   "citations": []
 }

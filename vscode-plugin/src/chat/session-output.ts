@@ -169,9 +169,9 @@ export interface SessionOutput {
    * E202611031bd72813:S001 t5: registers a long-lived reader cursor (the background observer's).
    * While registered, rollover keeps its generation readable (archived instead of discarded).
    */
-  registerCursor(cursor: SegmentCursor): void;
-  /** Drops a registered cursor; its archived generation is removed when nothing else pins it. */
-  unregisterCursor(cursor: SegmentCursor): void;
+  registerCursor(cursor: SegmentCursor, readerId?: string): void;
+  /** Drops one reader's registration; the archived generation goes only when NO reader pins it. */
+  unregisterCursor(cursor: SegmentCursor, readerId?: string): void;
   /** The oldest generation still retained for a session (for SegmentGone replay recovery). */
   oldestRetainedGeneration(sessionId: string): Promise<number | undefined>;
   /**
@@ -201,8 +201,19 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     return { current: `${base}.ndjson`, previous: `${base}.1.ndjson`, err: `${base}.err.log` };
   };
 
-  /** The durable pin marker for one session generation (`<session>.pin.<gen>`). */
-  const pinPath = (sessionId: string, generation: number): string => `${deps.root}/${sessionFileName(sessionId)}.pin.${generation}`;
+  /** The durable pin marker for one reader of one generation (`<session>.pin.<gen>.<reader>`). */
+  const pinPath = (sessionId: string, generation: number, readerId: string): string => `${deps.root}/${sessionFileName(sessionId)}.pin.${generation}.${readerId}`;
+  const pinPrefix = (sessionId: string, generation: number): string => `${sessionFileName(sessionId)}.pin.${generation}.`;
+  /** Any pin — in-memory or on disk — for this session generation (another process may hold it). */
+  const genPinned = async (sessionId: string, generation: number): Promise<boolean> => {
+    const prefix = `${sessionFileName(sessionId)}:${generation}:`;
+    for (const key of pinned.keys()) if (key.startsWith(prefix)) return true;
+    let names: string[] = [];
+    try {
+      names = await fs.readdir(deps.root);
+    } catch { /* no root */ }
+    return names.some((n) => n.startsWith(pinPrefix(sessionId, generation)));
+  };
 
   /** The generation a file holds (from its header line), or undefined when it is missing. */
   const generationOf = async (path: string): Promise<number | undefined> => {
@@ -249,7 +260,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   };
 
   // E202611031bd72813:S001 t5: generations pinned by registered cursors, archived instead of discarded.
-  const pinned = new Map<string, Set<number>>(); // sessionId -> generations
+  // Refcounted PER READER (`${base}:${generation}:${readerId}` -> count): one reader unregistering must
+  // not drop the protection another reader of the same generation still relies on.
+  const pinned = new Map<string, number>();
   const archived = new Map<string, string>(); // `${sessionFileName(sessionId)}:${generation}` -> path
 
   // Archives live on disk as `<session>.pinned.<gen>.ndjson`; the in-memory map is rebuilt from the
@@ -299,28 +312,37 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal);
 
   return {
-    registerCursor(cursor: SegmentCursor): void {
-      const set = pinned.get(cursor.sessionId) ?? new Set<number>();
-      set.add(cursor.generation);
-      pinned.set(cursor.sessionId, set);
-      // E202611031bd72813:S001 t5: the pin is also durable — a marker file per pinned generation,
+    registerCursor(cursor: SegmentCursor, readerId = 'default'): void {
+      const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
+      pinned.set(key, (pinned.get(key) ?? 0) + 1);
+      // E202611031bd72813:S001 t5: the pin is also durable — a marker file per (generation, reader),
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
-      void fs.writeFile(pinPath(cursor.sessionId, cursor.generation), '').catch(() => {});
+      void fs.writeFile(pinPath(cursor.sessionId, cursor.generation, readerId), '').catch(() => {});
     },
-    unregisterCursor(cursor: SegmentCursor): void {
-      const set = pinned.get(cursor.sessionId);
-      if (set === undefined) return;
-      set.delete(cursor.generation);
-      if (set.size === 0) pinned.delete(cursor.sessionId);
-      // drop the archived generation when nothing pins it any more
-      const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
-      const arch = archived.get(key);
-      if (arch !== undefined && !(pinned.get(cursor.sessionId)?.has(cursor.generation) ?? false)) {
-        archived.delete(key);
-        void fs.rm(arch).catch(() => {});
+    unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
+      const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
+      const count = pinned.get(key);
+      if (count === undefined) return;
+      if (count > 1) {
+        pinned.set(key, count - 1);
+      } else {
+        pinned.delete(key);
+        // drop the archived generation only when NO reader (this process or any other) pins it;
+        // remove this reader's marker FIRST so the disk scan below does not count it
+        const genKey = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
+        void fs
+          .rm(pinPath(cursor.sessionId, cursor.generation, readerId))
+          .catch(() => {})
+          .then(() => genPinned(cursor.sessionId, cursor.generation))
+          .then((still) => {
+            const arch = archived.get(genKey);
+            if (!still && arch !== undefined) {
+              archived.delete(genKey);
+              void fs.rm(arch).catch(() => {});
+            }
+          });
       }
-      void fs.rm(pinPath(cursor.sessionId, cursor.generation)).catch(() => {});
     },
     async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
       const p = paths(sessionId);
@@ -366,8 +388,8 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           // E202611031bd72813:S001 t5: retention tied to registered cursors — a pinned previous
           // generation is archived, not discarded, so its reader never hits SegmentGone.
           const prevGen = await generationOf(p.previous);
-          // pinned in this process OR by a durable marker file from another (possibly reloaded) one
-          const pinnedHere = prevGen !== undefined && (pinned.get(sessionId)?.has(prevGen) === true || (await fs.size(pinPath(sessionId, prevGen))) !== undefined);
+          // pinned by ANY reader — in this process OR by a durable marker from another one
+          const pinnedHere = prevGen !== undefined && (await genPinned(sessionId, prevGen));
           if (prevGen !== undefined && pinnedHere) {
             const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
             await fs.rename(p.previous, arch);
@@ -476,7 +498,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       for (const name of names) {
         if (name.startsWith(prefix)) await fs.rm(`${deps.root}/${name}`).catch(() => {});
       }
-      pinned.delete(sessionId);
+      for (const key of [...pinned.keys()]) {
+        if (key.startsWith(`${sessionFileName(sessionId)}:`)) pinned.delete(key);
+      }
       await fs.rm(p.err);
     },
 

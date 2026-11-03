@@ -348,7 +348,7 @@ test('E202611031bd72813:S001 t5: a registered cursor writes a durable pin marker
   const seg1 = await so1.beginTurn('s1', 't1');
   await so1.endTurn('s1', 't1', { code: 0, signal: null });
   so1.registerCursor(seg1.cursor);
-  await waitFor(() => existsSync(join(dir, 's1.pin.1')), 3000, 'the pin marker is on disk');
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.default')), 3000, 'the pin marker is on disk');
   await so1.beginTurn('s1', 't2'); // gen 1 -> previous (so1)
   await so1.endTurn('s1', 't2', { code: 0, signal: null });
   // a NEW writer process over the same root: its in-memory pin set is empty, only the marker exists
@@ -357,7 +357,39 @@ test('E202611031bd72813:S001 t5: a registered cursor writes a durable pin marker
   assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the recreated writer honored the durable pin marker and archived gen 1');
   // and unregister drops the marker
   so1.unregisterCursor(seg1.cursor);
-  await waitFor(() => !existsSync(join(dir, 's1.pin.1')), 3000, 'unregister removes the marker');
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.default')), 3000, 'unregister removes the marker');
   await so2.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: pins are refcounted PER READER — one unregister keeps another reader\'s archive alive', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5c-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor, 'reader-a');
+  so.registerCursor(seg1.cursor, 'reader-b');
+  await so.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  await so.beginTurn('s1', 't3'); // gen 1 archived (both readers pin it)
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'archived while pinned');
+  so.unregisterCursor(seg1.cursor, 'reader-a');
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.reader-b')) && !existsSync(join(dir, 's1.pin.1.reader-a')), 3000, 'only reader-a\'s marker is removed');
+  // reader-b is still pinned: the archive survives and stays readable
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the archive survived reader-a\'s unregister');
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'archive still on disk for reader-b');
+  so.unregisterCursor(seg1.cursor, 'reader-b');
+  await waitFor(() => !existsSync(join(dir, 's1.pinned.1.ndjson')), 3000, 'the archive is dropped only when the LAST reader unregisters');
+  let gone = false;
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    gone = e instanceof SegmentGone;
+  }
+  assert.ok(gone, 'then SegmentGone');
+  await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });

@@ -661,9 +661,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // while it runs and records it in `pins` (dropped only when the pass caught up or reached a
       // real terminal — between ticks an unread generation stays pinned, never archived away).
       const pins: { sessionId: string; turnId: string; generation: number; offset: number }[] = [];
+      const readerId = `host-${hostPid}`; // one pin per reader: another window's observer may pin the same generation
       const ingest = async (from: { generation: number; offset: number }, decSeq: number, decBuf: string) => {
         const cursor = { sessionId: s.id, turnId, generation: from.generation, offset: from.offset };
-        out.registerCursor(cursor);
+        out.registerCursor(cursor, readerId);
         pins.push(cursor);
         const ctl = new AbortController();
         const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
@@ -753,7 +754,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real
       // terminal drops every pin this tick made; otherwise the unread generation stays archived
-      if (caughtUp || pass.sawTerminal) for (const p of pins) out.unregisterCursor(p);
+      if (caughtUp || pass.sawTerminal) for (const p of pins) out.unregisterCursor(p, readerId);
     }
   };
 

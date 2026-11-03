@@ -180,7 +180,9 @@ export class OwnedLanceStore {
       const identity = await directoryIdentity(path);
       const check = async () => { await owner.assertOwned(); const now = await directoryIdentity(path); if (now.dev !== identity.dev || now.ino !== identity.ino) unavailable(); };
       await check(); await hooks.point?.('load');
-      const sdk = await import('@lancedb/lancedb');
+      let sdk: typeof import('@lancedb/lancedb');
+      try { sdk = await import('@lancedb/lancedb'); }
+      catch { throw new MemoryError('NOT_READY', 'Native memory storage is unavailable.'); }
       await check(); resources.connection = await sdk.connect(path, { readConsistencyInterval: 0 });
       retained.add(resources); await check(); await hooks.point?.('connect');
       const tables = await resources.connection.tableNames(); await check();

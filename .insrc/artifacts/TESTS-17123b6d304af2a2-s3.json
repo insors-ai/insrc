@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T16:48:31.185Z",
+    "updatedAt": "2026-11-03T16:56:34.306Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -1883,6 +1883,294 @@
               },
               {
                 "title": "store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "be98c1fd8",
+        "ranAt": "2026-11-03T16:56:34.306Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-no-lane-inversion-drain-ownership",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-owned-work-two-participant-shutdown",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-startup-rollback-every-open-boundary",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+                "title": "store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-admission-policy-wrapper-through-real-queue",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-attestation-envelope-size-and-verified-time-fail-before-persist",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-host.test.ts",
+                "title": "store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-public-submit-module-errors-outside-policy-catch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-host.test.ts",
+                "title": "store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-host-readiness-status-and-not-ready-public-reads",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-host.test.ts",
+                "title": "store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1473,
+            "titles": [
+              {
+                "title": "idempotent-drain-close-and-provider-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "public-service-accepted-status-and-unavailable-semantic-capabilities",
+                "result": "pass"
+              },
+              {
+                "title": "all-quiescent-participants-close-before-unverified-ownership-is-retained",
+                "result": "pass"
+              },
+              {
+                "title": "drain-close-startup-failure-preserve-backlog-and-ownership",
+                "result": "pass"
+              },
+              {
+                "title": "queue-limit-validation-precedes-directory-ownership",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1398,
+            "titles": [
+              {
+                "title": "store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-attestation-envelope-size-and-verified-time-fail-before-persist",
+                "result": "pass"
+              },
+              {
+                "title": "store-admission-host-registered-new-source-lifecycle-is-required-after-forget",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-host.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1154,
+            "titles": [
+              {
+                "title": "store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2429,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-lifecycle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2424,
+            "titles": [
+              {
+                "title": "store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error",
+                "result": "pass"
+              },
+              {
+                "title": "store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner",
                 "result": "pass"
               }
             ],

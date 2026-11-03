@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 118 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 135 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -503,3 +503,64 @@ Run at 2026-11-03T16:48:31.185Z on commit `77034ecb4`. Tests check: **passed**. 
 | `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.8 s |  |
 | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.5 s |  |
 | `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 3.1 s |  |
+
+## t13
+
+Run at 2026-11-03T16:56:34.306Z on commit `be98c1fd8`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-no-lane-inversion-drain-ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-owned-work-two-participant-shutdown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-startup-rollback-every-open-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-initialization-rolls-back-each-acquired-native-resource | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-unverified-close-is-explicit-and-owner-stays-held | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | drain-close-startup-failure-preserve-backlog-and-ownership | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**integration: store-admission-policy-wrapper-through-real-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-attestation-envelope-size-and-verified-time-fail-before-persist | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+
+**integration: store-public-submit-module-errors-outside-policy-catch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+
+**smoke: store-host-readiness-status-and-not-ready-public-reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+| pass | public-service-accepted-status-and-unavailable-semantic-capabilities | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/runtime.test.ts` | 0 | 5 | 1.5 s |  |
+| `packages/project-memory/src/__tests__/store-admission.test.ts` | 0 | 4 | 1.4 s |  |
+| `packages/project-memory/src/__tests__/store-host.test.ts` | 0 | 1 | 1.2 s |  |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.4 s |  |
+| `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.4 s |  |

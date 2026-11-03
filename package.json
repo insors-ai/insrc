@@ -9,6 +9,7 @@
   },
   "bin": {
     "insrc-mcp": "./out/bin/insrc-mcp.js",
+    "insrc-git-hook": "./out/bin/insrc-git-hook.js",
     "insrc": "./out/cli/index.js"
   },
   "scripts": {

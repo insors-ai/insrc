@@ -415,9 +415,10 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
     setStatus(id: string, status: ChatStatus): void {
       const s = get(id);
       if (s === undefined) return; // missing or damaged: a no-op, as in the Memento store
-      // monotonic guard: lastActivityAt never moves backwards; the status itself always applies
-      const last = Math.max(s.lastActivityAt ?? 0, Date.now());
-      save({ ...s, status, lastActivityAt: last });
+      // mutate in place: this store keys row bookkeeping off object identity
+      s.status = status;
+      s.lastActivityAt = Math.max(s.lastActivityAt ?? 0, Date.now());
+      save(s);
     },
   };
 }

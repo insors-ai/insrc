@@ -279,20 +279,22 @@ export function mergeActiveChatFields(incoming: ChatSession, existing: ChatSessi
   const incAt = incoming.lastActivityAt ?? 0;
   const exAt = existing.lastActivityAt ?? 0;
   const staleWrite = exAt > incAt;
+  // A stale write (older lastActivityAt) loses entirely: the persisted record owns all four
+  // active-chat fields. Otherwise the incoming values win, falling back to persisted when absent.
   const status = staleWrite ? existing.status : (incoming.status ?? existing.status);
   const lastActivityAt = Math.max(incAt, exAt);
-  const pendingRequests = incoming.pendingRequests ?? existing.pendingRequests;
-  const observerCheckpoint = incoming.observerCheckpoint ?? existing.observerCheckpoint;
+  const pendingRequests = staleWrite ? existing.pendingRequests : (incoming.pendingRequests ?? existing.pendingRequests);
+  const observerCheckpoint = staleWrite ? existing.observerCheckpoint : (incoming.observerCheckpoint ?? existing.observerCheckpoint);
   if (status === incoming.status && lastActivityAt === incAt && pendingRequests === incoming.pendingRequests && observerCheckpoint === incoming.observerCheckpoint) {
     return incoming;
   }
-  return {
-    ...incoming,
-    ...(status !== undefined ? { status } : {}),
-    ...(lastActivityAt > 0 ? { lastActivityAt } : {}),
-    ...(pendingRequests !== undefined ? { pendingRequests } : {}),
-    ...(observerCheckpoint !== undefined ? { observerCheckpoint } : {}),
-  };
+  // Mutate in place and return the same object: the file store keys its rows bookkeeping off
+  // object identity, so cloning here would make the next save rewrite the transcript whole.
+  incoming.status = status;
+  incoming.lastActivityAt = lastActivityAt > 0 ? lastActivityAt : undefined;
+  incoming.pendingRequests = pendingRequests;
+  incoming.observerCheckpoint = observerCheckpoint;
+  return incoming;
 }
 
 /** When a session last changed: its last row's time, or its creation time when it has no row. */
@@ -405,10 +407,11 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     setStatus(id: string, status: ChatStatus): void {
       const s = get(id);
       if (s === undefined) return; // corrupt/missing -> no-op, never throw
-      // monotonic guard: lastActivityAt never moves backwards (an older observer tick must not
-      // resurrect a stale status), while the status itself always applies
-      const last = Math.max(s.lastActivityAt ?? 0, Date.now());
-      save({ ...s, status, lastActivityAt: last });
+      // mutate in place (the file store keys row bookkeeping off object identity), monotonic
+      // lastActivityAt: never moves backwards, while the status itself always applies
+      s.status = status;
+      s.lastActivityAt = Math.max(s.lastActivityAt ?? 0, Date.now());
+      save(s);
     },
   };
 }

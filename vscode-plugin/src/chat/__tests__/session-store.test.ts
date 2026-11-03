@@ -402,6 +402,9 @@ test('E202611031bd72813:S001 t1: setStatus persists status+lastActivityAt; old r
   const fifth = store.get(s.id);
   assert.equal(fifth?.status, 'waiting-input', 'newer persisted status wins over an older explicit one');
   assert.equal(fifth?.pendingRequests?.[0]?.requestId, 'r1', 'pendingRequests not dropped by a stale write');
+  // a stale write carrying an OLDER pendingRequests must lose to the persisted newer one
+  store.save({ ...fifth!, pendingRequests: [{ requestId: 'stale', kind: 'approval', resolved: false }], lastActivityAt: first - 2000 });
+  assert.equal(store.get(s.id)?.pendingRequests?.[0]?.requestId, 'r1', 'newer persisted pendingRequests win over an older explicit value');
   // unknown id: no-op, never throws
   store.setStatus('nope', 'done');
 });

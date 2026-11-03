@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -89,3 +89,38 @@ Run at 2026-11-03T15:00:39.422Z on commit `1467e753a`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystem-publication.test.ts` | 0 | 3 | 2.3 s |  |
+
+## t4
+
+Run at 2026-11-03T15:31:50.313Z on commit `8f06acfa0`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start | `src/indexer/__tests__/subsystem-scheduling.test.ts` |
+
+**integration: S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried | `src/indexer/__tests__/subsystem-scheduling.test.ts` |
+
+**integration: S001 t4: after an outage a retry writes the summaries, one call at a time after code work**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t4: after an outage a retry writes the summaries, one call at a time after code work | `src/indexer/__tests__/subsystem-scheduling.test.ts` |
+
+**integration: S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing | `src/indexer/__tests__/subsystem-scheduling.test.ts` |
+| pass | S001 t4: a timer that fires while the queue is stopping queues nothing | `src/indexer/__tests__/subsystem-scheduling.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/subsystem-scheduling.test.ts` | 0 | 5 | 6.1 s |  |

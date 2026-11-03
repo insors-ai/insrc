@@ -4,7 +4,7 @@
     "epicHash": "7d42b5dceb62afec",
     "storyId": "S001",
     "createdAt": "2026-11-03T14:34:09.725Z",
-    "updatedAt": "2026-11-03T15:00:39.422Z",
+    "updatedAt": "2026-11-03T15:31:50.313Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.745Z",
     "epicSlug": "subsystem-pass-regroups-whole-repository-after"
@@ -214,6 +214,102 @@
               },
               {
                 "title": "S001 t3: a pass held across a full index publishes nothing, and the next full pass drops the deleted file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "8f06acfa0",
+        "ranAt": "2026-11-03T15:31:50.313Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+                "title": "S001 t4: a timer that fires while the queue is stopping queues nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-scheduling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6119,
+            "titles": [
+              {
+                "title": "S001 t4: across the worker link, passes are paced by their actual starts, even when the lane or a held hand-over delays a start",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: failed summaries re-queue on the bounded back-off at the queue owner, a clean pass resets it, and a rejected job is retried",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: after an outage a retry writes the summaries, one call at a time after code work",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: dispose clears the timers on both stop paths, and a timer firing while stopping queues nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: a timer that fires while the queue is stopping queues nothing",
                 "result": "pass"
               }
             ],

@@ -5751,6 +5751,12 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
   // age the done chat past the purge window (mutate the stored record directly) and let the timer fire
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
   store.get(id)!.lastActivityAt = Date.now() - 31 * 60 * 1000;
-  await waitFor(() => activeLists().some((p) => !(p.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id)), 5000, '60s-style timer repost purges the aged done chat from the list');
+  // a NEW active-list post (after the ones that contained the chat) must now lack it — the initial
+  // empty list would satisfy a naive some() check, so compare against the latest post only
+  const postsBefore = activeLists().length;
+  await waitFor(() => {
+    const lists = activeLists();
+    return lists.length > postsBefore && !(lists.at(-1)!.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id);
+  }, 5000, 'the timer repost purges the aged done chat from the LATEST active-list');
   assert.equal(store.get(id)?.status, 'done', 'purge is list-level: the row keeps its status');
 });

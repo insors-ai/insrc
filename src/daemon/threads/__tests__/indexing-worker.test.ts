@@ -170,7 +170,7 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			// The worker's own store (Epic c2ba6fa6 s8): the repository's subsystems with what they rest on.
 			'index.subsystems': r => { assert.equal(r.error, undefined); assert.equal((r.result as { repoPath: string }).repoPath, REPO); },
 			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
-			'mcp.register': r => assert.equal(r.error, 'Cannot register providers: repo path must be a string (got number)', 'its own validation ran'),
+			'mcp.register': r => { assert.equal(r.error, undefined); assert.equal((r.result as { code?: string }).code, 'repo-missing', 'the repo gate answers first, as data'); },
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
 			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
 			// A job held running: today's busy refusal, from the worker's real queue.

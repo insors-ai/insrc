@@ -120,6 +120,28 @@ test('Workflows pane lists epics and opens the chain detail', async () => {
 	unmount();
 });
 
+test('Workflows pane: a approves the focused item through the async approve service, toasts the result, and toasts a refusal', async () => {
+	const svc = fakeServices();
+	svc.workflow.listEpics = () => [{ epicHash: 'a3f4b8c9d1e2f3a4', epicSlug: 'add-tag-filter' }];
+	svc.workflow.chain = () => CHAIN;
+	const approved: string[] = [];
+	svc.workflow.approve = async (path: string) => { approved.push(path); return { approval: { workflow: 'design.epic', path, approvedAt: '' } }; };
+	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
+	await settle();
+	stdin.write('3'); await settle();   // → Workflows pane
+	stdin.write('\r'); await settle();  // open the epic
+	stdin.write('a'); await settle();   // approve the focused item
+	assert.equal(approved.length, 1);
+	assert.match(approved[0] ?? '', /HLD-add-tag-filter/);
+	assert.match(lastFrame() ?? '', /approved design\.epic/);
+
+	// a refusal from the awaited call is a toast, not a crash
+	svc.workflow.approve = async () => { throw new Error('blocked by review'); };
+	stdin.write('a'); await settle();
+	assert.match(lastFrame() ?? '', /blocked by review/);
+	unmount();
+});
+
 test('Setup pane renders system + recommendation without crashing', async () => {
 	const svc = fakeServices();
 	svc.setup.detect = () => ({
@@ -210,7 +232,7 @@ test('Repos pane: `t` runs tracker setup for the selected repo and shows the rep
 	const svc = fakeServices();
 	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
 	const calls: Array<{ path: string; opts: unknown }> = [];
-	svc.workflow.trackerSetup = (path, opts) => {
+	svc.workflow.trackerSetup = async (path, opts) => {
 		calls.push({ path, opts });
 		return {
 			steps: [
@@ -238,7 +260,7 @@ test('Repos pane: `t` runs tracker setup for the selected repo and shows the rep
 test('Repos pane: a throwing tracker setup renders a failed row instead of crashing', async () => {
 	const svc = fakeServices();
 	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
-	svc.workflow.trackerSetup = () => { throw new Error('gh exploded'); };
+	svc.workflow.trackerSetup = async () => { throw new Error('gh exploded'); };
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('2'); await settle();
@@ -252,7 +274,7 @@ test('Repos pane: a throwing tracker setup renders a failed row instead of crash
 test('Repos pane: `t` with no repos registered is a no-op', async () => {
 	const svc = fakeServices();   // default getStatus → repos: []
 	let called = false;
-	svc.workflow.trackerSetup = () => { called = true; return { steps: [], manualRemaining: 0 }; };
+	svc.workflow.trackerSetup = async () => { called = true; return { steps: [], manualRemaining: 0 }; };
 	const { lastFrame, stdin, unmount } = render(createElement(App, { services: svc, pollMs: 0 }));
 	await settle();
 	stdin.write('2'); await settle();
@@ -265,7 +287,7 @@ test('Repos pane: `t` with no repos registered is a no-op', async () => {
 test('Repos pane: the tracker modal dismisses on any key back to the list', async () => {
 	const svc = fakeServices();
 	svc.daemon.getStatus = async () => status({ repos: [repo('/work/repoA')] });
-	svc.workflow.trackerSetup = () => ({
+	svc.workflow.trackerSetup = async () => ({
 		steps: [{ key: 'gh-auth', title: 'gh CLI authenticated', status: 'already', detail: 'signed in' }],
 		manualRemaining: 0,
 	});

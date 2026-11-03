@@ -470,7 +470,6 @@ export class CliProvider implements LLMProvider {
 			},
 			(raw) => validateAgainstSchema<T>(schema, raw, opts?.connectionExecution),
 			opts?.internalRetry === false ? 1 : 3,
-			false,
 			opts?.connectionExecution,
 		);
 	}

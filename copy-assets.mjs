@@ -53,7 +53,7 @@ const sourceFiles = {}, compiledFiles = {};
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 function attest(directory, prefix = '') {
 	for (const entry of readdirSync(directory, { withFileTypes: true })) {
-		if (entry.name === '__tests__') continue;
+		if (entry.name === '__tests__' || entry.name === '__type-tests__') continue;   // not emitted by tsc (tsconfig excludes them; typecheck:tools checks them)
 		const name = prefix + entry.name, path = resolve(directory, entry.name);
 		if (entry.isDirectory()) attest(path, name + '/');
 		else if (entry.isFile() && /\.tsx?$/.test(name) && !/\.(?:d|test)\.tsx?$/.test(name)) {

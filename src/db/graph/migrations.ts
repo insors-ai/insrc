@@ -472,12 +472,14 @@ export const MIGRATION_V8_TO_V9: Migration = {
 	to:   9,
 	description: 'entity_by_file: rebuild in the (repoId, filePath) shape and drop the legacy entity_by_repo table of the retired v2 index',
 	run: async (store) => {
-		let cleared = 0;
-		for (const { key } of store.entityByFile.getRange()) { store.entityByFile.remove(key as Buffer); cleared++; }
+		const cleared = store.entityByFile.getKeysCount();
+		store.entityByFile.clearSync();
 		let seeded = 0;
 		for (const { key, value } of store.entity.getRange()) {
 			const u64 = decodeEntityKey(key as Buffer);
 			const row = decodeEntityRow(value as Buffer);
+			// GUARD-TEST-EXEMPT (merge of origin/main into v2, D1): standalone index-only repair, not an entity-row write -- it never
+			// calls entity.put/entity.remove.
 			store.entityByFile.put(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
 			seeded++;
 		}

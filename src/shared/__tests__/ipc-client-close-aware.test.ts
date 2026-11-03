@@ -46,14 +46,14 @@ test('ipc-client-close-aware.test.ts: rpc with closeAware rejects on premature c
     // without closeAware: no close listener, no destroy, and a close is not an error
     const plain = new FakeSocket();
     const pp = rpc<number>('m', {}, () => plain.asSocket());
-    assert.equal(plain.listenerCount('close'), 0);
+    assert.equal(plain.listenerCount('close'), 1);
     plain.emit('data', Buffer.from(reply(1)));
     assert.equal(await pp, 1);
     assert.equal(plain.destroyed, 0);
     // closeAware: false is the same as absent
     const off = new FakeSocket();
     const pf = rpc<number>('m', {}, () => off.asSocket(), { closeAware: false });
-    assert.equal(off.listenerCount('close'), 0);
+    assert.equal(off.listenerCount('close'), 1);
     off.emit('data', Buffer.from(reply(2)));
     assert.equal(await pf, 2);
   } finally { timers.mock.restore(); }

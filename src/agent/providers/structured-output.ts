@@ -214,8 +214,8 @@ export async function withStructuredRetry<T>(
 	call:         StructuredCall,
 	validate:     StructuredValidator<T>,
 	maxAttempts:  number,
-	reviewScoped = false,
 	execution?: ConnectionExecutionContext,
+	reviewScoped = false,
 ): Promise<T> {
 	assertConnectionProviderAttempt(execution);
 	const log = execution?.mode === 'session-memory' ? quietLog : savedLog;

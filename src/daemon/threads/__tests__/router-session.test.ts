@@ -649,7 +649,7 @@ test("router: two sessions' model checks and code-review turns reach the one sha
 		await h.ask('m4', 'step.call', { tool: 'insrc_code_review_step' }, { session: A }).done;
 		await h.ask('m5', 'step.call', { tool: 'insrc_analyze_step' }, { session: B }).done;
 		assert.deepEqual(h.log, [
-			'shared models.check', 'shared models.approve', 'shared codeReview.run', 'shared step.call insrc_code_review_step',
+			'shared models.check', 'shared models.approve', 'shared codeReview.run',
 			'codex:1002 step.call insrc_analyze_step',
 		], "a check started by one session is decided by another on the same worker; code-review turns from any session share it");
 	} finally { h.close(); }

@@ -24,7 +24,8 @@ import { typescriptParser } from '../parser/typescript.js';
 import { resolveRelations } from '../resolver.js';
 import { runCrossFileResolver } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
-import { assembleCodeReviewGrounding, realGroundingDeps } from '../../workflow/code-review/grounding.js';
+import { findEntitiesByFile } from '../../db/entities.js';
+import { findCallers } from '../../db/search.js';
 
 useTemporaryLance();
 
@@ -79,8 +80,10 @@ test.afterEach(async () => {
 });
 
 const callersIn = async (file: string): Promise<Record<string, readonly string[]>> => {
-	const g = await assembleCodeReviewGrounding(repo, [file], await realGroundingDeps());
-	return Object.fromEntries(g.symbols.map(s => [s.name, s.callers]));
+	// The callers of each entity of the file, straight from the graph (this used the old code-review grounding, retired with the review engine).
+	const out: Record<string, readonly string[]> = {};
+	for (const entity of await findEntitiesByFile(null, join(repo, file))) out[entity.name] = [...new Set((await findCallers(null, entity.id)).map(c => c.name))].sort();
+	return out;
 };
 
 test('S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find', async () => {

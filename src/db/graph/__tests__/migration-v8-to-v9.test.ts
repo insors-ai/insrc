@@ -75,7 +75,7 @@ test('migration-v8-to-v9.test.ts: a v6 store built by the retired v2 index is re
 	assert.equal(rows.length, 2, 'one row per entity, none left from the v2 shape');
 	for (const row of rows) {
 		const key = decodeEntityByFileKey(row.key);
-		assert.equal(key.filePath, FILE);
+		assert.equal(key.filePath, 'src/a.ts', 'the key holds the repo-relative path the entity row stores');
 		assert.ok(entityKeys.some(k => decodeEntityKey(k) === decodeEntityKey(row.value)));
 	}
 	const legacy = store.root.openDB({ name: 'entity_by_repo', keyEncoding: 'binary', encoding: 'binary', dupSort: true });

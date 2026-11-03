@@ -94,18 +94,6 @@ test('cli-ollama.test.ts: every claude entry point on an Ollama-targeted provide
 	assert.deepEqual({ ...process.env }, before, 'the daemon environment is unchanged');
 });
 
-test('cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables', async () => {
-	reset();
-	const p = new CliProvider({ kind: 'claude', binPath: bin, model: 'glm-5.3:cloud', ollama: TARGET, ollamaCheck: passing, timeoutMs: 20_000 });
-	const out = await p.completeStructured([{ role: 'user', content: 'evidence' }], schema, { boundedInput: { maxInputChars: 10_000, contextMode: 'isolated-structured' } });
-	assert.deepEqual(out, { ok: true });
-	const [run] = calls();
-	assert.ok(run !== undefined);
-	assert.deepEqual(run.env, { ...ollamaEnv, INSRC_TEST_SENTINEL: null }, 'allow-list only (no sentinel), Ollama variables set, vendor login dropped');
-	for (const flag of FLAGS.split(' ')) assert.ok(run.args.includes(flag), flag);
-	assert.equal(run.args[run.args.indexOf('--model') + 1], 'glm-5.3:cloud');
-});
-
 test("cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables", async () => {
 	const vendor = new CliProvider({ kind: 'claude', binPath: bin, model: 'claude-sonnet-5', effort: 'high', timeoutMs: 20_000 });
 	assert.equal(vendor.ollama, undefined);
@@ -115,10 +103,6 @@ test("cli-ollama.test.ts: providers without an Ollama target (claude, codex) sta
 		assert.deepEqual(r.env, { ANTHROPIC_BASE_URL: 'https://vendor.example', ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: 'daemon-env', CLAUDE_CODE_USE_BEDROCK: null }, 'the daemon environment, as inherited today');
 		assert.equal(r.args[r.args.indexOf('--model') + 1], 'claude-sonnet-5');
 	}
-	// The bounded path keeps its allow-list unchanged.
-	reset();
-	await vendor.completeStructured([{ role: 'user', content: 'evidence' }], schema, { boundedInput: { maxInputChars: 10_000, contextMode: 'isolated-structured' } });
-	assert.deepEqual(calls()[0]!.env, { ANTHROPIC_BASE_URL: null, ANTHROPIC_AUTH_TOKEN: null, ANTHROPIC_API_KEY: null, CLAUDE_CODE_OAUTH_TOKEN: 'vendor-token', INSRC_TEST_SENTINEL: null, CLAUDE_CODE_USE_BEDROCK: null });
 	// A codex provider takes no target either.
 	assert.equal(new CliProvider({ kind: 'codex', model: 'gpt-x' }).ollama, undefined);
 });

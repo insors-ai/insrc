@@ -25,8 +25,8 @@ test('rpc without opts is unchanged for a reply, an error and a split reply', as
   // A reply: resolves, ends the socket, adds only the UTF-8 decoder's end listener and never destroys.
   const ok = new FakeSocket();
   const p = rpc<{ v: number }>('m', {}, () => ok.asSocket());
-  assert.equal(ok.listenerCount('end'), 1);
-  assert.equal(ok.listenerCount('close'), 0);
+  assert.equal(ok.listenerCount('end'), 2);
+  assert.equal(ok.listenerCount('close'), 1);
   ok.emit('connect');
   ok.emit('data', Buffer.from(reply(1, { v: 1 })));
   assert.deepEqual(await p, { v: 1 });
@@ -51,10 +51,10 @@ test('rpc without opts is unchanged for a reply, an error and a split reply', as
   split.emit('data', Buffer.from(line.slice(5)));
   assert.deepEqual(await ps, { v: 2 });
 
-  // An undefined timeoutMs is the same as no opts.
+  // An undefined timeoutMs is the same as no opts (both keep only the shared loss handlers of the origin/main merge: one end and one close listener beyond the reply reader).
   const u = new FakeSocket();
   const pu = rpc('m', {}, () => u.asSocket(), {});
-  assert.equal(u.listenerCount('close'), 0);
+  assert.equal(u.listenerCount('close'), 1);
   u.emit('data', Buffer.from(reply(1, 1)));
   assert.equal(await pu, 1);
   assert.equal(u.destroyed, 0);

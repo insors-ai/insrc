@@ -138,15 +138,15 @@ test("listPendingArtifacts lists a pending BUILD record whose Story has a code r
 		assert.deepEqual(listPendingArtifacts(repo).map(a => a.artifactId), [BUILD_ID]);
 		// A standalone Story's record (upper-case story id) is matched by the same suffix.
 		const solo = fixtureRepo({
-			[`BUILD-${HASH}-S001.json`]: buildRecord({ storyId: 'S001', standalone: true }),
-			[`CR-${HASH}-S001.json`]: crRecord(),
-			[`CR-${HASH}-S002.json`]: crRecord(),
-			[`BUILD-${HASH}-S003.json`]: buildRecord({ storyId: 'S003', standalone: true }),
+			[`BUILD-${HASH}-s1.json`]: buildRecord({ storyId: 's1', standalone: true }),
+			[`CR-${HASH}-s1.json`]: crRecord(),
+			[`CR-${HASH}-s2.json`]: crRecord(),
+			[`BUILD-${HASH}-s3.json`]: buildRecord({ storyId: 's3', standalone: true }),
 		});
 		try {
 			// ISSUE-16b8d3d50f14fc1d: a standalone BUILD is listed on its own meta.standalone
-			// marker — S003's build is listed even though only S001/S002 have CR siblings.
-			assert.deepEqual(listPendingArtifacts(solo).map(a => a.artifactId), [`BUILD-${HASH}-S001`, `BUILD-${HASH}-S003`, `CR-${HASH}-S001`, `CR-${HASH}-S002`], 'standalone BUILDs are listed without their own CR sibling; the CR-sibling gate binds only non-standalone BUILDs');
+			// marker — s3's build is listed even though only s1/s2 have CR siblings.
+			assert.deepEqual(listPendingArtifacts(solo).map(a => a.artifactId), [`BUILD-${HASH}-s1`, `BUILD-${HASH}-s3`, `CR-${HASH}-s1`, `CR-${HASH}-s2`], 'standalone BUILDs are listed without their own CR sibling; the CR-sibling gate binds only non-standalone BUILDs');
 		} finally { cleanup(solo); }
 	} finally {
 		cleanup(repo);
@@ -178,19 +178,19 @@ test('ISSUE-6dbf14435972af7a: EXT and AMD records are listed while pending (AMD 
 test('ISSUE-16b8d3d50f14fc1d: a standalone BUILD record is listed WITHOUT a CR sibling, and resolves its BUILD.md path; the CR-sibling gate still binds non-standalone BUILDs', () => {
 	// Standalone, no CR sibling: listed, with its md path resolved via the marker.
 	const solo = fixtureRepo({
-		[`BUILD-${HASH}-S001.json`]: buildRecord({ storyId: 'S001', standalone: true }),
+		[`BUILD-${HASH}-s1.json`]: buildRecord({ storyId: 's1', standalone: true }),
 	});
 	try {
-		const md = writeBuildMd(solo, buildMeta({ storyId: 'S001', standalone: true }), `<!-- insrc:artifact BUILD-${HASH}-S001 -->\n\n# Build (standalone)\n`);
+		const md = writeBuildMd(solo, buildMeta({ storyId: 's1', standalone: true }), `<!-- insrc:artifact BUILD-${HASH}-s1 -->\n\n# Build (standalone)\n`);
 		const list = listPendingArtifacts(solo);
-		const b = list.find(a => a.artifactId === `BUILD-${HASH}-S001`);
+		const b = list.find(a => a.artifactId === `BUILD-${HASH}-s1`);
 		assert.ok(b, 'the standalone BUILD record is listed with no CR sibling present');
 		assert.equal(b.kind, 'BUILD');
 		assert.equal(b.mdPath, md, 'its BUILD.md path resolves through deriveMdPath + the marker');
 	} finally { cleanup(solo); }
 	// Standalone but already approved: not pending, CR sibling or not.
 	const done = fixtureRepo({
-		[`BUILD-${HASH}-S001.json`]: buildRecord({ storyId: 'S001', standalone: true, approvedAt: '2026-10-31T00:00:00.000Z' }),
+		[`BUILD-${HASH}-s1.json`]: buildRecord({ storyId: 's1', standalone: true, ...approvedMeta() }),
 	});
 	try {
 		assert.deepEqual(listPendingArtifacts(done), [], 'an approved standalone BUILD is not pending');

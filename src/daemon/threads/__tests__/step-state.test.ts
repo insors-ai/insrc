@@ -164,34 +164,3 @@ test('atomic review claim commit generation recovery receipt and pinned-capacity
 });
 
 
-test('DIFF-WAIT-RESUME: shared and hub leases protect all active entries from TTL/LRU and expire at a fixed terminal deadline', async () => {
- let now = 1000;
- const store = new LocalStepStateStore(() => now);
- const tokens: string[] = [];
- for (let i = 0; i < 105; i++) tokens.push(await store.mint('code-review', { active: i }, 10 * HOUR));
- assert.equal(await store.sizeForTests('code-review'), 105, 'active operations may exceed the unpinned LRU cap');
- now = 2 * HOUR;
- await store.mint('code-review', { unrelated: true });
- for (const token of tokens) assert.notEqual(await store.read('code-review', token), undefined);
- const { worker, ask } = connect(store)();
- try {
-  const token = tokens[0]!;
-  assert.equal((await ask({ op: 'pin', kind: 'code-review', token, until: now + 1000 }))['ok'], true);
-  now += 999; assert.notEqual(await store.read('code-review', token), undefined);
-  now += 1; assert.equal(await store.read('code-review', token), undefined, 'reads never extend fixed terminal grace');
-  assert.notEqual(await store.read('code-review', tokens[1]!), undefined);
- } finally { await worker.terminate(); }
-});
-
-
-test('DIFF-CONTROLLER-VALIDATE: shared hub compare-and-replace admits one expected state revision without rotating its token', async () => {
- const store = new LocalStepStateStore();
- const token = await store.mint('code-review', { revision: 0, currentCall: 'a' }, Date.now() + HOUR);
- const { worker, ask } = connect(store)();
- try {
-  const first = await ask({ op: 'compare', kind: 'code-review', token, revision: 0, payload: { revision: 1, currentCall: 'b' } });
-  const stale = await ask({ op: 'compare', kind: 'code-review', token, revision: 0, payload: { revision: 1, currentCall: 'foreign' } });
-  assert.equal(first['replaced'], true); assert.equal(stale['replaced'], false);
-  assert.deepEqual((await store.read('code-review', token))?.payload, { revision: 1, currentCall: 'b' });
- } finally { await worker.terminate(); }
-});

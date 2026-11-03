@@ -12,7 +12,6 @@ import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:f
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { createRepoIgnoreFilter } from '../../analyze/context/repo-ignore-filter.js';
 import { ghAuthTool } from '../../daemon/tools/builtins/gh/account.js';
 import { ghTrackerTool } from '../../daemon/tools/builtins/gh/tracker.js';
 import { gitCatFileTool } from '../../daemon/tools/builtins/git/cat-file.js';
@@ -125,7 +124,6 @@ const SITES: Array<[string, () => Promise<unknown>]> = [
 	['build runners: the gate\'s headFullSha', async () => headFullSha(plainRepo())],
 	['validation checks: trackedFiles', async () => trackedFiles(plainRepo())],
 	['validation checks: trivialCheckPlan', async () => trivialCheckPlan(plainRepo())],
-	['ignore filter: createRepoIgnoreFilter', async () => createRepoIgnoreFilter(plainRepo())],
 	['companion header: resolveReviewer', async () => resolveReviewer(plainRepo())],
 	['convert plan: assertCleanTree', async () => assertCleanTree(plainRepo())],
 	['corpus reader: readPinnedSources', async () => { const f = gitFixture(); dirs.push(f.dir); return readPinnedSources(f.dir, f.request); }],

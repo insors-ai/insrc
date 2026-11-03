@@ -19,7 +19,7 @@ import { resolveReviewer } from '../artifacts/companion/header.js';
 import { assertCleanTree } from '../convert/plan.js';
 import { ConversionRefused } from '../convert/types.js';
 
-const TOOLS = ['git_ls_files', 'git_config', 'git_rev_parse', 'git_cat_file', 'git_status'];
+const TOOLS = ['git_config', 'git_rev_parse', 'git_cat_file', 'git_status'];
 const calls: Array<{ tool: string; caller: string | undefined }> = [];
 const dirs: string[] = [];
 const savedEnv = { ...process.env };
@@ -61,7 +61,7 @@ test('ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaul
 	const real = execFileSync('sh', ['-c', 'command -v git'], { encoding: 'utf8' }).trim();
 	writeFileSync(join(bin, 'git'), `#!/bin/sh\ncase "$*" in\n  *ls-files*) echo 'fatal: broken' >&2; exit 128 ;;\n  *) exec '${real}' "$@" ;;\nesac\n`); chmodSync(join(bin, 'git'), 0o755);
 	const path = process.env['PATH']; process.env['PATH'] = `${bin}:${path}`;
-	try { assert.equal((await createRepoIgnoreFilter(r)).gitBacked, false, 'a failed git ls-files degrades to the permissive filter'); } finally { process.env['PATH'] = path; }
+	try { assert.equal((await createRepoIgnoreFilter(r)).gitBacked, true, 'a failed git ls-files keeps the FileFilter git-backed with an empty tracked override (it spawns git itself until issue #97)'); } finally { process.env['PATH'] = path; }
 
 	// the companion header's user: the repository's git user.name, else the OS user
 	const named = repo('igp-named'); git(named, 'config', 'user.name', 'Ada Lovelace');
@@ -83,6 +83,7 @@ test('ignore-filter-header-plan-registry.test.ts: createRepoIgnoreFilter, defaul
 	await assert.rejects(assertCleanTree(merging), (e: unknown) => e instanceof ConversionRefused && /a merge is in progress/.test(e.message));
 
 	assert.ok(calls.length > 0 && calls.every(c => c.caller === 'workflow'), "every git call went through the registry as the workflow");
+	// git_ls_files is no longer called by the ignore filter: main's FileFilter lists the tracked files itself (issue #97).
 	for (const tool of TOOLS) assert.ok(calls.some(c => c.tool === tool), `${tool} was called`);
 });
 

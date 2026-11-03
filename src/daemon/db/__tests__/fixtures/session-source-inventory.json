@@ -31346,10 +31346,6 @@
    "sites": [
     [
      "storage-call",
-     "clearUnresolvedMetaKeyBatch"
-    ],
-    [
-     "storage-call",
      "deleteResolvedRelations"
     ],
     [
@@ -31402,10 +31398,6 @@
     ],
     [
      "storage-call",
-     "listEntitiesForRepo"
-    ],
-    [
-     "storage-call",
      "listExportNames"
     ],
     [
@@ -31431,14 +31423,6 @@
     [
      "storage-call",
      "listUnresolvedRelations"
-    ],
-    [
-     "storage-call",
-     "listUnresolvedRelations"
-    ],
-    [
-     "diagnostic",
-     "log.info"
     ],
     [
      "diagnostic",
@@ -31541,10 +31525,6 @@
      "readIndexState"
     ],
     [
-     "storage-call",
-     "returnInferredSqlReferencesToPending"
-    ],
-    [
      "filesystem-read",
      "statSync"
     ],
@@ -31573,9 +31553,9 @@
      "zeroPending"
     ]
    ],
-   "siteCount": 57,
-   "sitesDigest": "005815c2a2e8885db5a3f3870f9b2db18c6ecb41a728f88110132fcb1aa6d840",
-   "sourceDigest": "13e4e5c179c864adaec6fecc74c63d281bd8af8ac00b011acfbc4c98c9fb8f9f",
+   "siteCount": 52,
+   "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
+   "sourceDigest": "61126e8b745e57290642cb86f582218f45a85c6cb49c37d36a9c79ca4966bdea",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

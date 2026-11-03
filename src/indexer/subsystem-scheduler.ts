@@ -109,12 +109,15 @@ export class SubsystemScheduler {
 	private async retryFired(repoPath: string, delay: number): Promise<void> {
 		if (this.disposed || this.host.isStopping()) return;
 		if (await this.host.graphComplete(repoPath)) { this.admit(repoPath); return; }
+		if (this.disposed || this.host.isStopping()) return;
 		const st = this.state(repoPath);
 		if (st.retry === undefined && !this.disposed) st.retry = this.clock.setTimeout(() => { st.retry = undefined; void this.retryFired(repoPath, delay); }, delay);
 	}
 
 	/** Queue the pass now, or remember the request (one is queued or in flight), or arm the pacing timer. */
 	private admit(repoPath: string): void {
+		// Checked again here: a request that awaited the graph's state may resume after dispose or a stop.
+		if (this.disposed || this.host.isStopping()) return;
 		const st = this.state(repoPath);
 		if (st.queued || st.inFlight) { st.requested = true; return; }
 		const wait = st.lastStart === undefined ? 0 : st.lastStart + SUBSYSTEM_MIN_INTERVAL_MS - this.now();

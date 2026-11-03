@@ -343,6 +343,17 @@ test('S001 t4: dispose clears the timers on both stop paths, and a timer firing 
 	await clock.advance(2 * 60 * 60_000);
 	assert.equal(starts.length, 1, 'nothing is queued after dispose');
 
+	// A request still reading the graph's state when dispose runs resumes into nothing: no job, no timer.
+	const own = new FakeClock();
+	let answer!: (complete: boolean) => void;
+	const queued: string[] = [];
+	const scheduler = new SubsystemScheduler({ graphComplete: () => new Promise<boolean>(r => { answer = r; }), enqueue: r => queued.push(r), isStopping: () => false, clock: own });
+	const pending = scheduler.request('/r');
+	scheduler.dispose();
+	answer(true);
+	await pending;
+	assert.deepEqual([queued, own.armed], [[], 0], 'a request resuming after dispose queues nothing');
+
 	// Both stop paths dispose the scheduler before the queue stops.
 	for (const [file, path] of [['src/daemon/index.ts', /stopIndexing = \(\) => \{ indexerService\.disposeSubsystemScheduler\(\); indexQueue\.stop\(\);/],
 	                            ['src/daemon/threads/indexing-worker.ts', /INDEXING_STOP_OP, async \(\) => \{\s*service\.disposeSubsystemScheduler\(\);\s*queue\.stop\(\);/]] as const) {

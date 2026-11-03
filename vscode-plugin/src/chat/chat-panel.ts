@@ -29,7 +29,7 @@ import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
-import type { ChatSessionStore, ChatSession, TranscriptEntry, RunConfig } from './session-store.js';
+import type { ChatSessionStore, ChatSession, ChatStatus, TranscriptEntry, RunConfig } from './session-store.js';
 import type { ModelDefinitions } from '../models/definitions.js';
 import { providerIcon, PROVIDER_ICON_SVGS } from './provider-icons.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
@@ -677,6 +677,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
+  // E202611031bd72813:S001 t2 — active-chat status precedence (LLD s5): waiting-input while ANY
+  // approval/selection request is unresolved; working while a turn runs; done at terminal with none.
+  const unresolvedRequests = (): boolean => approvals.head() !== undefined || pendingSelections.size > 0;
+  const setChatStatus = (s: ChatSession, status: ChatStatus): void => {
+    // a failing status write is logged and never breaks a turn (same rule as trySaveSession)
+    try {
+      deps.store.setStatus(s.id, status);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: status not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const reevaluateChatStatus = (s: ChatSession): void => {
+    if (unresolvedRequests()) setChatStatus(s, 'waiting-input');
+    else if (turns.busy()) setChatStatus(s, 'working');
+    else setChatStatus(s, 'done');
+  };
+
   const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
     approvals.enqueue({
       requestId: ev.requestId,
@@ -942,17 +959,21 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (ev.kind === 'approval-request') {
             followedTurns.add(ev.turnId);
             enqueueApproval(ev);
+            setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2
           } else postLive(ev, rowIndex);
           if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
         }
       },
       onEnd: (outcome) => {
         // A failed resume leaves the turn's cursor saved for a later follow; nothing has ended.
+        // E202611031bd72813:S001 t2: 'observation-failed' likewise keeps the last known status —
+        // only a real end moves the chat to done (or waiting-input when requests remain).
         if (outcome === 'ended') endPresented(shown);
         if (outcome === 'ended' && session === s) {
           for (const turnId of followedTurns) approvals.endTurn(turnId);
           runCompletedBatch();
           postHistory();
+          setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
         }
       },
     });
@@ -1680,6 +1701,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
     }
+    // E202611031bd72813:S001 t2: turn starts -> working (after the first save, so the draft exists in the store)
+    setChatStatus(s, 'working');
 
     const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
     // The session's attachments directory is readable on this turn and on every later one (a grant
@@ -1754,8 +1777,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             pushMarker(open, pathLine(edited));
           }
           const rowIndex = appendEvent(s, ev);
-          if (ev.kind === 'approval-request') enqueueApproval(ev);
-          else postLive(ev, rowIndex);
+          if (ev.kind === 'approval-request') {
+            enqueueApproval(ev);
+            setChatStatus(s, 'waiting-input'); // mid-turn: the agent is blocked on this request
+          } else postLive(ev, rowIndex);
         }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
         if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
@@ -1763,6 +1788,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
           pendingSelections.set(ev.requestId, { options: ev.options });
+          setChatStatus(s, 'waiting-input'); // mid-turn selection request
           reportCards(); // Story S002
         }
         // S006: an observed file-edit -> the governor computes + renders its own diff
@@ -1799,6 +1825,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           }
         : {}),
       onTerminal: (ev) => {
+        // E202611031bd72813:S001 t2: terminal with pending cards stays waiting-input, else done.
+        setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'done');
         if (q !== undefined) {
           q.terminal = ev.kind;
           if (ev.kind === 'error') q.error = ev.message;
@@ -1826,6 +1854,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },
       onError: (message, turnId) => {
+        setChatStatus(s, 'done'); // E202611031bd72813:S001 t2: adapter/setup/lock failure -> done
         if (q !== undefined) q.error = message;
         endDiffTurn();
         post({ type: 'turn-event', event: { kind: 'error', turnId, message } });
@@ -1966,6 +1995,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         settleQueued(); // a queued message waiting only on a card ends now
         endDiffTurn();
         void turns.stop();
+        if (session !== undefined) setChatStatus(session, 'done'); // E202611031bd72813:S001 t2: Stop -> done
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
@@ -2080,6 +2110,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (approvals.has(msg.requestId)) {
           const res = approvals.decide(msg.requestId, msg.decision);
           if (!res.ok) return;
+          if (session !== undefined) reevaluateChatStatus(session); // E202611031bd72813:S001 t2: resolution re-evaluates precedence
           // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
           queueMicrotask(settleQueued);
           queueMicrotask(reportCards); // Story S002

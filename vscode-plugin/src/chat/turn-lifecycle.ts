@@ -77,7 +77,11 @@ export interface FollowSink {
   onEnd(outcome: FollowOutcome): void;
 }
 
-export type FollowOutcome = 'ended' | 'failed';
+/**
+ * E202611031bd72813:S001: 'observation-failed' — the follow could not READ the turn's output
+ * (the CLI may still be running); the cursor stays saved, the status is not terminal.
+ */
+export type FollowOutcome = 'ended' | 'failed' | 'observation-failed';
 
 export interface TurnLifecycle {
   /**
@@ -484,6 +488,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     let attached: TurnProcess | undefined;
     void (async () => {
       let outcome: FollowOutcome | undefined;
+      let observationFailure = false;
       try {
         const events = adapter.resume(
           { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
@@ -507,12 +512,22 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             log.warn(`[chat] session ${s.id}: turn ${turnId}: an event was not handled: ${err instanceof Error ? err.message : String(err)}`);
           }
           keepNativeSession(s, ev);
-          if (isTerminal(ev)) break;
+          if (isTerminal(ev)) {
+            // E202611031bd72813:S001: an output-read failure is not a real terminal — keep the
+            // cursor so a later follow retries, and report 'observation-failed', never 'ended'.
+            if (ev.kind === 'error' && ev.observationFailure === true) observationFailure = true;
+            break;
+          }
         }
         if (!ctl.signal.aborted) {
-          clearCursor(s, turnId);
-          trySave(s);
-          outcome = 'ended';
+          if (observationFailure) {
+            trySave(s); // cursor stays saved for a later follow
+            outcome = 'observation-failed';
+          } else {
+            clearCursor(s, turnId);
+            trySave(s);
+            outcome = 'ended';
+          }
         }
       } catch (err) {
         log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);

@@ -1397,3 +1397,23 @@ test('turn lifecycle: a second start runs after the first ends instead of supers
     await spawned[0]!.exited;
   }
 });
+
+test('E202611031bd72813:S001 t2: an output-read failure ends the follow as observation-failed and keeps the cursor', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = savedTurn(99);
+  const calls: string[] = [];
+  h.lc.follow(h.session, {
+    onEvent: (ev) => calls.push(`event:${ev.kind}`),
+    onEnd: (outcome) => calls.push(`end:${outcome}`),
+  });
+  await waitFor(() => resumes.length === 1);
+  resumes[0]!.feed.push(delta('old'));
+  resumes[0]!.feed.push({ kind: 'error', turnId: 'old', message: 'the output of this turn could not be read: x', observationFailure: true });
+  await waitFor(() => calls.some((c) => c.startsWith('end:')));
+  assert.deepEqual(calls, ['event:assistant-delta', 'event:error', 'end:observation-failed']);
+  assert.notEqual(h.session.liveTurn, undefined, 'the cursor stays saved for a later follow');
+  // a later follow retries: a new resume is started
+  h.lc.follow(h.session, { onEvent: () => {}, onEnd: () => {} });
+  await waitFor(() => resumes.length === 2);
+});

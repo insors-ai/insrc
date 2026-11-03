@@ -5548,3 +5548,55 @@ test('providerIcon: the OFFICIAL vendor mark per provider (path data from media/
   assert.equal(providerIcon(undefined), '');
   assert.notEqual(providerIcon('claude'), providerIcon('codex'), 'distinct marks');
 });
+
+// ---- E202611031bd72813:S001 t2 — active-chat status precedence ----
+
+test('E202611031bd72813:S001 t2: turn start -> working; terminal with no pending requests -> done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const evs: TurnEvent[] = [{ kind: 'done', turnId: 't1', ok: true, sessionId: 's1' }];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { gateBeforeDone: gate }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  assert.equal(store.get(id)?.status, 'working', 'turn start -> working');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  await waitFor(() => store.get(id)?.status === 'done');
+});
+
+test('E202611031bd72813:S001 t2: mid-turn approval-request -> waiting-input; terminal with pending card stays waiting-input; decision -> done', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const evs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't1', requestId: 'req-w', title: 'Permission: Write', detail: 'd', toolName: 'Write' },
+    { kind: 'done', turnId: 't1', ok: true, sessionId: 's1' },
+  ];
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter(evs, { gateBeforeDone: gate }) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'write' }));
+  await waitFor(() => store.list().length === 1);
+  const id = store.list()[0]!.id;
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'mid-turn request arrival -> waiting-input');
+  release();
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
+  assert.equal(store.get(id)?.status, 'waiting-input', 'terminal with a pending card stays waiting-input, not done');
+  fc.send(env('permission-decision', { requestId: 'req-w', decision: 'deny' }));
+  await waitFor(() => store.get(id)?.status === 'done', 5000); // resolving the last request after terminal -> done
+});

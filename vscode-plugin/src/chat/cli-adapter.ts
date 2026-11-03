@@ -1317,7 +1317,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         log.warn(`[chat:${mapper.id}] ${err.message}`);
         return;
       }
-      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}` };
+      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}`, observationFailure: true };
       return;
     }
     if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on

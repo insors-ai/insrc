@@ -84,6 +84,25 @@ async function routedDocuments(packet: ReviewPacket, route: StoryRoute, sources:
  }
  return { docs, hash, storyId };
 }
+/** The one review unit of a route without a Plan: the BUILD's single task, judged against the design record the route has. */
+function derivedUnit(route: StoryRoute, docs: Partial<Record<DocumentRole, LoadedDocument>>, files: number): PlanTask {
+ requireReview(route.build.taskIds.length === 1, 'documents', 'A route without a Plan needs a BUILD with exactly one task');
+ const id = route.build.taskIds[0]!, focus = route.build.focus?.trim() || undefined;
+ const body = (name: DocumentRole) => (docs[name]?.head['body'] ?? {}) as Record<string, unknown>;
+ const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && item.trim() !== '') : [];
+ let title = focus ?? `Story ${route.storyId}`, checks: string[] = [];
+ if (route.lld) {
+  const mapping = (body('lld')['testStrategy'] as { acceptanceMapping?: { criterionId?: unknown; provingTests?: unknown }[] } | undefined)?.acceptanceMapping ?? [];
+  checks = mapping.filter(m => typeof m.criterionId === 'string').map(m => `Criterion ${String(m.criterionId)} is proven by: ${strings(m.provingTests).join('; ') || 'no named test'}`);
+ } else if (route.issue) {
+  const issue = body('issue');
+  if (typeof issue['title'] === 'string' && issue['title'].trim()) title = issue['title'];
+  checks = strings([issue['fixIntent']]);
+ }
+ if (checks.length === 0 && focus) checks = [focus];
+ requireReview(checks.length > 0, 'documents', 'The route has no stated done condition to review against');
+ return { id, title, summary: focus ?? title, size: files <= 2 ? 'S' : files <= 8 ? 'M' : 'L', order: 1, dependsOn: [], acceptanceChecks: checks, derivedFrom: [], tests: [] };
+}
 export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
  const { docs, hash } = route ? await routedDocuments(packet, route, sources) : await pinnedTriple(packet, sources);
@@ -139,6 +158,10 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
    }
    changes.push({ commit: pointer.commit, parent: pointer.parent, path: file.path, previousPath, segments: file.segments, before, after, limitations });
   }
+ }
+ if (route && !plan) {
+  tasks = [derivedUnit(route, docs, new Set(changes.map(change => change.path)).size)];
+  requireReview(!packet.taskId || packet.taskId === tasks[0]!.id, 'taskId', 'Task is not in the review');
  }
  const revisions = [...new Set(packet.reviewSet.flatMap(c => [c.commit, ...(c.parent ? [c.parent] : [])]))];
  for (const test of packet.tests) {

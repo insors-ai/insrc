@@ -4,7 +4,7 @@
     "epicHash": "1ad687e69c9218de",
     "storyId": "S001",
     "createdAt": "2026-11-03T08:06:43.031Z",
-    "updatedAt": "2026-11-03T08:32:54.582Z",
+    "updatedAt": "2026-11-03T08:53:08.139Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.712Z",
     "epicSlug": "typescript-reader-drops-calls-user-functions"
@@ -156,6 +156,53 @@
               },
               {
                 "title": "S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "260c75e0e",
+        "ranAt": "2026-11-03T08:53:08.139Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/builtin-named-calls-resolution.test.ts",
+                "title": "S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: the installed daemon shows callers of a built-in-named function after index and repo.reindex",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/smoke-t3.md"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/builtin-named-calls-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 847,
+            "titles": [
+              {
+                "title": "S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find",
                 "result": "pass"
               }
             ],

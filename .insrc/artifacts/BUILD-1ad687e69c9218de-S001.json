@@ -4,7 +4,7 @@
     "epicHash": "1ad687e69c9218de",
     "storyId": "S001",
     "createdAt": "2026-11-03T08:06:43.031Z",
-    "updatedAt": "2026-11-03T08:32:54.582Z",
+    "updatedAt": "2026-11-03T08:53:08.139Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.712Z",
@@ -19,9 +19,13 @@
       {
         "id": "t2",
         "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
       }
     ],
-    "summary": "Member calls with built-in method names are kept on receivers proven user objects by a type or a new expression: class fields and constructor parameter properties typed with a user class or defaulted/initialised with new X(), this.x = new X() assignments, typed or new-defaulted parameters, const/let and var locals, and values asserted to a user class (as / satisfies / <T>), looking through parentheses and !. Class field proofs are per class (class, class expression and abstract class are boundaries), and `this` proves a receiver only where it is the class instance (class method, field initialiser, or an arrow inside one). Built-in classes, unions, arrays, primitives and untyped values never prove one. Mutation-checked.",
+    "summary": "The resolution integration test shows a bare imported parse, a namespace-import call, a new-initialised field call and a this-call each resolving to the user definition, and items.find() creating no edge to a same-file find; it fails with the reader from before this Story and with the method filter removed. Installed daemon at ca8b54c8 shows callers of user parse and Store.find after index and after repo.reindex. Full sweep per directory: 7337 tests, 29 failures, all classified, none in the TypeScript reader.",
     "testRecord": {
       "md": "docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/TESTS.md"
     },
@@ -31,16 +35,37 @@
           "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T08:32:54.582Z"
+        "timestamp": "2026-11-03T08:53:08.139Z"
       },
       {
         "target": {
           "file": "src/indexer/parser/typescript.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T08:32:54.582Z"
+        "timestamp": "2026-11-03T08:53:08.139Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/builtin-named-calls-resolution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:53:08.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/full-sweep-t3.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:53:08.139Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/smoke-t3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:53:08.139Z"
       }
     ],
-    "commit": "f4d469ba3"
+    "commit": "260c75e0e"
   }
 }

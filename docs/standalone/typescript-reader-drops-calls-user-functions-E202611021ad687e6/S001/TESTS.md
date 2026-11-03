@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 7 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -61,3 +61,23 @@ Run at 2026-11-03T08:32:54.582Z on commit `f4d469ba3`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` | 0 | 6 | 0.8 s |  |
+
+## t3
+
+Run at 2026-11-03T08:53:08.139Z on commit `260c75e0e`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t3: the restored calls resolve to the user definitions and items.find() links to no user find | `src/indexer/__tests__/builtin-named-calls-resolution.test.ts` |
+
+**smoke: S001 t3: the installed daemon shows callers of a built-in-named function after index and repo.reindex**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/typescript-reader-drops-calls-user-functions-E202611021ad687e6/S001/smoke-t3.md
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/__tests__/builtin-named-calls-resolution.test.ts` | 0 | 1 | 0.8 s |  |

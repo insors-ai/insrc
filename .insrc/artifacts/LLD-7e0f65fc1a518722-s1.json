@@ -26,7 +26,48 @@
     "hldAmendmentsApplied": [],
     "standalone": true,
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f823d006c49e2dbb4ee02b33a5c103278cc795ecefe0327b33476ff03227d1af",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T07:13:03.270Z",
+        "override": {
+          "reason": "Daemon design review unavailable; controller self-review at docs/standalone/keep-artifact-log-step-raw-content-E202611027e0f65fc/S001/SELF-REVIEW.md (verdict pass). The user approved the LLD in the review UI after being told approval needs this override."
+        }
+      }
+    },
+    "rangeBase": "74e61c0e350d3aafba929db6daac0a39f6dac1cf",
+    "questionResolutions": {
+      "q9081541a": {
+        "question": "src/workflow/artifact-core/types.ts is listed as a call site of the adopted ChangeLogEntry but was not cited in an s1 analyze bundle; confirm it when building.",
+        "status": "resolved",
+        "choice": "Verify now via targeted grep/Read",
+        "rationale": "Checked: src/workflow/artifact-core/types.ts defines ChangeLogEntry (line 58) with a free-text outcome.result, so the adopted entry needs no type change; types.ts is a reference, not a file to edit.",
+        "resolvedAt": "2026-11-03T07:14:14.107Z"
+      }
+    }
   },
   "body": {
     "summary": {

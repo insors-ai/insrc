@@ -243,3 +243,17 @@ ArtifactStore gains an adopt(id, actor) that, under the queue, appends an 'updat
 - src/workflow/artifact-core/types.ts is listed as a call site of the adopted ChangeLogEntry but was not cited in an s1 analyze bundle; confirm it when building.
 - The Story carries no formal acceptance criteria: ac1 to ac4 and the constraints that the alternatives were scored against are derived from the approved issue's fix intent.
 - The adopted entry carries the time and actor (insrc:system) of the adoption, not of the raw write; confirm that this is acceptable for the history, or have the raw writers log at write time in a later change.
+
+## Resolved questions
+
+- `q9081541a` — src/workflow/artifact-core/types.ts is listed as a call site of the adopted ChangeLogEntry but was not cited in an s1 analyze bundle; confirm it when building.
+  - **resolved**: Verify now via targeted grep/Read — Checked: src/workflow/artifact-core/types.ts defines ChangeLogEntry (line 58) with a free-text outcome.result, so the adopted entry needs no type change; types.ts is a reference, not a file to edit. _(2026-11-03T07:14:14.107Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/storage.ts`
+- **[[c2]]** `code` `src/workflow/artifact-core/lifecycle.ts`
+- **[[c3]]** `code` `src/workflow/artifact-core/store.ts`
+- **[[c4]]** `code` `src/workflow/artifact-core/lifecycle-service.ts`
+- **[[c5]]** `doc` `docs/plans/core-data-model.md`
+- **[[c6]]** `code` `src/workflow/artifact-core/__tests__/lifecycle-service.test.ts`

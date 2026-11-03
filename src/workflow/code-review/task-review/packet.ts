@@ -6,7 +6,7 @@ import { tasksEnumerateSchema } from '../../runners/plan/schemas.js';
 import { validateAgainstSchema } from '../../../agent/providers/structured-output.js';
 import { validatePlanRows } from '../../tasks/pure.js';
 import { parsePacket, requireReview } from './contracts.js';
-import type { CommittedDocument, ReviewPacket, SubmittedTestDetail } from './contracts.js';
+import type { CommittedDocument, ReviewPacket, StoredDerived, SubmittedTestDetail } from './contracts.js';
 import type { PinnedBlob, ReviewSources } from './sources.js';
 import { DOCUMENT_ROLES, requiredDocumentRoles } from './route.js';
 import type { DocumentRole, StoryRoute } from './route.js';
@@ -20,6 +20,7 @@ export interface SelectedChange {
 export interface PreparedReviewPacket {
  readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly SelectedChange[]; readonly tasks: readonly PlanTask[];
  readonly documents: Readonly<Partial<Record<DocumentRole, string>>>;
+ readonly derived?: StoredDerived | undefined;
 }
 function head(text: string): Record<string, unknown> {
  let value: unknown;
@@ -103,9 +104,15 @@ function derivedUnit(route: StoryRoute, docs: Partial<Record<DocumentRole, Loade
  requireReview(checks.length > 0, 'documents', 'The route has no stated done condition to review against');
  return { id, title, summary: focus ?? title, size: files <= 2 ? 'S' : files <= 8 ? 'M' : 'L', order: 1, dependsOn: [], acceptanceChecks: checks, derivedFrom: [], tests: [] };
 }
-export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute): Promise<PreparedReviewPacket> {
+/** Re-reading a stored review of a route without a Plan: the pinned documents must still load, and the epic and unit come from what admission kept. */
+async function storedDocuments(packet: ReviewPacket, stored: StoredDerived, sources: ReviewSources) {
+ const docs: Partial<Record<DocumentRole, LoadedDocument>> = {};
+ for (const role of DOCUMENT_ROLES) if (packet.documents[role]) docs[role] = await document(packet.documents[role]!, sources);
+ return { docs, hash: stored.epicHash };
+}
+export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
- const { docs, hash } = route ? await routedDocuments(packet, route, sources) : await pinnedTriple(packet, sources);
+ const { docs, hash } = route ? await routedDocuments(packet, route, sources) : stored ? await storedDocuments(packet, stored, sources) : await pinnedTriple(packet, sources);
  const plan = docs.plan?.head;
  let tasks: PlanTask[] = [];
  if (plan) {
@@ -159,9 +166,12 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
    changes.push({ commit: pointer.commit, parent: pointer.parent, path: file.path, previousPath, segments: file.segments, before, after, limitations });
   }
  }
- if (route && !plan) {
-  tasks = [derivedUnit(route, docs, new Set(changes.map(change => change.path)).size)];
-  requireReview(!packet.taskId || packet.taskId === tasks[0]!.id, 'taskId', 'Task is not in the review');
+ let derived: StoredDerived | undefined;
+ if (!plan && (route || stored)) {
+  const unit = route ? derivedUnit(route, docs, new Set(changes.map(change => change.path)).size) : { ...stored!.unit, order: 1, dependsOn: [], derivedFrom: [], tests: [] };
+  tasks = [unit];
+  derived = { epicHash: hash, unit: { id: unit.id, title: unit.title, summary: unit.summary, size: unit.size, acceptanceChecks: [...unit.acceptanceChecks] } };
+  requireReview(!packet.taskId || packet.taskId === unit.id, 'taskId', 'Task is not in the review');
  }
  const revisions = [...new Set(packet.reviewSet.flatMap(c => [c.commit, ...(c.parent ? [c.parent] : [])]))];
  for (const test of packet.tests) {
@@ -170,7 +180,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
   requireReview(found, 'tests', 'Test file is absent from the supplied committed source');
  }
- return { epicHash: hash, packet, changes, tasks, documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
+ return { epicHash: hash, packet, changes, tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }

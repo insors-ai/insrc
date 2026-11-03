@@ -8,6 +8,7 @@ import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, Sav
 import type { ReviewAttempt, ReviewerParty, ReviewOperation } from './contracts.js';
 import { checkpointPath, loadCheckpoint } from './checkpoint.js';
 import { prepareReviewPacket } from './packet.js';
+import { readStoryRoute } from './route-source.js';
 import type { PreparedReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
@@ -33,7 +34,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   for (const [index, entry] of saved.attempts.entries()) {
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
    validateFailureDiagnostics(entry);
-   const prepared = await prepareReviewPacket(entry.submitted, sources, true);
+   const prepared = await prepareReviewPacket(entry.submitted, sources, true, undefined, entry.header.derived);
    requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');
    const selected = prepared.tasks.filter(task => !saved.taskId || task.id === saved.taskId).map(task => task.id);
@@ -77,10 +78,12 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  requireReview(request.packet, 'packet', 'Start requires a committed packet');
  requireReview(saved ? attempt === saved.attempts.length + 1 : attempt === 1, 'attempt', saved ? 'attempt-conflict: expected next sequential attempt' : 'missing-checkpoint: first attempt must be 1');
  if (latest) requireReview(!['pending', 'running'].includes(latest.header.status) && latest['review-response'].crPublication === 'complete', 'attempt', 'attempt-conflict: previous attempt must be terminal and published');
- const prepared = await prepareReviewPacket(request.packet, sources);
+ // The route comes from the Story's stored artifacts, never from the packet. Resume and publication re-read stored history and pass none.
+ const route = context.epicHash ? await readStoryRoute(canonical, context.epicHash, canonicalReviewStory(request.packet.storyId, context.epicHash)) : undefined;
+ const prepared = await prepareReviewPacket(request.packet, sources, false, route);
  requireReview(!context.epicHash || context.epicHash === prepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
  if (saved && priorPrepared) requireReview(prepared.epicHash === priorPrepared.epicHash && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
- const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id) }, submitted: prepared.packet,
+ const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id), ...(prepared.derived ? { derived: prepared.derived } : {}) }, submitted: prepared.packet,
   'review-response': { summary: 'Review admitted; CR publication pending.', tasks: [], crPublication: 'pending' } };
  if (!prepared.packet.taskId) {
   try { entry.header.buildFingerprint = reviewedBuildFingerprint(JSON.parse(await readFile(artifactJsonPath(canonical, buildArtifactId(prepared.epicHash, canonicalReviewStory(prepared.packet.storyId, prepared.epicHash))), 'utf8'))); }

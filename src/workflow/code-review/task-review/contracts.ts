@@ -14,6 +14,9 @@ export const MAX_REVIEW_JSON_BYTES = 4 * 1024 * 1024;
 const oid = Type.String({ pattern: '^(?:[0-9a-f]{40}|[0-9a-f]{64})$' });
 const range = Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]);
 export const DocumentSchema = object({ path: text, commit: oid });
+/** What a route without a Plan derived when the review was admitted: the epic and the single review unit, kept so a stored review is re-read without reading the Story's artifacts again. */
+export const DerivedSchema = object({ epicHash: text, unit: object({ id: text, title: text, summary: text, size: Type.Union((['S', 'M', 'L'] as const).map(s => Type.Literal(s))), acceptanceChecks: Type.Array(text, { minItems: 1, maxItems: 10000 }) }) });
+export type StoredDerived = Static<typeof DerivedSchema>;
 export const TestDetailSchema = object({ file: text, cases: Type.Array(text, { minItems: 1, maxItems: 10000 }), command: text,
  result: Type.Union((['pass', 'fail', 'skipped', 'not_run'] as const).map(s => Type.Literal(s))), executionDetails: text, evidenceReferences: strings });
 export const StoredPacketSchema = object({ storyId: text, taskId: Type.Optional(text), functionalSummary: text,
@@ -84,7 +87,7 @@ export function parsePacket(input: unknown, historical = false): ReviewPacket {
 }
 export interface ReviewAttempt {
  progress?: ReviewProgress;
- header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; buildFingerprint?: string; reassessmentSummary?: string };
+ header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; reassessmentSummary?: string };
  submitted: ReviewPacket;
  'review-response': { failureDiagnostics?: readonly FailureDiagnostic[]; summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string; origins?: readonly TaskResultOrigin[] };
 }
@@ -101,6 +104,6 @@ export interface TaskBasedCodeReviewRecord {
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
  progress:Type.Optional(ProgressSchema),
- header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
+ header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), derived:Type.Optional(DerivedSchema), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
  submitted:StoredPacketSchema, 'review-response':Type.Object({ failureDiagnostics:Type.Optional(FailureDiagnosticsSchema), summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
  },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

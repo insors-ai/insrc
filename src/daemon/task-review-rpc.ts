@@ -40,8 +40,7 @@ export async function startTaskReview(raw: unknown, trusted?: TrustedRpcContext,
  const input = operation === 'resume' ? p['packet'] : packet;
  const story = /^s\d+$/.test(packet.storyId) ? packet.storyId : /^STORY-[0-9a-f]{16}-(s\d+)$/.exec(packet.storyId)?.[1];
  requireReview(story, 'storyId', 'Expected canonical story identity');
- requireReview(packet.documents.plan, 'documents.plan', 'Expected a plan document');
- requireReview(packet.documents.plan.path.endsWith(`PLAN-${epicHash}-${story}.json`) || packet.documents.plan.path.endsWith('/PLAN.md'), 'documents.plan', 'Plan identity must match review subject');
+ if (packet.documents.plan) requireReview(packet.documents.plan.path.endsWith(`PLAN-${epicHash}-${story}.json`) || packet.documents.plan.path.endsWith('/PLAN.md'), 'documents.plan', 'Plan identity must match review subject');
  requireReview(p['client'] === undefined || p['client'] === 'claude' || p['client'] === 'codex', 'client', 'Unsupported client');
  const client = p['client'] as 'claude' | 'codex' | undefined;
  const coordinator = coordinatorFor(repo);

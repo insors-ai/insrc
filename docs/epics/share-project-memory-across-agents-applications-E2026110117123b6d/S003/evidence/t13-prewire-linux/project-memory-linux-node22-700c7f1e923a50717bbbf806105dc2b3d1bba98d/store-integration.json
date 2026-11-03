@@ -1,0 +1,417 @@
+{
+  "kind": "production-store-real-queue-process-crashes",
+  "node": "22.22.1",
+  "abi": "127",
+  "platform": "linux",
+  "arch": "x64",
+  "release": "7.0.0-1017-azure",
+  "filesystemType": 61267,
+  "versions": {
+    "@lancedb/lancedb": "0.40.0",
+    "apache-arrow": "18.1.0"
+  },
+  "source": {
+    "package.json": "ccebf7e86eddf61cb90030e4694d70ee2c0e3db223866f0522ec519788b9f0f7",
+    "tsconfig.json": "4ea7864e8d38261d2da50656773dac48e964dd96d43d98afb49829db172cdcb6",
+    "src/__tests__/configuration.test.ts": "795490d3cb927b51647d3e643b1e05131437f4cd85f84bfa7780612eb7362748",
+    "src/__tests__/contention.test.ts": "ee328a12df2f9664bfe6472483e704ef00875413459b3c8aaa4d97c5e814374e",
+    "src/__tests__/contracts.test.ts": "7351ba496f01ea66d9750dcbe6b935caac277bfcc7c33098f6f6e906eb9118f1",
+    "src/__tests__/fixtures/node22.ts": "1c21224bb57cd740209f84264b8b4b4efee00ea1e53a29bc1e5c18b625f144fe",
+    "src/__tests__/fixtures/options.ts": "8e9f2ae7f8fcf94ef7526ac17edeb67aefe559a65273c0f53933dcf4d7bf471b",
+    "src/__tests__/fixtures/owner-peer.mjs": "d367c0f1a9938b7fc863355d82db1983f874b8116a9da28522c3f54ab328933d",
+    "src/__tests__/fixtures/public-consumer.mts": "f004cea63799a082c38ad5996e2b1b851618ff33b62b755caecc86cd2bca0118",
+    "src/__tests__/fixtures/queue-crash-peer.ts": "2f757fad1e482bff513bcebd5b185c49158146e43d54c12b30d7208187e5ca97",
+    "src/__tests__/fixtures/queue-crash-ports.ts": "21b1ccad6789d2751c78abca876a4e54d4959aac4a78e0c482bb8a1e20d91777",
+    "src/__tests__/fixtures/store-cleanup-peer.ts": "59fc2480013b0c50f134ecb6782bfec4262d4d62ac2f89314f899cf86d1aea4b",
+    "src/__tests__/fixtures/store-crash-peer.ts": "812bc6cd392deea3620fea422d82d9edc61e7531b0ab2e33c90cb916b4d72889",
+    "src/__tests__/fixtures/store-integration.ts": "d591e8dfc27c3ac5332aea7750b44e94a66ec4983c93c14e66f193384b9d1d9b",
+    "src/__tests__/fixtures/store-native-peer.ts": "a264d9295b19f71dd635f1dc2d6d251c3dde4b174091fd6bd1e3ead93a1e8dfe",
+    "src/__tests__/fixtures/store-native.ts": "03350938dfe0aec18f4e0f2637284e667b9a38f4c9290dba1fd9996c7b88e408",
+    "src/__tests__/fixtures/store-plans.ts": "42e8a17cdb61bdd89251fb552a543f71e9f577fe6d2c7f4e955518d1de82893e",
+    "src/__tests__/fixtures/store-rows.ts": "49786de3e24fbe9f1e3f29a92fcd4f4700568ac213ef5d61354254c0a1f96e47",
+    "src/__tests__/fixtures/store-writer-peer.ts": "059a7ff2d5c126a45a8bfe52f0ce5fe0af7675a7cd2e698d2768a6a70631ff1f",
+    "src/__tests__/model-dispatcher.test.ts": "8bfeb1b3b51a21fcac6d9148457b65def3f7c98ec8f574df1491e3ced34c4cd7",
+    "src/__tests__/native.test.ts": "f214eadca51295d406e3e11dcf38ee331b001756da6c8a6151af4dab80b11990",
+    "src/__tests__/ownership.test.ts": "8da7ca02206bf58ca12f693f2f8f5464896c3a82abcc253bf037b9efe32ba101",
+    "src/__tests__/packed.test.ts": "c959e4df787a182e61ddcdbe91d7e9abef0eee15ce9e40c6e18b1d35da27b444",
+    "src/__tests__/queue-admission.test.ts": "5fab9ce071020cf36cab3bc8a5597af67e982cdd3fc16eb0e49ac372470e97a8",
+    "src/__tests__/queue-append.test.ts": "3082cd7779b44b3aaf144bf3bc47868f269d3c5e081c5b1abc86da98abd29502",
+    "src/__tests__/queue-checkpoint.test.ts": "433ab0f7e4db44bfb16c1e6faa9805694d0fde1e886526cc1f73e20c8da75e58",
+    "src/__tests__/queue-codec.test.ts": "caaf696910ce1e191f9eab33bcdbab68a9a5f729cd35c650499f5a92713efa56",
+    "src/__tests__/queue-cost.test.ts": "033698849c681b32ce7b0adeec7af604243dfd0a57f3717eaf344e07d000b776",
+    "src/__tests__/queue-crash.test.ts": "e50f9238fef57cfee8273b11155ef1da6376d119592ba6ca895a4fc05b6cab36",
+    "src/__tests__/queue-fault-matrix.test.ts": "1240d669fa904ce28b031b8edd38a57b1528bdb1d854eefb9a5d10efd10dec85",
+    "src/__tests__/queue-io.test.ts": "94e724e6b22250a2e60f80b2380914a016572fa3d40676c4c424d6804ee2046e",
+    "src/__tests__/queue-receipts.test.ts": "04d916de60af7af694e4f421f635316fdd65926f7fe399c24e33c41a0f12def0",
+    "src/__tests__/queue-recovery.test.ts": "5dddd9f1f157a832a0605c1a3c3bc3dbc99713fac3cec8ff86cd86043115205f",
+    "src/__tests__/queue-replay.test.ts": "824526703879cde5d519299fd04b1bafc4685de1c49624be757002ebfb5ef0bb",
+    "src/__tests__/queue-retirement.test.ts": "9961e0d4af24436984d7ce7b1ef5d853b14a142c927d219217f3e46c9b6f9efa",
+    "src/__tests__/runtime.test.ts": "244acc204fcc91df438d3ab80599b635d4e4650fb512a9cf6f8ff7fc1ad199b3",
+    "src/__tests__/store-admission.test.ts": "3018176367040a23ded0a291fb3847b246306ae7a16bbc438f81ef1ca331d082",
+    "src/__tests__/store-barriers.test.ts": "5be02befd3b2e7af45279714d2657f171ab4cd8b4ce55eabdc1eef9a30864482",
+    "src/__tests__/store-codec.test.ts": "1f5db2e2dd47c29891717d8a7ce1a34150cf384b346636f1a831e317de68db84",
+    "src/__tests__/store-crash.test.ts": "8a298c218ca8bc76441d89130ff46b7a8d821e5dbbabb30dcdf49f239eb08667",
+    "src/__tests__/store-embedding-profile.test.ts": "5b0cc79e860790c90941f2382b377b84b842c9bad89369c18eef157c0e042b13",
+    "src/__tests__/store-guards.test.ts": "694ddbe31d4ead04f2ae343e7dc555cc7a87e57d56ff047f9cd888aea7e90762",
+    "src/__tests__/store-initialization.test.ts": "10a631f8a429d34ce5025df23891314a38da55e8f6a7185650331d55f6b0ff32",
+    "src/__tests__/store-lifecycle.test.ts": "18c8c6663cfc707cc2efdc064db4862ef32a7dd00beb9f044b472558c15b386a",
+    "src/__tests__/store-native.test.ts": "61cbbbd39eec836cb7fdbd672ab1d667f13c10c05b3386ef85d4a652f65a48c7",
+    "src/__tests__/store-reads.test.ts": "74f0603b11e1baf71f15807701bcc813e4c0b2b935e2352a3d0fc885b80ae4e1",
+    "src/__tests__/store-receipts.test.ts": "26057e9e7134e173a6f5d0d0afeb6c668ad1b30f120ef08d99f4f8c996f0bdb2",
+    "src/__tests__/store-writer.test.ts": "6c4b6bbaa252f4a816f12f56a670e57c0b40458d79d99c864ac7f3071e5b00a9",
+    "src/configuration.ts": "c9648b79eb9ef2721a069373b8381a7e4418ec35a163c92bfe1e0f4bdde83a26",
+    "src/errors.ts": "4ef853da3c18fc4db41a4b304948a9340b694a42b14ed62c1e746a9032a8147e",
+    "src/host-node.ts": "7f6bb7888a5100e24c0360e47769a257fb8f4b625d3699ba0d1f6614ed863622",
+    "src/index.ts": "4b93dd63f2fbf4619eaa41abb1dd862b4f115e77899e7c9aec9f4a6eaaab19b4",
+    "src/model-dispatcher.ts": "9d89796744663b6c8504844f3dd2ae93e3fac53ac202d45d6d09ead35853deaf",
+    "src/native.ts": "375bb260295a539f17be429c1562895296a325a4f0961632b4b98ba58b5bb5c1",
+    "src/ownership.ts": "82d7ff424fffa5cd2648baef797903412506b059719c2736d4b441b30207e06c",
+    "src/private-file.ts": "478d8e394efa5e08f8ffddad2be6fdfb8755f977817a59b20ceb43b41def4d67",
+    "src/queue/admission.ts": "c1af15fa7d10f359b7e2f88367c477b02b7166f3d0a9eff88889c3b3ed6c9c76",
+    "src/queue/checkpoint.ts": "b518be35f5e2f58c51788acd2a117d1b28841928d06bec5ba95cbf32e0525b56",
+    "src/queue/codec.ts": "92a1d5993bc0a53be1b5b5da908592b156bbb27e13b6b6ea19cf81c83f5d278f",
+    "src/queue/file-queue.ts": "4c6aaaaba0f37237905705a327476babd10808f83bdf41f0321ddd6a77f60050",
+    "src/queue/index-record.ts": "199b90ac36b3d0719fab98d51ba429818b17805062cf44400b04ccab951fe891",
+    "src/queue/io.ts": "58a7fe9c2c5f55afbf1e4f41dfee0d47afb2532f44f3e833c473e8657a5cd987",
+    "src/queue/receipts.ts": "de4d11a4cf29ced5f410103b0340d1eaa72612920cd4abe5a9e02fc4f038c498",
+    "src/queue/recovery.ts": "e47ef6fda4ff3cd70c84a599fc56086feb92e319f3ea42024220555066f3745e",
+    "src/queue/retirement.ts": "080ee26c70d91256d59c4afa764a3305b8721f05fe731a9a8e72a965a9ebf139",
+    "src/queue/shape.ts": "da1a098b4484f2d7ecd6baba917ebe2cf3d3a600771fdecc49bf8df134611b7d",
+    "src/queue/types.ts": "6699597b9f011f9d73bd7eeec75da471cf382831dd9d1b449bef7033aace8f31",
+    "src/runtime.ts": "6daf69d8aa4e2a187ea897f0a2e9b7424f0cf398cc8998dcec94f2bb51447856",
+    "src/store/admission-policy.ts": "d5e71001802ce2ceb9e44189eec418feb255b412854d254963265cfcbf922dd0",
+    "src/store/barriers.ts": "889faa1c6b9ec399615ac052b57948672e724f09e1b52e020ceeb402848f817a",
+    "src/store/codec.ts": "a450c84fc36af8e313e179faac6c55453cfe2e5b7666e9b6db6de13441e1837a",
+    "src/store/embedding-profile.ts": "e72ebb65501a6e2f9d27a17d30371bc1a120309105effd454a0426d724bfa321",
+    "src/store/format.ts": "620e26f9d402f8cc501d684d0199e3aceaf2bab5c8c7dc6f09fe5043c87e6ac6",
+    "src/store/guards.ts": "3f090dab90df62de6e5a17f658a09ad85f991626f489e42bb757ffc05cfa262c",
+    "src/store/lance-store.ts": "cab9b4d90f7886e0419f236102cea5b1c0fa962573d686a0cd7ccc4dd1e73707",
+    "src/store/lifecycle.ts": "f484fab6206ca2bd4226725bc1c72763a8d60879608089bfc949b1bd49ade528",
+    "src/store/native-reads.ts": "96d4f61973132cf73c8a585be9586c09021c60e24ca5d167270c045632c72d5c",
+    "src/store/plan.ts": "b03588295964d045ea70f555b1333109950a78adef2522c3370c2237d089e4ee",
+    "src/store/reads.ts": "002d26c79ae83ed3c92f41d39ad5938599cd4503c7a8375b1ef8561072ec4f3d",
+    "src/store/receipts.ts": "6fcef8736e96052cfda178486cc9e57bb1ce27df8809cf8232aab1795be15e1a",
+    "src/store/types.ts": "614d7abd850f35dc11d0b1c59d9d2978c08c5ec5953cdc6e55931cfa529ef10e",
+    "src/store/writer.ts": "afdb63a007a0c02f77f5e24a3efe66aff424b4e5f5fc8dd058d0f48de6f49bd6",
+    "src/types.ts": "30567525504ff5ca9095337f4589797a5ad1d1c51e5b4ad87d6685e0db942b09"
+  },
+  "nativePackage": "@lancedb/lancedb-linux-x64-gnu",
+  "nativeSha256": "7cac6b9f75fabcc8792199350c5974223d50c5265b3b29f404cfeabbdb8244a5",
+  "scenarios": [
+    {
+      "mode": "accepted",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "accepted"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "0",
+      "recoveredVersion": 2,
+      "recoveredRows": 1,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "before-write",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "before-write"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "0",
+      "recoveredVersion": 2,
+      "recoveredRows": 1,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "race",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "race"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "0",
+      "recoveredVersion": 2,
+      "recoveredRows": 1,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "race",
+      "delayMs": 2,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "race"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "0",
+      "recoveredVersion": 2,
+      "recoveredRows": 1,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "race",
+      "delayMs": 10,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "race"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "race",
+      "delayMs": 50,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "race",
+        "race-completed"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "before-reply",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "before-reply"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "before-ack",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "before-ack"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "after-ack",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "after-ack"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "after-recycle",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "after-recycle"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 7,
+      "finalGeneration": "1",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "forget-project",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "forget-committed"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 4,
+      "finalGeneration": "2",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "forget-session",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "forget-committed"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 4,
+      "finalGeneration": "2",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "forget-conversation",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "forget-committed"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "1",
+      "recoveredVersion": 3,
+      "recoveredRows": 4,
+      "finalGeneration": "2",
+      "pendingEvents": 0
+    },
+    {
+      "mode": "reader-delete",
+      "delayMs": 0,
+      "signal": "SIGKILL",
+      "observedStages": [
+        "reader-forget-committed"
+      ],
+      "liveOwnerConflict": true,
+      "acceptedReceipt": {
+        "operationId": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+        "eventId": "accepted-operation",
+        "state": "accepted"
+      },
+      "acceptedOperation": "24fdec545ede142db1760bae951c998fe13183a6d3aacd207f59ca350bf555a0",
+      "acceptedSequence": "1",
+      "acceptedPayloadHash": "884961bb281251a78d2f012dff07837d3cc15b8bd6e9966c5b04d06b85ffbad5",
+      "recoveredGeneration": "2",
+      "recoveredVersion": 4,
+      "recoveredRows": 10,
+      "finalGeneration": "2",
+      "pendingEvents": 0
+    }
+  ],
+  "limitations": [
+    "Actual parent-observed process SIGKILL, not host power-loss/fsync qualification.",
+    "Race delays do not identify an exact internal Rust stage.",
+    "Direct owner/store/queue harness; production MemoryFactory wiring remains gated until t13.",
+    "Trusted final payload fixtures do not substitute for t11 admission transforms or S7/S8 host lifecycle adapters."
+  ]
+}

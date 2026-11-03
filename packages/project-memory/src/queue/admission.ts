@@ -5,13 +5,21 @@ import { boundedString, IngressBudget, snapshotCommand, snapshotJson, validateSc
 import type { Reservation } from './codec.js';
 import { FileQueue } from './file-queue.js';
 
+/** Module-owned synchronous hooks only; never accepted through MemoryOptions. */
+export interface AdmissionTransforms {
+  validateInput(command: MemoryCommand): void;
+  finalize(binding: ProjectBinding, original: MemoryCommand, output: MemoryCommand): MemoryCommand;
+}
+
 /** No default policy: callers must supply the host's project/namespace authority. */
 export class QueueAdmission {
   readonly #queue: FileQueue;
   readonly #policy: HostPolicy;
   readonly #budget: IngressBudget;
-  constructor(queue: FileQueue, policy: HostPolicy) {
+  readonly #transforms: AdmissionTransforms | undefined;
+  constructor(queue: FileQueue, policy: HostPolicy, transforms?: AdmissionTransforms) {
     this.#queue = queue; this.#policy = policy; this.#budget = new IngressBudget(queue.limits);
+    this.#transforms = transforms;
   }
   /** Also used by status reads later; binding never changes durable event data. */
   async bind(projectId: string, sessionId?: string): Promise<ProjectBinding> {
@@ -48,6 +56,7 @@ export class QueueAdmission {
       lease = this.#budget.reserve();
       // Synchronous and before enqueue: a later caller mutation cannot race policy.
       const original = snapshotCommand(command, this.#queue.limits.maxEventBytes, lease);
+      this.#transforms?.validateInput(original.command);
       const reservation = lease;
       const result = this.#queue.enqueue(async () => {
         const binding = await this.bind(original.command.scope.projectId, original.command.scope.sessionId);
@@ -56,7 +65,9 @@ export class QueueAdmission {
         catch (error) { throw policyFailure(error); }
         const admitted = output === (original.command as unknown as Json) ? original : snapshotCommand(output, this.#queue.limits.maxEventBytes, reservation);
         if (!sameEnvelope(admitted.command, original.command)) throw new MemoryError('POLICY_DENIED', 'Policy cannot change command identity or scope.');
-        return this.#queue.persist(admitted, binding.scopeEpoch);
+        const finalized = this.#transforms ? snapshotCommand(this.#transforms.finalize(binding, original.command, admitted.command), this.#queue.limits.maxEventBytes, reservation) : admitted;
+        if (!sameEnvelope(finalized.command, original.command)) throw new MemoryError('POLICY_DENIED', 'Policy cannot change command identity or scope.');
+        return this.#queue.persist(finalized, binding.scopeEpoch);
       });
       return result.finally(() => reservation.release());
     } catch (error) { lease?.release(); return Promise.reject(error); }

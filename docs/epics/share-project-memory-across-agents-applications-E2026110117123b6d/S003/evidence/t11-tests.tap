@@ -1,0 +1,106 @@
+TAP version 13
+# Subtest: concurrent-admission-fifo-and-idempotent-retry
+ok 1 - concurrent-admission-fifo-and-idempotent-retry
+  ---
+  duration_ms: 145.018167
+  type: 'test'
+  ...
+# Subtest: privacy-binding-and-scope-status-isolation-before-enqueue
+ok 2 - privacy-binding-and-scope-status-isolation-before-enqueue
+  ---
+  duration_ms: 387.957208
+  type: 'test'
+  ...
+# Subtest: admission-quota-refunds-and-hanging-policy-drains-safely
+ok 3 - admission-quota-refunds-and-hanging-policy-drains-safely
+  ---
+  duration_ms: 1477.652209
+  type: 'test'
+  ...
+# Subtest: store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes
+ok 4 - store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes
+  ---
+  duration_ms: 443.190833
+  type: 'test'
+  ...
+# Subtest: store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries
+ok 5 - store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries
+  ---
+  duration_ms: 320.781042
+  type: 'test'
+  ...
+# Subtest: store-admission-attestation-envelope-size-and-verified-time-fail-before-persist
+ok 6 - store-admission-attestation-envelope-size-and-verified-time-fail-before-persist
+  ---
+  duration_ms: 203.749292
+  type: 'test'
+  ...
+# Subtest: store-admission-host-registered-new-source-lifecycle-is-required-after-forget
+ok 7 - store-admission-host-registered-new-source-lifecycle-is-required-after-forget
+  ---
+  duration_ms: 547.355083
+  type: 'test'
+  ...
+# Subtest: store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+ok 8 - store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+  ---
+  duration_ms: 22.182333
+  type: 'test'
+  ...
+# Subtest: store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+ok 9 - store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+  ---
+  duration_ms: 6.929209
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-generation-predecessor-reference-and-history-guards
+ok 10 - store-plan-exact-generation-predecessor-reference-and-history-guards
+  ---
+  duration_ms: 15.691292
+  type: 'test'
+  ...
+# Subtest: store-plan-source-provenance-span-authority-and-evidence-sets
+ok 11 - store-plan-source-provenance-span-authority-and-evidence-sets
+  ---
+  duration_ms: 5.564458
+  type: 'test'
+  ...
+# Subtest: store-plan-lifecycle-complete-matrix-and-reason-constraints
+ok 12 - store-plan-lifecycle-complete-matrix-and-reason-constraints
+  ---
+  duration_ms: 1.697291
+  type: 'test'
+  ...
+# Subtest: store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+ok 13 - store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+  ---
+  duration_ms: 11.051875
+  type: 'test'
+  ...
+# Subtest: store-plan-paired-supersession-is-atomic-and-acyclic
+ok 14 - store-plan-paired-supersession-is-atomic-and-acyclic
+  ---
+  duration_ms: 48.690167
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+ok 15 - store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+  ---
+  duration_ms: 7.847584
+  type: 'test'
+  ...
+# Subtest: store-plan-logical-forget-requires-exact-monotone-marker
+ok 16 - store-plan-logical-forget-requires-exact-monotone-marker
+  ---
+  duration_ms: 5.13925
+  type: 'test'
+  ...
+1..16
+# tests 16
+# suites 0
+# pass 16
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2174.586458

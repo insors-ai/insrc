@@ -1,0 +1,71 @@
+TAP version 13
+# Subtest: store-codec-canonical-roundtrip-all-row-kinds
+ok 1 - store-codec-canonical-roundtrip-all-row-kinds
+  ---
+  duration_ms: 22.476273
+  type: 'test'
+  ...
+# Subtest: store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+ok 2 - store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+  ---
+  duration_ms: 74.961668
+  type: 'test'
+  ...
+# Subtest: store-codec-validates-nested-lineage-outcomes-and-source-shapes
+ok 3 - store-codec-validates-nested-lineage-outcomes-and-source-shapes
+  ---
+  duration_ms: 10.549531
+  type: 'test'
+  ...
+# Subtest: store-codec-reserves-bounded-immutable-effect-batches
+ok 4 - store-codec-reserves-bounded-immutable-effect-batches
+  ---
+  duration_ms: 8.686749
+  type: 'test'
+  ...
+# Subtest: store-codec-qualified-identities-and-explicit-arrow-schema
+ok 5 - store-codec-qualified-identities-and-explicit-arrow-schema
+  ---
+  duration_ms: 262.331109
+  type: 'test'
+  ...
+# Subtest: store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+ok 6 - store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+  ---
+  duration_ms: 12.502666
+  type: 'test'
+  ...
+# Subtest: store-embedding-profile-preserves-text-and-converts-float32-once
+ok 7 - store-embedding-profile-preserves-text-and-converts-float32-once
+  ---
+  duration_ms: 6.198309
+  type: 'test'
+  ...
+# Subtest: store-embedding-profile-rejects-missing-or-mismatched-metadata
+ok 8 - store-embedding-profile-rejects-missing-or-mismatched-metadata
+  ---
+  duration_ms: 6.123959
+  type: 'test'
+  ...
+# Subtest: store-embedding-profile-rejects-unsafe-text-and-vectors
+ok 9 - store-embedding-profile-rejects-unsafe-text-and-vectors
+  ---
+  duration_ms: 0.985121
+  type: 'test'
+  ...
+# Subtest: native-store-primitives-process-crash-and-runtime-qualification
+ok 10 - native-store-primitives-process-crash-and-runtime-qualification
+  ---
+  duration_ms: 6377.567291
+  type: 'test'
+  ...
+# {"platform":"linux","node":"22.22.1","scenarios":8}
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 6930.784919

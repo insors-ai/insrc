@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 71 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 144 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -299,3 +299,302 @@ Run at 2026-11-03T14:57:31.085Z on commit `ef702f35b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/store-barriers.test.ts` | 0 | 7 | 8.6 s |  |
+
+## t9
+
+Run at 2026-11-03T16:09:45.971Z on commit `6a9165318`. Tests check: **passed**. 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-scope-epoch-predicate-escaping**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-binding-change-during-projection-is-rechecked-before-return | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-null-vectors-version-pinned-reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-reader-expiry-delete-race**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-binding-change-during-projection-is-rechecked-before-return | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-time-boundaries-expire-sources-without-a-generation-change | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-future-validity-is-published-as-a-cache-boundary | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-result-reference-and-byte-overflow-return-no-truncated-projection | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**integration: store-embedding-profile-reopen-plan-query-compatibility**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-profile-query-text-float32-and-cold-current-projection-agree | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 12 | 5.1 s |  |
+
+## t10
+
+Run at 2026-11-03T16:35:37.180Z on commit `eb6afe27e`. Tests check: **passed**. 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-proof-port-retained-and-recycled**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-proof-real-queue-retained-ack-recycle-and-cold-authority | `packages/project-memory/src/__tests__/store-receipts.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-one-mutation-effects-receipt-generation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-generation-revision-conflicts-and-exact-retry**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-serial-generation-revisions-conflicts-and-retained-identity | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-replay-forget-no-resurrection-scoped**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-reader-expiry-delete-race**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content | `packages/project-memory/src/__tests__/store-reads.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-native-uncertain-writes-fence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-timeout-retains-lane-native-work-and-owner-through-close | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-native-rejection-fences-until-verified-close-and-reopen | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-commit-kill-before-after-receipt-ack**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-broad-forget-unseen-pending-event**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-forget-after-plan-before-commit**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**integration: store-macos-apfs-linux-ext4-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-macos-apfs-linux-ext4-production-evidence-matches-current-source | `src/shared/__tests__/project-memory-platform-evidence.test.ts` |
+| pass | production-store-queue-process-crash-replay-and-forget-qualification | `packages/project-memory/src/__tests__/store-crash.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-crash.test.ts` | 0 | 1 | 11.3 s |  |
+| `packages/project-memory/src/__tests__/store-reads.test.ts` | 0 | 12 | 9 s |  |
+| `packages/project-memory/src/__tests__/store-receipts.test.ts` | 0 | 4 | 7.9 s |  |
+| `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 2.7 s |  |
+| `src/shared/__tests__/project-memory-platform-evidence.test.ts` | 0 | 1 | 1 s |  |
+
+## t11
+
+Run at 2026-11-03T16:41:37.530Z on commit `34419fe94`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-admitted-provenance-v1-derivation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-plan-source-provenance-span-authority-and-evidence-sets | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+
+**integration: store-closed-lifecycle-explicit-new-activity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-host-registered-new-source-lifecycle-is-required-after-forget | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**integration: store-admission-policy-wrapper-through-real-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-attestation-envelope-size-and-verified-time-fail-before-persist | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**integration: store-public-submit-module-errors-outside-policy-catch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-admission.test.ts` | 0 | 4 | 2.1 s |  |
+| `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.5 s |  |
+
+## t12
+
+Run at 2026-11-03T16:48:31.185Z on commit `77034ecb4`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-no-lane-inversion-drain-ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-native-uncertain-writes-fence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-writer-timeout-retains-lane-native-work-and-owner-through-close | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+| pass | store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption | `packages/project-memory/src/__tests__/store-writer.test.ts` |
+
+**integration: store-owned-work-two-participant-shutdown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-startup-rollback-every-open-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-initialization-rolls-back-each-acquired-native-resource | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-unverified-close-is-explicit-and-owner-stays-held | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.8 s |  |
+| `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.5 s |  |
+| `packages/project-memory/src/__tests__/store-writer.test.ts` | 0 | 8 | 3.1 s |  |
+
+## t13
+
+Run at 2026-11-03T16:56:34.306Z on commit `be98c1fd8`. Tests check: **passed**. 17 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-no-lane-inversion-drain-ownership**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-owned-work-two-participant-shutdown**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+
+**integration: store-startup-rollback-every-open-boundary**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error | `packages/project-memory/src/__tests__/store-lifecycle.test.ts` |
+| pass | store-initialization-rolls-back-each-acquired-native-resource | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | store-initialization-unverified-close-is-explicit-and-owner-stays-held | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+| pass | drain-close-startup-failure-preserve-backlog-and-ownership | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**integration: store-admission-policy-wrapper-through-real-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-attestation-envelope-size-and-verified-time-fail-before-persist | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+
+**integration: store-public-submit-module-errors-outside-policy-catch**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries | `packages/project-memory/src/__tests__/store-admission.test.ts` |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+
+**smoke: store-host-readiness-status-and-not-ready-public-reads**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary | `packages/project-memory/src/__tests__/store-host.test.ts` |
+| pass | public-service-accepted-status-and-unavailable-semantic-capabilities | `packages/project-memory/src/__tests__/runtime.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/runtime.test.ts` | 0 | 5 | 1.5 s |  |
+| `packages/project-memory/src/__tests__/store-admission.test.ts` | 0 | 4 | 1.4 s |  |
+| `packages/project-memory/src/__tests__/store-host.test.ts` | 0 | 1 | 1.2 s |  |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.4 s |  |
+| `packages/project-memory/src/__tests__/store-lifecycle.test.ts` | 0 | 5 | 2.4 s |  |
+
+## t14
+
+Run at 2026-11-03T17:03:55.755Z on commit `3df2b56be`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: store-runtime-package-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tarball-public-dependency-and-asset-allowlist | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-isolated-node22-consumer | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: store-standalone-packed-node22-consumer**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | packed-isolated-node22-consumer | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-external-submit-crash-reopen-and-operation | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-store-private-commit-read-receipt-and-cold-public-status | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**smoke: store-existing-packed-allowlists-and-native-absence**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | tarball-public-dependency-and-asset-allowlist | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-native-missing-import-versus-open | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-lance-dependency-stays-lazy-on-import | `packages/project-memory/src/__tests__/packed.test.ts` |
+| pass | packed-lance-native-missing-import-safe-open-not-ready-and-owner-released | `packages/project-memory/src/__tests__/packed.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 7 | 23.7 s |  |

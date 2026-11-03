@@ -1,0 +1,70 @@
+TAP version 13
+# Subtest: store-initialization-gates-real-queue-recovery-on-validated-authority
+ok 1 - store-initialization-gates-real-queue-recovery-on-validated-authority
+  ---
+  duration_ms: 1553.917167
+  type: 'test'
+  ...
+# Subtest: store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+ok 2 - store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+  ---
+  duration_ms: 76.307417
+  type: 'test'
+  ...
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 3 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 58.363792
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+ok 4 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 79.291625
+  type: 'test'
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 5 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 72.522833
+  type: 'test'
+  ...
+# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+ok 6 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+  ---
+  duration_ms: 100.498667
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 7 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 244.414792
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 8 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 67.168917
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 9 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 284.670917
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 10 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 737.918167
+  type: 'test'
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3857.423333

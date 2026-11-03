@@ -1,0 +1,57 @@
+TAP version 13
+# > @insrc/project-memory@0.1.0 prepack
+# > npm run build
+# > @insrc/project-memory@0.1.0 build
+# > tsc -p tsconfig.json
+# npm warn deprecated node-domexception@1.0.0: Use your platform's native DOMException instead
+# Subtest: packed-isolated-node22-consumer
+ok 1 - packed-isolated-node22-consumer
+  ---
+  duration_ms: 15257.316667
+  type: 'test'
+  ...
+# Subtest: packed-native-missing-import-versus-open
+ok 2 - packed-native-missing-import-versus-open
+  ---
+  duration_ms: 441.645958
+  type: 'test'
+  ...
+# Subtest: tarball-public-dependency-and-asset-allowlist
+ok 3 - tarball-public-dependency-and-asset-allowlist
+  ---
+  duration_ms: 1.637334
+  type: 'test'
+  ...
+# Subtest: packed-lance-dependency-stays-lazy-on-import
+ok 4 - packed-lance-dependency-stays-lazy-on-import
+  ---
+  duration_ms: 132.236791
+  type: 'test'
+  ...
+# Subtest: packed-external-submit-crash-reopen-and-operation
+ok 5 - packed-external-submit-crash-reopen-and-operation
+  ---
+  duration_ms: 641.097291
+  type: 'test'
+  ...
+# Subtest: packed-store-private-commit-read-receipt-and-cold-public-status
+ok 6 - packed-store-private-commit-read-receipt-and-cold-public-status
+  ---
+  duration_ms: 583.73675
+  type: 'test'
+  ...
+# Subtest: packed-lance-native-missing-import-safe-open-not-ready-and-owner-released
+ok 7 - packed-lance-native-missing-import-safe-open-not-ready-and-owner-released
+  ---
+  duration_ms: 498.716667
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 18063.696875

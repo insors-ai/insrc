@@ -1220,7 +1220,7 @@
       ],
       "siteCount": 231,
       "sitesDigest": "18ae099bb29f61667a33be95327c3ff3e59348080350bdb7eebb20d24ef28d09",
-      "sourceDigest": "963823544697fa06582fef6a3689beaea7db51103c88e1aa29e0c9b335c2c93a"
+      "sourceDigest": "6b694a08263178c7d8e58d58cdd0f44f70eb0b523dd0a68e9e1f779b37d38973"
     },
     "src/agent/providers/ollama-target.ts": {
       "classification": "provider-admission",
@@ -1742,7 +1742,7 @@
       ],
       "siteCount": 112,
       "sitesDigest": "7010e316fa34d177ba5b65fb856a0e4303d045c42dddcc6df94a50ff612c7783",
-      "sourceDigest": "1280370da7a5442805c7a8cf8e0ef96352155368cbbd774755fd80b898e5c3e4"
+      "sourceDigest": "6dd4dbb203ee7aed6d2af43a97c00bbbeab77951366bb411d79192fb21cda9a3"
     },
     "src/agent/providers/onnx-embedder.ts": {
       "classification": "provider-admission",
@@ -2246,7 +2246,7 @@
       ],
       "siteCount": 14,
       "sitesDigest": "0c52cf39711803a9b20bda05b61a64013f3090054660e6082c341ca46ae29033",
-      "sourceDigest": "726605aa467d4dfc4292c3f45fed1080c66a6ebbe14ea0fb0a4911a3d0731d6a"
+      "sourceDigest": "b0ff7336f9e042b474ad1c0c092f3113d1fedeac854d623717bbd99bef694bb1"
     },
     "src/agent/providers/structured-schema.ts": {
       "classification": "provider-admission",
@@ -2973,7 +2973,7 @@
       ],
       "siteCount": 10,
       "sitesDigest": "1b0ee0d7115785e1226191ae0178d4eb3ea7b863205bb39af94535338bac19bc",
-      "sourceDigest": "54df044b19fe0ed89e18fed54572b27818a84fe7d4be426f542e51d6667f5bf2"
+      "sourceDigest": "ba4f70833f27d8b12a3e83009fa6aca8782e80055104b13fc3460b16d92d4a03"
     },
     "src/analyze/context/live-project-context.ts": {
       "classification": "session-invocation",
@@ -25114,7 +25114,7 @@
       ],
       "siteCount": 90,
       "sitesDigest": "dc37ab36b533b237e1c8dfe955301524a80855d372f48196602bd5d12c774e30",
-      "sourceDigest": "1aefaee79da6b9c5a63efa90d6a77540320977e9e86f5a8159f6b5e175b6d39f"
+      "sourceDigest": "93b61a550e12c731dff74b9c0593580aee4cbfe17d76e5946dd5645847bfc2f7"
     },
     "src/db/graph/migrations.ts": {
       "classification": "persistent-storage-boundary",
@@ -25466,7 +25466,11 @@
         ],
         [
           "storage-call",
-          "store.entityByFile.getRange"
+          "store.entityByFile.clearSync"
+        ],
+        [
+          "storage-call",
+          "store.entityByFile.getKeysCount"
         ],
         [
           "storage-call",
@@ -25475,10 +25479,6 @@
         [
           "storage-call",
           "store.entityByFile.put"
-        ],
-        [
-          "storage-call",
-          "store.entityByFile.remove"
         ],
         [
           "storage-call",
@@ -25554,8 +25554,8 @@
         ]
       ],
       "siteCount": 108,
-      "sitesDigest": "00fcccaf7de642e1121a60e9ae4399dbfba9dfc098850490fb544b2c63e2645f",
-      "sourceDigest": "d96f07d91b6fa6b1fd1688e8afd077ffa61a48fc6bda45350eaf1a6ec7a97e8c"
+      "sitesDigest": "ba40cce16f6802d323109c6c04dfed8a08429b3a187190d8e5b83e20bf81e781",
+      "sourceDigest": "0f5dffe7f0c6cfd4f59f479e0ac023fde4934c74a5703da701ad0723153609da"
     },
     "src/db/graph/pending-class.ts": {
       "classification": "persistent-storage-boundary",
@@ -33804,7 +33804,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "c04c992e376769caa35851f4518e0a626758ebe1f2de694876ef8b9a4f30d334",
-      "sourceDigest": "1dfd7b670afac809c72c2d8ea457b4d33135b6f484944bbf14aaabadcb04119d"
+      "sourceDigest": "73c047841971b52b2ac52d7a81218563d9ccab11882639cf56274d55a0020df7"
     },
     "src/mcp/code-review/handler.ts": {
       "classification": "mcp-client-boundary",

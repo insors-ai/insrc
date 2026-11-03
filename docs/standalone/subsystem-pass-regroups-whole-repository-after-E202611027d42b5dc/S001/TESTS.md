@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 14 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -124,3 +124,13 @@ Run at 2026-11-03T15:31:50.313Z on commit `8f06acfa0`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/__tests__/subsystem-scheduling.test.ts` | 0 | 5 | 6.1 s |  |
+
+## t5
+
+Run at 2026-11-03T17:04:51.021Z on commit `3df2b56be`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**smoke: S001 t5: on the installed daemon a comment-only save no longer re-reads the repository, and a cross-file save reads only the changed files**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/smoke-t5.md and cost-t5.md

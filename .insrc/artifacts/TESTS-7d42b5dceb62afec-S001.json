@@ -4,7 +4,7 @@
     "epicHash": "7d42b5dceb62afec",
     "storyId": "S001",
     "createdAt": "2026-11-03T14:34:09.725Z",
-    "updatedAt": "2026-11-03T15:31:50.313Z",
+    "updatedAt": "2026-11-03T17:04:51.021Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.745Z",
     "epicSlug": "subsystem-pass-regroups-whole-repository-after"
@@ -316,6 +316,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "3df2b56be",
+        "ranAt": "2026-11-03T17:04:51.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t5: on the installed daemon a comment-only save no longer re-reads the repository, and a cross-file save reads only the changed files",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/smoke-t5.md and cost-t5.md"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

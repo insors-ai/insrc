@@ -86,6 +86,28 @@ nativeTest(import.meta.url, 'store-reads-binding-change-during-projection-is-rec
     assert.equal((await f.store.current(scope, await f.store.snapshot(scope))).length, 0);
   } finally { release.resolve(); await f.close(); }
 });
+nativeTest(import.meta.url, 'store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content', async () => {
+  for (const change of ['forget', 'binding', 'validity', 'lease-deadline'] as const) {
+    const reached = deferred(), release = deferred(); let hold = true, elapsed = 0;
+    const f = await integrationFixture({ monotonic: () => elapsed, async point(point) { if (point === 'read-close' && hold) { reached.resolve(); await release.promise; } } });
+    try {
+      const frame = await f.append(finalCommand('cleanup-race')), plan = framePlan(frame, '0', 100);
+      const rows = change === 'validity' ? plan.rows.map(row => row.rowKind === 'source' ? makeRow('source', scope, frame.scopeEpoch, { ...row.payload, validUntil: 200 }, profile) : row) : plan.rows;
+      await f.store.commit({ ...plan, rows });
+      const reading = f.store.current(scope, await f.store.snapshot(scope));
+      const rejected = assert.rejects(reading, denied(change === 'lease-deadline' ? 'DEADLINE_EXCEEDED' : 'REVISION_CONFLICT'));
+      await reached.promise; assert.ok(f.store.pendingReadLeases() > 0, 'cleanup remains owned work');
+      if (change === 'forget') {
+        const selector = { kind: 'session' as const, sessionId: frame.command.source.sessionId };
+        const b = await f.append(finalCommand('forget-during-cleanup', { kind: 'forget', scope: { projectId: scope.projectId }, input: { target: selector } }));
+        f.clock(200); await f.store.commit(forgetPlan(b, '1', 200, selector));
+      } else if (change === 'binding') f.epoch(scope.projectId, 'rebound-during-cleanup');
+      else if (change === 'validity') f.clock(200);
+      else elapsed = 30_001;
+      hold = false; release.resolve(); await rejected; assert.equal(f.store.pendingReadLeases(), 0);
+    } finally { hold = false; release.resolve(); await f.close(); }
+  }
+});
 nativeTest(import.meta.url, 'store-reads-time-boundaries-expire-sources-without-a-generation-change', async () => {
   let advance = false;
   const f = await integrationFixture({ point(point) { if (point === 'read-before-final' && advance) { advance = false; f.clock(200); } } });

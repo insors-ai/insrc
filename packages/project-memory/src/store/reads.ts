@@ -57,6 +57,7 @@ export class ReadLeases {
   readonly #registered = new WeakMap<object, Lease>();
   readonly #live = new Set<Lease>();
   readonly #activity = new Set<Promise<unknown>>();
+  readonly #detached = new Set<Lease>();
   #slots = 0;
   #stopped = false;
   constructor(access: ReadAccess, profile: EmbeddingProfile, limits: MemoryLimits, hooks: ReadHooks = {}) {
@@ -67,7 +68,9 @@ export class ReadLeases {
   #elapsed(): number { const now = this.#hooks.monotonic?.() ?? performance.now(); if (!Number.isFinite(now) || now < 0 || now > Number.MAX_SAFE_INTEGER - STORE_LIMITS.leaseMs) unavailable(); return now; }
   #admission(): void { if (this.#stopped || !this.#access.accepting()) notReady(); }
   #track<T>(work: Promise<T>): Promise<T> {
-    const tracked = work.finally(() => this.#activity.delete(tracked)); this.#activity.add(tracked); return tracked;
+    this.#activity.add(work);
+    void work.then(() => { this.#activity.delete(work); }, () => { this.#activity.delete(work); });
+    return work;
   }
   async #binding(scope: Scope): Promise<ProjectBinding> {
     try {
@@ -109,7 +112,9 @@ export class ReadLeases {
   async #release(lease: Lease): Promise<void> {
     lease.closing ??= (async () => {
       clearTimeout(lease.timer); lease.timer = undefined;
-      await lease.reader.close(); lease.closed = true; this.#live.delete(lease); this.#slots--;
+      await lease.reader.close(); lease.closed = true;
+      if (lease.active) this.#detached.add(lease);
+      this.#live.delete(lease); this.#slots--;
     })();
     return lease.closing;
   }
@@ -122,9 +127,9 @@ export class ReadLeases {
     const lease = this.#registered.get(snapshot); if (!lease) throw new MemoryError('INVALID_REQUEST', 'Unknown memory read lease.');
     this.#check(lease); return embeddingQuery(input, this.#profile, maxBytes);
   }
-  #check(lease: Lease): void {
+  #check(lease: Lease, allowClosed = false): void {
     if (lease.expired || this.#elapsed() >= lease.expires) { lease.expired = true; expired(); }
-    this.#admission(); if (lease.closed) notReady();
+    this.#admission(); if (lease.closed && !allowClosed) notReady();
   }
   current(scope: Scope, snapshot: CommittedSnapshot): Promise<CurrentProjection> {
     let lease: Lease;
@@ -139,11 +144,14 @@ export class ReadLeases {
         if (canonical(await this.#binding(lease.scope)) !== canonical(lease.binding)) conflict();
         const projection = await this.#projection(lease, reservation);
         await this.#access.point?.('before-final'); this.#check(lease);
+        // Native cleanup may itself await. Complete it before the final checks,
+        // retaining this facade operation in pending accounting until return.
+        await this.#release(lease); this.#check(lease, true);
         // Double collection gives an overlap where the unique host binding and
         // monotone store generation agree, without invoking host callbacks while
         // the writer lane is held. Epochs are never reused by the trusted host.
         const binding = await this.#binding(lease.scope), head = await this.#access.head();
-        const rebound = await this.#binding(lease.scope), confirmed = await this.#access.head(); this.#check(lease);
+        const rebound = await this.#binding(lease.scope), confirmed = await this.#access.head(); this.#check(lease, true);
         if (canonical(binding) !== canonical(lease.binding) || canonical(rebound) !== canonical(lease.binding) || head.version !== snapshot.version || head.root.generation !== snapshot.generation || confirmed.version !== snapshot.version || confirmed.root.generation !== snapshot.generation) conflict();
         if (projection.nextValidityBoundary !== null && this.#now() >= projection.nextValidityBoundary) conflict();
         return projection;
@@ -151,7 +159,13 @@ export class ReadLeases {
         if (error instanceof MemoryError && error.code === 'BACKPRESSURE') overflow();
         if (error instanceof MemoryError) throw error;
         unavailable();
-      } finally { reservation?.release(); lease.active = false; await this.#release(lease); }
+      } finally {
+        reservation?.release();
+        // Success has no await after its final freshness check. Failure still
+        // releases any live handle, while unverified cleanup keeps the slot held.
+        try { if (!lease.closed) await this.#release(lease); }
+        finally { lease.active = false; this.#detached.delete(lease); }
+      }
     })());
   }
   async #projection(lease: Lease, reservation: Reservation): Promise<CurrentProjection> {
@@ -221,7 +235,7 @@ export class ReadLeases {
     return Object.freeze({ items: Object.freeze(views.map(record => record.view)), eligibleRowIds: Object.freeze(views.map(record => record.rowId)), generation: lease.snapshot.generation, scopeEpoch: lease.binding.scopeEpoch, evaluatedAt: now, nextValidityBoundary: boundary });
   }
   stopAdmission(): void { this.#stopped = true; }
-  pending(): number { return this.#slots; }
+  pending(): number { return this.#slots + this.#detached.size; }
   async drain(): Promise<void> {
     this.stopAdmission(); let failed = false;
     for (const lease of this.#live) if (!lease.active) try { await this.#release(lease); } catch { failed = true; }

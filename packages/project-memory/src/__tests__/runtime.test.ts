@@ -9,7 +9,7 @@ import { EmbeddedMemoryService } from '../runtime.js';
 import { ModelDispatcher } from '../model-dispatcher.js';
 import { acquireOwnership } from '../ownership.js';
 import { MemoryError } from '../errors.js';
-import { options } from './fixtures/options.js';
+import { hostOptions as options, attestHostEvent } from './fixtures/host-options.js';
 import { nativeTest } from './fixtures/node22.js';
 
 test('idempotent-drain-close-and-provider-ownership', async () => {
@@ -42,7 +42,7 @@ nativeTest(import.meta.url, 'public-service-accepted-status-and-unavailable-sema
     assert.equal('owner' in service, false); assert.equal('models' in service, false);
     await assert.rejects(MemoryFactory.open(opts), (error: unknown) => error instanceof MemoryError && error.code === 'OWNERSHIP_CONFLICT');
     const scope = { projectId: 'p' };
-    const command = { version: 1 as const, scope, source: { producerId: 'p', eventId: 'e', sessionId: 's', turnId: 't', sourceVersion: '1' }, kind: 'capture' as const, payload: null };
+    const command = { version: 1 as const, scope, source: { producerId: 'p', eventId: 'e', sessionId: 's', turnId: 't', sourceVersion: '1' }, kind: 'capture' as const, payload: { schemaVersion: 1, input: {}, source: { text: 'Host captured source', reference: null, occurredAt: null } } };
     const receipt = await service.submit(command); assert.equal(receipt.state, 'accepted');
     assert.deepEqual(await service.operation({ scope, operationId: receipt.operationId }), receipt);
     const requests = [service.context({ scope, budgetTokens: 100 }), service.search({ scope, budgetTokens: 100, query: 'x', limit: 1 }), service.inspect({ scope, memoryId: 'x' })];
@@ -77,10 +77,10 @@ nativeTest(import.meta.url, 'drain-close-startup-failure-preserve-backlog-and-ow
   let release!: () => void, entered!: () => void;
   const paused = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { entered = resolve; });
   const opts = options(join(dir, 'data'));
-  const service = await MemoryFactory.open({ ...opts, policy: { ...opts.policy, async admit(_binding, value) { entered(); await paused; return value; } } });
+  const service = await MemoryFactory.open({ ...opts, policy: { ...opts.policy, async admit(_binding, value) { entered(); await paused; return attestHostEvent(value); } } });
   let closing: Promise<void> | undefined;
   try {
-    const command = { version: 1 as const, scope: { projectId: 'p' }, source: { producerId: 'test', eventId: 'one', sessionId: 's', turnId: 't', sourceVersion: '1' }, kind: 'capture' as const, payload: null };
+    const command = { version: 1 as const, scope: { projectId: 'p' }, source: { producerId: 'test', eventId: 'one', sessionId: 's', turnId: 't', sourceVersion: '1' }, kind: 'capture' as const, payload: { schemaVersion: 1, input: {}, source: { text: 'Host captured source', reference: null, occurredAt: null } } };
     const submitted = service.submit(command); await started;
     assert.deepEqual(await service.drain(5), { completed: false, pending: 1 });
     closing = service.close();

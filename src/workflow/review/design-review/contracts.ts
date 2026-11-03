@@ -132,6 +132,7 @@ export const DesignAttemptSchema = object({
  })),
  failure: Type.Optional(object({ code: id, summary: text })),
  report: Type.Optional(DesignReportSchema), model: Type.Optional(text),
+ reviewer: Type.Optional(enumeration(['daemon','controller'])),
  recovery: Type.Optional(DesignRecoveryStateSchema), unit: Type.Optional(DesignUnitStateSchema),
  unitSummaries: Type.Optional(Type.Array(DesignUnitSummarySchema,{maxItems:DESIGN_LIMITS.chunks+1})),
  actions: Type.Optional(Type.Array(DesignActionRecordSchema,{maxItems:DESIGN_LIMITS.actions})),

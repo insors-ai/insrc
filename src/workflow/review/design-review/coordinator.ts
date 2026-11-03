@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { randomUUID,createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
@@ -9,13 +9,14 @@ import type { LLMProvider } from '../../../shared/types.js';
 import type { ReviewActivityMonitorDeps } from '../../../shared/review-activity.js';
 import { requireReviewActivity, REVIEW_INACTIVITY_MS, ReviewActivityMonitor } from '../../../shared/review-activity.js';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult } from './contracts.js';
+import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult, DesignRecoveryRequest } from './contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from './subject.js';
 import { designCheckpointPath, loadDesignCheckpoint, saveDesignCheckpoint } from './checkpoint.js';
 import { DesignProgressTracker, observeDesignCheckpoint } from './progress.js';
 import type { DesignObservation } from './progress.js';
 import { designPlanningPrompt, designChunkPrompt } from './policy.js';
 import { validateDesignPlan, assessDesignResult, consolidateDesignReview } from './results.js';
+import { nextDesignUnit, reserveDesignUnit, sealDesignUnit } from './recovery-state.js';
 
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
@@ -44,6 +45,7 @@ interface DesignJob {
  serial:Promise<void>; done:Promise<void>; providerFactory:()=>DesignProvider;
  progressTimer?:ReturnType<typeof setTimeout>|undefined; progressWritePending?:boolean; storageError?:unknown;
  closed:boolean; owner?:DesignControllerOwner|undefined; controller?:ControllerUnit|undefined; disconnect?:(()=>void)|undefined;
+ reservedExecutionId?:string|undefined;
 }
 /** Main-daemon owner. Request disconnection is deliberately not an execution signal. */
 export class DesignReviewCoordinator {
@@ -66,11 +68,79 @@ export class DesignReviewCoordinator {
   const promise=this.admit(request,context);this.admitting.set(key,{signature,promise});
   try{return await promise;}finally{if(this.admitting.get(key)?.promise===promise)this.admitting.delete(key);}
  }
- private ack(checkpoint:DesignReviewCheckpoint,active:boolean):DesignReviewAcknowledgement{
-  const attempt=currentDesignAttempt(checkpoint),error=this.uncertain.get(this.key(checkpoint.project,checkpoint.reviewId));
-  return {reviewId:checkpoint.reviewId,attempt:attempt.number,artifactId:checkpoint.artifactId,reviewer:checkpoint.subject.reviewer,
+ private ack(checkpoint:DesignReviewCheckpoint,active:boolean,number=currentDesignAttempt(checkpoint).number):DesignReviewAcknowledgement{
+  const attempt=checkpoint.attempts[number-1];requireDesign(attempt,'missing_attempt','Design review attempt not found');
+  const error=number===currentDesignAttempt(checkpoint).number&&this.uncertain.get(this.key(checkpoint.project,checkpoint.reviewId));
+  return {reviewId:checkpoint.reviewId,attempt:attempt.number,artifactId:checkpoint.artifactId,reviewer:attempt.reviewer??checkpoint.subject.reviewer,
    status:error?'failed':!active&&(attempt.status==='pending'||attempt.status==='running')?'interrupted':attempt.status,
    checkpointPath:designCheckpointPath(checkpoint.project,checkpoint.reviewId)};
+ }
+ async recover(input:unknown,context:DesignStartContext={}):Promise<DesignReviewAcknowledgement>{
+  const decoded=parseDesignRequest(input);requireDesign(decoded.phase==='recover','invalid_phase','Expected recover');
+  const request={...decoded,repo:await realpath(decoded.repo)},key=this.key(request.repo,request.reviewId),signature=requestSignature(request),existing=this.admitting.get(key);
+  if(existing){requireDesign(existing.signature===signature,'review_conflict','Conflicting recovery during admission');return existing.promise;}
+  const promise=this.admitRecovery(request,signature,context);this.admitting.set(key,{signature,promise});
+  try{return await promise;}finally{if(this.admitting.get(key)?.promise===promise)this.admitting.delete(key);}
+ }
+ private launch(checkpoint:DesignReviewCheckpoint,tracker:DesignProgressTracker,context:DesignStartContext,reservedExecutionId?:string):void{
+  const key=this.key(checkpoint.project,checkpoint.reviewId),subject=checkpoint.subject;
+  const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,owner:subject.reviewer==='controller'?context.owner:undefined,reservedExecutionId,
+   providerFactory:context.provider??(()=>{const descriptor=this.deps.provider?.(subject);requireDesign(descriptor,'missing_provider','Review provider unavailable');return descriptor;})};
+  this.jobs.set(key,job);
+  if(job.owner){
+   job.disconnect=()=>{const error=new DesignReviewError('controller_disconnected','Reviewing controller disconnected');job.abort.abort(error);job.controller?.reject(error);for(const [id,replay] of this.replays)if(replay.owner.id===job.owner!.id)this.replays.delete(id);};
+   job.owner.signal.addEventListener('abort',job.disconnect,{once:true});if(job.owner.signal.aborted)job.disconnect();
+  }
+  job.done=new Promise<void>(finish=>{setImmediate(()=>{void this.execute(job).then(finish,finish);});});
+ }
+ private async admitRecovery(request:DesignRecoveryRequest,signature:string,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
+  requireDesign(request.operation!=='retry_publication','publication_unavailable','Artifact history publication belongs to S4');
+  const key=this.key(request.repo,request.reviewId),active=this.jobs.get(key);
+  const saved=active?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(request.repo,request.reviewId);
+  requireDesign(saved,'missing_checkpoint','Design review not found');
+  const replay=saved.attempts.flatMap(a=>a.actions??[]).find(a=>a.actionId===request.actionId);
+  if(replay){
+   requireDesign(replay.signature===signature,'review_conflict','Conflicting recovery action replay');
+   if(active?.owner)requireDesign(context.owner?.id===active.owner.id,'wrong_owner','Not the reviewing connection');
+   return this.ack(saved,!!active&&currentDesignAttempt(saved).number===replay.resultAttempt,replay.resultAttempt);
+  }
+  requireDesign(!active&&!this.subjects.has(this.subjectKey(saved.subject)),'review_conflict','Review subject already has an active execution');
+  requireDesign(!this.uncertain.has(key),'persistence_failed','Prior terminal state could not be persisted');
+  const checkpoint=structuredClone(saved),source=currentDesignAttempt(checkpoint);
+  requireDesign(source.number===request.attempt,'missing_attempt','Recovery must name the current attempt');
+  source.reviewer??=saved.subject.reviewer;
+  let attempt=source;
+  if(request.operation==='restart_full'){
+   requireDesign(source.status==='invalidated','review_conflict','Full restart requires an invalidated attempt');
+   const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,saved.subject.canonicalPath);
+   requireDesign(prepared.subject.artifactId===saved.artifactId,'foreign_checkpoint','Restart resolved another artifact');
+   checkpoint.subject=prepared.subject;
+   const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
+   attempt={number:source.number+1,status:'pending',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer};
+   checkpoint.attempts.push(attempt);
+  }else{
+   requireDesign(['pending','running','interrupted','paused'].includes(source.status),'review_conflict','Attempt is not resumable');
+   try{assertDesignSubjectUnchanged(saved.subject,source.baseline);}catch(error){
+    const summary=error instanceof Error?error.message:'Reviewed artifact changed';source.status='invalidated';source.failure={code:'artifact_changed',summary};source.finishedAt=new Date().toISOString();
+    source.recovery={attempt:source.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:source.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
+    source.progress={...source.progress,status:'invalidated',phase:'complete',requiresUserInput:true};
+    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);throw error;
+   }
+   if(source.status==='paused')requireDesign(request.userDecision?.action==='retry_failed_unit','user_decision_required','Paused review requires user direction');
+  }
+  if(checkpoint.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
+  const work=nextDesignUnit(attempt);
+  requireDesign(work||!request.userDecision||request.operation==='restart_full','invalid_decision','No unfinished unit to retry');
+  const reservedExecutionId=work?reserveDesignUnit(attempt,work.chunk,request.userDecision?.action==='retry_failed_unit',true):undefined;
+  (source.actions??=[]).push({actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),acceptedAt:new Date().toISOString()});
+  const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId),undefined,attempt.progress);
+  tracker.phase('persisting',attempt.completedChunks.length,attempt.plan?.chunks.length??0);
+  attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;attempt.progress=tracker.snapshot();
+  const subjectKey=this.subjectKey(checkpoint.subject);this.subjects.set(subjectKey,key);
+  try{
+   await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
+   this.launch(checkpoint,tracker,context,reservedExecutionId);return this.ack(checkpoint,true);
+  }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
  }
  private async admit(request:DesignReviewStart,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
   const key=this.key(request.repo,request.reviewId),active=this.jobs.get(key);
@@ -87,17 +157,9 @@ export class DesignReviewCoordinator {
   try{
    const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
    const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:request.reviewId,project:request.repo,artifactId:prepared.subject.artifactId,subject:prepared.subject,
-    submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString()}]};
+    submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
-   const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,owner:prepared.subject.reviewer==='controller'?context.owner:undefined,
-    providerFactory:context.provider??(()=>{const descriptor=this.deps.provider?.(prepared.subject);requireDesign(descriptor,'missing_provider','Review provider unavailable');return descriptor;})};
-   this.jobs.set(key,job);
-   if(job.owner){
-    job.disconnect=()=>{const error=new DesignReviewError('controller_disconnected','Reviewing controller disconnected');job.abort.abort(error);job.controller?.reject(error);for(const [id,replay] of this.replays)if(replay.owner.id===job.owner!.id)this.replays.delete(id);};
-    job.owner.signal.addEventListener('abort',job.disconnect,{once:true});
-    if(job.owner.signal.aborted)job.disconnect();
-   }
-   job.done=new Promise<void>(finish=>{setImmediate(()=>{void this.execute(job).then(finish,finish);});});
+   this.launch(checkpoint,tracker,context);
    return this.ack(checkpoint,true);
   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
  }
@@ -105,9 +167,10 @@ export class DesignReviewCoordinator {
   project=await realpath(project);const key=this.key(project,reviewId),job=this.jobs.get(key);
   const checkpoint=job?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(project,reviewId);
   requireDesign(checkpoint,'missing_checkpoint','Design review not found');
-  requireDesign(currentDesignAttempt(checkpoint).number===attempt,'missing_attempt','Design review attempt not found');
-  const view=observeDesignCheckpoint(checkpoint,{...options,active:!!job,...(job?{liveProgress:job.tracker.snapshot()}:{})});
-  const uncertain=this.uncertain.get(key);
+  requireDesign(checkpoint.attempts[attempt-1]?.number===attempt,'missing_attempt','Design review attempt not found');
+  const live=!!job&&currentDesignAttempt(checkpoint).number===attempt;
+  const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.slice(0,attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
+  const uncertain=attempt===currentDesignAttempt(checkpoint).number&&this.uncertain.get(key);
   return uncertain?{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain}:view;
  }
  private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void,kind:'execution'|'failure'='execution'):Promise<void>{
@@ -131,9 +194,11 @@ export class DesignReviewCoordinator {
   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint),path=designCheckpointPath(checkpoint.project,checkpoint.reviewId);
   assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
   job.tracker.unit(chunk?'chunk_review':'planning',chunk?.id,attempt.completedChunks.length,attempt.plan?.chunks.length??0);
-  const assignment:DesignUnitAssignment={kind:chunk?'chunk':'planning',executionId:randomUUID(),sequence:0,...(chunk?{chunkId:chunk.id}:{}),
+  const reserved=job.reservedExecutionId;job.reservedExecutionId=undefined;
+  let executionId=reserved??'';
+  await this.commit(job,a=>{a.status='running';if(reserved)requireDesign(a.current?.executionId===reserved,'stale_execution','Reserved execution no longer matches');else executionId=reserveDesignUnit(a,chunk);});
+  const assignment:DesignUnitAssignment={kind:chunk?'chunk':'planning',executionId,sequence:0,...(chunk?{chunkId:chunk.id}:{}),
    prompt:chunk?designChunkPrompt(checkpoint.subject,chunk,path):designPlanningPrompt(checkpoint.subject,path),schema:chunk?DesignResultSchema:DesignPlanSchema};
-  await this.commit(job,a=>{a.status='running';a.current={kind:assignment.kind,executionId:assignment.executionId,sequence:0,issuedAt:new Date().toISOString(),...(chunk?{chunkId:chunk.id}:{})};});
   const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,[checkpoint.subject.documentPath,...(chunk.purpose==='consistency'?[path]:[])]):validateDesignPlan(input,attempt.inventory);
   if(job.owner){
    requireDesign(!job.owner.signal.aborted,'controller_disconnected','Reviewing controller disconnected');
@@ -201,15 +266,19 @@ export class DesignReviewCoordinator {
   const key=this.key(job.checkpoint.project,job.checkpoint.reviewId);
   try{
    let provider:LLMProvider|undefined;
-   if(!job.owner){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
-   const plan=await this.unit(job,provider) as DesignChunkPlan;
-   assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
-   job.tracker.phase('persisting',0,plan.chunks.length);await this.commit(job,a=>{a.plan=plan;delete a.current;});this.acceptController(job);
-   for(const chunk of plan.chunks){
+   if(!job.owner&&nextDesignUnit(currentDesignAttempt(job.checkpoint))){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
+   let plan=currentDesignAttempt(job.checkpoint).plan;
+   if(!plan){
+    plan=await this.unit(job,provider) as DesignChunkPlan;
+    assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+    job.tracker.phase('persisting',0,plan.chunks.length);const accepted=plan;
+    await this.commit(job,a=>{a.plan=accepted;sealDesignUnit(a);delete a.current;});this.acceptController(job);
+   }
+   for(const chunk of plan.chunks.slice(currentDesignAttempt(job.checkpoint).completedChunks.length)){
     const result=await this.unit(job,provider,chunk) as DesignChunkResult;
     assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     job.tracker.phase('persisting',currentDesignAttempt(job.checkpoint).completedChunks.length+1,plan.chunks.length);
-    await this.commit(job,a=>{a.completedChunks.push(result);delete a.current;});this.acceptController(job);
+    await this.commit(job,a=>{a.completedChunks.push(result);sealDesignUnit(a);delete a.current;});this.acceptController(job);
    }
    const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
    const report=consolidateDesignReview(checkpoint.reviewId,attempt.number,checkpoint.subject,attempt.baseline.contentIdentity,plan,attempt.completedChunks);
@@ -220,11 +289,12 @@ export class DesignReviewCoordinator {
    const issues=error instanceof ReviewOutputFailureError?error.diagnostic.issues.map(issue=>`${issue.code} ${issue.field}: ${issue.correction}`).join('; '):'';
    const summary=[error instanceof Error?error.message:'Design review failed',issues].filter(Boolean).join('; ').slice(0,DESIGN_LIMITS.text);
    const status=code==='artifact_changed'?'invalidated':code==='controller_disconnected'?'interrupted':'failed';job.tracker.status(status);
-   try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();delete a.current;},'failure');}
+   try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();const base={attempt:a.number,completedChunkIds:a.completedChunks.map(c=>c.chunkId),requiresUserInput:true as const};if(status==='interrupted')a.recovery={...base,status:'interrupted',reason:'connection_lost'};if(status==='invalidated')a.recovery={...base,status:'invalidated',reason:'artifact_changed'};delete a.current;},'failure');}
    catch{this.uncertain.set(key,{code:'persistence_failed',summary:`Terminal result could not be persisted: ${summary}`.slice(0,DESIGN_LIMITS.text)});}
    log.warn({reviewId:job.checkpoint.reviewId,code},'Design review stopped');
   }finally{
    job.closed=true;job.controller?.monitor.stop();this.stopProgress(job);await job.serial.catch(()=>{});
+   if(job.owner&&job.disconnect)job.owner.signal.removeEventListener('abort',job.disconnect);
    this.jobs.delete(key);if(this.subjects.get(this.subjectKey(job.checkpoint.subject))===key)this.subjects.delete(this.subjectKey(job.checkpoint.subject));
   }
  }

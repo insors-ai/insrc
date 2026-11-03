@@ -12,8 +12,8 @@ export class DesignProgressTracker {
  private readonly sessions=new Map<string,number>();
  private readonly tools=new Set<string>();
  private value:DesignReviewProgress;
- constructor(path:string,private readonly time:DesignClock=clock){
-  this.started=time.now();this.value={status:'pending',phase:'planning',completedChunks:0,totalChunks:0,lastMeaningfulActivityAt:null,activeToolCount:0,requiresUserInput:false,checkpointPath:path,sequence:0,reviewElapsedMs:0,unitElapsedMs:null,observedAt:time.wall(),freshness:'live'};
+ constructor(path:string,private readonly time:DesignClock=clock,previous?:DesignReviewProgress){
+  this.started=time.now()-(previous?.reviewElapsedMs??0);this.value={status:'pending',phase:'planning',completedChunks:0,totalChunks:0,lastMeaningfulActivityAt:null,activeToolCount:0,requiresUserInput:false,checkpointPath:path,sequence:previous?.sequence??0,reviewElapsedMs:0,unitElapsedMs:null,observedAt:time.wall(),freshness:'live'};
  }
  unit(phase:'planning'|'chunk_review',chunkId?:string,completed=0,total=0):void{
   this.sessions.clear();this.tools.clear();this.unitStarted=this.time.now();
@@ -67,6 +67,8 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  progress.freshness=live?'live':'stored';
  if(!live&&(attempt.status==='pending'||attempt.status==='running'))progress.status='interrupted';else progress.status=attempt.status;
  progress.completedChunks=attempt.completedChunks.length;progress.totalChunks=attempt.plan?.chunks.length??0;
+ if(attempt.recovery)progress.recovery=structuredClone(attempt.recovery);
+ else if(progress.status==='interrupted')progress.recovery={attempt:attempt.number,status:'interrupted',reason:'daemon_restarted',completedChunkIds:attempt.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
  const completedResults=options.includeResult?attempt.completedChunks.slice(cursor,cursor+1):[];
  const report=attempt.report;
  progress.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(progress.status);

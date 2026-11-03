@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "1ad687e69c9218de",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T08:06:43.031Z",
+    "updatedAt": "2026-11-03T08:20:30.043Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.712Z",
+    "epicSlug": "typescript-reader-drops-calls-user-functions"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "a0d1fe628",
+        "ranAt": "2026-11-03T08:20:30.043Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: bare calls to user functions named like built-ins are kept; bare global functions are not",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts",
+                "title": "S001 t1: bare calls to user functions named like built-ins are kept; bare global functions are not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: calls on this, super and import bindings are kept whatever the name; a local shadowing an import is not",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts",
+                "title": "S001 t1: calls on this, super and import bindings are kept whatever the name; a local shadowing an import is not",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts",
+                "title": "S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 711,
+            "titles": [
+              {
+                "title": "S001 t1: bare calls to user functions named like built-ins are kept; bare global functions are not",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: calls on this, super and import bindings are kept whatever the name; a local shadowing an import is not",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: built-in-named member calls on untyped locals and built-in objects record no row, and import bindings do not leak to the next file",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

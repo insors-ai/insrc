@@ -234,6 +234,24 @@ export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEvent
   if (bytes > limit) invalid();
   return Object.freeze({ rows: Object.freeze(rows), bytes });
 }
+/** Prepare the row/profile portion of a CommitPlan before writer admission.
+ * Other plan fields (frame identity, revisions and disposition) belong to the
+ * causal guards. Never infer a missing vector profile from the row dimension. */
+export function snapshotPlanRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number) {
+  validateProfile(profile); record(invalid, input);
+  const proto = Object.getPrototypeOf(input);
+  if (proto !== Object.prototype && proto !== null) invalid();
+  const rows = Object.getOwnPropertyDescriptor(input, 'rows');
+  const metadata = Object.getOwnPropertyDescriptor(input, 'embeddingProfile');
+  if (!rows || !rows.enumerable || !('value' in rows)) invalid();
+  if (metadata) {
+    if (!metadata.enumerable || !('value' in metadata)) invalid();
+    requireProfile(metadata.value, profile);
+  }
+  const prepared = snapshotRows(rows.value, profile, maxEventBytes);
+  if (!metadata && prepared.rows.some(row => row.embedding !== null)) invalid();
+  return prepared;
+}
 /** Native SDK adapters call explicitly; imports of the public package stay pure. */
 export async function arrowSchema(profile: EmbeddingProfile) {
   validateProfile(profile);

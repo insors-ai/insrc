@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T12:09:27.140Z",
+    "updatedAt": "2026-11-03T12:27:33.196Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -83,6 +83,130 @@
               },
               {
                 "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "1e0058f24",
+        "ranAt": "2026-11-03T12:27:33.196Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "store-row-codec-and-effect-reservations",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-canonical-roundtrip-all-row-kinds",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-reserves-bounded-immutable-effect-batches",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-persisted-payload-v1-required-fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+                "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-embedding-normalization-profile-v1",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+                "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/store-codec.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 758,
+            "titles": [
+              {
+                "title": "store-codec-canonical-roundtrip-all-row-kinds",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-rejects-missing-extra-and-duplicated-envelope-fields",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-validates-nested-lineage-outcomes-and-source-shapes",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-reserves-bounded-immutable-effect-batches",
+                "result": "pass"
+              },
+              {
+                "title": "store-codec-qualified-identities-and-explicit-arrow-schema",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-embedding-profile.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 552,
+            "titles": [
+              {
+                "title": "store-embedding-profile-preserves-text-and-converts-float32-once",
+                "result": "pass"
+              },
+              {
+                "title": "store-embedding-profile-rejects-missing-or-mismatched-metadata",
+                "result": "pass"
+              },
+              {
+                "title": "store-embedding-profile-rejects-unsafe-text-and-vectors",
                 "result": "pass"
               }
             ],

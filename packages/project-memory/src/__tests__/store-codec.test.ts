@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryError } from '../errors.js';
 import { snapshotJson } from '../queue/codec.js';
-import { arrowSchema, decodeRow, encodeRow, makeRow, namespaceKey, physicalId, snapshotRows, validateRow } from '../store/codec.js';
+import { arrowSchema, decodeRow, encodeRow, makeRow, namespaceKey, physicalId, snapshotPlanRows, snapshotRows, validateRow } from '../store/codec.js';
 import { embeddingProfile } from '../store/embedding-profile.js';
-import { currentPayload, epoch, profile, scope, storeRows } from './fixtures/store-rows.js';
+import { currentPayload, epoch, operationId, profile, scope, storeRows } from './fixtures/store-rows.js';
 
 const fails = (run: () => unknown, code = 'INVALID_REQUEST') => assert.throws(run, e => e instanceof MemoryError && e.code === code);
 const copy = (value: unknown) => structuredClone(value) as Record<string, any>;
@@ -109,4 +109,27 @@ test('store-codec-qualified-identities-and-explicit-arrow-schema', async () => {
   fails(() => validateRow(storeRows()[0], changed), 'UNSUPPORTED_VERSION');
   const row = makeRow('current', scope, epoch, currentPayload(), profile, [0.1, 0.2]);
   assert.deepEqual(row.embedding, [Math.fround(0.1), Math.fround(0.2)]);
+});
+test('store-codec-vector-bearing-plan-requires-compatible-embedding-metadata', () => {
+  const rows = storeRows().filter(row => ['current', 'revision', 'source', 'evidence'].includes(row.rowKind));
+  const before = snapshotJson(rows, 65_536).text;
+  const plan = { operationId, scope, expectedGeneration: '0', rows, embeddingProfile: { ...profile } };
+  const prepared = snapshotPlanRows(plan, profile, 16_384);
+  assert.equal(prepared.rows.length, rows.length);
+  for (const metadata of [embeddingProfile('changed-model', 2), embeddingProfile(profile.model, 3), { ...profile, normalizationVersion: 'changed-profile-v2' }]) {
+    fails(() => snapshotPlanRows({ ...plan, embeddingProfile: metadata }, profile, 16_384), 'UNSUPPORTED_VERSION');
+  }
+  const missing = { ...plan } as Record<string, unknown>; delete missing.embeddingProfile;
+  fails(() => snapshotPlanRows(missing, profile, 16_384));
+  fails(() => snapshotPlanRows({ ...plan, embeddingProfile: undefined }, profile, 16_384));
+  fails(() => snapshotPlanRows({ ...plan, embeddingProfile: { model: profile.model, dimension: 2 } }, profile, 16_384));
+  const scalar = rows.find(row => row.rowKind === 'source')!;
+  assert.equal(snapshotPlanRows({ rows: [scalar] }, profile, 16_384).rows.length, 1, 'scalar-only plans need no new embedding');
+  fails(() => snapshotPlanRows({ rows: [scalar], embeddingProfile: embeddingProfile('other', 2) }, profile, 16_384), 'UNSUPPORTED_VERSION');
+  plan.embeddingProfile.model = 'caller-mutated';
+  assert.deepEqual(prepared.rows.find(row => row.rowKind === 'current')?.embedding, [1, 0]);
+  let invoked = false;
+  const getter = Object.defineProperty({ rows }, 'embeddingProfile', { enumerable: true, get() { invoked = true; return profile; } });
+  fails(() => snapshotPlanRows(getter, profile, 16_384)); assert.equal(invoked, false);
+  assert.equal(snapshotJson(rows, 65_536).text, before, 'mismatch checks do not mutate inputs');
 });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -30,3 +30,37 @@ Run at 2026-11-03T12:09:27.140Z on commit `0604e8443`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 5 | 18.4 s |  |
+
+## t2
+
+Run at 2026-11-03T12:27:33.196Z on commit `1e0058f24`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: store-row-codec-and-effect-reservations**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-codec-canonical-roundtrip-all-row-kinds | `packages/project-memory/src/__tests__/store-codec.test.ts` |
+| pass | store-codec-reserves-bounded-immutable-effect-batches | `packages/project-memory/src/__tests__/store-codec.test.ts` |
+| pass | store-codec-qualified-identities-and-explicit-arrow-schema | `packages/project-memory/src/__tests__/store-codec.test.ts` |
+
+**unit: store-persisted-payload-v1-required-fields**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-codec-rejects-missing-extra-and-duplicated-envelope-fields | `packages/project-memory/src/__tests__/store-codec.test.ts` |
+| pass | store-codec-validates-nested-lineage-outcomes-and-source-shapes | `packages/project-memory/src/__tests__/store-codec.test.ts` |
+
+**unit: store-embedding-normalization-profile-v1**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-embedding-profile-preserves-text-and-converts-float32-once | `packages/project-memory/src/__tests__/store-embedding-profile.test.ts` |
+| pass | store-embedding-profile-rejects-missing-or-mismatched-metadata | `packages/project-memory/src/__tests__/store-embedding-profile.test.ts` |
+| pass | store-embedding-profile-rejects-unsafe-text-and-vectors | `packages/project-memory/src/__tests__/store-embedding-profile.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-codec.test.ts` | 0 | 5 | 0.8 s |  |
+| `packages/project-memory/src/__tests__/store-embedding-profile.test.ts` | 0 | 3 | 0.6 s |  |

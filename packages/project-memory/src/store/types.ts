@@ -87,3 +87,8 @@ export interface RowEnvelope {
 }
 export type StoreRow = { [K in RowKind]: RowEnvelope & { readonly rowKind: K; readonly payload: PayloadByKind[K] } }[RowKind];
 export type EncodedRow = RowEnvelope & { readonly rowKind: RowKind; readonly payload: string };
+/** Row/profile portion of the private CommitPlan; causal guards are separate. */
+export interface CommitPlanRows {
+  readonly rows: readonly StoreRow[];
+  readonly embeddingProfile?: EmbeddingProfile | undefined;
+}

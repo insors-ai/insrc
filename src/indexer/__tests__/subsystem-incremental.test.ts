@@ -42,6 +42,9 @@ const FILES: Record<string, string> = {
 	'src/store/limits.ts': "export function maxRows(): number { return 100; }\n",
 };
 
+const SOON = 'export function soon(): number { return 1; }\n';
+const LATE = "import { soon } from './soon.js';\nexport function late(): number { return soon(); }\n";
+
 const watcher = { onEvents() {}, async addRepo() {}, async removeRepo() {}, async addConfigDir() {} } as unknown as Watcher;
 const db = null as unknown as DbClient;
 const provider = { capabilities: {}, async completeStructured<T>(): Promise<T> { return { summary: 'a summary' } as T; } } as unknown as LLMProvider;
@@ -119,14 +122,33 @@ test('S001 t2: after each edit in the sequence the incremental pass stores what 
 		['a new file', 'src/util/fmt.ts', "import { token } from '../parse/tokens.js';\nexport function fmt(s: string): string { return token(s); }\n"],
 		['a deleted file', 'src/util/fmt.ts', null],
 		['a file losing its last code entity', 'src/store/limits.ts', '// no code here any more\n'],
-		['a pending call of another file', 'src/store/late.ts', "import { soon } from './soon.js';\nexport function late(): number { return soon(); }\n"],
-		['the definition that resolves it, in a settle', 'src/store/soon.ts', 'export function soon(): number { return 1; }\n'],
+		['a new callee', 'src/store/soon.ts', SOON],
+		['its caller in another file', 'src/store/late.ts', LATE],
 	];
 	for (const [label, file, text] of steps) {
 		await edit(file, text);
 		const r = await passEqualsFull(label);
 		assert.equal(r.mode, 'incremental', `${label}: the file graph changed`);
 	}
+	const callsSoon = async () => readContributionsInTxn(await getGraphStore(), repoId).get('src/store/late.ts')!.out.some(e => e.to === 'src/store/soon.ts' && (e.kinds.CALLS ?? 0) > 0);
+	assert.equal(await callsSoon(), true);
+
+	// The callee's file is deleted: the caller's call returns to pending, awaiting the callee, and the graph is
+	// incomplete -- no pass groups it.
+	await edit('src/store/soon.ts', null);
+	assert.equal((await pass()).reason, 'graph-incomplete');
+	const stampOf = async () => readChangedFilesInTxn(await getGraphStore(), repoId).find(c => c.file === 'src/store/late.ts')?.stamp ?? 0n;
+	const whileWaiting = await stampOf();
+
+	// The callee comes back: the settle completes the caller's waiting call (Pass 0), although late.ts was not
+	// saved -- the promotion records late.ts again, so the incremental pass recomputes it.
+	await edit('src/store/soon.ts', SOON);
+	assert.ok(await stampOf() > whileWaiting, 'the settle recorded the unsaved caller when it completed its call');
+	const back = await passEqualsFull('the settle resolves the unsaved caller');
+	// No pass grouped the incomplete graph, so the rows are back to what is stored: the caller is re-read
+	// (with the callee) and found unchanged.
+	assert.deepEqual([back.mode, back.filesRead], ['unchanged', 2]);
+	assert.equal(await callsSoon(), true, 'the caller now calls the callee again');
 	assert.equal(await groupOf('src/store/limits.ts'), undefined, 'a file with no code entity is in no group');
 	assert.equal(await groupOf('src/util/fmt.ts'), undefined, 'a deleted file is in no group');
 	assert.ok(await groupOf('src/store/late.ts'));

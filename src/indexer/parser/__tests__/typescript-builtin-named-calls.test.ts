@@ -166,6 +166,7 @@ test('S001 t2: calls on typed, new-initialised and constructor-assigned fields a
 	const r = parse(`
 import * as ns from './ns.js';
 class Store { find(): void {} }
+class Repo<T> { create(): void {} }
 export class Service {
 	private typed: Store;
 	private generic: Repo<number>;
@@ -285,4 +286,75 @@ export function jsRun(arg) {
 function make() { return []; }
 `, '/repo/src/mod.js');
 	assert.deepEqual(calls(js, 'jsRun'), ['find', 'make'], 'in JavaScript a new-initialised local proves a user object; untyped values do not');
+});
+
+test('S001 review: package imports and library types never prove a user object, so built-in calls on them link to nothing', () => {
+	const r = parse(`
+import path from 'node:path';
+import * as yaml from 'yaml';
+import type { Socket } from 'socket.io';
+import { Command } from 'commander';
+import { Local } from './local.js';
+export function resolve(p: string): void {}
+export function parse(t: string): void {}
+export function emit(): void {}
+type Items = number[];
+interface Bag extends Array<number> {}
+interface Own { find(): void }
+class Bus extends Command { fire(): void { this.emit('x'); this.parse(); this.own(); } own(): void {} parse(): void {} }
+export function load(f: string, s: Socket, items: Items, bag: Bag, own: Own, local: Local): void {
+	yaml.parse(path.resolve(f));
+	s.emit('x');
+	const program = new Command();
+	program.parse([]);
+	items.find(Boolean);
+	bag.map(x => x);
+	own.find();
+	local.create();
+	const bus = new Bus();
+	bus.emit('x');
+}
+`);
+	assert.deepEqual(calls(r, 'load'), ['create', 'find'],
+		'only the in-file interface and the in-repo import prove a receiver; package bindings, library types, array aliases and interfaces extending Array do not');
+	assert.deepEqual(calls(r, 'fire'), ['own', 'parse'], 'in a class extending a library class, this.<built-in name> is kept only for members it declares');
+});
+
+test('S001 review: a bare built-in name is kept only for a function or class declaration or an import, not a parameter or variable', () => {
+	const r = parse(`
+export function resolve(): void {}
+export function find(): void {}
+export function wait(withParser: (s: string) => void, parse: (s: string) => void): Promise<void> {
+	find();
+	return new Promise((resolve, reject) => { resolve(); reject(); parse('x'); });
+}
+`);
+	assert.deepEqual(calls(r, 'wait'), ['find'], 'find is a function declaration; resolve, reject and parse are parameters here');
+});
+
+test('S001 review: module-level declarations prove a receiver, and a block var axios client keeps its HTTP proof', () => {
+	const r = parse(`
+import axios from 'axios';
+class Repo { find(): void {} }
+const repo = new Repo();
+export function run(): void { repo.find(); }
+export function http(c: boolean): void {
+	if (c) { var api = axios.create(); }
+	api.get('/u');
+}
+`);
+	assert.deepEqual(calls(r, 'run'), ['find'], 'a module-level new-initialised const');
+	const httpFn = r.entities.find(e => e.kind === 'function' && e.name === 'http')!;
+	assert.equal(r.relations.filter(x => x.kind === 'CALLS_HTTP' && x.from === httpFn.id).length, 1, 'the var axios instance created in a block is still proven');
+});
+
+test('S001 review: a file of many nested functions parses in linear time', () => {
+	// A bundle-style IIFE: each nested function sits beside a var of the outer
+	// function, whose frame is costly to build; it must be built once, not per body.
+	const body = Array.from({ length: 400 }, (_v, i) => `var v${i} = { a: ${i} };\nfunction f${i}(x) { var y = v${i}.a; return f${(i + 1) % 400}(x) + y; }`).join('\n');
+	const src = `(function () {\n${body}\n})();\n`;
+	const start = Date.now();
+	parse(src, '/repo/src/bundle.js');
+	const ms = Date.now() - start;
+	assert.ok(ms < 3000, `400 nested functions took ${ms} ms (about 0.1 s with cached frames, 6.7 s without)`);
 });

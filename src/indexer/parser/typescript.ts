@@ -118,7 +118,15 @@ class TypeScriptParser implements CodeParser {
     // S004 (t2): messaging detection is import-gated for every language — a file
     // is scanned for pub/sub call-sites only when it imports a messaging library.
     messagingEnabled = fileImportsMessagingLibrary(lang, collectTsImportSpecifiers(source));
-    fileImportBindings = collectImportBindings(tree.rootNode);   // ISSUE-1ad687e6: per file
+    // ISSUE-1ad687e6: per file -- the import bindings, which of them (and which
+    // local classes) are the repository's own code, and a cache of scope frames.
+    const imports = collectImportBindings(tree.rootNode);
+    fileImportBindings = imports.all;
+    fileUserImports = imports.user;
+    fileUserNamespaces = imports.namespaces;
+    fileUserTypes = collectFileUserTypes(tree.rootNode, imports.user, imports.namespaces);
+    fileRoot = tree.rootNode;
+    frameCache = new Map();
 
     const entities:  Entity[]   = [];
     const relations: Relation[] = [];
@@ -753,14 +761,17 @@ function extractCalls(
   // extracted as its own entity still sees its outer function's parameters and
   // locals), then the body's own frame; a name resolves to the nearest frame
   // that declares it.
+  // The file's own top-level declarations form the frame after the imports.
+  // Frames are cached per node for the parse, so nested bodies reuse them.
   const enclosing: AxiosScope[] = [];
   for (let a = bodyNode.parent; a !== null; a = a.parent) {
-    if (SCOPE_NODE_TYPES.has(a.type)) enclosing.unshift(collectScopeFrame(a));
+    if (SCOPE_NODE_TYPES.has(a.type)) enclosing.unshift(scopeFrame(a));
   }
   const axiosScopes: AxiosScope[] = [
-    { declared: fileImportBindings, axios: new Set(), user: fileImportBindings },
+    { declared: fileImportBindings, axios: new Set(), user: fileUserImports, callable: fileImportBindings },
+    ...(fileRoot !== null && fileRoot !== bodyNode ? [scopeFrame(fileRoot)] : []),
     ...enclosing,
-    collectScopeFrame(bodyNode),
+    scopeFrame(bodyNode),
   ];
   walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes, skip);
 }
@@ -847,13 +858,18 @@ const CLASS_NODE_TYPES = new Set(['class_declaration', 'abstract_class_declarati
  *  class body, as in a field initialiser). In a plain function or an object
  *  literal's method `this` is something else. */
 function thisIsClassInstance(node: SyntaxNode): boolean {
+  return enclosingClassOf(node) !== null;
+}
+
+/** The class whose instance `this` at `node` is, or null (see thisIsClassInstance). */
+function enclosingClassOf(node: SyntaxNode): SyntaxNode | null {
   for (let a = node.parent; a !== null; a = a.parent) {
-    if (a.type === 'class_body') return true;
-    if (a.type === 'method_definition') return a.parent?.type === 'class_body';
+    if (a.type === 'class_body') return a.parent;
+    if (a.type === 'method_definition') return a.parent?.type === 'class_body' ? a.parent.parent : null;
     if (a.type === 'function_declaration' || a.type === 'function_expression'
-        || a.type === 'generator_function' || a.type === 'generator_function_declaration') return false;
+        || a.type === 'generator_function' || a.type === 'generator_function_declaration') return null;
   }
-  return false;
+  return null;
 }
 
 /** ISSUE-1ad687e6: the `this.<field>` names of the class being walked that
@@ -882,8 +898,13 @@ const BUILTIN_CLASS_NAMES = new Set([
  *  arrays, functions, literals and primitives never do. */
 function typeProvesUser(annotation: SyntaxNode | null): boolean {
   let t: SyntaxNode | null | undefined = annotation?.type === 'type_annotation' ? annotation.namedChildren[0] : annotation;
-  if (t?.type === 'generic_type' || t?.type === 'nested_type_identifier') t = t.childForFieldName('name');
-  return t?.type === 'type_identifier' && !BUILTIN_CLASS_NAMES.has(t.text);
+  if (t?.type === 'generic_type') t = t.childForFieldName('name');
+  if (t?.type === 'nested_type_identifier') {                // ns.Repo: ns must be an in-repo namespace import
+    const ns = t.namedChildren[0];
+    const name = t.childForFieldName('name');
+    return ns?.type === 'identifier' && fileUserNamespaces.has(ns.text) && name !== null && !BUILTIN_CLASS_NAMES.has(name.text);
+  }
+  return t?.type === 'type_identifier' && fileUserTypes.has(t.text) && !BUILTIN_CLASS_NAMES.has(t.text);
 }
 
 /** Whether an initialiser creates a user object: `new X(...)` / `new ns.X(...)`
@@ -891,9 +912,74 @@ function typeProvesUser(annotation: SyntaxNode | null): boolean {
 function newProvesUser(value: SyntaxNode | null): boolean {
   if (value?.type !== 'new_expression') return false;
   const ctor = value.childForFieldName('constructor');
-  const name = ctor?.type === 'identifier' ? ctor.text
-    : ctor?.type === 'member_expression' ? ctor.childForFieldName('property')?.text : undefined;
-  return name !== undefined && !BUILTIN_CLASS_NAMES.has(name) && !BUILTIN_OBJECTS.has(name);
+  if (ctor?.type === 'identifier') return fileUserTypes.has(ctor.text) && !BUILTIN_CLASS_NAMES.has(ctor.text);
+  if (ctor?.type === 'member_expression') {                  // new ns.Store(): ns must be an in-repo namespace import
+    const ns = ctor.childForFieldName('object');
+    const name = ctor.childForFieldName('property')?.text;
+    return ns?.type === 'identifier' && fileUserNamespaces.has(ns.text) && name !== undefined && !BUILTIN_CLASS_NAMES.has(name);
+  }
+  return false;
+}
+
+/** ISSUE-1ad687e6: per file -- every import binding, those from the
+ *  repository's own files (a relative specifier), the in-repo namespace
+ *  imports, and the class and interface names that are the repository's own
+ *  code (declared in the file or imported from an in-repo file). */
+let fileUserImports: Set<string> = new Set();
+let fileUserNamespaces: Set<string> = new Set();
+let fileUserTypes: Set<string> = new Set();
+
+/** Whether a class's `extends` base is the repository's own class. */
+function baseIsUser(base: SyntaxNode | null | undefined): boolean {
+  if (base?.type === 'identifier') return fileUserTypes.has(base.text);
+  if (base?.type === 'member_expression') {
+    const ns = base.childForFieldName('object');
+    return ns?.type === 'identifier' && fileUserNamespaces.has(ns.text);
+  }
+  return false;
+}
+
+/** The `extends` base of a class node, or undefined when it has none. */
+function extendsBaseOf(cls: SyntaxNode): SyntaxNode | null | undefined {
+  const heritage = cls.namedChildren.find(c => c.type === 'class_heritage');
+  const ext = heritage?.namedChildren.find(c => c.type === 'extends_clause');
+  return ext === undefined ? undefined : ext.childForFieldName('value');
+}
+
+/** The file's own classes and interfaces, plus the in-repo imports: a class
+ *  counts unless it extends a base that is not the repository's own (its
+ *  inherited methods would be the library's); an interface counts unless it
+ *  extends a type that is not. */
+function collectFileUserTypes(root: SyntaxNode, userImports: Set<string>, userNamespaces: Set<string>): Set<string> {
+  const types = new Set(userImports);
+  for (const ns of userNamespaces) types.delete(ns);
+  const classes: SyntaxNode[] = [];
+  const interfaces: SyntaxNode[] = [];
+  const stack: SyntaxNode[] = [root];
+  while (stack.length > 0) {
+    const n = stack.pop()!;
+    if (CLASS_NODE_TYPES.has(n.type) && n.childForFieldName('name')) classes.push(n);
+    else if (n.type === 'interface_declaration') interfaces.push(n);
+    for (const c of n.namedChildren) stack.push(c);
+  }
+  const prev = fileUserTypes;
+  fileUserTypes = types;                    // baseIsUser reads the set being built
+  for (let changed = true; changed;) {     // a class may extend another file class declared later
+    changed = false;
+    for (const cls of classes) {
+      const name = cls.childForFieldName('name')!.text;
+      if (types.has(name)) continue;
+      const base = extendsBaseOf(cls);
+      if (base === undefined || baseIsUser(base)) { types.add(name); changed = true; }
+    }
+  }
+  for (const itf of interfaces) {
+    const ext = itf.namedChildren.find(c => c.type === 'extends_type_clause');
+    const bases = ext?.namedChildren.map(b => (b.type === 'generic_type' ? b.childForFieldName('name') : b)) ?? [];
+    if (bases.every(b => b?.type === 'type_identifier' && types.has(b.text))) types.add(itf.childForFieldName('name')!.text);
+  }
+  fileUserTypes = prev;
+  return types;
 }
 
 /** A class's `this.<field>` names that hold a user object: a field or a
@@ -951,7 +1037,7 @@ const FUNCTION_SCOPE_TYPES = new Set([
 
 /** Add the names `var` declares anywhere inside `node`, stopping at nested
  *  functions, and to `user` those it declares with a user-class type or `new`. */
-function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>): void {
+function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>, axios: Set<string>): void {
   for (const c of node.namedChildren) {
     if (FUNCTION_SCOPE_TYPES.has(c.type)) continue;
     if (c.type === 'for_in_statement' && c.childForFieldName('kind')?.text === 'var') {
@@ -963,9 +1049,12 @@ function collectVarNames(node: SyntaxNode, out: Set<string>, user: Set<string>):
         const name = d.type === 'variable_declarator' ? d.childForFieldName('name') : null;
         if (name) collectPatternIdentifiers(name, out);
         if (name?.type === 'identifier' && (typeProvesUser(d.childForFieldName('type')) || newProvesUser(d.childForFieldName('value')))) user.add(name.text);
+        const value = d.type === 'variable_declarator' ? d.childForFieldName('value') : null;
+        const fn = value?.type === 'call_expression' ? value.childForFieldName('function') : null;
+        if (name?.type === 'identifier' && fn && normalizeCallee(fn.text) === 'axios.create') axios.add(name.text);
       }
     }
-    collectVarNames(c, out, user);
+    collectVarNames(c, out, user, axios);
   }
 }
 
@@ -1011,8 +1100,21 @@ function collectPatternIdentifiers(node: SyntaxNode, out: Set<string>): void {
  *  A receiver is proven-axios iff the nearest frame that `declared` it also has
  *  it in `axios`; a nearer non-axios declaration shadows an outer proof. */
 /** One lexical scope's bindings: every name it declares, those proven axios
- *  instances, and those proven user objects (ISSUE-1ad687e6). */
-interface AxiosScope { declared: Set<string>; axios: Set<string>; user: Set<string>; }
+ *  instances, those proven user objects, and those a function or class
+ *  declaration binds (callable by name; ISSUE-1ad687e6). */
+interface AxiosScope { declared: Set<string>; axios: Set<string>; user: Set<string>; callable: Set<string>; }
+
+/** ISSUE-1ad687e6: scope frames of the file being parsed, by node; reset per parse. */
+let frameCache: Map<string, AxiosScope> = new Map();
+let fileRoot: SyntaxNode | null = null;
+
+/** The scope frame of `node`, built once per parse. */
+function scopeFrame(node: SyntaxNode): AxiosScope {
+  const key = `${node.type}:${node.startIndex}:${node.endIndex}`;
+  let frame = frameCache.get(key);
+  if (frame === undefined) { frame = collectScopeFrame(node); frameCache.set(key, frame); }
+  return frame;
+}
 
 /** Build the AxiosScope frame for ONE lexical scope: scan its direct
  *  `variable_declarator`s, stopping at nested function/arrow/method boundaries
@@ -1026,6 +1128,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   // is NOT that instance. `parameters` = a formal_parameters list; `parameter` =
   // an unparenthesized single arrow param or the catch binding.
   const user = new Set<string>();
+  const callable = new Set<string>();
   for (const field of ['parameters', 'parameter']) {
     const bound = scope.childForFieldName(field);
     if (bound) collectPatternIdentifiers(bound, declared);
@@ -1038,11 +1141,11 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
   // A named function expression binds its own name inside itself.
   if (scope.type === 'function_expression' || scope.type === 'generator_function') {
     const name = scope.childForFieldName('name');
-    if (name) declared.add(name.text);
+    if (name) { declared.add(name.text); callable.add(name.text); }
   }
   // A function's frame also holds every `var` in its body, whatever block it is in.
   const body = FUNCTION_SCOPE_TYPES.has(scope.type) ? scope.childForFieldName('body') : null;
-  if (body) collectVarNames(body, declared, user);
+  if (body) collectVarNames(body, declared, user, axios);
   if (scope.type === 'for_in_statement' && scope.childForFieldName('kind')) {
     const left = scope.childForFieldName('left');        // for (const x of / in ...)
     if (left) collectPatternIdentifiers(left, declared);
@@ -1053,7 +1156,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     const n = stack.pop()!;
     if (NAMED_DECLARATION_TYPES.has(n.type)) {
       const name = n.childForFieldName('name');          // function ns() {} / class ns {}
-      if (name) declared.add(name.text);
+      if (name) { declared.add(name.text); callable.add(name.text); }
     }
     if (SCOPE_NODE_TYPES.has(n.type)) continue;  // nested scope: its own frame
     if (n.type === 'variable_declarator') {
@@ -1072,7 +1175,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     }
     for (const c of n.namedChildren) stack.push(c);
   }
-  return { declared, axios, user };
+  return { declared, axios, user, callable };
 }
 
 /** Resolve a receiver name against the lexical scope stack: the nearest frame
@@ -1101,27 +1204,33 @@ function isProvenUser(recv: string, scopes: AxiosScope[]): boolean {
  *  like messagingEnabled. */
 let fileImportBindings: Set<string> = new Set();
 
-function collectImportBindings(root: SyntaxNode): Set<string> {
-  const names = new Set<string>();
+function collectImportBindings(root: SyntaxNode): { all: Set<string>; user: Set<string>; namespaces: Set<string> } {
+  const all = new Set<string>();
+  const user = new Set<string>();          // bound by an import of the repository's own file
+  const namespaces = new Set<string>();    // `import * as ns` of the repository's own file
   for (const stmt of root.namedChildren) {
     if (stmt.type !== 'import_statement') continue;
     const clause = stmt.namedChildren.find(c => c.type === 'import_clause');
     if (!clause) continue;
+    // Only a relative specifier is the repository's own code; a package's
+    // bindings shadow but never prove a user object (nothing in-repo to resolve to).
+    const inRepo = /^['"`]\.{1,2}\//.test(stmt.childForFieldName('source')?.text ?? '');
+    const bind = (name: string): void => { all.add(name); if (inRepo) user.add(name); };
     for (const part of clause.namedChildren) {
-      if (part.type === 'identifier') names.add(part.text);                    // import x from
+      if (part.type === 'identifier') bind(part.text);                         // import x from
       else if (part.type === 'namespace_import') {                             // import * as ns from
         const id = part.namedChildren.find(c => c.type === 'identifier');
-        if (id) names.add(id.text);
+        if (id) { bind(id.text); if (inRepo) namespaces.add(id.text); }
       } else if (part.type === 'named_imports') {                              // import { a, b as c } from
         for (const spec of part.namedChildren) {
           if (spec.type !== 'import_specifier') continue;
           const local = spec.childForFieldName('alias') ?? spec.childForFieldName('name');
-          if (local) names.add(local.text);
+          if (local) bind(local.text);
         }
       }
     }
   }
-  return names;
+  return { all, user, namespaces };
 }
 
 /** S004 (t2): true when the file being parsed imports a messaging library, so
@@ -1183,8 +1292,11 @@ function walkForCalls(
   let prevClassHttpFields: Set<string> | null = null;
   let prevClassUserFields: Set<string> | null = null;
   if (SCOPE_NODE_TYPES.has(node.type)) {
-    axiosScopes.push(collectScopeFrame(node));
-    pushedScope = true;
+    const frame = scopeFrame(node);
+    if (axiosScopes[axiosScopes.length - 1] !== frame) {   // the body's frame is already on the stack
+      axiosScopes.push(frame);
+      pushedScope = true;
+    }
   } else if (CLASS_NODE_TYPES.has(node.type)) {
     prevClassHttpFields = currentClassHttpFields;
     currentClassHttpFields = collectClassHttpFields(node);
@@ -1266,9 +1378,36 @@ function walkForCalls(
  * their edges.
  */
 function keepsCall(funcNode: SyntaxNode, name: string, scopes: AxiosScope[]): boolean {
-  if (funcNode.type === 'identifier') return !BUILTIN_OBJECTS.has(name);
+  if (funcNode.type === 'identifier') {
+    if (BUILTIN_OBJECTS.has(name)) return false;
+    if (!BUILTIN_METHODS.has(name)) return true;
+    // `resolve()` inside `new Promise((resolve) => ...)` is a parameter, not
+    // the user's `resolve`: a bare built-in name is kept only where it names a
+    // function or class declaration or an import.
+    for (let i = scopes.length - 1; i >= 0; i--) {
+      const frame = scopes[i]!;
+      if (frame.declared.has(name)) return frame.callable.has(name);
+    }
+    return true;
+  }
   if (!BUILTIN_METHODS.has(name)) return true;
-  return isUserReceiver(funcNode.childForFieldName('object'), scopes);
+  const obj = funcNode.childForFieldName('object');
+  if (obj?.type === 'this' || obj?.type === 'super') return thisCallIsUser(obj, name);
+  return isUserReceiver(obj, scopes);
+}
+
+/** `this.name()` / `super.name()` with a built-in method name: the class
+ *  instance's own code unless the class extends a base that is not the
+ *  repository's own (an EventEmitter's `this.emit`), then only for a member
+ *  the class declares itself. */
+function thisCallIsUser(obj: SyntaxNode, name: string): boolean {
+  const cls = enclosingClassOf(obj);
+  if (cls === null) return false;
+  const base = extendsBaseOf(cls);
+  if (obj.type === 'super') return base !== undefined && baseIsUser(base);
+  if (base === undefined || baseIsUser(base)) return true;
+  return (cls.childForFieldName('body')?.namedChildren ?? [])
+    .some(m => (m.type === 'method_definition' || m.type === 'public_field_definition') && m.childForFieldName('name')?.text === name);
 }
 
 /** A receiver proven a user object: `this`, `super`, a name proven in scope, a

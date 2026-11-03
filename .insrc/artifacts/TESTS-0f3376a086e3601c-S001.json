@@ -4,7 +4,7 @@
     "epicHash": "0f3376a086e3601c",
     "storyId": "S001",
     "createdAt": "2026-11-03T10:37:50.308Z",
-    "updatedAt": "2026-11-03T10:41:55.428Z",
+    "updatedAt": "2026-11-03T11:57:25.736Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.736Z",
     "epicSlug": "sql-references-miss-across-2-3"
@@ -125,6 +125,198 @@
               },
               {
                 "title": "s9 review: a SQL grammar that fails to load registers the document-only fallback, which is not listed as SQL",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "5d8f6ac93",
+        "ranAt": "2026-11-03T11:46:24.679Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2337,
+            "titles": [
+              {
+                "title": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "53c056c70",
+        "ranAt": "2026-11-03T11:51:38.475Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t3: a settle selects only the pending SQL rows the saved files can affect",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t3: a settle selects only the pending SQL rows the saved files can affect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2293,
+            "titles": [
+              {
+                "title": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: a settle selects only the pending SQL rows the saved files can affect",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "b31641ec1",
+        "ranAt": "2026-11-03T11:57:25.736Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t4: a saved definition re-checks same-named inferred edges, including quote-only and segment-boundary edits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t4: a saved definition re-checks same-named inferred edges, including quote-only and segment-boundary edits",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t4: the store re-check returns only inferred edges, and never one of an excluded holder",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t4: upgrade, legacy-collision and mixed-ownership cases resolve correctly",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+                "title": "S001 t4: upgrade, legacy-collision and mixed-ownership cases resolve correctly",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2697,
+            "titles": [
+              {
+                "title": "S001 t2: qualified names meet by segment suffix and quoted names resolve to their own definitions",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: a removed definition's references return to pending by folded-or-key match, never for a locally defined name, and carry the marker",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: a settle selects only the pending SQL rows the saved files can affect",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t3: the re-pend marker is consumed by the next settle, so an unrelated later save does not retry the row",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: a saved definition re-checks same-named inferred edges, including quote-only and segment-boundary edits",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: upgrade, legacy-collision and mixed-ownership cases resolve correctly",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t4: the store re-check returns only inferred edges, and never one of an excluded holder",
                 "result": "pass"
               }
             ],

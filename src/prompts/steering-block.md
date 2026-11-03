@@ -1,5 +1,33 @@
 ## insrc — front door (insrc MCP server)
 
+### Hard gates — never skipped, whatever the host agent
+
+These apply to every agent (Claude Code, Codex, Vibe, …) working in this repo.
+If a gate cannot be satisfied, stop and ask the user — do not improvise around it.
+
+1. **Approval is a human gate.** Never call `insrc_workflow_approve` unless the
+   user gave an explicit in-chat yes in the same turn, for the specific artifact:
+   the yes names the artifact id/path, or answers "yes" to the summary you just
+   presented after `insrc_present`. A blanket "approve all" covers ONLY the
+   artifacts you declared with `insrc_present` in that same turn — list them.
+   Never batch-approve via `{ epicHash }` without naming each artifact and
+   getting a yes for that batch. Never approve via raw daemon IPC/socket —
+   only through the registered `insrc_workflow_approve` MCP tool.
+2. **Present before you ask.** `insrc_present` must report every declared name
+   as `presented` before you ask for approval. If it errors, or any name comes
+   back `notPending`, correct the name and call again; if it cannot succeed,
+   STOP and tell the user — do not approve anything that was not presented.
+3. **Mandatory reviews only, max three rounds each** (DEF/HLD/LLD review before
+   approval; code review before BUILD completion). After the third round, stop
+   and ask the user.
+4. **Never patch off-ledger.** Every feature and every defect goes through
+   triage → tracked artifact → approval → build → review → approve. No direct
+   commits that implement tracked work without the chain's records.
+5. **Workflows run only via `insrc_workflow_step`**, turn-by-turn, preserving
+   the opaque `state` token. Never `insrc_workflow_run`, never raw IPC.
+6. **If `insrc_schema` / `insrc_guide` / `insrc_present` are unavailable or
+   error, do not improvise their content from memory — say so and ask the user.**
+
 This is the SKELETON. It names every insrc surface and routes an intent to the
 right one; it does NOT inline each workflow's full procedure. Two on-demand
 lookups carry the detail so this block can stay small:
@@ -124,13 +152,20 @@ These checks stay within the existing three-round review limit.
 ### Approval discipline (applies to every workflow artifact)
 
 Never auto-approve and never send the user to the TUI. When a `done` response
-carries a `pendingApproval` block (or a build or review step leaves a record to
-approve), first DECLARE what you are about to show: call
-`insrc_present({ documents: [...] })` with each document's artifact id (for
-example `LLD-<hash>-S001`) or repo-relative path. Then PRESENT a concise summary
-(give the document's path in your message too) and ASK the user; only on their
-explicit in-chat yes call `insrc_workflow_approve({ artifactPath })` (or
-`{ epicHash }` to batch). Review a DEF, HLD or LLD before you approve it — see
+carries a `pendingApproval` block — or any step you drove leaves a record
+pending (check `insrc_workflow_step`'s done response and the pending list) —
+the gate is the same every time: first DECLARE what you are about to show by
+calling `insrc_present({ documents: [...] })` with each document's artifact id
+(for example `LLD-<hash>-S001`) or repo-relative path, and require every name
+to come back `presented`; then PRESENT a concise summary (give the document's
+path in your message too) and ASK the user. Only then, on the user's explicit
+in-chat yes **for that artifact** (the message names its id/path, or answers
+"yes" to the summary you just presented), call
+`insrc_workflow_approve({ artifactPath })`. A blanket "approve all" authorizes
+only the artifacts you presented in that same turn. Never batch via
+`{ epicHash }` without listing each artifact and getting a yes for the batch.
+Never call `insrc_workflow_approve` through raw daemon IPC or a socket — only
+through the MCP tool. Review a DEF, HLD or LLD before you approve it — see
 `insrc_guide({ workflow: 'review' })`.
 
 ### Review discipline (applies to every review)
@@ -152,9 +187,10 @@ The chat opens exactly the documents you declare with `insrc_present`; it does
 not work out what to open from tool output, so a document you do not declare is
 not opened for the user. The answer lists each name as `presented` or
 `notPending` (misspelt, already approved, or with no document file yet): correct
-a `notPending` name and call again. Declaring is steering-only for now, and a
-missed call shows up as nothing opening; if that proves unreliable, revisit it
-(a reminder from the daemon in tool responses, or detection of a missing call).
+a `notPending` name and call again, and require every declared name to be
+`presented` before you ask for approval. If `insrc_present` itself is
+unavailable or errors, do not approve anything that turn — report the tool
+failure and ask the user instead.
 
 <!-- insrc:guide:triage:start -->
 ## triage — size a feature request and route it (`insrc_triage`)

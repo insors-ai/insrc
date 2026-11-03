@@ -1,0 +1,241 @@
+TAP version 13
+# > @insrc/project-memory@0.1.0 prepack
+# > npm run build
+# > @insrc/project-memory@0.1.0 build
+# > tsc -p tsconfig.json
+# npm error code EPERM
+# npm error syscall open
+# npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+# npm error errno -1
+# npm error
+# npm error Your cache folder contains root-owned files, due to a bug in
+# npm error previous versions of npm which has since been addressed.
+# npm error
+# npm error To permanently fix this problem, please run:
+# npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+# npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+# npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+# Subtest: packed-isolated-node22-consumer
+not ok 1 - packed-isolated-node22-consumer
+  ---
+  duration_ms: 5378.047959
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: npm pack /Users/subhagho/work/projects/insors/insrc/packages/project-memory/ --json --pack-destination /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-packed-7zE3SN
+    
+    > @insrc/project-memory@0.1.0 prepack
+    > npm run build
+    
+    
+    > @insrc/project-memory@0.1.0 build
+    > tsc -p tsconfig.json
+    
+    npm error code EPERM
+    npm error syscall open
+    npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+    npm error errno -1
+    npm error
+    npm error Your cache folder contains root-owned files, due to a bug in
+    npm error previous versions of npm which has since been addressed.
+    npm error
+    npm error To permanently fix this problem, please run:
+    npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+    npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+    npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    npm (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:22:48)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:23:31)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:56:20)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:63:24)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: packed-native-missing-import-versus-open
+not ok 2 - packed-native-missing-import-versus-open
+  ---
+  duration_ms: 5.173458
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: npm pack /Users/subhagho/work/projects/insors/insrc/packages/project-memory/ --json --pack-destination /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-packed-7zE3SN
+    
+    > @insrc/project-memory@0.1.0 prepack
+    > npm run build
+    
+    
+    > @insrc/project-memory@0.1.0 build
+    > tsc -p tsconfig.json
+    
+    npm error code EPERM
+    npm error syscall open
+    npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+    npm error errno -1
+    npm error
+    npm error Your cache folder contains root-owned files, due to a bug in
+    npm error previous versions of npm which has since been addressed.
+    npm error
+    npm error To permanently fix this problem, please run:
+    npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+    npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+    npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    npm (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:22:48)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:23:31)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:56:20)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:63:24)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: tarball-public-dependency-and-asset-allowlist
+not ok 3 - tarball-public-dependency-and-asset-allowlist
+  ---
+  duration_ms: 0.297042
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: npm pack /Users/subhagho/work/projects/insors/insrc/packages/project-memory/ --json --pack-destination /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-packed-7zE3SN
+    
+    > @insrc/project-memory@0.1.0 prepack
+    > npm run build
+    
+    
+    > @insrc/project-memory@0.1.0 build
+    > tsc -p tsconfig.json
+    
+    npm error code EPERM
+    npm error syscall open
+    npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+    npm error errno -1
+    npm error
+    npm error Your cache folder contains root-owned files, due to a bug in
+    npm error previous versions of npm which has since been addressed.
+    npm error
+    npm error To permanently fix this problem, please run:
+    npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+    npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+    npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    npm (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:22:48)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:23:31)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:56:20)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:63:24)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: packed-lance-dependency-stays-lazy-on-import
+not ok 4 - packed-lance-dependency-stays-lazy-on-import
+  ---
+  duration_ms: 0.328084
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: npm pack /Users/subhagho/work/projects/insors/insrc/packages/project-memory/ --json --pack-destination /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-packed-7zE3SN
+    
+    > @insrc/project-memory@0.1.0 prepack
+    > npm run build
+    
+    
+    > @insrc/project-memory@0.1.0 build
+    > tsc -p tsconfig.json
+    
+    npm error code EPERM
+    npm error syscall open
+    npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+    npm error errno -1
+    npm error
+    npm error Your cache folder contains root-owned files, due to a bug in
+    npm error previous versions of npm which has since been addressed.
+    npm error
+    npm error To permanently fix this problem, please run:
+    npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+    npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+    npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    npm (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:22:48)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:23:31)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:56:20)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:63:24)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+# Subtest: packed-external-submit-crash-reopen-and-operation
+not ok 5 - packed-external-submit-crash-reopen-and-operation
+  ---
+  duration_ms: 0.308375
+  type: 'test'
+  location: '/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/fixtures/node22.ts:1:871'
+  failureType: 'testCodeFailure'
+  error: |-
+    Command failed: npm pack /Users/subhagho/work/projects/insors/insrc/packages/project-memory/ --json --pack-destination /var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/memory-packed-7zE3SN
+    
+    > @insrc/project-memory@0.1.0 prepack
+    > npm run build
+    
+    
+    > @insrc/project-memory@0.1.0 build
+    > tsc -p tsconfig.json
+    
+    npm error code EPERM
+    npm error syscall open
+    npm error path /Users/subhagho/.npm/_cacache/tmp/3adb8348
+    npm error errno -1
+    npm error
+    npm error Your cache folder contains root-owned files, due to a bug in
+    npm error previous versions of npm which has since been addressed.
+    npm error
+    npm error To permanently fix this problem, please run:
+    npm error   sudo chown -R 501:20 "/Users/subhagho/.npm"
+    npm error Log files were not written due to an error writing to the directory: /Users/subhagho/.npm/_logs
+    npm error You can rerun the command with `--loglevel=verbose` to see the logs in your terminal
+    
+  code: 'ERR_TEST_FAILURE'
+  stack: |-
+    genericNodeError (node:internal/errors:983:15)
+    wrappedFn (node:internal/errors:537:14)
+    checkExecSyncError (node:child_process:916:11)
+    execFileSync (node:child_process:952:15)
+    npm (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:22:48)
+    <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:23:31)
+    async <anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:56:20)
+    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/packages/project-memory/src/__tests__/packed.test.ts:63:24)
+    async Test.run (node:internal/test_runner/test:1054:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 0
+# fail 5
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 5848.383333

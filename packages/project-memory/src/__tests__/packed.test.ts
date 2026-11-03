@@ -83,8 +83,25 @@ nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', asy
     assert.ok(files.includes('dist/queue/' + module + '.js')); assert.ok(files.includes('dist/queue/' + module + '.d.ts'));
   }
   const manifest = JSON.parse(await readFile(join(dir, 'node_modules/@insrc/project-memory/package.json'), 'utf8'));
-  assert.deepEqual(manifest.dependencies, { 'fs-ext': '2.1.1' });
+  assert.deepEqual(manifest.dependencies, { '@lancedb/lancedb': '0.40.0', 'apache-arrow': '18.1.0', 'fs-ext': '2.1.1' });
   assert.deepEqual(Object.keys(manifest.exports), ['.', './node']);
+});
+
+nativeTest(import.meta.url, 'packed-lance-dependency-stays-lazy-on-import', async () => {
+  const { dir, env } = await packed();
+  const sdk = join(dir, 'node_modules/@lancedb/lancedb');
+  await rename(sdk, sdk + '.unavailable');
+  try {
+    await writeFile(join(dir, 'lazy-lance.mjs'), `import assert from 'node:assert/strict';
+const before = process.eventNames().map(String).sort();
+const entry = await import('@insrc/project-memory');
+const nodeEntry = await import('@insrc/project-memory/node');
+assert.equal(typeof entry.MemoryFactory.open, 'function');
+assert.equal(typeof nodeEntry.MemoryFactory.open, 'function');
+assert.deepEqual(process.eventNames().map(String).sort(), before);
+`);
+    execFileSync(node22(), ['lazy-lance.mjs'], { cwd: dir, env, timeout: 10_000, stdio: 'pipe' });
+  } finally { await rename(sdk + '.unavailable', sdk); }
 });
 
 nativeTest(import.meta.url, 'packed-external-submit-crash-reopen-and-operation', async () => {

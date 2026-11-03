@@ -10,7 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { TranscriptEntry } from '../session-store.js';
-import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
+import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode, type ActiveChatEntry, type DocsDocumentTab } from '../protocol.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -251,4 +251,11 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   // selection reuses the existing open-chat { chatId } — no new webview->host kind was added
   assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-chat'));
   assert.ok(!WEBVIEW_TO_HOST_TYPES.includes('open-active' as WebviewToHostType));
+  // in-panel document protocol is UNCHANGED: DocsDocumentTab keeps title/type/relPath, no presentKey;
+  // docs-content/open-doc shapes unchanged (presentKey is panel-level, not a message field)
+  const tab: DocsDocumentTab = { title: 'LLD.md', type: 'md', relPath: undefined };
+  assert.deepEqual(Object.keys(tab).sort(), ['relPath', 'title', 'type']);
+  assert.ok(!('presentKey' in tab), 'DocsDocumentTab has no presentKey field');
+  const content = { type: 'docs-content', artifactId: 'a1', doc: tab, html: undefined, text: undefined, presented: ['a1'] } as unknown as HostToWebview;
+  assert.equal(content.type, 'docs-content');
 });

@@ -48,3 +48,7 @@ The previous backend-wide sweep has 18 failures and 2 cancellations, plus a revi
 The automatic review attempts produced no usable current independent review: graph-based findings were contradicted by source, diff reviews hit timeout/invalid-fragment failures, and Codex was refused by the tool-free isolation guard. The canonical old CR is retained for provenance. Formal BUILD completion remains pending the latest T14 attribution verdict and the workflow's non-overridable freshness/independence check; this report is the requested manual evidence and continuation basis, not a forged independent CR. S3 design can proceed against the approved HLD and implemented sc3 contract while this bookkeeping limit remains explicit.
 
 Configuration was left unchanged throughout this manual review, per user instruction.
+
+## User approval and manual closure
+
+The user explicitly instructed: “close s2 with approval and then start s3”. This manual acceptance is recorded in `evidence/manual-review/user-approval.json`. S2 is accepted for continuation on the documented self-review and test evidence, including the disclosed review/attribution exceptions. The native approval API returned `approved: []` and `stale-review` even with the explicit override reason; formal workflow completion is therefore still unstamped. No gate result, review provenance or approvedAt field was fabricated. S3 design proceeds against the already approved HLD.

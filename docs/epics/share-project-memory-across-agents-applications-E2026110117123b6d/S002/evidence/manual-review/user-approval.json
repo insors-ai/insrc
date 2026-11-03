@@ -1,0 +1,24 @@
+{
+  "kind": "user-manual-approval",
+  "epicHash": "17123b6d304af2a2",
+  "storyId": "s2",
+  "approvedAt": "2026-11-03T08:39:48.257316+00:00",
+  "approvedBy": "user",
+  "instruction": "close s2 with approval and then start s3",
+  "manualClosureAccepted": true,
+  "basis": "SELF-REVIEW.md; receipt-consistency fix 0f4ee7724; macOS/Linux63/63,55 SIGKILL boundaries/platform; root build and current-source proof checks pass",
+  "acceptedExceptions": [
+    "Author self-review replaces unavailable automated independent review for this manual acceptance",
+    "Historical T14 canonical-root-fix attribution issue retained; current code remains within approved S2 story scope",
+    "Prior backend-wide sweep is not a clean current pass"
+  ],
+  "formalWorkflowApproved": false,
+  "formalApprovalAttempt": {
+    "approved": [],
+    "status": "stale-review",
+    "message": "Review inputs changed; run a new independent review",
+    "overrideReviewSupplied": true
+  },
+  "configurationChanged": false,
+  "continuation": "Proceed to S3 design against approved HLD/sc3; do not claim formal workflow completion or independent review."
+}

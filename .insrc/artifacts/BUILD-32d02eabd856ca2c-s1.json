@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "bdf4bce22d1544e742b40be6b2a802bfc7fb036091ec9c2cca23c542a2d6997a",
+        "at": "2026-11-03T08:46:21.967Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-8e0edc7a-ca7e-4ca2-a519-3ed1140de6a8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T08:45:19.319Z",
+    "epicCreatedAt": "2026-11-03T08:37:45.578Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "32d02eabd856ca2c",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix: one test file, stale recorded method list.",
+    "epicSlug": "record-codereview-task-methods-handler-runtime",
+    "updatedAt": "2026-11-03T08:45:57.639Z"
+  },
+  "body": {
+    "focus": "Fix src/daemon/__tests__/handler-runtime.test.ts per ISSUE-32d02eabd856ca2c: add the eight codeReview.task.* methods (activity, assignment, cleanup, progress, publish, result, scope, start) to ADDED_RPC, and change the second test (lines 100-104) so it keeps the duplicate/rename check but no longer asserts that no codeReview.* method was added. No runtime change.",
+    "producesLld": false,
+    "commit": "2717639c2",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added the eight codeReview.task.* methods to ADDED_RPC in handler-runtime.test.ts and replaced the \"no codeReview.* method added\" assertion with one that the only added code review methods are those eight, with no duplicate or renamed method. No runtime change.",
+    "testRecord": {
+      "md": "docs/standalone/record-codereview-task-methods-handler-runtime-E2026110332d02eab/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:45:57.639Z"
+      }
+    ]
+  },
+  "citations": []
+}

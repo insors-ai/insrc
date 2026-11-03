@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793695031888-eev4v7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T08:37:45.578Z",
+    "epicCreatedAt": "2026-11-03T08:37:45.578Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 33689,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "32d02eabd856ca2c",
+    "epicSlug": "record-codereview-task-methods-handler-runtime",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b20c9d8d53b0d5e2c8a346f76172b2f8fde29d1c77f6f8fff4e005a56b9a096d",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T08:44:55.824Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "32d02eabd856ca2c",
+      "slug": "EPIC-32d02eabd856ca2c"
+    }
+  },
+  "body": {
+    "title": "Record the codeReview.task.* methods in the handler-runtime key-set test",
+    "reproduction": "Run `npx tsx --test --test-force-exit src/daemon/__tests__/handler-runtime.test.ts`. Expected: 4 pass. Observed: the test \"the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since\" fails with a deep-equal diff whose only extra keys are codeReview.task.activity, assignment, cleanup, progress, publish, result, scope and start.",
+    "rootCause": "The daemon handler table now registers eight codeReview.task.* methods (src/daemon/handler-runtime.ts:620 is the start entry; src/daemon/threads/method-class.ts:91 classes them and its own coverage test passes). The handler-runtime test records the methods the tables gained after the single-thread move in ADDED_RPC (src/daemon/__tests__/handler-runtime.test.ts:73-79), and that list was never extended for them. A second test in the same file (lines 100-104) also asserts that no codeReview.* method is among the added ones, which was true when it was written (only codeReview.freshness existed) and is no longer true. The runtime and the method-class table agree; only the test's records are stale.",
+    "fixIntent": "Add the eight codeReview.task.* methods to the test's ADDED_RPC list and change the second test so it still checks that nothing is duplicated or renamed but no longer claims no codeReview.* method was added (codeReview.freshness stays in the recorded set). No runtime change."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/handler-runtime.test.ts:73-79",
+      "quotedText": "const ADDED_RPC = ["
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/handler-runtime.test.ts:100-104",
+      "quotedText": "assert.ok(!ADDED_RPC.some(m => m.startsWith('codeReview.'))"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/handler-runtime.ts:620",
+      "quotedText": "'codeReview.task.start': async (params, context) ="
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/threads/method-class.ts:91",
+      "quotedText": "['codeReview.task.start', 'session', false],"
+    }
+  ]
+}

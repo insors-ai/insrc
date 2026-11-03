@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "1132d06a5a4453a675aa0629ec1cefe9514ea3fdf18ec8f9d94c0f88cb01f573",
+        "at": "2026-11-03T08:45:57.828Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "32d02eabd856ca2c",
+    "storyId": "s1",
+    "createdAt": "2026-11-03T08:45:57.639Z",
+    "updatedAt": "2026-11-03T08:45:57.639Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-03T08:37:45.578Z",
+    "epicSlug": "record-codereview-task-methods-handler-runtime",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "2717639c2",
+        "ranAt": "2026-11-03T08:45:57.639Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/__tests__/handler-runtime.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/__tests__/handler-runtime.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/handler-runtime.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1053,
+            "titles": [
+              {
+                "title": "the runtime function builds the handler tables with stub indexing dependencies and their key sets equal the recorded single-thread key sets plus the methods added since",
+                "result": "pass"
+              },
+              {
+                "title": "src/daemon/__tests__/handler-runtime.test.ts: the only code review methods added after the move are the eight task ones, with no duplicate or renamed method",
+                "result": "pass"
+              },
+              {
+                "title": "workflow.approvePipeline, tracker.sync and tracker.setup are registered and answer their requests",
+                "result": "pass"
+              },
+              {
+                "title": "team.refresh, team.claim and team.release are registered and return the old results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

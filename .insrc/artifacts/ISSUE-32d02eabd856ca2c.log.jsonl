@@ -1,0 +1,1 @@
+361	{"artifactId":"ISSUE-32d02eabd856ca2c","entry":{"id":"e119b5a8463d4500b189c4c0ed17ef21","actor":{"id":"insrc:approval","kind":"system","properties":{}},"timestamp":"2026-11-03T08:44:55.824Z","operation":"approve","revision":{"number":1,"contentHash":"b20c9d8d53b0d5e2c8a346f76172b2f8fde29d1c77f6f8fff4e005a56b9a096d"},"status":{"from":"draft","to":"approved"}}}

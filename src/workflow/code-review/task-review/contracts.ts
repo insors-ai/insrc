@@ -17,7 +17,7 @@ export const DocumentSchema = object({ path: text, commit: oid });
 export const TestDetailSchema = object({ file: text, cases: Type.Array(text, { minItems: 1, maxItems: 10000 }), command: text,
  result: Type.Union((['pass', 'fail', 'skipped', 'not_run'] as const).map(s => Type.Literal(s))), executionDetails: text, evidenceReferences: strings });
 export const StoredPacketSchema = object({ storyId: text, taskId: Type.Optional(text), functionalSummary: text,
- documents: object({ story: DocumentSchema, lld: DocumentSchema, plan: DocumentSchema }),
+ documents: object({ story: Type.Optional(DocumentSchema), lld: Type.Optional(DocumentSchema), plan: Type.Optional(DocumentSchema), issue: Type.Optional(DocumentSchema) }),
  reviewSet: Type.Array(object({ commit: oid, parent: Type.Union([oid, Type.Null()]), files: Type.Array(object({ path: text,
   previousPath: Type.Optional(text), segments: Type.Array(object({ before: Type.Optional(range), after: Type.Optional(range), deletionAt: Type.Optional(Type.Integer({ minimum: 0 })) }), { maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }),
  tests: Type.Array(TestDetailSchema, { maxItems: 10000 }) });

@@ -40,7 +40,9 @@ async function document(ref: CommittedDocument, sources: ReviewSources): Promise
 }
 export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
- const docs = { story: await document(packet.documents.story, sources), lld: await document(packet.documents.lld, sources), plan: await document(packet.documents.plan, sources) };
+ const { story: storyRef, lld: lldRef, plan: planRef } = packet.documents;
+ requireReview(storyRef && lldRef && planRef, 'documents', 'Expected story, lld and plan documents');
+ const docs = { story: await document(storyRef, sources), lld: await document(lldRef, sources), plan: await document(planRef, sources) };
  const plan = docs.plan.head, meta = plan['meta'] as Record<string, unknown> | undefined;
  requireReview(meta && typeof meta['epicHash'] === 'string' && /^s\d+$/.test(String(meta['storyId'])), 'documents.plan', 'Expected a canonical story Plan');
  const storyId = String(meta['storyId']), hash = String(meta['epicHash']);

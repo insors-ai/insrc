@@ -78,9 +78,12 @@ nativeTest(import.meta.url, 'packed-native-missing-import-versus-open', async ()
 nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', async () => {
   const { dir, files } = await packed();
   for (const required of ['package.json', 'README.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/host-node.js']) assert.ok(files.includes(required), required);
-  for (const file of files) assert.match(file, /^(?:package\.json|README\.md|LICENSE|dist\/(?:queue\/)?[\w-]+\.(?:js|d\.ts)(?:\.map)?)$/);
+  for (const file of files) assert.match(file, /^(?:package\.json|README\.md|LICENSE|dist\/(?:queue\/|store\/)?[\w-]+\.(?:js|d\.ts)(?:\.map)?)$/);
   for (const module of ['types', 'shape', 'codec', 'io', 'checkpoint', 'index-record', 'recovery', 'receipts', 'retirement', 'file-queue', 'admission']) {
     assert.ok(files.includes('dist/queue/' + module + '.js')); assert.ok(files.includes('dist/queue/' + module + '.d.ts'));
+  }
+  for (const module of ['types', 'codec', 'embedding-profile']) {
+    assert.ok(files.includes('dist/store/' + module + '.js')); assert.ok(files.includes('dist/store/' + module + '.d.ts'));
   }
   const manifest = JSON.parse(await readFile(join(dir, 'node_modules/@insrc/project-memory/package.json'), 'utf8'));
   assert.deepEqual(manifest.dependencies, { '@lancedb/lancedb': '0.40.0', 'apache-arrow': '18.1.0', 'fs-ext': '2.1.1' });

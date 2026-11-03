@@ -168,7 +168,7 @@ export interface DesignReviewAcknowledgement {
 export interface DesignUnitAssignment {
  readonly kind: 'planning' | 'chunk'; readonly executionId: string; readonly sequence: number;
  readonly chunkId?: string | undefined; readonly prompt: string; readonly schema: TSchema;
- readonly previousTechnicalFeedback?: DesignTechnicalFailure | undefined;
+ readonly previousTechnicalFeedback?: {readonly code:string;readonly summary:string} | undefined;
  readonly retriesUsed?: number | undefined;
 }
 export class DesignReviewError extends Error {

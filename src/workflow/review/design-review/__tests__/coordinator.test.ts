@@ -60,18 +60,18 @@ test('native execution has request-independent activity options and model-free o
  const restored=new DesignReviewCoordinator({provider:()=>{throw new Error('Observation must not construct provider');}});assert.equal((await restored.progress(f.repo,'review-1',1)).status,'passed');
 });
 
-test('contradictory native status fails with pointed details and never silently retries or normalizes',async t=>{
+test('contradictory native status retries only the failed unit and pauses with pointed details',async t=>{
  const f=designFixture(t),native=fake(f,{mode:'invalid-status'}),coordinator=new DesignReviewCoordinator({provider:()=>({provider:native.provider,model:'fake'})});
  await coordinator.start(input(f));const view=await terminal(coordinator,f);
- assert.equal(view.status,'failed');assert.equal(view.completedChunks,0);assert.deepEqual(native.calls,['planning','content']);
- assert.equal(view.failure?.code,'invalid_result');assert.match(view.failure!.summary,/received changes_requested, expected incomplete; limitations=1/);
+ assert.equal(view.status,'paused');assert.equal(view.completedChunks,0);assert.deepEqual(native.calls,['planning','content','content','content','content']);
+ assert.equal(view.failure?.code,'technical_retry_exhausted');assert.match(view.failure!.summary,/received changes_requested, expected incomplete; limitations=1/);
 });
 
-test('native schema failures retain pointed diagnostic corrections without raw output or retry',async t=>{
+test('native schema failures retain pointed diagnostic corrections without raw output and pause after three retries',async t=>{
  const f=designFixture(t);let calls=0;
  const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{calls++;throw new ReviewOutputFailureError('Native schema rejected feedback',{provider:'codex',issues:[{code:'MISSING_REQUIRED_FIELD',field:'/findings',correction:'Include findings as an array.',occurrences:1}],lastRejectedFeedback:{preview:'RAW_OUTPUT_CANARY',truncated:false}});}} as unknown as LLMProvider;
  const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'fake'})});await coordinator.start(input(f));const view=await terminal(coordinator,f);
- assert.equal(view.status,'failed');assert.equal(calls,1);assert.match(view.failure!.summary,/MISSING_REQUIRED_FIELD \/findings: Include findings as an array/);assert.ok(!view.failure!.summary.includes('RAW_OUTPUT_CANARY'));
+ assert.equal(view.status,'paused');assert.equal(calls,4);assert.match(view.failure!.summary,/MISSING_REQUIRED_FIELD \/findings: Include findings as an array/);assert.ok(!view.failure!.summary.includes('RAW_OUTPUT_CANARY'));
 });
 
 test('slow progress persistence coalesces activity instead of accumulating checkpoint writes',async t=>{
@@ -92,22 +92,22 @@ test('slow progress persistence coalesces activity instead of accumulating check
 test('native inactivity is supervised by the owner and observation never renews its grace',async t=>{
  const f=designFixture(t);let now=0,wake:(()=>void)|undefined,grace=0,calls=0;
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(_prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
-  calls++;await opts.onActivity({sessionId:'native-clock',sequence:1,kind:'session_started'});await opts.onActivity({sessionId:'native-clock',sequence:2,kind:'tool_started',toolId:'read-design'});
+  calls++;await opts.onActivity({sessionId:'native-clock',sequence:1,kind:'session_started'});await opts.onActivity({sessionId:'native-clock',sequence:2,kind:'model_output'});
   await new Promise<void>((_resolve,reject)=>opts.signal.addEventListener('abort',()=>reject(opts.signal.reason),{once:true}));
  }} as unknown as LLMProvider;
  const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'fake'}),activity:{now:()=>now,pressure:()=>({}),timer:(callback,ms)=>{wake=callback;grace=ms;return()=>{if(wake===callback)wake=undefined;};}}});
  await coordinator.start(input(f));for(let i=0;i<100&&!calls;i++)await pause(5);
- assert.equal(grace,1800000);assert.equal((await coordinator.progress(f.repo,'review-1',1)).activeToolCount,1);
+ assert.equal(grace,1800000);assert.equal((await coordinator.progress(f.repo,'review-1',1)).activeToolCount,0);
  now=1799999;for(let i=0;i<3;i++)await coordinator.progress(f.repo,'review-1',1);assert.equal(grace,1800000);
- now=1800001;assert.ok(wake);wake();const view=await terminal(coordinator,f);assert.equal(view.status,'failed');assert.equal(view.failure?.code,'review_inactive');assert.match(view.failure!.summary,/30 minutes/);assert.equal(calls,1);
+ now=1800001;assert.ok(wake);wake();
+ for(let round=2;round<=4;round++){for(let i=0;i<1000&&calls<round;i++)await pause(2);assert.equal(calls,round);now+=1800001;assert.ok(wake);wake();}
+ const view=await terminal(coordinator,f);assert.equal(view.status,'paused');assert.equal(view.recovery?.failedUnit?.code,'review_inactive');assert.match(view.failure!.summary,/30 minutes/);assert.equal(calls,4);
 });
 
 test('a native provider returning after inactivity cannot publish a late valid plan',async t=>{
- const f=designFixture(t);let now=0,wake:(()=>void)|undefined,release!:(value:unknown)=>void;
- const wait=new Promise<unknown>(r=>release=r);let started=false;
- const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{started=true;return wait;}} as unknown as LLMProvider;
+ const f=designFixture(t);let now=0,wake:(()=>void)|undefined,calls=0;
+ const late={chunks:[{id:'content',title:'Content',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'Complete',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))};
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{calls++;now+=1800001;wake!();return late;}} as unknown as LLMProvider;
  const coordinator=new DesignReviewCoordinator({provider:()=>({provider,model:'late fake'}),activity:{now:()=>now,pressure:()=>({}),timer:callback=>{wake=callback;return()=>{};}}});
- await coordinator.start(input(f));for(let i=0;i<100&&!started;i++)await pause(5);now=1800001;wake!();
- release({chunks:[{id:'content',title:'Content',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'Complete',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))});
- const view=await terminal(coordinator,f);assert.equal(view.status,'failed');assert.equal(view.failure?.code,'review_inactive');assert.equal(view.totalChunks,0);
+ await coordinator.start(input(f));const view=await terminal(coordinator,f);assert.equal(view.status,'paused');assert.equal(view.recovery?.failedUnit?.code,'review_inactive');assert.equal(view.totalChunks,0);assert.equal(calls,4);
 });

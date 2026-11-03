@@ -782,11 +782,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           rejectQueuedApprovals();
           pendingSelections.clear();
           endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+          // E202611031bd72813:S001 t2: the timeout cleared every request — re-evaluate so a
+          // completed turn no longer sits at waiting-input.
+          if (session !== undefined) reevaluateChatStatus(session);
         }, deps.continuationWaitMs ?? CONTINUATION_WAIT_MS);
       }
       return;
     }
-    if (q.viewLost && cardsWaiting) return endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+    if (q.viewLost && cardsWaiting) { endQueued({ kind: 'stopped', reason: 'no answer to the approval' }); if (session !== undefined) reevaluateChatStatus(session); return; } // E202611031bd72813:S001 t2
     if (q.error !== undefined || q.terminal === 'error') {
       // Story S004: the cause is read from the error text and reported with whether the agent acted; every failed turn is
       // logged with both, so a pattern the classifier missed is visible. The queue decides whether to retry.

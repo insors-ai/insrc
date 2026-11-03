@@ -5,9 +5,9 @@ import { randomUUID } from 'node:crypto';
 import { isMainThread } from 'node:worker_threads';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider } from '../../../shared/types.js';
-import { requireReviewActivity, REVIEW_INACTIVITY_MS } from '../../../shared/review-activity.js';
+import { requireReviewActivity, REVIEW_INACTIVITY_MS, ReviewActivityMonitor } from '../../../shared/review-activity.js';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult } from './contracts.js';
+import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult } from './contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from './subject.js';
 import { designCheckpointPath, loadDesignCheckpoint, saveDesignCheckpoint } from './checkpoint.js';
 import { DesignProgressTracker, observeDesignCheckpoint } from './progress.js';
@@ -23,12 +23,19 @@ export interface DesignCoordinatorDeps {
  readonly save?:typeof saveDesignCheckpoint;
  readonly load?:typeof loadDesignCheckpoint;
 }
-export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; }
+export interface DesignControllerOwner { readonly id:string; readonly signal:AbortSignal; }
+export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; readonly owner?:DesignControllerOwner|undefined; }
+interface ControllerUnit {
+ assignment:DesignUnitAssignment; resolve:(value:unknown)=>void; reject:(reason:unknown)=>void;
+ accepted:Promise<void>; accept:()=>void; fail:(reason:unknown)=>void; monitor:ReviewActivityMonitor;
+ sequence:number; replay:Map<number,{signature:string;completion:Promise<void>}>;
+ validate:(value:unknown)=>unknown;
+}
 interface DesignJob {
  checkpoint:DesignReviewCheckpoint; tracker:DesignProgressTracker; abort:AbortController;
  serial:Promise<void>; done:Promise<void>; providerFactory:()=>DesignProvider;
  progressTimer?:ReturnType<typeof setTimeout>|undefined; storageError?:unknown;
- closed:boolean;
+ closed:boolean; owner?:DesignControllerOwner|undefined; controller?:ControllerUnit|undefined; disconnect?:(()=>void)|undefined;
 }
 /** Main-daemon owner. Request disconnection is deliberately not an execution signal. */
 export class DesignReviewCoordinator {
@@ -36,6 +43,7 @@ export class DesignReviewCoordinator {
  private readonly admitting=new Map<string,{signature:string;promise:Promise<DesignReviewAcknowledgement>}>();
  private readonly subjects=new Map<string,string>();
  // Only tiny diagnostics remain if a terminal failure itself could not be saved.
+ private readonly replays=new Map<string,{owner:DesignControllerOwner;signature:string;completion:Promise<void>}>();
  private readonly uncertain=new Map<string,{code:string;summary:string}>();
  constructor(private readonly deps:DesignCoordinatorDeps={}){
   requireDesign(isMainThread,'wrong_owner','Design review execution belongs to the main daemon');
@@ -64,7 +72,7 @@ export class DesignReviewCoordinator {
    return this.ack(saved,!!active);
   }
   const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
-  requireDesign(prepared.subject.reviewer==='daemon','controller_not_supported','Controller exchange is not implemented yet');
+  if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const subjectKey=this.subjectKey(prepared.subject);
   if(this.subjects.has(subjectKey))throw new DesignReviewConflictError('Subject already has an active review');
   this.subjects.set(subjectKey,key);
@@ -73,9 +81,14 @@ export class DesignReviewCoordinator {
    const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:request.reviewId,project:request.repo,artifactId:prepared.subject.artifactId,subject:prepared.subject,
     submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString()}]};
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
-   const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,
+   const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,owner:prepared.subject.reviewer==='controller'?context.owner:undefined,
     providerFactory:context.provider??(()=>{const descriptor=this.deps.provider?.(prepared.subject);requireDesign(descriptor,'missing_provider','Review provider unavailable');return descriptor;})};
    this.jobs.set(key,job);
+   if(job.owner){
+    job.disconnect=()=>{const error=new DesignReviewError('controller_disconnected','Reviewing controller disconnected');job.abort.abort(error);job.controller?.reject(error);for(const [id,replay] of this.replays)if(replay.owner.id===job.owner!.id)this.replays.delete(id);};
+    job.owner.signal.addEventListener('abort',job.disconnect,{once:true});
+    if(job.owner.signal.aborted)job.disconnect();
+   }
    job.done=new Promise<void>(finish=>{setImmediate(()=>{void this.execute(job).then(finish,finish);});});
    return this.ack(checkpoint,true);
   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
@@ -104,7 +117,7 @@ export class DesignReviewCoordinator {
    void this.commit(job,()=>{}).catch(error=>{job.storageError=error;job.abort.abort(error);});
   },250);job.progressTimer.unref();
  }
- private async unit(job:DesignJob,provider:LLMProvider,chunk?:DesignChunk):Promise<unknown>{
+ private async unit(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint),path=designCheckpointPath(checkpoint.project,checkpoint.reviewId);
   assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
   job.tracker.unit(chunk?'chunk_review':'planning',chunk?.id,attempt.completedChunks.length,attempt.plan?.chunks.length??0);
@@ -112,6 +125,16 @@ export class DesignReviewCoordinator {
    prompt:chunk?designChunkPrompt(checkpoint.subject,chunk,path):designPlanningPrompt(checkpoint.subject,path),schema:chunk?DesignResultSchema:DesignPlanSchema};
   await this.commit(job,a=>{a.status='running';a.current={kind:assignment.kind,executionId:assignment.executionId,sequence:0,issuedAt:new Date().toISOString(),...(chunk?{chunkId:chunk.id}:{})};});
   const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,[checkpoint.subject.documentPath,...(chunk.purpose==='consistency'?[path]:[])]):validateDesignPlan(input,attempt.inventory);
+  if(job.owner){
+   requireDesign(!job.owner.signal.aborted,'controller_disconnected','Reviewing controller disconnected');
+   return new Promise<unknown>((resolve,reject)=>{
+    let accept!:()=>void,fail!:(reason:unknown)=>void;
+    const accepted=new Promise<void>((yes,no)=>{accept=yes;fail=no;});void accepted.catch(()=>{});
+    const monitor=new ReviewActivityMonitor(error=>{job.abort.abort(error);reject(error);});
+    job.controller={assignment,resolve,reject,accepted,accept,fail,monitor,sequence:0,replay:new Map(),validate};
+   });
+  }
+  requireDesign(provider,'missing_provider','Review provider unavailable');
   let candidateError:unknown;
   try{
    const value=await provider.runReviewSession!(assignment.prompt,assignment.schema,{mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,signal:job.abort.signal,internalRetry:false,
@@ -123,31 +146,68 @@ export class DesignReviewCoordinator {
   }catch(error){throw job.storageError??candidateError??error;}
   finally{this.stopProgress(job);}
  }
+ private acceptController(job:DesignJob):void{
+  const unit=job.controller;if(!unit)return;unit.monitor.stop();unit.accept();job.controller=undefined;
+ }
+ /** Only a connection identity supplied by the IPC host grants reviewer authority. */
+ async exchange(input:unknown,owner:DesignControllerOwner):Promise<unknown>{
+  const request=parseDesignRequest(input);
+  requireDesign(!['start','progress'].includes(request.phase),'invalid_phase','Expected controller exchange');
+  const project=await realpath(request.repo),key=this.key(project,request.reviewId),job=this.jobs.get(key);
+  requireDesign(!owner.signal.aborted,'wrong_owner','Reviewer connection has ended');
+  const signature=JSON.stringify(request);
+  if('executionId' in request){
+   const replay=this.replays.get(`${key}\0${request.executionId}\0${request.sequence}`);
+   if(replay){requireDesign(replay.owner.id===owner.id,'wrong_owner','Not the reviewing connection');requireDesign(replay.signature===signature,'review_conflict','Conflicting response replay');await replay.completion;return{accepted:true};}
+  }
+  requireDesign(job?.owner?.id===owner.id,'wrong_owner','Not the reviewing connection');
+  requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
+  const unit=job.controller;
+  if(request.phase==='assignment')return{assignment:unit?.assignment??null,progress:job.tracker.snapshot()};
+  requireDesign(unit,'stale_execution','No active controller assignment');
+  requireDesign('executionId' in request&&request.executionId===unit.assignment.executionId,'stale_execution','Wrong execution generation');
+  requireDesign(request.sequence===unit.sequence+1,'invalid_sequence','Expected the next response sequence');
+  assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+  if(request.phase==='activity'){
+   requireDesign(unit.monitor.observe(request.event),'invalid_activity','Invalid or duplicate activity event');
+   unit.sequence=request.sequence;job.tracker.activity(request.event);
+   const completion=this.commit(job,a=>{if(a.current)a.current.sequence=request.sequence;});
+   this.replays.set(`${key}\0${request.executionId}\0${request.sequence}`,{owner,signature,completion});
+   try{await completion;}catch(error){job.abort.abort(error);unit.reject(error);throw error;}return{accepted:true};
+  }
+  requireDesign(request.phase==='plan'&&unit.assignment.kind==='planning'||request.phase==='result'&&unit.assignment.kind==='chunk','invalid_phase','Response does not match assignment');
+  const value=unit.validate(request.phase==='plan'?request.plan:(request as Extract<DesignReviewRequest,{phase:'result'}>).result);
+  unit.sequence=request.sequence;
+  this.replays.set(`${key}\0${request.executionId}\0${request.sequence}`,{owner,signature,completion:unit.accepted});
+  unit.resolve(value);await unit.accepted;return{accepted:true};
+ }
  private async execute(job:DesignJob):Promise<void>{
   const key=this.key(job.checkpoint.project,job.checkpoint.reviewId);
   try{
-   const {provider,model}=job.providerFactory();requireReviewActivity(provider);
-   await this.commit(job,a=>{a.model=model;});
+   let provider:LLMProvider|undefined;
+   if(!job.owner){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
    const plan=await this.unit(job,provider) as DesignChunkPlan;
-   job.tracker.phase('persisting',0,plan.chunks.length);await this.commit(job,a=>{a.plan=plan;delete a.current;});
+   assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
+   job.tracker.phase('persisting',0,plan.chunks.length);await this.commit(job,a=>{a.plan=plan;delete a.current;});this.acceptController(job);
    for(const chunk of plan.chunks){
     const result=await this.unit(job,provider,chunk) as DesignChunkResult;
+    assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     job.tracker.phase('persisting',currentDesignAttempt(job.checkpoint).completedChunks.length+1,plan.chunks.length);
-    await this.commit(job,a=>{a.completedChunks.push(result);delete a.current;});
+    await this.commit(job,a=>{a.completedChunks.push(result);delete a.current;});this.acceptController(job);
    }
    const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
    const report=consolidateDesignReview(checkpoint.reviewId,attempt.number,checkpoint.subject,attempt.baseline.contentIdentity,plan,attempt.completedChunks);
    job.tracker.status(report.status);
    await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();delete a.current;});
   }catch(error){
-   this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
+   job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
    const summary=(error instanceof Error?error.message:'Design review failed').slice(0,DESIGN_LIMITS.text);
-   const status=code==='artifact_changed'?'invalidated':'failed';job.tracker.status(status);
+   const status=code==='artifact_changed'?'invalidated':code==='controller_disconnected'?'interrupted':'failed';job.tracker.status(status);
    try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();delete a.current;});}
    catch{this.uncertain.set(key,{code:'persistence_failed',summary:`Terminal result could not be persisted: ${summary}`.slice(0,DESIGN_LIMITS.text)});}
    log.warn({reviewId:job.checkpoint.reviewId,code},'Design review stopped');
   }finally{
-   job.closed=true;this.stopProgress(job);await job.serial.catch(()=>{});
+   job.closed=true;job.controller?.monitor.stop();this.stopProgress(job);await job.serial.catch(()=>{});
    this.jobs.delete(key);if(this.subjects.get(this.subjectKey(job.checkpoint.subject))===key)this.subjects.delete(this.subjectKey(job.checkpoint.subject));
   }
  }

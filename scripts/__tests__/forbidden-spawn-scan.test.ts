@@ -56,9 +56,9 @@ test('forbidden-spawn-scan.test.ts: the three exemptions are listed with their r
 	const { report, code, stdout } = scan(join(FIXTURES, 'exempt'), '--fail');
 	assert.deepEqual(report.violations, []);
 	assert.equal(code, 0, 'exempt sites do not fail failing mode');
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/index.ts']);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
 	assert.ok(report.exempt.every(e => e.reason.length > 20 && e.sites === 1));
-	assert.match(stdout, /exempt indexer\/index\.ts/);
+	assert.match(stdout, /exempt indexer\/file-filter\.ts/);
 });
 
 test('forbidden-spawn-scan.test.ts: report mode exits 0 and failing mode exits 1 over the same sites', () => {
@@ -88,5 +88,5 @@ test('forbidden-spawn-scan.test.ts: a run over src lists the direct gitDiffTool.
 	assert.ok(execs.includes('workflow/runners/build/changed-files.ts'), execs.join(', '));
 	assert.ok(report.violations.some(v => v.text.includes('gitDiffTool.execute')));
 	assert.ok(report.violations.every(v => !v.file.startsWith('daemon/tools/')), 'src/daemon/tools is not read');
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/index.ts']);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
 });

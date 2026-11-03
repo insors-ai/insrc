@@ -47,7 +47,7 @@ const BUILTIN_MODULE = /tools\/builtins\//;
 const EXEMPT = new Map([
 	['cli/services/maintenance.ts', 'the daemon self-update pulls and builds its own install directory, outside any repository the registry serves'],
 	['daemon/installed-commit.ts', 'it reads the installed daemon\'s own commit at start-up, before the tool registry exists'],
-	['indexer/index.ts', 'the indexer lists the files of a repository with git ls-files for its own file walk, not on behalf of a caller'],
+	['indexer/file-filter.ts', 'the FileFilter lists the tracked files of a repository with git ls-files and reads core.excludesFile for the indexer\'s own file walk, not on behalf of a caller; it is built synchronously, so it stays exempt until it is converted to the typed git tools (GitHub issue, see docs/plans/main-sync-conflicts.md)'],
 ]);
 
 const SKIPPED_DIRS = new Set(['__tests__', '__type-tests__', 'node_modules']);

@@ -187,7 +187,7 @@ their process. The refresh uses only `git_ls_remote` and `git_fetch_refs`, which
 One row per file of the Story's replacement table. The tool and op of each call are in section 5; the test is the file that runs the site through
 the registry (a stand-in `git` or `gh` binary or an injected tool hook), and `src/workflow/tracker/__tests__/migration-record.test.ts` checks that the
 file exists. The scan finds no site outside the three exemptions: `src/cli/services/maintenance.ts` (the daemon self-update), `src/daemon/installed-commit.ts`
-(read before the registry exists) and `src/indexer/index.ts` (the indexer's own file walk).
+(read before the registry exists) and `src/indexer/file-filter.ts` (the indexer's own file walk; temporary, after the merge of origin/main moved the git listing there from `src/indexer/index.ts`).
 
 | Site | Tool family | Test |
 | :--- | :--- | :--- |

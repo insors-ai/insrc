@@ -21,5 +21,5 @@ test('build-script.test.ts: package.json build runs forbidden-spawn-scan.mjs --f
 	assert.equal(report.mode, 'failing');
 	assert.deepEqual(report.violations, []);
 	assert.deepEqual(report.unscanned, []);
-	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/index.ts']);
+	assert.deepEqual(report.exempt.map(e => e.file).sort(), ['cli/services/maintenance.ts', 'daemon/installed-commit.ts', 'indexer/file-filter.ts']);
 });

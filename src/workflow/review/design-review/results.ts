@@ -47,7 +47,7 @@ export function assessDesignResult(input: unknown, chunk: DesignChunk, previous:
  const blocking=result.findings.some(f=>f.severity==='HIGH'||f.severity==='MED');
  const expected=result.limitations.length?'incomplete':blocking?'changes_requested':'passed';
  if(missing.length)result.status='incomplete';
- requireDesign(result.status===expected,'invalid_result','Status contradicts findings or mandatory verification limits');
+ requireDesign(result.status===expected,'invalid_result',`Status contradicts findings or mandatory verification limits: received ${result.status}, expected ${expected}; limitations=${result.limitations.length}, HIGH/MED=${result.findings.filter(f=>f.severity==='HIGH'||f.severity==='MED').length}`);
  return result;
 }
 export function consolidateDesignReview(reviewId: string, attempt: number, subject: DesignReviewSubject, contentIdentity: string, plan: DesignChunkPlan, results: readonly DesignChunkResult[]): DesignReviewConsolidated {

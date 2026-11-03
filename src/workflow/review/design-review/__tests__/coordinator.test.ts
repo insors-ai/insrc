@@ -9,7 +9,7 @@ import { saveDesignCheckpoint } from '../checkpoint.js';
 import { designFixture } from './fixtures.js';
 
 const input=(f:ReturnType<typeof designFixture>,reviewId='review-1')=>({phase:'start',repo:f.repo,reviewId,attempt:1,artifactPath:f.json});
-function fake(f:ReturnType<typeof designFixture>,options:{before?:(stage:string)=>Promise<void>|void;mode?:'limits'|'mutation'}={}){
+function fake(f:ReturnType<typeof designFixture>,options:{before?:(stage:string)=>Promise<void>|void;mode?:'limits'|'mutation'|'invalid-status'}={}){
  const calls:string[]=[],sessions:ActivityReviewSessionOpts[]=[];
  const plan:DesignChunkPlan={chunks:[{id:'content',title:'Coherent scope',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements and implementation responsibility'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Whole-design consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'All units reviewed together, then consistency',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))};
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
@@ -19,7 +19,7 @@ function fake(f:ReturnType<typeof designFixture>,options:{before?:(stage:string)
   await opts.onActivity({sessionId:`session-${calls.length}`,sequence:2,kind:'model_output'});
   if(stage==='content'&&options.mode==='mutation')appendFileSync(f.md,'\nChanged during review');
   const limited=stage==='content'&&options.mode==='limits';
-  const value=assignment?{chunkId:stage,status:limited?'changes_requested':'passed',summary:'Fake substantive result, not hosted review',findings:limited?[{id:'f1',severity:'MED',location:'/body/summary',message:'Contradictory design',evidenceReferences:[f.md]}]:[],inspectedReferences:limited?[]:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path],limitations:[],advice:[]}:plan;
+  const value=assignment?{chunkId:stage,status:limited||stage==='content'&&options.mode==='invalid-status'?'changes_requested':'passed',summary:'Fake substantive result, not hosted review',findings:limited?[{id:'f1',severity:'MED',location:'/body/summary',message:'Contradictory design',evidenceReferences:[f.md]}]:[],inspectedReferences:limited?[]:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path],limitations:stage==='content'&&options.mode==='invalid-status'?['Required contract not verified']:[],advice:[]}:plan;
   const accepted=await opts.onCandidate(value);if(!accepted.accepted)throw new Error('Candidate rejected');return value;
  }} as unknown as LLMProvider;
  return {provider,calls,sessions};
@@ -57,4 +57,11 @@ test('native execution has request-independent activity options and model-free o
  release();assert.equal((await terminal(coordinator,f)).status,'passed');
  const first=await coordinator.progress(f.repo,'review-1',1,{includeResult:true});assert.equal(first.completedResults.length,1);assert.equal(first.nextCompletedChunk,1);
  const restored=new DesignReviewCoordinator({provider:()=>{throw new Error('Observation must not construct provider');}});assert.equal((await restored.progress(f.repo,'review-1',1)).status,'passed');
+});
+
+test('contradictory native status fails with pointed details and never silently retries or normalizes',async t=>{
+ const f=designFixture(t),native=fake(f,{mode:'invalid-status'}),coordinator=new DesignReviewCoordinator({provider:()=>({provider:native.provider,model:'fake'})});
+ await coordinator.start(input(f));const view=await terminal(coordinator,f);
+ assert.equal(view.status,'failed');assert.equal(view.completedChunks,0);assert.deepEqual(native.calls,['planning','content']);
+ assert.equal(view.failure?.code,'invalid_result');assert.match(view.failure!.summary,/received changes_requested, expected incomplete; limitations=1/);
 });

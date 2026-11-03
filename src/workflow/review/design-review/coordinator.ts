@@ -139,7 +139,7 @@ export class DesignReviewCoordinator {
   try{
    const value=await provider.runReviewSession!(assignment.prompt,assignment.schema,{mode:'activity',cwd:checkpoint.project,inactivityMs:REVIEW_INACTIVITY_MS,signal:job.abort.signal,internalRetry:false,
     onActivity:event=>{if(!job.closed&&currentDesignAttempt(job.checkpoint).current?.executionId===assignment.executionId&&job.tracker.activity(event))this.scheduleProgress(job);},
-    onCandidate:async input=>{if(job.closed||currentDesignAttempt(job.checkpoint).current?.executionId!==assignment.executionId)return{accepted:false};try{validate(input);return{accepted:true};}catch(error){candidateError=error;job.abort.abort(error);return{accepted:false};}}});
+    onCandidate:async input=>{if(job.closed||currentDesignAttempt(job.checkpoint).current?.executionId!==assignment.executionId)return{accepted:false};try{validate(input);return{accepted:true};}catch(error){candidateError=error;throw error;}}});
    if(job.storageError)throw job.storageError;if(candidateError)throw candidateError;
    assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
    return validate(value);

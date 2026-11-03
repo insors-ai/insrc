@@ -28,3 +28,6 @@ __pycache__/
 
 # Private per-block review recovery (never workflow artifacts or source)
 .insrc/review-runs/investigation-v1/
+
+# Live design-review baselines and feedback are private runtime checkpoints.
+.insrc/tmp/design-review/

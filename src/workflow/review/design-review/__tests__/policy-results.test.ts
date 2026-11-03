@@ -15,7 +15,7 @@ test('artifact-specific prompts contain live paths and trailing schema, never co
   assert.ok(!prompt.includes('UNIQUE_ARTIFACT_BODY_CANARY'));assert.ok(prompt.indexOf('Output schema')>prompt.indexOf('Not applicable'));
   assert.doesNotThrow(()=>JSON.parse(prompt.split('Output schema (structural reference):\n')[1]!));
  }
- const prompt=designChunkPrompt(subject,plan.chunks[0]!,'/checkpoint');assert.ok(prompt.includes('originating_issue'));assert.ok(prompt.includes('does not')||prompt.includes('Do not'));assert.ok(prompt.includes('HIGH/MED'));
+ const prompt=designChunkPrompt(subject,plan.chunks[0]!,'/checkpoint');assert.ok(prompt.includes('originating_issue'));assert.ok(prompt.includes('does not')||prompt.includes('Do not'));assert.ok(prompt.includes('HIGH/MED'));assert.ok(prompt.includes('if limitations is nonempty, status MUST be incomplete'));
  const final=designChunkPrompt(subject,plan.chunks[1]!,'/checkpoint');assert.ok(final.includes('all accepted completed feedback'));assert.ok(final.includes('whole-artifact'));
 });
 test('chunk plans reject missing units, final-only coverage, duplicate ids, cycles and bad final checks',()=>{
@@ -31,6 +31,8 @@ test('required gaps cannot pass and consolidation preserves HIGH/MED, incomplete
  const gap=assessDesignResult({...result(),inspectedReferences:['/body/a']},chunk,[]);assert.equal(gap.status,'incomplete');assert.ok(gap.limitations[0]!.includes('/body/b'));
  const finding={id:'f1',severity:'MED' as const,location:'/body/a',message:'Contract contradiction',evidenceReferences:['/project/source.ts:5']};
  assert.throws(()=>assessDesignResult({...result(),findings:[finding]},chunk,[]),/Status contradicts/);
+ assert.throws(()=>assessDesignResult({...result(),status:'changes_requested',findings:[finding],limitations:['Required contract not verified']},chunk,[]),/received changes_requested, expected incomplete; limitations=1, HIGH\/MED=1/);
+ const limited=assessDesignResult({...result(),status:'incomplete',findings:[finding],limitations:['Required contract not verified']},chunk,[]);assert.equal(limited.status,'incomplete');
  const blocked=assessDesignResult({...result(),status:'changes_requested',findings:[finding]},chunk,[]);
  const final=assessDesignResult(result('final'),plan.chunks[1]!,[blocked]);
  assert.throws(()=>consolidateDesignReview('review',1,subject,'a'.repeat(64),plan,[blocked]),/Every planned/);

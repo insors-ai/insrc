@@ -303,7 +303,7 @@ BUILD-315d510cb28100e2-s8 approved by the user after two review rounds (round 1 
 - LOW `signoff.ts` `resubmit`: the after-publish branch check cannot undo the push.
 - LOW `lifecycle-resignoff.test.ts`: add the header comment and use flat `test()`.
 
-Still deferred from the s8 decisions: gating `define` on an existing Epic; gating the other content writers (`resolveComment`, `appendStoryToDefine`) with 'revise'. Open question outside s8: raw design-run writes (`writeArtifact` in synthesize.ts) append no revision-bearing log entry, so review/approve of a redrafted head may hit `head-ahead-of-log` (core-data-model.md item 3).
+Still deferred from the s8 decisions: gating `define` on an existing Epic; gating the other content writers (`resolveComment`, `appendStoryToDefine`) with 'revise'. Raw design-run writes (`writeArtifact` in synthesize.ts) append no revision-bearing log entry, so a redrafted head used to be refused with `head-ahead-of-log` (core-data-model.md item 3): since 2026-11-03 `LifecycleService` adopts such a head (see core-data-model.md, "Raw content writers and the log").
 
 ## s9 decisions on the LLD's open questions (2026-10-23)
 
@@ -401,6 +401,6 @@ No new failure: every failing test name also fails in the tree before the Story,
 **Open items.**
 - A non-holder reviewer cannot record comments while a stage is in signoff (decision 3); a reviewer carve-out is a possible later change.
 - A comment outside signoff claims an unassigned stage (decision 4); that side effect is tested, not designed away.
-- The head-ahead-of-log defect of raw design-run writes (`synthesize.ts`, core-data-model.md item 3) is not in this Story and still open.
+- The head-ahead-of-log defect of raw design-run writes (`synthesize.ts`, core-data-model.md item 3) was not in this Story; it was fixed afterwards (2026-11-03) in `LifecycleService`.
 - The tracker label create of the draft hook (`gh_label` with `force`) always asks for approval, so a first draft in a repo with the tracker on needs a connected client: a separate bugfix, not started.
 - The build has no independent code review (the tool is unavailable): the approval needs a controller self-review override.

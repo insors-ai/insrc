@@ -22,7 +22,7 @@ export function buildBlock(entryPath: string, hookName: string): string {
 }
 
 /** The span of the block in `text` (start of its first line to just after its last line), or undefined. */
-function findBlock(text: string): { start: number; end: number } | undefined {
+export function findBlock(text: string): { start: number; end: number } | undefined {
 	const start = text.indexOf(BLOCK_START);
 	if (start === -1) return undefined;
 	const endMarker = text.indexOf(BLOCK_END, start);

@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "7d42b5dceb62afec",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T14:34:09.725Z",
+    "updatedAt": "2026-11-03T14:39:01.676Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.745Z",
+    "epicSlug": "subsystem-pass-regroups-whole-repository-after"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "f8e36664f",
+        "ranAt": "2026-11-03T14:39:01.676Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/subsystem-changes.test.ts",
+                "title": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/subsystem-changes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1300,
+            "titles": [
+              {
+                "title": "S001 t1: every change site records its source file in the same transaction, and a non-grouping kind records nothing",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: entity-row removal records its file on every path, and a whole-repository delete drops the contributions and bumps the reset counter",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

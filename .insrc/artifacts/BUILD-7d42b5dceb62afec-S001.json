@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "7d42b5dceb62afec",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T14:34:09.725Z",
+    "updatedAt": "2026-11-03T14:39:01.676Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-02T11:44:58.745Z",
+    "epicSlug": "subsystem-pass-regroups-whole-repository-after"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      }
+    ],
+    "summary": "@fe1d42528, @067af4f5e and the test commit: src/db/subsystem-changes.ts and two sub-databases; the changed-file record is written in-transaction at every grouping-input change (the file commit once per commit; upsertRelations outside a commit; promotions; deleteResolvedRelations; the SQL re-check; the incoming sweep of a removed entity; entity-row removal on every other path). The first t1 test now also covers an outgoing grouping-edge sweep (deleting an entity that holds a CALLS edge records its own file, not the target's) and transactional atomicity (a write transaction that records and then throws leaves no entry, read back after reopening the store; withWriteTxn uses childTransaction, which aborts on a throw). Mutation check: 15 mutants, all caught. Related suites: 368 pass.",
+    "testRecord": {
+      "md": "docs/standalone/subsystem-pass-regroups-whole-repository-after-E202611027d42b5dc/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/db/__tests__/subsystem-changes.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:39:01.676Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T14:39:01.676Z"
+      }
+    ],
+    "commit": "f8e36664f"
+  }
+}

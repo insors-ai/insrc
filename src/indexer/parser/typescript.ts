@@ -892,7 +892,8 @@ function collectClassUserFields(classNode: SyntaxNode): Set<string> {
       for (const param of member.childForFieldName('parameters')?.namedChildren ?? []) {
         const name = param.childForFieldName('pattern');
         const isProperty = /^(?:(?:public|private|protected|readonly|override)\s+)+/.test(param.text);
-        if (isProperty && name?.type === 'identifier' && typeProvesUser(param.childForFieldName('type'))) set.add(`this.${name.text}`);
+        const proves = typeProvesUser(param.childForFieldName('type')) || newProvesUser(param.childForFieldName('value'));
+        if (isProperty && name?.type === 'identifier' && proves) set.add(`this.${name.text}`);
       }
     }
   }
@@ -1013,8 +1014,9 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     if (bound) collectPatternIdentifiers(bound, declared);
   }
   for (const param of scope.childForFieldName('parameters')?.namedChildren ?? []) {
-    const name = param.childForFieldName('pattern');      // repo: Repo
-    if (name?.type === 'identifier' && typeProvesUser(param.childForFieldName('type'))) user.add(name.text);
+    const name = param.childForFieldName('pattern');      // repo: Repo / repo = new Repo()
+    const proves = typeProvesUser(param.childForFieldName('type')) || newProvesUser(param.childForFieldName('value'));
+    if (name?.type === 'identifier' && proves) user.add(name.text);
   }
   // A named function expression binds its own name inside itself.
   if (scope.type === 'function_expression' || scope.type === 'generator_function') {
@@ -1252,9 +1254,20 @@ function keepsCall(funcNode: SyntaxNode, name: string, scopes: AxiosScope[]): bo
   return isUserReceiver(funcNode.childForFieldName('object'), scopes);
 }
 
-/** A receiver proven a user object: `this`, `super`, or a name proven in scope. */
+/** A receiver proven a user object: `this`, `super`, a name proven in scope, a
+ *  proven `this.<field>`, or a value asserted to a user class (`x as Repo`);
+ *  parentheses and `!` are looked through. */
 function isUserReceiver(obj: SyntaxNode | null, scopes: AxiosScope[]): boolean {
   if (!obj) return false;
+  if (obj.type === 'parenthesized_expression' || obj.type === 'non_null_expression') {
+    return isUserReceiver(obj.namedChildren[0] ?? null, scopes);
+  }
+  if (obj.type === 'as_expression' || obj.type === 'satisfies_expression') {      // x as Repo
+    return typeProvesUser(obj.namedChildren[1] ?? null) || isUserReceiver(obj.namedChildren[0] ?? null, scopes);
+  }
+  if (obj.type === 'type_assertion') {                                             // <Repo>x
+    return typeProvesUser(obj.namedChildren[0]?.namedChildren[0] ?? null) || isUserReceiver(obj.namedChildren[1] ?? null, scopes);
+  }
   if (obj.type === 'this' || obj.type === 'super') return true;
   if (obj.type === 'identifier') return isProvenUser(obj.text, scopes);
   if (obj.type === 'member_expression' && obj.childForFieldName('object')?.type === 'this') {

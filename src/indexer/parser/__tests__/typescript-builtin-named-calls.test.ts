@@ -174,7 +174,7 @@ export class Service {
 	private plain: Store[];
 	private builtin: Map<string, number>;
 	private untyped;
-	constructor(private readonly param: Store, readonly other: Store, notAProperty: Store) {
+	constructor(private readonly param: Store, readonly other: Store, notAProperty: Store, private defaulted = new Store()) {
 		this.assigned = new Store();
 	}
 	run(): void {
@@ -189,17 +189,22 @@ export class Service {
 		this.builtin.keys();
 		this.untyped.find();
 		this.notAProperty.filter();
+		this.defaulted.bind();
+		this.typed!.at(0);
+		(this.created).fill(0);
 	}
 }
 `);
-	assert.deepEqual(calls(r, 'run'), ['apply', 'create', 'emit', 'find', 'parse', 'push', 'resolve'],
-		'typed, generic, qualified, new-initialised, parameter-property and assigned fields; not array, built-in, untyped or a plain constructor parameter');
+	assert.deepEqual(calls(r, 'run'), ['apply', 'at', 'bind', 'create', 'emit', 'fill', 'find', 'parse', 'push', 'resolve'],
+		'typed, generic, qualified, new-initialised, parameter-property (typed or new-defaulted) and assigned fields; not array, built-in, untyped or a plain constructor parameter');
 });
 
 test('S001 t2: calls on typed parameters and new-initialised locals are kept; built-in, array, union and untyped receivers are not', () => {
 	const r = parse(`
 class Repo { find(): void {} }
-export function viaParams(repo: Repo, maybe?: Repo, list: Repo[], either: Repo | undefined, p: Promise<Repo>, e: EventEmitter): void {
+export function viaParams(repo: Repo, maybe?: Repo, list: Repo[], either: Repo | undefined, p: Promise<Repo>, e: EventEmitter, generic: Array<Repo>, dflt = new Repo()): void {
+	generic.map(x => x);
+	dflt.call();
 	repo.find();
 	maybe.create();
 	list.map(x => x);
@@ -220,9 +225,17 @@ export function viaLocals(): void {
 	untyped.find();
 	builtin.keys();
 }
+export function asserted(v: unknown): void {
+	(v as Repo).includes(1);
+	(v satisfies Repo).flat();
+	(<Repo>v).call();
+	(v as Map<string, number>).keys();
+	(v).split(',');
+}
 function make(): any { return null; }
 `);
-	assert.deepEqual(calls(r, 'viaParams'), ['create', 'find']);
+	assert.deepEqual(calls(r, 'viaParams'), ['call', 'create', 'find'], 'typed and new-defaulted parameters; not Array<Repo>, arrays, unions or built-ins');
+	assert.deepEqual(calls(r, 'asserted'), ['call', 'flat', 'includes'], 'as / satisfies / <T> to a user class prove the receiver; to a built-in or on an untyped value do not');
 	assert.deepEqual(calls(r, 'viaLocals'), ['emit', 'make', 'parse', 'push', 'resolve'], 'a var declared in a block keeps its proof for the whole function');
 });
 

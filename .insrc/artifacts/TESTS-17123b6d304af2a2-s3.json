@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T13:53:44.987Z",
+    "updatedAt": "2026-11-03T13:57:17.082Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -438,8 +438,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "05870a034",
-        "ranAt": "2026-11-03T13:53:44.987Z",
+        "commit": "43b310c1b",
+        "ranAt": "2026-11-03T13:57:17.082Z",
         "testsPassed": true,
         "tests": [
           {
@@ -561,6 +561,11 @@
                 "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
                 "title": "store-plan-carried-evidence-preserves-vectors-and-complete-lineage",
                 "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
               }
             ],
             "files": []
@@ -571,7 +576,7 @@
             "file": "packages/project-memory/src/__tests__/store-guards.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 512,
+            "durationMs": 414,
             "titles": [
               {
                 "title": "store-plan-snapshots-bounds-protected-kinds-frame-and-profile",
@@ -607,6 +612,55 @@
               },
               {
                 "title": "store-plan-logical-forget-requires-exact-monotone-marker",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "packages/project-memory/src/__tests__/store-initialization.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6626,
+            "titles": [
+              {
+                "title": "store-initialization-gates-real-queue-recovery-on-validated-authority",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-reopened-profile-prepares-matching-plan-and-native-query",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-fresh-profile-and-read-only-reopen",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-refuses-queue-only-and-unknown-roots-without-replacement",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-preserves-missing-corrupt-and-mismatched-profile-data",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-resumes-only-recognized-generation-zero",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-validates-pending-markers-and-native-directory-identity",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-rolls-back-each-acquired-native-resource",
+                "result": "pass"
+              },
+              {
+                "title": "store-initialization-unverified-close-is-explicit-and-owner-stays-held",
                 "result": "pass"
               }
             ],

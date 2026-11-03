@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 44 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 45 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -138,7 +138,7 @@ Run at 2026-11-03T13:39:59.021Z on commit `ad4f1b289`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-03T13:53:44.987Z on commit `05870a034`. Tests check: **passed**. 15 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-03T13:57:17.082Z on commit `43b310c1b`. Tests check: **passed**. 16 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: store-row-codec-and-effect-reservations**
 
@@ -184,9 +184,11 @@ Run at 2026-11-03T13:53:44.987Z on commit `05870a034`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | store-plan-snapshots-bounds-protected-kinds-frame-and-profile | `packages/project-memory/src/__tests__/store-guards.test.ts` |
 | pass | store-plan-carried-evidence-preserves-vectors-and-complete-lineage | `packages/project-memory/src/__tests__/store-guards.test.ts` |
+| pass | store-initialization-reopened-profile-prepares-matching-plan-and-native-query | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.5 s |  |
+| `packages/project-memory/src/__tests__/store-guards.test.ts` | 0 | 9 | 0.4 s |  |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 6.6 s |  |

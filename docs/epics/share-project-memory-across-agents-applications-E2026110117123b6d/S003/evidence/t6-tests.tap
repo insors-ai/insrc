@@ -1,0 +1,244 @@
+TAP version 13
+# Subtest: concurrent-admission-fifo-and-idempotent-retry
+ok 1 - concurrent-admission-fifo-and-idempotent-retry
+  ---
+  duration_ms: 156.482917
+  type: 'test'
+  ...
+# Subtest: privacy-binding-and-scope-status-isolation-before-enqueue
+ok 2 - privacy-binding-and-scope-status-isolation-before-enqueue
+  ---
+  duration_ms: 433.266584
+  type: 'test'
+  ...
+# Subtest: admission-quota-refunds-and-hanging-policy-drains-safely
+ok 3 - admission-quota-refunds-and-hanging-policy-drains-safely
+  ---
+  duration_ms: 2415.863
+  type: 'test'
+  ...
+# Subtest: canonical-json-frame-length-checksum-and-bounded-decoding
+ok 4 - canonical-json-frame-length-checksum-and-bounded-decoding
+  ---
+  duration_ms: 6.93425
+  type: 'test'
+  ...
+# Subtest: immutable-policy-snapshot-before-persistence
+ok 5 - immutable-policy-snapshot-before-persistence
+  ---
+  duration_ms: 32.707042
+  type: 'test'
+  ...
+# Subtest: scoped-identity-exact-retry-and-conflicting-reuse
+ok 6 - scoped-identity-exact-retry-and-conflicting-reuse
+  ---
+  duration_ms: 1.137208
+  type: 'test'
+  ...
+# Subtest: store-codec-canonical-roundtrip-all-row-kinds
+ok 7 - store-codec-canonical-roundtrip-all-row-kinds
+  ---
+  duration_ms: 9.312667
+  type: 'test'
+  ...
+# Subtest: store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+ok 8 - store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+  ---
+  duration_ms: 25.421958
+  type: 'test'
+  ...
+# Subtest: store-codec-validates-nested-lineage-outcomes-and-source-shapes
+ok 9 - store-codec-validates-nested-lineage-outcomes-and-source-shapes
+  ---
+  duration_ms: 4.74775
+  type: 'test'
+  ...
+# Subtest: store-codec-reserves-bounded-immutable-effect-batches
+ok 10 - store-codec-reserves-bounded-immutable-effect-batches
+  ---
+  duration_ms: 2.915292
+  type: 'test'
+  ...
+# Subtest: store-codec-qualified-identities-and-explicit-arrow-schema
+ok 11 - store-codec-qualified-identities-and-explicit-arrow-schema
+  ---
+  duration_ms: 213.423708
+  type: 'test'
+  ...
+# Subtest: store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+ok 12 - store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+  ---
+  duration_ms: 3.458167
+  type: 'test'
+  ...
+# Subtest: store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+ok 13 - store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+  ---
+  duration_ms: 36.062083
+  type: 'test'
+  ...
+# Subtest: store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+ok 14 - store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+  ---
+  duration_ms: 7.19
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-generation-predecessor-reference-and-history-guards
+ok 15 - store-plan-exact-generation-predecessor-reference-and-history-guards
+  ---
+  duration_ms: 19.671833
+  type: 'test'
+  ...
+# Subtest: store-plan-source-provenance-span-authority-and-evidence-sets
+ok 16 - store-plan-source-provenance-span-authority-and-evidence-sets
+  ---
+  duration_ms: 4.5015
+  type: 'test'
+  ...
+# Subtest: store-plan-lifecycle-complete-matrix-and-reason-constraints
+ok 17 - store-plan-lifecycle-complete-matrix-and-reason-constraints
+  ---
+  duration_ms: 1.665958
+  type: 'test'
+  ...
+# Subtest: store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+ok 18 - store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+  ---
+  duration_ms: 7.461
+  type: 'test'
+  ...
+# Subtest: store-plan-paired-supersession-is-atomic-and-acyclic
+ok 19 - store-plan-paired-supersession-is-atomic-and-acyclic
+  ---
+  duration_ms: 20.284625
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+ok 20 - store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+  ---
+  duration_ms: 10.882125
+  type: 'test'
+  ...
+# Subtest: store-plan-logical-forget-requires-exact-monotone-marker
+ok 21 - store-plan-logical-forget-requires-exact-monotone-marker
+  ---
+  duration_ms: 5.710792
+  type: 'test'
+  ...
+# Subtest: store-initialization-gates-real-queue-recovery-on-validated-authority
+ok 22 - store-initialization-gates-real-queue-recovery-on-validated-authority
+  ---
+  duration_ms: 1451.217959
+  type: 'test'
+  ...
+# Subtest: store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+ok 23 - store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+  ---
+  duration_ms: 136.5965
+  type: 'test'
+  ...
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 24 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 122.735875
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+ok 25 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 144.1845
+  type: 'test'
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 26 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 244.606416
+  type: 'test'
+  ...
+# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+ok 27 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+  ---
+  duration_ms: 249.728125
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 28 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 302.562292
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 29 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 104.720083
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 30 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 326.463584
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 31 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 781.019084
+  type: 'test'
+  ...
+# Subtest: store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+ok 32 - store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+  ---
+  duration_ms: 1457.505958
+  type: 'test'
+  ...
+# Subtest: store-writer-serial-generation-revisions-conflicts-and-retained-identity
+ok 33 - store-writer-serial-generation-revisions-conflicts-and-retained-identity
+  ---
+  duration_ms: 308.010209
+  type: 'test'
+  ...
+# Subtest: store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+ok 34 - store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+  ---
+  duration_ms: 275.446375
+  type: 'test'
+  ...
+# Subtest: store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+ok 35 - store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+  ---
+  duration_ms: 238.347375
+  type: 'test'
+  ...
+# Subtest: store-writer-native-rejection-fences-until-verified-close-and-reopen
+ok 36 - store-writer-native-rejection-fences-until-verified-close-and-reopen
+  ---
+  duration_ms: 324.705708
+  type: 'test'
+  ...
+# Subtest: store-writer-timeout-retains-lane-native-work-and-owner-through-close
+ok 37 - store-writer-timeout-retains-lane-native-work-and-owner-through-close
+  ---
+  duration_ms: 294.349125
+  type: 'test'
+  ...
+# Subtest: store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+ok 38 - store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+  ---
+  duration_ms: 390.44475
+  type: 'test'
+  ...
+# Subtest: store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+ok 39 - store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+  ---
+  duration_ms: 510.28325
+  type: 'test'
+  ...
+1..39
+# tests 39
+# suites 0
+# pass 39
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4202.26175

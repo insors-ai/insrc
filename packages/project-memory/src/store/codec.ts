@@ -1,6 +1,7 @@
 import { MemoryError } from '../errors.js';
 import type { Json, MemoryFailureCode, Scope } from '../types.js';
 import { boundedString, decimal, digest, snapshotJson, validateScope } from '../queue/codec.js';
+import type { Reservation } from '../queue/codec.js';
 import { record, shape } from '../queue/shape.js';
 import { embeddingProfile, embeddingVector, requireProfile, validateProfile } from './embedding-profile.js';
 import type { EmbeddingProfile, EncodedRow, PayloadByKind, RowEnvelope, RowKind, StoreRow } from './types.js';
@@ -177,10 +178,10 @@ export function makeRow<K extends RowKind>(kind: K, scope: Scope, epoch: string,
     ...columns(kind, data), generation: derivedGeneration, embedding: vector, payload: p }, profile);
 }
 const ROW_FIELDS = ['rowId', 'rowKind', 'projectId', 'namespaceKey', 'scopeEpoch', 'sessionId', 'branch', 'environment', 'entityId', 'revisionId', 'sourceId', 'operationId', 'payloadHash', 'identityDigest', 'generation', 'status', 'validFrom', 'validUntil', 'embedding', 'payload'] as const;
-export function validateRow(input: unknown, profile: EmbeddingProfile, maxBytes: number = STORE_LIMITS.maxBytes): StoreRow {
+export function validateRow(input: unknown, profile: EmbeddingProfile, maxBytes: number = STORE_LIMITS.maxBytes, reservation?: Reservation): StoreRow {
   validateProfile(profile);
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > STORE_LIMITS.maxBytes) invalid();
-  const value = snapshotJson(input, maxBytes).value;
+  const value = snapshotJson(input, maxBytes, reservation).value;
   const r = object(value, ROW_FIELDS);
   if (r.rowKind === 'delivery') throw new MemoryError('NOT_READY', 'Memory delivery storage is not implemented.');
   one(r.rowKind, KINDS);
@@ -218,7 +219,7 @@ export function decodeRow(input: unknown, profile: EmbeddingProfile): StoreRow {
   return validateRow({ ...r, payload: parsed }, profile);
 }
 /** Reserve the complete canonical effect batch before any native mutation. */
-export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number): { readonly rows: readonly StoreRow[]; readonly bytes: number } {
+export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number, reservation?: Reservation): { readonly rows: readonly StoreRow[]; readonly bytes: number } {
   if (!Number.isSafeInteger(maxEventBytes) || maxEventBytes < 1 || maxEventBytes > 16 * 1024 * 1024) invalid();
   const limit = Math.min(STORE_LIMITS.maxBytes, 8 * maxEventBytes);
   if (!Array.isArray(input) || Object.getPrototypeOf(input) !== Array.prototype || input.length > STORE_LIMITS.maxRows || Reflect.ownKeys(input).length !== input.length + 1) invalid();
@@ -226,7 +227,7 @@ export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEvent
   for (let i = 0; i < input.length; i++) {
     const entry = Object.getOwnPropertyDescriptor(input, String(i));
     if (!entry || !entry.enumerable || !('value' in entry)) invalid();
-    const row = validateRow(entry.value, profile, limit);
+    const row = validateRow(entry.value, profile, limit, reservation);
     const size = snapshotJson(row, limit).bytes + (i ? 1 : 0);
     if (size > limit - bytes || seen.has(row.rowId)) invalid();
     rows.push(row); seen.add(row.rowId); bytes += size;
@@ -237,7 +238,7 @@ export function snapshotRows(input: unknown, profile: EmbeddingProfile, maxEvent
 /** Prepare the row/profile portion of a CommitPlan before writer admission.
  * Other plan fields (frame identity, revisions and disposition) belong to the
  * causal guards. Never infer a missing vector profile from the row dimension. */
-export function snapshotPlanRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number) {
+export function snapshotPlanRows(input: unknown, profile: EmbeddingProfile, maxEventBytes: number, reservation?: Reservation) {
   validateProfile(profile); record(invalid, input);
   const proto = Object.getPrototypeOf(input);
   if (proto !== Object.prototype && proto !== null) invalid();
@@ -248,7 +249,7 @@ export function snapshotPlanRows(input: unknown, profile: EmbeddingProfile, maxE
     if (!metadata.enumerable || !('value' in metadata)) invalid();
     requireProfile(metadata.value, profile);
   }
-  const prepared = snapshotRows(rows.value, profile, maxEventBytes);
+  const prepared = snapshotRows(rows.value, profile, maxEventBytes, reservation);
   if (!metadata && prepared.rows.some(row => row.embedding !== null)) invalid();
   return prepared;
 }

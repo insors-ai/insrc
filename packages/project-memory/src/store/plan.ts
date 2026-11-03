@@ -2,6 +2,7 @@ import { TextDecoder } from 'node:util';
 import { MemoryError } from '../errors.js';
 import type { Scope } from '../types.js';
 import { boundedString, decimal, decodeFrame, digest, encodeFrame, snapshotCommand, snapshotJson, validateScope } from '../queue/codec.js';
+import type { Reservation } from '../queue/codec.js';
 import { shape } from '../queue/shape.js';
 import { QUEUE_LIMITS } from '../queue/types.js';
 import type { EventBody, QueueFrame } from '../queue/types.js';
@@ -19,8 +20,8 @@ export function processingVersion(value: unknown): asserts value is ProcessingVe
   if (value.schema !== 1 || !boundedString(value.processor) || ![value.normalizer, value.prompt].every(v => v === null || boundedString(v))) invalidPlan();
 }
 /** Revalidate the unchanged S2 frame, including its independently recomputed checksum. */
-export function snapshotAdmittedFrame(input: unknown, maxEventBytes: number): QueueFrame {
-  const copy = snapshotJson(input, maxEventBytes + QUEUE_LIMITS.frameOverhead, undefined, 2, 64).value;
+export function snapshotAdmittedFrame(input: unknown, maxEventBytes: number, reservation?: Reservation): QueueFrame {
+  const copy = snapshotJson(input, maxEventBytes + QUEUE_LIMITS.frameOverhead, reservation, 2, 64).value;
   shape(invalidPlan, copy, ['formatVersion', 'recordType', 'sequence', 'operationId', 'command', 'checksum', 'payloadHash', 'queueId', 'admittedAtMs', 'scopeEpoch']);
   const { checksum, ...body } = copy;
   const decoded = decodeFrame(encodeFrame(body as unknown as EventBody, maxEventBytes), maxEventBytes);
@@ -31,7 +32,7 @@ const prepared = new WeakSet<object>();
 export interface PreparedPlan { readonly plan: CommitPlan; readonly bytes: number; readonly identityDigest: string; }
 /** Each bounded substructure is copied separately; a legal deep S2 payload does not
  * lose depth/node capacity merely because a plan adds an envelope around it. */
-export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEventBytes: number): PreparedPlan {
+export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEventBytes: number, reservation?: Reservation): PreparedPlan {
   if (!Number.isSafeInteger(maxEventBytes) || maxEventBytes < 1 || maxEventBytes > QUEUE_LIMITS.maxEventBytes) invalidPlan();
   if (!input || typeof input !== 'object' || Array.isArray(input) || ![Object.prototype, null].includes(Object.getPrototypeOf(input))) invalidPlan();
   const descriptors = Object.getOwnPropertyDescriptors(input);
@@ -44,7 +45,7 @@ export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEvent
     if (key !== 'rows' && key !== 'frame') header[key] = descriptor.value;
   }
   const limit = Math.min(STORE_LIMITS.maxBytes, maxEventBytes * 8);
-  const copied = snapshotJson(header, limit), h = copied.value;
+  const copied = snapshotJson(header, limit, reservation), h = copied.value;
   shape(invalidPlan, h, required.filter(k => k !== 'rows' && k !== 'frame'), ['embeddingProfile']);
   if (typeof h.operationId !== 'string' || !HASH.test(h.operationId) || typeof h.commandHash !== 'string' || !HASH.test(h.commandHash) || !boundedString(h.scopeEpoch, 256) || !decimal(h.expectedGeneration)) invalidPlan();
   validateScope(h.scope); processingVersion(h.processingVersion);
@@ -59,10 +60,10 @@ export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEvent
   if (disposition.rejectedByTombstoneIds.length && (disposition.state !== 'failed' || disposition.errorCode !== 'POLICY_DENIED')) invalidPlan();
   if (!h.expectedRevisions || typeof h.expectedRevisions !== 'object' || Array.isArray(h.expectedRevisions)) invalidPlan();
   for (const [id, revision] of Object.entries(h.expectedRevisions)) { domainId('memory', id); if (revision !== null) domainId('revision', revision); }
-  const frame = snapshotAdmittedFrame(descriptors['frame']!.value, maxEventBytes);
+  const frame = snapshotAdmittedFrame(descriptors['frame']!.value, maxEventBytes, reservation);
   const command = snapshotCommand(frame.command, maxEventBytes);
   if (h.operationId !== frame.operationId || h.commandHash !== frame.payloadHash || h.scopeEpoch !== frame.scopeEpoch || canonical(h.scope) !== canonical(frame.command.scope)) invalidPlan();
-  const rows = snapshotPlanRows(input, profile, maxEventBytes);
+  const rows = snapshotPlanRows(input, profile, maxEventBytes, reservation);
   // Leave room for generated root, receipt and at most one namespace per effect.
   const namespaces = new Set(rows.rows.map(row => row.namespaceKey));
   if (rows.rows.length + namespaces.size + 2 > STORE_LIMITS.maxRows) invalidPlan();

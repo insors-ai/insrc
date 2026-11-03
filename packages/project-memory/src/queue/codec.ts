@@ -24,9 +24,10 @@ export class IngressBudget {
   #bytes = 0;
   #calls = 0;
   readonly capacity: number;
-  constructor(limits: MemoryLimits) {
+  constructor(limits: MemoryLimits, capacity = Math.min(64 * 1024 * 1024, limits.maxPendingBytes, 4 * limits.maxEventBytes)) {
     validateQueueLimits(limits);
-    this.capacity = Math.min(64 * 1024 * 1024, limits.maxPendingBytes, 4 * limits.maxEventBytes);
+    if (!Number.isSafeInteger(capacity) || capacity < 1 || capacity > 64 * 1024 * 1024) invalid();
+    this.capacity = capacity;
   }
   get bytes(): number { return this.#bytes; }
   get calls(): number { return this.#calls; }

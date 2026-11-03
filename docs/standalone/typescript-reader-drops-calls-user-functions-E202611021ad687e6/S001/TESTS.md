@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -33,3 +33,31 @@ Run at 2026-11-03T08:20:30.043Z on commit `a0d1fe628`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` | 0 | 3 | 0.7 s |  |
+
+## t2
+
+Run at 2026-11-03T08:32:54.582Z on commit `f4d469ba3`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: S001 t2: calls on typed, new-initialised and constructor-assigned fields are kept whatever the name**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t2: calls on typed, new-initialised and constructor-assigned fields are kept whatever the name | `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` |
+
+**unit: S001 t2: calls on typed parameters and new-initialised locals are kept; built-in, array, union and untyped receivers are not**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t2: calls on typed parameters and new-initialised locals are kept; built-in, array, union and untyped receivers are not | `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` |
+
+**unit: S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules | `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/indexer/parser/__tests__/typescript-builtin-named-calls.test.ts` | 0 | 6 | 0.8 s |  |

@@ -64,6 +64,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
   const dress = (e: BodyStub): Stub => {
     const s = e as Stub;
     s['options'] = [];
+    s['dataset'] = {};
     s['remove'] = () => {};
     s['focus'] = () => {};
     s['removeAttribute'] = () => {};
@@ -660,4 +661,39 @@ test("chat shell: an informational line's done does not end a running turn, and 
   v.msg({ type: 'turn-running', sessionId: 's1' });
   v.msg({ type: 'turn-event', event: { kind: 'error', turnId: 't2', message: 'boom' } });
   assert.deepEqual([prog.className, prompt.textContent], ['progress idle', '\u276f'], "the turn's error ends it");
+});
+
+test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded entries; selecting posts open-chat { chatId }', () => {
+  const s = runShell();
+  // layout: the active chip precedes the .right (history) span in the chrome
+  const chromeAt = s.html.indexOf('class="chrome"');
+  const actAt = s.html.indexOf('id="insrc-active"');
+  const rightAt = s.html.indexOf('class="right"');
+  const histAt = s.html.indexOf('id="insrc-history"');
+  assert.ok(chromeAt !== -1 && actAt > chromeAt && actAt < rightAt && histAt > rightAt, 'active chip is left of .right; history stays right-aligned in .right');
+  // drive the select like a browser: options is a real array, appendChild feeds it
+  const act = s.el('insrc-active') as unknown as { options: unknown[] & { remove?: (i: number) => void }; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
+  const opts: unknown[] = [];
+  (act as { options: unknown[] }).options = opts;
+  act.remove = (i: number) => { opts.splice(i, 1); };
+  const origAppend = act.appendChild.bind(act);
+  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
+  s.msg({ type: 'active-list', chats: [
+    { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 1 },
+    { id: 'b', title: 'Chat B', status: 'working', lastActivityAt: 2 },
+    { id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 },
+  ] });
+  assert.equal(opts.length, 3, 'three entries');
+  assert.match(String((opts[0] as { textContent: string }).textContent), /^● Chat A/, 'dot + title');
+  assert.match(String((opts[1] as { textContent: string }).textContent), /^● Chat B/);
+  assert.match(String((opts[2] as { textContent: string }).textContent), /^● Chat C/);
+  // the dot colour rides on the option's dataset in a real browser; here the chip glyph carries it
+  const chip = s.el('insrc-actchip') as unknown as { dataset: Record<string, string> };
+  assert.equal(chip.dataset.urgent, 'waiting-input', 'chip glyph shows the most urgent status (red)');
+  s.msg({ type: 'active-list', chats: [{ id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 }] });
+  assert.equal(chip.dataset.urgent, 'done', 'with only a done chat left, the chip goes green');
+  // selecting an entry posts the SAME open-chat { chatId } the history dropdown posts
+  act.value = 'b';
+  fire(act as never, 'change');
+  assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
 });

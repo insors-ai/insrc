@@ -1275,6 +1275,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.histchip::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;background-color:currentColor;pointer-events:none;` +
       `-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;}` +
       `.chrome #insrc-history{max-width:100%;}` +
+      // E202611031bd72813:S001 t4: the active-chats chip, LEFT-aligned at the start of .chrome
+      // (.histchip look, but the glyph is a status dot whose colour follows the most urgent entry:
+      // red > yellow > green via data-urgent on the chip).
+      `.actchip{position:relative;display:inline-flex;align-items:center;max-width:36ch;padding:3px 2px 3px 22px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);}` +
+      `.actchip::before{content:"";position:absolute;left:7px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--muted);pointer-events:none;}` +
+      `.actchip[data-urgent="waiting-input"]::before{background:var(--red);}` +
+      `.actchip[data-urgent="working"]::before{background:var(--warn);}` +
+      `.actchip[data-urgent="done"]::before{background:var(--pass);}` +
+      `.chrome #insrc-active{max-width:100%;}` +
+      `.status-dot{font-style:normal;}` +
+      `.status-dot.red{color:var(--red);}.status-dot.yellow{color:var(--warn);}.status-dot.green{color:var(--pass);}` +
       // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
@@ -1439,6 +1450,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // S005: history-dropdown wiring (same one nonce'd script).
       `var cur='';` +
       `const hs=document.getElementById('insrc-history');` +
+      `const actChip=document.getElementById('insrc-actchip');const act=document.getElementById('insrc-active');` +
+      `const DOT={ 'waiting-input':'red', working:'yellow', done:'green' };` +
+      `act.addEventListener('change',function(){if(typeof act.value==='string'&&act.value!==''){vs.postMessage({v:1,payload:{type:'open-chat',chatId:act.value}});}});` +
       // Run-config controls (bottom-right): the provider·model popup + effort gauge.
       // State lives in the buttons' data-* attributes (server-rendered from the active
       // session); the model catalog is embedded once in #insrc-catalog.
@@ -1553,7 +1567,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
       `else if(m.type==='run-config'){if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();}` +
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}` +
+      // E202611031bd72813:S001 t4: active-list (re)populates the left dropdown; each option carries a
+      // status dot (red/yellow/green) + title; the chip glyph shows the most urgent status.
+      `else if(m.type==='active-list'){while(act.options.length>1)act.remove(1);var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;var d=DOT[c.status]||'green';if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;o.textContent='\u25CF '+c.title;if(o.dataset)o.dataset.dot=d;act.appendChild(o);});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;if(act.value&&!(m.chats||[]).some(function(c){return c.id===act.value;}))act.value='';}` +
+      `});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
@@ -1594,6 +1612,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // (its selected option already shows the session — the old 'session' label + active-name text were
       // duplication). The provider + mode selects live in the footer status bar now.
       `<div class="chrome">` +
+            // E202611031bd72813:S001 t4: #insrc-active LEFT-aligned at the chrome start; the history
+            // chip stays the sole control of .right (right-aligned).
+            `<span class="actchip" id="insrc-actchip" data-urgent=""><select id="insrc-active" class="segsel" aria-label="active chats"><option value="">active…</option></select></span>` +
             `<span class="right"><span class="histchip"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input

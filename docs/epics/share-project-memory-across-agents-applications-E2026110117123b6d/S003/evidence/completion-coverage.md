@@ -16,7 +16,7 @@ from task validation or earlier source snapshots.
 | ac3: index/memory/queue isolation | real isolated IndexerService rebuild plus closed temporary graph/vector reset; complete cold memory/proof/guard and pending-frame/segment-byte oracle (t15) |
 | ac3: safe internal cleanup targeting | exact canonical owned memory.lance preflight, rejected root/queue/metadata/foreign/alias/child/inode substitutions; non-destructive graph/vector/queue preservation oracle |
 | Resource and latency limits | t16 method and completed hardware/source/profile report required; logical quotas and observed RSS must remain distinct |
-| Final current-source package/backend qualification | Pending t17 full sweeps and refreshed APFS/ext4 source fingerprints |
+| Final current-source package/backend qualification | Package: 138/138 pass on APFS and ext4 at 0990b423e; t17-platforms.json and CI run 41695843142. Backend: 7,238 pass, 21 fail, 135 skipped, 3 todo; focused retry 26 pass/5 fail. See t17.md and t17-backend-results.json. Source unchanged across sweep. Completion blocked, not a green full sweep. |
 | Independent code review and story closure | Pending post-build review and explicit user BUILD approval |
 
 Full epic AC29 remains pending S7/S9. S7 must qualify actual host index/memory/queue

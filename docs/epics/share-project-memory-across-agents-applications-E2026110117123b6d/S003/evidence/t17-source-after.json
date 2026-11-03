@@ -1,0 +1,22 @@
+{
+  "capturedAt": "2026-11-03T19:03:52.337487+00:00",
+  "head": "0990b423e1036ec1d2bf1783f20f40b62de77da3",
+  "sourceDigest": "ddafbb2d945a305eae9f0f8ff344416972df3af19c24b2e0469bb9f5d324e697",
+  "fileCount": 2131,
+  "changedFromBaseline": [],
+  "contracts": {
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/HLD.md": "15c59341cae2398c3548aaced5f55742e8848e6f6f6a3f9656b9e2555a2249cf",
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/LLD.md": "2d241459f77eb34ee520d5f48c43fc1f9142fcd2baca29849528cac027bb1079",
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/PLAN.md": "ceaf918bf0b2baea4c3c9287f755bc8f63d14783f19b711374a6a608cf5b37b6"
+  },
+  "dirtyTrackedPaths": [
+    ".insrc/artifacts/BUILD-17123b6d304af2a2-s2.json",
+    "CLAUDE.md",
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/BUILD.md",
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t10-platforms.json",
+    "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t16.md",
+    "src/artifact-theme/__tests__/theme.test.ts",
+    "src/artifact-theme/theme.ts"
+  ],
+  "scope": "src, standalone package src, scripts, manifests, compiler/npm config and qualification workflow; generated output and mutable workflow records excluded"
+}

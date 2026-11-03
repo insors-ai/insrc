@@ -22,3 +22,14 @@ Repository /private/tmp/insrc-cost-repo (a clone of insors-extraction registered
 ```
 
 Result: pass. The first pass for the clone in the new process is full (the self-healing first pass); the next pass, paced 67 s after it began and after code work, re-reads the one recorded file, finds its contribution unchanged and restamps the 94 groups without regrouping: 47 ms, against a whole-repository read and regroup of every settle before this Story (about 0.5-1.4 s for this repository; see cost-t5.md).
+
+### A save adding a cross-file call, on the same repository
+
+An import of insors.core.utils.metrics.metrics_manager.MetricValue and a function calling it were appended to insors/extraction/db/financial_extraction_data.py at 16:32:54.
+
+```
+[16:33:23] cross-file settle pass complete  repo /private/tmp/insrc-cost-repo
+[16:45:16] subsystem pass: grouped  repo /private/tmp/insrc-cost-repo  generation 3781  mode incremental  filesRead 1  files 1599  subsystems 93  elapsedMs 248
+```
+
+Result: pass. The pass re-read only the saved file, found its contribution changed (a new edge to another file), and regrouped in memory from the stored rows: 94 groups became 93, in 248 ms, without reading the repository's entities. (The pass waited for the summary lane, which held up to 131 document-summary jobs, and for the 60 s pacing.)

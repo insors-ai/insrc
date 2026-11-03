@@ -48,7 +48,7 @@ class Svc extends IndexerService {
 	readonly passes: string[] = [];
 	constructor(readonly q: RecordingQueue) { super(db, q, watcher, undefined, 20); }
 	cleanUpPass(repoPath: string): Promise<void> { return this.resolveAfterReconcile(repoPath); }
-	protected override async subsystemPass(repoPath: string): Promise<void> { this.passes.push(repoPath); }
+	protected override async subsystemPass(repoPath: string) { this.passes.push(repoPath); return { summariesFailed: 0, stopped: false, startedAt: Date.now() }; }
 }
 
 let store: string;
@@ -71,6 +71,11 @@ test.afterEach(async () => {
 });
 
 const subsystemJobs = (q: RecordingQueue) => q.enqueued.filter(j => j.kind === 'subsystems');
+/**
+ * The queued subsystems job ran and finished, its start long enough ago for the pacing (ISSUE-7d42b5dc): the
+ * scheduler queues the next request at once, as these tests (which do not run the queue) need.
+ */
+const ranLongAgo = (svc: Svc) => svc.runQueuedJob({ kind: 'subsystems', repoPath: repo }, async () => ({ summariesFailed: 0, stopped: false, startedAt: Date.now() - 120_000 }));
 const tick = () => new Promise<void>(r => setImmediate(r));
 
 test('s8 t5: the subsystems job runs in the summary lane, after code work, and is handed to the summary worker', async () => {
@@ -136,6 +141,7 @@ test('s8 t5: a settle and a clean-up that leave the graph complete enqueue the j
 	const svc = new Svc(new RecordingQueue());
 	await svc.processJob({ kind: 'full', repoPath: repo });
 	await svc.start([{ path: repo, name: 'fixture', addedAt: '2026-11-02T00:00:00.000Z', status: 'ready' }]);
+	await ranLongAgo(svc);
 	svc.q.enqueued.length = 0;
 
 	writeFileSync(join(repo, 'src/a/z.ts'), "import { y } from './y.js';\nexport function z(): string { return y(); }\n");
@@ -144,10 +150,12 @@ test('s8 t5: a settle and a clean-up that leave the graph complete enqueue the j
 	await svc._settlePassesDoneForTest();
 	assert.deepEqual(subsystemJobs(svc.q), [{ kind: 'subsystems', repoPath: repo }], 'the settle enqueued it');
 
+	await ranLongAgo(svc);
 	svc.q.enqueued.length = 0;
 	await svc.cleanUpPass(repo);
 	assert.deepEqual(subsystemJobs(svc.q), [{ kind: 'subsystems', repoPath: repo }], 'the clean-up enqueued it');
 
+	await ranLongAgo(svc);
 	svc.q.enqueued.length = 0;
 	await markFullIndexUnfinished(repo);
 	await svc.cleanUpPass(repo);
@@ -178,11 +186,13 @@ test('s8 review: a clean-up that removes nothing -- the one each daemon start qu
 	const svc = new Svc(new RecordingQueue());
 	await svc.processJob({ kind: 'full', repoPath: repo });
 	await svc.start([{ path: repo, name: 'fixture', addedAt: '2026-11-02T00:00:00.000Z', status: 'ready' }]);
+	await ranLongAgo(svc);
 	svc.q.enqueued.length = 0;
 
 	await svc.processJob({ kind: 'reconcile', repoPath: repo });
 	assert.deepEqual(subsystemJobs(svc.q), [{ kind: 'subsystems', repoPath: repo }], 'queued with no file removed');
 
+	await ranLongAgo(svc);
 	svc.q.enqueued.length = 0;
 	await markFullIndexUnfinished(repo);
 	await svc.processJob({ kind: 'reconcile', repoPath: repo });

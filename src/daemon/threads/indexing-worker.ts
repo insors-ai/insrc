@@ -160,7 +160,7 @@ await publishStore();
 await service.start(await listRepos(db));
 // Each job under the maintenance lock's shared hold (runIndexJob); summary jobs run on the document-summary worker.
 const queueDone = queue.start(async job => {
-	try { await runIndexJob(job, summaries, j => service.processJob(j)); }
+	try { await service.runQueuedJob(job, () => runIndexJob(job, summaries, j => service.processJob(j))); }
 	finally { void publishStore(); }
 });
 
@@ -168,6 +168,7 @@ const queueDone = queue.start(async job => {
 // The watcher's close is awaited: a native watcher call still running when
 // the worker's environment is torn down aborts the whole process.
 hub.onPush(INDEXING_STOP_OP, async () => {
+	service.disposeSubsystemScheduler();
 	queue.stop();
 	summaries?.stop();
 	await watcher.close();

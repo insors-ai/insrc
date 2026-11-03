@@ -14210,7 +14210,7 @@
    ],
    "siteCount": 69,
    "sitesDigest": "e6680b56d4d6ee92ffe8354434a007d7a96d53d491e3660b7edcd89ae8e596f2",
-   "sourceDigest": "093080bb71e13b22b873dab141e44e646d7fc0f4636df6e628a05b28e7cd44f4",
+   "sourceDigest": "6b0be9b5075536ec6af24cf8c29ec063522f8d2e36dec706a908c344d5b60f71",
    "boundaries": [
     "diagnostic",
     "filesystem-write",
@@ -16375,7 +16375,7 @@
    ],
    "siteCount": 9,
    "sitesDigest": "4a7c3bf8701abefbb1ccfcb3f0b522b13122f18c8551c415d02af22be429cce0",
-   "sourceDigest": "9a5d0b1653d230b730bccec82f9e7c071d6e3bd5001a613d00317b42ec0e60c7",
+   "sourceDigest": "f0b4ab9ab06aa4eba2b01ad9a191b5a16380059f80f8ef306e5b7e76d60cec7b",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -16965,7 +16965,7 @@
    ],
    "siteCount": 7,
    "sitesDigest": "a09a02d223680bed3842352163e65f5c1ddc24f6e3c65428d6b85b80c3aa6a5c",
-   "sourceDigest": "90acfba82c19e7a4b4640bd4777dc61e087fe593d7c5d25e95e4104236866438",
+   "sourceDigest": "a683e20669542eeb5a6a6de34a234a7ad42125627eabd408df1fbbe02c125b9b",
    "boundaries": [
     "serialization"
    ]
@@ -21837,6 +21837,10 @@
     ],
     [
      "storage-call",
+     "after"
+    ],
+    [
+     "storage-call",
      "allocateEntityIdInTxn"
     ],
     [
@@ -22673,6 +22677,10 @@
     ],
     [
      "storage-call",
+     "isGroupingKindByte"
+    ],
+    [
+     "storage-call",
      "lance.addEntityEmbeddings"
     ],
     [
@@ -23009,6 +23017,18 @@
     ],
     [
      "storage-call",
+     "recordChangedEntityFileInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedFileInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedFileInTxn"
+    ],
+    [
+     "storage-call",
      "rel.dedupeResolvedRelations"
     ],
     [
@@ -23038,6 +23058,14 @@
     [
      "storage-call",
      "removeEntityRowInTxn"
+    ],
+    [
+     "storage-call",
+     "resetSubsystemInputsInTxn"
+    ],
+    [
+     "storage-call",
+     "resetSubsystemInputsInTxn"
     ],
     [
      "storage-call",
@@ -23393,6 +23421,10 @@
     ],
     [
      "storage-call",
+     "toRepoRelative"
+    ],
+    [
+     "storage-call",
      "trackUnembeddedInTxn"
     ],
     [
@@ -23516,6 +23548,10 @@
      "withWriteTxn"
     ],
     [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
      "serialization",
      "writeVectorsThenMarkers"
     ],
@@ -23548,9 +23584,9 @@
      "writeVectorsThenMarkersLocked"
     ]
    ],
-   "siteCount": 434,
-   "sitesDigest": "169565aa0e70c4bf72bea3dd98c65eb0c8de642711a89c9958f0b726dad8ada7",
-   "sourceDigest": "e619030aa1496f376ae765a4cf5f40bcff8bfba8fe059111c4191f86404788ce",
+   "siteCount": 443,
+   "sitesDigest": "ba89b3c56106ef08bc2767b1f63e7c9ed3c29316e8b4b4a502c1f300850676f5",
+   "sourceDigest": "d082b9accb59ec13e2ca975321121c6f9fdb0875d4cc47c5e51f314272629084",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -23833,6 +23869,22 @@
      "decode"
     ],
     [
+     "serialization",
+     "decode"
+    ],
+    [
+     "serialization",
+     "decode"
+    ],
+    [
+     "storage-call",
+     "decode"
+    ],
+    [
+     "storage-call",
+     "decode"
+    ],
+    [
      "storage-call",
      "decode"
     ],
@@ -23966,6 +24018,22 @@
     ],
     [
      "serialization",
+     "encode"
+    ],
+    [
+     "serialization",
+     "encode"
+    ],
+    [
+     "serialization",
+     "encode"
+    ],
+    [
+     "storage-call",
+     "encode"
+    ],
+    [
+     "storage-call",
      "encode"
     ],
     [
@@ -24037,9 +24105,9 @@
      "Unpackr"
     ]
    ],
-   "siteCount": 67,
-   "sitesDigest": "b7fe29222ea54c1e609e803c7d1968a792e2d261855e72e388a8222a1d167f26",
-   "sourceDigest": "a096786d094861515ddbb33a9d89b498929f0a02e9b6249a54cddb065eaf6164",
+   "siteCount": 75,
+   "sitesDigest": "7954a1f989d20d11eb78fbd30540905f5eaf56377122245f869610cb467b2e48",
+   "sourceDigest": "fdf19ff7e212d63a43ffae50e683d531e56e0f0a334cecf22c204b719ee14bff",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -25266,7 +25334,7 @@
     ],
     [
      "storage-call",
-     "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\tentityByFile:       open_('entity_by_file', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
+     "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\tentityByFile:       open_('entity_by_file', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\t\t\tsubsystem:          open_('subsystem'),\n\t\t\tsubsystemByFile:    open_('subsystem_by_file'),\n\t\t\tsubsystemDirty:     open_('subsystem_dirty'),\n\t\t\tsubsystemFile:      open_('subsystem_file'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
     ],
     [
      "storage-call",
@@ -25870,6 +25938,22 @@
     ],
     [
      "storage-call",
+     "open_"
+    ],
+    [
+     "storage-call",
+     "open_"
+    ],
+    [
+     "storage-call",
+     "open_"
+    ],
+    [
+     "storage-call",
+     "open_"
+    ],
+    [
+     "storage-call",
      "open"
     ],
     [
@@ -26257,9 +26341,9 @@
      "writeSchemaVersion"
     ]
    ],
-   "siteCount": 250,
-   "sitesDigest": "032251b92fa8509a88efd034e2f37d74703749000c0ee04b761de4601832eadf",
-   "sourceDigest": "d44989bc0e97ac2f9f0fc632808dbb02333748176bc092568efdd7e6b1a785be",
+   "siteCount": 254,
+   "sitesDigest": "a8e5dea81731e6c896eab8641aedfe64ebe04a385ef8d866b52d6504a3ea3308",
+   "sourceDigest": "f5144cacf4ad818f341a9b839409c7e6d7dda02e2694560c2f5acbe883dafe26",
    "boundaries": [
     "diagnostic",
     "filesystem-open",
@@ -28001,6 +28085,18 @@
      "advanceGenerationInTxn"
     ],
     [
+     "storage-call",
+     "advanceGenerationInTxn"
+    ],
+    [
+     "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
+     "serialization",
+     "assertNoSessionPersistence"
+    ],
+    [
      "serialization",
      "assertNoSessionPersistence"
     ],
@@ -28051,6 +28147,10 @@
     [
      "storage-call",
      "awaitingReasonOf"
+    ],
+    [
+     "storage-call",
+     "awaitingRowFor"
     ],
     [
      "storage-call",
@@ -28117,11 +28217,51 @@
      "decodeEntityRow"
     ],
     [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
+     "decodeEntityRow"
+    ],
+    [
      "storage-call",
      "decodeEntityRow"
     ],
     [
      "serialization",
+     "decodeEvidence"
+    ],
+    [
+     "serialization",
+     "decodeEvidence"
+    ],
+    [
+     "storage-call",
      "decodeEvidence"
     ],
     [
@@ -28198,6 +28338,18 @@
     ],
     [
      "serialization",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFileKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
      "encodeEntityKey"
     ],
     [
@@ -28206,6 +28358,42 @@
     ],
     [
      "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
      "encodeEntityKey"
     ],
     [
@@ -28237,12 +28425,28 @@
      "encodeInEdgeKey"
     ],
     [
+     "serialization",
+     "encodeInEdgeKey"
+    ],
+    [
      "storage-call",
      "encodeInEdgeKey"
     ],
     [
      "storage-call",
      "encodeInEdgeKey"
+    ],
+    [
+     "storage-call",
+     "encodeInEdgeKey"
+    ],
+    [
+     "serialization",
+     "encodeInEdgePrefix"
+    ],
+    [
+     "storage-call",
+     "encodeInEdgePrefix"
     ],
     [
      "serialization",
@@ -28254,6 +28458,14 @@
     ],
     [
      "serialization",
+     "encodeOutEdgeKey"
+    ],
+    [
+     "serialization",
+     "encodeOutEdgeKey"
+    ],
+    [
+     "storage-call",
      "encodeOutEdgeKey"
     ],
     [
@@ -28330,6 +28542,14 @@
     ],
     [
      "serialization",
+     "encodeUnresolvedRow"
+    ],
+    [
+     "serialization",
+     "encodeUnresolvedRow"
+    ],
+    [
+     "storage-call",
      "encodeUnresolvedRow"
     ],
     [
@@ -28375,6 +28595,22 @@
     [
      "storage-call",
      "getPendingRowInTxn"
+    ],
+    [
+     "storage-call",
+     "getPendingRowInTxn"
+    ],
+    [
+     "storage-call",
+     "isGroupingKindByte"
+    ],
+    [
+     "storage-call",
+     "isGroupingKindByte"
+    ],
+    [
+     "storage-call",
+     "isGroupingKindByte"
     ],
     [
      "diagnostic",
@@ -28434,6 +28670,14 @@
     ],
     [
      "storage-call",
+     "lookupU64ByStringId"
+    ],
+    [
+     "storage-call",
+     "makeUnresolvedRelationId"
+    ],
+    [
+     "storage-call",
      "makeUnresolvedRelationId"
     ],
     [
@@ -28458,6 +28702,10 @@
     ],
     [
      "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
      "promoteResolvedBatch"
     ],
     [
@@ -28471,6 +28719,22 @@
     [
      "storage-call",
      "putExportNameInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedEntityFileInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedEntityFileInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedEntityFileInTxn"
+    ],
+    [
+     "storage-call",
+     "recordChangedEntityFileInTxn"
     ],
     [
      "storage-call",
@@ -28550,6 +28814,26 @@
     ],
     [
      "storage-call",
+     "s.entity.get"
+    ],
+    [
+     "storage-call",
+     "s.entity.get"
+    ],
+    [
+     "storage-call",
+     "s.entity.get"
+    ],
+    [
+     "storage-call",
+     "s.entity.get"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.getValues"
+    ],
+    [
+     "storage-call",
      "s.entityIdByString.get"
     ],
     [
@@ -28562,7 +28846,19 @@
     ],
     [
      "storage-call",
+     "s.entityStringByU64.get"
+    ],
+    [
+     "storage-call",
+     "s.inEdge.getKeys"
+    ],
+    [
+     "storage-call",
      "s.inEdge.put"
+    ],
+    [
+     "storage-call",
+     "s.inEdge.remove"
     ],
     [
      "storage-call",
@@ -28574,7 +28870,15 @@
     ],
     [
      "storage-call",
+     "s.outEdge.get"
+    ],
+    [
+     "storage-call",
      "s.outEdge.put"
+    ],
+    [
+     "storage-call",
+     "s.outEdge.remove"
     ],
     [
      "storage-call",
@@ -28591,6 +28895,10 @@
     [
      "storage-call",
      "s.unresolved.get"
+    ],
+    [
+     "storage-call",
+     "s.unresolved.put"
     ],
     [
      "storage-call",
@@ -28639,6 +28947,18 @@
     [
      "storage-call",
      "slotOf"
+    ],
+    [
+     "storage-call",
+     "sqlByNameRows"
+    ],
+    [
+     "storage-call",
+     "sqlByNameRows"
+    ],
+    [
+     "storage-call",
+     "sqlReferenceReader"
     ],
     [
      "storage-call",
@@ -28722,6 +29042,18 @@
     ],
     [
      "storage-call",
+     "withEvidence"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
      "withWriteTxn"
     ],
     [
@@ -28770,6 +29102,14 @@
     ],
     [
      "serialization",
+     "writePendingRowInTxn"
+    ],
+    [
+     "serialization",
+     "writePendingRowInTxn"
+    ],
+    [
+     "storage-call",
      "writePendingRowInTxn"
     ],
     [
@@ -28789,9 +29129,9 @@
      "writePendingRowInTxn"
     ]
    ],
-   "siteCount": 204,
-   "sitesDigest": "21eeedf741212450cdab85ab068f59556be7834cd267be00e0c2e7b3eacb8c3b",
-   "sourceDigest": "710e1b46819245d2df1da906cb75c58355776fe328a73a0864ce4c8201f3d17e",
+   "siteCount": 268,
+   "sitesDigest": "492cd9a49920be1584277166d0c5c2918bb36043639c5d4fc4ca122afc11fc92",
+   "sourceDigest": "674b6180581e6a3c8c5bae5b83c94bbee3dcc5946627537a30c83f276b319427",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -28852,6 +29192,10 @@
     ],
     [
      "storage-call",
+     "deleteSubsystemInputsInTxn"
+    ],
+    [
+     "storage-call",
      "deleteUnresolvedForRepo"
     ],
     [
@@ -28868,6 +29212,22 @@
     ],
     [
      "serialization",
+     "encodeRepoKey"
+    ],
+    [
+     "serialization",
+     "encodeRepoKey"
+    ],
+    [
+     "serialization",
+     "encodeRepoKey"
+    ],
+    [
+     "storage-call",
+     "encodeRepoKey"
+    ],
+    [
+     "storage-call",
      "encodeRepoKey"
     ],
     [
@@ -29015,6 +29375,22 @@
      "s.repo.remove"
     ],
     [
+     "storage-call",
+     "s.subsystem.getRange"
+    ],
+    [
+     "storage-call",
+     "s.subsystem.remove"
+    ],
+    [
+     "storage-call",
+     "s.subsystemByFile.getRange"
+    ],
+    [
+     "storage-call",
+     "s.subsystemByFile.remove"
+    ],
+    [
      "filesystem-read",
      "statSync"
     ],
@@ -29047,9 +29423,9 @@
      "withWriteTxn"
     ]
    ],
-   "siteCount": 61,
-   "sitesDigest": "655f020669654f627c2073f3f43cbc839eebd5b8e759afe8c8595a8d9c047fcb",
-   "sourceDigest": "1a47ad75763cb1d6d4dd83bed9ff5dcd7eb9ee63419259470afa9fccaea868b3",
+   "siteCount": 70,
+   "sitesDigest": "d7973ac1a527af3d2e3b4d9808d3ad8a023a456453946a174c3114f28d998c01",
+   "sourceDigest": "051d898dd8b0298e1693114aac9e4fde0ca25649572f5e13134e643bec0f9892",
    "boundaries": [
     "filesystem-read",
     "serialization",
@@ -30970,6 +31346,10 @@
    "sites": [
     [
      "storage-call",
+     "clearUnresolvedMetaKeyBatch"
+    ],
+    [
+     "storage-call",
      "deleteResolvedRelations"
     ],
     [
@@ -31022,7 +31402,7 @@
     ],
     [
      "storage-call",
-     "listExportNames"
+     "listEntitiesForRepo"
     ],
     [
      "storage-call",
@@ -31030,7 +31410,7 @@
     ],
     [
      "storage-call",
-     "listUnresolvedRelations"
+     "listExportNames"
     ],
     [
      "storage-call",
@@ -31047,6 +31427,18 @@
     [
      "storage-call",
      "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "diagnostic",
+     "log.info"
     ],
     [
      "diagnostic",
@@ -31149,6 +31541,10 @@
      "readIndexState"
     ],
     [
+     "storage-call",
+     "returnInferredSqlReferencesToPending"
+    ],
+    [
      "filesystem-read",
      "statSync"
     ],
@@ -31177,9 +31573,9 @@
      "zeroPending"
     ]
    ],
-   "siteCount": 52,
-   "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
-   "sourceDigest": "61126e8b745e57290642cb86f582218f45a85c6cb49c37d36a9c79ca4966bdea",
+   "siteCount": 57,
+   "sitesDigest": "005815c2a2e8885db5a3f3870f9b2db18c6ecb41a728f88110132fcb1aa6d840",
+   "sourceDigest": "13e4e5c179c864adaec6fecc74c63d281bd8af8ac00b011acfbc4c98c9fb8f9f",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -32036,6 +32432,10 @@
     ],
     [
      "storage-call",
+     "readIndexState"
+    ],
+    [
+     "storage-call",
      "reconcileEntityVectors"
     ],
     [
@@ -32065,6 +32465,10 @@
     [
      "filesystem-read",
      "statSync"
+    ],
+    [
+     "provider-factory",
+     "this.subsystemProvider"
     ],
     [
      "serialization",
@@ -32119,13 +32523,14 @@
      "writeBackfillVectors"
     ]
    ],
-   "siteCount": 130,
-   "sitesDigest": "4c634075f70682bfd57d718bb2f088330576cc786c64006365eda8dcb7ed61b2",
-   "sourceDigest": "bb2635ac77b9339f27035df5f7ce236e54a662ae0207469cc526df33dd4b4de4",
+   "siteCount": 132,
+   "sitesDigest": "ab4bbdbb2d9d83450210586c55c68197f16d86e5b89e52b916ee29f8b2ee213b",
+   "sourceDigest": "99445f6321a57a1d205bd7455b4ada2e5716cb310141d2a3cd230e588d8a472e",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
     "provider-adapter",
+    "provider-factory",
     "provider-use",
     "serialization",
     "storage-call",

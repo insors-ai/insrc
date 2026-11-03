@@ -347,8 +347,8 @@ async function main(): Promise<void> {
 		await indexerService.start(repos);
 		queue = indexQueue;
 		indexer = indexerService;
-		startQueue = () => indexQueue.start(job => indexerService.processJob(job));
-		stopIndexing = () => { indexQueue.stop(); void watcher.close(); };
+		startQueue = () => indexQueue.start(job => indexerService.runQueuedJob(job, () => indexerService.processJob(job)));
+		stopIndexing = () => { indexerService.disposeSubsystemScheduler(); indexQueue.stop(); void watcher.close(); };
 	}
 
 	// 5b. Boot-time steering refresh — re-stamp the insrc:steering skeleton into

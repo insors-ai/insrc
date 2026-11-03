@@ -56,7 +56,7 @@ export const isSummaryJob = (job: IndexJob): boolean => job.kind === 'doc-summar
  * here: the summary worker takes the job's hold. Held on both ends, a maintenance pending between
  * the two shared requests would block the second (writer preference) while it waited on the first.
  */
-export function runIndexJob(job: IndexJob, summaries: SummaryRunner | undefined, processJob: (job: IndexJob) => Promise<void>): Promise<void> {
+export function runIndexJob(job: IndexJob, summaries: SummaryRunner | undefined, processJob: (job: IndexJob) => Promise<unknown>): Promise<unknown> {
 	if (summaries !== undefined && isSummaryJob(job)) return summaries.run(job);
 	return withBackgroundHold(() => processJob(job));
 }
@@ -64,7 +64,7 @@ export function runIndexJob(job: IndexJob, summaries: SummaryRunner | undefined,
 /** The code-indexing worker's end: runs summary jobs on the summary worker. */
 export class SummaryRunner {
 	private seq = 0;
-	private readonly pending = new Map<string, { resolve: () => void; reject: (e: Error) => void }>();
+	private readonly pending = new Map<string, { resolve: (result: unknown) => void; reject: (e: Error) => void }>();
 	private sweep: SummarySweepProgress | undefined;
 	/** The live port to the summary worker; undefined between its exit and its replacement's connection. */
 	private port: MessagePort | undefined;
@@ -101,7 +101,7 @@ export class SummaryRunner {
 			if (m.kind === 'reply') {
 				const p = this.pending.get(m.requestId);
 				this.pending.delete(m.requestId);
-				if (m.error === undefined) p?.resolve(); else p?.reject(new Error(m.error));
+				if (m.error === undefined) p?.resolve(m.result); else p?.reject(new Error(m.error));
 			} else if (m.kind === 'frame') {
 				if (!this.pending.has(m.requestId)) return;
 				this.sweep = (m.frame as SweepFrame).data ?? undefined;
@@ -120,14 +120,15 @@ export class SummaryRunner {
 	}
 
 	/**
-	 * Run one summary job on the summary worker; rejects when it fails or the
-	 * worker goes. Between a summary worker's exit and its replacement, waits
-	 * for the replacement.
+	 * Run one summary job on the summary worker; resolves the job's outcome (a
+	 * subsystems job's pass outcome, ISSUE-7d42b5dc), rejects when it fails or
+	 * the worker goes. Between a summary worker's exit and its replacement,
+	 * waits for the replacement.
 	 */
-	async run(job: IndexJob): Promise<void> {
+	async run(job: IndexJob): Promise<unknown> {
 		const port = this.port ?? await this.connected;
 		const requestId = `summary-job-${++this.seq}`;
-		return new Promise<void>((resolve, reject) => {
+		return new Promise<unknown>((resolve, reject) => {
 			this.pending.set(requestId, { resolve, reject });
 			port.postMessage({ kind: 'request', requestId, method: SUMMARY_JOB, params: job, stream: true } satisfies RequestEnvelope);
 		});
@@ -162,7 +163,7 @@ export class SummaryWorkerLink implements IndexerQueue {
 	private port: MessagePort;
 	/** The code-indexing worker that handed over the running job exited: the job stops as on shutdown. */
 	private abandoned = false;
-	private jobs: { run: (job: IndexJob) => Promise<void>; sweep: () => SummarySweepProgress | undefined } | undefined;
+	private jobs: { run: (job: IndexJob) => Promise<unknown>; sweep: () => SummarySweepProgress | undefined } | undefined;
 	/**
 	 * One job at a time, across reconnections too: a replacement code-indexing worker's
 	 * job waits for the job the exited one handed over (abandoned, stopping between
@@ -208,16 +209,16 @@ export class SummaryWorkerLink implements IndexerQueue {
 	}
 
 	/** Serve the jobs the code-indexing worker hands over, one at a time as the lane sends them. */
-	serveJobs(run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
+	serveJobs(run: (job: IndexJob) => Promise<unknown>, sweep: () => SummarySweepProgress | undefined): void {
 		this.jobs = { run, sweep };
 	}
 
-	private serveJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): void {
+	private serveJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<unknown>, sweep: () => SummarySweepProgress | undefined): void {
 		// A failure answering an exited worker's port must not stop the jobs after it.
 		this.serial = this.serial.then(() => this.runJob(port, m, run, sweep)).catch(() => {});
 	}
 
-	private runJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<void>, sweep: () => SummarySweepProgress | undefined): Promise<void> {
+	private runJob(port: MessagePort, m: RequestEnvelope, run: (job: IndexJob) => Promise<unknown>, sweep: () => SummarySweepProgress | undefined): Promise<void> {
 		this.abandoned = false;
 		let last: string | undefined;
 		const report = (): void => {
@@ -232,7 +233,8 @@ export class SummaryWorkerLink implements IndexerQueue {
 		// for summary jobs (a second shared request after a pending maintenance would wait on the first),
 		// and this job may outlive that worker's wait for it (a rebind abandons the wait).
 		return withBackgroundHold(() => run(m.params as IndexJob)).then(
-			() => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId } satisfies ReplyEnvelope); },
+			// The job's outcome rides on the reply (a subsystems pass's, for the scheduler of the code-indexing worker).
+			(result: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, ...(result !== undefined && { result }) } satisfies ReplyEnvelope); },
 			(err: unknown) => { clearInterval(ticker); report(); port.postMessage({ kind: 'reply', requestId: m.requestId, error: err instanceof Error ? err.message : String(err) } satisfies ReplyEnvelope); },
 		);
 	}

@@ -43,6 +43,7 @@ import './parser/artifact.js';
 import { basenameParser } from './parser/artifact.js';
 import { selectFile } from './file-selection.js';
 import { runSubsystemPass } from './subsystem-pass.js';
+import { asSubsystemsOutcome, SubsystemScheduler, type SchedulerClock, type SubsystemsOutcome } from './subsystem-scheduler.js';
 import { Watcher } from './watcher.js';
 import { createFileFilter, isGeneratedOrMinifiedFile, proposeIgnoreFile, refreshFileFilter, type CheapTierModel, type FileFilter } from './file-filter.js';
 import { IndexQueue } from '../daemon/queue.js';
@@ -151,6 +152,13 @@ export interface IndexerQueue {
 export class IndexerService {
   private readonly db:      DbClient;
   private readonly queue:   IndexerQueue;
+  /** When subsystem passes run (ISSUE-7d42b5dc): pacing by actual start, retry with back-off. */
+  private readonly subsystems = new SubsystemScheduler({
+    graphComplete: async repoPath => (await readIndexState(repoPath))?.graphComplete === true,
+    enqueue:       repoPath => this.queue.enqueue({ kind: 'subsystems', repoPath }),
+    isStopping:    () => this.queue.isStopping,
+    clock:         this.subsystemSchedulerClock(),
+  });
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
   private readonly configStore: ConfigStore | null;
@@ -431,8 +439,11 @@ export class IndexerService {
     await this.watcher.removeRepo(repoPath);
   }
 
-  /** Process a single IndexJob — called by the queue worker loop. */
-  async processJob(job: IndexJob): Promise<void> {
+  /**
+   * Process a single IndexJob — called by the queue worker loop. Resolves the
+   * job's outcome where it has one (a subsystems job's, for the scheduler).
+   */
+  async processJob(job: IndexJob): Promise<unknown> {
     switch (job.kind) {
       case 'full':           await this.fullIndex(job.repoPath);            break;
       case 'file':           await this.fileEvent(job.filePath, job.event); break;
@@ -443,7 +454,7 @@ export class IndexerService {
       case 'config-reindex': await this.configReindex(job.scope);           break;
       case 'doc-summarise-repo':   await this.docSummariseRepo(job.repoPath);   break;
       case 'doc-summarise-entity': await this.docSummariseEntity(job.entityId); break;
-      case 'subsystems':           await this.subsystemPass(job.repoPath); break;
+      case 'subsystems':           return this.subsystemPass(job.repoPath);
     }
   }
 
@@ -652,13 +663,14 @@ export class IndexerService {
    * The subsystem pass for one repository, yielding to code work and stopping
    * on shutdown as the document sweep does (a seam: a test overrides it).
    */
-  protected async subsystemPass(repoPath: string): Promise<void> {
-    await runSubsystemPass({
+  protected async subsystemPass(repoPath: string): Promise<SubsystemsOutcome> {
+    const r = await runSubsystemPass({
       db: this.db, repoPath, provider: this.subsystemProvider(),
       waitForCodeIdle: () => this.queue.waitForIndexIdle(),
       isCodeIdle:      () => this.queue.isIndexIdle,
       shouldStop:      () => this.queue.isStopping,
     });
+    return { summariesFailed: r.summariesFailed, stopped: r.stopped, startedAt: r.startedAt };
   }
 
   /** The summaries' model: undefined is the cheap tier (a seam: the stub summary worker runs none). */
@@ -666,8 +678,38 @@ export class IndexerService {
     return undefined;
   }
 
+  /**
+   * Request a subsystem pass: the scheduler queues it now or when pacing allows
+   * (ISSUE-7d42b5dc). Only the IndexerService that owns the queue requests.
+   */
   protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {
-    if ((await readIndexState(repoPath))?.graphComplete === true) this.queue.enqueue({ kind: 'subsystems', repoPath });
+    await this.subsystems.request(repoPath);
+  }
+
+  /**
+   * Run one queued job for the queue driver, telling the subsystem scheduler
+   * when a subsystems job starts and how it ended -- its outcome, wherever it
+   * ran (here, or on the document-summary worker), or a failure.
+   */
+  async runQueuedJob(job: IndexJob, run: () => Promise<unknown>): Promise<void> {
+    if (job.kind !== 'subsystems') { await run(); return; }
+    this.subsystems.started(job.repoPath);
+    let outcome: SubsystemsOutcome | undefined;
+    try {
+      outcome = asSubsystemsOutcome(await run());
+    } finally {
+      this.subsystems.finished(job.repoPath, outcome);
+    }
+  }
+
+  /** The subsystem scheduler's time and timers: the real ones (a seam for tests). */
+  protected subsystemSchedulerClock(): SchedulerClock | undefined {
+    return undefined;
+  }
+
+  /** Stop: clear the subsystem scheduler's timers (both stop paths call it). */
+  disposeSubsystemScheduler(): void {
+    this.subsystems.dispose();
   }
 
   /** Test seam: how many per-repo settle timers are armed. */

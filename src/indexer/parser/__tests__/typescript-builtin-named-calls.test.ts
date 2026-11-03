@@ -161,3 +161,94 @@ function getList(): any { return []; }
 	const next = parse(`export function b(): void { const x = 1; list.find(1); }\n`, '/repo/src/b.ts');
 	assert.deepEqual(calls(next, 'b'), [], "the previous file's import of `list` does not apply here");
 });
+
+test('S001 t2: calls on typed, new-initialised and constructor-assigned fields are kept whatever the name', () => {
+	const r = parse(`
+import * as ns from './ns.js';
+class Store { find(): void {} }
+export class Service {
+	private typed: Store;
+	private generic: Repo<number>;
+	private qualified: ns.Repo;
+	private created = new Store();
+	private plain: Store[];
+	private builtin: Map<string, number>;
+	private untyped;
+	constructor(private readonly param: Store, readonly other: Store, notAProperty: Store) {
+		this.assigned = new Store();
+	}
+	run(): void {
+		this.typed.find();
+		this.generic.create();
+		this.qualified.resolve();
+		this.created.emit();
+		this.param.push();
+		this.other.parse();
+		this.assigned.apply();
+		this.plain.map(x => x);
+		this.builtin.keys();
+		this.untyped.find();
+		this.notAProperty.filter();
+	}
+}
+`);
+	assert.deepEqual(calls(r, 'run'), ['apply', 'create', 'emit', 'find', 'parse', 'push', 'resolve'],
+		'typed, generic, qualified, new-initialised, parameter-property and assigned fields; not array, built-in, untyped or a plain constructor parameter');
+});
+
+test('S001 t2: calls on typed parameters and new-initialised locals are kept; built-in, array, union and untyped receivers are not', () => {
+	const r = parse(`
+class Repo { find(): void {} }
+export function viaParams(repo: Repo, maybe?: Repo, list: Repo[], either: Repo | undefined, p: Promise<Repo>, e: EventEmitter): void {
+	repo.find();
+	maybe.create();
+	list.map(x => x);
+	either.resolve();
+	p.then(x => x);
+	e.emit('x');
+}
+export function viaLocals(): void {
+	const created = new Repo();
+	const typed: Repo = make();
+	const untyped = make();
+	const builtin = new Map();
+	created.push();
+	typed.parse();
+	untyped.find();
+	builtin.keys();
+}
+function make(): any { return null; }
+`);
+	assert.deepEqual(calls(r, 'viaParams'), ['create', 'find']);
+	assert.deepEqual(calls(r, 'viaLocals'), ['make', 'parse', 'push']);
+});
+
+test('S001 t2: field proofs do not leak across classes or files, and JavaScript follows the same rules', () => {
+	const r = parse(`
+class Store { find(): void {} }
+export class A { private store = new Store(); run(): void { this.store.find(); } }
+export class B { private store; go(): void { this.store.find(); } }
+export class A2 { private store = new Store(); }
+export function loose(this: any): void { this.store.find(); }
+`);
+	assert.deepEqual(calls(r, 'run'), ['find']);
+	assert.deepEqual(calls(r, 'go'), [], "A's field proof does not apply to B's same-named field");
+	assert.deepEqual(calls(r, 'loose'), [], 'nor to code after the class');
+
+	const next = parse(`export class C { private store; go2(): void { this.store.find(); } }\nexport function loose2(this: any): void { this.store.find(); }\n`, '/repo/src/c.ts');
+	assert.deepEqual(calls(next, 'go2'), [], 'nor to a class in the next file');
+	assert.deepEqual(calls(next, 'loose2'), [], 'nor to code outside a class in the next file');
+
+	const js = parse(`
+class Store { find() {} }
+export function jsRun(arg) {
+	const created = new Store();
+	const untyped = make();
+	created.find();
+	untyped.push(1);
+	arg.map(x => x);
+}
+function make() { return []; }
+`, '/repo/src/mod.js');
+	assert.deepEqual(calls(js, 'jsRun'), ['find', 'make'], 'in JavaScript a new-initialised local proves a user object; untyped values do not');
+});

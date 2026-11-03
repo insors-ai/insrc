@@ -520,9 +520,62 @@ Other post-merge fixes in step 1: `shared/ipc-client.ts` rpc (v2's timeout/close
 - **`src/indexer/__tests__/watcher-new-directories.test.ts`**: adapted to the FileFilter (ignore rules written to a `.gitignore`). The watcher now judges a new directory with `excludesDirectory`, not `includes()` (which calls a just-created directory excluded). All 7 tests pass, and main's `watcher-file-filter.test.ts` (10) passes.
 - **`src/analyze/context/invariants.ts`**: the entity-existence fallback passes `{ limit: 1 }` again (v2's bounded-readiness behaviour); `listEntitiesForRepo` accepts the option.
 
+## Post-merge step 4: the sweep (2026-11-03/04)
+
+Every test file (1317 under `src` and `scripts`) was run once per tree, one process per file with a 120 s limit, in foreground chunks of 110: the merged branch, v2 before the merge (`10718f013`, the main working tree) and origin/main at the merge parent (`1f1c2ebfe`, a detached worktree). A failing test name is compared against both parents. The three trees ran in parallel, so a few timing-sensitive tests can differ between runs.
+
+**First pass:** 128 files failing on the merged branch, 47 failing test names that failed in neither parent. They fell into these groups, all fixed or explained:
+
+- **Build outputs missing in the worktree** (shutdown-bounded, shutdown-lifecycle-evidence, shutdown-watchdog, daemon-ctl-forced-stop, process-broker-native, 23 tests): the tests run `npm run build`, which failed in `copy-assets.mjs` because main's source attestation read a `.js.map` for the `__type-tests__` files that tsc does not emit. `copy-assets.mjs` now skips `__type-tests__`; `npm run build` passes end to end on the branch (including the spawn scan in failing mode).
+- **Main's tests of features D2 drops:** the bounded-path tests of `cli-ollama`, the pinning tests of `step-state`, `completion-identity`, the code-review row of `router-session` (v2 handles review step calls on the main thread), the stale-review wording in `review-rule-text` (reverted to v2's), the old-grounding helper in `builtin-named-calls-resolution` (now reads callers from the graph).
+- **Repo gate, FileFilter and exemption changes:** `indexing-worker` (mcp.register is answered by the repo gate), `ignore-filter-header-plan-registry` and `registry-denial-s9` (the FileFilter spawns git itself, issue #97), `park-offer` (the step client is installed lazily), `pending` (main's standalone-BUILD test moved to lowercase story ids and the lifecycle approval form).
+- **Merge-specific code:** `shared/ipc-client.ts` tests (one end and one close listener beyond the reply reader, the shared loss handlers), `withStructuredRetry` argument order `(execution, reviewScoped)`, `fake-services` helper brought to v2's async Services shape, the schema 9 repair step (guard exemption, `clearSync`) and its test.
+- **Module-state inventory:** 64 values introduced by v2 (before this guard existed) were classified, 23 stale entries removed. **34 of the 64 are classified `per-thread` PROVISIONALLY, with that word in the reason**: they include shared mutable registries that may need an owner (the review coordinators, the review request owner maps, the lifecycle registry, the approval broker, the artifact write queues, the tool hooks, the park-offer and signoff providers, the tracker refresh sets). They are listed in `/docs/plans/main-sync-conflicts.md` below and need a real review; see the follow-up issue.
+
+**After the fixes** (the 128 files re-run): 101 files still fail, and **one** test name fails in the merged branch and in neither parent: `workflow-run-dispatch.test.ts` "START returns runId". It is environmental: the MCP repo resolution needs the working directory to be a repository the real daemon has registered, and the sync worktree is not. With `INSRC_REPO` pointing at the registered clone the file passes 8/8.
+
+The remaining failures also fail in at least one parent: 19 names in both, 107 in v2 only (the known set: old review gates, lifecycle wiring, code-review rpc files, the 22 mcp review/schema tests), 45 in origin/main only. Crashes or timeouts with no failing names: `code-review-rpc-fallback`, `code-review-rpc` (both fail in v2), `peer-state-store-leakfree` (hangs in v2 and the merge), `search-filter` and `search-guard` (time out in origin/main and the merge, pass in v2), `range-base` (passes alone; reports async activity after the test ended in v2 too).
+
 ## Deferred (get back to these)
 
 - **BUILD writer lock (decided 2026-11-03 to defer).** main's `src/workflow/approval-owner.ts` (`withBuildWriter`, a cross-process ownership lock for BUILD ledger and approval writes, commit `e777060ff`) is not carried into v2. It wraps a synchronous stamp-write that v2 replaced with the async lifecycle service. If cross-process BUILD write ownership is still wanted, add an async variant of `withBuildWriter` around the lifecycle approve for BUILD records, with a test that two concurrent approvals of one BUILD do not both write. Until then v2 relies on the lifecycle service's own journalled writes. Owner: user to decide when to schedule it; track it as its own Story through triage.
 - **ISSUE-7fa297efd4bd1c59 approval** (approved on main 2026-11-01, draft in v2's converted record): re-approve through the lifecycle with the user.
 - **FileFilter spawns git directly (decided 2026-11-03: exempt for now, clean up later).** `src/indexer/file-filter.ts` (main's s6) runs `git ls-files --cached -z` and `git config --get core.excludesFile` with `execFileSync`; the filter is built synchronously and every caller relies on that, while the typed git tools are async. The spawn scan's exemption moved from `indexer/index.ts` (which no longer spawns) to `indexer/file-filter.ts`; the exemption tests and the migration record were updated. Clean-up tracked in GitHub issue https://github.com/insors-ai/insrc/issues/97 (convert to `lsFiles`/`configGet`, make construction async, remove the exemption).
 - **`scripts/__tests__/forbidden-spawn-scan.test.ts`** ("a run over src lists the direct gitDiffTool.execute calls in grounding.ts and changed-files.ts") fails on v2 as well: it names `grounding.ts`, which v2 deleted with the old review engine. Update or drop it with the next change to the scan.
+
+### Provisionally classified module state (needs review)
+
+- `src/daemon/approval.ts#approvalBroker`
+- `src/daemon/design-review-rpc.ts#coordinators`
+- `src/daemon/lifecycle-registry.ts#ENTRIES`
+- `src/daemon/lifecycle-registry.ts#identityService`
+- `src/daemon/repo-schema-guard.ts#override`
+- `src/daemon/review-request-owner.ts#connections`
+- `src/daemon/review-request-owner.ts#owners`
+- `src/daemon/review-request-owner.ts#ports`
+- `src/daemon/steps/workflow-step/handler.ts#handoffDeps`
+- `src/daemon/task-review-rpc.ts#coordinators`
+- `src/daemon/tools/call-handler.ts#nextRequestId`
+- `src/daemon/tools/convert-text.ts#attemptDeadlineMs`
+- `src/daemon/tools/convert-text.ts#tail`
+- `src/daemon/tools/executor.ts#commonSetting`
+- `src/daemon/tools/executor.ts#gate`
+- `src/daemon/tools/hooks.ts#hooks`
+- `src/daemon/tools/shell-helper.ts#timeoutScale`
+- `src/daemon/tracker-setup-handlers.ts#refreshing`
+- `src/daemon/workflow-rpc.ts#driver`
+- `src/workflow/artifact-core/store.ts#WRITE_QUEUES`
+- `src/workflow/config/github-store.ts#queueTail`
+- `src/workflow/config/github-store.ts#tempCounter`
+- `src/workflow/draft-issues.ts#hookOverride`
+- `src/workflow/tasks/task-set.ts#entrySeq`
+- `src/workflow/team/gate.ts#insideHook`
+- `src/workflow/team/gate.ts#parkOfferProvider`
+- `src/workflow/team/gate.ts#registeredHook`
+- `src/workflow/team/gate.ts#testDeps`
+- `src/workflow/team/sighting-store.ts#identityCache`
+- `src/workflow/team/signoff.ts#lifecycleProvider`
+- `src/workflow/team/signoff.ts#testDeps`
+- `src/workflow/tracker-auto.ts#testDeps`
+- `src/workflow/tracker/comment-sync.ts#running`
+- `src/workflow/tracker/registry-table.ts#depsOverridesForTests`

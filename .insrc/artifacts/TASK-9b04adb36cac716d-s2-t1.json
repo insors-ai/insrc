@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bfdd5dc8-6e82-4d37-af22-913bba3067f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.465Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Define strict recovery and technical-failure contracts",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2ab38c50ae9675e23b3b6a3a88cec6d581bcb26041795c52ea034468a0da95f1",
+        "at": "2026-11-03T14:11:57.465Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.466Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define strict recovery and technical-failure contracts",
+    "summary": "Extend design-review contracts and validators with recover/failure phases, phase versus operation discrimination, actionId/user decisions, sc3 recovery/failure state, per-unit automatic counters, bounded diagnostics, sealed unit summaries and one-fill action outcomes. Retain readable S1 checkpoints and existing size limits; declare later impact/publication seams without implementing them.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Strict recover and failure schemas reject unknown fields, invalid discriminator/operation/identity/attempt/decision combinations and exceeded bounds before dispatch.",
+      "Typed checkpoint/progress/assignment metadata carries retry state, pointed technical feedback and completed-unit summaries without artifact-body copies or raw native transcripts.",
+      "Existing S1 checkpoint shapes remain readable; automatic initial-plus-three limits and action/attempt/unit bounds are explicit."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Strict recover/failure schemas discriminate phase and operation and reject invalid identities, attempts, decisions, unknown fields and size limits."
+      },
+      {
+        "level": "unit",
+        "name": "Additive S1 checkpoints and bounded sc3 counters/actions/unit summaries/progress metadata round-trip without copied content or raw transcripts."
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

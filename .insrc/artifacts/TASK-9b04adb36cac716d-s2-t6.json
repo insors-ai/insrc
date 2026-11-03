@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-03a1f9b6-388a-41bc-ac7f-6b5d2d447d60",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.472Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Separate active tools from model-wait inactivity",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "91ef208e2d1d04d5cba019e2bc46b297d193ec55e4afbf6500d99d055b3ac608",
+        "at": "2026-11-03T14:11:57.472Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.472Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Separate active tools from model-wait inactivity",
+    "summary": "Implement design-local timer/activity policy around the existing ReviewActivityMonitor. Preserve 30-minute true-inactivity grace and no task deadline, while separately tracking active tool identities/elapsed state and deferring inactivity expiry during verified in-flight tools. Keep shared code-review/provider behavior unchanged and report tool-wait diagnostic honestly.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Native and controller execution survive beyond old fixed allowances while meaningful activity continues or a verified tool remains active; no deadlineMs/stallMs/task budget is introduced.",
+      "After tool completion normal model-wait inactivity applies; actual idle expiry becomes the coordinator-owned technical failure path and late output cannot commit.",
+      "Polling, heartbeats and process presence do not renew grace; tool failures/process exit remain actionable; all clocks/timers/resources stop with the unit/job."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Virtual-clock native/controller activity permits long active tools and meaningful progress without fixed deadlines, while true idle waits expire at thirty minutes."
+      },
+      {
+        "level": "unit",
+        "name": "Polling, heartbeat and process liveness do not renew activity; tool completion/failure and late output obey unit cancellation and timer cleanup."
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

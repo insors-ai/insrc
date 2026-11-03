@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f54784a5-7752-4e30-90b4-2df1b285383f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.469Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Retry only failed units and pause on exhausted budget",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7aa592409c582830ad4a71a5ab6ec9df307696ae156d1c27342bfe37c4ec2564",
+        "at": "2026-11-03T14:11:57.469Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.470Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Retry only failed units and pause on exhausted budget",
+    "summary": "Refactor coordinator unit execution with separate per-unit versus whole-job cancellation. Persist reservations and pointed diagnostics before serial technical retries; initial execution plus at most three automatic retries. Handle native errors and controller generation-bound failure/invalid-output exchange under one classifier; preserve budget across interruption and require recorded one-launch user action after exhaustion.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Only the failed planning/chunk unit retries; completed units remain unchanged, native internalRetry stays false, and HIGH/MED/incomplete semantic results are accepted without retry.",
+      "Crash after reservation conservatively consumes that dispatch; resume preserves remaining budget. Exhaustion durably pauses all remaining work until matching user direction; each unique approved action grants one extra dispatch without automatic reset.",
+      "Trusted controller failure and native failures share diagnostics/counters/generation fencing; malformed request/foreign owner/storage/context/unsupported-provider/mutation errors do not spend automatic model retries.",
+      "Completed unit summaries and user-action outcomes remain available after later successful units and full restart; no earlier technical history is silently overwritten."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Native and controller technical failures share initial-plus-three retry budget, pointed feedback and fresh generation while semantic findings/incomplete results never retry."
+      },
+      {
+        "level": "unit",
+        "name": "Crash reservations survive recovery; exhausted reviews pause until one-launch user direction without resetting automatic budget or losing unit summaries."
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

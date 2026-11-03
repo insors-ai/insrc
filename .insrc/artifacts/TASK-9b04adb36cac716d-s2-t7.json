@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9437debe-3899-4fa5-a0d2-d4a6e26079fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.473Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Expose recovery and failure through normal MCP and IPC",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f5ed8694460a852ab32a5e43118605b089b7f163575b1307b12fdaf9735e9d71",
+        "at": "2026-11-03T14:11:57.473Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.473Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose recovery and failure through normal MCP and IPC",
+    "summary": "Wire strict recover/failure phases into current MCP schema/handler, step/RPC dispatch, main-owned unary method registration/router classifications, repo audit coverage and canonical steering. Route recover before unconditional exchange owner gating, resolving native provider as start does and requiring trusted connection for controller recovery. Expose bounded paused/interrupted/invalidation progress and preserve controller connection semantics.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Normal insrc_review_step and designReview.recover/failure reach the same main-owner coordinator with strict repo/schema/phase enforcement.",
+      "Native recovery does not require an exchange owner; controller recovery/failure requires actual trusted owner and never allows observers to steal work. Independent subjects can progress without duplicate same-review execution.",
+      "Guides/schema discovery explain action replay, explicit retrigger, three retries then pause, user-approved restart and no intermediate corrections; retired APIs still raise PENDING REVIEW RE-IMPLEMENTATION.",
+      "Progress is bounded metadata by default, reports active unit/retries/reason/input requirement and preserves one-result paging without baseline/history leakage."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Normal MCP and short main-owned IPC recover/failure routes enforce strict schema/repo gates, native provider routing and actual controller ownership."
+      },
+      {
+        "level": "integration",
+        "name": "Independent subjects and multi-session recovery preserve accepted results and reject duplicate dispatch, stale generations and observer takeover."
+      },
+      {
+        "level": "unit",
+        "name": "Schema/guide and bounded progress expose retry/pause/restart rules while retired review calls remain unavailable."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

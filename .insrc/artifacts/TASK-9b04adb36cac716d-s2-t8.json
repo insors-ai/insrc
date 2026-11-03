@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e157e3af-35ff-4ac1-bdb3-4dc029f52742",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.474Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Qualify compiled recovery flows and document evidence",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2247d870ae82a0220c24e85d069ee27521500996db65fdd0e28088cb6f262b65",
+        "at": "2026-11-03T14:11:57.474Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.474Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify compiled recovery flows and document evidence",
+    "summary": "Extend the isolated compiled smoke harness and normal stdio MCP/Unix IPC tests for interruption/recovery, retries/exhaustion/user direction, subject invalidation and active tools. Record production build, focused regressions and synthetic evidence; update design-review execution documentation and maintain the approved sequence definition if implementation changes its flow. Do not restart the installed daemon or require repeated hosted calls for deterministic tests.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "Compiled fake-CLI normal MCP/IPC scenarios demonstrate no duplicate accepted-chunk model calls, correct retry counts/pause, exact recovery replay and sticky invalidation with retrievable feedback.",
+      "Epic/Standalone/Issue contexts, native/controller parity and session/main-owner routes are exercised with disposable project/home/socket fixtures.",
+      "Production build and scoped contract/coordinator/controller/checkpoint/MCP/route regressions pass, with recorded commands and case-level evidence; synthetic versus hosted execution is explicit.",
+      "S3 selective impact and S4 lifecycle/history publication/cleanup remain deferred; no code-review engine or shared provider changes are included.",
+      "All test daemon lifecycle operations target only disposable fixtures; no installed-daemon shutdown/restart/update or broad hosted test sweep is permitted as qualification."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Compiled isolated fake-CLI normal-entrypoint recovery demonstrates retry pause/user action, subject invalidation and zero repeated accepted-chunk calls."
+      },
+      {
+        "level": "integration",
+        "name": "Focused regressions qualify native/controller parity and Epic/Standalone/Issue contexts with disposable fixtures, preserving unrelated review engines."
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

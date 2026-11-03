@@ -8,6 +8,7 @@ export const DESIGN_LIMITS = {
  subjectBytes: 8 * 1024 * 1024, checkpointBytes: 64 * 1024 * 1024,
  resultBytes: 1024 * 1024, requestBytes: 1024 * 1024 + 65536,
  units: 8192, chunks: 128, findings: 256, text: 8192, path: 2048,
+ attempts: 128, actions: 128, automaticRetries: 3, automaticDispatches: 4,
 } as const;
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
 const enumeration = <const T extends readonly string[]>(values: T): TUnion<TLiteral<T[number]>[]> => Type.Union(values.map(value => Type.Literal(value as T[number])));
@@ -20,6 +21,46 @@ const timestamp = Type.String({ minLength: 20, maxLength: 30, pattern: '^\\d{4}-
 const digest = Type.String({ pattern: '^[a-f0-9]{64}$' });
 const texts = Type.Array(text, { maxItems: DESIGN_LIMITS.units });
 const refs = Type.Array(path, { maxItems: DESIGN_LIMITS.units });
+const retries = Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.automaticRetries });
+const dispatches = Type.Integer({ minimum: 1, maximum: DESIGN_LIMITS.automaticDispatches });
+const unitPhase = enumeration(['planning','impact','chunk_review','publication']);
+const operation = enumeration(['resume','restart_full','retry_publication']);
+const diagnostic = object({ code: id, summary: text });
+export const DesignTechnicalFailureSchema = object({
+ code: enumeration(['process_failed','transport_failed','review_inactive','invalid_output']), summary: text,
+});
+export type DesignTechnicalFailure = Static<typeof DesignTechnicalFailureSchema>;
+export const DesignFailureSchema = object({ unitId: id, phase: unitPhase, code: id, summary: text, retriesUsed: retries });
+export type DesignFailure = Static<typeof DesignFailureSchema>;
+const userDecision = object({ action: enumeration(['restart_full','retry_failed_unit']), reason: text, recordedAt: timestamp });
+export const DesignRecoveryActionSchema = object({
+ operation, reviewId: id, attempt: positive, userDecision: Type.Optional(userDecision),
+});
+export type DesignRecoveryAction = Static<typeof DesignRecoveryActionSchema>;
+export const DesignRecoveryStateSchema = Type.Union([
+ object({ attempt: positive, status: Type.Literal('interrupted'), reason: enumeration(['connection_lost','daemon_restarted']), failedUnit: Type.Optional(DesignFailureSchema), completedChunkIds: Type.Array(id,{maxItems:DESIGN_LIMITS.chunks}), requiresUserInput: Type.Boolean() }),
+ object({ attempt: positive, status: Type.Literal('paused'), reason: Type.Literal('technical_retry_exhausted'), failedUnit: DesignFailureSchema, completedChunkIds: Type.Array(id,{maxItems:DESIGN_LIMITS.chunks}), requiresUserInput: Type.Literal(true) }),
+ object({ attempt: positive, status: Type.Literal('invalidated'), reason: Type.Literal('artifact_changed'), failedUnit: Type.Optional(DesignFailureSchema), completedChunkIds: Type.Array(id,{maxItems:DESIGN_LIMITS.chunks}), requiresUserInput: Type.Literal(true) }),
+]);
+export type DesignRecoveryState = Static<typeof DesignRecoveryStateSchema>;
+export const DesignUnitStateSchema = object({
+ unitId: id, phase: unitPhase, executionId: id, dispatches, retriesUsed: retries,
+ userDirectedDispatches: Type.Integer({minimum:0,maximum:DESIGN_LIMITS.actions}),
+ diagnostics: Type.Array(diagnostic,{maxItems:DESIGN_LIMITS.automaticDispatches}),
+});
+export type DesignUnitState = Static<typeof DesignUnitStateSchema>;
+export const DesignUnitSummarySchema = object({
+ unitId: id, phase: unitPhase, automaticDispatches: dispatches, retriesUsed: retries,
+ userDirectedDispatches: Type.Integer({minimum:0,maximum:DESIGN_LIMITS.actions}),
+ diagnostics: Type.Array(diagnostic,{maxItems:DESIGN_LIMITS.automaticDispatches}),
+ actionIds: Type.Array(id,{maxItems:DESIGN_LIMITS.actions}),
+});
+export type DesignUnitSummary = Static<typeof DesignUnitSummarySchema>;
+export const DesignActionRecordSchema = object({
+ actionId: id, signature: digest, operation, sourceAttempt: positive, resultAttempt: positive,
+ userDecision: Type.Optional(userDecision), acceptedAt: timestamp, outcome: Type.Optional(diagnostic),
+});
+export type DesignActionRecord = Static<typeof DesignActionRecordSchema>;
 export const DesignStatusSchema = enumeration(['pending','running','interrupted','paused','invalidated','passed','changes_requested','incomplete','failed']);
 export type DesignReviewStatus = Static<typeof DesignStatusSchema>;
 export const DesignWorkflowSchema = object({
@@ -67,6 +108,8 @@ export const DesignProgressSchema = object({ status: DesignStatusSchema,
  requiresUserInput: Type.Boolean(), checkpointPath: path, sequence: number,
  reviewElapsedMs: number, unitElapsedMs: Type.Union([number, Type.Null()]),
  observedAt: timestamp, freshness: enumeration(['live','stored']),
+ recovery: Type.Optional(DesignRecoveryStateSchema), retriesUsed: Type.Optional(retries),
+ executionId: Type.Optional(id), failedUnit: Type.Optional(DesignFailureSchema),
 });
 export type DesignReviewProgress = Static<typeof DesignProgressSchema>;
 export const DesignReportSchema = object({ reviewId: id, attempt: positive, artifactId: path,
@@ -89,17 +132,20 @@ export const DesignAttemptSchema = object({
  })),
  failure: Type.Optional(object({ code: id, summary: text })),
  report: Type.Optional(DesignReportSchema), model: Type.Optional(text),
+ recovery: Type.Optional(DesignRecoveryStateSchema), unit: Type.Optional(DesignUnitStateSchema),
+ unitSummaries: Type.Optional(Type.Array(DesignUnitSummarySchema,{maxItems:DESIGN_LIMITS.chunks+1})),
+ actions: Type.Optional(Type.Array(DesignActionRecordSchema,{maxItems:DESIGN_LIMITS.actions})),
 });
 export type DesignAttempt = Static<typeof DesignAttemptSchema>;
 export const DesignCheckpointSchema = object({ schemaVersion: Type.Literal(1), reviewId: id, project: path,
  artifactId: path, subject: DesignSubjectSchema,
  submitted: object({ artifactPath: path, attempt: positive }),
- attempts: Type.Array(DesignAttemptSchema, { minItems: 1, maxItems: 128 }),
+ attempts: Type.Array(DesignAttemptSchema, { minItems: 1, maxItems: DESIGN_LIMITS.attempts }),
 });
 export type DesignReviewCheckpoint = Static<typeof DesignCheckpointSchema>;
 const identity = { repo: path, reviewId: id, attempt: positive };
 const submission = { ...identity, executionId: id, sequence: positive };
-export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','activity','result'] as const;
+export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','activity','result','recover','failure'] as const;
 export const DesignRequestSchemas = {
  start: object({ phase: Type.Literal('start'), repo: path, reviewId: id, attempt: Type.Literal(1), artifactPath: path }),
  progress: object({ phase: Type.Literal('progress'), ...identity, afterCompletedChunk: Type.Optional(number), includeResult: Type.Optional(Type.Boolean()) }),
@@ -107,10 +153,13 @@ export const DesignRequestSchemas = {
  plan: object({ phase: Type.Literal('plan'), ...submission, plan: DesignPlanSchema }),
  activity: object({ phase: Type.Literal('activity'), ...submission, event: DesignActivitySchema }),
  result: object({ phase: Type.Literal('result'), ...submission, result: DesignResultSchema }),
+ recover: object({ phase: Type.Literal('recover'), ...identity, actionId: id, operation, userDecision: Type.Optional(userDecision) }),
+ failure: object({ phase: Type.Literal('failure'), ...submission, failure: DesignTechnicalFailureSchema }),
 };
 export const DesignRequestSchema = Type.Union(Object.values(DesignRequestSchemas));
 export type DesignReviewRequest = Static<typeof DesignRequestSchema>;
 export type DesignReviewStart = Static<typeof DesignRequestSchemas.start>;
+export type DesignRecoveryRequest = Static<typeof DesignRequestSchemas.recover>;
 export interface DesignReviewAcknowledgement {
  readonly reviewId: string; readonly attempt: number; readonly artifactId: string;
  readonly reviewer: 'daemon' | 'controller'; readonly status: DesignReviewStatus; readonly checkpointPath: string;
@@ -118,6 +167,8 @@ export interface DesignReviewAcknowledgement {
 export interface DesignUnitAssignment {
  readonly kind: 'planning' | 'chunk'; readonly executionId: string; readonly sequence: number;
  readonly chunkId?: string | undefined; readonly prompt: string; readonly schema: TSchema;
+ readonly previousTechnicalFeedback?: DesignTechnicalFailure | undefined;
+ readonly retriesUsed?: number | undefined;
 }
 export class DesignReviewError extends Error {
  constructor(readonly code: string, message: string) { super(message); this.name = 'DesignReviewError'; }
@@ -160,6 +211,11 @@ export function parseDesignRequest(input: unknown): DesignReviewRequest {
   const request = decodeDesign(DesignRequestSchema, input, DESIGN_LIMITS.requestBytes);
   requireDesign(isAbsolute(request.repo),'invalid_project','Expected an absolute project path');
   if (request.phase === 'result') decodeDesign(DesignResultSchema, request.result, DESIGN_LIMITS.resultBytes);
+  if (request.phase === 'recover') {
+   const decision = request.userDecision?.action;
+   requireDesign(request.operation !== 'restart_full' || decision === 'restart_full','user_decision_required','Full restart requires an explicit restart decision');
+   requireDesign(decision === undefined || request.operation === 'restart_full' && decision === 'restart_full' || request.operation === 'resume' && decision === 'retry_failed_unit','invalid_decision','Decision does not match recovery operation');
+  }
   return request;
  } catch (error) {
   if (error instanceof DesignReviewError) throw new DesignReviewInputError(error.code, error.message);

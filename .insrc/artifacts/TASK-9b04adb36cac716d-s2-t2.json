@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4a4f5326-9553-471f-9c2f-c38a3e755da1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.466Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Persist monotonic recovery state and preserve checkpoint errors",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bb7e0ca52de62a98e2fbc3d0c44ad31ea3dac3ef642a0f06c307ab33ba74a540",
+        "at": "2026-11-03T14:11:57.467Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.467Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Persist monotonic recovery state and preserve checkpoint errors",
+    "summary": "Extend existing atomic checkpoint save/load validation for per-unit counters, action replay identity, sealed completed-unit summaries, one-fill user-directed outcomes and fully frozen prior attempts. Normalize I/O failures at save boundary; preserve concrete domain error codes through coordinator commit and fence every failed save.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Atomic failed writes preserve the previous accepted snapshot and block subsequent launch/advance.",
+      "Accepted baseline/plan/chunks and older attempts are immutable; per-unit counters/actions never decrease or disappear, completed summaries seal and action outcomes fill once.",
+      "Direct save and coordinator commit preserve domain codes such as checkpoint_too_large/foreign_checkpoint/immutable_history and normalize I/O failures to DesignReviewPersistenceError."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Atomic checkpoint failures preserve accepted snapshots and fence execution; direct save and commit preserve domain versus normalized I/O errors."
+      },
+      {
+        "level": "unit",
+        "name": "Per-unit counters, action replay identity, one-fill outcomes, sealed summaries and prior attempts enforce monotonic immutable history."
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

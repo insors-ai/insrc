@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3d962d12-4a99-4e58-b078-b4a04bc48282",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.468Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Recover interrupted work and admit approved full restarts",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e575c3bb5274c33f8b63866347e3a577cf7e2877aff8479e1dc71658de982d3a",
+        "at": "2026-11-03T14:11:57.468Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.469Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Recover interrupted work and admit approved full restarts",
+    "summary": "Add coordinator recover admission using existing main-owner job/subject serialization. Persist exact actionId replay and dispatch reservations before short acknowledgement; reconstruct accepted plan/chunks and execute only unfinished work. Bind trusted recovering controller after old execution ends; append fresh user-approved invalidated-attempt restart with no reuse and current workflow-aware subject preparation.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Explicit unchanged-subject resume retains accepted chunks byte-for-byte, skips accepted planning/units and re-consolidates all-complete report-only work with zero provider calls.",
+      "Exact action replay never duplicates work; conflicting actions, missing checkpoints/attempts, foreign active owners and stale generations are refused. Startup/progress/duplicate start never implicitly recover.",
+      "Approved restart_full appends the next fresh attempt and freezes previous history; admitted same-attempt references ignore external changes, while fresh restart derives proper Epic/Standalone/Issue prerequisites and reviewer party."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Explicit unchanged-subject recovery skips accepted plan/chunks and completes report-only work without model calls."
+      },
+      {
+        "level": "unit",
+        "name": "Recovery action replay/conflicts, missing checkpoints, controller rebind and fresh approved restart preserve authority, history and workflow context."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

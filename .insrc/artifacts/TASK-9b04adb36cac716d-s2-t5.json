@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7523664a-bdcf-40b9-b338-e0f048a05a7a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T14:11:57.470Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "envelope": {
+      "description": "Monitor the reviewed subject and latch invalidation",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s2",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s2",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s2-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e8be767dffc816442c6931bd9a3661078d7e1e0510d5c6a1a5e335f027c2aaae",
+        "at": "2026-11-03T14:11:57.470Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T14:11:57.471Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Monitor the reviewed subject and latch invalidation",
+    "summary": "Add a design-local subject monitor using filtered parent-directory watch hints and a nonoverlapping one-second fallback check; reuse existing subject fingerprint validation. Guard admission/recovery/unit/result/final-report boundaries, latch changes before abort, persist invalidation independently of a slow provider, retire late generations and dispose monitor resources.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Observed subject edits, deletion, noncanonical replacement and rename during a long-running unit immediately stop advancement and expose durable invalidated/user-input state; restoring bytes cannot revive the attempt.",
+      "Late provider/controller output, queued activity saves and final checkpoint-report races cannot overwrite latched invalidation; persistence failure stays fail-closed.",
+      "Reference/source edits outside canonical JSON/document do not invalidate; monitor cleanup/re-arm works without unrelated directory-event restarts. Full restart remains explicit/user-approved."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Subject-only monitoring detects edits/deletion/rename during blocked execution and persists sticky invalidation despite restoration and late output."
+      },
+      {
+        "level": "unit",
+        "name": "Final-report/activity-save races fail closed; external changes are ignored and watcher resources clean up and re-arm."
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

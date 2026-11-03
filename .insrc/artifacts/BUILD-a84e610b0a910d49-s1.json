@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 10,
         "contentHash": "664e2b978bd2986364a67148857b4e971f79d8505e5e7c609688cc4e3a511537",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 10,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-03T11:41:28.534Z",
+        "override": {
+          "reason": "The daemon's whole-story code review (review-a84e610b0a910d49-s1-r1) used its three rounds without a pass: t1, t2, t3, t5 and t6 passed with verified coverage every round; t4 failed mechanically in rounds 1 and 2 and was incomplete in round 3 on one MED test-strength finding, which was fixed (commit 814a8ce0f) after the round. Controller self-review in docs/standalone/make-code-review-s-documents-review-E20261103a84e610b/S001/CODE-SELF-REVIEW.md (not independent of the author). Approved by the user with this override on 2026-11-03."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-7fcd1c2d-aa99-4042-974a-05cd0b3c252f",

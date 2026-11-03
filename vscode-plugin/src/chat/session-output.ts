@@ -201,6 +201,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     return { current: `${base}.ndjson`, previous: `${base}.1.ndjson`, err: `${base}.err.log` };
   };
 
+  /** The durable pin marker for one session generation (`<session>.pin.<gen>`). */
+  const pinPath = (sessionId: string, generation: number): string => `${deps.root}/${sessionFileName(sessionId)}.pin.${generation}`;
+
   /** The generation a file holds (from its header line), or undefined when it is missing. */
   const generationOf = async (path: string): Promise<number | undefined> => {
     if ((await fs.size(path)) === undefined) return undefined;
@@ -284,6 +287,10 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       const set = pinned.get(cursor.sessionId) ?? new Set<number>();
       set.add(cursor.generation);
       pinned.set(cursor.sessionId, set);
+      // E202611031bd72813:S001 t5: the pin is also durable — a marker file per pinned generation,
+      // so a RECREATED writer (another window's process) does not discard a generation this
+      // (possibly reloaded) reader still needs.
+      void fs.writeFile(pinPath(cursor.sessionId, cursor.generation), '').catch(() => {});
     },
     unregisterCursor(cursor: SegmentCursor): void {
       const set = pinned.get(cursor.sessionId);
@@ -297,6 +304,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         archived.delete(key);
         void fs.rm(arch).catch(() => {});
       }
+      void fs.rm(pinPath(cursor.sessionId, cursor.generation)).catch(() => {});
     },
     async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
       const p = paths(sessionId);
@@ -342,7 +350,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           // E202611031bd72813:S001 t5: retention tied to registered cursors — a pinned previous
           // generation is archived, not discarded, so its reader never hits SegmentGone.
           const prevGen = await generationOf(p.previous);
-          if (prevGen !== undefined && pinned.get(sessionId)?.has(prevGen) === true) {
+          // pinned in this process OR by a durable marker file from another (possibly reloaded) one
+          const pinnedHere = prevGen !== undefined && (pinned.get(sessionId)?.has(prevGen) === true || (await fs.size(pinPath(sessionId, prevGen))) !== undefined);
+          if (prevGen !== undefined && pinnedHere) {
             const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
             await fs.rename(p.previous, arch);
             archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
@@ -369,7 +379,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
 
     async *tail(cursor, opts) {
-      const file = await fileFor(cursor);
+      let file = await fileFor(cursor);
       let offset = cursor.offset;
       if (offset > ((await fs.size(file)) ?? 0)) {
         // The file is shorter than the cursor (truncated or replaced): re-anchor at the turn's start.
@@ -381,6 +391,10 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       let pending: Buffer = Buffer.alloc(0);
       for (;;) {
         if (opts.signal?.aborted === true) return;
+        // A rollover RENAMES the generation's file (to .previous, or an archived .pinned.* name),
+        // so the cursor's generation is re-resolved to its current path on EVERY read — an
+        // in-progress (pinned) reader follows the rename and can never switch generations mid-read.
+        file = await fileFor(cursor);
         // Read finished() BEFORE reading, so bytes written just before the writer finished are not missed.
         const done = opts.finished();
         const chunk = await fs.readRange(file, offset + pending.length, READ_CHUNK);
@@ -428,6 +442,16 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           await fs.rm(arch).catch(() => {});
         }
       }
+      // ...and so do its durable pin markers.
+      const prefix = `${sessionFileName(sessionId)}.pin.`;
+      let names: string[] = [];
+      try {
+        names = await fs.readdir(deps.root);
+      } catch { /* no root */ }
+      for (const name of names) {
+        if (name.startsWith(prefix)) await fs.rm(`${deps.root}/${name}`).catch(() => {});
+      }
+      pinned.delete(sessionId);
       await fs.rm(p.err);
     },
 

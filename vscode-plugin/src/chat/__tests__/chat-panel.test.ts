@@ -5966,15 +5966,16 @@ test('E202611031bd72813:S001 t5: the observer ignores a checkpoint of ANOTHER tu
     store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;
-    // the recorded segment generation is GONE (rolled away unpinned) — resume hits SegmentGone
-    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation + 100, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
-    // a STALE checkpoint of another turn must be ignored (turn identity is validated)
-    cur.observerCheckpoint = { turnId: 'some-other-turn', generation: seg.cursor.generation + 100, offset: 5, selectionSeq: 7 };
+    // the recorded segment generation is GONE (rolled away unpinned): the liveTurn cursor AND a
+    // VALID same-turn checkpoint point at it, so the first ingest really hits SegmentGone
+    const goneGen = seg.cursor.generation + 100;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: goneGen, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    cur.observerCheckpoint = { turnId: 't-obs', generation: goneGen, offset: 0, selectionSeq: 3 };
     store.save(cur);
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'SegmentGone recovered by replay from the oldest retained generation -> terminal cleared the cursor');
     const after = store.get(s.id)!;
     assert.equal(after.status, 'done', 'result line replayed -> done (no unresolved requests)');
-    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs', 'checkpoint re-persisted for THIS turn (stale one not reused)');
+    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs', 'checkpoint re-persisted for THIS turn');
     assert.equal(after.observerCheckpoint!.generation, seg.cursor.generation, 'recovered into the retained generation, not the gone one');
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -6058,4 +6059,50 @@ test('E202611031bd72813:S001 t5: the observer budget watchdog ends a pass even w
   await waitFor(() => resumeCalls >= 3, 5000, 'several passes ran: each idle pass ended at the budget watchdog and did not block the next tick');
   assert.equal(store.get(s.id)?.status, 'working', 'a budget-aborted pass keeps the last status (not done)');
   assert.ok(store.get(s.id)?.liveTurn !== undefined, 'the cursor is kept');
+});
+
+test('E202611031bd72813:S001 t5: a checkpoint of ANOTHER turn is ignored — the observer re-anchors to the turn start, so a split marker at the liveTurn cursor still resolves (waiting-input, not a silent done)', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs4-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const selJson = JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] });
+    const marker = '```insrc:select\n' + selJson + '\n```';
+    const half = Math.floor(marker.length / 2);
+    const frag1Line = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(0, half) }] } }) + '\n';
+    const frag2Line = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(half) }] } }) + '\n';
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
+    appendFileSync(seg.outPath, frag1Line + frag2Line + resultLine);
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // STALE checkpoint of another turn pointing mid-file (past frag1, no decoder buffer): if the
+    // observer wrongly reused it, frag2 alone cannot complete the marker and the request is lost
+    cur.observerCheckpoint = { turnId: 'another-turn', generation: seg.cursor.generation, offset: seg.cursor.offset + Buffer.byteLength(frag1Line), selectionSeq: 9 };
+    store.save(cur);
+    await waitFor(() => (store.get(s.id)?.pendingRequests ?? []).length > 0, 5000, 'the wrong-turn checkpoint was ignored and the marker resolved from the turn start');
+    const after = store.get(s.id)!;
+    assert.equal(after.status, 'waiting-input');
+    assert.equal(after.pendingRequests![0]!.kind, 'selection');
+    assert.equal(after.pendingRequests![0]!.prompt, 'Pick');
+    assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq < 9, 'the persisted checkpoint is for THIS turn with a fresh decoder, not the stale seq 9');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });

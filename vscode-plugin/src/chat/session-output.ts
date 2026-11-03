@@ -165,6 +165,15 @@ export interface SessionOutput {
   remove(sessionId: string): Promise<void>;
   /** Deletes the files of sessions not in `keep` that have not been written for `olderThanMs`. */
   sweep(opts: { readonly olderThanMs: number; readonly keep: ReadonlySet<string> }): Promise<void>;
+  /**
+   * E202611031bd72813:S001 t5: registers a long-lived reader cursor (the background observer's).
+   * While registered, rollover keeps its generation readable (archived instead of discarded).
+   */
+  registerCursor(cursor: SegmentCursor): void;
+  /** Drops a registered cursor; its archived generation is removed when nothing else pins it. */
+  unregisterCursor(cursor: SegmentCursor): void;
+  /** The oldest generation still retained for a session (for SegmentGone replay recovery). */
+  oldestRetainedGeneration(sessionId: string): Promise<number | undefined>;
 }
 
 export const DEFAULT_MAX_BYTES = 4 * 1024 * 1024;
@@ -225,17 +234,53 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     await fs.appendFile(path, `${unterminated ? '\n' : ''}${JSON.stringify(marker)}\n`);
   };
 
+  // E202611031bd72813:S001 t5: generations pinned by registered cursors, archived instead of discarded.
+  const pinned = new Map<string, Set<number>>(); // sessionId -> generations
+  const archived = new Map<string, string>(); // `${sessionId}:${generation}` -> path
+
   /** The file currently holding a cursor's generation. */
   const fileFor = async (cursor: SegmentCursor): Promise<string> => {
     const p = paths(cursor.sessionId);
     if ((await generationOf(p.current)) === cursor.generation) return p.current;
     if ((await generationOf(p.previous)) === cursor.generation) return p.previous;
+    const arch = archived.get(`${cursor.sessionId}:${cursor.generation}`);
+    if (arch !== undefined && (await generationOf(arch)) === cursor.generation) return arch;
     throw new SegmentGone(cursor);
   };
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal);
 
   return {
+    registerCursor(cursor: SegmentCursor): void {
+      const set = pinned.get(cursor.sessionId) ?? new Set<number>();
+      set.add(cursor.generation);
+      pinned.set(cursor.sessionId, set);
+    },
+    unregisterCursor(cursor: SegmentCursor): void {
+      const set = pinned.get(cursor.sessionId);
+      if (set === undefined) return;
+      set.delete(cursor.generation);
+      if (set.size === 0) pinned.delete(cursor.sessionId);
+      // drop the archived generation when nothing pins it any more
+      const key = `${cursor.sessionId}:${cursor.generation}`;
+      const arch = archived.get(key);
+      if (arch !== undefined && !(pinned.get(cursor.sessionId)?.has(cursor.generation) ?? false)) {
+        archived.delete(key);
+        void fs.rm(arch).catch(() => {});
+      }
+    },
+    async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
+      const p = paths(sessionId);
+      const gens: number[] = [];
+      const cur = await generationOf(p.current);
+      if (cur !== undefined) gens.push(cur);
+      const prev = await generationOf(p.previous);
+      if (prev !== undefined) gens.push(prev);
+      for (const key of archived.keys()) {
+        if (key.startsWith(`${sessionId}:`)) gens.push(Number(key.slice(sessionId.length + 1)));
+      }
+      return gens.length === 0 ? undefined : Math.min(...gens);
+    },
     async beginTurn(sessionId: string, turnId: string): Promise<TurnSegment> {
       const p = paths(sessionId);
       await fs.mkdir(deps.root);
@@ -246,6 +291,14 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         if (open !== undefined) await appendMarker(p.current, { [MARKER_KEY]: 'turn-end', turnId: open, code: null, signal: null, unknown: true });
         // Roll over between turns only, so a segment is never split across files.
         if (((await fs.size(p.current)) ?? 0) > maxBytes) {
+          // E202611031bd72813:S001 t5: retention tied to registered cursors — a pinned previous
+          // generation is archived, not discarded, so its reader never hits SegmentGone.
+          const prevGen = await generationOf(p.previous);
+          if (prevGen !== undefined && pinned.get(sessionId)?.has(prevGen) === true) {
+            const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
+            await fs.rename(p.previous, arch);
+            archived.set(`${sessionId}:${prevGen}`, arch);
+          }
           await fs.rename(p.current, p.previous); // replaces the older generation
           generation = undefined;
         }
@@ -320,6 +373,13 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       const p = paths(sessionId);
       await fs.rm(p.current);
       await fs.rm(p.previous);
+      // E202611031bd72813:S001 t5: archived (pinned) generations of this session go too.
+      for (const [key, arch] of archived) {
+        if (key.startsWith(`${sessionId}:`)) {
+          archived.delete(key);
+          await fs.rm(arch).catch(() => {});
+        }
+      }
       await fs.rm(p.err);
     },
 

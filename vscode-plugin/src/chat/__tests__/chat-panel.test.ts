@@ -5787,3 +5787,52 @@ test('E202611031bd72813:S001 t4: selecting an active-chat entry (open-chat { cha
   const restored = fc.posted.filter((m) => m.payload.type === 'session-restored').at(-1);
   assert.equal((restored?.payload as { sessionId: string }).sessionId, b.id, 'the active-chat selection opened chat B like history would');
 });
+
+test('E202611031bd72813:S001 t5: the observer reconciles a detached chat with a dead owner — ingests requests (waiting-input), then terminal -> done, clears cursor, persists checkpoint', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const registered: unknown[] = [];
+  const stubOut = { registerCursor: (c: unknown) => void registered.push(c), unregisterCursor: () => {}, oldestRetainedGeneration: async () => 1 } as never;
+  const resumeEvs: TurnEvent[] = [
+    { kind: 'approval-request', turnId: 't9', requestId: 'req-d9', title: 'T', detail: 'd' },
+    { kind: 'done', turnId: 't9', ok: true, sessionId: 'n9' },
+  ];
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(req, o): AsyncIterable<TurnEvent> {
+      o?.onProgress?.({ ...req.cursor, offset: req.cursor.offset + 10 });
+      for (const ev of resumeEvs) { yield ev; if (ev.kind === 'done') return; }
+    },
+    cancel: () => {},
+    decide: () => {},
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    sessionOutput: stubOut,
+    observerTimerMs: 20,
+    hostPid: 1,
+    isAlive: () => false, // the owner host and the CLI pid are both dead
+  });
+  host.open();
+  // a detached session with a saved turn owned by a dead host
+  const s = store.create('claude' as never);
+  store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+  store.setStatus(s.id, 'working');
+  const cur = store.get(s.id)!;
+  cur.liveTurn = { cursor: { turnId: 't9', generation: 1, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+  store.save(cur);
+  await waitFor(() => registered.length >= 1, 5000, 'observer registered the checkpoint cursor (retention)');
+  // the stub stream carries the request then the terminal in one pass: the request is persisted
+  // BEFORE the completion transition, so the end state is done with the request kept unresolved
+  // precedence: terminal WITH an unresolved persisted request stays waiting-input (not done)
+  await waitFor(() => store.get(s.id)?.status === 'waiting-input', 5000, 'ingested request -> waiting-input, kept across the terminal');
+  const after = store.get(s.id)!;
+  assert.equal(after.liveTurn, undefined, 'cursor cleared on observed terminal');
+  assert.equal(after.pendingRequests?.[0]?.requestId, 'req-d9', 'the request was persisted before the transition');
+  assert.equal(after.pendingRequests?.[0]?.resolved, false, 'still unresolved');
+  assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.offset > 0, 'checkpoint persisted');
+});

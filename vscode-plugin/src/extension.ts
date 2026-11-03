@@ -748,6 +748,7 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     const chatHost = createChatPanelHost({
       links: linkOpener,
+      sessionOutput: chatOutput, // E202611031bd72813:S001 t5: the detached-session observer's store
       attachments: {
         store: chatAttachments,
         // The file dialog is VS Code's own; a dismissed dialog attaches nothing.

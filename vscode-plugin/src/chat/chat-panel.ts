@@ -29,7 +29,7 @@ import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
-import type { ChatSessionStore, ChatSession, ChatStatus, TranscriptEntry, RunConfig } from './session-store.js';
+import type { ActiveChatEntry, ChatSessionStore, ChatSession, ChatStatus, PersistedRequest, TranscriptEntry, RunConfig } from './session-store.js';
 import type { ModelDefinitions } from '../models/definitions.js';
 import { providerIcon, PROVIDER_ICON_SVGS } from './provider-icons.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
@@ -187,6 +187,18 @@ export interface ChatPanelHostDeps {
    * chats age out (the 60 s purge timer). Default 60_000; tests set it low.
    */
   readonly activeListTimerMs?: number | undefined;
+  /**
+   * E202611031bd72813:S001 t5: the session-output store (for cursor registration/retention) behind
+   * the detached-session observer. Absent -> the observer does not run.
+   */
+  readonly sessionOutput?: import('./session-output.js').SessionOutput | undefined;
+  /**
+   * E202611031bd72813:S001 t5: how often the background observer reconciles detached chats.
+   * Default 60_000; tests set it low. Per-tick ingestion is budgeted.
+   */
+  readonly observerTimerMs?: number | undefined;
+  /** E202611031bd72813:S001 t5: per-tick ingestion budget for the observer (ms). Default 2000. */
+  readonly observerTickBudgetMs?: number | undefined;
   /**
    * Epic E20261014613abdb3 Story S001: builds this window's worker over the repository's chat queue,
    * given the host's runner. Present: typed messages go through the queue and run in order. Absent
@@ -576,6 +588,117 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const startActiveTimer = (): void => {
     if (activeTimer !== undefined) return;
     activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);
+  };
+
+  // E202611031bd72813:S001 t5 — the 60 s lossless observer for detached chats. For each active
+  // session whose saved turn this host does not run and whose owner host is dead, it ingests the
+  // remaining output through the provider adapter from the persisted observer checkpoint (own
+  // cursor, registered for retention), persisting requests before any completion/death transition.
+  let observerTimer: ReturnType<typeof setInterval> | undefined;
+  const startObserverTimer = (): void => {
+    if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
+    observerTimer = setInterval(() => { if (!disposed) void observeDetached(); }, deps.observerTimerMs ?? 60_000);
+  };
+  const persistRequest = (s: ChatSession, r: PersistedRequest): void => {
+    const existing = s.pendingRequests ?? [];
+    if (existing.some((x) => x.requestId === r.requestId)) return;
+    try {
+      s.pendingRequests = [...existing, r];
+      deps.store.save(s); // mergeActiveChatFields keeps the newer record's fields
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: pendingRequest not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const observeDetached = async (): Promise<void> => {
+    const out = deps.sessionOutput;
+    if (out === undefined) return;
+    let chats: readonly ActiveChatEntry[];
+    try {
+      chats = deps.store.activeChats();
+    } catch {
+      return;
+    }
+    const hostPid = deps.hostPid ?? process.pid;
+    for (const c of chats) {
+      const s = deps.store.get(c.id);
+      const live = s?.liveTurn;
+      if (s === undefined || live === undefined) continue;
+      if (live.ownerHostPid === hostPid) continue; // this host's own live/followed turn: the lifecycle owns it
+      if (deps.isAlive !== undefined && live.ownerHostPid !== 0 && deps.isAlive(live.ownerHostPid)) continue; // another live window owns it
+      const cp = s.observerCheckpoint ?? { generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
+      const cursor = { sessionId: s.id, turnId: live.cursor.turnId, generation: cp.generation, offset: cp.offset };
+      out.registerCursor(cursor); // retention: this generation is not discarded under us
+      let adapter;
+      try {
+        adapter = deps.providers.get(s.provider);
+      } catch {
+        out.unregisterCursor(cursor);
+        continue;
+      }
+      if (typeof adapter.resume !== 'function') {
+        out.unregisterCursor(cursor);
+        continue;
+      }
+      const ctl = new AbortController();
+      const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
+      let sawTerminal = false;
+      let lastCursor = cursor;
+      let ingestedAny = false;
+      try {
+        const events = adapter.resume(
+          { cursor, pid: live.pid, startedAt: live.startedAt ?? null },
+          {
+            signal: ctl.signal,
+            onProgress: (cur) => {
+              lastCursor = { ...cursor, offset: cur.offset };
+              if (Date.now() > deadline) ctl.abort(); // per-tick budget: pause, never discard
+            },
+          },
+        );
+        for await (const ev of events) {
+          ingestedAny = true;
+          if (ev.kind === 'approval-request') {
+            persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false });
+            setChatStatus(s, 'waiting-input');
+          } else if (ev.kind === 'selection-request') {
+            persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
+            setChatStatus(s, 'waiting-input');
+          } else if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+            sawTerminal = true;
+          }
+          if (Date.now() > deadline) ctl.abort();
+        }
+      } catch {
+        // SegmentGone or an adapter throw: the cursor stays; next tick replays from the oldest
+        // retained generation (retention above keeps it readable while registered).
+      }
+      // persist the checkpoint (own cursor + decoder progress)
+      try {
+        s.observerCheckpoint = { generation: lastCursor.generation, offset: lastCursor.offset, selectionSeq: cp.selectionSeq };
+        deps.store.save(s);
+      } catch { /* best-effort */ }
+      out.unregisterCursor(cursor);
+      // transitions: requests ingested BEFORE completion/death; death->done only when caught up
+      if (!ingestedAny || sawTerminal || deps.isAlive === undefined || !deps.isAlive(live.pid ?? 0)) {
+        // process verified dead (or terminal seen) and ingestion caught up to the end
+      }
+      if (sawTerminal) {
+        // real terminal observed: clear the cursor and go done unless requests remain
+        try {
+          delete s.liveTurn;
+          deps.store.save(s);
+        } catch { /* best-effort */ }
+        setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+      } else if ((deps.isAlive === undefined || live.pid === undefined || !deps.isAlive(live.pid)) && ingestedAny) {
+        // verified process death with the observer caught up (iterator drained): done unless requests remain
+        try {
+          delete s.liveTurn;
+          deps.store.save(s);
+        } catch { /* best-effort */ }
+        setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+      }
+      // else: still running or budget exhausted — keep the last known status
+    }
   };
 
   // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
@@ -2482,12 +2605,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         clearInterval(activeTimer);
         activeTimer = undefined;
       }
+      if (observerTimer !== undefined) {
+        clearInterval(observerTimer);
+        observerTimer = undefined;
+      }
     });
     channel.onMessage(handleMessage);
     channel.setHtml(renderShell());
     postInitialState();
     postActive();
     startActiveTimer();
+    startObserverTimer();
+    void observeDetached(); // one immediate pass on attach
   };
 
   return {

@@ -8,7 +8,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createSessionOutput, parseMarker, SegmentGone, type SegmentCursor } from '../session-output.js';
@@ -217,4 +217,43 @@ test("remove deletes a session's files; sweep removes old files of sessions not 
   await out.remove('never-existed');
   clock += 1;
   await createSessionOutput({ root: join(dir, 'missing') }).sweep({ olderThanMs: 1, keep: new Set() });
+});
+
+test('E202611031bd72813:S001 t5: a registered cursor pins its generation across rollover (archived, not discarded); unregister drops it; oldestRetainedGeneration reflects it', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'out-t5-')), 'out');
+  const so = createSessionOutput({ root, maxBytes: 1, pollMs: 5 }); // tiny cap: every beginTurn rolls over
+  const seg1 = await so.beginTurn('s1', 't1');
+  const p = { current: `${root}/s1.ndjson`, previous: `${root}/s1.1.ndjson` };
+  // pin generation 1 (the current file's generation)
+  so.registerCursor(seg1.cursor);
+  assert.equal(await so.oldestRetainedGeneration('s1'), 1);
+  // write a line into gen 1, then start a second turn: rollover must archive gen 1, not discard it
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  const seg2 = await so.beginTurn('s1', 't2');
+  assert.notEqual(seg2.cursor.generation, seg1.cursor.generation, 'rolled over to a new generation');
+  // the pinned generation is still readable from the tail (no SegmentGone), even after a SECOND
+  // rollover that would normally discard it
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  const seg3 = await so.beginTurn('s1', 't3');
+  let threw = false;
+  for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    threw = e instanceof SegmentGone;
+  }
+  assert.equal(threw, false, 'the pinned generation survived a second rollover (archived, readable)');
+  assert.equal(await so.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldest retained is the pinned one');
+  // unregister: the archive is dropped
+  so.unregisterCursor(seg1.cursor);
+  await new Promise((r) => setTimeout(r, 20));
+  let gone = false;
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    gone = e instanceof SegmentGone;
+  }
+  assert.ok(gone, 'after unregister the archived generation is gone (SegmentGone)');
+  await so.remove('s1');
+  rmSync(root, { recursive: true, force: true });
 });

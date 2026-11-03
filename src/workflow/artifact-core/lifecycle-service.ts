@@ -193,13 +193,16 @@ export class LifecycleService {
 
 	/**
 	 * The status of a head and whether it and its log agree (the full check, against the last revision-bearing entry);
-	 * undefined when there is no head.
+	 * undefined when there is no head. With `adoptable`, a head that apply would adopt (see adoptionOf) counts as agreeing.
 	 */
-	async inspect(id: string): Promise<{ readonly status: Status; readonly integrity: Integrity; readonly lifecycle: Lifecycle } | undefined> {
+	async inspect(id: string, opts: { readonly adoptable?: boolean | undefined } = {}): Promise<{ readonly status: Status; readonly integrity: Integrity; readonly lifecycle: Lifecycle } | undefined> {
 		try {
 			await this.deps.store.finishPending(id);
 			const stored = await this.deps.store.readWithHistory(id);
-			const integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, stored.changeLog);
+			let integrity = checkIntegrity({ description: stored.description, payload: stored.payload, lifecycle: stored.lifecycle }, stored.changeLog);
+			// For a caller that is about to approve, review or complete: a head a raw writer moved past its log is not a conflict,
+			// because apply logs it first. Nothing is logged here; a reader that does not ask keeps the strict answer.
+			if (opts.adoptable === true && !integrity.ok && integrity.reason === 'head-ahead-of-log' && this.adoptionOf(stored, stored.changeLog) !== undefined) integrity = { ok: true };
 			return { status: stored.lifecycle.status, integrity, lifecycle: stored.lifecycle };
 		} catch (err) {
 			if (err instanceof ArtifactNotFoundError) return undefined;
@@ -246,10 +249,15 @@ export class LifecycleService {
 		const tail = [...changeLog].reverse().find(e => e.revision !== undefined);
 		const revision = head.lifecycle.revision;
 		if (tail?.revision === undefined || tail.revision.contentHash === revision.contentHash) return undefined;
+		// The log is ordered by timestamp, then id, and the operation is stamped after this call: so the entry is dated a
+		// millisecond before now but never before the entry it follows, and its id sorts ahead of any other entry of the same instant.
+		const now = Date.parse(this.at());
+		const after = Date.parse(tail.timestamp);
+		const timestamp = new Date(Number.isNaN(after) ? now : Math.max(after + 1, now - 1)).toISOString();
 		return {
-			id: randomUUID().replace(/-/g, ''),
+			id: `0000${randomUUID().replace(/-/g, '').slice(4)}`,
 			actor: SYSTEM_ACTOR,
-			timestamp: this.at(),
+			timestamp,
 			operation: 'update',
 			revision: { number: revision.number, contentHash: revision.contentHash },
 			outcome: { result: 'adopted', summary: 'a content change written outside the store was logged when the head was approved, reviewed or completed' },

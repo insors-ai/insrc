@@ -630,7 +630,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const id = artifactIdOf(jsonPath);
 	const actor = opts.actor ?? GATE_ACTOR;
 	// A head that is out of step with its change log, or whose stored hash no longer matches its content, is not approved: a person has to resolve it first.
-	const seen = await lifecycle.inspect(id);
+	const seen = await lifecycle.inspect(id, { adoptable: true });
 	if (seen !== undefined && !seen.integrity.ok) throw new LifecycleConflictError(id, seen.integrity.reason);
 	// Team gate: in a team repo a stage held by someone else is not approved here. Refused before any
 	// review check or approval; a repo with no policy is untouched.
@@ -953,7 +953,7 @@ export async function approveWorkflowTarget(
 	const actor = req.actor ?? GATE_ACTOR;
 	/** The head and its change log must agree before a BUILD record is touched or anything is approved. */
 	const refuseLogConflict = async (jsonPath: string): Promise<boolean> => {
-		const seen = await lifecycle.inspect(artifactIdOf(jsonPath));
+		const seen = await lifecycle.inspect(artifactIdOf(jsonPath), { adoptable: true });
 		if (seen === undefined || seen.integrity.ok) return false;
 		skipped.push({ path: jsonPath, reason: new LifecycleConflictError(artifactIdOf(jsonPath), seen.integrity.reason).message });
 		return true;

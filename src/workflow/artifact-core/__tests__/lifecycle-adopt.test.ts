@@ -164,6 +164,22 @@ describe('LifecycleService adopts a raw content write', () => {
 		} finally { k.done(); }
 	});
 
+	it('inspect answers the strict integrity unless the caller is about to approve and asks for adoptable, and logs nothing either way', async () => {
+		const k = kit();
+		try {
+			const id = await seeded(k, 1);
+			const byHand = await seeded(k, 2);
+			rawEdit(k, id, 'a raw redraft');
+			const head = JSON.parse(bytesOf(k, byHand)); head.meta.lifecycle.revision.number = 5; writeFileSync(artifactJsonPath(k.repo, byHand), JSON.stringify(head, null, 2) + '\n');
+			const svc = service(k, stubEvidence([]));
+			const before = (await logOf(k, id)).length;
+			assert.deepEqual((await svc.inspect(id))?.integrity, { ok: false, reason: 'head-ahead-of-log' });
+			assert.deepEqual((await svc.inspect(id, { adoptable: true }))?.integrity, { ok: true });
+			assert.deepEqual((await svc.inspect(byHand, { adoptable: true }))?.integrity, { ok: false, reason: 'head-ahead-of-log' }, 'a number raised by hand is not adoptable');
+			assert.equal((await logOf(k, id)).length, before, 'inspect logs nothing');
+		} finally { k.done(); }
+	});
+
 	it('a Story completed with a member that has a raw content write follows the same rule', async () => {
 		const k = kit();
 		const stuck = kit();

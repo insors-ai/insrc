@@ -487,6 +487,11 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			return handleTrackerSetup(params, repoSettingsHandlers['repo.trackerConfig.ensure']!);
 		},
 
+		// Story 9ac84abac177b399/s1: install, remove and report the git hooks that refresh the tracker status for git run outside the daemon.
+		'repo.gitHooks.install': async (params) => gitHooks.handlers['repo.gitHooks.install']!(params),
+		'repo.gitHooks.uninstall': async (params) => gitHooks.handlers['repo.gitHooks.uninstall']!(params),
+		'repo.gitHooks.status': async (params) => gitHooks.handlers['repo.gitHooks.status']!(params),
+
 		// s9: convert the repository's artifacts to the current schema (a preview unless mode is 'apply'). Exempt from the schema gate.
 		'repo.convert': async (params) => {
 			const { handleRepoConvert } = await import('./repo-convert.js');
@@ -1270,7 +1275,6 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		// Repo-scoped tracker settings (Story s3): the daemon is the only writer of
 		// ~/.insrc/github.json, so every client edits it through these methods.
 		...repoSettingsHandlers,
-		...gitHooks.handlers,
 
 		// docgen: generate a self-contained HTML document from the code graph
 		// (Epic 870ed3dd, s1 · t7). The IPC method + the docgen_generate tool +

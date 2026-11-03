@@ -70,7 +70,7 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  if(attempt.recovery)progress.recovery=structuredClone(attempt.recovery);
  else if(progress.status==='interrupted')progress.recovery={attempt:attempt.number,status:'interrupted',reason:'daemon_restarted',completedChunkIds:attempt.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
  const completedResults=options.includeResult?attempt.completedChunks.slice(cursor,cursor+1):[];
- const report=attempt.report;
+ const report=['passed','changes_requested','incomplete'].includes(progress.status)?attempt.report:undefined;
  progress.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(progress.status);
  const guidance=['pending','running'].includes(progress.status)?'Review in progress. Show progress and wait for full completion before corrections, resolution or approval.':progress.requiresUserInput?'Review stopped. Await user input; S1 does not automatically retry, resume or reassign.':'Review complete. Read all completed feedback before taking action; checkpoint feedback alone does not approve the artifact.';
  return {...progress,guidance,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};

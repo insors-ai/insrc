@@ -18,6 +18,8 @@ import { designPlanningPrompt, designChunkPrompt } from './policy.js';
 import { validateDesignPlan, assessDesignResult, consolidateDesignReview } from './results.js';
 import { nextDesignUnit, reserveDesignUnit, sealDesignUnit } from './recovery-state.js';
 import { designTechnicalFailure, recordDesignFailure, finishDirectedExecution } from './technical-failure.js';
+import { DesignSubjectMonitor } from './subject-monitor.js';
+import type { DesignSubjectMonitorDeps } from './subject-monitor.js';
 
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
@@ -32,6 +34,7 @@ export interface DesignCoordinatorDeps {
  readonly save?:typeof saveDesignCheckpoint;
  readonly load?:typeof loadDesignCheckpoint;
  readonly activity?:ReviewActivityMonitorDeps|undefined;
+ readonly subjectMonitor?:DesignSubjectMonitorDeps|undefined;
 }
 export interface DesignControllerOwner { readonly id:string; readonly signal:AbortSignal; }
 export interface DesignStartContext { readonly provider?:(()=>DesignProvider)|undefined; readonly owner?:DesignControllerOwner|undefined; }
@@ -49,6 +52,7 @@ interface DesignJob {
  closed:boolean; owner?:DesignControllerOwner|undefined; controller?:ControllerUnit|undefined; disconnect?:(()=>void)|undefined;
  reservedExecutionId?:string|undefined;
  unitAbort?:AbortController|undefined;
+ subjectMonitor?:DesignSubjectMonitor|undefined; invalidation?:Promise<void>|undefined;
 }
 /** Main-daemon owner. Request disconnection is deliberately not an execution signal. */
 export class DesignReviewCoordinator {
@@ -90,6 +94,7 @@ export class DesignReviewCoordinator {
   const job:DesignJob={checkpoint,tracker,abort:new AbortController(),serial:Promise.resolve(),done:Promise.resolve(),closed:false,owner:subject.reviewer==='controller'?context.owner:undefined,reservedExecutionId,
    providerFactory:context.provider??(()=>{const descriptor=this.deps.provider?.(subject);requireDesign(descriptor,'missing_provider','Review provider unavailable');return descriptor;})};
   this.jobs.set(key,job);
+  job.subjectMonitor=new DesignSubjectMonitor(subject,currentDesignAttempt(checkpoint).baseline,error=>this.invalidate(job,error),this.deps.subjectMonitor);
   if(job.owner){
    job.disconnect=()=>{const error=new DesignReviewError('controller_disconnected','Reviewing controller disconnected');job.abort.abort(error);job.controller?.reject(error);for(const [id,replay] of this.replays)if(replay.owner.id===job.owner!.id)this.replays.delete(id);};
    job.owner.signal.addEventListener('abort',job.disconnect,{once:true});if(job.owner.signal.aborted)job.disconnect();
@@ -184,14 +189,29 @@ export class DesignReviewCoordinator {
   const live=!!job&&currentDesignAttempt(checkpoint).number===attempt;
   const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.slice(0,attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});
   const uncertain=attempt===currentDesignAttempt(checkpoint).number&&this.uncertain.get(key);
-  return uncertain?{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain}:view;
+  if(uncertain)return{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain};
+  const reason=live&&job.abort.signal.reason;
+  if(reason instanceof DesignReviewError&&reason.code==='artifact_changed')return{...view,status:'invalidated',phase:'complete',requiresUserInput:true,failure:{code:reason.code,summary:reason.message},report:undefined};
+  return view;
+ }
+ private invalidate(job:DesignJob,cause:unknown):void{
+  if(job.closed||job.invalidation)return;
+  const error=cause instanceof DesignReviewError?cause:new DesignReviewError('artifact_changed','Reviewed artifact changed');
+  job.abort.abort(error);job.unitAbort?.abort(error);job.controller?.reject(error);job.controller?.fail(error);job.tracker.status('invalidated');this.stopProgress(job);job.subjectMonitor?.stop();
+  job.invalidation=this.commit(job,a=>{a.status='invalidated';a.failure={code:'artifact_changed',summary:error.message};a.finishedAt=new Date().toISOString();a.recovery={attempt:a.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:a.completedChunks.map(c=>c.chunkId),requiresUserInput:true};finishDirectedExecution(a,'artifact_changed',error.message);delete a.current;},'failure').catch(saveError=>{
+   job.storageError=saveError;this.uncertain.set(this.key(job.checkpoint.project,job.checkpoint.reviewId),{code:'persistence_failed',summary:'Subject changed but durable invalidation could not be saved'});
+  });
  }
  private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void,kind:'execution'|'failure'='execution'):Promise<void>{
   const work=job.serial.catch(()=>{}).then(async()=>{
-   if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;}
+   if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}catch(error){this.invalidate(job,error);throw error;}}
    const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);attempt.progress=job.tracker.snapshot();
    try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){if(error instanceof DesignReviewError)throw error;throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
+   if(kind==='execution'){
+    try{assertDesignSubjectUnchanged(next.subject,attempt.baseline);}catch(error){this.invalidate(job,error);throw error;}
+    if(job.abort.signal.aborted)throw job.abort.signal.reason;
+   }
   });job.serial=work;return work;
  }
  private stopProgress(job:DesignJob):void{if(job.progressTimer)clearTimeout(job.progressTimer);job.progressTimer=undefined;}
@@ -270,7 +290,7 @@ export class DesignReviewCoordinator {
  }
  private checkControllerSubject(job:DesignJob):void{
   try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}
-  catch(error){job.abort.abort(error);job.controller?.reject(error);throw error;}
+  catch(error){this.invalidate(job,error);throw error;}
  }
  /** Only a connection identity supplied by the IPC host grants reviewer authority. */
  async exchange(input:unknown,owner:DesignControllerOwner):Promise<unknown>{
@@ -284,7 +304,7 @@ export class DesignReviewCoordinator {
    if(replay){requireDesign(replay.owner.id===owner.id,'wrong_owner','Not the reviewing connection');requireDesign(replay.signature===signature,'review_conflict','Conflicting response replay');await replay.completion;return{accepted:true};}
   }
   requireDesign(job?.owner?.id===owner.id,'wrong_owner','Not the reviewing connection');
-  requireDesign(!job.abort.signal.aborted,'review_stopped','Review execution has stopped');
+  if(job.abort.signal.aborted)throw job.abort.signal.reason??new DesignReviewError('review_stopped','Review execution has stopped');
   requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
   const unit=job.controller;
   if(request.phase==='assignment'){this.checkControllerSubject(job);return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};}
@@ -321,6 +341,7 @@ export class DesignReviewCoordinator {
  private async execute(job:DesignJob):Promise<void>{
   const key=this.key(job.checkpoint.project,job.checkpoint.reviewId);
   try{
+   if(job.abort.signal.aborted)throw job.abort.signal.reason;
    let provider:LLMProvider|undefined;
    if(!job.owner&&nextDesignUnit(currentDesignAttempt(job.checkpoint))){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
    let plan=currentDesignAttempt(job.checkpoint).plan;
@@ -341,6 +362,7 @@ export class DesignReviewCoordinator {
    job.tracker.status(report.status);
    await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();delete a.current;});
   }catch(error){
+   if(job.invalidation){await job.invalidation;return;}
    job.abort.abort(error);job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
    const issues=error instanceof ReviewOutputFailureError?error.diagnostic.issues.map(issue=>`${issue.code} ${issue.field}: ${issue.correction}`).join('; '):'';
    const summary=[error instanceof Error?error.message:'Design review failed',issues].filter(Boolean).join('; ').slice(0,DESIGN_LIMITS.text);
@@ -349,7 +371,7 @@ export class DesignReviewCoordinator {
    catch{this.uncertain.set(key,{code:'persistence_failed',summary:`Terminal result could not be persisted: ${summary}`.slice(0,DESIGN_LIMITS.text)});}
    log.warn({reviewId:job.checkpoint.reviewId,code},'Design review stopped');
   }finally{
-   job.closed=true;job.controller?.monitor.stop();this.stopProgress(job);await job.serial.catch(()=>{});
+   job.closed=true;job.controller?.monitor.stop();job.subjectMonitor?.stop();this.stopProgress(job);await job.serial.catch(()=>{});
    if(job.owner&&job.disconnect)job.owner.signal.removeEventListener('abort',job.disconnect);
    this.jobs.delete(key);if(this.subjects.get(this.subjectKey(job.checkpoint.subject))===key)this.subjects.delete(this.subjectKey(job.checkpoint.subject));
   }

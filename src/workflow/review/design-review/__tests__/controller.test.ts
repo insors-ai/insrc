@@ -88,7 +88,8 @@ test('observed controller subject changes invalidate every exchange boundary and
   }
   const original=readFileSync(x.f.md,'utf8');appendFileSync(x.f.md,'\nChanged during review');
   const request=phase==='assignment'?{phase,...x.base}:phase==='activity'?{phase,...x.base,executionId:a.executionId,sequence:1,event:{sessionId:'session',sequence:1,kind:'session_started'}}:phase==='plan'?{phase,...x.base,executionId:a.executionId,sequence:1,plan:x.plan}:{phase,...x.base,executionId:a.executionId,sequence:1,result:x.result('content')};
-  await assert.rejects(x.c.exchange(request,x.owner),(error:unknown)=>!!error&&typeof error==='object'&&'code' in error&&error.code==='artifact_changed');
+  // The asynchronous subject monitor may already have retired the owner before this boundary executes.
+  await assert.rejects(x.c.exchange(request,x.owner),(error:unknown)=>!!error&&typeof error==='object'&&'code' in error&&['artifact_changed','wrong_owner'].includes(String(error.code)));
   writeFileSync(x.f.md,original);await assert.rejects(x.c.exchange(request,x.owner));
   for(let i=0;i<100;i++){if((await x.c.progress(x.f.repo,'review-1',1)).status==='invalidated')break;await pause(5);}
   const view=await x.c.progress(x.f.repo,'review-1',1);assert.equal(view.status,'invalidated',phase);assert.equal(view.requiresUserInput,true);assert.equal(view.completedChunks,0);assert.equal(view.failure?.code,'artifact_changed');x.abort.abort();

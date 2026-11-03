@@ -97,6 +97,8 @@ export interface GithubEntry {
 	readonly ghHost?:       string;
 	/** Branch naming pattern. Stored and shown only; consumed later by the handoff story (s6). */
 	readonly branchPattern?: string;
+	/** Whether the daemon installed the git hooks that refresh the tracker status for git run outside it (default false). Set by repo.gitHooks.install and uninstall. */
+	readonly gitHooks?: boolean;
 }
 
 export interface GithubConfigFile {

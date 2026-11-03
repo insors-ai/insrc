@@ -136,7 +136,7 @@ test('the modal lists payload rows, edits local rows only and shows an error mes
 	const rows = buildSettingsRows(REPO_TRACKER_FIELDS, PAYLOAD);
 	assert.deepEqual(rows.map(r => r.key), REPO_TRACKER_FIELDS.map(r => r.key));
 	assert.deepEqual(rows.map(r => r.label), REPO_TRACKER_FIELDS.map(r => r.label));
-	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern']);
+	assert.deepEqual(rows.filter(r => r.editable).map(r => r.key), ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']);
 	const byKey = Object.fromEntries(rows.map(r => [r.key, r]));
 	assert.equal(byKey['ghHost']?.value, 'ghe.example.com');
 	assert.equal(byKey['ghPath']?.value, '(not set)');

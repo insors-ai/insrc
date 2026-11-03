@@ -91,6 +91,15 @@
       "kind": "status"
     },
     {
+      "key": "gitHooks",
+      "label": "Git hooks",
+      "type": "boolean",
+      "default": false,
+      "description": "Whether git hooks in this repo ask the daemon to refresh the tracker status after git run outside the daemon. Set by installing or removing the hooks.",
+      "group": "Tracker",
+      "kind": "local"
+    },
+    {
       "key": "target",
       "label": "Resolved target",
       "type": "string",

@@ -87,12 +87,17 @@ export const REPO_TRACKER_FIELDS: readonly RepoFieldDef[] = [
 		},
 	},
 	{ key: 'signin', label: 'Sign-in', type: 'string', description: 'Who gh is signed in as, read live.', group: 'Tracker', kind: 'status' },
+	{
+		key: 'gitHooks', label: 'Git hooks', type: 'boolean', default: false,
+		description: 'Whether git hooks in this repo ask the daemon to refresh the tracker status after git run outside the daemon. Set by installing or removing the hooks.',
+		group: 'Tracker', kind: 'local',
+	},
 	{ key: 'target', label: 'Resolved target', type: 'string', description: 'The owner and repository the tracker calls go to, and where that came from.', group: 'Tracker', kind: 'status' },
 	...POLICY_ROWS,
 ];
 
 // Compile-time: every local key is a GithubEntry field.
-const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern'] as const satisfies readonly (keyof GithubEntry)[];
+const _localKeys = ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks'] as const satisfies readonly (keyof GithubEntry)[];
 void _localKeys;
 
 // ---------------------------------------------------------------------------

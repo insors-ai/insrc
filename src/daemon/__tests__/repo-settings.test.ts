@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { createRepoSettingsHandlers, mapSignin } from '../repo-settings.js';
+import { REPO_TRACKER_FIELDS, validateRepoSetting } from '../../config/repo-fields.js';
 import type { RepoSettingsDeps, RepoSettingsPayload, SettingsResult } from '../repo-settings.js';
 import { IpcServer, directDispatch } from '../server.js';
 import { rpc } from '../../shared/ipc-client.js';
@@ -404,4 +405,33 @@ test('ensure writes the five keys once and concurrent sets both land', async () 
 			assert.equal(again.repos[REPO]?.['pushTasks'], true, 'keys the settings do not touch are kept');
 		} finally { await new Promise<void>(r => server.close(() => r())); rmSync(sockDir, { recursive: true, force: true }); }
 	} finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test('the gitHooks setting reads false when absent, is validated as a boolean and round-trips through github.json', async () => {
+	const row = REPO_TRACKER_FIELDS.find(r => r.key === 'gitHooks');
+	assert.ok(row !== undefined && row.type === 'boolean' && row.default === false && row.kind === 'local', 'a local boolean row that defaults to false');
+	assert.deepEqual(validateRepoSetting('gitHooks', true), { ok: true, value: true });
+	assert.deepEqual(validateRepoSetting('gitHooks', false), { ok: true, value: false });
+	assert.equal(validateRepoSetting('gitHooks', 'yes').ok, false);
+	assert.equal(validateRepoSetting('gitHooks', 1).ok, false);
+
+	const f = fixture({ file: JSON.stringify({ repos: { [REPO]: { type: 'github', owner: 'o', repo: 'r' } } }) });
+	try {
+		// absent: the entry has no key, so the repository's own values do not list it (the row's default, false, applies)
+		assert.equal(Object.hasOwn(payloadOf(await f.call('repo.settings.get', { repo: REPO })).values, 'gitHooks'), false);
+
+		const set = payloadOf(await f.call('repo.settings.set', { repo: REPO, key: 'gitHooks', value: true }));
+		assert.equal(set.values['gitHooks'], true);
+		const written = JSON.parse(readFileSync(f.path, 'utf8')) as Record<string, any>;
+		assert.deepEqual(written['repos'][REPO], { type: 'github', owner: 'o', repo: 'r', gitHooks: true }, 'the key is written beside the others, which are kept');
+		assert.equal(payloadOf(await f.call('repo.settings.get', { repo: REPO })).values['gitHooks'], true);
+
+		// a value that is not a boolean is refused and writes nothing
+		const refused = await f.call('repo.settings.set', { repo: REPO, key: 'gitHooks', value: 'on' });
+		assert.equal(refused.ok, false);
+		assert.deepEqual((JSON.parse(readFileSync(f.path, 'utf8')) as Record<string, any>)['repos'][REPO]['gitHooks'], true);
+
+		await f.call('repo.settings.set', { repo: REPO, key: 'gitHooks', value: false });
+		assert.equal(payloadOf(await f.call('repo.settings.get', { repo: REPO })).values['gitHooks'], false);
+	} finally { f.cleanup(); }
 });

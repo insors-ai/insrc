@@ -19,8 +19,8 @@ test('table keys, kinds, GithubEntry fields and one policy row per TeamPolicy ru
 	}
 
 	const local = REPO_TRACKER_FIELDS.filter(r => r.kind === 'local').map(r => r.key);
-	assert.deepEqual(local, ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern']);
-	const sample: Record<string, unknown> = { type: 'github', owner: 'o', repo: 'r', ghPath: 'p', ghHost: 'h', branchPattern: 'b' };
+	assert.deepEqual(local, ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']);
+	const sample: Record<string, unknown> = { type: 'github', owner: 'o', repo: 'r', ghPath: 'p', ghHost: 'h', branchPattern: 'b', gitHooks: true };
 	assert.deepEqual(Object.keys(sample).sort(), [...local].sort());
 
 	// One policy row per rule of a real TeamPolicy value (every key except its provenance).
@@ -141,7 +141,7 @@ test('validateRepoSetting per row for type, owner, repo, ghPath and ghHost', () 
 	}
 
 	// null clears any local row.
-	for (const key of ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern']) {
+	for (const key of ['type', 'owner', 'repo', 'ghPath', 'ghHost', 'branchPattern', 'gitHooks']) {
 		assert.deepEqual(validateRepoSetting(key, null), { ok: true, value: null }, key);
 	}
 

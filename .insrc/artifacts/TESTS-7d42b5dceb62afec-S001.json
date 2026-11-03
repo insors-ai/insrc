@@ -4,7 +4,7 @@
     "epicHash": "7d42b5dceb62afec",
     "storyId": "S001",
     "createdAt": "2026-11-03T14:34:09.725Z",
-    "updatedAt": "2026-11-03T14:39:01.676Z",
+    "updatedAt": "2026-11-03T14:55:18.938Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.745Z",
     "epicSlug": "subsystem-pass-regroups-whole-repository-after"
@@ -74,6 +74,76 @@
               },
               {
                 "title": "S001 t1: a record entry is consumed only while its stamp is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "577df4ff8",
+        "ranAt": "2026-11-03T14:55:18.938Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+                "title": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/subsystem-incremental.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2444,
+            "titles": [
+              {
+                "title": "S001 t2: after each edit in the sequence the incremental pass stores what a forced full pass stores, and a comment-only edit is unchanged with one file read",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: an unchanged importer stays correct while its target gains, loses and regains code entities",
+                "result": "pass"
+              },
+              {
+                "title": "S001 t2: the first pass in a process and the first after a full index are full, including after an isolated file vanished without a watcher event",
                 "result": "pass"
               }
             ],

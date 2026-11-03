@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T18:25:42.152Z",
+    "updatedAt": "2026-11-03T19:06:12.399Z",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
   },
@@ -2481,6 +2481,54 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "3d675e1b8",
+        "ranAt": "2026-11-03T19:06:12.399Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "store-macos-apfs-linux-ext4-qualification",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/shared/__tests__/project-memory-platform-evidence.test.ts",
+                "title": "store-macos-apfs-linux-ext4-production-evidence-matches-current-source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "final-source-package-and-backend-full-sweep-and-evidence-handoff",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "fail",
+              "evidence": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md; t17-backend-results.json; unchanged t17-source-before.json / t17-source-after.json; commit 3d675e1b8"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/shared/__tests__/project-memory-platform-evidence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 656,
+            "titles": [
+              {
+                "title": "store-macos-apfs-linux-ext4-production-evidence-matches-current-source",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "reported as failed by the builder: final-source-package-and-backend-full-sweep-and-evidence-handoff"
       }
     ]
   }

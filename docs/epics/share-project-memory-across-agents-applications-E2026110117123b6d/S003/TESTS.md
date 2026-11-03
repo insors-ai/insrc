@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 152 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 153 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -653,3 +653,25 @@ Run at 2026-11-03T18:25:42.152Z on commit `107b8526f`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/shared/__tests__/project-memory-resource-evidence.test.ts` | 0 | 1 | 0.6 s |  |
+
+## t17
+
+Run at 2026-11-03T19:06:12.399Z on commit `3d675e1b8`. Tests check: **failed**. 1 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+reported as failed by the builder: final-source-package-and-backend-full-sweep-and-evidence-handoff
+
+**smoke: store-macos-apfs-linux-ext4-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-macos-apfs-linux-ext4-production-evidence-matches-current-source | `src/shared/__tests__/project-memory-platform-evidence.test.ts` |
+
+**smoke: final-source-package-and-backend-full-sweep-and-evidence-handoff**
+
+Reported by the builder, not run by the gate: **fail**. Evidence: docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md; t17-backend-results.json; unchanged t17-source-before.json / t17-source-after.json; commit 3d675e1b8
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/project-memory-platform-evidence.test.ts` | 0 | 1 | 0.7 s |  |

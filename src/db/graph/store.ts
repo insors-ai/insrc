@@ -281,6 +281,10 @@ export interface GraphStore {
 	subsystem:           AnyDb;
 	/** Epic c2ba6fa6 s8: (repoId, repo-relative code file) -> subsystem id. */
 	subsystemByFile:     AnyDb;
+	/** ISSUE-7d42b5dc: (repoId, repo-relative file) -> change stamp: files whose grouping inputs changed since the subsystem pass read them. */
+	subsystemDirty:      AnyDb;
+	/** ISSUE-7d42b5dc: (repoId, repo-relative file) -> the file's file-graph contribution; (repoId, 0x00) -> the repository's reset counter. */
+	subsystemFile:       AnyDb;
 
 	// Plans
 	plan:                AnyDb;
@@ -654,6 +658,8 @@ export async function getGraphStore(): Promise<GraphStore> {
 			indexState:         open_('index_state'),
 			subsystem:          open_('subsystem'),
 			subsystemByFile:    open_('subsystem_by_file'),
+			subsystemDirty:     open_('subsystem_dirty'),
+			subsystemFile:      open_('subsystem_file'),
 
 			// Plans -- `plan` is utf8 id keyed; planStep keys are pre-
 			// encoded composite Buffers so binary is fine

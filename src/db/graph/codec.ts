@@ -298,6 +298,22 @@ export interface SubsystemRow {
 export const encodeSubsystemRow = (r: SubsystemRow): Buffer => encode(r);
 export const decodeSubsystemRow = (b: Buffer): SubsystemRow => decode(b);
 
+/** One file's outgoing edges to another file, as the subsystem pass weighs them (ISSUE-7d42b5dc). */
+export interface FileContributionEdge {
+	readonly to:     string;   // repo-relative file
+	readonly weight: number;
+	readonly kinds:  Readonly<Partial<Record<RelationKind, number>>>;
+}
+
+/** A row of the subsystem_file table: one file's code-entity count and its outgoing file-graph edges. */
+export interface FileContributionRow {
+	readonly entityCount: number;
+	readonly out:         readonly FileContributionEdge[];   // sorted by `to`
+}
+
+export const encodeFileContributionRow = (r: FileContributionRow): Buffer => encode(r);
+export const decodeFileContributionRow = (b: Buffer): FileContributionRow => decode(b);
+
 // ---------------------------------------------------------------------------
 // Plan + plan_step rows
 // ---------------------------------------------------------------------------

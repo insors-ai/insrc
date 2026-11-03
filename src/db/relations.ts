@@ -72,6 +72,7 @@ import { advanceGenerationInTxn, countUnwritableInTxn, movePendingInTxn, type Pe
 import { awaitingReasonOf, BOUNDARY_RELATION_KINDS, pendingClassOf } from './graph/pending-class.js';
 import { putExportNameInTxn } from './export-names.js';
 import { sqlFoldedText, sqlNameKey, sqlNamesMeet } from '../indexer/parser/sql-names.js';
+import { isGroupingKindByte, recordChangedEntityFileInTxn } from './subsystem-changes.js';
 
 const log = getLogger('db.relations');
 
@@ -167,7 +168,13 @@ export interface RelationWriteCounts {
  * as an edge, ONE pending row awaiting its target id, or a counted unwritable.
  * `relations` are expected deduplicated; the caller logs the counts.
  */
-export function upsertResolvedRelationsInTxn(s: GraphStore, relations: readonly Relation[], now: number = Date.now()): RelationWriteCounts {
+export function upsertResolvedRelationsInTxn(
+	s: GraphStore,
+	relations: readonly Relation[],
+	now: number = Date.now(),
+	/** recordSources false: the caller records the sources' file itself (the file commit). */
+	opts: { readonly recordSources?: boolean | undefined } = {},
+): RelationWriteCounts {
 	const counts: RelationWriteCounts = { stored: 0, pending: 0, unwritable: 0, refused: [] };
 	for (const r of relations) {
 		const kindByte = RELATION_KIND_BYTE[r.kind as InternalRelationKind];
@@ -187,6 +194,7 @@ export function upsertResolvedRelationsInTxn(s: GraphStore, relations: readonly 
 			continue;
 		}
 		putEdgeInTxn(s, fromU64, kindByte, toU64, r.evidence, r);
+		if (opts.recordSources !== false && isGroupingKindByte(kindByte)) recordChangedEntityFileInTxn(s, fromU64);
 		counts.stored++;
 	}
 	return counts;
@@ -241,6 +249,7 @@ export async function deleteResolvedRelations(
 			if (kindByte === undefined) continue;
 			s.outEdge.remove(encodeOutEdgeKey(fromU64, kindByte, toU64));
 			s.inEdge.remove(encodeInEdgeKey(toU64, kindByte, fromU64));
+			if (isGroupingKindByte(kindByte)) recordChangedEntityFileInTxn(s, fromU64);
 		}
 	});
 }
@@ -576,6 +585,7 @@ export async function promoteResolvedBatch(
 				continue;
 			}
 			putEdgeInTxn(s, fromU64, kindByte, toU64, evidence, { kind: unresolved.kind, from: unresolved.fromEntity, to: targetEntityId });
+			if (isGroupingKindByte(kindByte)) recordChangedEntityFileInTxn(s, fromU64);   // ISSUE-7d42b5dc
 			if (exportName !== undefined) putExportNameInTxn(s, fromU64, exportName, targetEntityId);
 			removePendingRowInTxn(s, unresolved.id);
 			if (repoId !== undefined) promotedRepos.add(repoId);
@@ -661,6 +671,7 @@ export async function returnInferredSqlReferencesToPending(
 				for (const row of rows) writePendingRowInTxn(s, row);
 				s.outEdge.remove(outKey);
 				s.inEdge.remove(encodeInEdgeKey(toU64, kindByte, fromU64));
+				recordChangedEntityFileInTxn(s, fromU64);   // ISSUE-7d42b5dc
 				repos.add(decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer).repoId);
 				returned++;
 			}

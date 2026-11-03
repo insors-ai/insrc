@@ -75,6 +75,7 @@ import {
 import { trackUnembeddedInTxn, updateIndexStateRowInTxn } from './graph/index-state-rows.js';
 import { loadLocalProviderConfig } from '../config/local.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
+import { isGroupingKindByte, recordChangedEntityFileInTxn, recordChangedFileInTxn, resetSubsystemInputsInTxn } from './subsystem-changes.js';
 
 const log = getLogger('db.entities');
 
@@ -577,6 +578,9 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 			throw new UnregisteredRepoError(repoPath);
 		}
 
+		// The file's outgoing edges and entities are rewritten: the subsystem pass recomputes it (ISSUE-7d42b5dc).
+		recordChangedFileInTxn(s, repoId, toRepoRelative(filePath, repoPath));
+
 		// 1. The file's existing entities, by its entity_by_file key.
 		const existing: bigint[] = [];
 		for (const u64Buf of s.entityByFile.getValues(encodeEntityByFileKey(repoId, toRepoRelative(filePath, repoPath)))) {
@@ -664,7 +668,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 
 		// 5. The file's new relationships, by Story s1's rule (edge / pending / counted unwritable).
 		const now = Date.now();
-		resolvedCounts = rel.upsertResolvedRelationsInTxn(s, resolved, now);
+		resolvedCounts = rel.upsertResolvedRelationsInTxn(s, resolved, now, { recordSources: false });   // the file is recorded above
 		unresolvedCounts = rel.upsertUnresolvedRelationsInTxn(s, unresolved, now);
 
 		// 6. The repository's index state, in the same transaction.
@@ -823,8 +827,9 @@ export async function deleteEntitiesForRepo(
 				}
 			}
 		}
-	});
-	// Its own transaction: detachDeleteEntities skips its hook when the repository has no entities left.
+	}, s => resetSubsystemInputsInTxn(s, repoId));   // after the removals, which record their files
+	// Its own transaction: detachDeleteEntities skips its hooks when the repository has no entities left.
+	if (ids.length === 0) await withWriteTxn(s => { resetSubsystemInputsInTxn(s, repoId); });
 	if (opts?.carryDocSummaries !== true) await withWriteTxn(s => { deleteCarriedDocSummariesInTxn(s, repoId); });
 	// Repo-scoped Lance cleanup: belt-and-suspenders alongside the
 	// per-id cleanup detachDeleteEntities does. Catches any rows whose
@@ -1352,6 +1357,8 @@ export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow)
 	s.entityByFile.remove(encodeEntityByFileKey(row.repoId, row.filePath), encodeEntityKey(u64));
 	s.entity.remove(encodeEntityKey(u64));
 	trackUnembeddedInTxn(s, row, null);
+	// The file lost an entity: the subsystem pass recomputes it (ISSUE-7d42b5dc), on every removal path.
+	recordChangedFileInTxn(s, row.repoId, row.filePath);
 }
 
 // GUARD-TEST-BOUNDARY: entity-row write path ends.
@@ -1451,7 +1458,7 @@ async function collectEntityU64sByRepo(store: GraphStore, repoId: number): Promi
  * Phase 2.3 edge API; for Phase 2.2 we do raw key-range scans on the
  * out_edge / in_edge sub-DBs.
  */
-async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], before?: (s: GraphStore) => void): Promise<void> {
+async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], before?: (s: GraphStore) => void, after?: (s: GraphStore) => void): Promise<void> {
 	if (u64s.length === 0) return;
 	// Capture string IDs BEFORE the delete (we lose the entity_id_by_string
 	// mapping inside the txn). After LMDB commits, drop the corresponding
@@ -1461,7 +1468,7 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], 
 		const sid = lookupStringIdByU64(store, u64);
 		if (sid !== undefined) stringIds.push(sid);
 	}
-	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); });
+	await withWriteTxn(s => { before?.(s); detachDeleteEntitiesInTxn(s, u64s); after?.(s); });
 	// As commitFile's removal (ISSUE-8c7d75b0): chunked, under the vector lock,
 	// and a failure is logged, not thrown -- the graph change stands, a later add
 	// of these ids deletes any row first, and the start-time reconciliation
@@ -1554,6 +1561,8 @@ function incomingEdgesInTxn(s: GraphStore, u64: bigint): Array<{ kind: number; f
 
 function sweepIncomingEdges(s: GraphStore, u64: bigint): void {
 	for (const { kind, from } of incomingEdgesInTxn(s, u64)) {
+		// The holder's file loses an outgoing edge (ISSUE-7d42b5dc).
+		if (isGroupingKindByte(kind)) recordChangedEntityFileInTxn(s, from);
 		const inKey = Buffer.alloc(17);
 		inKey.writeBigUInt64BE(u64, 0);
 		inKey.writeUInt8(kind, 8);

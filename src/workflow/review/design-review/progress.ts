@@ -57,6 +57,7 @@ export interface DesignObservation extends DesignReviewProgress {
  readonly completedResults: readonly DesignChunkResult[];
  readonly nextCompletedChunk:number;
  readonly report?:DesignReportMetadata|undefined;
+ readonly failure?:{readonly code:string;readonly summary:string}|undefined;
 }
 export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,options:{active?:boolean|undefined;liveProgress?:DesignReviewProgress|undefined;afterCompletedChunk?:number|undefined;includeResult?:boolean|undefined}={}):DesignObservation{
  const attempt=currentDesignAttempt(checkpoint),cursor=options.afterCompletedChunk??0;
@@ -67,5 +68,5 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  progress.completedChunks=attempt.completedChunks.length;progress.totalChunks=attempt.plan?.chunks.length??0;
  const completedResults=options.includeResult?attempt.completedChunks.slice(cursor,cursor+1):[];
  const report=attempt.report;
- return {...progress,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
+ return {...progress,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
 }

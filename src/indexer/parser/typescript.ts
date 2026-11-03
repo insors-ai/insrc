@@ -117,6 +117,7 @@ class TypeScriptParser implements CodeParser {
     // S004 (t2): messaging detection is import-gated for every language — a file
     // is scanned for pub/sub call-sites only when it imports a messaging library.
     messagingEnabled = fileImportsMessagingLibrary(lang, collectTsImportSpecifiers(source));
+    fileImportBindings = collectImportBindings(tree.rootNode);   // ISSUE-1ad687e6: per file
 
     const entities:  Entity[]   = [];
     const relations: Relation[] = [];
@@ -743,7 +744,22 @@ function extractCalls(
   // resolved to their NEAREST lexical scope. axiosScopes is a stack of per-scope
   // frames (innermost last); it is seeded with THIS body's frame and grows/shrinks
   // as walkForCalls descends into / leaves nested function/arrow/method scopes.
-  const axiosScopes: AxiosScope[] = [collectScopeFrame(bodyNode)];
+  // ISSUE-1ad687e6: the file's import bindings are the outermost frame, so a
+  // receiver named by an import is a user object unless a nearer scope shadows it.
+  // The body's frame also holds the enclosing function's parameters, which
+  // collectScopeFrame reads only from the function node itself.
+  const bodyFrame = collectScopeFrame(bodyNode);
+  const fn = bodyNode.parent;
+  if (fn && !SCOPE_NODE_TYPES.has(bodyNode.type) && SCOPE_NODE_TYPES.has(fn.type)) {
+    for (const field of ['parameters', 'parameter']) {
+      const bound = fn.childForFieldName(field);
+      if (bound) collectPatternIdentifiers(bound, bodyFrame.declared);
+    }
+  }
+  const axiosScopes: AxiosScope[] = [
+    { declared: fileImportBindings, axios: new Set(), user: fileImportBindings },
+    bodyFrame,
+  ];
   walkForCalls(bodyNode, callerId, repo, filePath, relations, seen, axiosScopes, skip);
 }
 
@@ -854,7 +870,9 @@ function collectPatternIdentifiers(node: SyntaxNode, out: Set<string>): void {
  *  - `axios`: the subset whose initializer is `axios.create(...)`.
  *  A receiver is proven-axios iff the nearest frame that `declared` it also has
  *  it in `axios`; a nearer non-axios declaration shadows an outer proof. */
-interface AxiosScope { declared: Set<string>; axios: Set<string>; }
+/** One lexical scope's bindings: every name it declares, those proven axios
+ *  instances, and those proven user objects (ISSUE-1ad687e6). */
+interface AxiosScope { declared: Set<string>; axios: Set<string>; user: Set<string>; }
 
 /** Build the AxiosScope frame for ONE lexical scope: scan its direct
  *  `variable_declarator`s, stopping at nested function/arrow/method boundaries
@@ -889,7 +907,7 @@ function collectScopeFrame(scope: SyntaxNode): AxiosScope {
     }
     for (const c of n.namedChildren) stack.push(c);
   }
-  return { declared, axios };
+  return { declared, axios, user: new Set() };
 }
 
 /** Resolve a receiver name against the lexical scope stack: the nearest frame
@@ -901,6 +919,44 @@ function isProvenAxios(recv: string, axiosScopes: AxiosScope[]): boolean {
     if (frame.declared.has(recv)) return frame.axios.has(recv);
   }
   return false;
+}
+
+/** Whether a receiver name is proven a user object (ISSUE-1ad687e6): the nearest
+ *  frame that declares it decides, so a local or parameter shadows an import. */
+function isProvenUser(recv: string, scopes: AxiosScope[]): boolean {
+  for (let i = scopes.length - 1; i >= 0; i--) {
+    const frame = scopes[i]!;
+    if (frame.declared.has(recv)) return frame.user.has(recv);
+  }
+  return false;
+}
+
+/** ISSUE-1ad687e6: the local names the file's import statements bind (default,
+ *  namespace and named, an alias when one is given). Set per file in parse(),
+ *  like messagingEnabled. */
+let fileImportBindings: Set<string> = new Set();
+
+function collectImportBindings(root: SyntaxNode): Set<string> {
+  const names = new Set<string>();
+  for (const stmt of root.namedChildren) {
+    if (stmt.type !== 'import_statement') continue;
+    const clause = stmt.namedChildren.find(c => c.type === 'import_clause');
+    if (!clause) continue;
+    for (const part of clause.namedChildren) {
+      if (part.type === 'identifier') names.add(part.text);                    // import x from
+      else if (part.type === 'namespace_import') {                             // import * as ns from
+        const id = part.namedChildren.find(c => c.type === 'identifier');
+        if (id) names.add(id.text);
+      } else if (part.type === 'named_imports') {                              // import { a, b as c } from
+        for (const spec of part.namedChildren) {
+          if (spec.type !== 'import_specifier') continue;
+          const local = spec.childForFieldName('alias') ?? spec.childForFieldName('name');
+          if (local) names.add(local.text);
+        }
+      }
+    }
+  }
+  return names;
 }
 
 /** S004 (t2): true when the file being parsed imports a messaging library, so
@@ -1011,7 +1067,7 @@ function walkForCalls(
       }
 
       const calleeName = resolveCalleeName(funcNode);
-      if (calleeName && !seen.has(calleeName) && !BUILTIN_OBJECTS.has(calleeName) && !BUILTIN_METHODS.has(calleeName)) {
+      if (calleeName && !seen.has(calleeName) && keepsCall(funcNode, calleeName, axiosScopes)) {
         seen.add(calleeName);
         relations.push({
           kind:     'CALLS',
@@ -1031,6 +1087,27 @@ function walkForCalls(
   // Leave the scope: pop the axios frame / restore the outer class proof.
   if (pushedScope) axiosScopes.pop();
   if (prevClassHttpFields !== null) currentClassHttpFields = prevClassHttpFields;
+}
+
+/**
+ * Whether a call to `name` is recorded (ISSUE-1ad687e6). A bare call is kept
+ * unless it names a global function; a member call is kept unless its name is a
+ * built-in method and its receiver is not proven a user object, so `items.map()`
+ * cannot resolve by name to a user `map` while `this.find()` / `ns.parse()` keep
+ * their edges.
+ */
+function keepsCall(funcNode: SyntaxNode, name: string, scopes: AxiosScope[]): boolean {
+  if (funcNode.type === 'identifier') return !BUILTIN_OBJECTS.has(name);
+  if (!BUILTIN_METHODS.has(name)) return true;
+  return isUserReceiver(funcNode.childForFieldName('object'), scopes);
+}
+
+/** A receiver proven a user object: `this`, `super`, or a name proven in scope. */
+function isUserReceiver(obj: SyntaxNode | null, scopes: AxiosScope[]): boolean {
+  if (!obj) return false;
+  if (obj.type === 'this' || obj.type === 'super') return true;
+  if (obj.type === 'identifier') return isProvenUser(obj.text, scopes);
+  return false;
 }
 
 /**

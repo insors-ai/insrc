@@ -393,6 +393,18 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.slider-pop .foot',
     '.slider-pop .pane-h',
     '.slider-pop input[type=range]',
+    // E202611031bd72813:S001 t4: the active-chats chip (left of the history chip) and its
+    // red/yellow/green status dots.
+    '.actchip',
+    '.actchip::before',
+    '.actchip[data-urgent="done"]::before',
+    '.actchip[data-urgent="waiting-input"]::before',
+    '.actchip[data-urgent="working"]::before',
+    '.chrome #insrc-active',
+    '.status-dot',
+    '.status-dot.green',
+    '.status-dot.red',
+    '.status-dot.yellow',
     '.statusbar .runctl',
     '.ticks',
     '.ticks i',

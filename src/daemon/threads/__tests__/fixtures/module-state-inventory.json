@@ -323,7 +323,7 @@
   },
   "src/daemon/approval.ts#approvalBroker": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/approve-pipeline.ts#DESIGN_WORKFLOWS": {
     "class": "per-thread",
@@ -504,7 +504,7 @@
   },
   "src/daemon/design-review-rpc.ts#coordinators": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/feedback-handlers.ts#KINDS": {
     "class": "per-thread",
@@ -516,11 +516,11 @@
   },
   "src/daemon/lifecycle-registry.ts#ENTRIES": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/lifecycle-registry.ts#identityService": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/lifecycle.ts#modelState": {
     "class": "one-owner",
@@ -561,19 +561,19 @@
   },
   "src/daemon/repo-schema-guard.ts#override": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/review-request-owner.ts#connections": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/review-request-owner.ts#owners": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/review-request-owner.ts#ports": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/run-file-ownership.ts#daemonRunFiles": {
     "class": "one-owner",
@@ -635,11 +635,11 @@
   },
   "src/daemon/steps/workflow-step/handler.ts#handoffDeps": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/task-review-rpc.ts#coordinators": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/threads/maintenance-entry.ts#SUBSCRIPTIONS": {
     "class": "per-thread",
@@ -755,7 +755,7 @@
   },
   "src/daemon/tools/call-handler.ts#nextRequestId": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/config.ts#changed": {
     "class": "per-thread",
@@ -767,23 +767,23 @@
   },
   "src/daemon/tools/convert-text.ts#attemptDeadlineMs": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/convert-text.ts#tail": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/executor.ts#commonSetting": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/executor.ts#gate": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/hooks.ts#hooks": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/provenance.ts#originals": {
     "class": "per-thread",
@@ -799,7 +799,7 @@
   },
   "src/daemon/tools/shell-helper.ts#timeoutScale": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/tools/tool-signal.ts#storage": {
     "class": "per-thread",
@@ -807,7 +807,7 @@
   },
   "src/daemon/tracker-setup-handlers.ts#refreshing": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/workflow-rpc.ts#ANALYZE_STEP_RUNNERS": {
     "class": "per-thread",
@@ -815,7 +815,7 @@
   },
   "src/daemon/workflow-rpc.ts#driver": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/daemon/workflow-run-registry.ts#board": {
     "class": "shared-store",
@@ -1139,7 +1139,7 @@
   },
   "src/workflow/artifact-core/store.ts#WRITE_QUEUES": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/artifacts/companion/adaptive-cards.ts#schemaCache": {
     "class": "per-thread",
@@ -1179,11 +1179,11 @@
   },
   "src/workflow/config/github-store.ts#queueTail": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/config/github-store.ts#tempCounter": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/convert/legacy-view.ts#KINDS": {
     "class": "per-thread",
@@ -1247,7 +1247,7 @@
   },
   "src/workflow/draft-issues.ts#hookOverride": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/executor.ts#registry": {
     "class": "per-thread",
@@ -1319,7 +1319,7 @@
   },
   "src/workflow/tasks/task-set.ts#entrySeq": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/approval-gate.ts#EPIC_WORKFLOWS": {
     "class": "per-thread",
@@ -1343,19 +1343,19 @@
   },
   "src/workflow/team/gate.ts#insideHook": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/gate.ts#parkOfferProvider": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/gate.ts#registeredHook": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/gate.ts#testDeps": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/handoff.ts#STAGES": {
     "class": "per-thread",
@@ -1367,23 +1367,23 @@
   },
   "src/workflow/team/sighting-store.ts#identityCache": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/signoff.ts#lifecycleProvider": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/team/signoff.ts#testDeps": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/tracker-auto.ts#testDeps": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/tracker/comment-sync.ts#running": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/tracker/github-adapter.ts#CAPABILITIES": {
     "class": "per-thread",
@@ -1391,7 +1391,7 @@
   },
   "src/workflow/tracker/registry-table.ts#depsOverridesForTests": {
     "class": "per-thread",
-    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see the follow-up issue."
+    "reason": "PROVISIONAL (not reviewed for cross-thread effect): introduced by v2 before this guard existed and classified mechanically during the merge of origin/main into v2 on 2026-11-03. Treat as per-thread until reviewed; see GitHub issue 99."
   },
   "src/workflow/tracker/resolve.ts#EXPLICIT_EVIDENCE": {
     "class": "per-thread",

@@ -663,7 +663,7 @@ export async function commitFile(commit: FileCommit): Promise<FileCommitResult> 
 				if (rel.returnEdgeToPendingInTxn(s, from, kind, u64)) returnedToPending++;
 			}
 		}
-		detachDeleteEntitiesInTxn(s, toDelete);
+		detachDeleteEntitiesInTxn(s, toDelete, { recordFile: false });   // the committed file is recorded once, above
 		entitiesRemoved = toDelete.length;
 
 		// 5. The file's new relationships, by Story s1's rule (edge / pending / counted unwritable).
@@ -1349,7 +1349,7 @@ export function putEntityRowInTxn(
  * entries along with it. The other half of the single write path every
  * entity-row mutation now goes through (Epic c2ba6fa6 Story s3).
  */
-export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow): void {
+export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow, recordFile = true): void {
 	s.nameIndex.remove(
 		encodeNameIndexKey(row.repoId, ENTITY_KIND_BYTE[row.kind], row.name),
 		encodeEntityKey(u64),
@@ -1358,7 +1358,7 @@ export function removeEntityRowInTxn(s: GraphStore, u64: bigint, row: EntityRow)
 	s.entity.remove(encodeEntityKey(u64));
 	trackUnembeddedInTxn(s, row, null);
 	// The file lost an entity: the subsystem pass recomputes it (ISSUE-7d42b5dc), on every removal path.
-	recordChangedFileInTxn(s, row.repoId, row.filePath);
+	if (recordFile) recordChangedFileInTxn(s, row.repoId, row.filePath);
 }
 
 // GUARD-TEST-BOUNDARY: entity-row write path ends.
@@ -1488,7 +1488,7 @@ async function detachDeleteEntities(store: GraphStore, u64s: readonly bigint[], 
  * `reindexFile` helper (Phase 2.9) so the snapshot + upsert + tombstone
  * pass commits as a single LMDB transaction.
  */
-function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void {
+function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[], opts: { readonly recordFile?: boolean | undefined } = {}): void {
 	if (u64s.length === 0) return;
 	for (const u64 of u64s) {
 		// Forward direction: edges where this entity is the `from`.
@@ -1516,7 +1516,7 @@ function detachDeleteEntitiesInTxn(s: GraphStore, u64s: readonly bigint[]): void
 		const stringId = s.entityStringByU64.get(encodeEntityKey(u64)) as string | undefined;
 		const rowBuf = s.entity.get(encodeEntityKey(u64));
 		if (rowBuf !== undefined) {
-			removeEntityRowInTxn(s, u64, decodeEntityRow(rowBuf as Buffer));
+			removeEntityRowInTxn(s, u64, decodeEntityRow(rowBuf as Buffer), opts.recordFile);
 		}
 		if (stringId !== undefined) {
 			s.entityIdByString.remove(stringId);

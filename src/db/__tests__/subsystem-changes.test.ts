@@ -125,9 +125,15 @@ test('S001 t1: entity-row removal records its file on every path, and a whole-re
 	await deleteEntitiesForFile(null, join(repo, 'src/c.ts'));
 	assert.deepEqual(await recorded(), ['src/c.ts']);
 	await clear();
-	// commitFile removing every entity of a file (a deleted file).
+	// commitFile removing every entity of a file (a deleted file): the file is recorded once, one stamp.
+	await save('src/d.ts', 'export function fd(): number { return 4; }\nexport function gd(): number { return 5; }\nexport class Kd { m(): void {} }\n');
+	await clear();
+	const stamp = async () => readChangedFilesInTxn(await getGraphStore(), repoId).find(c => c.file === 'src/d.ts')?.stamp;
+	await withWriteTxn(w => recordChangedFileInTxn(w, repoId, 'src/probe.ts'));
+	const probe = readChangedFilesInTxn(await getGraphStore(), repoId).find(c => c.file === 'src/probe.ts')!.stamp;
 	await commitFile({ repoPath: repo, filePath: join(repo, 'src/d.ts'), contentHash: null, entities: [], relations: [] });
-	assert.deepEqual(await recorded(), ['src/d.ts']);
+	assert.deepEqual(await recorded(), ['src/d.ts', 'src/probe.ts']);
+	assert.equal(await stamp(), probe + 1n, 'one stamp for the commit, however many entities it removed');
 	await clear();
 
 	// deleteEntitiesForRepo: the contributions and the record go, the reset counter goes up.

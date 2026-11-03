@@ -628,6 +628,8 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 		'designReview.plan': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('plan', params, context),
 		'designReview.activity': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('activity', params, context),
 		'designReview.result': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('result', params, context),
+		'designReview.recover': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('recover', params, context),
+		'designReview.failure': async (params, context) => (await import('./design-review-rpc.js')).designReviewOperation('failure', params, context),
 		'codeReview.task.cleanup': async params => (await import('./task-review-rpc.js')).cleanupApprovedTaskReviews(params),
 		'codeReview.task.progress': async params => (await import('./task-review-rpc.js')).readTaskReviewProgress(params),
 		'codeReview.task.publish': async params => (await import('./task-review-rpc.js')).publishStoredTaskReview(params),

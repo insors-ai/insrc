@@ -93,6 +93,8 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['designReview.plan', 'session', false],
 	['designReview.activity', 'session', false],
 	['designReview.result', 'session', false],
+	['designReview.recover', 'session', false],
+	['designReview.failure', 'session', false],
 	['codeReview.task.cleanup', 'session', false],
 	['codeReview.task.start', 'session', false],
 	['codeReview.task.progress', 'session', false],
@@ -312,4 +314,5 @@ export const MAIN_DAEMON_TASK_REVIEW_METHODS: ReadonlySet<string> = new Set([
 /** Design review execution and trusted connection authority are main-daemon owned. */
 export const MAIN_DAEMON_DESIGN_REVIEW_METHODS:ReadonlySet<string>=new Set([
  'designReview.start','designReview.progress','designReview.assignment','designReview.plan','designReview.activity','designReview.result',
+ 'designReview.recover','designReview.failure',
 ]);

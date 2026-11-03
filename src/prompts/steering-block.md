@@ -334,17 +334,41 @@ For a controller reviewer, `assignment` returns the current planning or chunk pr
 schema and executionId. Submit `plan` or `result` using that executionId and the next
 positive sequence; `activity` uses the same response sequence and real session/tool
 events. Assignment includes the latest accepted sequence. Keep the same live MCP
-session: observers cannot become reviewer. Semantic rejection does not transfer
-ownership. Do not manufacture activity merely to keep a review alive.
+session: observers cannot become reviewer. Schema-invalid requests do not transfer
+ownership or spend retry budget. A structurally valid but invalid review plan/result
+is a technical output failure: fetch the next assignment and its fresh executionId.
+Use `failure` with the current generation/next sequence to report a technical execution
+failure. The host classifies it, persists pointed feedback and rotates the generation.
+Do not manufacture activity merely to keep a review alive.
 
 Prompts contain guidelines and live document paths, never copied artifact bodies.
 The reviewer may inspect anything in the codebase. Plan coherent artifact-specific
 chunks covering every inventory unit, then a final consistency chunk. Findings and
 verification gaps do not skip later chunks. Completed feedback is saved before
 advancement. A subject change invalidates this review; external changes are ignored.
-S1 supports initial attempts only: failures/interruption require user input and never
-automatically reassign, retry or resume. Later stories add retry/recovery and approval
-publication; a checkpoint result alone is not an approval record.
+Technical failures retry only that unit: one initial execution plus at most three
+automatic retries, retaining completed chunks. Planning uses the same budget. Native
+internal retries are disabled; do not add controller/MCP retry loops. On exhaustion,
+status is paused and remaining chunks stop until user direction. Findings and honest
+incomplete coverage are not technical failures. Tools are tracked separately from the
+30-minute idle model-wait grace; polling, heartbeats and mere process presence do not
+renew activity, and no fixed task deadline applies.
+
+Recovery is always an explicit `recover` request with a fresh actionId, source attempt
+and operation. Exact actionId/input replay returns existing admission, never another
+dispatch; conflicting replay is an error. Interrupted unchanged work uses operation
+resume, retaining accepted plan/chunks and retry counters. After daemon restart there
+is no automatic scan/resume; retrigger explicitly. The recovering controller needs a
+live trusted connection after the old execution has ended. Observers cannot steal work.
+Paused resume requires the user's approval and userDecision action retry_failed_unit,
+reason and recordedAt; it grants one extra execution, never a fresh automatic budget.
+Invalidated work requires user approval and operation restart_full with userDecision
+action restart_full, reason and recordedAt. It appends a full fresh attempt, with no
+chunk reuse. External changes are ignored for same-attempt recovery. Report progress
+and wait for full completion before corrections. Failed storage/domain state is not an
+automatic retry. retry_publication is unavailable until the later publication story.
+Selective impact analysis and approval-history publication remain later stories;
+a checkpoint result alone is not an approval record.
 
 <!-- insrc:guide:review:end -->
 

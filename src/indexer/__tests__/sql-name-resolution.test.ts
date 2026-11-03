@@ -12,6 +12,11 @@
  *  - t3: a settle re-attempts only the pending SQL references its files can
  *    affect (observed as the rows it selects), and a re-pended row's marker
  *    is consumed by the next settle whatever its outcome.
+ *  - t4: a settle re-checks the inferred edges into every definition whose
+ *    last segment folds to that of a saved one: a new candidate makes them
+ *    ambiguous, quote-only and segment-boundary edits re-decide them, a
+ *    legacy store is corrected when only its definition file is read again,
+ *    and a name the holder's own file answers is never returned.
  *
  * Run: npx tsx --test src/indexer/__tests__/sql-name-resolution.test.ts
  */
@@ -24,7 +29,7 @@ import { join } from 'node:path';
 
 import { closeGraphStore, setGraphStorePath } from '../../db/graph/store.js';
 import { commitFile, entityU64ForId, upsertEntities } from '../../db/entities.js';
-import { listUnresolvedRelations, SQL_REPEND_MARKER, upsertRelations } from '../../db/relations.js';
+import { listUnresolvedRelations, returnInferredSqlReferencesToPending, SQL_REPEND_MARKER, upsertRelations } from '../../db/relations.js';
 import { outNeighbors } from '../../db/graph/edges.js';
 import { addRepo, lookupRepoId } from '../../db/repos.js';
 import type { DbClient } from '../../db/client.js';
@@ -245,4 +250,106 @@ test('S001 t3: the re-pend marker is consumed by the next settle, so an unrelate
 	const before = (await listUnresolvedRelations(null, repo)).map(r => [r.rawTo, r.attemptedAt]).sort();
 	await pass('settle', ['db/z.sql']);
 	assert.deepEqual((await listUnresolvedRelations(null, repo)).map(r => [r.rawTo, r.attemptedAt]).sort(), before);
+});
+
+/** An inferred edge as the cross-file pass writes one (the store holding a reference from before the rule). */
+const inferredEdge = (from: Entity, to: Entity) =>
+	upsertRelations(null, [{ kind: 'REFERENCES', from: from.id, to: to.id, resolved: true, evidence: 'inferred', meta: { repo, file: from.file } }]);
+
+test('S001 t4: a saved definition re-checks same-named inferred edges, including quote-only and segment-boundary edits', async () => {
+	const a = await save('db/a.sql', 'CREATE TABLE app.users (id int);\nCREATE TABLE orders (id int);\nCREATE TABLE Pay (id int);\nCREATE TABLE s.t (id int);');
+	const v = await save('db/v.sql', [
+		'CREATE VIEW vu AS SELECT * FROM users;',
+		'CREATE VIEW vo AS SELECT * FROM orders;',
+		'CREATE VIEW vp AS SELECT * FROM Pay;',
+		'CREATE VIEW vs AS SELECT * FROM s.t;',
+	].join('\n'));
+	await pass();
+	for (const n of ['vu', 'vo', 'vp', 'vs']) assert.equal((await edges(v.get(n)!)).length, 1, `${n} is linked`);
+
+	// A second candidate: users becomes ambiguous; orders, a different name, keeps its edge.
+	const b = await save('db/b.sql', 'CREATE TABLE audit.users (id int);');
+	await pass('settle', ['db/b.sql']);
+	assert.deepEqual(await edges(v.get('vu')!), [], 'no edge is kept to a guess');
+	const [vu] = await pendingOf(v.get('vu')!);
+	assert.equal(vu?.meta['class'], 'ambiguous');
+	assert.deepEqual([...(vu?.meta['candidates'] as string[])].sort(), [a.get('app.users')!.id, b.get('audit.users')!.id].sort());
+	assert.equal(vu?.meta[SQL_REPEND_MARKER], undefined, 'the marker is consumed');
+	assert.deepEqual(await edges(v.get('vo')!, a), ['orders@db/a.sql: inferred']);
+
+	// A quoted second candidate: "Ledger" linked to the bare "Ledger", then app."Ledger" is declared.
+	const ql = await save('db/ql.sql', 'CREATE TABLE "Ledger" (id int);');
+	const qv = await save('db/qv.sql', 'CREATE VIEW qv AS SELECT * FROM "Ledger";');
+	await pass('settle', ['db/ql.sql', 'db/qv.sql']);
+	assert.deepEqual(await edges(qv.get('qv')!, ql), ['"Ledger"@db/ql.sql: inferred']);
+	await save('db/ql2.sql', 'CREATE TABLE app."Ledger" (id int);');
+	await pass('settle', ['db/ql2.sql']);
+	assert.deepEqual(await classes(qv.get('qv')!), ['"Ledger": ambiguous']);
+
+	// A quote-only edit (Pay -> "Pay") and a segment-boundary edit (s.t -> "s.t"): the old edges are re-decided.
+	await save('db/a.sql', 'CREATE TABLE app.users (id int);\nCREATE TABLE orders (id int);\nCREATE TABLE "Pay" (id int);\nCREATE TABLE "s.t" (id int);');
+	await pass('settle', ['db/a.sql']);
+	assert.deepEqual(await edges(v.get('vp')!), []);
+	assert.deepEqual(await classes(v.get('vp')!), ['Pay: no-candidate'], 'Pay is not the case-sensitive "Pay"');
+	assert.deepEqual(await edges(v.get('vs')!), []);
+	assert.deepEqual(await classes(v.get('vs')!), ['s.t: no-candidate'], 's.t is not the single name "s.t"');
+	assert.deepEqual(await edges(v.get('vo')!, a), ['orders@db/a.sql: inferred'], 'a re-checked edge that still has one candidate re-resolves');
+});
+
+test('S001 t4: upgrade, legacy-collision and mixed-ownership cases resolve correctly', async () => {
+	// Upgrade: "Accounts" stored before the rule as Accounts, linked from "Accounts"; only its file is read again.
+	const oldAcc = await legacy('db/acc.sql', 'table', 'Accounts', 'CREATE TABLE "Accounts" (id int);');
+	const u = await save('db/u.sql', 'CREATE VIEW u AS SELECT * FROM "Accounts";');
+	await inferredEdge(u.get('u')!, oldAcc);
+	const acc = await save('db/acc.sql', 'CREATE TABLE "Accounts" (id int);');
+	await pass('settle', ['db/acc.sql']);
+	assert.deepEqual(await edges(u.get('u')!, acc), ['"Accounts"@db/acc.sql: inferred']);
+	assert.deepEqual(await pendingOf(u.get('u')!), []);
+
+	// Legacy collision: one file declared Users and "Users", stored before the rule as one entity Users; an
+	// external "Users" reference was linked to it. Re-read, the file keeps Users (same id) and adds "Users".
+	const oldUsers = await legacy('db/users.sql', 'table', 'Users', 'CREATE TABLE Users (id int);');
+	const ext = await save('db/ext.sql', 'CREATE VIEW ext AS SELECT * FROM "Users";\nCREATE VIEW plain AS SELECT * FROM users;');
+	await inferredEdge(ext.get('ext')!, oldUsers);
+	await inferredEdge(ext.get('plain')!, oldUsers);
+	const users = await save('db/users.sql', 'CREATE TABLE Users (id int);\nCREATE TABLE "Users" (id int);');
+	assert.equal(users.get('Users')!.id, oldUsers.id, 'the unquoted definition keeps its id, so no removal re-pends its edges');
+	await pass('settle', ['db/users.sql']);
+	assert.deepEqual(await edges(ext.get('ext')!, users), ['"Users"@db/users.sql: inferred'], '"Users" moves to its own definition');
+	assert.deepEqual(await edges(ext.get('plain')!, users), ['Users@db/users.sql: inferred'], 'users stays with Users');
+
+	// A legacy definition in a file NOT read again: "Ledger" stored as Ledger in old.sql; "Ledger" is now declared
+	// in new.sql. The edge from "Ledger" to the lossy Ledger is grouped by the folded name and re-decided by key.
+	const lossy = await legacy('db/oldl.sql', 'table', 'Ledger', 'CREATE TABLE "Ledger" (id int);');
+	const lr = await save('db/lr.sql', 'CREATE VIEW lr AS SELECT * FROM "Ledger";');
+	await inferredEdge(lr.get('lr')!, lossy);
+	const fresh = await save('db/newl.sql', 'CREATE TABLE "Ledger" (id int);');
+	await pass('settle', ['db/newl.sql']);
+	assert.deepEqual(await edges(lr.get('lr')!, fresh, new Map([['Ledger', lossy]])), ['"Ledger"@db/newl.sql: inferred']);
+
+	// Mixed ownership: mv reads its own file's orders (linked by the reader) and another file's app.orders.
+	const defs = await save('db/defs.sql', 'CREATE TABLE app.orders (id int);');
+	const m = await save('db/m.sql', 'CREATE TABLE orders (id int);\nCREATE VIEW mv AS SELECT * FROM orders JOIN app.orders ON true;');
+	await pass();
+	assert.deepEqual(await edges(m.get('mv')!, m, defs), ['app.orders@db/defs.sql: inferred', 'orders@db/m.sql: extracted']);
+	await save('db/n.sql', 'CREATE TABLE x.orders (id int);');
+	await pass('settle', ['db/n.sql']);
+	assert.deepEqual(await pendingOf(m.get('mv')!), [], 'no pending row for the locally answered orders');
+	assert.deepEqual(await edges(m.get('mv')!, m, defs), ['app.orders@db/defs.sql: inferred', 'orders@db/m.sql: extracted']);
+});
+
+test('S001 t4: the store re-check returns only inferred edges, and never one of an excluded holder', async () => {
+	const t = await save('db/t.sql', 'CREATE TABLE app.ledger (id int);');
+	const h = await save('db/h.sql', 'CREATE VIEW h1 AS SELECT * FROM ledger;\nCREATE VIEW h2 AS SELECT * FROM ledger;\nCREATE VIEW h3 AS SELECT * FROM ledger;');
+	const target = t.get('app.ledger')!;
+	await inferredEdge(h.get('h1')!, target);
+	await inferredEdge(h.get('h2')!, target);
+	await upsertRelations(null, [{ kind: 'REFERENCES', from: h.get('h3')!.id, to: target.id, resolved: true, evidence: 'extracted', meta: { repo, file: at('db/h.sql') } }]);
+
+	assert.equal(await returnInferredSqlReferencesToPending(null, [target.id], new Set([h.get('h2')!.id])), 1);
+	assert.deepEqual((await pendingOf(h.get('h1')!)).map(r => [r.rawTo, r.meta[SQL_REPEND_MARKER]]), [['ledger', true]], 'the inferred edge returns, marked');
+	assert.deepEqual(await edges(h.get('h1')!), []);
+	assert.deepEqual(await edges(h.get('h2')!, t), ['app.ledger@db/t.sql: inferred'], 'an excluded holder keeps its edge');
+	assert.deepEqual(await edges(h.get('h3')!, t), ['app.ledger@db/t.sql: extracted'], 'an extracted edge is never touched');
+	assert.deepEqual([...await pendingOf(h.get('h2')!), ...await pendingOf(h.get('h3')!)].filter(r => r.meta[SQL_REPEND_MARKER] === true), []);
 });

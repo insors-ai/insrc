@@ -59,6 +59,7 @@ import {
   promoteResolvedBatch,
   updateUnresolvedMetaBatch,
   clearUnresolvedMetaKeyBatch,
+  returnInferredSqlReferencesToPending,
   SQL_REPEND_MARKER,
   type UnresolvedRelation,
 } from '../db/relations.js';
@@ -71,7 +72,7 @@ import { selectFile, type FileSelection } from './file-selection.js';
 import { resolveImportPath } from './resolver.js';
 import { listExportNames } from '../db/export-names.js';
 import { createFileFilter, type FileFilter } from './file-filter.js';
-import { sqlLastSegmentKey, sqlNamesMeet } from './parser/sql-names.js';
+import { sqlFoldedLastSegment, sqlLastSegmentKey, sqlNamesMeet } from './parser/sql-names.js';
 
 const log = getLogger('cross-file-resolver');
 
@@ -524,6 +525,7 @@ async function runPass2(
 ): Promise<{ resolved: number; ambiguous: number; stillUnresolved: number }> {
   // Step 1 -- prefetch UnresolvedRelation rows + the file->file IMPORTS
   // map (one DB read each; per-row helpers below are pure-sync).
+  if (mode === 'settle') await recheckSqlReferences(opts, index);
   const tList = Date.now();
   const unresolved = await rowsInScope(opts, mode);
   if (mode === 'settle') unresolved.push(...await sqlReferencesAwaitingCommitted(opts, unresolved, index));
@@ -850,6 +852,37 @@ async function sqlReferencesAwaitingCommitted(
   return (await listUnresolvedRelations(opts.db, opts.repoRoot))
     .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id))
     .filter(r => r.meta[SQL_REPEND_MARKER] === true || names.has(sqlLastSegmentKey(r.rawTo)) || goneCandidate(r));
+}
+
+/**
+ * In settle mode, before the resolution pass: a table or view defined in a
+ * committed file can change what another file's inferred reference means --
+ * a second candidate, or a quoting edit whose id survived (a legacy file that
+ * stored Users and "Users" as one Users). So every 'inferred' REFERENCES edge
+ * into a stored table/view whose last segment folds (case and quotes
+ * ignored) to that of a committed definition -- the committed definitions
+ * included -- returns to pending by name, marked, unless its holder is in a
+ * committed file (re-read, so already re-attempted); the pass then decides
+ * it by the name rule: one candidate re-resolves, several are ambiguous.
+ * Edges the reader linked in its own file ('extracted') are never touched.
+ */
+async function recheckSqlReferences(opts: CrossFileResolveOpts, index: EntityIndex): Promise<void> {
+  const committed = (opts.committedFiles ?? []).filter(f => f.toLowerCase().endsWith('.sql'));
+  if (committed.length === 0) return;
+  const folded = new Set<string>();
+  const holders = new Set<string>();
+  for (const file of committed) {
+    for (const e of index.byFile.get(file) ?? []) {
+      holders.add(e.id);
+      if (isSqlDefinition(e)) folded.add(sqlFoldedLastSegment(e.name));
+    }
+  }
+  if (folded.size === 0) return;
+  const targets: string[] = [];
+  for (const [key, defs] of index.sqlByLastSegment) if (folded.has(key.toLowerCase())) targets.push(...defs.map(e => e.id));
+  const t = Date.now();
+  const returned = await returnInferredSqlReferencesToPending(opts.db, targets, holders);
+  log.info({ repo: opts.repoRoot, targets: targets.length, returned, elapsedMs: Date.now() - t }, 'cross-file Pass 2: SQL references re-checked');
 }
 
 /**

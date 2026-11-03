@@ -52,6 +52,7 @@ import {
 	encodeEntityKey,
 	encodeOutEdgeKey,
 	encodeInEdgeKey,
+	encodeInEdgePrefix,
 	encodeRepoKey,
 	encodeUnresolvedByFileKey,
 	prefixSuccessor,
@@ -614,6 +615,54 @@ export async function clearUnresolvedMetaKeyBatch(_db: DbClient, ids: readonly s
 			s.unresolved.put(id, encodeUnresolvedRow({ ...row, meta }));
 		}
 	});
+}
+
+/**
+ * A settle's re-check of SQL references a saved definition can change
+ * (ISSUE-0f3376a0): every 'inferred' REFERENCES edge into one of `targets`
+ * (string ids of stored tables/views) whose holder is not one of
+ * `excludeHolders` returns to pending by name under sqlByNameRows' rules --
+ * the holder's names that could mean the target, never one its own file
+ * answers, each marked -- and the edge is removed, so the settle's
+ * resolution pass decides it again by the name rule. An edge none of whose
+ * holder's names fits, and every edge the reader linked in its own file
+ * ('extracted'), is left as it is. Returns the number of edges returned.
+ */
+export async function returnInferredSqlReferencesToPending(
+	_db: DbClient,
+	targets: readonly string[],
+	excludeHolders: ReadonlySet<string>,
+): Promise<number> {
+	assertNoSessionPersistence();
+	if (targets.length === 0) return 0;
+	const kindByte = RELATION_KIND_BYTE['REFERENCES' as InternalRelationKind];
+	let returned = 0;
+	await withWriteTxn(s => {
+		const repos = new Set<number>();
+		for (const target of targets) {
+			const toU64 = lookupU64ByStringId(s, target);
+			if (toU64 === undefined) continue;
+			const prefix = encodeInEdgePrefix(toU64, kindByte);
+			const holders = [...s.inEdge.getKeys({ start: prefix, end: prefixSuccessor(prefix) })].map(k => (k as Buffer).readBigUInt64BE(9));
+			for (const fromU64 of holders) {
+				const holderId = s.entityStringByU64.get(encodeEntityKey(fromU64)) as string | undefined;
+				if (holderId === undefined || excludeHolders.has(holderId)) continue;
+				const outKey = encodeOutEdgeKey(fromU64, kindByte, toU64);
+				const evidence = decodeEvidence(s.outEdge.get(outKey) as Buffer | undefined);
+				if (evidence !== 'inferred') continue;
+				const awaiting = awaitingRowFor(s, fromU64, holderId, 'REFERENCES', target, withEvidence(undefined, evidence), Date.now());
+				const rows = sqlByNameRows(s, awaiting, fromU64, toU64);
+				if (rows === undefined) continue;
+				for (const row of rows) writePendingRowInTxn(s, row);
+				s.outEdge.remove(outKey);
+				s.inEdge.remove(encodeInEdgeKey(toU64, kindByte, fromU64));
+				repos.add(decodeEntityRow(s.entity.get(encodeEntityKey(fromU64)) as Buffer).repoId);
+				returned++;
+			}
+		}
+		for (const repoId of repos) advanceGenerationInTxn(s, repoId);
+	});
+	return returned;
 }
 
 /** The relationship kind of an edge-key kind byte. */

@@ -73,6 +73,12 @@ export const sqlLastSegmentKey = (written: string): string => {
 	return segs[segs.length - 1] ?? '';
 };
 
+/** The last segment's unquoted text, lower-cased: definitions that could share a name under any quoting. */
+export const sqlFoldedLastSegment = (written: string): string => {
+	const segs = sqlSegments(written);
+	return (segs[segs.length - 1]?.text ?? '').toLowerCase();
+};
+
 /**
  * The comparison used before this rule: the unquoted segments joined by dots,
  * lower-cased. A definition stored before the rule (`"Users"` stored as

@@ -48,7 +48,7 @@ export class DesignProgressTracker {
  }
  snapshot():DesignReviewProgress{
   const elapsed=(start:number)=>Math.max(0,Math.min(Number.MAX_SAFE_INTEGER,Math.floor(this.time.now()-start)));
-  return {...this.value,reviewElapsedMs:elapsed(this.started),unitElapsedMs:this.unitStarted===undefined?null:elapsed(this.unitStarted)};
+  return {...this.value,observedAt:this.time.wall(),reviewElapsedMs:elapsed(this.started),unitElapsedMs:this.unitStarted===undefined?null:elapsed(this.unitStarted)};
  }
  private touch():void{this.value.sequence++;this.value.observedAt=this.time.wall();}
 }

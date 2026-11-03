@@ -15,7 +15,7 @@ test('artifact-specific prompts contain live paths and trailing schema, never co
   assert.ok(!prompt.includes('UNIQUE_ARTIFACT_BODY_CANARY'));assert.ok(prompt.indexOf('Output schema')>prompt.indexOf('Not applicable'));
   assert.doesNotThrow(()=>JSON.parse(prompt.split('Output schema (structural reference):\n')[1]!));
  }
- const prompt=designChunkPrompt(subject,plan.chunks[0]!,'/checkpoint');assert.ok(prompt.includes('originating_issue'));assert.ok(prompt.includes('does not')||prompt.includes('Do not'));assert.ok(prompt.includes('HIGH/MED'));assert.ok(prompt.includes('if limitations is nonempty, status MUST be incomplete'));
+ const prompt=designChunkPrompt(subject,plan.chunks[0]!,'/checkpoint');assert.ok(prompt.includes('originating_issue'));assert.ok(prompt.includes('does not')||prompt.includes('Do not'));assert.ok(prompt.includes('HIGH/MED'));assert.ok(prompt.includes('if limitations is nonempty, status MUST be incomplete'));assert.ok(prompt.includes('Never submit placeholder findings'));assert.ok(prompt.includes('exact unmodified string'));assert.ok(prompt.includes(JSON.stringify(['/body/a','/body/b',subject.documentPath])));
  const final=designChunkPrompt(subject,plan.chunks[1]!,'/checkpoint');assert.ok(final.includes('all accepted completed feedback'));assert.ok(final.includes('whole-artifact'));
 });
 test('chunk plans reject missing units, final-only coverage, duplicate ids, cycles and bad final checks',()=>{

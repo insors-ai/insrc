@@ -28,7 +28,7 @@ test('progress pages expose one result without baseline and polling does not ren
  const f=designFixture(t);let now=0;const tracker=new DesignProgressTracker(f.path,{now:()=>now,wall:()=>new Date(1762128000000+now).toISOString()});
  tracker.unit('chunk_review','chunk-1',0,2);tracker.activity({sessionId:'session',sequence:1,kind:'session_started'});
  now=20;tracker.activity({sessionId:'session',sequence:2,kind:'tool_started',toolId:'tool'});const active=tracker.snapshot();assert.equal(active.activeToolCount,1);const last=active.lastMeaningfulActivityAt;
- now=5000;assert.equal(tracker.activity({sessionId:'session',sequence:3,kind:'heartbeat'}),false);assert.equal(tracker.snapshot().lastMeaningfulActivityAt,last);
+ now=5000;assert.notEqual(tracker.snapshot().observedAt,active.observedAt);assert.equal(tracker.snapshot().sequence,active.sequence);assert.equal(tracker.activity({sessionId:'session',sequence:3,kind:'heartbeat'}),false);assert.equal(tracker.snapshot().lastMeaningfulActivityAt,last);
  tracker.activity({sessionId:'session',sequence:4,kind:'tool_completed',toolId:'tool'});assert.equal(tracker.snapshot().activeToolCount,0);
  const attempt=f.checkpoint.attempts[0]!;attempt.status='running';attempt.progress=tracker.snapshot();
  attempt.completedChunks=[{chunkId:'a',status:'passed',summary:'Assessed',findings:[],inspectedReferences:['/body/summary'],limitations:[],advice:[]}];

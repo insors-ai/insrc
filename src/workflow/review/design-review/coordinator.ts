@@ -110,8 +110,9 @@ export class DesignReviewCoordinator {
   const uncertain=this.uncertain.get(key);
   return uncertain?{...view,status:'failed',phase:'complete',requiresUserInput:true,failure:uncertain}:view;
  }
- private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void):Promise<void>{
+ private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void,kind:'execution'|'failure'='execution'):Promise<void>{
   const work=job.serial.catch(()=>{}).then(async()=>{
+   if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;}
    const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);attempt.progress=job.tracker.snapshot();
    try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
@@ -171,6 +172,7 @@ export class DesignReviewCoordinator {
    if(replay){requireDesign(replay.owner.id===owner.id,'wrong_owner','Not the reviewing connection');requireDesign(replay.signature===signature,'review_conflict','Conflicting response replay');await replay.completion;return{accepted:true};}
   }
   requireDesign(job?.owner?.id===owner.id,'wrong_owner','Not the reviewing connection');
+  requireDesign(!job.abort.signal.aborted,'review_stopped','Review execution has stopped');
   requireDesign(currentDesignAttempt(job.checkpoint).number===request.attempt,'missing_attempt','Review attempt not active');
   const unit=job.controller;
   if(request.phase==='assignment')return{assignment:unit?{...unit.assignment,sequence:unit.sequence}:null,progress:job.tracker.snapshot()};
@@ -183,7 +185,7 @@ export class DesignReviewCoordinator {
    unit.sequence=request.sequence;job.tracker.activity(request.event);
    const completion=this.commit(job,a=>{if(a.current)a.current.sequence=request.sequence;});
    this.replays.set(`${key}\0${request.executionId}\0${request.sequence}`,{owner,signature,completion});
-   try{await completion;}catch(error){job.abort.abort(error);unit.reject(error);throw error;}return{accepted:true};
+   try{await completion;}catch(error){job.storageError=error;job.abort.abort(error);unit.reject(error);throw error;}return{accepted:true};
   }
   requireDesign(request.phase==='plan'&&unit.assignment.kind==='planning'||request.phase==='result'&&unit.assignment.kind==='chunk','invalid_phase','Response does not match assignment');
   const value=unit.validate(request.phase==='plan'?request.plan:(request as Extract<DesignReviewRequest,{phase:'result'}>).result);
@@ -210,11 +212,11 @@ export class DesignReviewCoordinator {
    job.tracker.status(report.status);
    await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();delete a.current;});
   }catch(error){
-   job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
+   job.abort.abort(error);job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';
    const issues=error instanceof ReviewOutputFailureError?error.diagnostic.issues.map(issue=>`${issue.code} ${issue.field}: ${issue.correction}`).join('; '):'';
    const summary=[error instanceof Error?error.message:'Design review failed',issues].filter(Boolean).join('; ').slice(0,DESIGN_LIMITS.text);
    const status=code==='artifact_changed'?'invalidated':code==='controller_disconnected'?'interrupted':'failed';job.tracker.status(status);
-   try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();delete a.current;});}
+   try{await this.commit(job,a=>{a.status=status;a.failure={code,summary};a.finishedAt=new Date().toISOString();delete a.current;},'failure');}
    catch{this.uncertain.set(key,{code:'persistence_failed',summary:`Terminal result could not be persisted: ${summary}`.slice(0,DESIGN_LIMITS.text)});}
    log.warn({reviewId:job.checkpoint.reviewId,code},'Design review stopped');
   }finally{

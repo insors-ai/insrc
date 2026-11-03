@@ -4,7 +4,7 @@ import { setTimeout as pause } from 'node:timers/promises';
 import { DesignReviewCoordinator } from '../coordinator.js';
 import type { DesignControllerOwner } from '../coordinator.js';
 import type { DesignUnitAssignment, DesignChunkPlan } from '../contracts.js';
-import { loadDesignCheckpoint } from '../checkpoint.js';
+import { saveDesignCheckpoint,loadDesignCheckpoint } from '../checkpoint.js';
 import { designFixture } from './fixtures.js';
 
 async function assignment(c:DesignReviewCoordinator,f:ReturnType<typeof designFixture>,owner:DesignControllerOwner){
@@ -58,4 +58,20 @@ test('controller results use the common schema and produce deterministic complet
  }
  for(let i=0;i<100;i++){if((await x.c.progress(x.f.repo,'review-1',1)).report)break;await pause(5);}
  const view=await x.c.progress(x.f.repo,'review-1',1);assert.equal(view.status,'changes_requested');assert.deepEqual(view.report?.counts,{HIGH:0,MED:1,LOW:0});assert.equal(view.completedChunks,2);x.abort.abort();
+});
+
+test('failed controller activity persistence fences a concurrently submitted valid plan',async t=>{
+ const f=designFixture(t,'daemon'),abort=new AbortController(),owner={id:'trusted-owner',signal:abort.signal};
+ let entered!:()=>void,release!:()=>void;const saving=new Promise<void>(r=>entered=r),blocked=new Promise<void>(r=>release=r);
+ const c=new DesignReviewCoordinator({save:async(project,cp)=>{
+  if(cp.attempts[0]!.current?.sequence===1){entered();await blocked;throw new Error('activity disk failure');}
+  await saveDesignCheckpoint(project,cp);
+ }}),base={repo:f.repo,reviewId:'review-1',attempt:1};
+ await c.start({phase:'start',...base,artifactPath:f.json},{owner});const a=await assignment(c,f,owner);
+ const activity=c.exchange({phase:'activity',...base,executionId:a.executionId,sequence:1,event:{sessionId:'session',sequence:1,kind:'session_started'}},owner);void activity.catch(()=>{});await saving;
+ const plan={chunks:[{id:'content',title:'Content',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'All units',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))};
+ const submission=c.exchange({phase:'plan',...base,executionId:a.executionId,sequence:2,plan},owner);void submission.catch(()=>{});await pause(10);release();
+ await assert.rejects(activity,/activity disk failure/);await assert.rejects(submission,/activity disk failure/);
+ for(let i=0;i<100;i++){if((await c.progress(f.repo,'review-1',1)).status==='failed')break;await pause(5);}
+ const view=await c.progress(f.repo,'review-1',1);assert.equal(view.status,'failed');assert.equal(view.totalChunks,0);assert.equal(view.completedChunks,0);assert.equal(view.failure?.code,'persistence_failed');assert.equal(abort.signal.aborted,false);abort.abort();
 });

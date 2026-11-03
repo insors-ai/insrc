@@ -4,11 +4,16 @@
     "epicHash": "0f3376a086e3601c",
     "storyId": "S001",
     "createdAt": "2026-11-03T10:37:50.308Z",
-    "updatedAt": "2026-11-03T12:49:42.542Z",
+    "updatedAt": "2026-11-03T13:20:46.653Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicCreatedAt": "2026-11-02T11:44:58.736Z",
-    "epicSlug": "sql-references-miss-across-2-3"
+    "epicSlug": "sql-references-miss-across-2-3",
+    "approvedAt": "2026-11-03T13:21:04.175Z",
+    "reviewOverride": {
+      "reason": "Manual independent code review (2 rounds by a separate reviewer agent; verdict warn with LOW test-coverage items only; round-1 findings 1-3 fixed in 5aa740c4b) per the interim manual-code-review rule; approved by the user in the review pane 2026-11-03.",
+      "at": "2026-11-03T13:21:04.175Z"
+    }
   },
   "body": {
     "tasks": [
@@ -68,20 +73,6 @@
       },
       {
         "target": {
-          "file": "src/db/relations.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T12:49:42.542Z"
-      },
-      {
-        "target": {
-          "file": "src/indexer/__tests__/sql-name-resolution.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T12:49:42.542Z"
-      },
-      {
-        "target": {
           "file": "src/indexer/cross-file-resolver.ts"
         },
         "author": "insrc-build",
@@ -100,8 +91,24 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T12:49:42.542Z"
+      },
+      {
+        "target": {
+          "file": "src/db/relations.ts",
+          "version": "5aa740c4b"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T13:20:46.653Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/sql-name-resolution.test.ts",
+          "version": "5aa740c4b"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T13:20:46.653Z"
       }
     ],
-    "commit": "fb01c6804"
+    "commit": "5aa740c4b"
   }
 }

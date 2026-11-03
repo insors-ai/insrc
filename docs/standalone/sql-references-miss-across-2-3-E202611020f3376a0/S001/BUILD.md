@@ -2,9 +2,9 @@
 
 # Build (standalone) — Story S001
 
-**Standalone:** yes  ·  **Created:** 2026-11-03T10:37:50.308Z  ·  **Updated:** 2026-11-03T12:49:42.542Z
+**Standalone:** yes  ·  **Created:** 2026-11-03T10:37:50.308Z  ·  **Updated:** 2026-11-03T13:20:46.653Z
 
-**Commit:** fb01c6804
+**Commit:** 5aa740c4b
 
 ## Summary
 
@@ -26,8 +26,8 @@ Pushed through e68162aa7; the installed daemon updated to e68162aa and restarted
 - `src/indexer/parser/__tests__/sql.test.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
 - `src/indexer/parser/sql-names.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
 - `src/indexer/parser/sql.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
-- `src/db/relations.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
-- `src/indexer/__tests__/sql-name-resolution.test.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
 - `src/indexer/cross-file-resolver.ts` — **insrc-build** (2026-11-03T12:49:42.542Z)
 - `docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/full-sweep-t5.md` — **insrc-build** (2026-11-03T12:49:42.542Z)
 - `docs/standalone/sql-references-miss-across-2-3-E202611020f3376a0/S001/smoke-t5.md` — **insrc-build** (2026-11-03T12:49:42.542Z)
+- `src/db/relations.ts` — **insrc-build** (2026-11-03T13:20:46.653Z)
+- `src/indexer/__tests__/sql-name-resolution.test.ts` — **insrc-build** (2026-11-03T13:20:46.653Z)

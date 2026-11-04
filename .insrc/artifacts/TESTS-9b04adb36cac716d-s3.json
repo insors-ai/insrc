@@ -1,0 +1,740 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "b2944b9121453884f81aca442e42034d7349082c44c8d2be5c9077fa23b52df6",
+        "at": "2026-11-04T20:15:13.471Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "createdAt": "2026-11-04T19:37:48.840Z",
+    "updatedAt": "2026-11-04T20:15:13.377Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "revision": 9
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "e673bdfb5",
+        "ranAt": "2026-11-04T19:37:48.840Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Strict impact/disposition/projection schemas reject extras, wrong branches and bounds; old full checkpoints decode",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-contracts.test.ts",
+                "title": "strict impact/disposition/projection schemas reject extras, wrong branches and bounds",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-contracts.test.ts",
+                "title": "old full checkpoints decode and new attempt metadata remains bounded and strict",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 677,
+            "titles": [
+              {
+                "title": "strict impact/disposition/projection schemas reject extras, wrong branches and bounds",
+                "result": "pass"
+              },
+              {
+                "title": "old full checkpoints decode and new attempt metadata remains bounded and strict",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "f36004a23",
+        "ranAt": "2026-11-04T19:41:50.260Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Sequential admission/replay and two checkpoint-growth branches preserve history and reject invalid statuses",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/correction-admission.test.ts",
+                "title": "sequential admission and replay preserve immutable initial submission and complete prior attempts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/correction-admission.test.ts",
+                "title": "correction admission rejects unfinished statuses, skipped ordinals, missing reports and failed saves",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/correction-admission.test.ts",
+                "title": "checkpoint evolution freezes preparation and prior prefixes and rejects partial plan-impact pairs",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/correction-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 774,
+            "titles": [
+              {
+                "title": "sequential admission and replay preserve immutable initial submission and complete prior attempts",
+                "result": "pass"
+              },
+              {
+                "title": "correction admission rejects unfinished statuses, skipped ordinals, missing reports and failed saves",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint evolution freezes preparation and prior prefixes and rejects partial plan-impact pairs",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f0d5da047",
+        "ranAt": "2026-11-04T19:45:32.116Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Backward provenance eligibility matrix and incomplete-source bypass rejection",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
+                "title": "backward provenance resolves eligible chains and preserves findings without copying historical bodies",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
+                "title": "retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 671,
+            "titles": [
+              {
+                "title": "backward provenance resolves eligible chains and preserves findings without copying historical bodies",
+                "result": "pass"
+              },
+              {
+                "title": "retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "1fa0ac6a7",
+        "ranAt": "2026-11-04T19:49:39.763Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Full-plan partition and explicit-full versus rejected-selective retry classification",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-selection.test.ts",
+                "title": "impact validates complete partition and safe equivalent retention with fresh consistency",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-selection.test.ts",
+                "title": "explicit full fallback consumes no retry while unsafe selective output is classified invalid_output",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-selection.test.ts",
+                "title": "impact carries canonical effective finding tuples and rejects missing or invented origins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-selection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 693,
+            "titles": [
+              {
+                "title": "impact validates complete partition and safe equivalent retention with fresh consistency",
+                "result": "pass"
+              },
+              {
+                "title": "explicit full fallback consumes no retry while unsafe selective output is classified invalid_output",
+                "result": "pass"
+              },
+              {
+                "title": "impact carries canonical effective finding tuples and rejects missing or invented origins",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "e7d6aab14",
+        "ranAt": "2026-11-04T19:53:18.141Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Interleaved selected order and impact reservation kind",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/selected-recovery.test.ts",
+                "title": "interleaved retained coverage schedules only the selected prefix and fresh final consistency",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/selected-recovery.test.ts",
+                "title": "impact reservation kinds preserve retry counters and reject mismatches without mutation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Selected work resume/mutation/generation and persisted retry counters",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/selected-recovery.test.ts",
+                "title": "accepted selection corruption stays terminal and all-fresh checkpoints retain recovery behavior",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+                "title": "explicit native recovery preserves accepted prefixes and durable replay reserves only unfinished work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+                "title": "controller recovery rebinds only after disconnect and rejects stale generations without repeating completed chunks",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject-monitor.test.ts",
+                "title": "blocked native work is durably invalidated before return and restored bytes cannot accept late output",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 760,
+            "titles": [
+              {
+                "title": "explicit native recovery preserves accepted prefixes and durable replay reserves only unfinished work",
+                "result": "pass"
+              },
+              {
+                "title": "report-only recovery rebuilds the checkpoint report with zero provider construction or calls",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery rebinds only after disconnect and rejects stale generations without repeating completed chunks",
+                "result": "pass"
+              },
+              {
+                "title": "changed subject recovery latches invalidation and approved full restart refreshes party without reusing old work",
+                "result": "pass"
+              },
+              {
+                "title": "recovery refuses missing checkpoints stale attempts and unavailable publication without invoking a provider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/selected-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 670,
+            "titles": [
+              {
+                "title": "interleaved retained coverage schedules only the selected prefix and fresh final consistency",
+                "result": "pass"
+              },
+              {
+                "title": "impact reservation kinds preserve retry counters and reject mismatches without mutation",
+                "result": "pass"
+              },
+              {
+                "title": "accepted selection corruption stays terminal and all-fresh checkpoints retain recovery behavior",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/subject-monitor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 766,
+            "titles": [
+              {
+                "title": "subject monitor filters unrelated events rearms renamed watches and disposes without treating polling as activity",
+                "result": "pass"
+              },
+              {
+                "title": "subject polling invalidates deletion symlink replacement and atomic rename for either subject representation",
+                "result": "pass"
+              },
+              {
+                "title": "blocked native work is durably invalidated before return and restored bytes cannot accept late output",
+                "result": "pass"
+              },
+              {
+                "title": "subject change during final report save preserves historical feedback but never exposes a valid report",
+                "result": "pass"
+              },
+              {
+                "title": "subject invalidation rejects controller feedback queued behind a delayed activity save",
+                "result": "pass"
+              },
+              {
+                "title": "failed invalidation persistence stays visibly failed and never retries native work",
+                "result": "pass"
+              },
+              {
+                "title": "an opened watcher error closes and rearms it while fingerprint checks still invalidate a changed subject",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a4c3115ec",
+        "ranAt": "2026-11-04T19:57:26.797Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Native/controller impact exchange parity and atomic plan-plus-impact save",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 772,
+            "titles": [
+              {
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "685ce94a6",
+        "ranAt": "2026-11-04T20:03:02.626Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Exact coverage partition and effective finding counts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+                "title": "exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+                "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Final-result-only decisions, missing reconciliation carry, resolved/superseded evidence",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+                "title": "missing reconciliation is accepted incomplete with conservative carry and supersession references a real current finding",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+                "title": "invalid dispositions cannot close retained-only concerns or cite unknown duplicate or uninspected sources",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 712,
+            "titles": [
+              {
+                "title": "exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result",
+                "result": "pass"
+              },
+              {
+                "title": "missing reconciliation is accepted incomplete with conservative carry and supersession references a real current finding",
+                "result": "pass"
+              },
+              {
+                "title": "invalid dispositions cannot close retained-only concerns or cite unknown duplicate or uninspected sources",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "57b35344d",
+        "ranAt": "2026-11-04T20:07:33.486Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Normal impact schema/IPC routing rejects foreign or stale submissions",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Fresh-only progress pagination and retained breakdown",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/coverage-progress.test.ts",
+                "title": "fresh-only progress and pagination report retained scope without masking incomplete status",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/coverage-progress.test.ts",
+                "title": "pre-plan and old full progress derive counts and impact tools return to impact phase",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/design-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12573,
+            "titles": [
+              {
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
+              {
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              },
+              {
+                "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
+                "result": "pass"
+              },
+              {
+                "title": "normal stdio controller failure and explicit recovery retain actual connection authority and generations",
+                "result": "pass"
+              },
+              {
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/coverage-progress.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 707,
+            "titles": [
+              {
+                "title": "fresh-only progress and pagination report retained scope without masking incomplete status",
+                "result": "pass"
+              },
+              {
+                "title": "pre-plan and old full progress derive counts and impact tools return to impact phase",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "76d3d899a",
+        "ranAt": "2026-11-04T20:15:13.377Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Disposable compiled MCP/IPC initial and corrected review call counts",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/insrc-design-impact-QBpWWv/evidence.json; /tmp/s3-compiled-impact-smoke.log; compiled=true, hostedModel=false, installedDaemonTouched=false. Exact stages: planning/keep/edit/final, impact/edit/final, impact/keep/edit/final; retained calls zero, carried HIGH preserved then resolved after indirect fresh inspection."
+            }
+          },
+          {
+            "name": "Epic standalone issue contexts and S1/S2 regression qualification",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+                "title": "native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts",
+                "title": "correction after an invalidated first attempt and full restart can retain the restarted coverage",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts",
+                "title": "stored initial reports cannot invent impact projections or nonimpact finding decisions",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+                "title": "changed subject recovery latches invalidation and approved full restart refreshes party without reusing old work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 787,
+            "titles": [
+              {
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 693,
+            "titles": [
+              {
+                "title": "correction after an invalidated first attempt and full restart can retain the restarted coverage",
+                "result": "pass"
+              },
+              {
+                "title": "stored initial reports cannot invent impact projections or nonimpact finding decisions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 730,
+            "titles": [
+              {
+                "title": "explicit native recovery preserves accepted prefixes and durable replay reserves only unfinished work",
+                "result": "pass"
+              },
+              {
+                "title": "report-only recovery rebuilds the checkpoint report with zero provider construction or calls",
+                "result": "pass"
+              },
+              {
+                "title": "controller recovery rebinds only after disconnect and rejects stale generations without repeating completed chunks",
+                "result": "pass"
+              },
+              {
+                "title": "changed subject recovery latches invalidation and approved full restart refreshes party without reusing old work",
+                "result": "pass"
+              },
+              {
+                "title": "recovery refuses missing checkpoints stale attempts and unavailable publication without invoking a provider",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/subject.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1068,
+            "titles": [
+              {
+                "title": "workflow matrix resolves Epic designs, standalone LLD and ISSUE LLD without future artifacts",
+                "result": "pass"
+              },
+              {
+                "title": "workflow requirements do not downgrade broken Epics or turn correction links into ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "subject identity, containment and party are validated and only subject changes invalidate",
+                "result": "pass"
+              },
+              {
+                "title": "native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

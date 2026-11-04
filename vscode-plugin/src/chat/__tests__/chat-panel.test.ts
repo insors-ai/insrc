@@ -6238,3 +6238,44 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewinds the checkpoint INCLUDING the decoder seq/buffer — the retry pass re-reads the terminal under the gate and never re-issues a different requestId', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs6-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      observerTickBudgetMs: 1, // pass 1 sees the terminal but cannot drain the trailing output
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const selLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```' }] } }) + '\n';
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
+    const tailLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'after the result' }] } }) + '\n';
+    appendFileSync(seg.outPath, selLine + resultLine + tailLine);
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the terminal is re-read under the caught-up gate and completes');
+    const after = store.get(s.id)!;
+    const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
+    assert.equal(sels.length, 1, 'exactly one selection request across the rewind+retry (same id, no duplicate)');
+    assert.equal(sels[0]!.requestId, 'sel-t-obs-0', 'the requestId is stable across the replay');
+    assert.equal(after.status, 'waiting-input', 'the unresolved request keeps waiting-input across the terminal');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

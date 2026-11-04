@@ -682,7 +682,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number } | undefined };
+        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
@@ -741,11 +741,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             } else if (ev.kind === 'error') {
               if (ev.observationFailure === true) st.sawObservationFailure = true;
               else {
-                st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset };
+                // capture the decoder state AS OF just before the terminal too — a rewind must
+                // rewind the seq/buffer with the offset, or the replay re-issues a different id
+                st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf };
                 st.sawTerminal = true;
               }
             } else if (ev.kind === 'done') {
-              st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset };
+              st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf };
               st.sawTerminal = true;
             }
             if (Date.now() > deadline && !ctl.signal.aborted) {
@@ -779,9 +781,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
       // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
-      const persistAt = pass.sawTerminal && !caughtUp ? (pass.preTerminal ?? pass.last) : pass.last;
+      const rewind = pass.sawTerminal && !caughtUp;
+      const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
+      const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
+      const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
       try {
-        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: pass.seq, ...(pass.buf !== '' ? { selectionBuffer: pass.buf } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
+        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a

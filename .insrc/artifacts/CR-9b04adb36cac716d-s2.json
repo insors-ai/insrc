@@ -1,0 +1,2367 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-d905a81a-b692-4dcc-be0f-7061289c476e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-03T16:19:37.047Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s2",
+    "reviewedBy": "daemon",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "2fe53d574b53ab009a7d11e4a3faac0fbdff44f453a546c02f24b01fe7afc093",
+        "at": "2026-11-03T16:57:11.077Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 2
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s2",
+    "status": "failed",
+    "reviews": [
+      {
+        "reviewId": "design-review-s2-1793721015585",
+        "attempt": 1,
+        "storyId": "s2",
+        "reviewer": "daemon",
+        "status": "failed",
+        "scope": {
+          "storyId": "s2",
+          "documents": {
+            "story": {
+              "path": ".insrc/artifacts/DEF-9b04adb36cac716d.json",
+              "commit": "9e05275465beb81a2bf335658d45f20c8ef2a3c7"
+            },
+            "lld": {
+              "path": ".insrc/artifacts/LLD-9b04adb36cac716d-s2.json",
+              "commit": "52c23f14387b8a7cfad37b5de5e71af9201737f4"
+            },
+            "plan": {
+              "path": ".insrc/artifacts/PLAN-9b04adb36cac716d-s2.json",
+              "commit": "0e8caf5be479161c86656a0d4e95b775ee538dbf"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "0e8caf5be479161c86656a0d4e95b775ee538dbf",
+              "parent": "62e30ff080fbdb1c33137784563fcbec8c516759",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        55
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        11,
+                        11
+                      ]
+                    },
+                    {
+                      "after": [
+                        24,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        111,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        137
+                      ]
+                    },
+                    {
+                      "after": [
+                        143,
+                        143
+                      ]
+                    },
+                    {
+                      "after": [
+                        148,
+                        148
+                      ]
+                    },
+                    {
+                      "after": [
+                        156,
+                        157
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        171,
+                        171
+                      ]
+                    },
+                    {
+                      "after": [
+                        214,
+                        218
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "594b26247b8a68cdb3657a85331a144890d0ef6e",
+              "parent": "21e4a78f3625182b34399dd7c5fe9173463ed13e",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        76
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/checkpoint.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        71
+                      ]
+                    },
+                    {
+                      "after": [
+                        103,
+                        104
+                      ]
+                    },
+                    {
+                      "after": [
+                        106,
+                        107
+                      ]
+                    },
+                    {
+                      "after": [
+                        127,
+                        129
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        135
+                      ]
+                    },
+                    {
+                      "after": [
+                        142,
+                        142
+                      ]
+                    },
+                    {
+                      "after": [
+                        157,
+                        160
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        117,
+                        117
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "53b3002208aa0a7bd7013402aef735191de01373",
+              "parent": "f176f357b06061513cf3e603d4aa39a758707d5d",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        91
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        135,
+                        135
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        4
+                      ]
+                    },
+                    {
+                      "after": [
+                        12,
+                        12
+                      ]
+                    },
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        48,
+                        48
+                      ]
+                    },
+                    {
+                      "after": [
+                        71,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        89
+                      ]
+                    },
+                    {
+                      "after": [
+                        90,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        99,
+                        133
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        144
+                      ]
+                    },
+                    {
+                      "after": [
+                        160,
+                        160
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        170,
+                        173
+                      ]
+                    },
+                    {
+                      "after": [
+                        197,
+                        199
+                      ]
+                    },
+                    {
+                      "after": [
+                        200,
+                        200
+                      ]
+                    },
+                    {
+                      "after": [
+                        269,
+                        277
+                      ]
+                    },
+                    {
+                      "after": [
+                        281,
+                        281
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        297
+                      ]
+                    },
+                    {
+                      "deletionAt": 201
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        71
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/recovery-state.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        44
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "92d1e2f3235ba04da6d2ee9d78f0706d856798bf",
+              "parent": "1119847fbfc17fe00924a798e76fecd2aa4dca18",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        63,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        66,
+                        67
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        70
+                      ]
+                    },
+                    {
+                      "after": [
+                        74,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        95,
+                        95
+                      ]
+                    },
+                    {
+                      "after": [
+                        100,
+                        100
+                      ]
+                    },
+                    {
+                      "after": [
+                        102,
+                        104
+                      ]
+                    },
+                    {
+                      "after": [
+                        108,
+                        110
+                      ]
+                    },
+                    {
+                      "after": [
+                        112,
+                        112
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/__tests__/retry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        86
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        171,
+                        171
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        20,
+                        20
+                      ]
+                    },
+                    {
+                      "after": [
+                        42,
+                        42
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        101,
+                        103
+                      ]
+                    },
+                    {
+                      "after": [
+                        139,
+                        147
+                      ]
+                    },
+                    {
+                      "after": [
+                        207,
+                        228
+                      ]
+                    },
+                    {
+                      "after": [
+                        235,
+                        239
+                      ]
+                    },
+                    {
+                      "after": [
+                        241,
+                        242
+                      ]
+                    },
+                    {
+                      "after": [
+                        255,
+                        256
+                      ]
+                    },
+                    {
+                      "after": [
+                        259,
+                        261
+                      ]
+                    },
+                    {
+                      "after": [
+                        266,
+                        266
+                      ]
+                    },
+                    {
+                      "after": [
+                        278,
+                        278
+                      ]
+                    },
+                    {
+                      "after": [
+                        292,
+                        292
+                      ]
+                    },
+                    {
+                      "after": [
+                        296,
+                        300
+                      ]
+                    },
+                    {
+                      "after": [
+                        309,
+                        316
+                      ]
+                    },
+                    {
+                      "after": [
+                        347,
+                        348
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/technical-failure.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        29
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "aa58428502639a359f0ef01927daed9ec6d8caf1",
+              "parent": "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        91,
+                        92
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/__tests__/subject-monitor.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        21,
+                        22
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        55,
+                        55
+                      ]
+                    },
+                    {
+                      "after": [
+                        97,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        192,
+                        203
+                      ]
+                    },
+                    {
+                      "after": [
+                        207,
+                        207
+                      ]
+                    },
+                    {
+                      "after": [
+                        211,
+                        214
+                      ]
+                    },
+                    {
+                      "after": [
+                        293,
+                        293
+                      ]
+                    },
+                    {
+                      "after": [
+                        307,
+                        307
+                      ]
+                    },
+                    {
+                      "after": [
+                        344,
+                        344
+                      ]
+                    },
+                    {
+                      "after": [
+                        365,
+                        365
+                      ]
+                    },
+                    {
+                      "after": [
+                        374,
+                        374
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        73,
+                        73
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/subject-monitor.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        47
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "5be98972fff052ba9477f7bc6edd490a827d90bd",
+              "parent": "aa58428502639a359f0ef01927daed9ec6d8caf1",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/activity-monitor.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        73
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/activity-monitor.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        19
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        9,
+                        10
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        23
+                      ]
+                    },
+                    {
+                      "after": [
+                        270,
+                        270
+                      ]
+                    },
+                    {
+                      "after": [
+                        278,
+                        278
+                      ]
+                    },
+                    {
+                      "after": [
+                        311,
+                        311
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "43db4833b3337371ade0d6aa7a0d41a2b798db5b",
+              "parent": "5be98972fff052ba9477f7bc6edd490a827d90bd",
+              "files": [
+                {
+                  "path": "src/daemon/design-review-rpc.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        5,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        20,
+                        20
+                      ]
+                    },
+                    {
+                      "after": [
+                        22,
+                        22
+                      ]
+                    },
+                    {
+                      "after": [
+                        26,
+                        27
+                      ]
+                    },
+                    {
+                      "after": [
+                        34,
+                        34
+                      ]
+                    },
+                    {
+                      "after": [
+                        38,
+                        38
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/handler-runtime.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        631,
+                        632
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/repo-call-audit.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        56,
+                        56
+                      ]
+                    },
+                    {
+                      "after": [
+                        60,
+                        61
+                      ]
+                    },
+                    {
+                      "after": [
+                        184,
+                        184
+                      ]
+                    },
+                    {
+                      "after": [
+                        188,
+                        189
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/threads/method-class.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        96,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        317,
+                        317
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/mcp/__tests__/design-review.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        22,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        28,
+                        32
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        79,
+                        134
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/mcp/__tests__/schema-registry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        49,
+                        49
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        337,
+                        342
+                      ]
+                    },
+                    {
+                      "after": [
+                        349,
+                        371
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        72,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        78
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9d0831fdf69e23c21b9c2194b7573b8791298b48",
+              "parent": "43db4833b3337371ade0d6aa7a0d41a2b798db5b",
+              "files": [
+                {
+                  "path": "docs/design-review-execution.md",
+                  "segments": [
+                    {
+                      "after": [
+                        26,
+                        26
+                      ]
+                    },
+                    {
+                      "after": [
+                        29,
+                        46
+                      ]
+                    },
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    },
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        54,
+                        54
+                      ]
+                    },
+                    {
+                      "after": [
+                        63,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        68,
+                        69
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "scripts/smoke-design-review-recovery.mjs",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        104
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "scripts/smoke-design-review.mjs",
+                  "segments": [
+                    {
+                      "after": [
+                        19,
+                        21
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "passed",
+            "summary": "t1 adds strict `recover`/`failure` request schemas, sc3 recovery/failure/unit/action/summary types, and extends checkpoint/progress/attempt schemas with bounded, optional recovery metadata, while preserving S1-era checkpoint readability. The implementation at commit 0e8caf5be matches the LLD's sc3 interface sketch (DesignFailure, DesignRecoveryState, DesignRecoveryAction field-for-field) and the PLAN's t1 acceptance checks. The two new tests in recovery-contracts.test.ts exercise the discriminator/operation/decision matrix, bounds (automaticRetries=3, automaticDispatches=4, actions=128, chunks+1 unitSummaries), additionalProperties strictness (rejecting raw-transcript/artifact-body smuggling), immutable-literal recovery-state variants, and backward-compatible S1 checkpoint decoding. Ran the scoped test file against the current checkout: 2/2 pass, matching the builder's reported result.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "recovery-contracts.test.ts's two tests directly exercise every schema/validator addition claimed in scope: DesignRequestSchemas.recover and .failure (phase/operation/identity/actionId/userDecision strict validation and the parseDesignRequest cross-field decision rules), DesignRecoveryStateSchema's three discriminated-literal variants, DesignUnitStateSchema/DesignUnitSummarySchema/DesignActionRecordSchema bounds (dispatches 1-4, retriesUsed 0-3, userDirectedDispatches 0-128, diagnostics<=4, actions<=128, unitSummaries<=chunks+1), DesignProgressSchema's new optional recovery/retriesUsed/executionId/failedUnit fields plus additionalProperties rejection of an extraneous baseline field, DesignAttemptSchema's attempts bound, and old-shape S1 checkpoint backward compatibility (attempts[0].unit undefined, full round-trip decode). I cross-read the committed contracts.ts (0e8caf5be) line-by-line against its parent (62e30ff08) to confirm every quoted block is new/changed as claimed, confirmed the git parent relationship, and ran `npx tsx --test-force-exit --test src/workflow/review/design-review/__tests__/recovery-contracts.test.ts` against the current checkout: both cases pass, consistent with the builder-reported result. DesignUnitAssignment's new previousTechnicalFeedback/retriesUsed fields are a plain TS interface (not a TypeBox-validated boundary type, same as the pre-existing DesignReviewAcknowledgement), so no schema test is needed for them; DesignRecoveryActionSchema is a documented standalone sc3 contract type (matching the LLD interfaceSketch verbatim) not wired into decodeDesign directly, which is consistent with how the request-level recover schema is composed inline — not a gap in this task's scope.",
+              "evidenceReferences": [
+                "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/contracts.ts",
+                "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/__tests__/fixtures.ts",
+                "52c23f14387b8a7cfad37b5de5e71af9201737f4:.insrc/artifacts/LLD-9b04adb36cac716d-s2.json",
+                "0e8caf5be479161c86656a0d4e95b775ee538dbf:.insrc/artifacts/PLAN-9b04adb36cac716d-s2.json"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran the scoped unit test file directly (2/2 pass); did not rerun the full 100-test aggregate, typecheck, or production build claimed by the builder's evidence — those are outside what's needed to confirm this task's contract/test additions and are consistent with the \"Do not rerun broad or hosted suites\" instruction.",
+              "Optional improvement (non-blocking): DesignRecoveryActionSchema is exported but has no current call site outside contracts.ts itself; consider either wiring DesignRequestSchemas.recover to intersect it (reducing duplicate field definitions between the two) or noting in a comment that it exists to document the sc3 cross-story contract shape for S3/S4 consumers."
+            ],
+            "inspectedReferences": [
+              "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/contracts.ts",
+              "62e30ff080fbdb1c33137784563fcbec8c516759:src/workflow/review/design-review/contracts.ts",
+              "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+              "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/__tests__/fixtures.ts",
+              "9e05275465beb81a2bf335658d45f20c8ef2a3c7:.insrc/artifacts/DEF-9b04adb36cac716d.json",
+              "52c23f14387b8a7cfad37b5de5e71af9201737f4:.insrc/artifacts/LLD-9b04adb36cac716d-s2.json",
+              "0e8caf5be479161c86656a0d4e95b775ee538dbf:.insrc/artifacts/PLAN-9b04adb36cac716d-s2.json",
+              "5be98972fff052ba9477f7bc6edd490a827d90bd:src/workflow/review/design-review/coordinator.ts",
+              "5be98972fff052ba9477f7bc6edd490a827d90bd:src/workflow/review/design-review/checkpoint.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "cases": [
+                  "recovery and failure envelopes strictly separate transport phase, operation and user direction",
+                  "S1 checkpoints remain readable and bounded recovery metadata round-trips without content or transcripts"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran against current checkout (working tree matches commit 0e8caf5be for both files per git history). Output: tests 2, pass 2, fail 0, duration ~588ms.",
+                "evidenceReferences": [
+                  "0e8caf5be479161c86656a0d4e95b775ee538dbf:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts"
+                ]
+              }
+            ]
+          },
+          {
+            "taskId": "t2",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t3",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t4",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t5",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t6",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t7",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          },
+          {
+            "taskId": "t8",
+            "status": "failed",
+            "summary": "Reviewer failed: Review activity CLI failed",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: Review activity CLI failed"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: Review activity CLI failed"
+          }
+        ],
+        "summary": "8 selected task assessment(s): failed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"t2\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t3\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t4\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t5\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t6\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t7\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}},{\"phase\":\"assessment\",\"taskId\":\"t8\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"NATIVE_CLI_FAILURE\",\"field\":\"/\",\"correction\":\"Resolve the reported native CLI output failure.\",\"occurrences\":1}],\"terminal\":{\"reason\":\"success\",\"exitCode\":1}}]",
+        "completedAt": "2026-11-03T16:19:18.460Z",
+        "buildFingerprint": "f1aa06a88b745dc6a1a818e89be23f1b4872e45c306d195fa61f007423e642b0"
+      },
+      {
+        "reviewId": "design-review-s2-1793721015585",
+        "attempt": 2,
+        "storyId": "s2",
+        "reviewer": "daemon",
+        "status": "failed",
+        "scope": {
+          "storyId": "s2",
+          "documents": {
+            "story": {
+              "path": ".insrc/artifacts/DEF-9b04adb36cac716d.json",
+              "commit": "9e05275465beb81a2bf335658d45f20c8ef2a3c7"
+            },
+            "lld": {
+              "path": ".insrc/artifacts/LLD-9b04adb36cac716d-s2.json",
+              "commit": "52c23f14387b8a7cfad37b5de5e71af9201737f4"
+            },
+            "plan": {
+              "path": ".insrc/artifacts/PLAN-9b04adb36cac716d-s2.json",
+              "commit": "0e8caf5be479161c86656a0d4e95b775ee538dbf"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "0e8caf5be479161c86656a0d4e95b775ee538dbf",
+              "parent": "62e30ff080fbdb1c33137784563fcbec8c516759",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        55
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        11,
+                        11
+                      ]
+                    },
+                    {
+                      "after": [
+                        24,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        111,
+                        112
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        137
+                      ]
+                    },
+                    {
+                      "after": [
+                        143,
+                        143
+                      ]
+                    },
+                    {
+                      "after": [
+                        148,
+                        148
+                      ]
+                    },
+                    {
+                      "after": [
+                        156,
+                        157
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        171,
+                        171
+                      ]
+                    },
+                    {
+                      "after": [
+                        214,
+                        218
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "594b26247b8a68cdb3657a85331a144890d0ef6e",
+              "parent": "21e4a78f3625182b34399dd7c5fe9173463ed13e",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        76
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/checkpoint.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        7,
+                        71
+                      ]
+                    },
+                    {
+                      "after": [
+                        103,
+                        104
+                      ]
+                    },
+                    {
+                      "after": [
+                        106,
+                        107
+                      ]
+                    },
+                    {
+                      "after": [
+                        127,
+                        129
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        135
+                      ]
+                    },
+                    {
+                      "after": [
+                        142,
+                        142
+                      ]
+                    },
+                    {
+                      "after": [
+                        157,
+                        160
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        117,
+                        117
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "53b3002208aa0a7bd7013402aef735191de01373",
+              "parent": "f176f357b06061513cf3e603d4aa39a758707d5d",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        91
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        135,
+                        135
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        4
+                      ]
+                    },
+                    {
+                      "after": [
+                        12,
+                        12
+                      ]
+                    },
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    },
+                    {
+                      "after": [
+                        48,
+                        48
+                      ]
+                    },
+                    {
+                      "after": [
+                        71,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        89
+                      ]
+                    },
+                    {
+                      "after": [
+                        90,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        99,
+                        133
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        144
+                      ]
+                    },
+                    {
+                      "after": [
+                        160,
+                        160
+                      ]
+                    },
+                    {
+                      "after": [
+                        162,
+                        162
+                      ]
+                    },
+                    {
+                      "after": [
+                        170,
+                        173
+                      ]
+                    },
+                    {
+                      "after": [
+                        197,
+                        199
+                      ]
+                    },
+                    {
+                      "after": [
+                        200,
+                        200
+                      ]
+                    },
+                    {
+                      "after": [
+                        269,
+                        277
+                      ]
+                    },
+                    {
+                      "after": [
+                        281,
+                        281
+                      ]
+                    },
+                    {
+                      "after": [
+                        297,
+                        297
+                      ]
+                    },
+                    {
+                      "deletionAt": 201
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        16
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        71
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/recovery-state.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        44
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "92d1e2f3235ba04da6d2ee9d78f0706d856798bf",
+              "parent": "1119847fbfc17fe00924a798e76fecd2aa4dca18",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        63,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        66,
+                        67
+                      ]
+                    },
+                    {
+                      "after": [
+                        70,
+                        70
+                      ]
+                    },
+                    {
+                      "after": [
+                        74,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        95,
+                        95
+                      ]
+                    },
+                    {
+                      "after": [
+                        100,
+                        100
+                      ]
+                    },
+                    {
+                      "after": [
+                        102,
+                        104
+                      ]
+                    },
+                    {
+                      "after": [
+                        108,
+                        110
+                      ]
+                    },
+                    {
+                      "after": [
+                        112,
+                        112
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/__tests__/retry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        86
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        171,
+                        171
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        20,
+                        20
+                      ]
+                    },
+                    {
+                      "after": [
+                        42,
+                        42
+                      ]
+                    },
+                    {
+                      "after": [
+                        51,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        101,
+                        103
+                      ]
+                    },
+                    {
+                      "after": [
+                        139,
+                        147
+                      ]
+                    },
+                    {
+                      "after": [
+                        207,
+                        228
+                      ]
+                    },
+                    {
+                      "after": [
+                        235,
+                        239
+                      ]
+                    },
+                    {
+                      "after": [
+                        241,
+                        242
+                      ]
+                    },
+                    {
+                      "after": [
+                        255,
+                        256
+                      ]
+                    },
+                    {
+                      "after": [
+                        259,
+                        261
+                      ]
+                    },
+                    {
+                      "after": [
+                        266,
+                        266
+                      ]
+                    },
+                    {
+                      "after": [
+                        278,
+                        278
+                      ]
+                    },
+                    {
+                      "after": [
+                        292,
+                        292
+                      ]
+                    },
+                    {
+                      "after": [
+                        296,
+                        300
+                      ]
+                    },
+                    {
+                      "after": [
+                        309,
+                        316
+                      ]
+                    },
+                    {
+                      "after": [
+                        347,
+                        348
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/technical-failure.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        29
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "aa58428502639a359f0ef01927daed9ec6d8caf1",
+              "parent": "cf18ecd8771379024ddf3c2e09c11d83fd2dc57a",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/controller.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        91,
+                        92
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/__tests__/subject-monitor.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        82
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        21,
+                        22
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        55,
+                        55
+                      ]
+                    },
+                    {
+                      "after": [
+                        97,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        192,
+                        203
+                      ]
+                    },
+                    {
+                      "after": [
+                        207,
+                        207
+                      ]
+                    },
+                    {
+                      "after": [
+                        211,
+                        214
+                      ]
+                    },
+                    {
+                      "after": [
+                        293,
+                        293
+                      ]
+                    },
+                    {
+                      "after": [
+                        307,
+                        307
+                      ]
+                    },
+                    {
+                      "after": [
+                        344,
+                        344
+                      ]
+                    },
+                    {
+                      "after": [
+                        365,
+                        365
+                      ]
+                    },
+                    {
+                      "after": [
+                        374,
+                        374
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        73,
+                        73
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/subject-monitor.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        47
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "5be98972fff052ba9477f7bc6edd490a827d90bd",
+              "parent": "aa58428502639a359f0ef01927daed9ec6d8caf1",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/activity-monitor.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        73
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/activity-monitor.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        19
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        9,
+                        10
+                      ]
+                    },
+                    {
+                      "after": [
+                        23,
+                        23
+                      ]
+                    },
+                    {
+                      "after": [
+                        270,
+                        270
+                      ]
+                    },
+                    {
+                      "after": [
+                        278,
+                        278
+                      ]
+                    },
+                    {
+                      "after": [
+                        311,
+                        311
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "43db4833b3337371ade0d6aa7a0d41a2b798db5b",
+              "parent": "5be98972fff052ba9477f7bc6edd490a827d90bd",
+              "files": [
+                {
+                  "path": "src/daemon/design-review-rpc.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        5,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        20,
+                        20
+                      ]
+                    },
+                    {
+                      "after": [
+                        22,
+                        22
+                      ]
+                    },
+                    {
+                      "after": [
+                        26,
+                        27
+                      ]
+                    },
+                    {
+                      "after": [
+                        34,
+                        34
+                      ]
+                    },
+                    {
+                      "after": [
+                        38,
+                        38
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/handler-runtime.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        631,
+                        632
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/repo-call-audit.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        56,
+                        56
+                      ]
+                    },
+                    {
+                      "after": [
+                        60,
+                        61
+                      ]
+                    },
+                    {
+                      "after": [
+                        184,
+                        184
+                      ]
+                    },
+                    {
+                      "after": [
+                        188,
+                        189
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/threads/method-class.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        96,
+                        97
+                      ]
+                    },
+                    {
+                      "after": [
+                        317,
+                        317
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/mcp/__tests__/design-review.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        4,
+                        5
+                      ]
+                    },
+                    {
+                      "after": [
+                        22,
+                        25
+                      ]
+                    },
+                    {
+                      "after": [
+                        28,
+                        32
+                      ]
+                    },
+                    {
+                      "after": [
+                        37,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        79,
+                        134
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/mcp/__tests__/schema-registry.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        49,
+                        49
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/prompts/steering-block.md",
+                  "segments": [
+                    {
+                      "after": [
+                        337,
+                        342
+                      ]
+                    },
+                    {
+                      "after": [
+                        349,
+                        371
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/progress.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        72,
+                        74
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        78
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "9d0831fdf69e23c21b9c2194b7573b8791298b48",
+              "parent": "43db4833b3337371ade0d6aa7a0d41a2b798db5b",
+              "files": [
+                {
+                  "path": "docs/design-review-execution.md",
+                  "segments": [
+                    {
+                      "after": [
+                        26,
+                        26
+                      ]
+                    },
+                    {
+                      "after": [
+                        29,
+                        46
+                      ]
+                    },
+                    {
+                      "after": [
+                        50,
+                        50
+                      ]
+                    },
+                    {
+                      "after": [
+                        52,
+                        52
+                      ]
+                    },
+                    {
+                      "after": [
+                        54,
+                        54
+                      ]
+                    },
+                    {
+                      "after": [
+                        63,
+                        63
+                      ]
+                    },
+                    {
+                      "after": [
+                        68,
+                        69
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "scripts/smoke-design-review-recovery.mjs",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        104
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "scripts/smoke-design-review.mjs",
+                  "segments": [
+                    {
+                      "after": [
+                        19,
+                        21
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "t1",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t2",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t3",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t4",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t5",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t6",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t7",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          },
+          {
+            "taskId": "t8",
+            "status": "failed",
+            "summary": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "unverified",
+              "explanation": "No valid completed assessment was obtained.",
+              "evidenceReferences": []
+            },
+            "limitations": [
+              "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+            ],
+            "advice": [],
+            "inspectedReferences": [],
+            "executedTests": [],
+            "error": "Reviewer failed: attribution: Derived task scopes omit submitted changes or tests"
+          }
+        ],
+        "summary": "8 selected task assessment(s): failed.\nNative output diagnostics: [{\"phase\":\"attribution\",\"provider\":\"claude\",\"resolved\":false,\"errors\":[{\"code\":\"HOST_VALIDATION_ERROR\",\"field\":\"attribution\",\"correction\":\"Correct the host-rejected review field before resubmitting.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-03T16:56:53.733Z",
+        "buildFingerprint": "f1aa06a88b745dc6a1a818e89be23f1b4872e45c306d195fa61f007423e642b0"
+      }
+    ]
+  },
+  "citations": []
+}

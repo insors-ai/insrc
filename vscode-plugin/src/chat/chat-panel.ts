@@ -781,12 +781,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
       // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
-      const rewind = pass.sawTerminal && !caughtUp;
+      // Rewind a not-caught-up terminal to just before it — ONCE (a sustained budget exhaustion
+      // must not replay the same prefix forever; after one rewind the checkpoint advances normally).
+      const rewind = pass.sawTerminal && !caughtUp && cp.rewound !== true;
       const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
       const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
       const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
       try {
-        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
+        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(rewind ? { rewound: true } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a

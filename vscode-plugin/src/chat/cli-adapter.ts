@@ -1390,10 +1390,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // terminal was ingested and the pid may still be alive) — never a synthetic completion. A drain
     // that DID see a terminal ends cleanly instead (the segment's turn-end marker closed it).
     if (sawTerminalInDrain && opts?.drain === true) return;
-    // E202611031bd72813:S001 t5: EOF without a terminal event — if the process is ALIVE this is an
-    // observation failure (never a synthetic completion); if it is VERIFIED DEAD the turn really
-    // ended, so it is a plain terminal error and the observer's death gate can complete.
-    yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(isTheProcess() ? { observationFailure: true } : {}) };
+    // E202611031bd72813:S001 t5: EOF without a terminal event — a plain terminal error ONLY when a
+    // recorded pid is verified dead; alive OR ABSENT pid is an observation failure (an absent pid
+    // is unverifiable, never a synthetic completion).
+    const verifiedDead = pid !== undefined && !isTheProcess();
+    yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(verifiedDead ? {} : { observationFailure: true }) };
   }
 
   return { run, resume, cancel, decide, registerPending, capabilities: { resume: mapper.resume } };

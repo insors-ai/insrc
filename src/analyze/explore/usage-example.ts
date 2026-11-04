@@ -198,21 +198,30 @@ export async function runUsageExample(
 	};
 }
 
+const CALLER_NOUN = { one: 'listed caller', many: 'listed callers', none: 'No callers are listed.' } as const;
+
+/** The noun a document's related links are worded with (Epic c2ba6fa6 s10). */
+export const DOCUMENT_LINK_NOUN = { one: 'related document link', many: 'related document links' } as const;
+
 /**
  * How the listed callers' relationships were established, counted and said in
  * one sentence an answer can quote (Epic c2ba6fa6 s7, ac4): which rest on
  * inferred or chosen relationships, and that ones stored before evidence was
  * recorded are of unknown origin -- never presented as read from the source.
  */
-export function evidenceOrigin(evidence: readonly RelationEvidence[]): EvidenceOrigin {
+export function evidenceOrigin(
+	evidence: readonly RelationEvidence[],
+	/** What the relationships are called (s10): the listed callers by default, so existing sentences are unchanged. */
+	noun: { readonly one: string; readonly many: string; readonly none?: string | undefined } = CALLER_NOUN,
+): EvidenceOrigin {
 	const counts: Partial<Record<RelationEvidence, number>> = {};
 	for (const e of evidence) counts[e] = (counts[e] ?? 0) + 1;
 	const n = evidence.length;
-	if (n === 0) return { counts, note: 'No callers are listed.' };
+	if (n === 0) return { counts, note: noun.none ?? `No ${noun.many} are listed.` };
 	const of = (k: RelationEvidence): number => counts[k] ?? 0;
-	const callers = (c: number): string => `${c} of ${n} listed caller${n === 1 ? '' : 's'}`;
+	const callers = (c: number): string => `${c} of ${n} ${n === 1 ? noun.one : noun.many}`;
 	if (of('unknown') === n) {
-		return { counts, note: `The origin of ${n === 1 ? 'the listed caller' : `all ${n} listed callers`} is unknown: ${n === 1 ? 'its relationship was' : 'their relationships were'} stored before the index recorded how relationships are established, so none is known to be read from the source.` };
+		return { counts, note: `The origin of ${n === 1 ? `the ${noun.one}` : `all ${n} ${noun.many}`} is unknown: ${n === 1 ? 'its relationship was' : 'their relationships were'} stored before the index recorded how relationships are established, so none is known to be read from the source.` };
 	}
 	const parts: string[] = [];
 	if (of('extracted') > 0) parts.push(`${callers(of('extracted'))} read directly from the source`);

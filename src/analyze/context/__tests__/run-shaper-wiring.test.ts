@@ -1,3 +1,4 @@
+import { docRelationsRevision } from '../../../indexer/doc-relations-read.js';
 import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /**
  * runShaper's own body for a run-mode request, driven directly: the
@@ -457,9 +458,11 @@ function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, ex
 }
 
 /** A cached bundle for `intent` in `id`'s run slot, written the way runShaper writes one. */
-function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code'): void {
+async function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code'): Promise<void> {
 	const prompt = readFileSync(join(REPO_ROOT, `src/prompts/analyze/${shaper}.system.md`), 'utf8');
-	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...meta } };
+	// A bundle over a repository carries the document-relations revision it was built at (Epic c2ba6fa6 s10).
+	const revision = typeof meta['repoPath'] === 'string' ? { docRelationsRevision: await docRelationsRevision(meta['repoPath']) } : {};
+	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...revision, ...meta } };
 	writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle as unknown as AnalyzeContextBundle);
 }
 
@@ -480,7 +483,7 @@ test("runShaper cache order: a cache hit does not call scope resolution (a scope
 	// file, and one of them is broken. The cached bundle is still returned.
 	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
 	const cid = runId('cache-conn');
-	seedBundle(cid, conn, { repoPath: null }, 'data');
+	await seedBundle(cid, conn, { repoPath: null }, 'data');
 	const broken = forbiddenScopeDeps();
 	const connHit = await callWith(conn, cid, standIns().steps, { scopeDeps: broken.deps }, 'data');
 	assert.equal(connHit.summary, 'CACHED');
@@ -501,7 +504,7 @@ test('runShaper: a cache hit for a bundle whose repository is now being indexed 
 	// A bundle written before repoPath was recorded is a miss: built again.
 	await updateRepoStatus(null, repo, 'ready');
 	const oid = runId('cache-no-repopath');
-	seedBundle(oid, intent, {});
+	await seedBundle(oid, intent, {});
 	const rebuilt = standIns();
 	const fresh = await callWith(intent, oid, rebuilt.steps);
 	assert.equal(rebuilt.seen.synthesize, 1, 'built, not served');
@@ -547,7 +550,7 @@ test('bundle schema: a freshly built bundle with repoPath (a string and null) pa
 test('runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks', async () => {
 	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
 	const id = runId('cache-null');
-	seedBundle(id, conn, { repoPath: null }, 'data');
+	await seedBundle(id, conn, { repoPath: null }, 'data');
 	// Every repository is under index, and the freshness reader throws: neither is consulted.
 	await updateRepoStatus(null, repo, 'indexing');
 	let freshnessReads = 0;
@@ -562,14 +565,14 @@ test('runShaper: a cache hit decides the index state by the same rule as a miss:
 	// A generic run is not checked on a miss (step 4.5), so a hit is not refused either.
 	const generic = unfocused({ kind: 'repo', value: repo }, 'generic');
 	const gid = runId('cache-generic-indexing');
-	seedBundle(gid, generic, { repoPath: repo }, 'generic');
+	await seedBundle(gid, generic, { repoPath: repo }, 'generic');
 	const servedGeneric = await callWith(generic, gid, standIns().steps, {}, 'generic');
 	assert.equal(servedGeneric.summary, 'CACHED', 'generic: served, not refused');
 
 	// A run whose caller checked the scope already (runAnalyze) is not checked again.
 	const code = unfocused({ kind: 'repo', value: repo });
 	const cid = runId('cache-checked-indexing');
-	seedBundle(cid, code, { repoPath: repo });
+	await seedBundle(cid, code, { repoPath: repo });
 	const servedChecked = await callWith(code, cid, standIns().steps, { opts: { runId: cid, scopeChecked: true } });
 	assert.equal(servedChecked.summary, 'CACHED', 'scopeChecked: served, not refused');
 
@@ -618,7 +621,7 @@ test("runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold 
 	// Warm: a docs bundle cached for a repository the index no longer holds is refused too.
 	const intent = unfocused({ kind: 'repo', value: empty }, 'docs');
 	const wid = runId('docs-warm');
-	seedBundle(wid, intent, { repoPath: empty }, 'docs');
+	await seedBundle(wid, intent, { repoPath: empty }, 'docs');
 	const warm = await callWith(intent, wid, standIns().steps, {}, 'docs').then(() => undefined, (e: unknown) => e);
 	assert.ok(warm instanceof ScopeNotIndexedError, `warm: ${String(warm)}`);
 

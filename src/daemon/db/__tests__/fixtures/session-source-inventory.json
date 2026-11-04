@@ -2027,7 +2027,7 @@
    ],
    "siteCount": 45,
    "sitesDigest": "806014a2a2beb938ab3ff4811911001bc75886d3ea6bc54c8c06bb864c85ae5e",
-   "sourceDigest": "f25b83e07955dc09fab1b3f742937dc55eba8767d768afde9167baadc730ed23",
+   "sourceDigest": "d8e15d065410053590e2ba42f41ba3e40c7c3c5ced9fc6c7889d00e64a7beee3",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -2197,7 +2197,7 @@
    ],
    "siteCount": 3,
    "sitesDigest": "925c095ce24d910faa9ec54b91061efdbd39a5f213f01fd311326f1c224f454f",
-   "sourceDigest": "1c1f3513f2b0dd39daa19c8fe685cbf6ee276eb8bc012c0c6e9e63b911b76ca5",
+   "sourceDigest": "9a91764d672b22ad9dc0cffd6a1d15843dda36c5192a02193d2004c8a46f69e0",
    "boundaries": [
     "serialization"
    ]
@@ -3422,7 +3422,7 @@
    ],
    "siteCount": 19,
    "sitesDigest": "8014bad785d66de44d6627284510d0020932afab50e374b28ed4890e4a8f264d",
-   "sourceDigest": "22ed072a22177c7c994a37c527531a72c7c830d4bc80f05f51c11140044a8da5",
+   "sourceDigest": "2d8499c7a00dcdc966cb62661412abfb642dec9d2051d5faf165b605a252902e",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -3737,7 +3737,7 @@
    ],
    "siteCount": 7,
    "sitesDigest": "29ae33b7f43474955bb25645025ba594512597a8b897259ed8cb49ed3223385a",
-   "sourceDigest": "074c2d4ea73abac514ea056d54c97c776f99a9ab1c06fd1b0c96e5cd2b890be1",
+   "sourceDigest": "ee73cc7fd7ea3a009656e7ca2aed9b983b7551e763ebe5b73afeea0e8133de44",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -39986,7 +39986,27 @@
     ],
     [
      "storage-call",
+     "getGraphStore"
+    ],
+    [
+     "serialization",
+     "JSON.stringify"
+    ],
+    [
+     "storage-call",
+     "lookupRepoIdInTxn"
+    ],
+    [
+     "storage-call",
      "readDocRelationQuality"
+    ],
+    [
+     "storage-call",
+     "readDocRelationQuality"
+    ],
+    [
+     "storage-call",
+     "readDocRelationRowsInTxn"
     ],
     [
      "filesystem-read",
@@ -39994,14 +40014,19 @@
     ],
     [
      "storage-call",
+     "readIndexState"
+    ],
+    [
+     "storage-call",
      "switchOf"
     ]
    ],
-   "siteCount": 5,
-   "sitesDigest": "2381f0cead43d3a938beeaf998d8825cd63adccb78c9111f0194883c4a6991d4",
-   "sourceDigest": "ee6995ce1d38783ab6780dc659b576d1d7a3150a123d2ce944a3a64a5c2938fe",
+   "siteCount": 11,
+   "sitesDigest": "b0896680f51b067a1d2ff1e10541806bc08395ea68dc5fa5fd7f9e8af8ad2645",
+   "sourceDigest": "1fed43582c42db3e18aaad7ddaaef9d633fb16bd03d568d6c5639131626e85c5",
    "boundaries": [
     "filesystem-read",
+    "serialization",
     "storage-call"
    ]
   },
@@ -40325,6 +40350,32 @@
    "sitesDigest": "bbcc5f3bf79364cc2add8e2dd9cd2328192a35a8f9939c4067dce7ceffda5e75",
    "sourceDigest": "1334997094b1ba6ec74b194898aed9db3703481d093e49deb10fe6a71518e83a",
    "boundaries": [
+    "storage-call"
+   ]
+  },
+  "src/analyze/explore/doc-relations-attach.ts": {
+   "classification": "session-invocation",
+   "rationale": "Attaches a doc.mention hit's document relationships at read (Epic c2ba6fa6 s10): reads stored relationships and the repository's switch, never caches what it attaches, and routes its one diagnostic through captureAnalysisDiagnostics so a session-memory run stays quiet.",
+   "sites": [
+    [
+     "serialization",
+     "captureAnalysisDiagnostics(log).emit"
+    ],
+    [
+     "storage-call",
+     "getEntity"
+    ],
+    [
+     "diagnostic",
+     "getLogger"
+    ]
+   ],
+   "siteCount": 3,
+   "sitesDigest": "33254798429f564cd56ca541784b4e2be1f4e065c948751d5c75e941eab2416f",
+   "sourceDigest": "526d57925336a9ed6f7590ea18ed328786c9c5f6b7b12980d3daedc3b51a05e2",
+   "boundaries": [
+    "diagnostic",
+    "serialization",
     "storage-call"
    ]
   }

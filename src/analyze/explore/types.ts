@@ -247,6 +247,20 @@ export interface DocMentionHit {
 	readonly kind:      'document' | 'section' | 'config';
 	readonly score:     number;
 	readonly preview?:  string;
+	/**
+	 * The hit's document relationships (Epic c2ba6fa6 s10), attached at read --
+	 * never cached: stored and name links, and model proposals while switched on.
+	 */
+	readonly related?:  readonly DocMentionRelated[] | undefined;
+}
+
+/** One relationship of a doc.mention hit. */
+export interface DocMentionRelated {
+	readonly entityId:              string;
+	/** Repository-relative file of the related entity. */
+	readonly file:                  string;
+	readonly evidence:              RelationEvidence;
+	readonly computedAtGeneration?: number | undefined;
 }
 
 export interface DocMentionOutput {
@@ -255,6 +269,12 @@ export interface DocMentionOutput {
 	readonly completeness: Completeness;
 	readonly subject: string;
 	readonly hits:    readonly DocMentionHit[];
+	/** How the hits' related links were established (evidenceOrigin with the document noun); attached at read. */
+	readonly relatedOrigin?: string | undefined;
+	/** Set when model-proposed links were computed from an older index; attached at read. */
+	readonly relatedStale?:  string | undefined;
+	/** Set when the related links of some hits could not be read, naming them and why; attached at read. */
+	readonly relatedUnreadable?: string | undefined;
 }
 
 /** One decision recorded in a doc + its citation. Preserves

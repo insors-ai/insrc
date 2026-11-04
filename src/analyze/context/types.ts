@@ -95,6 +95,12 @@ export interface BundleMeta {
 	/** Indexer's lastIndexedAt at bundle-build time -- used for cache invalidation. */
 	readonly repoLastIndexedAt?: number;
 	/**
+	 * The repository's document-relationship revision at build time (Epic c2ba6fa6 s10): a cached bundle
+	 * whose revision differs from the current one is rebuilt, so it never serves model links that were
+	 * switched off, links to removed endpoints or a name that became ambiguous.
+	 */
+	readonly docRelationsRevision?: string;
+	/**
 	 * The registered repository the bundle was built over, or null for one
 	 * built over none (a connection scope, or a path no registered repository
 	 * contains). A cache hit is checked against it without resolving the

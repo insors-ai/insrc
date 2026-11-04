@@ -5793,8 +5793,9 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
   }, 5000, 'the timer repost purges the aged done chat from the LATEST active-list');
   assert.equal(store.get(id)?.status, 'done', 'purge is list-level: the row keeps its status');
   assert.ok(store.list().some((x) => x.id === id), 'purged from the active list, but the chat REMAINS in history (store.list)');
-  const historyPosts = fc.posted.filter((p) => p.payload.type === 'history');
-  assert.ok(historyPosts.length === 0 || (historyPosts.at(-1)!.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id), 'the latest history post still offers the purged chat');
+  const historyPosts = fc.posted.filter((p) => p.payload.type === 'history-list');
+  assert.ok(historyPosts.length > 0, 'a history-list was posted');
+  assert.ok((historyPosts.at(-1)!.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id), 'the latest history-list still offers the purged chat');
 });
 
 test('E202611031bd72813:S001 t4: selecting an active-chat entry (open-chat { chatId }) opens that chat exactly like the history dropdown', () => {

@@ -39,15 +39,17 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined } = {}): Shell {
   let html = '';
-  const channel: ChatPanelChannel = { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
+  const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
+  // keep runShell's own html snapshot in sync when a caller supplies the channel
+  const channel: ChatPanelChannel = opts.channel !== undefined ? { ...inner, setHtml: (h) => { html = h; inner.setHtml(h); } } : inner;
   const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
   const providers: ProviderRegistry = { available: ['claude'], get: () => adapter };
   createChatPanelHost({
     createPanel: () => channel,
     providers,
-    store: createInMemoryChatSessionStore(),
+    store: opts.store ?? createInMemoryChatSessionStore(),
     cwd: () => '/repo',
     genNonce: () => 'N',
     // Epic E20261014613abdb3 Story S002: a queue, so the shell has the outbox (the worker is inert here).
@@ -696,4 +698,46 @@ test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right hist
   act.value = 'b';
   fire(act as never, 'change');
   assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+});
+
+test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdown selection posts open-chat, the real host receives it, and answers session-restored for that chat', () => {
+  const posted: unknown[] = [];
+  let onMsg: ((m: unknown) => void) | undefined;
+  let html = '';
+  const channel: ChatPanelChannel = {
+    setHtml: (h) => { html = h; },
+    postMessage: (m) => { posted.push(m); },
+    onMessage: (l) => { onMsg = l as (m: unknown) => void; },
+    onDidDispose: () => {},
+    reveal: () => {},
+    dispose: () => {},
+  };
+  const store = createInMemoryChatSessionStore();
+  const s = runShell({ store, channel });
+  const a = store.create('claude' as never);
+  const b = store.create('claude' as never);
+  store.save(a);
+  store.save(b);
+  const act = s.el('insrc-active') as unknown as { options: unknown[]; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
+  const opts: unknown[] = [];
+  act.options = opts as never;
+  act.remove = (i: number) => { opts.splice(i, 1); };
+  const origAppend = act.appendChild.bind(act);
+  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
+  // the host posts the active list; the shell renders it (options wired first, like the browser)
+  s.msg({ type: 'active-list', chats: [
+    { id: a.id, title: 'Chat A', status: 'done', lastActivityAt: 1 },
+    { id: b.id, title: 'Chat B', status: 'done', lastActivityAt: 2 },
+  ] });
+  // select Chat B in the dropdown, like a browser change event
+  act.value = b.id;
+  fire(act as never, 'change');
+  const last = s.sent.at(-1) as { type: string; chatId: string };
+  assert.deepEqual(last, { type: 'open-chat', chatId: b.id }, 'the shell posted open-chat for the selected chat');
+  // forward it through the channel to the REAL host (webview -> host)
+  onMsg?.({ v: 1, payload: last });
+  // the host must answer session-restored for chat B
+  const restored = posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'session-restored').at(-1) as { payload: { sessionId: string } };
+  assert.ok(restored !== undefined, 'the host answered session-restored');
+  assert.equal(restored.payload.sessionId, b.id, 'the round trip opened chat B end to end (shell selection -> host -> restore)');
 });

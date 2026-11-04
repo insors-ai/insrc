@@ -36,6 +36,17 @@ test('every existing WebviewToHost message still constructs with its original sh
     { type: 'open-doc', artifactId: 'x' },
   ];
   assert.equal(samples.length, 7);
+  // objective shape proof: each message's exact key set, in order (runtime deep check that
+  // complements the compile-time construction above)
+  assert.deepEqual(samples.map((m) => Object.keys(m)), [
+    ['type', 'text'],
+    ['type', 'provider'],
+    ['type', 'chatId'],
+    ['type', 'mode'],
+    ['type', 'path', 'accept'],
+    ['type', 'artifactId', 'decision', 'comments'],
+    ['type', 'artifactId'],
+  ], 'every pre-existing WebviewToHost message carries exactly its original fields');
 });
 
 test("S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)", () => {

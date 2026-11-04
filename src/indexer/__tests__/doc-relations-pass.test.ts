@@ -147,7 +147,10 @@ test('s10 t7: stale-hash guard and superseded by a full index', async () => {
 	assert.equal((await rows()).size, 0, 'no row published across the full index');
 
 	// A full index that begins and finishes while a value is in hand: superseded too, though the hash is unchanged.
-	const completed = await pass({ select: using(fakeProvider(lexerAnswer).provider), beforePublish: async () => { await svc.processJob({ kind: 'full', repoPath: repo }); } });
+	await svc.processJob({ kind: 'full', repoPath: repo });   // the held case left a full index unfinished
+	const examining = fakeProvider(lexerAnswer);
+	const completed = await pass({ select: using(examining.provider), beforePublish: async () => { await svc.processJob({ kind: 'full', repoPath: repo }); } });
+	assert.equal(examining.calls.length, 1, 'a document was examined');
 	assert.equal((completed as { grouped?: boolean }).grouped, false, 'superseded by the completed full index');
 	assert.equal((await rows()).size, 0, 'nothing computed before the rebuild is published');
 });

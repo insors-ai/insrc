@@ -33,7 +33,7 @@ export function resolveDesignCoverage(history: readonly DesignAttempt[], fromAtt
   requireDesign(Number.isSafeInteger(number)&&number>0&&number<limit&&!seen.has(key),errorCode,'Coverage origin must refer strictly backward without cycles');seen.add(key);
   const source=history[number-1];
   requireDesign(source&&source.number===number&&source.plan&&source.report&&['passed','changes_requested','incomplete'].includes(source.status),errorCode,'Coverage origin has no complete accepted source attempt');
-  const root=history[0]?.report;
+  const root=history.find(a=>a.report)?.report;
   requireDesign(root&&source.report.reviewId===root.reviewId&&source.report.artifactId===root.artifactId&&source.report.attempt===number&&source.report.reviewedContentIdentity===source.baseline.contentIdentity,errorCode,'Coverage origin belongs to a foreign report or baseline');
   requireDesign(reviewer!==undefined&&source.reviewer===reviewer,errorCode,'Coverage origin belongs to another or unknown reviewer party');
   const chunks=source.plan.chunks.filter(c=>c.id===chunkId),results=source.completedChunks.filter(r=>r.chunkId===chunkId);

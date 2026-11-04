@@ -8,6 +8,11 @@ import { emptyLifecycle } from '../../../artifact-core/decode.js';
 import { resolveArtifactMdPath } from '../../../path-scheme.js';
 import type { ArtifactKind } from '../../../path-scheme.js';
 import { artifactJsonPath } from '../../../storage.js';
+import { DesignReviewCoordinator } from '../coordinator.js';
+import { designCheckpointPath } from '../checkpoint.js';
+import { setTimeout as pause } from 'node:timers/promises';
+import type { LLMProvider, ActivityReviewSessionOpts } from '../../../../shared/types.js';
+import type { DesignUnitAssignment } from '../contracts.js';
 import { DESIGN_LIMITS } from '../contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from '../subject.js';
 
@@ -83,4 +88,39 @@ test('subject identity, containment and party are validated and only subject cha
  assert.throws(()=>prepareDesignSubject(wrong.repo,y.json),{code:'invalid_context'});
  const big=fixture(t);const z=big.put('LLD',{summary:'Scope'},{standalone:true});writeFileSync(z.md,'x'.repeat(DESIGN_LIMITS.subjectBytes+1));
  assert.throws(()=>prepareDesignSubject(big.repo,z.json),{code:'invalid_context'});
+});
+
+
+test('native and controller correction reviews preserve Epic standalone and ISSUE workflow requirements',async t=>{
+ for(const kind of ['epic','standalone','issue'] as const)for(const author of ['controller','daemon'] as const){
+  const f=fixture(t);
+  if(kind==='epic'){f.put('DEF',{problem:'Scope',stories:[{id:'s1',title:'Story'}]});f.put('HLD');}
+  if(kind==='issue')f.put('ISSUE',{reproduction:'Fails',rootCause:'Cause',fixIntent:'Fix'},{standalone:true,magnitude:'sized'});
+  const root=f.put('LLD',{summary:'Workflow-specific review scope'},{standalone:kind!=='epic',authoredBy:author,...(kind==='issue'?{sizeClass:'bugfix'}:{})}),path=designCheckpointPath(f.repo,'review-1');
+  let nativeCalls=0;
+  function output(unit:'planning'|'impact'|'chunk',chunkId?:string){
+   const cp=JSON.parse(readFileSync(path,'utf8')),a=cp.attempts.at(-1),units=a.inventory.units.map((u:{id:string})=>u.id);
+   const plan={chunks:[{id:'content',title:'Workflow concern',selectors:units,concerns:['Correctness'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'Complete current scope',finalConsistencyChunkId:'final',coverage:units.map((unitId:string)=>({unitId,chunkIds:['content']}))};
+   if(unit==='planning')return plan;
+   if(unit==='impact')return{plan,impact:{baselineAttempt:1,mode:'full',changes:['Document corrected'],directChunkIds:['content'],indirectChunkIds:[],rationale:'Explicit full scope for changed grouping',uncertainReason:'Retain no uncertain coverage',chunkMapping:[{priorIds:['content'],currentIds:['content'],explanation:'Reassess whole concern'}],retainedCoverage:[],carriedFindingIds:[],consistencyChunkIds:['final']}};
+   return{chunkId,status:'passed',summary:'Deterministic workflow qualification, no hosted model',findings:[],inspectedReferences:[...units,root.md,path],limitations:[],advice:[],...(a.number>1&&chunkId==='final'?{findingDecisions:[]}:{})};
+  }
+  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{nativeCalls++;assert.equal(author,'controller');const match=prompt.match(/Chunk assignment: (.+)\n/),chunk=match?JSON.parse(match[1]):undefined,value=output(chunk?'chunk':prompt.includes('Impact preparation for attempt')?'impact':'planning',chunk?.id);await opts.onCandidate(value);return value;}} as unknown as LLMProvider;
+  const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fake workflow fixture'})}),abort=new AbortController(),owner={id:'trusted',signal:abort.signal};
+  for(const attempt of [1,2]){
+   if(attempt===2)writeFileSync(root.md,readFileSync(root.md,'utf8')+'\nCorrected document');
+   await c.start({phase:'start',repo:f.repo,reviewId:'review-1',attempt,artifactPath:root.json},author==='daemon'?{owner}:{});
+   let completed=false;
+   for(let i=0;i<500;i++){
+    const progress=await c.progress(f.repo,'review-1',attempt);if(progress.status==='passed'){completed=true;break;}assert.ok(['pending','running'].includes(progress.status),JSON.stringify(progress));
+    if(author==='daemon'){
+     const frame=await c.exchange({phase:'assignment',repo:f.repo,reviewId:'review-1',attempt},owner) as {assignment:DesignUnitAssignment|null},a=frame.assignment;
+     if(a){const value=output(a.kind,a.chunkId);await c.exchange({phase:a.kind==='chunk'?'result':a.kind==='impact'?'impact':'plan',repo:f.repo,reviewId:'review-1',attempt,executionId:a.executionId,sequence:1,...(a.kind==='chunk'?{result:value}:a.kind==='impact'?value as object:{plan:value})},owner);}
+    }
+    await pause(5);
+   }
+   assert.equal(completed,true);const cp=JSON.parse(readFileSync(path,'utf8'));assert.equal(cp.subject.workflow.kind,kind);assert.deepEqual(cp.subject.workflow.requiredReferences.map((r:{role:string})=>r.role),kind==='epic'?['definition','hld']:kind==='issue'?['originating_issue']:[]);
+  }
+  assert.equal(nativeCalls,author==='controller'?6:0);abort.abort();
+ }
 });

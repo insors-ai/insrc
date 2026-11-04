@@ -120,6 +120,8 @@ function checkIdentity(project: string, id: string, checkpoint: DesignReviewChec
   requireDesign(attempt.completedChunks.every(r=>Buffer.byteLength(JSON.stringify(r))<=DESIGN_LIMITS.resultBytes),'result_too_large','Stored chunk result exceeds page limit');
   const ids=new Set(attempt.completedChunks.map(r=>r.chunkId));
   requireDesign(ids.size===attempt.completedChunks.length,'invalid_checkpoint','Duplicate accepted chunk results');
+  requireDesign(attempt.completedChunks.every(r=>r.findingDecisions===undefined||!!attempt.impact&&r.chunkId===attempt.plan?.finalConsistencyChunkId),'invalid_checkpoint','Stored finding decisions are not on an impact final result');
+  if(attempt.report)requireDesign(!!attempt.report.impact===!!attempt.impact,'invalid_checkpoint','Report impact projection presence disagrees with accepted impact');
   if(attempt.report&&attempt.impact){
    requireDesign(attempt.plan,'invalid_checkpoint','Impact report lacks accepted plan');
    try{const report=consolidateDesignReview(id,attempt.number,{...checkpoint.subject,reviewer:attempt.reviewer??checkpoint.subject.reviewer},attempt.baseline.contentIdentity,attempt.plan,attempt.completedChunks,{impact:attempt.impact,attempts:checkpoint.attempts});requireDesign(same(report,attempt.report),'invalid_checkpoint','Report provenance differs from accepted review');}

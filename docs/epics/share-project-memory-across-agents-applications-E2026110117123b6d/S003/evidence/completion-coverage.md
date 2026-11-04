@@ -1,8 +1,10 @@
 # S3 completion evidence map
 
 This map describes S3 only. Task validation and prior sweeps do not establish
-review completion. The user-authorized [detailed self-review](../SELF-REVIEW.md)
-found two HIGH and one MED blocker; BUILD remains unapproved.
+review completion. The user-authorized [first self-review](../SELF-REVIEW.md)
+found two HIGH and one MED blocker. Fix commit `ae9146c01` addresses all three;
+the [second round](../SELF-REVIEW-ROUND-2.md) found no additional blockers in the
+revised paths. BUILD remains unapproved.
 
 | S3 criterion | Evidence |
 | --- | --- |
@@ -17,7 +19,7 @@ found two HIGH and one MED blocker; BUILD remains unapproved.
 | ac3: safe internal cleanup targeting | exact canonical owned memory.lance preflight, rejected root/queue/metadata/foreign/alias/child/inode substitutions; non-destructive graph/vector/queue preservation oracle |
 | Resource and latency limits | t16 method and completed hardware/source/profile report required; logical quotas and observed RSS must remain distinct |
 | Final current-source package/backend qualification | Package: 138/138 pass on APFS and ext4 at 0990b423e; t17-platforms.json and CI run 41695843142. Backend: 7,238 pass, 21 fail, 135 skipped, 3 todo; initial focused retry 26 pass/5 fail. See t17.md and t17-backend-results.json. Source unchanged across sweep. User explicitly deferred all backend failures to https://github.com/insors-ai/insrc/issues/98 on 2026-11-04; task 17 handoff validation accepted with clean typechecks and current-source platform audit. Independent review pending. Global sweep remains failed. |
-| Code review and story closure | First daemon review failed at its 12,600-second adherence limit (completion-review-attempt-1.json); the subsequent attempt lost daemon connectivity. The user requested detailed self-review while the framework is repaired elsewhere. SELF-REVIEW.md records two HIGH deletion-protection defects and one MED backward-clock defect, each reproduced against a real isolated store. Existing 72 store tests pass; they miss these cases. No independent CR verdict or BUILD approval is claimed. Fixes and regression validation are required. |
+| Code review and story closure | First daemon review failed at its 12,600-second adherence limit (completion-review-attempt-1.json); the subsequent attempt lost daemon connectivity. User-authorized self-review round 1 found three blockers, fixed in ae9146c01. Round 2 found no additional blockers; 75 store tests and package build/typecheck pass, and the three exact original probes now reject unsafe operations. See SELF-REVIEW-ROUND-2.md and self-review-round-2.json. Prior APFS/ext4 full qualification describes the earlier candidate; the fix has targeted macOS qualification only. No independent daemon CR or BUILD approval is claimed. |
 
 Full epic AC29 remains pending S7/S9. S7 must qualify actual host index/memory/queue
 overlap and alias prevention; S9 must qualify real queued physical cleanup/reset

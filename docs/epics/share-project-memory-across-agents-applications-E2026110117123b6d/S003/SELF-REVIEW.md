@@ -1,5 +1,9 @@
 # S3 detailed self-review — blocked
 
+Historical round-1 report. The three findings were corrected in `ae9146c01`;
+the [post-fix round-2 review](SELF-REVIEW-ROUND-2.md) found no additional blockers
+in the revised paths. Original observations below are preserved unchanged.
+
 Date: 2026-11-04. Evidence snapshot HEAD: `c3123f929`; project-memory sources are unchanged
 from candidate `0990b423e`. Verdict: **BLOCK — two HIGH findings and one MED finding**.
 

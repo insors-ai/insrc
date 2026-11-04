@@ -454,25 +454,29 @@ The link reader is as in a1. The summariser driver (src/analyze/summariser/drive
 - dm1 (partial): the new sub-dbs are declared in src/db/graph/store.ts, which the s1 bundles did not cite; it is the existing home of every sub-db.
 - ep3 (partial): invariants cite DEF constraint ids; the bundles that show them are the s1 summary-lane and store bundles.
 
-<!-- insrc:review -->
+## Resolved questions
 
-## Review
+- `q34308808` — Who builds the hand-checked set of at least 100 real document links for this repository (.insrc/doc-relations-checked.json): the user by hand, or a subagent drafting candidates that the user then checks? Until it exists the model capability stays off ('not-measured').
+  - **resolved**: Subagent drafts; user checks — User decision 2026-11-04: a subagent drafted candidates; the user reviewed and approved them; committed as .insrc/doc-relations-checked.json @bbb17eab8 (27 documents, 1140 links). _(2026-11-04T05:10:19.325Z)_
 
-### ⛔ Review `BLOCK` — design.story (design.story)
+## Citations
 
-**2 do not hold · 1 could not be verified · 11 hold** · template `design-spec` · model `cli-codex:gpt-6.1-sol` · reviewed 2026-11-04T04:46:09.255Z
-
-Only a premise that does not hold blocks approval. One that could not be verified is listed for the reader and does not block.
-
-#### Does not hold (blocks approval)
-
-| Check item | Severity | Premise | Evidence | Action |
-| --- | --- | --- | --- | --- |
-| error-paths | MED | An unknown proposal source has one consistent recovery rule. | Design §2.3 and §6 classify an 'unknown source entity' as DocRelationsOutputInvalid: the document row is not rewritten and the document is retried. The next §6 case includes 'a source that is not an entity of the document' and instead says 'The proposal is dropped and counted (unresolvedProposals)'. An unknown source satisfies both conditions. CliProvider.completeStructuredOnce can return structured values directly, so source membership must actually be decided by the new pass; no existing provider validation resolves this conflict. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/LLD.md, src/agent/providers/cli-provider.ts] | Define disjoint validation cases and choose whether an unknown source rejects the document or only its proposal. Add a mixed valid/invalid proposal test that proves the chosen row-publication and retry behavior. |
-| error-paths | MED | Measurement-provider failure has a consistent persisted status-write contract. | Design §2.7 says a provider failure 'writes no quality row and sets docRelations.reason to the cause'. However §2.5 and §3.3 place extraction state and reason inside that same doc_relation_quality row, with §3.3 explicitly assigning the measurement failure path as a writer. There is no separately designed persisted docRelations.reason field. Existing repo.stats and withCompleteness assemble status from store reads, so an unpersisted worker-local reason cannot satisfy the proposed cross-worker status behavior. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/LLD.md, src/daemon/repo-stats.ts, src/daemon/repo-completeness.ts, src/daemon/handler-runtime.ts] | Specify that measurement failure preserves existing figures but transactionally creates or updates quality.extraction to unavailable with the cause. Replace 'writes no quality row' with 'writes no new measurement figures', and test the failure before any quality row exists. |
-
-#### Could not verify (does not block)
-
-| Check item | Premise | What was tried and what was missing | Action |
-| --- | --- | --- | --- |
-| coverage-of-intent | The linked ER companion renders correctly and remains visually consistent with the design. | Inspected the actual HTML's embedded Mermaid source. Attempted to open the companion through the browser tool, which returned 'The browser access host is unavailable'. Layout, clipping and successful Mermaid rendering could not be verified. [files: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/er-model.html] | Render the existing companion in an available browser and verify its visible content and layout. |
+- **[[c1]]** `step-output` `s1`
+- **[[c2]]** `step-output` `s2`
+- **[[c3]]** `step-output` `s3`
+- **[[c4]]** `step-output` `s4`
+- **[[c5]]** `step-output` `s5`
+- **[[c6]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c6` — "Accuracy is chosen over cost"
+- **[[c7]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c7` — "Only the daemon opens the stores"
+- **[[c8]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c8` — "No direct cloud REST calls"
+- **[[c9]]** `convention` `DEF-c2ba6fa62a148ed1 c9` — "Calls that reach a model provider are made one after another"
+- **[[c10]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c10` — "a change to what is stored comes with a migration"
+- **[[c11]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c11` — "at least 95% ... at least 60% ... at least 100 hand-checked links"
+- **[[c12]]** `step-output` `s6`
+- **[[c13]]** `step-output` `s7`
+- **[[c14]]** `step-output` `s8`
+- **[[c15]]** `code` `src/indexer/parser/artifact.ts`
+- **[[c16]]** `code` `src/db/graph/codec.ts`
+- **[[c17]]** `code` `src/indexer/subsystem-pass.ts`
+- **[[c18]]** `code` `src/config/role-taxonomy.ts`
+- **[[c19]]** `stakeholder` `DEF-c2ba6fa62a148ed1 c19` — "Model extraction spends the user's CLI session quota"

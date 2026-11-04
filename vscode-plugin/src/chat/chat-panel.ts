@@ -781,7 +781,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // an observation failure, or a thrown pass
       // caught up = drained to the end of the available output without an abort/failure — reading
       // nothing new also counts when the checkpoint already holds an ingested terminal.
-      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.sawObservationFailure && !pass.threw;
+      const pidDead0 = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
+      // caught up = drained without abort/throw; an observation failure does not block it when the
+      // process is VERIFIED dead (the synthetic EOF error is expected then).
+      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.threw && (!pass.sawObservationFailure || pidDead0);
       // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
       // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
@@ -792,13 +795,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
       const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
       try {
-        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
-        deps.store.save(s);
+        // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass)
+        const fresh = deps.store.get(s.id) ?? s;
+        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}) };
+        deps.store.save(fresh);
       } catch { /* best-effort */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a
       // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
       // caught-up observer; budget exhaustion and observation failures keep the last known status
-      const pidDead = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
+      const pidDead = pidDead0;
       // the completion gate: caught up AND (a real terminal OR verified process death)
       if (caughtUp && (pass.sawTerminal || pidDead)) {
         // A newer turn may have started while this pass was ingesting: re-check the liveTurn identity

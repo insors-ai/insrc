@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s2
 
-**Standalone:** no  ·  **Created:** 2026-11-02T07:02:24.067Z  ·  **Updated:** 2026-11-03T08:28:52.463Z
+**Standalone:** no  ·  **Created:** 2026-11-02T07:02:24.067Z  ·  **Updated:** 2026-11-03T08:38:25.016Z
 
-**Commit:** 0f4ee7724
+**Commit:** 0eedfb340
 
 ## Summary
 
@@ -48,7 +48,6 @@ S2 durable queue is implemented. User-authorized manual self-review found and fi
 - `packages/project-memory/src/__tests__/queue-replay.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/queue-receipts.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/queue/receipts.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/design-verification.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/queue-retirement.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/queue/index-record.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/queue/retirement.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
@@ -58,12 +57,10 @@ S2 durable queue is implemented. User-authorized manual self-review found and fi
 - `packages/project-memory/src/__tests__/queue-fault-matrix.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `.github/workflows/project-memory.yml` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/fixtures/queue-crash-peer.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/fixtures/queue-crash-ports.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/queue-crash.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `scripts/__tests__/project-memory-s2-qualification.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/benchmarks/queue-cost.mjs` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/__tests__/queue-cost.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `scripts/__tests__/project-memory-s2-performance.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
@@ -73,21 +70,29 @@ S2 durable queue is implemented. User-authorized manual self-review found and fi
 - `packages/project-memory/src/ownership.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `src/config/__tests__/check-model-definitions.test.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/build-gate-rerun.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/local-validation.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/search-filter-isolated.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/run.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `.insrc/artifacts/CR-17123b6d304af2a2-s2.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/CR.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/full-sweep.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/code-review-round-2.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/native-lifecycle.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/packed-consumer.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-crash.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-suite.tap` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/run.json` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/review-response.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/platform.log` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/code-review-round-3.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/code-review-cycle-2.md` — **insrc-build** (2026-11-03T08:28:52.463Z)
 - `packages/project-memory/src/queue/shape.ts` — **insrc-build** (2026-11-03T08:28:52.463Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/root-build.log` — **insrc-build** (2026-11-03T08:28:52.463Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/design-verification.md` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/local-validation.json` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/run.json` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/native-lifecycle.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/packed-consumer.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-suite.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/run.json` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/platform.log` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/root-build.log` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/SELF-REVIEW.md` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/receipt-after.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/receipt-before.tap` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/review.json` — **insrc-build** (2026-11-03T08:38:25.016Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/task14-verdict.json` — **insrc-build** (2026-11-03T08:38:25.016Z)

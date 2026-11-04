@@ -1,0 +1,1207 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793716700088-027uu4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T14:44:34.694Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 374547,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3974a64998f883e8",
+    "epicSlug": "enforce-approval-hard-gates-daemon-present",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793716700088-027uu4",
+    "hldEffectiveHash": "3974a64998f883e87e80de66e5a351ca3760815dd7c510925b5b056efcc17987",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "feature tier (standalone LLD -> plan -> build).",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "block",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design covers every upstream decision, acceptance criterion and non-goal.",
+          "evidence": "The persisted artifact contains meta.standalone=true and triageRationale='feature tier (standalone LLD -> plan -> build).', but no original request, upstream criterion text or non-goal list. Its ac1–ac8 statements provide reviewable local requirements, but cannot establish upstream completeness. Searches found this LLD and its run log; the log records stage events only. The analyzer returned an incomplete structural bundle with an empty upstream layer. [files: .insrc/artifacts/LLD-3974a64998f883e8-S001.json, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md, /Users/subhagho/.insrc/workflow-runs/3974a64998f883e8/design.story-wf-1793716700088-027uu4.jsonl]",
+          "action": "Attach or link the original triage storySpec and decisions/non-goals, then map them to the inline requirements.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing fingerprint freshness failures are non-overridable, while legacy review verdict failures can use the recorded override mechanism.",
+          "evidence": "approveArtifactOwned invokes assertFreshBuildReview before evaluating opts.overrideReview. enforceCodeReviewGate returns a stale-review identity before resolving enforcement or override settings. Its later block-verdict branch permits an explicit override. The MCP description likewise says an override 'cannot bypass stale fingerprinted review identity'. [files: src/workflow/gates.ts, src/workflow/code-review/gate.ts, src/mcp/server.ts]",
+          "action": "Preserve this ordering when inserting presentation and publication validation.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Existing content hashing and BUILD writer ownership provide reusable foundations, but persistent display-bound presentation tokens require new functionality.",
+          "evidence": "contentVersionOf hashes Markdown with SHA-256 and returns 16 hex characters; handleArtifactContent returns that version. withBuildWriter already provides synchronous cross-process ownership with exclusive creation and dead-process takeover. Conversely, handleInsrcPresent currently calls workflow.pending and only returns name classifications; it records neither reads, display acknowledgements nor tokens. [files: src/workflow/artifact-content.ts, src/workflow/approval-owner.ts, src/mcp/server.ts]",
+          "action": "Generalize the existing writer ownership mechanism consistently so BUILD writers and new artifact writers share one lock domain.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "Relaying insrc_present tokens into the VS Code panel completes the session-bound MCP-to-panel approval path.",
+          "evidence": "MCP unaryRpc and the extension's shared rpc are separate transports. The presenter currently opens documents only for a tool-call with ev.present; the panel then performs its own client.content read. The proposed sequence requires a display acknowledgement before insrc_present, but defines neither a pre-present opening/read relay nor how the MCP readId/session becomes the panel's acknowledged read/session. The token sink carries artifactId/token only. A panel read under session B cannot acknowledge the MCP read under session A, and forwarding A's token through B conflicts with the proposed session-bound approval gate. [files: src/mcp/daemon-stream.ts, src/shared/ipc-client.ts, vscode-plugin/src/chat/review-presenter.ts, vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/docs-review-client.ts, vscode-plugin/src/chat/docs-review-panel.ts, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Specify session ownership or delegation across MCP and extension processes, relay the exact readId/version before presentation, and bind the later token and decision to that same authorized session. Document the opening trigger and asynchronous acknowledgement sequence.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The specified Kotlin transport support and TUI change sites fully migrate both clients to read→display-ack→present→approve.",
+          "evidence": "JetBrains ArtifactReviewViewDto has no contentVersion/readId. ArtifactContentPane.render calls b.loadHTML(html) or assigns nativeArea.text, while doApprove calls gateway.approve(repo, md, overrideReason). Those rendering and decision owners are absent from the change inventory; adding a session to UnixSocketDaemonRpc cannot create a display acknowledgement or carry a token through these signatures. The TUI's 'a' action directly calls the synchronous svc.workflow.approve(item.path), whose service invokes approveArtifactByJsonPath; no artifact-content display flow exists there. The LLD names TUI files and cross-host tests but supplies no replacement rendering/acknowledgement and approval contracts. [files: jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentPane.kt, jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/review/ReviewToolWindow.kt, src/cli/panes/WorkflowsPane.tsx, src/cli/services/workflow.ts, src/cli/services/index.ts, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Design the JetBrains DTO, rendering-completion callback, token storage and approval signatures, including its native fallback. Specify the TUI artifact display, acknowledgement and asynchronous daemon approval flow, and update its services interface.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "change-sites.3",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The proposed insrc_read response supplies reviewable, versionable content for document-less AMD records through deliveryEvidence.",
+          "evidence": "The delivery Markdown port excludes AMD from MD_KINDS and returns null for it. handleDeliveryEvidence supplies amendment content through meta/body, with renderedMarkdown=null. The proposed insrc_read signature returns only artifactId, kind, optional renderedMarkdown, contentVersion and readId; it omits meta/body and defines no AMD renderer or canonical version input. The existing VS Code adapter substitutes '# <id>\\n\\n(no rendered document)' when Markdown is null. Bridging this response as specified therefore cannot display and version the amendment being approved. [files: src/workflow/delivery/markdown.ts, src/workflow/delivery/handlers.ts, src/workflow/amendments/types.ts, vscode-plugin/src/chat/docs-review-client.ts, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Define a complete AMD review payload or deterministic server-rendered amendment document, including rationale and amendment details. Specify its version calculation and use the identical representation for read, acknowledgement, presentation and approval validation.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed non-AMD rejected-record reopening preserves existing state semantics while retaining AMD terminality and the default pending view.",
+          "evidence": "listPendingArtifacts currently excludes non-empty approvedAt/rejectedAt and includes AMD only when its top-level status is 'pending'. approveArtifactOwned deliberately deletes rejectedAt/rejectReason and retains a non-empty prior rangeBase. approveAmendment refuses every non-pending status and preserves approvedBy attribution. The design explicitly adds opt-in rejected discovery, permits fresh-token non-AMD reopening, clears rejection only at approval and keeps AMD terminal. [files: src/workflow/pending.ts, src/workflow/gates.ts, src/workflow/amendments/store.ts, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Retain these cases in the planned compatibility tests, including records created before presentation metadata existed.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "boundaries.1",
+          "ref": "boundaries",
+          "item": "boundaries",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "This is a standalone Story with no parent-HLD or adjacent-Story ownership contract to redesign.",
+          "evidence": "The persisted metadata identifies a standalone feature. hldContextSlice contains empty ownedContracts, consumedContracts and adjacentBoundaries, consistent with §1. No companion references or structured visual definitions are supplied, so there are no linked visual artifacts to inspect and no visual verification is claimed. The material cross-host ownership/interaction omission is reported under change-sites; an ERD alone would not resolve it. [files: .insrc/artifacts/LLD-3974a64998f883e8-S001.json, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Keep the correction within this Story and explicitly document the cross-host session/read relationships. A sequence diagram would help explain that correction but is not independently mandatory.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "HIGH",
+          "premise": "The proposed acknowledgement checks make a presentation token proof that content actually reached a display.",
+          "evidence": "§2.2 returns session-correlated readId/contentVersion to the MCP caller, and §2.3 exposes insrc_display_ack to that same caller. Its stated validation is only that readId/version was recorded for the session. Consequently the caller can read, submit the returned values to display_ack, and present without rendering anything. Existing MCP handlers dispatch tool arguments independently of the VS Code presenter/webview; a daemon-issued session establishes continuity, not a rendering event. The 'read exists, no ack' failure case does not detect a fabricated ack. [files: src/mcp/server.ts, src/mcp/daemon-stream.ts, vscode-plugin/src/chat/review-presenter.ts, vscode-plugin/src/chat/docs-review-panel.ts, docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md]",
+          "action": "Separate model-callable acknowledgement from trusted host rendering evidence. Define how the daemon authenticates or authorizes the display-producing host and binds its completion event to the read. Fail closed for hosts lacking that capability, and test read→fabricated-ack→present without rendering.",
+          "fixability": "manual",
+          "outcome": "does-not-hold"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Every inline acceptance criterion ac1–ac8 has a planned proving test.",
+          "evidence": "The mapping covers token/session validation and refusals, exact batch coverage, overrides and client forwarding, fingerprint exclusions, publication races, writer concurrency/reopening, and protocol/steering rollout. The cited present-dispatch, method-class, review-rule-text and fingerprint suites contain relevant socket fixtures, registry equality checks, steering assertions and real Git identity fixtures. The design explicitly calls for migrating existing fixtures. This verifies the planned mapping, not implementation or passing test results. [files: docs/standalone/enforce-approval-hard-gates-daemon-present-E202611033974a649/S001/LLD.md, src/mcp/__tests__/present-dispatch.test.ts, src/daemon/threads/__tests__/method-class.test.ts, src/mcp/__tests__/review-rule-text.test.ts, src/workflow/code-review/__tests__/input-fingerprint.test.ts]",
+          "action": "Extend the planned cross-host tests with the corrected session/read relay, actual JetBrains/TUI display completion, AMD content verification and fabricated-ack rejection identified above.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 4,
+        "med": 0,
+        "low": 6,
+        "unverified": 1
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-03T14:44:53.282Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    }
+  },
+  "body": {
+    "summary": {
+      "prose": "Present-before-approve bound to a provably displayed version under a server-owned, resumable session: the daemon issues a sessionId at session open (validated per request, propagated to workers, never the client envelope); the cross-host path is complete — insrc_read → render → insrc_display_ack → insrc_present({ documents, versions }) → tokens in the tool result → insrc_workflow_approve({ ..., presentToken }), with the VS Code presenter relaying tokens into the panel and decideNow forwarding them. Approvals validate token+version under per-artifact locks and consume tokens; BUILD approval additionally requires its sibling CR fully published (staged-marker + JSON/md agreement, CR-lock-before-BUILD ordering). Review publication is crash-safe; rejected non-AMD reopens token-validated; AMD stays terminal; every writer is inside the locked inventory; steering/guides update as one coordinated change with fail-closed legacy hosts.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Enforce approval hard gates in the daemon"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "workflow.sessionOpen / sessionResume",
+          "signature": "workflow.sessionOpen({ clientKind }) → { sessionId, resumptionToken }; workflow.sessionResume({ resumptionToken }) → { sessionId }",
+          "parameters": [
+            {
+              "name": "clientKind",
+              "type": "'mcp'|'vscode'|'jetbrains'|'tui'",
+              "purpose": "Transport kind.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ sessionId, resumptionToken }",
+            "meaning": "Server-owned session store; sessionId carried in a validated `session` field per request (never the client {label,pid} envelope); propagated to workers via request-context; resumable across reconnects."
+          },
+          "errors": [
+            {
+              "type": "unknown-session",
+              "condition": "missing/expired session"
+            }
+          ],
+          "preconditions": [
+            "daemon reachable"
+          ],
+          "postconditions": [
+            "session recorded; resume returns same sessionId"
+          ]
+        },
+        {
+          "name": "insrc_read (MCP)",
+          "signature": "insrc_read({ repo?, artifactId | mdPath, session }) → { artifactId, kind, renderedMarkdown?, contentVersion, readId }",
+          "parameters": [
+            {
+              "name": "session",
+              "type": "string",
+              "purpose": "Server-issued sessionId.",
+              "optional": false
+            },
+            {
+              "name": "artifactId|mdPath",
+              "type": "string",
+              "purpose": "What to read.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "content + contentVersion + readId",
+            "meaning": "Bridges artifactContent/deliveryEvidence; records the read under the session."
+          },
+          "errors": [
+            {
+              "type": "errorResult",
+              "condition": "unknown artifact / unknown session"
+            }
+          ],
+          "preconditions": [
+            "session open",
+            "artifact pending or rejected"
+          ],
+          "postconditions": [
+            "read recorded"
+          ]
+        },
+        {
+          "name": "insrc_display_ack (MCP) + workflow.displayAck",
+          "signature": "insrc_display_ack({ repo?, artifactId, contentVersion, readId, session }) → { acked }; webview postMessage { type: displayed, ... } → same RPC from the extension host",
+          "parameters": [
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "Displayed artifact.",
+              "optional": false
+            },
+            {
+              "name": "contentVersion",
+              "type": "string",
+              "purpose": "Version that reached the display.",
+              "optional": false
+            },
+            {
+              "name": "readId",
+              "type": "string",
+              "purpose": "Correlates to the recorded read.",
+              "optional": false
+            },
+            {
+              "name": "session",
+              "type": "string",
+              "purpose": "Server-issued sessionId.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ acked }",
+            "meaning": "Ack registry; superseded opens / closed panes / failed delivery never ack."
+          },
+          "errors": [
+            {
+              "type": "unknown-read",
+              "condition": "readId/version not recorded for this session"
+            }
+          ],
+          "preconditions": [
+            "content rendered"
+          ],
+          "postconditions": [
+            "ack recorded within TTL"
+          ]
+        },
+        {
+          "name": "recordPresentations (ack-bound)",
+          "signature": "recordPresentations(repoPath, docs: { name, contentVersion, readId }[], sessionId, now?): { recorded: { name, artifactId, token }[], notPending, failed }",
+          "parameters": [
+            {
+              "name": "docs",
+              "type": "{ name, contentVersion, readId }[]",
+              "purpose": "Read AND display-ack required per doc under this session within TTL.",
+              "optional": false
+            },
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "Server-issued.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ recorded[] with token, notPending, failed }",
+            "meaning": "Undisplayed or mismatched versions fail; never recorded."
+          },
+          "errors": [
+            {
+              "type": "UndisplayedVersionError",
+              "condition": "no ack within TTL"
+            },
+            {
+              "type": "VersionMismatchError",
+              "condition": "fresh render !== displayed version under lock"
+            }
+          ],
+          "preconditions": [
+            "session open",
+            "read + ack per doc"
+          ],
+          "postconditions": [
+            "stamp presentation fields + token under withArtifactWriter; old token superseded; non-AMD rejected re-presentable; AMD terminal excluded"
+          ]
+        },
+        {
+          "name": "insrc_present MCP handshake",
+          "signature": "args { documents, versions: Record<name, { contentVersion, readId }>, session, repo? } → text { presented, notPending, tokens: { artifactId, token }[] }",
+          "parameters": [
+            {
+              "name": "versions",
+              "type": "Record",
+              "purpose": "REQUIRED per doc from insrc_read + insrc_display_ack.",
+              "optional": false
+            },
+            {
+              "name": "session",
+              "type": "string",
+              "purpose": "Server-issued sessionId.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ presented, notPending } + additive tokens[]",
+            "meaning": "Tokens in the tool result to the presenting session; legacy → handshake-required isError; array names unchanged."
+          },
+          "errors": [
+            {
+              "type": "handshake-required",
+              "condition": "versions/session missing"
+            }
+          ],
+          "preconditions": [
+            "session open",
+            "read + ack per doc"
+          ],
+          "postconditions": [
+            "tokens in tool result text"
+          ]
+        },
+        {
+          "name": "presenter token relay (VS Code)",
+          "signature": "review-presenter/chat-panel relay the insrc_present tool result (tokens) into panel state via a token sink; docs-review-panel retains token + contentVersion for the displayed snapshot; decideNow forwards { presentToken, contentVersion } (protocol.ts)",
+          "parameters": [
+            {
+              "name": "presentToken",
+              "type": "string",
+              "purpose": "From the present tool result for the displayed snapshot.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "decision submitted token-bound",
+            "meaning": "Panel decision path carries the token across host/webview boundary."
+          },
+          "errors": [
+            {
+              "type": "NotPresentedError",
+              "condition": "token gate at daemon"
+            }
+          ],
+          "preconditions": [
+            "displayed + acked + presented"
+          ],
+          "postconditions": [
+            "daemon validates under lock"
+          ]
+        },
+        {
+          "name": "requireMatchingPresentation",
+          "signature": "requireMatchingPresentation(jsonPath, meta, req: { presentToken, sessionId, now?, requirePresent }): void — BUILD additionally validates sibling CR publication",
+          "parameters": [
+            {
+              "name": "meta",
+              "type": "ApprovableArtifactMeta",
+              "purpose": "Presentation fields + reviewPublication marker.",
+              "optional": false
+            },
+            {
+              "name": "req",
+              "type": "object",
+              "purpose": "Token + session + config.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "token === stored AND unconsumed AND within TTL AND current render === presentedContentVersion AND no staged marker AND md agrees; for BUILD: sibling CR fully published (no staged marker; contentVersionOf(CR md) === CR JSON) under CR-lock-before-BUILD ordering."
+          },
+          "errors": [
+            {
+              "type": "NotPresentedError",
+              "condition": "any mismatch — fail closed"
+            },
+            {
+              "type": "PublicationIncompleteError",
+              "condition": "staged / JSON-md disagree — blocks present AND approve until repair"
+            }
+          ],
+          "preconditions": [
+            "inside withArtifactWriter on fresh reread"
+          ],
+          "postconditions": [
+            "read-only; consume at write"
+          ]
+        },
+        {
+          "name": "staged review publication",
+          "signature": "publishReview(jsonPath, mdPath, review, at?): under lock (1) JSON + reviewPublication={staged, mdContentVersion}; (2) md; (3) JSON {published} — design reviews AND CR publication",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Artifact/CR JSON.",
+              "optional": false
+            },
+            {
+              "name": "mdPath",
+              "type": "string",
+              "purpose": "Markdown.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Crash leaves staged marker; present/approve blocked until repair under lock."
+          },
+          "errors": [
+            {
+              "type": "PublicationIncompleteError",
+              "condition": "staged / disagree"
+            }
+          ],
+          "preconditions": [
+            "inputContentVersion === current render"
+          ],
+          "postconditions": [
+            "JSON+md agree; lastReviewWriteAt stamped; marker published"
+          ]
+        },
+        {
+          "name": "withArtifactWriter (complete ops + ordering)",
+          "signature": "withArtifactWriter<T>(jsonPath, fn: (current) => T): T — lock across COMPLETE read/merge/JSON+md op; BUILD+CR: CR lock first, then BUILD",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Per-artifact cross-worker lock.",
+              "optional": false
+            },
+            {
+              "name": "fn",
+              "type": "(current) => T",
+              "purpose": "Fresh reread; all writes inside; presentation fields preserved.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "T",
+            "meaning": "ALL writers — inventory in dataModelChanges."
+          },
+          "errors": [
+            {
+              "type": "ApprovalWriterBusyError",
+              "condition": "contention"
+            }
+          ],
+          "preconditions": [
+            "store path"
+          ],
+          "postconditions": [
+            "atomic consistent writes"
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget (tokens + AMD + CR validation)",
+          "signature": "approveWorkflowTarget(req: { repoPath, artifactPath?, epicHash?, artifactIds?, presentTokens?, presentToken?, overrideReview?, requirePresent?, approvedBy?, sessionId? }): Promise<ApprovalOutcome>",
+          "parameters": [
+            {
+              "name": "presentTokens",
+              "type": "{ artifactId, token }[]",
+              "purpose": "Per-artifact tokens.",
+              "optional": true
+            },
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "Server-issued session.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalOutcome",
+            "meaning": "AMD → approveAmendment; BUILD → CR publication validated; skipped reasons gain not-presented/presentation-superseded/presentation-consumed/presentation-expired/version-mismatch/batch-not-listed/token-missing/undisplayed-version/publication-incomplete."
+          },
+          "errors": [
+            {
+              "type": "ReviewBlockedError",
+              "condition": "review gates"
+            },
+            {
+              "type": "NotPresentedError",
+              "condition": "token/version gate"
+            },
+            {
+              "type": "BatchNotListedError",
+              "condition": "coverage"
+            }
+          ],
+          "preconditions": [
+            "test records refused; AMD rejected terminal; session open"
+          ],
+          "postconditions": [
+            "per artifact under its lock: validate, stamp approvedAt + presentationConsumedAt; rejectedAt cleared on approve (non-AMD)"
+          ]
+        },
+        {
+          "name": "approveAmendment",
+          "signature": "approveAmendment(repoPath, amendmentId, approvedBy: string, opts?: { presentToken?, requirePresent?, now? }): AmendmentRecord",
+          "parameters": [
+            {
+              "name": "approvedBy",
+              "type": "string",
+              "purpose": "UNCHANGED attribution.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "AmendmentRecord",
+            "meaning": "pending→approved only with matching token+version; rejected terminal."
+          },
+          "errors": [
+            {
+              "type": "NotPresentedError",
+              "condition": "token gate"
+            },
+            {
+              "type": "AmendmentResolvedError",
+              "condition": "terminal"
+            }
+          ],
+          "preconditions": [
+            "pending"
+          ],
+          "postconditions": [
+            "status approved + approvedBy + consumed under lock"
+          ]
+        },
+        {
+          "name": "rejected reopen (non-AMD)",
+          "signature": "workflow.pending += includeRejected → rejected[]; reviewDecision guard permits approve with fresh unconsumed token; approve clears rejectedAt",
+          "parameters": [
+            {
+              "name": "includeRejected",
+              "type": "boolean",
+              "purpose": "Discovery of rejected records.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "pending + rejected lists",
+            "meaning": "IDE: discover → insrc_read → display-ack → present → token-validated approve."
+          },
+          "errors": [
+            {
+              "type": "AmendmentResolvedError",
+              "condition": "AMD terminal"
+            }
+          ],
+          "preconditions": [
+            "non-AMD rejected"
+          ],
+          "postconditions": [
+            "reopened via fresh token; rangeBase write-once"
+          ]
+        },
+        {
+          "name": "transport/schemas/steering",
+          "signature": "method-class entries (sessionOpen/sessionResume/present/displayAck); insrc_read + insrc_display_ack registered + bridged; ipc-client/server/channel session validation + request-context propagation; Kotlin UnixSocketDaemonRpc session support; insrc_workflow_approve += artifactIds + presentTokens + session; insrc_present versions+session required; steering-block.md + AGENTS.md + plugin asset + guides together; legacy → handshake-required; emergency requirePresent=false",
+          "parameters": [],
+          "returns": {
+            "type": "contracts + docs + session plumbing",
+            "meaning": "One coordinated protocol change across TS and Kotlin."
+          },
+          "errors": [
+            {
+              "type": "errorResult",
+              "condition": "unknown session; token-map mismatch; missing versions"
+            }
+          ],
+          "preconditions": [
+            "LLD approved"
+          ],
+          "postconditions": [
+            "all steering copies updated at build"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "session store (new)",
+        "change": "new",
+        "details": "Server-owned { sessionId, resumptionToken, clientKind, openedAt, lastSeenAt }; sessionId in a validated `session` field per request; worker propagation via request-context; TS + Kotlin transports.",
+        "callSites": [
+          "src/daemon/server.ts",
+          "src/daemon/request-context.ts",
+          "src/daemon/threads/channel.ts",
+          "src/shared/ipc-client.ts",
+          "src/mcp/daemon-stream.ts",
+          "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt"
+        ]
+      },
+      {
+        "entity": "ApprovableArtifactMeta",
+        "change": "field-add",
+        "details": "presentedAt?, presentedBy? (sessionId), presentationToken?, presentationConsumedAt?, presentedContentVersion?, gateOverrides?, lastReviewWriteAt?, reviewPublication? marker — all fingerprint-excluded.",
+        "schemaDiff": "meta += 7 optional + marker",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/presentations.ts",
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/workflow/pending.ts"
+        ]
+      },
+      {
+        "entity": "read + ack registries",
+        "change": "new",
+        "details": "{ sessionId, artifactId, contentVersion, readId, readAt } and { ..., ackedAt }; server-issued sessionId; TTL-bound; persisted under .insrc.",
+        "callSites": [
+          "src/workflow/artifact-content.ts",
+          "src/workflow/delivery/handlers.ts",
+          "src/workflow/presentations.ts",
+          "src/daemon/handler-runtime.ts"
+        ]
+      },
+      {
+        "entity": "AmendmentRecord",
+        "change": "field-add",
+        "details": "presentation fields incl. presentedContentVersion; status + approvedBy unchanged; rejected terminal.",
+        "schemaDiff": "record += 5 optional fields",
+        "callSites": [
+          "src/workflow/amendments/types.ts",
+          "src/workflow/amendments/store.ts"
+        ]
+      },
+      {
+        "entity": "skipped reasons + pending rejected[]",
+        "change": "field-add",
+        "details": "reasons gain token-missing, undisplayed-version, unread-version, publication-incomplete; pending gains includeRejected → rejected[].",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/pending.ts",
+          "src/daemon/handler-runtime.ts",
+          "src/mcp/daemon-stream.ts",
+          "src/mcp/server.ts"
+        ]
+      },
+      {
+        "entity": "CR publication",
+        "change": "invariant-change",
+        "details": "publication.ts + runner.ts use staged publishReview; BUILD-side CR readers (gate.ts, input-fingerprint.ts, gates.ts otherPartyReviewGap) validate CR publication state; CR-lock-before-BUILD ordering.",
+        "callSites": [
+          "src/workflow/code-review/publication.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/code-review/gate.ts",
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "config",
+        "change": "field-add",
+        "details": "workflow.approval.requirePresent (default true), workflow.presentationTtlMinutes (default 30), workflow.sessionTtlMinutes.",
+        "callSites": [
+          "src/config",
+          "src/daemon/handler-runtime.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "writer inventory (FINAL)",
+        "change": "invariant-change",
+        "details": "withArtifactWriter across complete read/merge/JSON+md ops for: approve, reject, findings.ts, verdicts.ts, run-artifact.ts, resolve.ts, questions.ts, resolve-comment.ts, code-review/runner.ts + publication.ts, provenance/writer.ts, synthesize.ts, runWorkflowServerSide, appendStoryToDefine, ackStaleArtifact, bugfix/stamp.ts writeParentRef, tracker/refs.ts, tracker/link.ts, tracker-auto.ts, orchestrator.ts, runners/build/standalone-record.ts, recordPresentations, AMD transitions.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/daemon/steps/review-step/phases/findings.ts",
+          "src/daemon/steps/review-step/phases/verdicts.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/workflow/review/resolve.ts",
+          "src/workflow/questions.ts",
+          "src/workflow/resolve-comment.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/code-review/publication.ts",
+          "src/workflow/artifacts/provenance/writer.ts",
+          "src/daemon/steps/workflow-step/phases/synthesize.ts",
+          "src/daemon/workflow-rpc.ts",
+          "src/workflow/bugfix/stamp.ts",
+          "src/workflow/tracker/refs.ts",
+          "src/workflow/tracker/link.ts",
+          "src/workflow/tracker-auto.ts",
+          "src/workflow/orchestrator.ts",
+          "src/workflow/runners/build/standalone-record.ts",
+          "src/workflow/presentations.ts",
+          "src/workflow/amendments/store.ts"
+        ]
+      },
+      {
+        "entity": "MCP + panel + steering",
+        "change": "field-add",
+        "details": "insrc_read + insrc_display_ack tools; method-class entries; daemon-stream; insrc_present versions+session required, tokens out; insrc_workflow_approve artifactIds+presentTokens+session; presenter token relay; docs-review-panel + protocol.ts; steering-block.md/AGENTS.md/plugin asset/guides together; TUI.",
+        "callSites": [
+          "src/mcp/server.ts",
+          "src/mcp/daemon-stream.ts",
+          "src/daemon/threads/method-class.ts",
+          "src/daemon/handler-runtime.ts",
+          "vscode-plugin/src/chat/review-presenter.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts",
+          "src/prompts/steering-block.md",
+          "AGENTS.md",
+          "vscode-plugin/assets/steering-block.md",
+          "src/cli/panes/WorkflowsPane.tsx",
+          "src/cli/services/workflow.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Request without server-issued session",
+          "detection": "session missing/unknown/expired",
+          "response": "unknown-session error; nothing recorded/approved",
+          "userImpact": "fail-closed",
+          "recoverable": true
+        },
+        {
+          "scenario": "Forged client {label,pid} envelope as session",
+          "detection": "server validates only its own session store",
+          "response": "unknown-session; rejected",
+          "userImpact": "trusted session identity",
+          "recoverable": false
+        },
+        {
+          "scenario": "Reconnect mid-session",
+          "detection": "sessionResume(resumptionToken) → same sessionId",
+          "response": "session continues; reads/acks/tokens correlated",
+          "userImpact": "continuity",
+          "recoverable": true
+        },
+        {
+          "scenario": "Legacy insrc_present without versions/session",
+          "detection": "missing fields",
+          "response": "handshake-required isError; never silent",
+          "userImpact": "fail-closed",
+          "recoverable": true
+        },
+        {
+          "scenario": "Fetched but never displayed",
+          "detection": "read recorded, no ack within TTL",
+          "response": "undisplayed-version; no token",
+          "userImpact": "token proves display",
+          "recoverable": true
+        },
+        {
+          "scenario": "Displayed version stale at present",
+          "detection": "fresh render !== displayed under lock",
+          "response": "version-mismatch; no token",
+          "userImpact": "current at mint",
+          "recoverable": true
+        },
+        {
+          "scenario": "Approve with no/wrong/missing token",
+          "detection": "token mismatch / token-missing",
+          "response": "NotPresentedError; batch → skipped[]; no approvedAt",
+          "userImpact": "no approval without present",
+          "recoverable": true
+        },
+        {
+          "scenario": "A presents v1, review publishes v2, B presents v2, A approves stale v1",
+          "detection": "token superseded and/or render v2 !== A version under lock",
+          "response": "presentation-superseded / version-mismatch",
+          "userImpact": "bound to displayed version",
+          "recoverable": true
+        },
+        {
+          "scenario": "BUILD approved while its CR is half-published",
+          "detection": "CR readers validate CR marker + md/JSON agreement; CR lock before BUILD lock",
+          "response": "PublicationIncompleteError; withheld until CR published + repaired",
+          "userImpact": "no approval against half-published CR",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash between JSON and md publication (design review or CR)",
+          "detection": "staged marker / disagree",
+          "response": "PublicationIncompleteError blocks present AND approve until repair under lock",
+          "userImpact": "no half-published state approvable",
+          "recoverable": true
+        },
+        {
+          "scenario": "Review running while artifact edited, then publishes",
+          "detection": "inputContentVersion !== fresh render",
+          "response": "ReviewInputChangedError; refused; restarts",
+          "userImpact": "report matches content",
+          "recoverable": true
+        },
+        {
+          "scenario": "Batch token-map gaps / artifactIds ≠ pending",
+          "detection": "per-id token + exact coverage",
+          "response": "token-missing / BatchNotListedError; nothing approved",
+          "userImpact": "per-artifact exact",
+          "recoverable": true
+        },
+        {
+          "scenario": "overrideReview without token",
+          "detection": "token gate before override",
+          "response": "NotPresentedError; reviewOverride not stamped",
+          "userImpact": "overrides gated",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale-review BUILD after source change",
+          "detection": "fingerprint before overrides",
+          "response": "withheld even with override/enforcement off",
+          "userImpact": "non-overridable preserved",
+          "recoverable": true
+        },
+        {
+          "scenario": "Rejected non-AMD IDE re-approval",
+          "detection": "rejected[] → read → ack → present → token-validated approve; rejectedAt cleared only at approve",
+          "response": "recovery works; rangeBase write-once",
+          "userImpact": "IDE re-approval works",
+          "recoverable": true
+        },
+        {
+          "scenario": "AMD rejected",
+          "detection": "terminal rule",
+          "response": "AmendmentResolvedError always",
+          "userImpact": "AMD terminal preserved",
+          "recoverable": false
+        },
+        {
+          "scenario": "Competing writers incl. tracker-auto/synthesis across workers",
+          "detection": "lock across complete ops",
+          "response": "serialized; contention → ApprovalWriterBusyError; presentation fields preserved",
+          "userImpact": "no lost updates",
+          "recoverable": true
+        },
+        {
+          "scenario": "requirePresent=false emergency",
+          "detection": "config",
+          "response": "proceeds; gateOverrides recorded; gateOverride: true",
+          "userImpact": "auditable escape",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "AMD empty mdPath",
+          "expected": "insrc_read via deliveryEvidence → ack → present → AMD branch → approveAmendment(approvedBy)"
+        },
+        {
+          "input": "test-record paths",
+          "expected": "NotApprovableError before token check"
+        },
+        {
+          "input": "case-differing ids",
+          "expected": "case-insensitive; declared names echoed; token keyed by canonical artifactId"
+        },
+        {
+          "input": "re-present same/different version",
+          "expected": "new token supersedes old; presentedContentVersion updated"
+        },
+        {
+          "input": "display-ack for a superseded open",
+          "expected": "never sent; undisplayed-version if presented"
+        },
+        {
+          "input": "staged CR marker",
+          "expected": "BUILD approval blocked publication-incomplete; repair clears"
+        },
+        {
+          "input": "session expires mid-flow",
+          "expected": "unknown-session; re-open, re-read, re-ack, re-present"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Review gates unchanged (block verdict, other-party, overrideReview recorded).",
+          "source": "c1"
+        },
+        {
+          "text": "Stale-review fingerprint non-overridable even with overrides/enforcement off.",
+          "source": "c8"
+        },
+        {
+          "text": "All bookkeeping fields + reviewPublication marker excluded from BUILD fingerprint.",
+          "source": "c9"
+        },
+        {
+          "text": "Non-lossy batch; test records never approvable; WRITE-ONCE rangeBase; non-AMD reject→approve clears rejectedAt; AMD terminal + approvedBy.",
+          "source": "c13"
+        },
+        {
+          "text": "workflow.pending default view unchanged; includeRejected opt-in.",
+          "source": "c6"
+        },
+        {
+          "text": "MCP public { presented, notPending } array names unchanged; tokens additive; legacy fail-closed; no approval logic in MCP layer.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Session store (issue/resume/expiry/forged rejection); registries; ack-before-token; token/version gate incl. BUILD CR validation; token-map batch; staged publication + fault injection + repair (design + CR); snapshot binding; rejected reopen; AMD terminal + approvedBy; exclusions.",
+          "subjects": [
+            "src/daemon/session-store.ts",
+            "src/workflow/presentations.ts",
+            "src/workflow/gates.ts",
+            "src/workflow/amendments/store.ts",
+            "src/workflow/code-review/input-fingerprint.ts",
+            "src/workflow/code-review/gate.ts",
+            "src/workflow/code-review/publication.ts",
+            "src/workflow/review/run-artifact.ts",
+            "src/workflow/review-decision.ts",
+            "src/workflow/pending.ts"
+          ],
+          "fixturesNeeded": [
+            "tmp stores incl. AMD + CR pairs; known contentVersions; fake registries/session store"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "method-class entries; insrc_read/insrc_display_ack registration + bridge; daemon-stream; MCP schemas (session, versions, tokens, artifactIds+presentTokens); public arrays pinned; pending includeRejected; skipped reasons; panel protocol + docs-review-decision + present-dispatch migrated; ipc-client/server/channel session validation; Kotlin contract.",
+          "subjects": [
+            "src/mcp/server.ts",
+            "src/mcp/daemon-stream.ts",
+            "src/daemon/threads/method-class.ts",
+            "src/daemon/handler-runtime.ts",
+            "src/daemon/server.ts",
+            "src/shared/ipc-client.ts",
+            "src/workflow/pending.ts",
+            "vscode-plugin/src/chat/docs-review-panel.ts",
+            "vscode-plugin/src/chat/protocol.ts"
+          ],
+          "fixturesNeeded": [
+            "extend present-dispatch, review-rule-text, method-class, review-decision, docs-review-decision, pending tests"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Real socket: session open → read → ack → present → approve; unknown-session + forged envelope refused; resume keeps session; legacy handshake-required; fetched-never-displayed refused; distinct-token batch; A/B stale-view; BUILD between CR JSON and CR md → publication-incomplete → repair → approve; design-publication crash injection; review-edit-during-review; rejected IDE reopen; concurrent clients/sessions over ALL writers.",
+          "subjects": [
+            "daemon IPC + session store + registries + gates + presentations + all writers + store"
+          ],
+          "fixturesNeeded": [
+            "scratch repo DEF/LLD/PLAN/BUILD/CR + AMD; two sessions; fault injection; mid-review edit"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Cross-host end-to-end: MCP sequence insrc_read→insrc_display_ack→insrc_present→tokens→insrc_workflow_approve; VS Code panel with presenter relay + decideNow forwarding; JetBrains; TUI; legacy + superseded-open paths.",
+          "subjects": [
+            "vscode-plugin/src/chat/review-presenter.ts",
+            "vscode-plugin/src/chat/chat-panel.ts",
+            "vscode-plugin/src/chat/docs-review-panel.ts",
+            "vscode-plugin/src/chat/docs-review-client.ts",
+            "jetbrains DaemonGateway.kt",
+            "src/cli/panes/WorkflowsPane.tsx",
+            "src/cli/services/workflow.ts"
+          ],
+          "fixturesNeeded": [
+            "existing harnesses with fake daemon + webview mocks"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "REQ: approval only with matching unconsumed token for the current display-acked version, per artifact, in a server-owned session. Tests: unit matrix; integration session→read→ack→present→approve; distinct-token batch."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "REQ: missing/wrong token, undisplayed/unread version, unknown/forged session, legacy no-versions → machine-readable refusal; no approvedAt; never silent. Tests: unit; integration; contract."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "REQ: epicHash requires artifactIds === pending set + token per id. Tests: BatchNotListedError; token-missing; distinct-token batch succeeds."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "REQ: overrides token-gated; stale-review non-overridable; reviewDecision + panel decideNow carry token. Tests: override-without-token; stale-review withheld; review-decision + panel contract."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "REQ: bookkeeping + marker never invalidate BUILD fingerprint; material changes still do. Tests: exclusions; review→present→approve regression; source change → stale-review."
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "REQ: approver bound to a provably displayed version in a trusted continuous session; A/B fail closed; crash-safe publication incl. BUILD-vs-CR blocks until agree; review-edit-during-review refused; equal-ms fail closed; superseded opens never ack; resume works. Tests: session unit; A/B integration; BUILD-between-CR-writes fault injection; design-publication injection; ReviewInputChangedError; equal-ms; superseded-open; resume."
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "REQ: ALL writers (incl. tracker-auto.ts, runWorkflowServerSide, CR publication, panel decision path) inside locked complete ops with CR→BUILD ordering; rejected reopen end-to-end IDE; no lost updates across workers/sessions. Tests: concurrent sessions over all paths; rejected IDE reopen integration."
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "REQ: one coordinated protocol change — insrc_read + insrc_display_ack surfaces, session plumbing TS+Kotlin, steering/guides/plugin asset updated; MCP arrays pinned + tokens additive; transport; method-class; legacy fail-closed; client sequence read→ack→present→approve. Tests: steering text tests; contract suites; cross-host wiring; migrated suites."
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx; socket integration per steering-refresh-through-daemon.test.ts; client/TUI/webview harnesses; fault injection via write seams. Criterion source: triage scope (params.storySpec / meta.triageRationale); ac1-ac8 REQ statements inline are authoritative."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Client-envelope session id",
+        "oneLineSummary": "Use unaryRpc client {label,pid} as session.",
+        "approach": "Key registries by client envelope.",
+        "pros": [
+          "no new plumbing"
+        ],
+        "cons": [
+          "untrusted per channel.ts; one connection per call → no continuity; forgeable"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Untrusted, non-continuous."
+      },
+      {
+        "id": "a2",
+        "name": "Server-owned session with resumption",
+        "oneLineSummary": "Daemon issues sessionId at session open; resumption token for reconnects; worker propagation.",
+        "approach": "Session store + request-context + TS/Kotlin transports.",
+        "pros": [
+          "trusted, continuous, resumable"
+        ],
+        "cons": [
+          "new store + transports"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Right session model; alone leaves cross-host path and BUILD-CR open."
+      },
+      {
+        "id": "a3",
+        "name": "a2 + cross-host ack/token path + BUILD-CR publication validation (chosen)",
+        "oneLineSummary": "Full closure of all 3 round-9 HIGHs.",
+        "approach": "As in s4.",
+        "pros": [
+          "closes all 3",
+          "trusted session",
+          "provable display→approve"
+        ],
+        "cons": [
+          "largest"
+        ],
+        "costEstimate": "L"
+      }
+    ],
+    "chosenAlternative": "a3",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:629-720",
+      "quotedText": "approveArtifactByJsonPath/Owned: review block, otherPartyReviewGap, BUILD freshness, overrideReview recorded; reject cleared on approve; rangeBase write-once."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1126-1165",
+      "quotedText": "handleWorkflowApprove forwards; present returns { presented, notPending }."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts",
+      "quotedText": "Pure scan of approvedAt/rejectedAt absent; AMD via status; includeRejected added."
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/gate.ts",
+      "quotedText": "stale-review before enforcement/override settings — non-overridable; BUILD CR readers here now validate publication state."
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/input-fingerprint.ts:25",
+      "quotedText": "BUILD_APPROVAL_IDENTITY_EXCLUSIONS deleted before hashing; readStoredReviewFreshness now checks CR publication marker."
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/amendments/store.ts:16",
+      "quotedText": "AMD pending→approved|rejected exactly once; no un-reject; approveAmendment writes approvedBy."
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:98",
+      "quotedText": "contentVersionOf(markdown); content reads return contentVersion + readId and record the read."
+    },
+    {
+      "id": "c24",
+      "kind": "code",
+      "ref": "src/workflow/review-decision.ts",
+      "quotedText": "handleReviewDecision refuses non-pending and drops tokens — guard relaxed for token-validated reopen; presentToken forwarded."
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "src/daemon/workflow-rpc.ts",
+      "quotedText": "runWorkflowServerSide writes renderedMd + renderedJson — migrated under lock across complete op."
+    },
+    {
+      "id": "c26",
+      "kind": "code",
+      "ref": "src/workflow/review/run-artifact.ts",
+      "quotedText": "reviewArtifactFile captures before awaiting runReview — snapshot-bound via inputContentVersion at publication."
+    },
+    {
+      "id": "c27",
+      "kind": "code",
+      "ref": "src/workflow/tracker-auto.ts",
+      "quotedText": "autoPushEpicOnHld/autoPushStoryOnLld merge from a previously-read defineTracker then writeAtomic(mdPath) via own relink — under one lock scope."
+    },
+    {
+      "id": "c29",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts",
+      "quotedText": "openDoc discards superseded content; decideNow submits without token — panel now display-acks and forwards token + contentVersion via protocol.ts."
+    },
+    {
+      "id": "c31",
+      "kind": "code",
+      "ref": "src/daemon/threads/channel.ts",
+      "quotedText": "client label/pid marked untrusted — session identity is server-issued instead."
+    },
+    {
+      "id": "c32",
+      "kind": "code",
+      "ref": "src/shared/ipc-client.ts",
+      "quotedText": "unaryRpc opens one connection per request and ends it — session contract needs server-owned id + resumption."
+    },
+    {
+      "id": "c33",
+      "kind": "code",
+      "ref": "src/workflow/code-review/publication.ts",
+      "quotedText": "CR publication writes JSON + md separately — staged marker + BUILD-side validation added."
+    }
+  ]
+}

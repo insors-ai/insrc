@@ -1,0 +1,1083 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793722967234-8apdy1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T16:24:43.002Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 115720,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1bd72813bfa795f4",
+    "epicSlug": "multiple-concurrent-chats-chat-panel-active",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793722967234-8apdy1",
+    "hldEffectiveHash": "1bd72813bfa795f41806ba85139a67ff256fab2c2ba3094fb1c9db34f8569078",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "feature tier: one cohesive story, real design choices (status model, purge timer, tab identity), multiple tasks across chat panel + presenter; no new subsystem.",
+    "authoredBy": "controller",
+    "review": {
+      "artifact": "design.story",
+      "stage": "design.story",
+      "verdict": "warn",
+      "findings": [
+        {
+          "claimId": "coverage-of-intent.1",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The four inline acceptance criteria completely reproduce upstream intent and non-goals.",
+          "evidence": "The cited workflow JSONL contains step execution events, but no original request or storySpec. Artifact metadata confirms standalone feature routing. The analyzer returned no upstream evidence. Coverage of omitted upstream requirements therefore cannot be established. [files: /Users/subhagho/.insrc/workflow-runs/1bd72813bfa795f4/design.story-wf-1793722967234-8apdy1.jsonl, .insrc/artifacts/LLD-1bd72813bfa795f4-S001.json]",
+          "action": "Include or link the original request and triage storySpec, including non-goals.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "coverage-of-intent.2",
+          "ref": "coverage-of-intent",
+          "item": "coverage-of-intent",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The generated UX companion renders consistently with the proposed chat-panel layout.",
+          "evidence": "The companion reference resolves to generated HTML containing the active/history columns, three status-color classes and existing chat regions. Browser inspection failed with 'The browser access host is unavailable'; rendered alignment, clipping and readability were not verified. [files: .insrc/artifacts/LLD-1bd72813bfa795f4-S001.json, docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/ux-mock-chat-panel.html, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "Visually verify the generated companion at representative chat-panel widths and correct/regenerate any inconsistent layout.",
+          "fixability": "manual",
+          "outcome": "could-not-verify"
+        },
+        {
+          "claimId": "current-behaviour.1",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Chat attachment and artifact presentation have separate owners, and the current docs-review host replaces one displayed document.",
+          "evidence": "The open-chat handler detaches and invalidates the lifecycle before assigning 'session = s'. Separately, createDocsReviewHost closes over one channel, opened document and openSeq; show() reveals that channel, and openDoc rejects superseded loads with 'if (mySeq !== openSeq) return'. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/docs-review-panel.ts]",
+          "action": "Preserve this ownership distinction and instantiate document state independently for each presentation panel.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "current-behaviour.2",
+          "ref": "current-behaviour",
+          "item": "current-behaviour",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The documented resume limitations involving decision routing, native session identity and selection decoder state are real.",
+          "evidence": "relayDecision returns when turns.live is undefined. detach clears the live references, while follow does not assign activeProvider/activeTurnId. Adapter resume initializes 'const state: TurnState = {}' and does not register approval requests in pendingByTurn. Selection IDs use selectionSeq; keepNativeSession updates the stored native ID only on done. [files: vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/cli-adapter.ts]",
+          "action": "Retain the proposed decision restoration, early native-session capture and independent decoder checkpoints.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "new-versus-reuse.1",
+          "ref": "new-versus-reuse",
+          "item": "new-versus-reuse",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Chat selection and panel creation can reuse the stated existing seams; active status and durable approval snapshots are new capabilities.",
+          "evidence": "History posts open-chat with chatId, and the handler restores that session. The presenter calls deps.open with artifactId/mdPath; extension wiring spreads that target into openArtifact. The docs host already injects createPanel. ChatSessionStore has no activeChats/status API, and ApprovalQueue exposes clear() but no snapshot()/restore(). [files: vscode-plugin/src/chat/protocol.ts, vscode-plugin/src/chat/chat-panel.ts, vscode-plugin/src/chat/review-presenter.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/session-store.ts, vscode-plugin/src/chat/approval-queue.ts, vscode-plugin/src/extension.ts]",
+          "action": "Extend these seams as designed, preserving callers that omit presentKey.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.1",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The presentation change inventory identifies the actual plumbing and draft-storage boundaries.",
+          "evidence": "The production presenter opener is in extension.ts; the delivery-board path calls openArtifact without presentation identity. openArtifactFrom currently forwards kind/path/readOnly/reveal into openDoc. Drafts are stored by rvSave/rvLoad in docs-review-comments.ts using shown.artifactId. Existing list navigation can open another artifact within the same panel, supporting the proposed composite presentation/artifact draft key. [files: vscode-plugin/src/extension.ts, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/docs-review-comments.ts, vscode-plugin/src/chat/docs-review-list.ts, vscode-plugin/src/delivery/details-memory.ts]",
+          "action": "Keep the composite key and A-to-B-to-A regression; isolate all host closure state per panel, including watches and polling.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "change-sites.2",
+          "ref": "change-sites",
+          "item": "change-sites",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The artifact-to-panel relationship is adequately documented without requiring an ERD.",
+          "evidence": "Sections 3.4, 4.2 and 6 specify artifact-to-N-panels cardinality, host-wide presentKey identity, host ownership, per-panel disposal and compatibility for callers without presentKey. The existing channel creation/disposal interfaces support these endpoints and lifetimes; DocsDocumentTab contains only title, type and optional relPath. [files: docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/LLD.md, vscode-plugin/src/chat/docs-review-panel.ts, vscode-plugin/src/chat/protocol.ts]",
+          "action": "Retain this relationship documentation and the unchanged in-panel protocol.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.1",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Optional session fields can round-trip while older rows remain readable.",
+          "evidence": "isSession validates existing required fields without requiring the proposed additions. headOf preserves all non-transcript fields through object spread, and sessionOf restores them. The Memento store also saves the complete session object. Excluding status-less rows from the active list therefore requires no destructive migration. [files: vscode-plugin/src/chat/session-store.ts, vscode-plugin/src/chat/session-file-store.ts]",
+          "action": "Retain explicit defaults and round-trip tests for optional status, request and checkpoint fields.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "data-compatibility.2",
+          "ref": "data-compatibility",
+          "item": "data-compatibility",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The proposed retention and eviction protections address real destructive storage paths.",
+          "evidence": "beginTurn currently renames current output over the previous generation; fileFor throws SegmentGone when neither generation matches. evictBeyondCap excludes only keepId, removes session files and invokes onEvict. Extension wiring sets maxSessions to 200 and onEvict removes output files. Cursor retention and active/request exclusions are therefore necessary additions, not existing guarantees. [files: vscode-plugin/src/chat/session-output.ts, vscode-plugin/src/chat/session-file-store.ts, vscode-plugin/src/extension.ts]",
+          "action": "Retain rollover, capped-store and cleanup regressions, including multiple rollovers before observer catch-up.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.1",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "The design distinguishes observation failure from actual provider completion and specifies retryable handling.",
+          "evidence": "Adapter resume currently converts ordinary read failures into error events and returns normally for SegmentGone. Lifecycle follow treats both normal exits as ended and clears the cursor; only a thrown exception yields failed. The proposed observation-failure boundary directly addresses this mismatch and explicitly retains cursor/status on read failure. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/turn-lifecycle.ts, docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/LLD.md]",
+          "action": "Retain tests proving that ordinary read failures and missing segments cannot masquerade as successful observation of completion.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "error-paths.2",
+          "ref": "error-paths",
+          "item": "error-paths",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Decision-delivery failures are detectable under the proposed transport changes, including restored processes without writable stdin.",
+          "evidence": "Current decide() consumes the pending request before checking live stdin and returns void; nodeSpawner.write swallows synchronous write failures. A resumed TurnProcess exposes stop/kill but no write transport. The design explicitly adds delivery results, durable native-session capture, stop-and-verify recovery, and delivery-failed/session-lost outcomes rather than assuming a resumed process is writable. [files: vscode-plugin/src/chat/cli-adapter.ts, vscode-plugin/src/chat/turn-lifecycle.ts, vscode-plugin/src/chat/chat-panel.ts]",
+          "action": "Implement delivery results through the actual stdin completion/error path and retain the proposed reload, dead-stdin and first-turn recovery tests.",
+          "fixability": "manual",
+          "outcome": "holds"
+        },
+        {
+          "claimId": "tests.1",
+          "ref": "tests",
+          "item": "tests",
+          "kind": "semantic",
+          "severity": "LOW",
+          "premise": "Each inline acceptance criterion maps to proposed proving tests supported by existing harness seams.",
+          "evidence": "Section 7 maps ac1 to status/render/open tests, ac2 to clock-driven filtering and history retention, ac3 to panel multiplicity/content preservation, and ac4 to history regressions. Existing tests provide fake channels/adapters, open-chat restoration, presenter declaration outcomes, injected panel creation, and output rollover fixtures. This verifies the test plan, not implementation test results. [files: docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/LLD.md, vscode-plugin/src/chat/__tests__/chat-panel.test.ts, vscode-plugin/src/chat/__tests__/review-presenter.test.ts, vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts, vscode-plugin/src/chat/__tests__/session-output.test.ts]",
+          "action": "Retain the mappings and the added regressions for queue snapshots, detached presentations, decoder checkpoints, eviction and delivery failures.",
+          "fixability": "manual",
+          "outcome": "holds"
+        }
+      ],
+      "counts": {
+        "high": 0,
+        "med": 0,
+        "low": 12,
+        "unverified": 2
+      },
+      "template": "design-spec",
+      "reviewedAt": "2026-11-03T19:38:21.749Z",
+      "model": "cli-codex:gpt-6.1-sol",
+      "reviewedBy": "daemon"
+    },
+    "reviewResolutions": {
+      "current-behaviour.2": {
+        "findingId": "current-behaviour.2",
+        "status": "resolved",
+        "note": "s2 now separates the two diagnoses: chat attachment/observation belongs to chat-panel host (let session, own TurnLifecycle, open-chat detaches) + turn-lifecycle; artifact supersession belongs to the docs-review-panel singleton (opened + openSeq).",
+        "resolvedAt": "2026-11-03T17:11:26.380Z"
+      },
+      "change-sites.1": {
+        "findingId": "change-sites.1",
+        "status": "resolved",
+        "note": "Draft key is now the COMPOSITE presentKey:artifactId (MD s3.6 item 6 + c9 + JSON chain/test purposes): the existing panel list lets one panel switch artifacts, so a constant presentKey would leak A drafts into B; in-memory per-webview state isolates sibling panels; A->B->A navigation draft-isolation test added.",
+        "resolvedAt": "2026-11-03T19:34:54.385Z"
+      },
+      "change-sites.2": {
+        "findingId": "change-sites.2",
+        "status": "resolved",
+        "note": "approval-queue.ts added to the change inventory with snapshot()/restore() contracts (queue order, decisions, ended-turn membership, grants, consumed batches) + round-trip tests; pendingRequests written from the snapshot before approvals.clear() and restored on attach by requestId. MD s3.6/s4 + JSON synced.",
+        "resolvedAt": "2026-11-03T19:19:59.182Z"
+      },
+      "data-compatibility.2": {
+        "findingId": "data-compatibility.2",
+        "status": "resolved",
+        "note": "Session-cap eviction protection specified (MD s5 + JSON errorCase): evictBeyondCap excludes sessions with status working/waiting-input, unresolved pendingRequests, or registered unread cursors; output cleanup (onEvict -> chatOutput.remove) inherits the same exclusion; done chats evict in savedAt order; capped-store regression test added.",
+        "resolvedAt": "2026-11-03T19:34:54.389Z"
+      },
+      "error-paths.1": {
+        "findingId": "error-paths.1",
+        "status": "resolved",
+        "note": "Process triage before decision transport: live-writable -> in-turn decide(); exited -> follow-up runTurn resuming native session; live-unwritable -> stop+verify original process exit (avoids the 600s lease wait that would kill the lease-holding process), then continuation with the decision, delivery correlated onto the persisted request. MD s5 + JSON synced.",
+        "resolvedAt": "2026-11-03T17:44:55.864Z"
+      },
+      "error-paths.2": {
+        "findingId": "error-paths.2",
+        "status": "resolved",
+        "note": "Observable delivery results specified (MD s5 + JSON): spawner write returns success/failure with propagated errors; adapter.decide returns { delivered } instead of consume-then-silent-noop; relayDecision correlates the result onto the persisted request — silent no-op after transport inspection persists delivery-failed, never a successful resolution; races guarded by monotonic lastActivityAt.",
+        "resolvedAt": "2026-11-03T19:34:54.390Z"
+      },
+      "change-sites.3": {
+        "findingId": "change-sites.3",
+        "status": "resolved",
+        "note": "UX mock reworked: dropdowns are depicted as the real .histchip + compact segsel controls, and status entries are TextBlocks with color attention/warning/good (rendered as ux-color-attention/warning/good) instead of ChoiceSet radio marks with literal text; companion regenerated and verified to contain the three status-color classes. uxDefinition re-persisted in JSON.",
+        "resolvedAt": "2026-11-03T19:19:59.183Z"
+      },
+      "error-paths.3": {
+        "findingId": "error-paths.3",
+        "status": "resolved",
+        "note": "Failed resume/follow no longer marked done: cursor retained, last known active status kept; recovery to working/waiting only from verified underlying state; done only on observed completion or verified process death.",
+        "resolvedAt": "2026-11-03T16:52:09.466Z"
+      },
+      "new-versus-reuse.2": {
+        "findingId": "new-versus-reuse.2",
+        "status": "resolved",
+        "note": "delivery/details-memory.ts removed from change sites; review drafts rekeyed by presentKey in docs-review-comments.ts (rvSave/rvLoad) plus the docs-review panel presentations map are the presentation memory sites.",
+        "resolvedAt": "2026-11-03T16:52:09.467Z"
+      },
+      "data-compatibility.3": {
+        "findingId": "data-compatibility.3",
+        "status": "resolved",
+        "note": "Durable observer checkpoint specified: segment identity + cursor offset + decoder state (selectionBuffer, selectionSeq) persisted per session; restore on init or segment-start replay with deterministic ids + resolved dedup; tests for reload between marker fragments and after a prior selection. MD s5 + JSON (new dataModel entity + edge cases) synced.",
+        "resolvedAt": "2026-11-03T17:30:45.598Z"
+      },
+      "coverage-of-intent.2": {
+        "findingId": "coverage-of-intent.2",
+        "status": "resolved",
+        "note": "Detached-chat presentations specified (MD s5 + JSON): the 60 s observer that ingests detached session output also dispatches insrc_present declarations to the shared presenter via deps.open({ artifactId, mdPath, presentKey }); each declaration is persisted with a declarationId (checkpointed with the observer checkpoint) so observer ingestion and later transcript replay dedup by declarationId — exactly one panel per declaration, separate declarations get separate panels; integration test added (detached chat presents -> one panel; reattach replay does not re-open).",
+        "resolvedAt": "2026-11-03T19:26:12.898Z"
+      },
+      "tests.2": {
+        "findingId": "tests.2",
+        "status": "resolved",
+        "note": "Contract-test bullet no longer mentions DocsDocumentTab.presentKey (MD s7 + JSON contract level): in-panel document protocol asserted unchanged; presentKey asserted on presenter/openArtifact/panel creation only.",
+        "resolvedAt": "2026-11-03T19:34:54.390Z"
+      }
+    },
+    "approvedAt": "2026-11-03T19:50:41.925Z",
+    "rangeBase": "a19eaa8e5ad09f2e2d329b0f73a8190fe63d9842"
+  },
+  "body": {
+    "summary": {
+      "prose": "The chat panel tab header gains a second dropdown next to the history control listing active chats — agent working (yellow) or waiting for user input (red), plus done chats (green) until purged from the list after 30 minutes of inactivity. Status is extension-local, derived from the turn lifecycle and stream events, persisted in the existing session store (with per-chat pendingRequests retained by requestId + resolution state), and reconciled for detached sessions by a 60 s observer grounded in LiveTurn + session-output + pid liveness; selecting an entry posts the existing open-chat { chatId } message, exactly like the history dropdown. History is untouched. Separately, every insrc_present declaration opens the artifact in a NEW presentation/editor panel (panel key = presentKey = artifactId#hostPresentSeq) instead of replacing the content of the already-open panel — the presentation panel component itself is unchanged; only its multiplicity changes."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Multiple concurrent chats in the chat panel + per-artifact present tabs"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "public",
+      "api": [
+        {
+          "name": "session-store status tracking",
+          "signature": "SessionStore += { status: 'working'|'waiting-input'|'done', lastActivityAt: number } per chat; SessionStore += pendingRequests: PersistedRequest[] per chat (full payload: QueuedApproval fields + batch decisions/grants, or the complete normalized SelectionRequestEvent (turnId, requestId, prompt, options, multi) + resolution state; each with requestId, kind, resolved); setStatus(id, status) from the turn lifecycle and stream-event handlers: runTurn start -> working; approval/selection-request event arrives (mid-turn) -> waiting-input (any unresolved request); request resolved -> re-evaluate precedence; terminal finish/onError/stop with zero unresolved -> done (always sets lastActivityAt); failed-resume keeps last known active status",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "Chat session id.",
+              "optional": false
+            },
+            {
+              "name": "status",
+              "type": "enum",
+              "purpose": "working | waiting-input | done.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Persisted with the session row so a restored panel rebuilds the list."
+          },
+          "errors": [],
+          "preconditions": [
+            "session exists"
+          ],
+          "postconditions": [
+            "status + lastActivityAt persisted"
+          ]
+        },
+        {
+          "name": "activeChats()",
+          "signature": "store.activeChats(): { id, title, status, lastActivityAt }[] — working + waiting-input always; done only if inactivity < 30 min; purge is computed at render + 60s panel timer, never destructive",
+          "parameters": [],
+          "returns": {
+            "type": "list",
+            "meaning": "Drives the dropdown; done chats older than 30 min are excluded from the list but remain in history."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "pure read"
+          ]
+        },
+        {
+          "name": "active-chat dropdown (webview)",
+          "signature": "chrome gains #insrc-active segsel LEFT-aligned at the start of .chrome; #insrc-history stays RIGHT-aligned in .chrome .right (margin-left:auto); active dropdown fed by active-list posts (same pattern as history-list); options show a colored dot (red=waiting-input, yellow=working, green=done) + title; selecting posts the EXISTING open-chat { chatId } message, handled by the same handler as the history selection",
+          "parameters": [
+            {
+              "name": "chatId",
+              "type": "string",
+              "purpose": "Chat to open.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Same open behavior as the history dropdown."
+          },
+          "errors": [],
+          "preconditions": [
+            "panel open"
+          ],
+          "postconditions": [
+            "chat window opened/switched"
+          ]
+        },
+        {
+          "name": "present -> new presentation/editor panel",
+          "signature": "The presentation panel component is already built — nothing new is built inside it. review-presenter declared(): presentKey = `${artifactId}#${hostPresentSeq}` per unique matched doc (hostPresentSeq = monotonic counter on the SHARED presenter; unique for the docs-review host lifetime, since the host outlives chat switches); deps.open({ artifactId, mdPath, presentKey }); docs-review host openArtifact({ ..., presentKey }): panels: Map<presentKey, channel> — a NEW presentKey always creates a NEW webview panel via deps.createPanel (viewType VIEW_TYPE, title `insrc docs review — <artifactId> #<hostPresentSeq>`, viewColumn per reviewColumn(), quiet per caller, panel icon as today); an already-seen presentKey REVEALS its existing panel; panel dispose removes its map entry; callers omitting presentKey keep the legacy single-panel show() path; dedup is WITHIN one insrc_present declaration by resolved artifact identity (same doc twice in one call -> one panel); the old cross-declaration per-turn dedup (state.opened.has(doc.id) across declared() calls, and its test \"the same document declared twice in a turn opens once\") is REPLACED — each declaration opens a new panel",
+          "parameters": [
+            {
+              "name": "presentKey",
+              "type": "string",
+              "purpose": "Instance identity of this presentation.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "new presentation/editor panel per presented artifact per insrc_present call",
+            "meaning": "Re-presenting the same artifact opens another panel; already-open panels keep their content and are never overwritten."
+          },
+          "errors": [
+            {
+              "type": "notPending (unchanged)",
+              "condition": "ambiguous/unmatched name"
+            }
+          ],
+          "preconditions": [
+            "doc pending + unique match"
+          ],
+          "postconditions": [
+            "one new tab per presented artifact per call; existing tabs untouched"
+          ]
+        },
+        {
+          "name": "protocol additions",
+          "signature": "HostToWebview += active-list { chats: ActiveChatEntry[] }; WebviewToHost adds NO new message — open-chat { chatId } is reused for active-chat selection; ActiveChatEntry { id, title, status, lastActivityAt }; presentKey is PANEL-level context, NOT a protocol field — DocsDocumentTab / open-doc / docs-content / docs-decision / open-companion are UNCHANGED",
+          "parameters": [],
+          "returns": {
+            "type": "additive protocol messages",
+            "meaning": "Additive protocol message (active-list only); history paths and all in-panel messages unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "webview renders dots with theme CSS vars",
+            "presentation strip entries carry per-instance identity"
+          ]
+        },
+        {
+          "name": "presentKey plumbing chain (panel-per-presentation)",
+          "signature": "presenter declared()/open() -> extension.ts openArtifact/openArtifactFrom forward optional presentKey (presenter opener at extension.ts:697 passes it through) -> docs-review host panels: Map<presentKey, channel>: openArtifact creates a NEW panel per new presentKey via deps.createPanel (title carries presentKey) and opens the doc in THAT panel; repeated presentKey reveals the existing panel; onDidDispose removes the entry. IN-PANEL machinery unchanged (single opened + openSeq, openDoc, renderContent, rvPresented strip, rvTabs — each panel renders only its own artifact, so no in-panel instance map / render-only-selected rule). protocol.ts messages unchanged (presentKey is panel-level). approval-queue.ts snapshot()/restore() contracts (queue order, decisions, ended-turn membership, grants, consumed batches) feeding persisted pendingRequests before approvals.clear(); docs-review-comments persisted drafts keyed by COMPOSITE presentKey:artifactId (the panel list can switch artifacts within a panel; A->B->A draft isolation test). delivery/details-memory.ts NOT a change site. Callers omitting presentKey keep the legacy single-panel path.",
+          "parameters": [
+            {
+              "name": "presentKey",
+              "type": "string",
+              "purpose": "Instance identity of this presentation.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Each presentation panel has its own channel, load + openSeq guard, watcher, reload, decision; closing a panel ends that presentation only."
+          },
+          "errors": [],
+          "preconditions": [
+            "callers omitting presentKey unchanged"
+          ],
+          "postconditions": [
+            "one new instance per unique presentKey per call"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Session record (session-store)",
+        "change": "field-add",
+        "details": "status?, lastActivityAt?, pendingRequests?: PersistedRequest[] — additive; full actionable request payload (QueuedApproval fields + batch/grant state, or selection options + pending), persisted BEFORE approvals.clear() on switch, restored on attach incl. terminal requests without liveTurn; supersession/rejection/timeout mark resolved with outcome",
+        "schemaDiff": "session += { status?, lastActivityAt?, pendingRequests? }",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts",
+          "vscode-plugin/src/chat/session-file-store.ts"
+        ]
+      },
+      {
+        "entity": "Docs-review host panels map (docs-review-panel)",
+        "change": "new field",
+        "details": "panels: Map<presentKey, channel> for presented docs (created per presentKey via deps.createPanel, title carries presentKey); legacy singleton channel kept for callers without presentKey; DocsDocumentTab unchanged; panel-level presentKey handed to docs-review-comments for draft keying",
+        "schemaDiff": "host += panels: Map<presentKey, channel>",
+        "callSites": [
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/chat/docs-review-comments.ts",
+          "vscode-plugin/src/chat/approval-queue.ts",
+          "vscode-plugin/src/chat/session-output.ts",
+          "vscode-plugin/src/chat/review-presenter.ts",
+          "vscode-plugin/src/extension.ts"
+        ]
+      },
+      {
+        "entity": "DocsDocumentTab",
+        "change": "field-add",
+        "details": "presentKey?: string — presentation instance identity carried on open-doc/docs-content; NOT an artifactId key (the tab type describes documents within one artifact)",
+        "schemaDiff": "tab += { presentKey? }",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts:46",
+          "vscode-plugin/src/chat/docs-review-panel.ts",
+          "vscode-plugin/src/chat/docs-review-comments.ts"
+        ]
+      },
+      {
+        "entity": "webview protocol + chrome CSS",
+        "change": "field-add",
+        "details": "active-list / ActiveChatEntry only (in-panel messages unchanged; presentKey is panel-level); open-chat { chatId } reused (no new open message); #insrc-active segsel left-aligned at .chrome start, #insrc-history right-aligned in .chrome .right + .status-dot.red/.yellow/.green with theme vars",
+        "schemaDiff": "",
+        "callSites": [
+          "vscode-plugin/src/chat/protocol.ts",
+          "vscode-plugin/src/chat/chat-panel.ts:1086",
+          "vscode-plugin/src/chat/chat-panel.ts:1173"
+        ]
+      },
+      {
+        "entity": "cli-adapter observation-failure outcome",
+        "change": "field-add",
+        "details": "output-read failures in resume() normalized to a distinct observation-failure FollowSink outcome (not 'ended'): cursor retained (retryable), last known active status kept, never done; distinguished from provider completion and verified process death",
+        "schemaDiff": "FollowSink outcome += 'observation-failed'",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts",
+          "vscode-plugin/src/chat/turn-lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "Observer checkpoint (per chat session)",
+        "change": "new type",
+        "details": "segment identity + cursor offset + decoder state (selectionBuffer fragments, selectionSeq counter) persisted per session; restore on init or replay from segment start with deterministic request ids + resolved-request dedup",
+        "schemaDiff": "session += { observerCheckpoint? }",
+        "callSites": [
+          "vscode-plugin/src/chat/session-output.ts",
+          "vscode-plugin/src/chat/cli-adapter.ts",
+          "vscode-plugin/src/chat/session-store.ts"
+        ]
+      },
+      {
+        "entity": "ApprovalQueue (approval-queue.ts)",
+        "change": "new contract",
+        "details": "snapshot(): ApprovalQueueSnapshot (queue order, per-request decisions, ended-turn membership, grants, already-consumed batches) + restore(snapshot); round-trip tests; pendingRequests written from snapshot before clear() on chat switch, restored on attach by requestId",
+        "schemaDiff": "ApprovalQueue += snapshot() | restore()",
+        "callSites": [
+          "vscode-plugin/src/chat/approval-queue.ts",
+          "vscode-plugin/src/chat/chat-panel.ts"
+        ]
+      },
+      {
+        "entity": "SessionOutput retention (session-output.ts)",
+        "change": "new contract",
+        "details": "observer/follow cursors register with the writer; rollover discards a generation only when no registered cursor points into it (retention tied to unread checkpoints); SegmentGone recovery: reset to oldest retained generation + replay, dedup by requestId against persisted pendingRequests",
+        "schemaDiff": "SessionOutput += registerCursor()/unregisterCursor()",
+        "callSites": [
+          "vscode-plugin/src/chat/session-output.ts",
+          "vscode-plugin/src/chat/cli-adapter.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Turn starts",
+          "detection": "runTurn begin",
+          "response": "status -> working (yellow)",
+          "userImpact": "shows active/working",
+          "recoverable": false
+        },
+        {
+          "scenario": "Agent waits for user input (mid-turn)",
+          "detection": "approval-request / selection-request stream events; persisted pendingRequests with resolved=false",
+          "response": "status -> waiting-input (red) immediately on event arrival; precedence re-evaluated on each resolution (turn-ended approvals start a follow-up runTurn; selections start runTurn)",
+          "userImpact": "visible as needing input even while the turn runs",
+          "recoverable": false
+        },
+        {
+          "scenario": "Turn completes",
+          "detection": "terminal event with zero unresolved pendingRequests",
+          "response": "status -> done (green) + lastActivityAt; purged from active list after 30 min inactivity",
+          "userImpact": "list self-cleans; history keeps the chat",
+          "recoverable": false
+        },
+        {
+          "scenario": "Terminal event with pending cards",
+          "detection": "onEnd/onTerminal while pendingRequests unresolved",
+          "response": "NOT done; stays waiting-input (host retains multiple requests)",
+          "userImpact": "blocked agent shows red, not green",
+          "recoverable": false
+        },
+        {
+          "scenario": "Failure exits",
+          "detection": "reportError/sink.onError (adapter/setup/lock), stop()",
+          "response": "status -> done + lastActivityAt",
+          "userImpact": "working can never become permanent",
+          "recoverable": false
+        },
+        {
+          "scenario": "Failed resume / observation failure",
+          "detection": "FollowSink 'failed' or new 'observation-failed' outcome (cli-adapter output-read failure, SegmentGone)",
+          "response": "keeps last known active status; cursor retained so a later follow retries; never done",
+          "userImpact": "distinguishes a broken observation from real completion",
+          "recoverable": true
+        },
+        {
+          "scenario": "trySaveSession failure",
+          "detection": "save throws (logged \"session ... not saved\")",
+          "response": "keep in-memory status; retry on next transition; monotonic lastActivityAt guards stale observer ticks",
+          "userImpact": "status survives a failed write",
+          "recoverable": true
+        },
+        {
+          "scenario": "Detached session (lossless background observation)",
+          "detection": "60 s observer + attach pass: session-output followed with its OWN independent cursor (lossless, not a fixed tail) through the provider-normalized mapper; per-tick line budget; LiveTurn pid liveness; persisted pendingRequests; durable decoder checkpoints for BOTH cursors (observer independent cursor AND transcript-follow cursor): segment identity + cursor offset + selectionBuffer + selectionSeq persisted per cursor, restored on init or segment-start replay with deterministic ids + resolved dedup (resume starts with empty TurnState today, reusing sel-t-0); retention tied to unread registered cursors (rollover discards a generation only when no cursor points into it); SegmentGone -> reset to oldest retained generation + replay, dedup by requestId",
+          "response": "per tick, in order: ingest+persist requests FIRST; any unresolved -> waiting-input (turn-ended approval stays red even if provider exited); else if CAUGHT UP (own-cursor consumed all written output) AND (terminal ingested or pid dead) -> done; budget exhaustion -> non-terminal, continue next tick (never reaches death transition); read/ingest failure -> skip tick. done reserved for caught-up observed completion or verified death with zero unresolved; observer ALSO dispatches insrc_present declarations to the shared presenter (deps.open with presentKey); each declaration persisted with declarationId (checkpointed) so observer ingestion + later transcript replay dedup by declarationId — exactly one panel per declaration",
+          "userImpact": "detached chats reconcile losslessly without reopening them",
+          "recoverable": false
+        },
+        {
+          "scenario": "Chat switch / request retention",
+          "detection": "open-chat handler: approvals.clear() would drop queue/batches/grants — approval-queue snapshot() taken first",
+          "response": "approval-queue snapshot()/restore() contracts (queue order, decisions, ended-turn membership, grants, consumed batches) with round-trip tests; full pendingRequests payload persisted BEFORE clearing; restored on attach keyed by original requestId (cards resolvable again even without liveTurn); process triage before transport: live-writable -> in-turn decide(); exited -> follow-up runTurn resuming native session; live-unwritable -> stop+verify original exit, then continuation with decision, delivery correlated onto persisted request; observable delivery result: spawner write returns success/failure (errors propagate), adapter.decide returns { delivered } instead of consume-then-silent-noop, relayDecision correlates it onto the persisted request (silent no-op -> delivery-failed, never successful resolution); races covered by monotonic lastActivityAt guard",
+          "userImpact": "waiting chats survive switching and reload",
+          "recoverable": false
+        },
+        {
+          "scenario": "Panel restored",
+          "detection": "store read on attach",
+          "response": "active list + pendingRequests rebuilt from persisted fields, then one reconciliation pass; purged entries stay out",
+          "userImpact": "no resurrection",
+          "recoverable": false
+        },
+        {
+          "scenario": "Concurrent chats",
+          "detection": "multiple working/waiting sessions",
+          "response": "all listed with own dots; selecting posts open-chat { chatId } (history path reused)",
+          "userImpact": "concurrent chats switchable",
+          "recoverable": false
+        },
+        {
+          "scenario": "Same artifact presented twice",
+          "detection": "presentKey differs per declaration",
+          "response": "new presentation panel each time (panels map keyed by presentKey); no overwrite",
+          "userImpact": "present never clobbers an open panel",
+          "recoverable": false
+        },
+        {
+          "scenario": "Ambiguous/notPending name",
+          "detection": "matches != 1",
+          "response": "notPending, no instance (unchanged)",
+          "userImpact": "unchanged",
+          "recoverable": true
+        },
+        {
+          "scenario": "Purge timer fires",
+          "detection": "60 s recompute of age",
+          "response": "done > 30 min leaves the list on next render; history unaffected",
+          "userImpact": "list bounded",
+          "recoverable": false
+        },
+        {
+          "scenario": "Session-cap eviction (maxSessions 200)",
+          "detection": "evictBeyondCap removes head/rows + output via onEvict -> chatOutput.remove(id)",
+          "response": "eviction EXCLUDES sessions with persisted status working/waiting-input, unresolved pendingRequests, or registered unread cursors; done chats evictable in savedAt order; active-list purge stays list-level",
+          "userImpact": "an active/waiting chat never disappears with its unread requests",
+          "recoverable": false
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "old session rows without status/pendingRequests",
+          "expected": "excluded from active list until a turn sets status; history intact"
+        },
+        {
+          "input": "same doc twice in one insrc_present call",
+          "expected": "deduped WITHIN the declaration by resolved artifact identity; one panel"
+        },
+        {
+          "input": "done chat gets a new turn",
+          "expected": "reappears as working/waiting; purge timer resets"
+        },
+        {
+          "input": "panel closed mid-turn, reopened",
+          "expected": "status + pendingRequests from store reflected, then reconciliation pass"
+        },
+        {
+          "input": "chat detached while agent runs",
+          "expected": "observer own-cursor ingest, requests before transitions, caught-up required before death->done: unresolved -> waiting-input; caught-up terminal/dead pid zero unresolved -> done; budget exhaustion -> non-terminal; read failure -> unchanged"
+        },
+        {
+          "input": "approval request arrives mid-turn",
+          "expected": "red immediately; resolve -> precedence re-evaluation; done only at terminal with none pending"
+        },
+        {
+          "input": "failed resume/follow",
+          "expected": "keeps last known active status (cursor retained for retry); only observed completion or verified process death with zero unresolved sets done"
+        },
+        {
+          "input": "same artifactId, different presentKey in renderContent",
+          "expected": "parenthesized (shown.presentKey ?? shown.artifactId) === (m.presentKey ?? m.artifactId) returns false — no cross-instance state leak"
+        },
+        {
+          "input": "reload between selection marker fragments",
+          "expected": "observer checkpoint restore or segment-start replay reconstructs the split marker; no duplicate/reused selection id"
+        },
+        {
+          "input": "multi-select request restored after LiveTurn cleared",
+          "expected": "prompt + multi preserved from persisted SelectionRequestEvent; checkbox behavior retained"
+        },
+        {
+          "input": "panel-per-presentation: no cross-panel renders",
+          "expected": "each panel renders only its own artifact; no shared shown document, nothing to hijack"
+        },
+        {
+          "input": "reattach after a resolved selection (normal transcript follow)",
+          "expected": "follow-cursor decoder checkpoint restores selectionSeq; request ids agree with the observer persisted requests (no reused sel-t-0)"
+        },
+        {
+          "input": "first-turn request -> reload -> live-unwritable recovery, no preceding done event",
+          "expected": "native session id recovered from checkpoint and reused by the continuation; otherwise outcome session-lost recorded"
+        },
+        {
+          "input": "same artifact presented from two different chat sessions",
+          "expected": "distinct presentKeys (host-wide counter); two separate editor panels, no collision"
+        },
+        {
+          "input": "same doc in TWO insrc_present calls (same turn)",
+          "expected": "two panels — the old cross-declaration per-turn dedup (state.opened across declared() calls) is replaced; its unit test is updated"
+        },
+        {
+          "input": "multiple output rollovers before the observer catches up",
+          "expected": "retention tied to unread registered cursors keeps generations readable; SegmentGone only after all cursors passed; recovery replays oldest retained generation with requestId dedup"
+        },
+        {
+          "input": "detached chat runs insrc_present",
+          "expected": "observer dispatches the declaration to the shared presenter; declarationId dedup ensures exactly one new panel; reattach replay does not re-open it"
+        },
+        {
+          "input": "capped store (maxSessions) with an active/waiting session at the cap",
+          "expected": "active session and its unread requests are not evicted; done sessions evict in savedAt order"
+        },
+        {
+          "input": "A->B->A artifact navigation within one panel",
+          "expected": "drafts kept per composite presentKey:artifactId key; no cross-artifact draft leakage"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "History dropdown byte-identical; active dropdown additive; open-chat { chatId } reused.",
+          "source": "c1"
+        },
+        {
+          "text": "Purge is list-level only; session rows/history never deleted by it.",
+          "source": "c2"
+        },
+        {
+          "text": "Existing presentation instances never overwritten by a present.",
+          "source": "c3"
+        },
+        {
+          "text": "Presenter unique-match/notPending/per-turn dedup semantics unchanged (dedup keyed by presentKey).",
+          "source": "c3"
+        },
+        {
+          "text": "Callers that omit presentKey keep the exact legacy single-document behavior.",
+          "source": "c4"
+        },
+        {
+          "text": "done is reserved for observed completion or verified process death with zero unresolved requests.",
+          "source": "c6"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Status precedence (multiple unresolved requests keep waiting-input; turn-ended approval follow-up -> working; terminal with pending cards stays not-done); mid-turn waiting-input on approval/selection events; pendingRequests persistence + restoration with requestId/resolved (incl. chats whose LiveTurn cleared); failure exits (onError/stop -> done + lastActivityAt; failed-resume keeps last active status); observation-failure outcome via cli-adapter normalization (cursor retained, not terminal, not done); trySaveSession failure keeps in-memory status; monotonic lastActivityAt guard; bounded observer read separate from follow cursor; process death with unresolved requests stays waiting-input; activeChats filter + 30-min purge; presentKey generation + per-declaration dedup (two declarations of one doc in a turn -> two panels; old cross-declaration dedup test updated); openDoc instance keying (new instance per presentKey, focus on repeat, legacy path unchanged when omitted); parenthesized selection comparison (same artifactId + different presentKey must NOT match); full presentKey chain incl. docs-decision/open-companion presentKey, close-present, docs-review-comments drafts keyed by presentKey; protocol shapes.; full request-payload persistence (QueuedApproval fields + batch/grants, selection options+pending) before approvals.clear(), restore keyed by requestId incl. no-liveTurn; lossless observer own-cursor ingestion with per-tick budget, requests ingested before completion/death transitions; caught-up required before death->done (dead process with unresolved request beyond first budget stays non-terminal); restored decision transport: pendingByTurn re-registration on reattach/reload, dead-stdin decision via follow-up runTurn, delivery-failure -> delivery-failed outcome; delivery tests after detach/reattach and reload; multi-select restoration after LiveTurn cleared; observer checkpoint restore vs segment-start replay (reload between marker fragments, after prior selection); follow+observer decoder checkpoints (identity agreement after resolved selection, between marker fragments); native-session capture before first-turn request + reload + live-unwritable recovery without done event; presentKey host-wide uniqueness regression (two chat sessions present the same artifact -> distinct keys, two instances); approval-queue snapshot()/restore() round-trip (queue order, decisions, ended-turn membership, grants, consumed batches); session-output retention tied to registered unread cursors + SegmentGone replay recovery (multiple rollovers before observer catches up)",
+          "subjects": [
+            "vscode-plugin/src/chat/session-store.ts",
+            "vscode-plugin/src/chat/stream-events.ts",
+            "vscode-plugin/src/chat/turn-lifecycle.ts",
+            "vscode-plugin/src/chat/session-output.ts",
+            "vscode-plugin/src/chat/cli-adapter.ts",
+            "vscode-plugin/src/chat/review-presenter.ts",
+            "vscode-plugin/src/chat/docs-review-panel.ts",
+            "vscode-plugin/src/chat/docs-review-comments.ts",
+            "vscode-plugin/src/chat/protocol.ts",
+            "vscode-plugin/src/extension.ts",
+            "vscode-plugin/src/chat/approval-queue.ts",
+            "vscode-plugin/src/chat/session-output.ts",
+            "vscode-plugin/src/chat/session-file-store.ts"
+          ],
+          "fixturesNeeded": [
+            "session-store fake",
+            "pending-doc list fake",
+            "stream-event fake",
+            "LiveTurn record fake with pid"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "active-list/ActiveChatEntry/ open-chat { chatId } reused for active selection; presenter declared() outcome unchanged + presentKey plumbed end-to-end; dropdown render with dots.; approval-queue snapshot()/restore() round-trip (queue order, decisions, ended-turn membership, grants, consumed batches); session-output retention tied to registered unread cursors + SegmentGone replay recovery (multiple rollovers before observer catches up)",
+          "subjects": [
+            "vscode-plugin/src/chat/protocol.ts",
+            "vscode-plugin/src/chat/chat-panel.ts",
+            "vscode-plugin/src/chat/review-presenter.ts"
+          ],
+          "fixturesNeeded": [
+            "extend existing chat-panel/presenter tests"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Webview-level: both dropdowns render; active-list updates on status change and on mid-turn approval request; selecting an active chat opens it like history; double present -> two editor panels with the first panel content unchanged; closing one panel disposes only its own map entry; fake-clock purge removes from list, keeps history; 60 s observer with fake session-output own-cursor reconciles a detached session losslessly (request ingested with terminal event -> waiting-input wins; terminal/dead pid with zero unresolved -> done; read failure -> unchanged).; approval-queue snapshot()/restore() round-trip (queue order, decisions, ended-turn membership, grants, consumed batches); session-output retention tied to registered unread cursors + SegmentGone replay recovery (multiple rollovers before observer catches up); detached-chat presentation integration test (observer dispatch -> exactly one new panel; replay after reattach does not re-open)",
+          "subjects": [
+            "vscode-plugin/src/chat/chat-panel.ts",
+            "vscode-plugin/src/chat/docs-review-panel.ts"
+          ],
+          "fixturesNeeded": [
+            "webview harness with fake store + fake timers"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "REQ: active-chat dropdown in tab header with red/yellow/green dots; selecting opens that chat like history. Tests: unit activeChats; contract; integration render+open."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "REQ: done chats purged from active list after 30 min inactivity; history untouched. Tests: unit purge with fake clock; integration timer."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "REQ: each insrc_present opens a NEW presentation/editor panel per artifact, never overwrites an open panel. Tests: unit panels map + chain; integration double-present -> two panels."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "REQ: history dropdown unchanged. Tests: existing history tests unmodified."
+          ]
+        }
+      ],
+      "testFramework": "vscode-plugin existing harness (tsx node:test + webview mocks); fake timers for purge. Criterion source: triage storySpec; ac1-ac4 inline above are authoritative."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Daemon-tracked status",
+        "oneLineSummary": "Daemon tracks status per session; plugin lists from daemon.",
+        "approach": "Extend SessionInfo; plugin polls.",
+        "pros": [
+          "cross-host"
+        ],
+        "cons": [
+          "unnecessary daemon surface for a panel feature"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Over-scoped."
+      },
+      {
+        "id": "a2",
+        "name": "Extension-local status only",
+        "oneLineSummary": "Plugin derives status from turn lifecycle in session-store.",
+        "approach": "setStatus from runTurn; dropdown reads store.",
+        "pros": [
+          "minimal, testable"
+        ],
+        "cons": [
+          "tab identity unfixed"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Needed the tab fix too."
+      },
+      {
+        "id": "a3",
+        "name": "Extension-local status + present-instance tab keys",
+        "oneLineSummary": "a2 plus presentKey-keyed artifact tabs.",
+        "approach": "As in s4.",
+        "pros": [
+          "smallest satisfying change",
+          "no daemon change"
+        ],
+        "cons": [
+          "tab proliferation on many presents"
+        ],
+        "costEstimate": "S"
+      }
+    ],
+    "chosenAlternative": "a3",
+    "openQuestions": [],
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "Two component mocks for the concurrent-chats story, based on the current webview UX: (1) the full chat panel webview as it is today (.box > .chrome / #insrc-term / #insrc-progress / .inputbar / .statusbar), with the new #insrc-active chip LEFT-aligned in .chrome (red/yellow/green status-dot entries) and the unchanged #insrc-history chip RIGHT-aligned in .right.",
+      "body": [
+        {
+          "type": "Container",
+          "description": "Component mock 1 — the whole chat webview panel as it is today (renderShell, chat-panel.ts:1545): body.insrc-term > .box fills the editor pane edge-to-edge as a flex column — .chrome header, #insrc-older pager, #insrc-term scrolling transcript (the only scroll region), #insrc-progress live band, .inputbar (❯ send/stop + 2-line textarea), .statusbar (attach, edits mode, bottom-right run controls). The ONLY addition is the active-chats dropdown chip LEFT-aligned in .chrome; #insrc-history stays as the sole RIGHT-aligned chip (.right, margin-left:auto).",
+          "items": [
+            {
+              "type": "Container",
+              "description": "Fixed header .chrome (bg-inset ground, bottom border, padding 10px 14px, font 12px, gap 10px). NEW: the active-chats chip at the far LEFT; the existing history chip stays at the far RIGHT via .right (margin-left:auto).",
+              "items": [
+                {
+                  "type": "ColumnSet",
+                  "description": "Chrome row: [active-chats chip, left] … [.right: history chip, right]. Each dropdown is depicted as its real control: a .histchip-style chip (dropdown-bg, border, radius 6px) containing a compact .segsel — not an expanded list.",
+                  "columns": [
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "description": "NEW active-chats chip, LEFT-aligned at the start of .chrome.",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "● Active chats ▾   (chip: dropdown-bg, 1px border, radius 6px; segsel inside)",
+                          "size": "small",
+                          "weight": "bolder",
+                          "description": "Chip label for select#insrc-active.segsel — left-aligned in .chrome; the leading dot glyph shows the most urgent status (red > yellow > green)."
+                        },
+                        {
+                          "type": "TextBlock",
+                          "text": "● waiting for input — [cli-vibe] approve LLD-1bd72813… (current)",
+                          "size": "small",
+                          "color": "attention",
+                          "description": "RED status entry (ux-color-attention): agent blocked on an approval/selection request."
+                        },
+                        {
+                          "type": "TextBlock",
+                          "text": "● agent working — [cli-codex] build S002",
+                          "size": "small",
+                          "color": "warning",
+                          "description": "YELLOW status entry (ux-color-warning): turn running or continuation queued."
+                        },
+                        {
+                          "type": "TextBlock",
+                          "text": "● done (drops off the list 30 min after lastActivityAt) — [cli-claude] daemon update",
+                          "size": "small",
+                          "color": "good",
+                          "description": "GREEN status entry (ux-color-good): terminal with zero unresolved requests; purged from the active list after 30 min idle, history untouched."
+                        },
+                        {
+                          "type": "TextBlock",
+                          "text": "Selecting an entry posts the SAME open-chat { chatId } as history.",
+                          "size": "small",
+                          "isSubtle": true,
+                          "wrap": true,
+                          "description": "Behavior: one handler, one open behavior — fed by active-list posts, options \"[provider] title\" like history."
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "description": "Existing history chip, RIGHT-aligned in .right (margin-left:auto) — UNCHANGED (ac4).",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "🕘 [cli-vibe] Refactor chat panel ▾   (chip, right-aligned)",
+                          "size": "small",
+                          "weight": "bolder",
+                          "description": "Existing .histchip with clock glyph + select#insrc-history.segsel showing the current session; first option \"new…\"; populated by history-list."
+                        },
+                        {
+                          "type": "TextBlock",
+                          "text": "  [cli-claude] Mermaid theming epic",
+                          "size": "small",
+                          "description": "A history option (\"[provider] title\"); selection posts open-chat { chatId } — the exact message the active chip reuses."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Container",
+              "description": "Transcript area: #insrc-older \"load earlier\" bar (shown only when older rows exist), then #insrc-term.term — the panel's single scroll region (flex column, gap 14px, padding 16px 14px), rows carry colored ::before markers.",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "↑ load earlier messages (12)",
+                  "size": "small",
+                  "isSubtle": true,
+                  "description": "#insrc-older pager bar above the transcript."
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "❯ user — can you review the LLD for the concurrent-chats story?",
+                  "wrap": true,
+                  "description": "A user row in #insrc-term with the --user marker/background."
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "assistant — reading docs/standalone/…/S001/LLD.md … presenting it for approval",
+                  "wrap": true,
+                  "description": "An assistant row on --assistant-bg."
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "⚙ tool: read_file LLD.md (312 lines)   ✓ done",
+                  "size": "small",
+                  "wrap": true,
+                  "description": "A tool row with the --tool/--done markers (accent2/amber/green glyphs)."
+                }
+              ]
+            },
+            {
+              "type": "Container",
+              "description": "Live band above the input: #insrc-progress — 3 blinking dots + label + right-aligned tabular elapsed timer; idle shows breathing dots.",
+              "items": [
+                {
+                  "type": "TextBlock",
+                  "text": "● ● ● working…   0:42",
+                  "size": "small",
+                  "isSubtle": true,
+                  "description": "#insrc-progress: spin dots + \"working…\" label + #insrc-elapsed timer (margin-left:auto)."
+                }
+              ]
+            },
+            {
+              "type": "Container",
+              "description": "Input bar .inputbar (top border, bg-inset): the leading ❯ IS the send/stop control (❯ green at rest, ■ red while a turn runs), then the flush 2-line borderless textarea #insrc-input (rows=2).",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "insrc-input",
+                  "label": "❯",
+                  "placeholder": "Message the agent…",
+                  "isMultiline": true,
+                  "description": ".inputbar: span#insrc-prompt (send/stop) + textarea#insrc-input rows=2, transparent, no border — the flush terminal prompt."
+                }
+              ]
+            },
+            {
+              "type": "Container",
+              "description": "Status bar .statusbar (bg-inset, top border, font 11.5px): attach button, the \"edits\" approval-mode seg (Manual / Edit Automatically / Auto, amber auto pill), and the bottom-RIGHT run controls (.runctl, margin-left:auto) — provider·model button + effort gauge, popups open upward from there.",
+              "items": [
+                {
+                  "type": "ColumnSet",
+                  "description": ".statusbar row: [attachbtn] [edits mode segsel] … [.runctl right-aligned].",
+                  "columns": [
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "description": "Left cluster of the status bar.",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "📎  edits ▾ (Manual | Edit Automatically | Auto)",
+                          "size": "small",
+                          "description": "button#insrc-attach.attachbtn (paperclip) + span#insrc-modeseg \"edits\" + select#insrc-mode.segsel with the approval-mode options."
+                        }
+                      ]
+                    },
+                    {
+                      "type": "Column",
+                      "width": "auto",
+                      "description": "Bottom-right run controls .runctl (margin-left:auto): runbtn + gaugebtn; their popups open upward.",
+                      "items": [
+                        {
+                          "type": "TextBlock",
+                          "text": "[icon] vibe · glm-4.7 ▾    ◔ medium",
+                          "size": "small",
+                          "weight": "bolder",
+                          "description": "button#insrc-runbtn.runbtn (provider icon + provider · model + ▾) and button#insrc-effortbtn.gaugebtn (◔ + effort label) — the existing provider/model popup and effort slider controls, unchanged by this story."
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/ux-mock-chat-panel.html",
+        "title": "UX mock — chat panel"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:565-566",
+      "quotedText": "postHistory posts history-list from deps.store.list() — the dropdown pattern the active dropdown reuses."
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts",
+      "quotedText": "Session store backs history; gains status/lastActivityAt; purge is list-level only."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/review-presenter.ts:83-95",
+      "quotedText": "open() dedups per turn via state.opened and calls deps.open({ artifactId, mdPath }) — keyed by artifactId today, hence overwrite."
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/docs-review-panel.ts:1495",
+      "quotedText": "openDoc(artifactId, opts) — tab keying point for presentKey."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts:46",
+      "quotedText": "DocsDocumentTab — gains presentKey."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/chat-sessions.ts:41-45",
+      "quotedText": "SessionInfo { id, repo, idleSeconds } — daemon already tracks idleness; no daemon change needed."
+    }
+  ]
+}

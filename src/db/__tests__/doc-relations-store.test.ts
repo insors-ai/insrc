@@ -20,6 +20,7 @@ import { open } from 'lmdb';
 import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath, withWriteTxn } from '../graph/store.js';
 import { encodeRepoKey } from '../graph/keys.js';
 import { addRepo, lookupRepoId, removeRepo } from '../repos.js';
+import { deleteEntitiesForRepo } from '../entities.js';
 import {
 	fileEntityHashInTxn,
 	readDocRelationQualityInTxn,
@@ -114,15 +115,19 @@ test('s10 t1: a full index clears and carries proposal rows; restore keeps only 
 		writeDocRelationQualityInTxn(s, repoId, quality);
 	});
 
-	writeFileSync(join(repo, 'docs/b.md'), '# B\n\nThe second document, edited.\n');
-	await svc.processJob({ kind: 'full', repoPath: repo });
+	// The full index's delete step, as the full index calls it: rows cleared and carried.
+	await deleteEntitiesForRepo(db, repo, { carryDocSummaries: true });
 	assert.equal(readDocRelationRowsInTxn(store, repoId).size, 0, 'no proposal row is readable after the delete');
 	assert.equal([...store.docRelationCarry.getKeys({})].length, 2, 'both rows were carried');
 	assert.deepEqual(readDocRelationQualityInTxn(store, repoId), quality, 'the quality row is not graph data and stays');
 
-	assert.deepEqual(await restoreCarriedDocRelations(repo), { restored: 1, dropped: 1 });
+	// The rebuild stores the documents again (b.md changed) and restores the carry after them.
+	writeFileSync(join(repo, 'docs/b.md'), '# B\n\nThe second document, edited.\n');
+	await svc.processJob({ kind: 'full', repoPath: repo });
 	assert.deepEqual([...readDocRelationRowsInTxn(store, repoId).keys()], ['docs/a.md'], 'only the unchanged document is restored');
 	assert.equal([...store.docRelationCarry.getKeys({})].length, 0, 'the carry is emptied');
+	assert.deepEqual(readDocRelationQualityInTxn(store, repoId), quality, 'the quality row stays across the full index');
+	assert.deepEqual(await restoreCarriedDocRelations(repo), { restored: 0, dropped: 0 }, 'nothing is left to restore');
 });
 
 test('s10 t1: removeRepo deletes proposal, carry and quality rows', async () => {

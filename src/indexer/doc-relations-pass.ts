@@ -26,7 +26,7 @@
 
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { getLogger } from '../shared/logger.js';
@@ -126,6 +126,25 @@ export interface Examination {
 	readonly repeated:   number;
 }
 
+const DOC = /\.mdx?$/i;
+
+/** A repository-relative path in canonical form, or undefined when it is not one. */
+export function canonicalPath(raw: string): string | undefined {
+	// Separators first, then POSIX normalisation, so 'src\\sub\\..\\x.ts' and './src/x.ts' are the same 'src/x.ts'.
+	const p = posix.normalize(raw.trim().replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/$/, '');
+	if (p === '' || p === '.' || p.startsWith('../') || p === '..' || p.startsWith('/')) return undefined;
+	return p;
+}
+
+/** The canonical identity of a link's target: path, or path#symbol; an anchor on a document is dropped. */
+export function canonicalTarget(raw: string): string | undefined {
+	const [pathPart, symbol] = raw.split('#', 2) as [string, string | undefined];
+	const path = canonicalPath(pathPart);
+	if (path === undefined) return undefined;
+	if (symbol === undefined || symbol === '' || DOC.test(path)) return path;
+	return `${path}#${symbol}`;
+}
+
 /** The shape check of a returned value: an object with a proposals array of three strings each. */
 export function validateProposals(value: unknown): RawProposal[] {
 	if (typeof value !== 'object' || value === null || !Array.isArray((value as { proposals?: unknown }).proposals)) {
@@ -178,10 +197,11 @@ export async function examineDocument(args: {
 	let repeated = 0;
 	for (const p of raw) {
 		if (!sourceIds.has(p.source)) { unresolved++; continue; }
-		const [pathPart, rawSymbol] = p.target.split('#', 2) as [string, string | undefined];
-		const rel = pathPart.replace(/^\.?\//, '');
-		// An anchor on a document target is dropped: the target is the document (as the hand-checked set names it).
-		const symbol = /\.mdx?$/i.test(rel) ? undefined : rawSymbol;
+		// The target in the hand-checked set's identity: separators and dot segments normalised, a
+		// document's anchor dropped (the target is the document).
+		const canonical = canonicalTarget(p.target);
+		if (canonical === undefined) { unresolved++; continue; }
+		const [rel, symbol] = canonical.split('#', 2) as [string, string | undefined];
 		if (!fileSet.has(rel) || rel === relFile) { unresolved++; continue; }
 		let to: string | undefined;
 		if (symbol === undefined || symbol === '') {

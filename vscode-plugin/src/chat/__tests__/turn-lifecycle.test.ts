@@ -1458,10 +1458,13 @@ test('E202611031bd72813:S001 t5: follow() restores the follow cursor\'s OWN deco
   h.lc.follow(h.session, f.sink);
   await waitFor(() => resumes.length === 1);
   assert.deepEqual(resumes[0]!.req.decoderState, { selectionSeq: 4, selectionBuffer: '```insrc:selec' }, 'the saved decoder state is restored into the resume (not started empty)');
-  // when the adapter reports decoder progress, it is saved onto the liveTurn
+  // decoder progress is stamped onto the liveTurn ATOMICALLY with the next cursor offset (one save)
   resumes[0]!.decoderState?.({ selectionSeq: 5, selectionBuffer: 'more' });
-  await waitFor(() => h.session.liveTurn?.decoder !== undefined);
-  assert.deepEqual(h.session.liveTurn!.decoder, { selectionSeq: 5, selectionBuffer: 'more' }, 'advanced decoder state saved with the cursor');
+  assert.equal(h.session.liveTurn?.decoder?.selectionSeq, 4, 'held, not saved ahead of the offset (still the seeded seq 4)');
+  resumes[0]!.feed.push(delta('old'));
+  await waitFor(() => h.session.liveTurn?.decoder?.selectionSeq === 5);
+  assert.deepEqual(h.session.liveTurn!.decoder, { selectionSeq: 5, selectionBuffer: 'more' }, 'advanced decoder state saved together with the cursor offset');
+  assert.ok(h.session.liveTurn!.cursor.offset > 100, 'and the offset advanced in the same save');
   resumes[0]!.feed.push(done('old', 'n1'));
   await waitFor(() => f.calls.includes('end'));
 });

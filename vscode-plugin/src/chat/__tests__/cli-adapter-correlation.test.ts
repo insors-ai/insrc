@@ -218,3 +218,28 @@ test('legacy replay waits through multiple results and reports missing retained 
   assert.deepEqual(missing,[],'retention failure must not invent successful completion');
   assert.equal(warnings.length,1);
 });
+
+test('a correlated Claude turn ends the CLI stdin at its own result, not before', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [
+    JSON.stringify({ type: 'result', user_message_uuid: 'other' }),
+    text('reply'),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', result: 'reply' }),
+  ] });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('claude');
+  try {
+    let endsBeforeDone = -1;
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'assistant-delta') assert.equal(spawner.procs[0]!.inputEnds(), 0);
+      if (event.kind === 'done') endsBeforeDone = spawner.procs[0]!.inputEnds();
+    }
+    assert.equal(endsBeforeDone, 1);
+    assert.deepEqual(spawner.procs[0]!.signals(), []);
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test('a prompt-argument CLI turn never has an input to end', async () => {
+  const spawner = makeFakeSpawner({ lines: [JSON.stringify({ type: 'turn.completed' })] });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('codex');
+  await collect(adapter.run({ provider: 'codex', cwd: '/tmp', prompt: 'hi' }));
+  assert.equal(spawner.procs[0]!.inputEnds(), 0);
+});

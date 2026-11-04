@@ -191,6 +191,12 @@ export interface SpawnedProcess {
    * A returned promise acknowledges writing; rejections are surfaced by the adapter.
    */
   write?(data: string): void | Promise<void>;
+  /**
+   * Optional: end the process stdin (EOF). A CLI that reads structured input keeps waiting for
+   * more after its result, so the adapter ends the input once a correlated turn is terminal and
+   * the CLI exits, releasing the session's chat lock. Idempotent; never throws.
+   */
+  endInput?(): void;
   /** With a session output: the position just after the last line lines() yielded. */
   readonly cursor?: SegmentCursor | undefined;
 }
@@ -1199,6 +1205,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             // Keep reading (and discarding) stdout so a CLI that outlives its answer never
             // blocks on a full pipe; nothing after the terminal event is yielded.
             void drain(stdout);
+            // A correlated turn has its answer: end the input the CLI is still waiting on so it
+            // exits and frees the session's chat lock instead of idling until the next turn kills it.
+            if (state.requestUuid !== undefined) proc.endInput?.();
           }
           // Checkpoint before terminal yield: consumers commonly return immediately at done.
           if (terminal && proc.cursor !== undefined) opts?.onProgress?.(proc.cursor);
@@ -1586,6 +1595,10 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       // The CLI leads its group (detached): signal the group; else, or once it is gone, the child.
       if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
       child.kill(signal);
+    },
+    endInput: () => {
+      const input = child.stdin;
+      if (input !== null && !input.destroyed && !input.writableEnded) input.end();
     },
     write: (data: string) => new Promise<void>((resolve, reject) => {
       const input = child.stdin;

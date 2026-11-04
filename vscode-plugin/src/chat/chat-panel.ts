@@ -1421,7 +1421,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const decisions = batch.decisions;
     // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
     // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
-    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, turns.live?.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: batch.turnId, sessionId: session?.id });
+    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, d.request.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: d.request.turnId, groupId: batch.turnId, sessionId: session?.id });
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
     void p.then(
       () => {

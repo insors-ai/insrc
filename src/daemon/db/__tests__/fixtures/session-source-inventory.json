@@ -32229,6 +32229,10 @@
    "sites": [
     [
      "storage-call",
+     "clearUnresolvedMetaKeyBatch"
+    ],
+    [
+     "storage-call",
      "deleteResolvedRelations"
     ],
     [
@@ -32281,7 +32285,7 @@
     ],
     [
      "storage-call",
-     "listExportNames"
+     "listEntitiesForRepo"
     ],
     [
      "storage-call",
@@ -32289,7 +32293,7 @@
     ],
     [
      "storage-call",
-     "listUnresolvedRelations"
+     "listExportNames"
     ],
     [
      "storage-call",
@@ -32306,6 +32310,18 @@
     [
      "storage-call",
      "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "diagnostic",
+     "log.info"
     ],
     [
      "diagnostic",
@@ -32408,6 +32424,10 @@
      "readIndexState"
     ],
     [
+     "storage-call",
+     "returnInferredSqlReferencesToPending"
+    ],
+    [
      "filesystem-read",
      "statSync"
     ],
@@ -32436,9 +32456,9 @@
      "zeroPending"
     ]
    ],
-   "siteCount": 52,
-   "sitesDigest": "21a428a04001f915e3621721a3f1f9b4935bbb5a80887ee5ab15a7715bbc5c9d",
-   "sourceDigest": "61126e8b745e57290642cb86f582218f45a85c6cb49c37d36a9c79ca4966bdea",
+   "siteCount": 57,
+   "sitesDigest": "005815c2a2e8885db5a3f3870f9b2db18c6ecb41a728f88110132fcb1aa6d840",
+   "sourceDigest": "13e2e656deb8ff23b62d866df262361adabee9b803f8c9cf2c117e573599c8c2",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -32915,6 +32935,10 @@
     ],
     [
      "storage-call",
+     "entityU64ForId"
+    ],
+    [
+     "storage-call",
      "findEntitiesByFile"
     ],
     [
@@ -32980,6 +33004,14 @@
     [
      "storage-call",
      "listUnembeddedEntities"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "diagnostic",
+     "log.debug"
     ],
     [
      "diagnostic",
@@ -33386,9 +33418,9 @@
      "writeBackfillVectors"
     ]
    ],
-   "siteCount": 132,
-   "sitesDigest": "ab4bbdbb2d9d83450210586c55c68197f16d86e5b89e52b916ee29f8b2ee213b",
-   "sourceDigest": "99445f6321a57a1d205bd7455b4ada2e5716cb310141d2a3cd230e588d8a472e",
+   "siteCount": 135,
+   "sitesDigest": "5be3d87877faf34ea3ee7931d77567c878877e7b2ed30ed91e18788db08aff60",
+   "sourceDigest": "1e386774cab0838cc38a31707eff466cb9b6ec5b2153102e20ed77eb659a1956",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

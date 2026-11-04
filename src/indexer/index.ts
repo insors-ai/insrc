@@ -2,12 +2,13 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider, Relation } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
 import { upsertEntities, listEntityFilesForRepo, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
   upsertRelations,
   deleteUnresolvedForRepo,
+  listUnresolvedRelations,
 } from '../db/relations.js';
 import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setEmbeddingAvailable, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
@@ -17,7 +18,7 @@ import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
-import { commitFile, getEntity } from '../db/entities.js';
+import { commitFile, entityU64ForId, getEntity } from '../db/entities.js';
 import { writeOfRelation } from '../db/file-commit.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
 import { bumpIndexRunDone, closeIndexRun, openIndexRun, readIndexRun, setIndexRunSelected } from './run-record.js';
@@ -623,6 +624,20 @@ export class IndexerService {
     // One commit: the file's entities, relationships and pending rows go together (Epic c2ba6fa6 s2).
     void ids;
     await commitFile({ repoPath, filePath: file, contentHash: null, entities: [], relations: [] });
+    await this.reReadCitingDocuments(repoPath, file);
+  }
+
+  /**
+   * After a file's removal (s10): its incoming document links went back to
+   * pending awaiting its file entity. Each markdown document holding one is
+   * read again, so its link is written as 'no-candidate' and the repository
+   * does not stay incomplete on a link to a file that is gone.
+   */
+  protected async reReadCitingDocuments(repoPath: string, filePath: string): Promise<void> {
+    const rows = await listUnresolvedRelations(this.db, repoPath, undefined, { awaiting: [makeEntityId(repoPath, filePath, 'file', filePath)] });
+    const docs = new Set(rows.filter(r => r.kind === 'REFERENCES' && /\.mdx?$/i.test(r.fromFile) && r.fromFile !== filePath).map(r => r.fromFile));
+    for (const doc of docs) this.queue.enqueue({ kind: 'file', filePath: doc, event: 'update' });
+    if (docs.size > 0) log.debug({ file: filePath, documents: docs.size }, 'documents citing a removed file queued for re-reading');
   }
 
   /**
@@ -955,6 +970,7 @@ export class IndexerService {
     if (event === 'delete') {
       // One commit removes the file's entities, relationships and pending rows together (ac4).
       await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+      await this.reReadCitingDocuments(repoPath, filePath);
       log.info({ file: filePath }, 'file deleted from index');
       this.scheduleSettle(repoPath, filePath);
       return;
@@ -1236,6 +1252,7 @@ export class IndexerService {
       // the delete event's would (s2 review -- nothing is deleted first now).
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+        await this.reReadCitingDocuments(repoPath, filePath);
         return false;
       }
       // Unreadable: the previous rows stay, and the caller records the file as uncommitted.
@@ -1273,8 +1290,8 @@ export class IndexerService {
     const fileEntity = result.entities.find(e => e.kind === 'file' && e.file === filePath);
     if (fileEntity) fileEntity.hash = hash;
 
-    // Resolve relative imports
-    const resolved = resolveRelations(result.relations, filePath, repoPath, result.entities);
+    // Resolve relative imports; then decide each document link stored or pending (s10).
+    const resolved = await documentLinksForCommit(resolveRelations(result.relations, filePath, repoPath, result.entities), filePath, repoPath);
     const resolvedCount = resolved.filter(r => r.resolved).length;
 
     // Embed entities (no-op if Ollama is unavailable)
@@ -1515,4 +1532,32 @@ export class IndexerService {
     }
     return best;
   }
+}
+
+/**
+ * The document links of a markdown file as the file commit takes them (Epic
+ * c2ba6fa6 s10). A path link whose target file entity is stored is written
+ * stored; one whose target is not is written pending, awaiting that id, class
+ * 'no-candidate' -- not a completeness cause -- so Pass 0 promotes it when the
+ * target commits. A name reference is always written pending, 'no-candidate',
+ * and resolved at read. Both pending forms name the citing file and the
+ * repository, which the store requires of a pending row. Only a store read: no
+ * file system probe.
+ */
+export async function documentLinksForCommit(relations: Relation[], filePath: string, repoPath: string): Promise<Relation[]> {
+  const out: Relation[] = [];
+  for (const rel of relations) {
+    if (rel.kind !== 'REFERENCES' || rel.meta?.['docLink'] !== true) { out.push(rel); continue; }
+    const where = { file: filePath, repo: repoPath };
+    if (typeof rel.meta['nameRef'] === 'string') {
+      out.push({ ...rel, resolved: false, meta: { ...rel.meta, ...where, class: 'no-candidate', reason: 'doc-name-ref' } });
+    } else if (await entityU64ForId(rel.to) !== undefined) {
+      const { awaitsId: _a, ...meta } = rel.meta;
+      void _a;
+      out.push({ ...rel, resolved: true, meta: { ...meta, repo: repoPath } });
+    } else {
+      out.push({ ...rel, resolved: false, meta: { ...rel.meta, ...where, awaitsId: true, class: 'no-candidate', reason: 'doc-link-target-absent' } });
+    }
+  }
+  return out;
 }

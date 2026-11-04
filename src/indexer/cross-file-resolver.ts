@@ -559,8 +559,9 @@ async function runPass2(
       processed++;
       continue;
     }
-    // A row awaiting an entity id holds that id, not a name: Pass 0 completes it.
-    if (!PASS2_KINDS.has(row.kind) || row.meta['awaitsId'] === true) {
+    // A row awaiting an entity id holds that id, not a name: Pass 0 completes it. A document's
+    // link (s10) is never resolved by name here: its name reference is resolved at read.
+    if (!PASS2_KINDS.has(row.kind) || row.meta['awaitsId'] === true || row.meta['docLink'] === true) {
       processed++;
       continue;
     }

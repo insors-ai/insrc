@@ -1,0 +1,346 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-38e578d5-03ec-43f3-acec-bd6fc0929c93",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:59:44.613Z",
+    "epicCreatedAt": "2026-11-04T05:05:39.006Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "d792f3aa6f135f1c",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "repair-incomplete-code-review-task-attribution",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "713ec657fabde14b187095f5bab029d886b9c49d535a46565a56b5d4f17a1798",
+        "at": "2026-11-04T05:59:44.613Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "attribution-repair-1793769161035",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "scope": {
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-d792f3aa6f135f1c.json",
+              "commit": "0490b4db61d46239f0aa311aeb946e2dedd07170"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "0490b4db61d46239f0aa311aeb946e2dedd07170",
+              "parent": "8b15346dd9fd76ef59b25f2741f52fa5af24895b",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        203,
+                        320
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/assessment.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        19,
+                        19
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/attribution-repair.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        17
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        90,
+                        90
+                      ]
+                    },
+                    {
+                      "after": [
+                        107,
+                        107
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/controller.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "after": [
+                        65,
+                        69
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/coordinator.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        1
+                      ]
+                    },
+                    {
+                      "after": [
+                        14,
+                        14
+                      ]
+                    },
+                    {
+                      "after": [
+                        213,
+                        219
+                      ]
+                    },
+                    {
+                      "after": [
+                        227,
+                        240
+                      ]
+                    },
+                    {
+                      "after": [
+                        244,
+                        244
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/packet.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        199,
+                        201
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Verified commit 0490b4db61d46239f0aa311aeb946e2dedd07170 against ISSUE-d792f3aa6f135f1c's rootCause/fixIntent and the acceptance check. The fix: (1) attributionPrompt now explicitly requires unchanged/cross-engine regression evidence (assessment.ts:19); (2) deriveTaskAssignments reports precise omitted change/test indexes+paths instead of a generic error (packet.ts:199-201); (3) a new attribution-repair.ts introduces a shared MAX_ATTRIBUTION_SUBMISSIONS=3 budget and recordAttributionRejection, persisted in the checkpoint header (contracts.ts attributionRepair field, min 1/max 3), consumed identically by both the native coordinator loop (coordinator.ts) and the controller route (controller.ts), so the budget survives disconnect/resume and is never reset. I traced the coordinator's retry loop and the controller's scope() handler line-by-line against all 9 new tests and confirmed: only TaskReviewInputError (attribution-shape rejections, including the ReviewOutputFailureError-wrapped host-validation variant) triggers a retry — generic CLI/timeout failures are rethrown unchanged, preserving \"no general retry\" and existing failure-continuation tests. Replay of the same envelope/sequence is idempotent (no extra rejection); a persistence failure during recordAttributionRejection restores the prior header value and aborts dispatch without fabricating task failures. I ran all 7 builder-named test files individually (47 cases total) and they pass, and a full tsc --noEmit typecheck is clean.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The new coordinator.test.ts cases exercise both the success-after-correction path and the full-exhaustion path on the native route, the controller route's scope()/submit() exchange with replay protection and disconnect/resume survival, the real ReviewOutputFailureError host-validation wrapper, the packet.ts omission-diagnostic message shape directly, and a save-failure during recordAttributionRejection that must not fabricate task failures. I read each test body and traced it against the implementation (coordinator.ts's for(;;) retry loop, controller.ts's scope() handler, attribution-repair.ts's rejection bookkeeping, packet.ts's missingChanges/missingTests computation) line-by-line rather than relying on graph edges, and independently ran all 7 builder-named test files (47 cases) plus tsc --noEmit, all passing. Coverage is complete for the stated fixIntent: regression-evidence wording, precise omission diagnostics, the bounded 3-submission budget shared by both routes, budget persistence across disconnect/resume, and non-retry of unrelated CLI/assessment failures.",
+              "evidenceReferences": [
+                "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/coordinator.ts",
+                "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/controller.ts",
+                "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/attribution-repair.ts",
+                "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/packet.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran the 7 builder-named test files individually (47 cases, all pass) and a repo-wide `tsc --noEmit` (clean); did not run the full unrelated test sweep.",
+              "Minor, non-blocking: in controller.ts's scope() handler, once the budget is already exhausted (rejections===3) and a further new-sequence scope submission arrives, requireReview throws before reviewAssignments runs and recordAttributionRejection is still invoked; it overwrites the stored attributionRepair.feedback with the generic 'Attribution correction budget exhausted' message (replacing the more specific prior feedback) and performs a redundant persist. Harmless given Math.min caps rejections at 3 and no test exercises this exact post-exhaustion extra call, but worth a one-line short-circuit if it's ever noticed in practice."
+            ],
+            "inspectedReferences": [
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:.insrc/artifacts/ISSUE-d792f3aa6f135f1c.json",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/assessment.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/attribution-repair.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/contracts.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/controller.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/coordinator.ts",
+              "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/packet.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "cases": [
+                  "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                  "task execution: checkpoint before next task, one inactivity grace, failure continuation and no automatic retry",
+                  "checkpoint write failure stops scheduling and retains the last complete JSON",
+                  "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+                  "native provider timeout is incomplete even when it returns just before the host timer",
+                  "malformed provider result is saved as failed without retrying the task",
+                  "native task output refuses placeholder references and foreign locations before host completion",
+                  "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                  "shared attribution timeout remains incomplete for every remaining task without retry",
+                  "shared attribution provider failure remains failed for every remaining task without retry",
+                  "shared attribution corrects omitted unchanged regression evidence before any assessment",
+                  "shared attribution exhausts three submissions without running assessments or resetting on resume",
+                  "controller attribution returns pointed correction frames then accepts complete mapping with replay protection",
+                  "native attribution handles the real host-candidate rejection wrapper and preserves diagnostics",
+                  "controller attribution budget survives disconnect and explicit resume, then exhausts",
+                  "attribution omission diagnostics enumerate missing change and test indexes separately",
+                  "attribution repair persistence failure stops dispatch without fabricating task failures"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "result": "pass",
+                "executionDetails": "17/17 pass, 530ms total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "cases": [
+                  "single-task attribution prompt and native schema select t4 only on initial and subsequent attempts",
+                  "whole-story attribution retains every Plan task and strict host uniqueness and coverage checks",
+                  "single-task re-review uses the same constrained attribution on daemon and controller routes and preserves prior attempts"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts",
+                "result": "pass",
+                "executionDetails": "3/3 pass, 1.15s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+                "cases": [
+                  "controller parity: actual independent-party routing and equivalent assignment/result/CR semantics",
+                  "controller submissions: replay idempotency, conflicting/foreign result refusal and missing-checkpoint errors",
+                  "review disconnect: stop controller work and retain completed tasks while daemon reviewer outlives submitter",
+                  "controller inactivity remains task-local and accepted replays cannot reset the next grace"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/controller.test.ts",
+                "result": "pass",
+                "executionDetails": "4/4 pass, 1.3s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/controller.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "cases": [
+                  "Old checkpoint unchanged; diagnostics optional and host-owned, absent from model result schema",
+                  "Shared attribution diagnostics stored once and projected only to applicable selected scope",
+                  "Controller diagnostic exchange preserves ownership/sequence replay and never renews inactivity",
+                  "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure",
+                  "attempt diagnostic budget removes previews before pointed errors",
+                  "controller rejects a late scope diagnostic after valid attribution and retains resolved evidence"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts",
+                "result": "pass",
+                "executionDetails": "6/6 pass, 0.93s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/diagnostic-persistence.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "cases": [
+                  "interrupted recovery: only absent tasks rerun and terminal failed/incomplete tasks are skipped",
+                  "controller recovery: new trusted connection, old-owner refusal, disconnect retention and daemon lifetime distinction",
+                  "publication recovery: saved feedback projects once with zero provider calls and conflict-free replay",
+                  "retrigger metadata: resume and sequential attempts return the pinned attempt/status and preserved task IDs",
+                  "controller recovery preserves every terminal outcome and selects missing task IDs"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/recovery.test.ts",
+                "result": "pass",
+                "executionDetails": "5/5 pass, 3.13s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/recovery.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "cases": [
+                  "previousRoundFeedback is concise, scoped, bounded, excludes previews/schema and respects latest same-party resolved result",
+                  "feedback applies shared attribution only to selected tasks and enforces the whole-input byte budget",
+                  "Fake Claude/Codex failure persists on daemon route and appears in subsequent input",
+                  "controller fake native failures use the same persisted feedback on real IPC for both CLIs",
+                  "Saved diagnostics survive disconnect/restart; later valid feedback does not rewrite failed attempt",
+                  "exact failed-result origins preserve diagnostic provenance without reviving resolved older rounds",
+                  "Writer failure does not falsely acknowledge diagnostics; accepted feedback survives later wrapper failure"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts",
+                "result": "pass",
+                "executionDetails": "7/7 pass, 2.78s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/previous-round-feedback.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "cases": [
+                  "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes",
+                  "selected-change packet preserves deletion rename and non-textual limits without invented ranges",
+                  "derived tasks: pinned dependencies, S/M/L sizes and complete selected-change attribution",
+                  "ordinary results: required evidence, coverage strength, supported severity and nonblocking advice",
+                  "ordinary result normalization retains feedback and conservatively derives incomplete status"
+                ],
+                "command": "npx tsx --test-force-exit --test src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "result": "pass",
+                "executionDetails": "5/5 pass, 0.71s total.",
+                "evidenceReferences": [
+                  "0490b4db61d46239f0aa311aeb946e2dedd07170:src/workflow/code-review/task-review/__tests__/contracts.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-04T05:59:42.748Z",
+        "buildFingerprint": "74dccbda8122afadbd8dfd9ad8692a1c0cb4c5028f07e84f25ac8f24bf326e62"
+      }
+    ]
+  },
+  "citations": []
+}

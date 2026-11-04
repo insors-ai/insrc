@@ -6261,14 +6261,20 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
     onDecide: () => { decideCalls += 1; },
   };
   let runIdx = 0;
+  let lastProc: FakeLiveProc | undefined;
+  let releaseLive!: () => void;
+  const liveGate = new Promise<void>((r) => { releaseLive = r; });
   const makeAdapter = (): StreamAdapter => ({
     ...scriptedAdapter(evs, hooks),
     run(req: TurnRequest, opts?: RunOptions) {
       runIdx += 1;
       const tid = `t2-r${runIdx}`;
-      const followUp = runIdx > 1;
+      const followUp = runIdx > 2; // run 1: original (gated) turn; run 2: the restored host's LIVE turn (gated); run 3+: follow-ups (done only)
+      const proc = fakeLiveProc(4000 + runIdx);
+      lastProc = proc;
+      opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: tid, generation: 1, offset: 0 }, outPath: '/out/s.ndjson' });
       const evs2 = followUp ? evs.filter((e) => e.kind === 'done').map((e) => ({ ...e, turnId: tid })) : evs.map((e) => ({ ...e, turnId: tid }));
-      return scriptedAdapter(evs2, { ...hooks, gateBeforeDone: followUp ? undefined : gate }).run(req, opts);
+      return scriptedAdapter(evs2, { ...hooks, gateBeforeDone: runIdx === 1 ? gate : runIdx === 2 ? liveGate : undefined }).run(req, opts);
     },
   });
   // host 1: the request is raised, then the host "reloads" (a fresh host over the same store)
@@ -6283,6 +6289,7 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   fc1.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fc1).some((e) => e.kind === 'approval-request'));
   const id = store.list()[0]!.id;
+  releaseDone();
   // switch away: the request is persisted UNRESOLVED (this is the record the reload restores)
   const other = store.create('claude' as never);
   fc1.send(env('open-chat', { chatId: other.id }));

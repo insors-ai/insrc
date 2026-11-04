@@ -1573,6 +1573,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // reattach/reload with no live turn. A stale id with no live turn and no unresolved persisted
     // record stays the old silent no-op. followUpsStarted keeps the follow-up one-shot.
     const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId);
+    // a persisted RESOLVED record means this decision was already delivered — a duplicate
+    // (the adapter no-ops on the consumed id, also reporting delivered:false) must not re-follow-up
+    if (persisted !== undefined && persisted.resolved) undelivered = false;
     // a snapshot-restored request (in restoredRequestIds) is unresolved by construction — the
     // follow-up must answer it even when no pendingRequests record exists
     // a request this host's queue just decided (decidedRequestIds) is a valid decision even if its
@@ -2892,6 +2895,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
+          // persist the full in-turn record (action payload included) unresolved, so a follow-up
+          // fallback can carry the real action text and a reload can restore it whole
+          if (decided.resolution === 'in-turn' && session !== undefined && deps.store.get(session.id) !== undefined) {
+            const list = [...(session.pendingRequests ?? [])];
+            if (!list.some((r) => r.requestId === msg.requestId)) {
+              list.push({
+                requestId: msg.requestId,
+                kind: 'approval',
+                turnId: decided.turnId,
+                title: decided.title,
+                detail: decided.detail,
+                ...(decided.toolName !== undefined ? { toolName: decided.toolName } : {}),
+                ...(decided.command !== undefined ? { command: decided.command } : {}),
+                resolved: false,
+              });
+              session.pendingRequests = list;
+              trySave(session);
+            }
+          }
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);

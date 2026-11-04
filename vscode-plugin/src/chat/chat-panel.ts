@@ -1344,10 +1344,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let started = false;
     if (s !== undefined) {
       try {
-        // NOT fire-and-forget: an async startup failure (spawn refused, nothing to resume) must
-        // still record delivery-failed, so the promise's rejection re-marks the request.
+        // NOT fire-and-forget: startup failures must still record delivery-failed. runTurn reports
+        // adapter/lock failures as error events rather than rejecting, so after the call we check
+        // whether a turn actually began; the promise rejection is a backstop for real throws.
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
         started = true;
+        queueMicrotask(() => {
+          if (!started) return;
+          if (!turns.busy() && startingTurns === 0) {
+            // the follow-up never started (empty prompt, no session, dropped chain): not delivered
+            markPersistedRequest(s, requestId, true, 'delivery-failed');
+            reevaluateChatStatus(s);
+          }
+        });
         void p.catch((err: unknown) => {
           log.warn(`[chat] follow-up for decision ${requestId} failed to start: ${err instanceof Error ? err.message : String(err)}`);
           markPersistedRequest(s, requestId, true, 'delivery-failed');
@@ -2687,8 +2696,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
-          // E202611031bd72813:S001 t6: the persisted request is marked resolved with its outcome too
-          markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
+          // E202611031bd72813:S001 t6: the persisted request is marked resolved with its outcome too —
+          // EXCEPT in-turn decisions, whose delivery relayDecision confirms first (an undelivered
+          // decision must stay unresolved so the follow-up fallback can answer it).
+          if (decided.resolution !== 'in-turn') markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
           if (decided.resolution === 'in-turn') {
             relayDecision(msg.requestId, msg.decision);
             showApprovalHead();

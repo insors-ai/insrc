@@ -113,6 +113,11 @@ export interface ResumeRequest {
    * marker that spans chunks. Absent -> an empty state (today's behaviour).
    */
   readonly decoderState?: { readonly selectionSeq?: number | undefined; readonly selectionBuffer?: string | undefined } | undefined;
+  /**
+   * E202611031bd72813:S001 t5: a terminal was already ingested at/before this cursor (checkpoint
+   * flag) — the resume must not report a synthetic EOF failure for it.
+   */
+  readonly sawTerminal?: boolean | undefined;
 }
 
 export interface ResumeOptions {
@@ -1350,7 +1355,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
       ...(!ok && message !== undefined ? { message } : {}),
     });
-    let sawTerminalInDrain = false;
+    let sawTerminalInDrain = req.sawTerminal === true;
     try {
       // E202611031bd72813:S001 t5: with drain, once a terminal event was ingested the read stops at
       // the end of the AVAILABLE output (a live process must not make the observer poll forever).

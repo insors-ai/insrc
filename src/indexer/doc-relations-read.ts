@@ -29,16 +29,11 @@ export function docRelationsSetHash(repoPath: string): string | undefined {
 	}
 }
 
-/** Test seam: a switch that replaces the computed one (the computed one needs this machine's model config). */
-let switchOverride: ((repoPath: string) => { readonly state: DocRelationSwitchState; readonly modelId?: string | undefined }) | undefined;
-export function _overrideDocRelationsSwitchForTest(fn: typeof switchOverride): void { switchOverride = fn; }
-
 /** The switch for a repository now, and the model it holds for. */
 export async function currentDocRelationsSwitch(
 	repoPath: string,
 	cfg:      AnalyzeConfig = loadAnalyzeConfig(),
 ): Promise<{ readonly state: DocRelationSwitchState; readonly modelId?: string | undefined }> {
-	if (switchOverride !== undefined) return switchOverride(repoPath);
 	const model = validatedDocRelationsModel(cfg, repoPath);
 	const modelId = model.ok ? model.model.id : undefined;
 	return { state: switchOf(await readDocRelationQuality(repoPath), modelId, docRelationsSetHash(repoPath)), ...(modelId !== undefined ? { modelId } : {}) };
@@ -61,7 +56,8 @@ export async function readDocumentRelations(entityId: string, direction: 'out' |
 export async function docRelationsRevision(repoPath: string, cfg: AnalyzeConfig = loadAnalyzeConfig()): Promise<string> {
 	const s = await getGraphStore();
 	const repoId = lookupRepoIdInTxn(s, repoPath);
-	const rows = repoId === undefined ? [] : [...readDocRelationRowsInTxn(s, repoId)].map(([file, r]) => [file, r.contentHash, r.modelId, r.computedAtGeneration, r.proposals.length]);
+	// Each row whole -- its proposals' endpoints included -- so replacing a proposal moves the revision.
+	const rows = repoId === undefined ? [] : [...readDocRelationRowsInTxn(s, repoId)].map(([file, r]) => [file, r.contentHash, r.modelId, r.computedAtGeneration, r.proposals.map(p => [p.from, p.to])]);
 	const model = validatedDocRelationsModel(cfg, repoPath);
 	return createHash('sha256').update(JSON.stringify({
 		generation: (await readIndexState(repoPath))?.generation ?? null,

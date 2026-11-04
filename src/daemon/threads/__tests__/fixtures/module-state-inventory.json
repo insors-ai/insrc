@@ -870,10 +870,6 @@
 		"class": "per-thread",
 		"reason": "A cache of data read from shipped assets, config files or derived from code that does not change at run time; each thread may keep its own copy and re-reads the same source."
 	},
-	"src/indexer/doc-relations-read.ts#switchOverride": {
-		"class": "per-thread",
-		"reason": "A test seam that replaces the computed document-relations switch; unset in the daemon, so every thread computes the switch from the store and its config."
-	},
 	"src/indexer/embedder.ts#_ollama": {
 		"class": "per-thread",
 		"reason": "This thread's Ollama client for embeddings; it holds no shared state beyond the endpoint."

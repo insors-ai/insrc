@@ -1218,6 +1218,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         });
       }
     }
+    for (const r of s.pendingRequests ?? []) if (!r.resolved) restoredRequestIds.add(r.requestId);
+    if (snap !== undefined && Array.isArray(snap.waiting)) for (const w of snap.waiting) restoredRequestIds.add(w.requestId);
     if (restored === 0) return; // nothing to restore: no card posts, no status rewrite, no save
     showApprovalHead();
     reportCards();
@@ -1425,7 +1427,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
         pendingFollowUp = { decisions: [{ requestId, outcome: decision === 'approve' ? 'approved' : 'denied' }], excludeTurnId: turns.live?.turnId };
-        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
+        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s }); // resumes s.nativeSessionId when known
         started = true;
         void p.then(
           () => {
@@ -1455,6 +1457,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   /** Decisions already sent to a follow-up run from this host — a follow-up starts at most once. */
   const followUpsStarted = new Set<string>();
+  /** Request ids restored from a persisted queue snapshot (they may have no pendingRequests record). */
+  const restoredRequestIds = new Set<string>();
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
   let pendingFollowUp: { readonly decisions: readonly { readonly requestId: string; readonly outcome: string }[]; readonly excludeTurnId: string | undefined } | undefined;
@@ -1507,7 +1511,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // reattach/reload with no live turn. A stale id with no live turn and no unresolved persisted
     // record stays the old silent no-op. followUpsStarted keeps the follow-up one-shot.
     const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId);
-    if (!undelivered && (persisted === undefined || persisted.resolved)) return;
+    // a snapshot-restored request (in restoredRequestIds) is unresolved by construction — the
+    // follow-up must answer it even when no pendingRequests record exists
+    if (!undelivered && (persisted === undefined ? !restoredRequestIds.has(requestId) : persisted.resolved)) return;
     if (followUpsStarted.has(requestId)) return;
     followUpsStarted.add(requestId);
     deliverDecisionAsFollowUp(requestId, decision);
@@ -2310,7 +2316,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function runTurn(
     text: unknown,
     allowedTools?: readonly string[],
-    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined },
+    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined },
   ): Promise<void> {
     // Story E202610138d4b90c9:S001: counted as starting until turns.start has been called (from
     // then on the lifecycle says a turn is in progress), so no waiting pane message is run between.
@@ -2331,15 +2337,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function startTurn(
     text: unknown,
     allowedTools: readonly string[] | undefined,
-    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined } | undefined,
+    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined } | undefined,
     started: () => void,
   ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const typed = text.trim();
     const files = opts?.attachments ?? [];
-    if ((typed === '' && files.length === 0) || session === undefined) return; // empty submit is a no-op
-
-    const s = session;
+    const s = opts?.session ?? session; // t6: a follow-up fallback may target a non-selected chat
+    if ((typed === '' && files.length === 0) || s === undefined) return; // empty submit is a no-op
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
     const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
 
@@ -2766,8 +2771,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         settleQueued();
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
-        restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests
         postRestored(s);
+        restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests AFTER postRestored — session-restored clears the webview, so cards posted before it would not survive
         postPending(s.id); // each chat shows its own pending attachments
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
@@ -3027,8 +3032,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     dropQueuedApprovals();
     session = s;
     permissionMode = modeOf(s);
-    restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests
     postRestored(s);
+    restorePendingRequests(s); // t6: after postRestored — session-restored clears the webview
     postPending(s.id);
     postHistory();
     followLiveTurn(s);

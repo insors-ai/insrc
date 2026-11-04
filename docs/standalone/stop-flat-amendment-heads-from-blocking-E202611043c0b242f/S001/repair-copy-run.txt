@@ -1,0 +1,300 @@
+working on a copy: /tmp/repair-amd-kx1Xcd
+converted: ["AMD-86197ac660732ceb-1","AMD-86197ac660732ceb-2"]
+problems: []
+
+AMD-185807ba9a6b35d3-1  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-1  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-2  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-3  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-4  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-5  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-6  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-7  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-8  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-9  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-1  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-10  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-11  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-12  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-13  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-14  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-15  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-16  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-17  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-18  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-19  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-2  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-20  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-21  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-22  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-23  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-24  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-25  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-26  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-27  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-28  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-29  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-3  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-30  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-31  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-32  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-4  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-5  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-6  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-7  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-8  (head before)
+  already a head; unchanged: true
+
+AMD-315d510cb28100e2-9  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-10  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-11  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-12  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-13  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-14  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-3  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-4  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-7  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-8  (head before)
+  already a head; unchanged: true
+
+AMD-613abdb351c2c738-9  (head before)
+  already a head; unchanged: true
+
+AMD-6a1315585c38c41c-1  (head before)
+  already a head; unchanged: true
+
+AMD-6a1315585c38c41c-2  (head before)
+  already a head; unchanged: true
+
+AMD-761a43a6fa645815-1  (head before)
+  already a head; unchanged: true
+
+AMD-761a43a6fa645815-2  (head before)
+  already a head; unchanged: true
+
+AMD-8315a11f29fd2812-1  (head before)
+  already a head; unchanged: true
+
+AMD-86197ac660732ceb-1  (flat before)
+  id unchanged: true
+  proposal unchanged: true
+  rationale unchanged: true
+  approval time before: "2026-10-28T05:23:44.099Z"
+  approval time after: "2026-10-28T05:23:44.099Z"
+  approver before: "Subho Ghosh (in-chat approval)"
+  approver read by the store: "Subho Ghosh (in-chat approval)"
+  status read by the store: "approved"
+  lifecycle status: "approved"
+  legacy approvedAt gone: true
+
+AMD-86197ac660732ceb-2  (flat before)
+  id unchanged: true
+  proposal unchanged: true
+  rationale unchanged: true
+  approval time before: "2026-10-29T08:39:53.304Z"
+  approval time after: "2026-10-29T08:39:53.304Z"
+  approver before: "Subho Ghosh (in-chat approval)"
+  approver read by the store: "Subho Ghosh (in-chat approval)"
+  status read by the store: "approved"
+  lifecycle status: "approved"
+  legacy approvedAt gone: true
+
+AMD-870ed3dd246225f4-1  (head before)
+  already a head; unchanged: true
+
+AMD-abd1ecf6a5f5063e-1  (head before)
+  already a head; unchanged: true
+
+AMD-ad0d45c9d690f8c1-1  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-1  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-10  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-11  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-12  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-2  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-3  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-4  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-5  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-6  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-7  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-8  (head before)
+  already a head; unchanged: true
+
+AMD-b7a68147dcf72034-9  (head before)
+  already a head; unchanged: true
+
+AMD-b9d5c5c40df5a574-1  (head before)
+  already a head; unchanged: true
+
+AMD-bfe98ff7f97178cf-1  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-1  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-10  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-2  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-3  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-4  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-5  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-6  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-7  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-8  (head before)
+  already a head; unchanged: true
+
+AMD-c2ba6fa62a148ed1-9  (head before)
+  already a head; unchanged: true
+
+AMD-c32aa60534232f36-1  (head before)
+  already a head; unchanged: true
+
+AMD-c32aa60534232f36-2  (head before)
+  already a head; unchanged: true
+
+AMD-c32aa60534232f36-3  (head before)
+  already a head; unchanged: true
+
+AMD-c66d49bb81925886-1  (head before)
+  already a head; unchanged: true
+
+AMD-e6ddcdcb3d9cf330-1  (head before)
+  already a head; unchanged: true
+
+AMD-edb76e2e4d41217d-1  (head before)
+  already a head; unchanged: true
+
+AMD-edb76e2e4d41217d-2  (head before)
+  already a head; unchanged: true

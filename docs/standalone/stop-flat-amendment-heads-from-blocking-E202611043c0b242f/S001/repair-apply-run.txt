@@ -1,0 +1,40 @@
+converted: ["AMD-86197ac660732ceb-1","AMD-86197ac660732ceb-2"]
+problems: []
+
+AMD-185807ba9a6b35d3-1  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-1  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-2  (head before)
+  already a head; unchanged: true
+
+AMD-2f27754d4ad00b8e-3  (head before)
+  already a head; unchanged: true
+
+--
+AMD-86197ac660732ceb-1  (flat before)
+  id unchanged: true
+  proposal unchanged: true
+  rationale unchanged: true
+  approval time before: "2026-10-28T05:23:44.099Z"
+  approval time after: "2026-10-28T05:23:44.099Z"
+  approver before: "Subho Ghosh (in-chat approval)"
+  approver read by the store: "Subho Ghosh (in-chat approval)"
+  status read by the store: "approved"
+  lifecycle status: "approved"
+  legacy approvedAt gone: true
+
+AMD-86197ac660732ceb-2  (flat before)
+  id unchanged: true
+  proposal unchanged: true
+  rationale unchanged: true
+  approval time before: "2026-10-29T08:39:53.304Z"
+  approval time after: "2026-10-29T08:39:53.304Z"
+  approver before: "Subho Ghosh (in-chat approval)"
+  approver read by the store: "Subho Ghosh (in-chat approval)"
+  status read by the store: "approved"
+  lifecycle status: "approved"
+  legacy approvedAt gone: true
+

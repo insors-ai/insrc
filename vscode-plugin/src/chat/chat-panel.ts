@@ -614,17 +614,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
     observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
   };
-  const persistRequest = (s: ChatSession, r: PersistedRequest): void => {
-    // Write onto the FRESH record and UNION by requestId — another window may have persisted its own
-    // requests meanwhile; a stale-snapshot save must never discard either side's requests.
+  /** Persists a request onto the fresh record (union by requestId); returns whether it is UNRESOLVED. */
+  const persistRequest = (s: ChatSession, r: PersistedRequest): boolean => {
     try {
       const fresh = deps.store.get(s.id) ?? s;
       const existing = fresh.pendingRequests ?? [];
-      if (existing.some((x) => x.requestId === r.requestId)) return;
+      const prior = existing.find((x) => x.requestId === r.requestId);
+      if (prior !== undefined) return !prior.resolved; // a replayed, already-resolved request stays resolved
       fresh.pendingRequests = [...existing, r];
       deps.store.save(fresh);
+      return true;
     } catch (err) {
       log.warn(`[chat] session ${s.id}: pendingRequest not saved: ${err instanceof Error ? err.message : String(err)}`);
+      return true;
     }
   };
   const observeDetached = async (): Promise<void> => {
@@ -710,11 +712,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           for await (const ev of events) {
             st.ingestedAny = true;
             if (ev.kind === 'approval-request') {
-              persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false });
-              setChatStatus(s, 'waiting-input');
+              // waiting-input only if the request is actually unresolved — a replayed, already
+              // resolved request must not flip the chat back to waiting-input
+              if (persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false })) setChatStatus(s, 'waiting-input');
             } else if (ev.kind === 'selection-request') {
-              persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
-              setChatStatus(s, 'waiting-input');
+              if (persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false })) setChatStatus(s, 'waiting-input');
             } else if (ev.kind === 'tool-call' && ev.present !== undefined) {
               // E202611031bd72813:S001 t8: a DETACHED chat's insrc_present is still dispatched to the
               // presenter (each declaration opens its own presentKey panel), deduped by declarationId.

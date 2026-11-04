@@ -187,6 +187,7 @@ function pageStyle(): string {
 		'.insrc-viewer .tag.pk{background:#FDF3D0;color:#5A4A00}.insrc-viewer .tag.fk{background:#E4EDFB;color:#1F3A6E}',
 		'.insrc-viewer .tag.call{background:var(--iv-inset);color:var(--iv-text)}.insrc-viewer .tag.ret{background:#E7F5EA;color:#1A5C2E}',
 		'.insrc-viewer .pin{display:inline-block;min-width:18px;height:18px;line-height:18px;border-radius:9px;background:var(--iv-active-bg);color:var(--iv-active-text);font-size:10px;font-weight:700;text-align:center}',
+		'@media (max-width:480px){.insrc-viewer header.hdr{flex-direction:column;gap:12px}.insrc-viewer table.ref{min-width:0;width:100%}}',
 		'.insrc-viewer footer.ft{margin-top:30px;padding-top:10px;border-top:1px dashed var(--iv-border);font-size:12px;color:var(--iv-muted);display:flex;justify-content:space-between}',
 	].join('');
 	// The branded page chrome is composed by the ONE shared helper (R1), so the
@@ -242,7 +243,9 @@ export function renderCompanionPage(header: CompanionHeader, page: CompanionPage
 <meta name="insrc-theme" content="${THEME_VERSION}">
 <title>${esc(header.projectName)} · ${esc(page.title)}</title>
 ${pageStyle()}<style>${visualStyle}</style></head>
-<body><div class="page insrc-viewer" data-theme="light" data-iv-export-css="${esc(exportCssAttr())}">
+<body class="insrc-viewer" data-theme="light" data-iv-export-css="${esc(exportCssAttr())}">
+<button id="iv-theme" title="Toggle light/dark" aria-label="toggle light/dark theme" aria-pressed="false">◐</button>
+<div class="page">
 <header class="hdr">
 <div><div class="proj">${esc(header.projectName)}</div><h1>${esc(page.title)}</h1><span class="kind">${esc(page.kindLabel)}</span></div>
 <table class="ref">
@@ -254,7 +257,7 @@ ${pageStyle()}<style>${visualStyle}</style></head>
 </header>
 <section class="blk narr"><h2>Narrative</h2><p class="context">${esc(header.contextLine)}</p>${narrativeHtml(page.narrative)}</section>
 <section class="blk"><h2>View</h2><div class="vp-wrap">
-<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-theme" title="Toggle light/dark" aria-label="toggle light/dark theme" aria-pressed="false">◐</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
+<div class="vp-bar"><span>Drag to pan · scroll to zoom · double-click to zoom in</span><span class="sp"></span><button id="zout" title="Zoom out" aria-label="zoom out">−</button><span class="zl" id="zl">100%</span><button id="zin" title="Zoom in" aria-label="zoom in">+</button><button id="zfit" title="Fit to view (overview)" aria-label="fit to view">Fit</button><button id="z100" title="Actual size" aria-label="actual size">1:1</button><button id="iv-export" title="Export SVG" aria-label="export svg">⇩</button><button id="iv-srcbtn" title="Show diagram source" aria-label="show diagram source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">${visualHtml}</div></div>
 ${legend}

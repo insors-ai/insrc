@@ -1,0 +1,491 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793818069922-rslrd4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T18:49:51.177Z",
+    "epicCreatedAt": "2026-11-04T15:40:52.348Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 120139,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c5a1921cb45a8d8",
+    "epicSlug": "apply-artifact-page-theme-whole-document",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793818069922-rslrd4",
+    "hldEffectiveHash": "580476a5054e18a5b42d790cdcccf21fa7abf5700bc19da4e14af4a524b0724d",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "small",
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "b91c720af7891310564273bace289cc0477fac35f9b69faf7eca30ece26ea441",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:23:08.291Z",
+        "override": {
+          "reason": "User approved LLD-7c5a1921cb45a8d8-s1 with override after three design review rounds: round 3 left 0 HIGH, 3 MED and 1 LOW, all wording and traceability gaps. Builder carries them as requirements: export invariant (data-iv-export-css and EXPORT_SVG unchanged), live test accepts google-chrome, chromium and chromium-browser, backward-compat note lists the new .insrc-viewer CSS rules, c3-c5 linked from the body."
+        }
+      }
+    },
+    "rangeBase": "795b389d1f3d720bffc2c67f9c3a871926bc8c35"
+  },
+  "body": {
+    "summary": {
+      "prose": "Generated mock, UML and ER pages and the docgen pages now apply the light or dark mode to the whole browser document, including the margin and the area below short content, open in light unless the reader has chosen otherwise, and no longer show the font data as text at the top. The theme switch becomes a small floating button fixed at the top right of the page, with room reserved above the content so it never covers the header at the top of the page. The companion page puts its theme root on the body as the docgen pages already do, so one set of page rules serves all three shells; the degraded docgen page keeps its own small script.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Apply the artifact page theme to the whole document, default to light and float the switch top right; also stop the packaged font-face CSS from showing as text at the top of the page"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "pageStyleTags",
+          "signature": "export function pageStyleTags(structuralCss: string): string",
+          "parameters": [
+            {
+              "name": "structuralCss",
+              "type": "string",
+              "purpose": "The shell's own layout CSS, appended to both mode style tags.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The page's style markup: the packaged font-face rules inside a <style> tag, one <style data-iv-mode> per mode and the diagram overrides."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "The font-face rules are inside a <style> element, so they are never rendered as text",
+            "Both mode style tags are still present and the dark one is still disabled by default"
+          ]
+        },
+        {
+          "name": "pageCssFor",
+          "signature": "export function pageCssFor(mode: ThemeMode): string",
+          "parameters": [
+            {
+              "name": "mode",
+              "type": "ThemeMode",
+              "purpose": "The surface mode, light or dark.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The page surface CSS for the mode."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "'.insrc-viewer' (the body in every shell) carries the surface background and colour, 'box-sizing:border-box', 'min-height:100vh' and 'padding-top:56px', so it fills the viewport with room above the content for the floating switch",
+            "No rule gives html a background of its own, so the body background propagates to the whole canvas (core CSS canvas propagation, no :has() or other newer selector) and no white strip shows below short content or in the overscroll area",
+            "Contains a rule that makes '.insrc-viewer #iv-theme' a fixed-position 32px control at top:12px and right:12px with a z-index above the page content, readable in both modes",
+            "Every rule is still scoped under .insrc-viewer"
+          ]
+        },
+        {
+          "name": "viewerBootScript",
+          "signature": "export function viewerBootScript(opts: ViewerBootOpts): string",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "ViewerBootOpts",
+              "purpose": "Initial mode and the Mermaid config per mode.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The inline boot script that selects and applies the mode."
+          },
+          "errors": [],
+          "preconditions": [
+            "The page has an element with class insrc-viewer that is the theme root"
+          ],
+          "postconditions": [
+            "The mode is the stored insrc-theme-mode when it is light or dark, otherwise opts.initialMode; the operating system's colour-scheme preference is not consulted",
+            "A throwing localStorage is caught in each of the two try blocks (the read and the write in applyMode) and the mode falls back to opts.initialMode",
+            "The mode is applied to the .insrc-viewer root, which in every shell is the body, and a missing #iv-theme element is tolerated"
+          ]
+        },
+        {
+          "name": "renderCompanionPage",
+          "signature": "export function renderCompanionPage(header: CompanionHeader, page: CompanionPageContent, runtime: CompanionRuntime): string",
+          "parameters": [
+            {
+              "name": "header",
+              "type": "CompanionHeader",
+              "purpose": "Page header fields.",
+              "optional": false
+            },
+            {
+              "name": "page",
+              "type": "CompanionPageContent",
+              "purpose": "Title, narrative, visual and description tables.",
+              "optional": false
+            },
+            {
+              "name": "runtime",
+              "type": "CompanionRuntime",
+              "purpose": "The inlined pan/zoom and Mermaid runtimes.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The companion page HTML."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "<body> carries class insrc-viewer, data-theme and the export CSS attribute; the existing div.page sits inside it, so the '.insrc-viewer .page' layout rule matches",
+            "#iv-theme is a direct child of the body, outside the pan/zoom bar",
+            "Its structural CSS has a 'max-width:480px' media rule that stacks header.hdr and sets table.ref to min-width:0 and width:100%, so the header table fits a 360px viewport without horizontal scrolling"
+          ]
+        },
+        {
+          "name": "assembleShell",
+          "signature": "export async function assembleShell(...): Promise<string>",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "the existing assembleShell parameters",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The docgen primary page HTML."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "#iv-theme is a direct child of the body, outside .iv-bar",
+            "The never-matching '.insrc-viewer html,.insrc-viewer body' rule is removed from docgenPageStyle; the canvas and the viewport fill come from the shared '.insrc-viewer' rule of pageCssFor"
+          ]
+        },
+        {
+          "name": "assembleFallbackShell",
+          "signature": "export function assembleFallbackShell(...): string",
+          "parameters": [
+            {
+              "name": "args",
+              "type": "the existing assembleFallbackShell parameters",
+              "purpose": "Unchanged.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The degraded docgen page HTML."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Its own inline script (it does not call viewerBootScript) defaults to light and does not consult the colour-scheme preference; because two mode-selection scripts now exist, a fallback test pins its default and storage key to the shared script's",
+            "#iv-theme is a direct child of the body, outside .iv-bar"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Stored theme choice (localStorage insrc-theme-mode)",
+        "change": "invariant-change",
+        "details": "The key and its two values are unchanged. The invariant that changes: with no stored value the page opens in light, where before it opened in the operating system's preferred mode. A stored value still wins. No new entity and no relationship change, so no ER definition is needed; the floating control is a single fixed-position button, so no UX mock is needed.",
+        "callSites": [
+          "src/artifact-theme/theme.ts:361-461",
+          "src/docgen/render/fallback.ts:240-252"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "localStorage is unavailable or throws (a file page in a locked-down browser)",
+          "detection": "Two independent try blocks in the boot script catch the exception: the one around the initial localStorage.getItem read and the one around localStorage.setItem inside applyMode",
+          "response": "The read falls back to the initial mode, light; the write is skipped; the toggle still works for the session",
+          "userImpact": "The page opens in light and the choice is not remembered",
+          "recoverable": true
+        },
+        {
+          "scenario": "The stored value is neither light nor dark",
+          "detection": "The boot script checks the stored value against the two allowed values before using it",
+          "response": "It is ignored and the page opens in light",
+          "userImpact": "None; the page opens in the default",
+          "recoverable": true
+        },
+        {
+          "scenario": "The page has no #iv-theme element (a page built without the control)",
+          "detection": "applyMode and the click wiring test the element before using it, as the existing code does",
+          "response": "The mode still applies from storage or the default; there is simply no button",
+          "userImpact": "No switch on that page",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A reader whose operating system prefers dark and who has never used the switch",
+          "expected": "The page opens in light"
+        },
+        {
+          "input": "A reader who chose dark earlier",
+          "expected": "The page opens in dark and the whole document, including the outer margin and the area below short content, is dark"
+        },
+        {
+          "input": "A short page in dark mode",
+          "expected": "The body fills the viewport and its background propagates to the canvas, so no white strip shows below the content"
+        },
+        {
+          "input": "The page at scroll position zero",
+          "expected": "The body's 56px top padding keeps the 32px floating switch clear of the header and its table"
+        },
+        {
+          "input": "A long page scrolled down, or a wide diagram",
+          "expected": "The switch stays fixed at the top right above the content and may float over content, which is acceptable for a floating control"
+        },
+        {
+          "input": "A narrow window of 360px",
+          "expected": "The switch stays inside the viewport at the top right, the header stacks and its table fits the width without horizontal scrolling"
+        },
+        {
+          "input": "Exporting the diagram as SVG in either mode",
+          "expected": "The export still embeds its own background and font style as before"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A stored insrc-theme-mode of light or dark still wins over the default, and the switch still stores the choice under the same key",
+          "source": "c2"
+        },
+        {
+          "text": "Every page rule stays scoped under .insrc-viewer and both per-mode style tags remain, the dark one disabled until chosen",
+          "source": "c1"
+        },
+        {
+          "text": "The toggle still re-renders the Mermaid diagram with the other mode's config (doRender, theme.ts:411-426, triggered by the click wiring at theme.ts:437-440) and keeps the diagram source verbatim",
+          "source": "c2"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "ac1: the mode applies to the whole document. In every shell the body is the .insrc-viewer theme root carrying data-theme and the export CSS. pageCssFor, in both modes, gives '.insrc-viewer' the surface background, 'min-height:100vh', 'box-sizing:border-box' and 'padding-top:56px', no rule gives html a background of its own, and docgenPageStyle no longer holds the never-matching '.insrc-viewer html,.insrc-viewer body' rule. ac2: with no stored choice the page opens in light and the colour-scheme preference is not consulted, in the boot script and in the fallback shell's own script, and the fallback script uses the same storage key and default as the shared one; a stored light or dark value still wins. The boot script is also run against a stub DOM for a throwing localStorage read, a throwing write, an invalid stored value and a missing #iv-theme. ac3: the font-face rules are inside a <style> element and the companion layout rule '.insrc-viewer .page' can match. ac4: #iv-theme is a direct child of the body, outside the toolbars, in the companion, docgen and fallback pages, and the page CSS makes it a fixed 32px top-right control above the content; the companion CSS has the max-width:480px rule that stacks the header and lets table.ref shrink.",
+          "subjects": [
+            "pageStyleTags and pageCssFor in src/artifact-theme/theme.ts",
+            "viewerBootScript in src/artifact-theme/theme.ts",
+            "renderCompanionPage in src/workflow/artifacts/companion/shell.ts",
+            "assembleShell in src/docgen/render/shell.ts",
+            "assembleFallbackShell in src/docgen/render/fallback.ts"
+          ],
+          "fixturesNeeded": [
+            "the rendered page strings produced by the existing test fixtures of theme.test.ts and of the three shell tests",
+            "a minimal stub document and localStorage for running the boot script in viewer-script.test.ts"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "A browser test renders a real ER companion page and a docgen page and opens them in headless Chrome (google-chrome) at desktop and 360px widths: light by default, dark on the switch with a dark canvas and no white rim or strip below short content, the switch fixed at the top right while scrolling and clear of the header table at scroll zero, the header table fitting the width at 360px without horizontal scrolling, and no font text at the top. It follows the repo's live-test convention: it runs only when INSRC_LIVE_TESTS=1 and the google-chrome binary is present and skips cleanly otherwise, like src/workflow/__tests__/companion-browser.live.test.ts. Screenshots are kept with the build record.",
+          "subjects": [
+            "A generated ER companion page opened in headless Chrome at desktop and 360px widths",
+            "A generated docgen page opened in headless Chrome"
+          ],
+          "fixturesNeeded": [
+            "a page rendered with renderCompanionPage from the ER definition used in er-page.test.ts"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "theme.test.ts: pageCssFor gives .insrc-viewer the surface background, min-height:100vh, box-sizing:border-box and padding-top:56px in light and dark, and no rule gives html a background",
+            "companion/__tests__/shell.test.ts: the companion page carries class insrc-viewer, data-theme and the export CSS on the body",
+            "docgen/render/__tests__/shell.test.ts: the docgen page keeps the theme root on the body and docgenPageStyle has no '.insrc-viewer html' rule",
+            "live: dark mode shows a dark canvas with no white rim or strip below a short page"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "viewer-script.test.ts: the boot script defaults to light and does not consult prefers-color-scheme, and a stored mode still wins",
+            "viewer-script.test.ts: run in a stub DOM, a throwing localStorage read and a throwing write fall back without error, an invalid stored value is ignored, and a missing #iv-theme is tolerated",
+            "docgen/render/__tests__/fallback.test.ts: the fallback script defaults to light, does not consult prefers-color-scheme and uses the same storage key as the shared script"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "theme.test.ts: pageStyleTags puts the font-face rules inside a style element",
+            "companion/__tests__/shell.test.ts: the companion layout rule targets the page inside the theme root",
+            "live: no font text at the top of the page"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "theme.test.ts: pageCssFor makes the theme switch a fixed 32px top-right control with a z-index in both modes",
+            "companion/__tests__/shell.test.ts: the theme switch is a direct child of the body in the companion page, and the companion CSS has the max-width:480px rule for header.hdr and table.ref",
+            "docgen/render/__tests__/shell.test.ts: the theme switch is a direct child of the body in the docgen page",
+            "docgen/render/__tests__/fallback.test.ts: the theme switch is a direct child of the body in the fallback page",
+            "live: the switch stays fixed at the top right while scrolling, clear of the header table at scroll zero, and the header table fits at 360px"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), the existing artifact-theme, companion and docgen test files"
+    },
+    "migration": {
+      "stateBefore": "A companion page puts the mode on a div inside the body, so html and body have no background and show white around dark pages and below short content; no rule makes the theme root fill the viewport or reserves room for a floating control; every page opens in dark when the operating system prefers dark and no choice is stored; every page shows the packaged font-face CSS as text because pageStyleTags adds it without a style tag; the companion layout rule '.insrc-viewer .page' never matches; the companion header table has a 380px minimum width; the docgen shell carries a '.insrc-viewer html,.insrc-viewer body' rule that can never match; and the theme button sits inside the toolbar of each shell (src/artifact-theme/theme.ts:271-316, src/artifact-theme/theme.ts:361-461, src/workflow/artifacts/companion/shell.ts:166-269, src/docgen/render/shell.ts:203-273, src/docgen/render/fallback.ts:240-287).",
+      "stateAfter": "In every shell the body is the theme root, fills the viewport, reserves 56px above the content and paints the whole canvas through background propagation, so the mode reaches the whole document; with no stored choice a page opens in light; the font-face rules sit inside a style element; the companion layout rule matches and its header table fits a 360px viewport; the dead docgen rule is gone; and the theme button is a fixed 32px top-right control that is a direct child of the body.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Wrap the font-face rules in a style element, drop the operating-system preference from the boot script and from the fallback shell's own script, and add to the shared page CSS the body fill and top clearance and the fixed top-right rule for the theme switch; update the shared theme tests, including the stub-DOM boot script tests; commit.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Move the theme root to the body in the companion shell, add its narrow-width media rule for the header and the header table, move the theme button out of the toolbar to the top of the body in the companion, docgen and fallback shells, and remove the docgen rule that cannot match; update the three shell tests; commit.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the live browser test, gated by INSRC_LIVE_TESTS=1 and the google-chrome binary, that renders a real ER companion page and a docgen page and checks them at desktop and 360px widths: light by default, a dark canvas with no white rim or strip after the switch, the switch fixed top right and clear of the header table at scroll zero, the header table fitting at 360px, and no font text at the top; keep the screenshots with the build record.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Pages already generated are static files and keep their old behaviour until regenerated; nothing reads them. The stored choice key and values are unchanged, so a reader's earlier choice still applies. The exported functions keep their signatures. The generated markup changes in five ways: the font-face rules now sit inside a style element in the head of every shell, the docgen shell's never-matching rule is removed, the companion page's theme root moves from a div to the body, the theme button moves to a direct child of the body, and the companion style gains a narrow-width media rule.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Theme root moves to <body>; canvas by propagation; shared floating switch in pageCssFor",
+        "oneLineSummary": "Put class insrc-viewer and data-theme on <body> in the companion shell so its background propagates to the canvas, give the root a viewport-filling box with top clearance, wrap the font-face rules in a style tag, default to light, and float #iv-theme top right.",
+        "approach": "In the companion shell render <body class=\"insrc-viewer\" data-theme=\"light\" data-iv-export-css=...> with the existing div.page inside. Because the theme root is then the body and html has no background of its own, the body background propagates to the canvas, so no html rule and no :has() are needed. pageCssFor gives '.insrc-viewer' the surface background, box-sizing:border-box, min-height:100vh and padding-top:56px, and a '.insrc-viewer #iv-theme' rule: fixed, top:12px, right:12px, 32px round, with a z-index above the content. The companion structural CSS gets a max-width:480px media rule that stacks header.hdr and sets table.ref min-width:0 and width:100%. Wrap fontFaceCssForArtifacts() in a <style> tag inside pageStyleTags, drop the prefers-color-scheme fallback from viewerBootScript and the fallback shell's own script, and move #iv-theme to a direct child of the body in all three shells. Remove the docgen shell's never-matching '.insrc-viewer html,.insrc-viewer body' rule.",
+        "pros": [
+          "One shared rule set fixes the surface and the switch in all three shells",
+          "No :has() or other newer selector: canvas propagation is core CSS",
+          "Matches how the docgen shells already work"
+        ],
+        "cons": [
+          "Touches four files and moves a button in three templates",
+          "The fallback shell keeps its own small script, so two mode-selection implementations stay in step by test"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Keep the theme root; mirror the mode onto <html> and <body>",
+        "oneLineSummary": "Leave the companion div as the theme root and have applyMode also set data-theme on documentElement, with html/body background rules.",
+        "approach": "Keep div.page.insrc-viewer as it is. Add page CSS keyed on html[data-theme] that sets the html and body background and colour from the same tokens, and have applyMode set data-theme on document.documentElement as well as the root. Fix the font-face tag, the default and the button as in a1.",
+        "pros": [
+          "The markup of the companion page is unchanged",
+          "Works for any future shell that wraps its content"
+        ],
+        "cons": [
+          "Two places hold the mode, so they can drift, and the tokens must be repeated for html",
+          "The never-matching layout rule still needs a separate fix",
+          "More CSS and script than a1"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Works but keeps two holders of the mode and repeats the tokens for html."
+      },
+      {
+        "id": "a3",
+        "name": "Fix only the default, the font text and the button",
+        "oneLineSummary": "Skip the whole-document change and fix only the light default, the leaked font CSS and the floating switch.",
+        "approach": "Leave the companion div as the theme root, wrap the font-face rules, remove the prefers-color-scheme fallback and make #iv-theme a fixed top-right button, without touching which element carries the theme.",
+        "pros": [
+          "Smallest change"
+        ],
+        "cons": [
+          "Leaves the white rim and strip in dark mode, which is the main complaint",
+          "Leaves the dead layout selector"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Leaves the white rim in dark mode, the main complaint."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/artifact-theme/theme.ts:271-316"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/artifact-theme/theme.ts:361-461"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/companion/shell.ts:221-269"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/docgen/render/shell.ts:215-273"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/docgen/render/fallback.ts:240-287"
+    }
+  ]
+}

@@ -106,7 +106,7 @@ test('d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot 
 	assert.ok(html.indexOf('/*MERMAID*/') < html.indexOf('mermaid.run('), 'the runtime loads before it is used');
 	// branded: theme meta stamp, shared DOM classes, per-mode CSS, packaged fonts, controls
 	assert.match(html, /<meta name="insrc-theme" content="insors-brand-1">/);
-	assert.match(html, /class="page insrc-viewer" data-theme="light"/);
+	assert.match(html, /<body class="insrc-viewer" data-theme="light"/);
 	assert.match(html, /<div class="vp iv-vp" id="vp"><div class="stage iv-stage insrc-viewer-diagram" id="stage">/);
 	assert.match(html, /<style data-iv-mode="light">/);
 	assert.match(html, /<style data-iv-mode="dark" disabled>/);
@@ -217,4 +217,34 @@ test('d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError', ()
 		_setCompanionRuntimeDirsForTests(undefined);
 		rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+test('companion/__tests__/shell.test.ts: the companion page carries class insrc-viewer, data-theme and the export CSS on the body', () => {
+	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	assert.match(html, /<body class="insrc-viewer" data-theme="light" data-iv-export-css="[^"]+">/);
+	assert.match(html, /<div class="page">/, 'the page container sits inside the theme root');
+	assert.doesNotMatch(html, /class="page insrc-viewer"/);
+});
+
+test('companion/__tests__/shell.test.ts: the companion layout rule targets the page inside the theme root', () => {
+	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	assert.match(html, /\.insrc-viewer \.page\{max-width:1180px/);
+	assert.match(html, /<body class="insrc-viewer"[^>]*>[\s\S]*<div class="page">/, '.page is a descendant of .insrc-viewer, so the rule matches');
+});
+
+test('companion/__tests__/shell.test.ts: the theme switch is a direct child of the body in the companion page, and the companion CSS has the max-width:480px rule for header.hdr and table.ref', () => {
+	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	assert.match(html, /<body[^>]*>\s*<button id="iv-theme"/, 'first child of the body');
+	assert.equal((html.match(/id="iv-theme"/g) ?? []).length, 1);
+	const bar = html.slice(html.indexOf('<div class="vp-bar">'), html.indexOf('</div>', html.indexOf('<div class="vp-bar">')));
+	assert.doesNotMatch(bar, /iv-theme/, 'not inside the pan/zoom bar');
+	assert.match(html, /@media \(max-width:480px\)\{\.insrc-viewer header\.hdr\{flex-direction:column/);
+	assert.match(html, /\.insrc-viewer table\.ref\{min-width:0;width:100%\}/);
+});
+
+test('companion/__tests__/shell.test.ts: the export CSS attribute still carries the fonts and the diagram overrides unchanged', () => {
+	const html = renderCompanionPage(HEADER, MERMAID_PAGE, RUNTIME_MERMAID);
+	const attr = html.match(/data-iv-export-css="([^"]*)"/)?.[1] ?? '';
+	assert.ok(attr.includes('@font-face') && attr.includes('relationshipLabel'), 'fonts plus DIAGRAM_OVERRIDES_CSS');
+	assert.doesNotMatch(attr, /<style/, 'the style wrapping of pageStyleTags does not leak into the export CSS');
 });

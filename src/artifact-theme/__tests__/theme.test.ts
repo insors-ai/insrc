@@ -82,7 +82,7 @@ test('theme.test.ts: contrast pairs exist for both modes with NFR1 targets', () 
 test('theme.test.ts: viewerBootScript carries the readable clamp, theme persistence, safe re-render, export and error+source', () => {
 	const boot = viewerBootScript({ initialMode: 'light', configs: { light: mermaidConfigFor('light'), dark: mermaidConfigFor('dark') } });
 	assert.match(boot, /insrc-theme-mode/, 'persisted per-origin override (resolved question)');
-	assert.match(boot, /prefers-color-scheme/, 'auto mode detection (R2)');
+	assert.doesNotMatch(boot, /prefers-color-scheme|matchMedia/, 'the OS colour-scheme preference is not consulted: light by default');
 	assert.match(boot, /document\.fonts\.ready/, 'font readiness before measuring (R6)');
 	assert.match(boot, /MIN_SCALE=0\.8/, 'readable floor: 16px labels at 20px font = 0.8 (R6/R11)');
 	assert.match(boot, /Math\.max\(fit,MIN_SCALE\)/, 'initial scale clamps at the readable floor, fit is separate');
@@ -134,7 +134,8 @@ test('theme.test.ts: pageStyleTags is the one shared page-style composition for 
 	assert.match(tags, /<style data-iv-mode="dark" disabled>/);
 	assert.ok(tags.indexOf('<style data-iv-mode="light">') < tags.indexOf('<style data-iv-mode="dark"'), 'light before dark');
 	// both mode tags carry pageCssFor(mode) AND the caller's structural CSS
-	const light = tags.slice(tags.indexOf('<style data-iv-mode="light">'), tags.indexOf('</style>'));
+	const lightStart = tags.indexOf('<style data-iv-mode="light">');
+	const light = tags.slice(lightStart, tags.indexOf('</style>', lightStart));
 	assert.ok(light.includes('.my-structural{}'), 'structural CSS inside the light variant');
 	assert.ok(light.includes('--iv-bg:'), 'brand surface tokens inside the light variant');
 	assert.match(tags, /<style>\.insrc-viewer-diagram/, 'diagram overrides appended once');
@@ -145,4 +146,34 @@ test('theme.test.ts: the boot script embeds the tested exportableSvg and toggles
 	assert.match(boot, /var EXPORT_SVG=function exportableSvg\(/, 'the export serializer is embedded verbatim');
 	assert.match(boot, /EXPORT_SVG\(new XMLSerializer\(\)/, 'runtime export calls it');
 	assert.match(boot, /\[data-iv-legend\]/, 'theme switch shows/hides the per-mode legend');
+});
+
+test('theme.test.ts: pageStyleTags puts the font-face rules inside a style element', () => {
+	const tags = pageStyleTags('');
+	assert.ok(tags.startsWith('<style>@font-face{font-family:\'Poppins\''), 'the fonts open in a style element, never as page text');
+	const outside = tags.replace(/<style[^>]*>[\s\S]*?<\/style>/g, '');
+	assert.equal(outside, '', 'every byte of the output is inside a style element');
+});
+
+test('theme.test.ts: pageCssFor gives .insrc-viewer the surface background, min-height:100vh, box-sizing:border-box and padding-top:56px in light and dark, and no rule gives html a background', () => {
+	for (const mode of ['light', 'dark'] as const) {
+		const css = pageCssFor(mode);
+		const root = css.slice(css.indexOf('.insrc-viewer{'), css.indexOf('}', css.indexOf('.insrc-viewer{')));
+		for (const decl of ['background:var(--iv-bg)', 'min-height:100vh', 'box-sizing:border-box', 'padding-top:56px']) {
+			assert.ok(root.includes(decl), `${mode}: ${decl}`);
+		}
+		assert.doesNotMatch(css, /(^|[\s,}])html[\s,{:.#\[>]/m, `${mode}: no html rule (the body background propagates to the canvas)`);
+		assert.doesNotMatch(css, /:has\(/, `${mode}: no :has() selector`);
+	}
+});
+
+test('theme.test.ts: pageCssFor makes the theme switch a fixed 32px top-right control with a z-index in both modes', () => {
+	for (const mode of ['light', 'dark'] as const) {
+		const css = pageCssFor(mode);
+		const rule = css.match(/\.insrc-viewer #iv-theme\{[^}]*\}/)?.[0] ?? '';
+		for (const decl of ['position:fixed', 'top:12px', 'right:12px', 'z-index:1000', 'width:32px', 'height:32px']) {
+			assert.ok(rule.includes(decl), `${mode}: ${decl}`);
+		}
+		assert.ok(rule.includes('var(--iv-panel)') && rule.includes('var(--iv-text)'), `${mode}: readable via the mode tokens`);
+	}
 });

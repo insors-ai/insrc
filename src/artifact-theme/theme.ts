@@ -272,7 +272,7 @@ export function pageCssFor(mode: ThemeMode): string {
 	const s = SURFACES[mode];
 	return [
 		`.insrc-viewer{--iv-bg:${s.bg};--iv-panel:${s.panel};--iv-inset:${s.inset};--iv-border:${s.border};--iv-text:${s.text};--iv-muted:${s.muted};--iv-accent:${s.accent};--iv-active-bg:${s.activeBg};--iv-active-text:${s.activeText};--iv-danger:${s.danger};`,
-		`margin:0;background:var(--iv-bg);color:var(--iv-text);font:14px/1.55 ${FALLBACK_FONT_STACK};}`,
+		`margin:0;box-sizing:border-box;min-height:100vh;padding-top:56px;background:var(--iv-bg);color:var(--iv-text);font:14px/1.55 ${FALLBACK_FONT_STACK};}`,
 		`.insrc-viewer *{box-sizing:border-box}`,
 		`.insrc-viewer h1,.insrc-viewer h2,.insrc-viewer h3,.insrc-viewer .insrc-viewer-title{font-family:${FALLBACK_FONT_STACK};font-weight:600;color:var(--iv-text)}`,
 		`.insrc-viewer .iv-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:6px 10px;background:var(--iv-inset);border-bottom:1px solid var(--iv-border);color:var(--iv-muted);font-size:12px}`,
@@ -296,6 +296,11 @@ export function pageCssFor(mode: ThemeMode): string {
 		`.insrc-viewer .iv-src{display:none;padding:8px;background:var(--iv-inset);border-top:1px solid var(--iv-border);font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;color:var(--iv-text)}`,
 		`.insrc-viewer .iv-src.open{display:block}`,
 		`.insrc-viewer a{color:var(--iv-accent)}`,
+		// The theme switch floats at the top right of the window in every shell; the 56px
+		// top padding on the root keeps it clear of the page header at scroll zero.
+		`.insrc-viewer #iv-theme{position:fixed;top:12px;right:12px;z-index:1000;width:32px;height:32px;padding:0;border-radius:50%;border:1px solid var(--iv-border);background:var(--iv-panel);color:var(--iv-text);font:inherit;font-size:16px;line-height:1;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.25)}`,
+		`.insrc-viewer #iv-theme:hover{background:var(--iv-inset)}`,
+		`.insrc-viewer #iv-theme:focus-visible{outline:2px solid var(--iv-accent);outline-offset:2px}`,
 		`@media (max-width:640px){.insrc-viewer .iv-vp{height:52vh;min-height:300px}.insrc-viewer .iv-bar{gap:4px}}`,
 	].join('\n');
 }
@@ -312,7 +317,7 @@ export function pageStyleTags(structuralCss: string): string {
 	const light = `<style data-iv-mode="light">${pageCssFor('light')}${structuralCss}</style>`;
 	const dark = `<style data-iv-mode="dark" disabled>${pageCssFor('dark')}${structuralCss}</style>`;
 	const overrides = `<style>${DIAGRAM_OVERRIDES_CSS}</style>`;
-	return `${fonts}${light}${dark}${overrides}`;
+	return `<style>${fonts}</style>${light}${dark}${overrides}`;
 }
 
 /** The legend CSS (shared, mode-agnostic — swatches carry their own colors). */
@@ -343,8 +348,9 @@ export interface ViewerBootOpts {
 
 /**
  * The boot script body (a string the shells inline in a <script>). It:
- *  - picks the mode from localStorage('insrc-theme-mode') else
- *    prefers-color-scheme, and applies data-theme on the root;
+ *  - picks the mode from localStorage('insrc-theme-mode') else the initial
+ *    mode (light; the OS colour-scheme preference is not consulted), and
+ *    applies data-theme on the root, which every shell makes the <body>;
  *  - waits for document.fonts.ready (timeout-guarded) BEFORE mermaid.run so
  *    labels are measured with Poppins, not the fallback (R6/NFR3);
  *  - renders at a readable initial scale: scale = clamp(fit, minScale, 1) where
@@ -372,7 +378,7 @@ export function viewerBootScript(opts: ViewerBootOpts): string {
   // (companion: panzoom.js; docgen: svg-pan-zoom). When absent the script
   // installs its own minimal pan/zoom.
   var pz=window.insrcPz||null;
-  var mode=(function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'${opts.initialMode}';})();
+  var mode=(function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return '${opts.initialMode}';})();
   var SURFACES_BG=${JSON.stringify({ light: LIGHT.bg, dark: DARK.bg })};
   var CSS_TEXT=root.getAttribute('data-iv-export-css')||'';
   // The tested export serializer, embedded verbatim so the in-browser export

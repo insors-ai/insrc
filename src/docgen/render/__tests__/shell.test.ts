@@ -206,3 +206,20 @@ test('assembleShell: the fallback subprocess shell is branded too (shared classe
 	assert.doesNotMatch(html, /\.insrc-artifact/);
 	assert.doesNotMatch(out.value.html, /<script[^>]*\bsrc=/i);
 });
+
+test('docgen/render/__tests__/shell.test.ts: the docgen page keeps the theme root on the body and docgenPageStyle has no .insrc-viewer html rule', async () => {
+	const ir: DocumentIR = {
+		docType: 'component-dependency', scopeDescription: 'repo',
+		derived: { nodes: [{ id: 'a', label: 'A', kind: 'component' }], edges: [] },
+		narrated: { sections: [] }, generatedAtRevision: 'r1',
+	};
+	const out = await assembleShell(ir, { renderSvg: async () => ({ status: 'unavailable' as const, triedBinaries: [], reason: '' }) } as never);
+	assert.ok(isOk(out));
+	if (!isOk(out)) return;
+	const html = out.value.html;
+	assert.match(html, /<body class="insrc-viewer" data-theme="light"/);
+	assert.doesNotMatch(html, /\.insrc-viewer html/, 'the never-matching rule is gone');
+	assert.match(html, /<body[^>]*>\s*<button id="iv-theme"/, 'the theme switch is the first child of the body');
+	const bar = html.slice(html.indexOf('<div class="iv-bar">'), html.indexOf('</div>', html.indexOf('<div class="iv-bar">')));
+	assert.doesNotMatch(bar, /iv-theme/, 'not inside the toolbar');
+});

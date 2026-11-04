@@ -239,7 +239,7 @@ export function assembleFallbackShell(
     setT: function (t) { if (t && typeof t.s === 'number') panzoomInstance.zoomTo(t.s); },
   } : null;
   // theme toggle for the fallback shell (page-level; the SVG is pre-rendered)
-  var mode = (function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return (window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';})();
+  var mode = (function(){try{var m=localStorage.getItem('insrc-theme-mode');if(m==='light'||m==='dark')return m;}catch(e){}return 'light';})();
   function applyMode(m){
     mode=m;document.body.setAttribute('data-theme',m);
     document.querySelectorAll('style[data-iv-mode]').forEach(function(s){s.disabled=(s.getAttribute('data-iv-mode')!==m);});
@@ -278,7 +278,8 @@ export function assembleFallbackShell(
 ${pageCss}
 </head>
 <body class="insrc-viewer" data-theme="light" data-iv-export-css="${escapeHtml(fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS)}">
-<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button></div>
+<button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button>
+<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}>${svg}</div>${legend}${narrative}
 <script>${svgPanZoom}</script>

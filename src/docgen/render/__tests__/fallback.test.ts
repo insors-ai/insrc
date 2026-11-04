@@ -238,3 +238,22 @@ test('generateDocument: unknown docType still → not-found (s5 leaves the surfa
 	const out = await generateDocument('no-such-doc-type', {});
 	assert.equal(out.status, 'not-found');
 });
+
+test('docgen/render/__tests__/fallback.test.ts: the fallback script defaults to light, does not consult prefers-color-scheme and uses the same storage key as the shared script', async () => {
+	const { viewerBootScript, mermaidConfigFor } = await import('../../../artifact-theme/theme.js');
+	const shell = assembleFallbackShell(bigIR, CANNED_SVG, '/*SVGPANZOOM-BUNDLE*/', '3.6.2');
+	assert.doesNotMatch(shell.html, /prefers-color-scheme|matchMedia/);
+	assert.match(shell.html, /return 'light';\}\)\(\);/, 'no stored mode falls back to light');
+	const shared = viewerBootScript({ initialMode: 'light', configs: { light: mermaidConfigFor('light'), dark: mermaidConfigFor('dark') } });
+	for (const src of [shell.html, shared]) {
+		assert.match(src, /localStorage\.getItem\('insrc-theme-mode'\)/);
+		assert.match(src, /localStorage\.setItem\('insrc-theme-mode',m\)/);
+	}
+});
+
+test('docgen/render/__tests__/fallback.test.ts: the theme switch is a direct child of the body in the fallback page', () => {
+	const shell = assembleFallbackShell(bigIR, CANNED_SVG, '/*SVGPANZOOM-BUNDLE*/', '3.6.2');
+	assert.match(shell.html, /<body class="insrc-viewer"[^>]*>\s*<button id="iv-theme"/);
+	const bar = shell.html.slice(shell.html.indexOf('<div class="iv-bar">'), shell.html.indexOf('</div>', shell.html.indexOf('<div class="iv-bar">')));
+	assert.doesNotMatch(bar, /iv-theme/, 'not inside the toolbar');
+});

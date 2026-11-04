@@ -201,7 +201,6 @@ function escapeHtml(s: string): string {
  *  companion shell's DOM (review round-2 fix). */
 function docgenPageStyle(): string {
 	const base = [
-		'.insrc-viewer html,.insrc-viewer body{margin:0;height:100%}',
 		'.insrc-viewer #docgen-diagram{width:100%;height:100vh;background:var(--iv-bg)}',
 		'.insrc-viewer #docgen-diagram svg{width:100%;height:100%}',
 		'.insrc-viewer [data-insrc-path]{cursor:pointer}',
@@ -259,7 +258,8 @@ function buildHtml(
 ${docgenPageStyle()}
 </head>
 <body class="insrc-viewer" data-theme="light" data-iv-export-css="${escapeHtml(fontFaceCssForArtifacts() + '\n' + DIAGRAM_OVERRIDES_CSS)}">
-<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-zin" aria-label="zoom in">+</button><span id="iv-zl">100%</span><button id="iv-zout" aria-label="zoom out">−</button><button id="iv-zfit" aria-label="fit to view">Fit</button><button id="iv-z100" aria-label="actual size">1:1</button><button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button><button id="iv-srcbtn" aria-label="show diagram source" title="Show source">src</button></div>
+<button id="iv-theme" aria-label="toggle light/dark theme" aria-pressed="false" title="Toggle light/dark">◐</button>
+<div class="iv-bar"><span>Drag to pan · scroll to zoom</span><span class="sp"></span><button id="iv-zin" aria-label="zoom in">+</button><span id="iv-zl">100%</span><button id="iv-zout" aria-label="zoom out">−</button><button id="iv-zfit" aria-label="fit to view">Fit</button><button id="iv-z100" aria-label="actual size">1:1</button><button id="iv-export" aria-label="export svg" title="Export SVG">⇩</button><button id="iv-srcbtn" aria-label="show diagram source" title="Show source">src</button></div>
 <div class="iv-err" id="iv-err" role="alert"></div>
 <div id="docgen-diagram" class="insrc-viewer-diagram"${diagramStyle}><pre class="mermaid">${escapeHtml(mermaidSource)}</pre></div>
 ${legend}

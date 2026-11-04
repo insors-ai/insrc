@@ -862,6 +862,17 @@
             "markdownDescription": "Model tier for the `indexer.summarise` role (peripheral). Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
+          "insrc.models.tasks.indexer.docRelations": {
+            "type": "string",
+            "enum": [
+              "cheap",
+              "mid",
+              "core"
+            ],
+            "default": "mid",
+            "markdownDescription": "Model tier for the `indexer.docRelations` role (peripheral). Leave at the default to use the daemon's routing.",
+            "scope": "machine"
+          },
           "insrc.models.tasks.understanding.classify": {
             "type": "string",
             "enum": [

@@ -2,7 +2,16 @@
 import { performance } from 'node:perf_hooks';
 import type { ReviewActivityEvent } from '../../../shared/review-activity.js';
 import { currentDesignAttempt, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignReviewProgress, DesignReviewConsolidated, DesignChunkResult, DesignReviewStatus } from './contracts.js';
+import type { DesignReviewCheckpoint, DesignReviewProgress, DesignReviewConsolidated, DesignChunkResult, DesignReviewStatus, DesignAttempt } from './contracts.js';
+import { selectedDesignChunks, nextDesignUnit } from './recovery-state.js';
+
+export function designCoverageProgress(attempt:DesignAttempt):Pick<DesignReviewProgress,'completedChunks'|'totalChunks'|'coverageProgress'>{
+ const selected=selectedDesignChunks(attempt);nextDesignUnit(attempt);
+ if(!attempt.plan)return{completedChunks:0,totalChunks:0};
+ const plannedChunks=attempt.plan.chunks.length,selectedChunks=selected.length,reviewedChunks=attempt.completedChunks.length,retainedChunks=attempt.impact?.retainedCoverage.length??0;
+ requireDesign(plannedChunks===selectedChunks+retainedChunks&&reviewedChunks<=selectedChunks,'invalid_checkpoint','Coverage counters do not form a complete partition');
+ return{completedChunks:reviewedChunks,totalChunks:selectedChunks,coverageProgress:{plannedChunks,selectedChunks,reviewedChunks,retainedChunks,effectiveCompletedChunks:reviewedChunks+retainedChunks}};
+}
 
 export interface DesignClock { now(): number; wall(): string; }
 const clock:DesignClock={now:()=>performance.now(),wall:()=>new Date().toISOString()};
@@ -25,6 +34,10 @@ export class DesignProgressTracker {
  }
  phase(phase:DesignReviewProgress['phase'],completed=this.value.completedChunks,total=this.value.totalChunks):void{
   this.value.phase=phase;this.value.completedChunks=completed;this.value.totalChunks=total;this.touch();
+ }
+ coverage(attempt:DesignAttempt):void{
+  const counts=designCoverageProgress(attempt);this.value.completedChunks=counts.completedChunks;this.value.totalChunks=counts.totalChunks;
+  if(counts.coverageProgress)this.value.coverageProgress=counts.coverageProgress;else delete this.value.coverageProgress;
  }
  status(status:DesignReviewStatus):void{
   this.value.status=status;this.value.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(status);
@@ -67,7 +80,8 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  const progress={...(options.liveProgress??attempt.progress)},live=options.active===true;
  progress.freshness=live?'live':'stored';
  if(!live&&(attempt.status==='pending'||attempt.status==='running'))progress.status='interrupted';else progress.status=attempt.status;
- progress.completedChunks=attempt.completedChunks.length;progress.totalChunks=attempt.plan?.chunks.length??0;
+ const counts=designCoverageProgress(attempt);progress.completedChunks=counts.completedChunks;progress.totalChunks=counts.totalChunks;
+ if(counts.coverageProgress)progress.coverageProgress=counts.coverageProgress;else delete progress.coverageProgress;
  if(attempt.recovery)progress.recovery=structuredClone(attempt.recovery);
  else if(progress.status==='interrupted')progress.recovery={attempt:attempt.number,status:'interrupted',reason:'daemon_restarted',completedChunkIds:attempt.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
  if(attempt.unit)progress.retriesUsed=attempt.unit.retriesUsed;else delete progress.retriesUsed;

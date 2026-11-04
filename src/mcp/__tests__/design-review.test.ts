@@ -18,6 +18,8 @@ import { handleDesignReviewStep } from '../../daemon/steps/design-review-step.js
 import { Router } from '../../daemon/threads/router.js';
 import { TargetRegistry } from '../../daemon/threads/registry.js';
 import { IpcServer,directDispatch } from '../../daemon/server.js';
+import { impactFixture } from '../../workflow/review/design-review/__tests__/impact-fixtures.js';
+import { appendFileSync } from 'node:fs';
 import { designFixture } from '../../workflow/review/design-review/__tests__/fixtures.js';
 import { loadDesignCheckpoint,saveDesignCheckpoint,designCheckpointPath } from '../../workflow/review/design-review/checkpoint.js';
 import { prepareDesignSubject } from '../../workflow/review/design-review/subject.js';
@@ -131,4 +133,24 @@ test('normal stdio controller failure and explicit recovery retain actual connec
   await until(async()=>(await reviewCall(replacement!,{phase:'progress',...common})).status==='passed');
   const cp=await loadDesignCheckpoint(f.repo,'review-1');assert.deepEqual(cp!.attempts[0]!.completedChunks.map(x=>x.chunkId),['content','final']);
  }finally{await owner.close();await replacement?.close();await observer.close();await h.ipc.close();}
+});
+
+
+test('normal impact schema and IPC routing preserve authority and fresh-only coverage progress',async t=>{
+ const f=impactFixture(t,'daemon');f.checkpoint.attempts=[f.baseline];await saveDesignCheckpoint(f.repo,f.checkpoint);appendFileSync(f.md,'\nCorrected contract');
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{throw Error('Controller route must not construct native work');}} as unknown as LLMProvider;
+ const h=await host(f,provider),client=await stdio(h.path,f.repo),observer=await stdio(h.path,f.repo),base={repo:f.repo,reviewId:'review-1',attempt:2};
+ try{
+  await reviewCall(client,{phase:'start',...base,artifactPath:f.json});const a=await reviewAssignment(client,base);assert.equal(a.kind,'impact');
+  const req={phase:'impact',...base,executionId:a.executionId,sequence:1,plan:f.plan,impact:f.impact};
+  assert.equal((await observer.callTool({name:'insrc_review_step',arguments:req})).isError,true);
+  assert.equal((await client.callTool({name:'insrc_review_step',arguments:{...req,executionId:'stale'}})).isError,true);
+  await reviewCall(client,req);let progress=await reviewCall(client,{phase:'progress',...base});assert.equal(progress.totalChunks,2);assert.equal(progress.coverageProgress.retainedChunks,1);
+  const chunk=await reviewAssignment(client,base);assert.equal(chunk.chunkId,'edit');
+  const result=(id:string)=>({...f.baseline.completedChunks.find(r=>r.chunkId===id)!,inspectedReferences:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path]});
+  await reviewCall(client,{phase:'result',...base,executionId:chunk.executionId,sequence:1,result:result('edit')});progress=await reviewCall(client,{phase:'progress',...base,includeResult:true});assert.equal(progress.completedChunks,1);assert.equal(progress.totalChunks,2);assert.equal(progress.completedResults[0].chunkId,'edit');
+  const final=await reviewAssignment(client,base);await reviewCall(client,{phase:'result',...base,executionId:final.executionId,sequence:1,result:{...result('final'),findingDecisions:[]}});
+  await until(async()=>(await reviewCall(client,{phase:'progress',...base})).status==='passed');
+  const saved=await loadDesignCheckpoint(f.repo,'review-1');assert.equal(saved!.attempts[1]!.progress.totalChunks,2);assert.equal(saved!.attempts[1]!.progress.coverageProgress!.retainedChunks,1);assert.deepEqual(saved!.attempts[1]!.report!.chunks.map(r=>r.chunkId),['edit','final']);
+ }finally{await client.close();await observer.close();await h.ipc.close();}
 });

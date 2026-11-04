@@ -154,7 +154,7 @@ export class DesignReviewCoordinator {
   (source.actions??=[]).push({actionId:request.actionId,signature,operation:request.operation,sourceAttempt:source.number,resultAttempt:attempt.number,...(request.userDecision?{userDecision:request.userDecision}:{}),acceptedAt:new Date().toISOString()});
   const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId),undefined,attempt.progress);
   tracker.phase('persisting',attempt.completedChunks.length,attempt.plan?.chunks.length??0);
-  attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;attempt.progress=tracker.snapshot();
+  attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;tracker.coverage(attempt);attempt.progress=tracker.snapshot();
   const subjectKey=this.subjectKey(checkpoint.subject);this.subjects.set(subjectKey,key);
   try{
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
@@ -226,7 +226,7 @@ export class DesignReviewCoordinator {
  private commit(job:DesignJob,mutate:(attempt:DesignAttempt)=>void,kind:'execution'|'failure'='execution'):Promise<void>{
   const work=job.serial.catch(()=>{}).then(async()=>{
    if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}catch(error){this.invalidate(job,error);throw error;}}
-   const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);attempt.progress=job.tracker.snapshot();
+   const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);job.tracker.coverage(attempt);attempt.progress=job.tracker.snapshot();
    try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){if(error instanceof DesignReviewError)throw error;throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
    if(kind==='execution'){

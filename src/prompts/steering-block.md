@@ -353,6 +353,9 @@ require an ERD for isolated class edits. Builders keep affected artifacts aligne
 
 Read `insrc_schema({ tool: 'insrc_review_step', phase })` for exact input fields.
 Use `start` with repo, unique reviewId, attempt 1 and canonical artifactPath.
+After a complete terminal report (passed/changes_requested/incomplete), explicitly
+start latest attempt+1 with the same reviewId and admitted artifact path for a correction.
+This runs impact analysis before selecting affected chunks; historical attempt replay only observes.
 DEF/HLD/LLD only: the owner derives Epic, standalone or ISSUE workflow context;
 missing required ancestors are errors, and ISSUE/SPEC/PLAN are not review subjects.
 The party that did not author the artifact reviews it: controller-authored artifacts
@@ -366,8 +369,8 @@ or approval. Default polling returns metadata only. Set includeResult true and u
 afterCompletedChunk/nextCompletedChunk to retrieve one completed chunk per page.
 Polling does not renew activity or execute model calls. The checkpoint path is returned.
 
-For a controller reviewer, `assignment` returns the current planning or chunk prompt,
-schema and executionId. Submit `plan` or `result` using that executionId and the next
+For a controller reviewer, `assignment` returns the current planning, impact or chunk prompt,
+schema and executionId. Submit `plan`, `impact` ({plan,impact}) or `result` using that executionId and the next
 positive sequence; `activity` uses the same response sequence and real session/tool
 events. Assignment includes the latest accepted sequence. Keep the same live MCP
 session: observers cannot become reviewer. Schema-invalid requests do not transfer
@@ -403,7 +406,16 @@ action restart_full, reason and recordedAt. It appends a full fresh attempt, wit
 chunk reuse. External changes are ignored for same-attempt recovery. Report progress
 and wait for full completion before corrections. Failed storage/domain state is not an
 automatic retry. retry_publication is unavailable until the later publication story.
-Selective impact analysis and approval-history publication remain later stories;
+Correction attempts assess direct and indirect effects from current paths and prior checkpoint
+history. The reviewer submits a complete current plan plus sc4 impact in one output; both
+are accepted atomically. Retain only justified eligible same-party coverage without limitations;
+review affected chunks in dependency order and always run fresh final consistency. Uncertain
+comparison requires explicit full mode, never a host-invented scope. The final accepted result
+is the only source of findingDecisions; missing decisions carry prior findings and make the
+report incomplete. Progress completedChunks/totalChunks counts fresh selected work;
+coverageProgress separately shows planned/selected/reviewed/retained/effective totals.
+Pagination contains fresh results only; inspect report provenance by checkpoint path.
+Approval-history publication remains the later S4 story;
 a checkpoint result alone is not an approval record.
 
 <!-- insrc:guide:review:end -->

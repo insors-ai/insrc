@@ -88,12 +88,50 @@ export const DesignPlanSchema = object({
 });
 export type DesignChunkPlan = Static<typeof DesignPlanSchema>;
 export type DesignChunk = DesignChunkPlan['chunks'][number];
+const chunkIds = Type.Array(id, { maxItems: DESIGN_LIMITS.chunks, uniqueItems: true });
+const attemptNumber = Type.Integer({ minimum: 1, maximum: DESIGN_LIMITS.attempts });
+export const DesignFindingOriginSchema = object({ attempt: attemptNumber, chunkId: id, findingId: id });
+export type DesignFindingOrigin = Static<typeof DesignFindingOriginSchema>;
+const findingDecision = { source: DesignFindingOriginSchema, rationale: text,
+ evidenceReferences: Type.Array(path, { minItems: 1, maxItems: 128 }),
+};
+const reviewedChunks = Type.Array(id, { minItems: 1, maxItems: DESIGN_LIMITS.chunks, uniqueItems: true });
+export const DesignFindingDecisionSchema = Type.Union([
+ object({ ...findingDecision, action: Type.Literal('carry') }),
+ object({ ...findingDecision, action: Type.Literal('resolved'), reviewedInChunkIds: reviewedChunks }),
+ object({ ...findingDecision, action: Type.Literal('superseded'), reviewedInChunkIds: reviewedChunks,
+  supersededBy: object({ chunkId: id, findingId: id }),
+ }),
+]);
+export type DesignFindingDecision = Static<typeof DesignFindingDecisionSchema>;
+const findingDecisions = Type.Array(DesignFindingDecisionSchema, { maxItems: DESIGN_LIMITS.findings });
+const retainedCoverage = object({ chunkId: id, fromAttempt: attemptNumber, fromChunkId: id, justification: text });
+export const DesignImpactSchema = object({
+ baselineAttempt: attemptNumber, mode: enumeration(['affected_chunks','full']), changes: texts,
+ directChunkIds: chunkIds, indirectChunkIds: chunkIds, rationale: text, uncertainReason: Type.Optional(text),
+ chunkMapping: Type.Array(object({ priorIds: chunkIds, currentIds: chunkIds, explanation: text }), { maxItems: DESIGN_LIMITS.chunks }),
+ retainedCoverage: Type.Array(retainedCoverage, { maxItems: DESIGN_LIMITS.chunks }),
+ carriedFindingIds: Type.Array(text, { maxItems: DESIGN_LIMITS.findings, uniqueItems: true }), consistencyChunkIds: chunkIds,
+});
+export type DesignImpactAssessment = Static<typeof DesignImpactSchema>;
+export const DesignImpactOutputSchema = object({ plan: DesignPlanSchema, impact: DesignImpactSchema });
+export const DesignCoverageOriginSchema = Type.Union([
+ object({ chunkId: id, kind: Type.Literal('fresh') }),
+ object({ ...retainedCoverage.properties, kind: Type.Literal('retained') }),
+]);
+export type DesignCoverageOrigin = Static<typeof DesignCoverageOriginSchema>;
+export const DesignReportImpactSchema = object({
+ baselineAttempt: attemptNumber, mode: enumeration(['affected_chunks','full']),
+ coverageOrigins: Type.Array(DesignCoverageOriginSchema, { minItems: 1, maxItems: DESIGN_LIMITS.chunks }),
+ findingDecisions, effectiveFindingOrigins: Type.Array(DesignFindingOriginSchema, { maxItems: DESIGN_LIMITS.findings }),
+});
+export type DesignReportImpact = Static<typeof DesignReportImpactSchema>;
 export const DesignResultSchema = object({
  chunkId: id, status: enumeration(['passed','changes_requested','incomplete']), summary: text,
  findings: Type.Array(object({ id, severity: enumeration(['HIGH','MED','LOW']), location: path,
   message: text, evidenceReferences: Type.Array(path, { minItems: 1, maxItems: 128 }),
  }), { maxItems: DESIGN_LIMITS.findings }),
- inspectedReferences: refs, limitations: texts, advice: texts,
+ inspectedReferences: refs, limitations: texts, advice: texts, findingDecisions: Type.Optional(findingDecisions),
 });
 export type DesignChunkResult = Static<typeof DesignResultSchema>;
 export type DesignFinding = DesignChunkResult['findings'][number];
@@ -110,6 +148,13 @@ export const DesignProgressSchema = object({ status: DesignStatusSchema,
  observedAt: timestamp, freshness: enumeration(['live','stored']),
  recovery: Type.Optional(DesignRecoveryStateSchema), retriesUsed: Type.Optional(retries),
  executionId: Type.Optional(id), failedUnit: Type.Optional(DesignFailureSchema),
+ coverageProgress: Type.Optional(object({
+  plannedChunks: Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.chunks }),
+  selectedChunks: Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.chunks }),
+  reviewedChunks: Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.chunks }),
+  retainedChunks: Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.chunks }),
+  effectiveCompletedChunks: Type.Integer({ minimum: 0, maximum: DESIGN_LIMITS.chunks }),
+ })),
 });
 export type DesignReviewProgress = Static<typeof DesignProgressSchema>;
 export const DesignReportSchema = object({ reviewId: id, attempt: positive, artifactId: path,
@@ -117,6 +162,7 @@ export const DesignReportSchema = object({ reviewId: id, attempt: positive, arti
  counts: object({ HIGH: number, MED: number, LOW: number }),
  chunks: Type.Array(DesignResultSchema, { maxItems: DESIGN_LIMITS.chunks }), limitations: texts,
  reviewer: enumeration(['daemon','controller']), reviewedContentIdentity: digest,
+ impact: Type.Optional(DesignReportImpactSchema),
 });
 export type DesignReviewConsolidated = Static<typeof DesignReportSchema>;
 const baseline = object({ subjectFingerprints: object({ canonical: digest, document: digest }), contentIdentity: digest,
@@ -126,8 +172,9 @@ export type DesignBaseline = Static<typeof baseline>;
 export const DesignAttemptSchema = object({
  number: positive, status: DesignStatusSchema, baseline, inventory: DesignInventorySchema,
  plan: Type.Optional(DesignPlanSchema), completedChunks: Type.Array(DesignResultSchema, { maxItems: DESIGN_LIMITS.chunks }),
+ impact: Type.Optional(DesignImpactSchema), preparationKind: Type.Optional(enumeration(['planning','impact'])),
  progress: DesignProgressSchema, startedAt: timestamp, finishedAt: Type.Optional(timestamp),
- current: Type.Optional(object({ kind: enumeration(['planning','chunk']), executionId: id,
+ current: Type.Optional(object({ kind: enumeration(['planning','impact','chunk']), executionId: id,
   chunkId: Type.Optional(id), sequence: number, issuedAt: timestamp,
  })),
  failure: Type.Optional(object({ code: id, summary: text })),
@@ -146,12 +193,13 @@ export const DesignCheckpointSchema = object({ schemaVersion: Type.Literal(1), r
 export type DesignReviewCheckpoint = Static<typeof DesignCheckpointSchema>;
 const identity = { repo: path, reviewId: id, attempt: positive };
 const submission = { ...identity, executionId: id, sequence: positive };
-export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','activity','result','recover','failure'] as const;
+export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','impact','activity','result','recover','failure'] as const;
 export const DesignRequestSchemas = {
- start: object({ phase: Type.Literal('start'), repo: path, reviewId: id, attempt: Type.Literal(1), artifactPath: path }),
+ start: object({ phase: Type.Literal('start'), repo: path, reviewId: id, attempt: attemptNumber, artifactPath: path }),
  progress: object({ phase: Type.Literal('progress'), ...identity, afterCompletedChunk: Type.Optional(number), includeResult: Type.Optional(Type.Boolean()) }),
  assignment: object({ phase: Type.Literal('assignment'), ...identity }),
  plan: object({ phase: Type.Literal('plan'), ...submission, plan: DesignPlanSchema }),
+ impact: object({ phase: Type.Literal('impact'), ...submission, plan: DesignPlanSchema, impact: DesignImpactSchema }),
  activity: object({ phase: Type.Literal('activity'), ...submission, event: DesignActivitySchema }),
  result: object({ phase: Type.Literal('result'), ...submission, result: DesignResultSchema }),
  recover: object({ phase: Type.Literal('recover'), ...identity, actionId: id, operation, userDecision: Type.Optional(userDecision) }),
@@ -166,7 +214,7 @@ export interface DesignReviewAcknowledgement {
  readonly reviewer: 'daemon' | 'controller'; readonly status: DesignReviewStatus; readonly checkpointPath: string;
 }
 export interface DesignUnitAssignment {
- readonly kind: 'planning' | 'chunk'; readonly executionId: string; readonly sequence: number;
+ readonly kind: 'planning' | 'impact' | 'chunk'; readonly executionId: string; readonly sequence: number;
  readonly chunkId?: string | undefined; readonly prompt: string; readonly schema: TSchema;
  readonly previousTechnicalFeedback?: {readonly code:string;readonly summary:string} | undefined;
  readonly retriesUsed?: number | undefined;

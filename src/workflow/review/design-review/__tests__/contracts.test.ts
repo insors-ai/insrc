@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import { Type } from '@sinclair/typebox';
 import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignWorkflowSchema, decodeDesign, parseDesignRequest } from '../contracts.js';
 
-test('strict design requests reject malformed identities, unknown fields, phases and noninitial attempts', () => {
+test('strict design requests reject malformed identities, unknown fields, phases and invalid attempt ordinals', () => {
  const start = {phase:'start',repo:'/project',reviewId:'review-1',attempt:1,artifactPath:'docs/DEF.md'};
  assert.deepEqual(parseDesignRequest(start),start);
- for (const patch of [{attempt:2},{attempt:0},{reviewId:'../escape'},{reviewId:''},{phase:'claims'},{commit:'abc'},{artifact:'copied body'},{repo:42},{repo:'relative-project'}]) {
+ assert.equal(parseDesignRequest({...start,attempt:2}).attempt,2);
+ for (const patch of [{attempt:129},{attempt:0},{reviewId:'../escape'},{reviewId:''},{phase:'claims'},{commit:'abc'},{artifact:'copied body'},{repo:42},{repo:'relative-project'}]) {
   assert.throws(()=>parseDesignRequest({...start,...patch}));
  }
  assert.throws(()=>parseDesignRequest({...start,artifactPath:'x'.repeat(DESIGN_LIMITS.path+1)}));

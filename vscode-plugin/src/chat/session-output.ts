@@ -393,11 +393,13 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      // The marker is durable BEFORE registerCursor returns, and the write is serialized with
-      // sweep's pin-check + archive deletion via the session lock: with the sync O_EXCL seam, spin
-      // on the lock (bounded — a holder's critical section is short) and write under it; on spin
-      // timeout write unlocked anyway (durability first) AND queue a locked rewrite to heal the
-      // ordering. Without sync seams, only the queued locked write exists (single-process seams).
+      // The marker write ALWAYS happens under the session lock — never unlocked — so it is
+      // serialized with sweep's pin-check + archive deletion: with the sync O_EXCL seam, spin on
+      // the lock (bounded; a holder's critical section is short) and write under it, making the
+      // marker durable before registerCursor returns. On spin timeout (e.g. an in-process holder
+      // whose async critical section our blocked thread cannot wait out), ONLY a queued locked
+      // write is left — tail() awaits that queue before its first read, so a reader never reads a
+      // generation before its pin marker is durable. Without sync seams: queued locked write only.
       if (fs.writeFileSync !== undefined && fs.writeFileExclusiveSync !== undefined) {
         const lock = lockPathOf(cursor.sessionId);
         const deadline = Date.now() + 100;
@@ -413,14 +415,15 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
             syncSleep(2);
           }
         }
-        try {
-          fs.writeFileSync(marker, '');
-        } finally {
-          if (locked && fs.rmSync !== undefined) fs.rmSync(lock);
+        if (locked) {
+          try {
+            fs.writeFileSync(marker, '');
+          } finally {
+            if (fs.rmSync !== undefined) fs.rmSync(lock);
+          }
+        } else {
+          enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
         }
-        if (!locked) enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
-      } else if (fs.writeFileSync !== undefined) {
-        fs.writeFileSync(marker, '');
       } else {
         enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
       }

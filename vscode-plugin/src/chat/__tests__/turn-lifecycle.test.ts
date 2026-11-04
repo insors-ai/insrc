@@ -650,6 +650,7 @@ test("stop ends a followed turn's process; detach leaves it running", async () =
   await tick(10);
   assert.deepEqual(d.resumes[0]!.proc.signals, [], 'detach leaves the followed process running');
   assert.deepEqual(g.calls, [], 'and does not end the turn');
+  assert.equal(h2.session.liveTurn?.ownerHostPid, 0, 'E202611031bd72813:S001 t5: detach orphans the FOLLOWED turn too, so the background observer reconciles it');
   assert.equal(h2.session.liveTurn?.cursor.turnId, 'old', 'its cursor stays saved');
   h2.lc.follow(h2.session, g.sink);
   await waitFor(() => d.resumes.length === 2);

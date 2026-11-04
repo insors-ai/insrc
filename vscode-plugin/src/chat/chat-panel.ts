@@ -1421,18 +1421,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const decisions = batch.decisions;
     // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
     // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
-    for (const d of decisions) pendingFollowUps.set(d.request.requestId, { outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: batch.turnId, sessionId: session?.id });
+    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, turns.live?.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: batch.turnId, sessionId: session?.id });
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
     void p.then(
       () => {
         for (const d of decisions) {
-          if (pendingFollowUps.delete(d.request.requestId)) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed');
+          if (pendingFollowUps.delete(followUpKey(session?.id, d.request.turnId, d.request.requestId))) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed', d.request.turnId);
         }
       },
       (err: unknown) => {
         log.warn(`[chat] batch follow-up for turn ${batch.turnId} failed: ${err instanceof Error ? err.message : String(err)}`);
         for (const d of decisions) {
-          if (pendingFollowUps.delete(d.request.requestId)) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed');
+          if (pendingFollowUps.delete(followUpKey(session?.id, d.request.turnId, d.request.requestId))) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed', d.request.turnId);
         }
       },
     );
@@ -1451,7 +1451,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * The lifecycle checks `shouldSpawn` immediately before spawning the CLI, so a timed-out
    * continuation can never execute later, after the UI already reported failure.
    */
-  const cancelledFollowUps = new Set<string>();
+  const cancelledFollowUps = new Set<string>(); // followUpKey entries whose continuation must not spawn
   const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession, originTurnId?: string): void => {
     const s = target ?? session;
     if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId, originTurnId); // survive a reload while the follow-up waits
@@ -1461,16 +1461,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
     let started = false;
     if (s !== undefined) {
+      const pfKey = followUpKey(s.id, originTurnId ?? turns.live?.turnId, requestId);
       try {
         // The outcome is marked only when the follow-up's CLI actually SPAINS (the run sink's
         // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
         // MR1-R3: the exclusion/origin turn is the decision's originating turn (fall back to the live one)
-        pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, groupId: requestId, sessionId: s.id });
+        const pfKey = followUpKey(s.id, originTurnId ?? turns.live?.turnId, requestId);
+        pendingFollowUps.set(pfKey, { requestId, outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, groupId: requestId, sessionId: s.id });
         // MR3: the continuation carries a cancellation identity — if the stall timer below fires
         // first, shouldSpawn returns false and the turn ends WITHOUT spawning the CLI.
-        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(requestId) }); // resumes s.nativeSessionId when known
+        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(pfKey) }); // resumes s.nativeSessionId when known
         started = true;
         // If the follow-up never spawns (the original CLI still holds the turn lock and stays
         // blocked), the settled-promise path above may never run — bound the wait with a timer so
@@ -1478,8 +1480,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // MR3: the timer also CANCELS the scheduled continuation (cancelledFollowUps), so when the
         // original turn later ends, the queued follow-up does not execute after the recorded failure.
         const stallTimer = setTimeout(() => {
-          cancelledFollowUps.add(requestId);
-          if (pendingFollowUps.delete(requestId)) {
+          cancelledFollowUps.add(pfKey);
+          if (pendingFollowUps.delete(pfKey)) {
             markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
             reevaluateChatStatus(s);
           }
@@ -1487,8 +1489,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         stallTimer.unref?.();
         const settle = (): void => {
           clearTimeout(stallTimer);
-          cancelledFollowUps.delete(requestId);
-          if (pendingFollowUps.delete(requestId)) {
+          cancelledFollowUps.delete(pfKey);
+          if (pendingFollowUps.delete(pfKey)) {
             markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
             reevaluateChatStatus(s);
           }
@@ -1498,8 +1500,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           settle();
         });
       } catch (err) {
-        pendingFollowUps.delete(requestId);
-        cancelledFollowUps.delete(requestId);
+        pendingFollowUps.delete(pfKey);
+        cancelledFollowUps.delete(pfKey);
         log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
@@ -1520,7 +1522,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const decidedRequestIds = new Set<string>();
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
-  let pendingFollowUps = new Map<string, { readonly outcome: string; readonly excludeTurnId: string | undefined; readonly groupId: string; readonly sessionId: string | undefined }>();
+  // MR1-R3: keyed by the FULL follow-up identity (session::originTurn::request) so repeated request
+  // ids across conversations/turns keep separate markers
+  let pendingFollowUps = new Map<string, { readonly requestId: string; readonly outcome: string; readonly excludeTurnId: string | undefined; readonly groupId: string; readonly sessionId: string | undefined }>();
   /** turnId -> requestId: each follow-up is bound to the turn it actually started, so a spawn/event
    * of one follow-up's turn never marks another pending follow-up delivered. */
   const followUpTurns = new Map<string, string>();
@@ -1546,10 +1550,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (pf === undefined) return;
     // one follow-up turn confirms its WHOLE group (a batch follow-up carries several decisions)
     for (const [other, opf] of [...pendingFollowUps]) {
-      if (opf.groupId === pf.groupId) {
+      if (opf.groupId === pf.groupId && opf.sessionId === s.id) {
         pendingFollowUps.delete(other);
         // MR1-R3: outcome correlation is turn-scoped (the request's originating turn)
-        markPersistedRequest(s, other, true, opf.outcome, opf.excludeTurnId);
+        markPersistedRequest(s, opf.requestId, true, opf.outcome, opf.excludeTurnId);
       }
     }
     // keep the binding until the turn ENDS: later events of the same follow-up turn must map to

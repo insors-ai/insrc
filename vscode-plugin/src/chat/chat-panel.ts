@@ -651,8 +651,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         try {
           const rc = await out.recoverTurn(s.id, turnId);
           if (rc !== undefined) cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
-        } catch { /* fall back to the liveTurn cursor */ }
-        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: 0 };
+        } catch { /* fall back below */ }
+        // Fallback: the liveTurn cursor PAIRED WITH the lifecycle's own decoder state for this turn —
+        // never the advanced offset with an empty decoder (that would lose a split-marker prefix).
+        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: live.decoder?.selectionSeq ?? 0, ...(live.decoder?.selectionBuffer !== undefined && live.decoder.selectionBuffer !== '' ? { selectionBuffer: live.decoder.selectionBuffer } : {}) };
       }
       let ad;
       try {

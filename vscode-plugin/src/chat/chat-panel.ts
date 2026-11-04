@@ -846,7 +846,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // re-fetch may return a different object (file store refresh from another window); saving
         // `fresh` alone would advance the checkpoint past rows that were never written.
         const fresh = deps.store.get(s.id) ?? s;
-        const toSave: ChatSession = fresh === s ? s : { ...fresh, transcript: s.transcript };
+        // Transcripts are append-only: when the re-fetched record differs, keep whichever transcript
+        // is longer — ours carries this pass's appended rows, the fresh one may carry rows another
+        // window appended during ingestion (e.g. a reattach). Never discard the longer one.
+        const toSave: ChatSession = fresh === s ? s : { ...fresh, transcript: s.transcript.length >= fresh.transcript.length ? s.transcript : fresh.transcript };
         if (pass.nativeSessionId !== undefined) toSave.nativeSessionId = pass.nativeSessionId;
         toSave.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: persistTranscriptLen ?? toSave.transcript.length };
         deps.store.save(toSave);

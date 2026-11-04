@@ -652,6 +652,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // dedupe), a mid-stream start could lose a split marker or reuse a selection id.
       const cpRaw = s.observerCheckpoint;
       let cp = cpRaw !== undefined && cpRaw.turnId === turnId ? cpRaw : undefined;
+      // A replaying pass (rewind / SegmentGone re-anchor) re-reads already-ingested events: truncate
+      // the transcript back to the checkpointed length so re-appended rows replace, not duplicate.
+      if (cp?.transcriptLen !== undefined && s.transcript.length > cp.transcriptLen) s.transcript.length = cp.transcriptLen;
       if (cp === undefined) {
         try {
           const rc = await out.recoverTurn(s.id, turnId);
@@ -689,7 +692,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: undefined as string | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
@@ -711,6 +714,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           );
           for await (const ev of events) {
             st.ingestedAny = true;
+            // persist the event's transcript row exactly like the live path (appendEvent), so an
+            // observer-completed detached chat reopens with its output, not an empty transcript
+            appendEvent(s, ev);
             if (ev.kind === 'approval-request') {
               // waiting-input only if the request is actually unresolved — a replayed, already
               // resolved request must not flip the chat back to waiting-input
@@ -761,6 +767,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             } else if (ev.kind === 'done') {
               st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf };
               st.sawTerminal = true;
+              // keep the provider's native session id (same rule as the live path's keepNativeSession),
+              // so the next turn can resume the detached session's CLI thread
+              if (ev.sessionId !== undefined) st.nativeSessionId = ev.sessionId;
             }
             if (Date.now() > deadline && !ctl.signal.aborted) {
               st.abortedByBudget = true;
@@ -774,6 +783,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
         return { ...st, cursor };
       };
+      const transcriptAtPassStart = s.transcript.length;
       let pass = await ingest({ generation: cp.generation, offset: cp.offset }, cp.selectionSeq, cp.selectionBuffer ?? '');
       // SegmentGone / output-read failure recovery: re-anchor into the oldest retained generation
       // that still holds this turn and replay from its start with a FRESH decoder. Replay is
@@ -783,6 +793,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           const oldest = await out.oldestRetainedGeneration(s.id);
           const rc = oldest !== undefined ? await out.recoverTurn(s.id, turnId) : undefined;
           if (rc !== undefined && (rc.generation !== pass.cursor.generation || rc.offset !== pass.cursor.offset)) {
+            s.transcript.length = transcriptAtPassStart; // the replay re-appends from the turn start: no duplicates
             pass = await ingest(rc, 0, '');
           }
         } catch { /* keep the failed pass */ }
@@ -808,7 +819,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       try {
         // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass)
         const fresh = deps.store.get(s.id) ?? s;
-        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}) };
+        if (pass.nativeSessionId !== undefined) fresh.nativeSessionId = pass.nativeSessionId;
+        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: fresh.transcript.length };
         deps.store.save(fresh);
         checkpointSaved = true;
       } catch { /* best-effort — pins are NOT released below if this failed */ }

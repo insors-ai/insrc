@@ -6522,3 +6522,42 @@ test('E202611031bd72813:S001 t5: recoverTurn failure falls back to the liveTurn 
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: an observer-completed detached chat persists its transcript rows AND the native session id — reopening shows the output and the next turn can resume', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs6-'));
+  try {
+    const out = createSessionOutput({ root, maxBytes: 1, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg1 = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg1.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'detached answer' }] } }) + '\n');
+    appendFileSync(seg1.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'native-42' }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the observer completed the detached turn');
+    const after = store.get(s.id)!;
+    assert.equal(after.status, 'done');
+    assert.ok(after.transcript.some((r) => r.role === 'assistant' && (r as { text?: string }).text === 'detached answer'), 'the detached assistant output is in the persisted transcript (reopening shows it)');
+    assert.equal(after.nativeSessionId, 'native-42', 'the done event\'s native session id is kept for resume');
+    assert.ok(after.observerCheckpoint?.transcriptLen === after.transcript.length, 'the checkpoint records the persisted transcript length');
+    host.dispose();
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

@@ -24,7 +24,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { join, normalize, relative } from 'node:path';
+import { join, posix, relative } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
@@ -60,7 +60,8 @@ const DOC = /\.mdx?$/i;
 
 /** A repository-relative path in canonical form, or undefined when it is not one. */
 function canonicalPath(raw: string): string | undefined {
-	const p = normalize(raw.trim().replace(/^\.\//, '')).replace(/\\/g, '/');
+	// Separators first, then POSIX normalisation, so 'src\\sub\\..\\x.ts' and './src/x.ts' are the same 'src/x.ts'.
+	const p = posix.normalize(raw.trim().replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/$/, '');
 	if (p === '' || p === '.' || p.startsWith('../') || p === '..' || p.startsWith('/')) return undefined;
 	return p;
 }

@@ -117,6 +117,10 @@ test('s10 t8: set validation and proposal normalisation', async () => {
 	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: 'src/x.ts', real: true }, { from: './docs/a.md', to: 'src/x.ts', real: true }] })), /appears twice/);
 	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: 'src/x.ts', real: true }, { from: 'docs/a.md', to: 'src/x.ts', real: false }] })), /both real and not real/);
 	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: '../outside.ts', real: true }] })), DocRelationsSetInvalid);
+	// Aliases of one path are one link: separators and dot segments are normalised before the pair check.
+	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: 'src/x.ts', real: true }, { from: 'docs\\a.md', to: 'src\\sub\\..\\x.ts', real: true }] })), /appears twice/);
+	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: 'src/./x.ts', real: true }, { from: 'docs/a.md', to: 'src//x.ts', real: false }] })), /both real and not real/);
+	assert.throws(() => parseCheckedSet(JSON.stringify({ links: [{ from: 'docs/a.md', to: 'src\\..\\..\\x.ts', real: true }] })), DocRelationsSetInvalid);
 	assert.throws(() => parseCheckedSet('{"items": []}'), /no links array/);
 	assert.equal(canonicalTarget('docs/b.md#Heading'), 'docs/b.md');
 	assert.equal(canonicalTarget('src/x.ts#fn'), 'src/x.ts#fn');

@@ -1424,8 +1424,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq === refreshSeq) postUnavailable(err);
     }
     if (disposed) return;
-    if (summary !== undefined) void openDoc(target.artifactId, { kind: summary.kind, reveal: true });
-    else void openDoc(target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
+    // await openDoc: the queued open is not done until the document's content has been read and
+    // posted — otherwise openPostTarget clears early and a later queued open's posts can race this
+    // panel's delayed content (dropping or superseding it)
+    if (summary !== undefined) await openDoc(target.artifactId, { kind: summary.kind, reveal: true });
+    else await openDoc(target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
   }
 
   /**

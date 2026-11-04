@@ -15,6 +15,8 @@ import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, 
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { DOCS_COMMENTS_SOURCE } from '../docs-review-comments.js';
 import { DOCS_LIST_SOURCE } from '../docs-review-list.js';
+import { createReviewPresenter } from '../review-presenter.js';
+const NOOP_LOGGER = { warn: () => {}, error: () => {} };
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -7437,4 +7439,41 @@ test('E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:ar
   draftOn(legacy, SUMMARY_P, 'cut to 8 lines', 'legacy note');
   const state3 = legacy.saved.state as { rv: Record<string, unknown> };
   assert.ok(state3.rv['LLD-a'], 'legacy key is the bare artifactId, unchanged');
+});
+
+test('E202611031bd72813:S001 t8: the REAL presenter wired to the REAL review host opens one panel per presentKey — a repeated declaration is deduped, a new declaration opens again', async () => {
+  const made: { title: string }[] = [];
+  const { client } = fakeClient({});
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      made.push({ title: opts.title });
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => {}, dispose: ch.dispose };
+    },
+    client,
+  });
+  const presenter = createReviewPresenter({
+    pendingDocuments: async () => [
+      { id: 'LLD-abc-S001', mdPath: DOC_PATH, kind: 'lld', pending: true } as never,
+      { id: 'HLD-xyz-S002', mdPath: DOC_PATH, kind: 'hld', pending: true } as never,
+    ],
+    open: (t) => host.openArtifact({ artifactId: t.artifactId, mdPath: t.mdPath, quiet: true, presentKey: t.presentKey }),
+    log: NOOP_LOGGER,
+  });
+  // one insrc_present naming the same doc TWICE: deduped within the declaration -> one panel
+  const shown = presenter.begin();
+  await shown.declared(['LLD-abc-S001', 'LLD-abc-S001']);
+  shown.end();
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 1, 'the same document named twice in one declaration opens once');
+  assert.equal(made[0]!.title, 'insrc docs review — LLD-abc-S001#1');
+  // a LATER declaration (another insrc_present) of another document opens again under a fresh key
+  const shown3 = presenter.begin();
+  await shown3.declared(['HLD-xyz-S002']);
+  shown3.end();
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 2, 'a later declaration opens again under a fresh key');
+  assert.equal(made[1]!.title, 'insrc docs review — HLD-xyz-S002#2');
+  host.dispose();
 });

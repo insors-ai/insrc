@@ -178,8 +178,10 @@ export async function examineDocument(args: {
 	let repeated = 0;
 	for (const p of raw) {
 		if (!sourceIds.has(p.source)) { unresolved++; continue; }
-		const [pathPart, symbol] = p.target.split('#', 2) as [string, string | undefined];
+		const [pathPart, rawSymbol] = p.target.split('#', 2) as [string, string | undefined];
 		const rel = pathPart.replace(/^\.?\//, '');
+		// An anchor on a document target is dropped: the target is the document (as the hand-checked set names it).
+		const symbol = /\.mdx?$/i.test(rel) ? undefined : rawSymbol;
 		if (!fileSet.has(rel) || rel === relFile) { unresolved++; continue; }
 		let to: string | undefined;
 		if (symbol === undefined || symbol === '') {

@@ -13922,7 +13922,7 @@
    ],
    "siteCount": 194,
    "sitesDigest": "259380a8d3fd1b9f2a2f58fd0c6b692947e250b2b3f40e78818722295f41c33f",
-   "sourceDigest": "ce226a54328720ddf9b7a34107b0f7172c138653d1d25da5a9cdbc0f0e751d5f",
+   "sourceDigest": "f7336938f842c2ae4b48e579880e9109cdf3823741747a554f95e6982770951d",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -40192,7 +40192,7 @@
    ],
    "siteCount": 41,
    "sitesDigest": "dd2715247c422fc76c7613cd05a855896fdcf6fca442a087fa1567f4bef4da91",
-   "sourceDigest": "0299843972f90b97e1fc78e63cf016d037bb4e4e0288135c0885c6f94e4cbe9b",
+   "sourceDigest": "ebb8f3df40e4767b8b2384fd6e62534130dfa995ff5f5fe3937e81c5b1f33de2",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -40204,11 +40204,129 @@
   "src/indexer/doc-relations-measure.ts": {
    "classification": "background-indexing",
    "rationale": "The background measurement of the mid-tier model's proposals against a registered repository's own hand-checked set (Epic c2ba6fa6 s10), writing the repository's quality row; never temporary session configurations or results.",
-   "sites": [],
-   "siteCount": 0,
-   "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-   "sourceDigest": "fc9b783ece2cd3854778e0af04507e3967301b1596ced578a7541a4926d89589",
-   "boundaries": []
+   "sites": [
+    [
+     "storage-call",
+     "documentRelations"
+    ],
+    [
+     "storage-call",
+     "findEntitiesByFile"
+    ],
+    [
+     "storage-call",
+     "findEntitiesByFile"
+    ],
+    [
+     "storage-call",
+     "getEntity"
+    ],
+    [
+     "storage-call",
+     "getGraphStore"
+    ],
+    [
+     "diagnostic",
+     "getLogger"
+    ],
+    [
+     "serialization",
+     "JSON.parse"
+    ],
+    [
+     "diagnostic",
+     "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "storage-call",
+     "lookupRepoIdInTxn"
+    ],
+    [
+     "storage-call",
+     "readDocRelationQualityInTxn"
+    ],
+    [
+     "storage-call",
+     "readDocRelationQualityInTxn"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "storage-call",
+     "storedFilesInTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationQualityInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationQualityInTxn"
+    ]
+   ],
+   "siteCount": 23,
+   "sitesDigest": "543d1a49aa33cb33a016ba763c673ff92bfb664c8ac2c3946d868a2fafab449a",
+   "sourceDigest": "e4f283e06715fbfd91b9f0bd8c93aa8fa7480464c5c2c7110c543af584a5c813",
+   "boundaries": [
+    "diagnostic",
+    "filesystem-read",
+    "serialization",
+    "storage-call"
+   ]
+  },
+  "src/daemon/doc-relations-rpc.ts": {
+   "classification": "daemon-admission-boundary",
+   "rationale": "Non-session RPC for document relationships (Epic c2ba6fa6 s10): search.doc_relations reads stored relationships behind the search guard, and docRelations.measure validates a registered repository's own hand-checked set and queues a summary-lane job; no session admission and no session-derived material.",
+   "sites": [
+    [
+     "storage-call",
+     "lookupRepoId"
+    ],
+    [
+     "storage-call",
+     "UnregisteredRepoError"
+    ]
+   ],
+   "siteCount": 2,
+   "sitesDigest": "bbcc5f3bf79364cc2add8e2dd9cd2328192a35a8f9939c4067dce7ceffda5e75",
+   "sourceDigest": "1334997094b1ba6ec74b194898aed9db3703481d093e49deb10fe6a71518e83a",
+   "boundaries": [
+    "storage-call"
+   ]
   }
  },
  "sc6Sources": {
@@ -40290,7 +40408,7 @@
   "src/daemon/threads/method-class.ts": {
    "classification": "removal-admission-routing",
    "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
-   "sourceDigest": "34a7985d7aefcd8bd1e9a5220d1ecfae239e6f54363e72d4cca43c640994cb98"
+   "sourceDigest": "f91458ffa7d932462001742006cc1cee59dbb540a39b25508f13fd48b7ae7155"
   },
   "src/daemon/db/management-enablement.ts": {
    "classification": "deployment-code-evidence",

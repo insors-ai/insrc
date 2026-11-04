@@ -25,7 +25,7 @@
     "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 5,
+    "revision": 7,
     "envelope": {
       "description": "",
       "references": [],
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "60e791ee2abdf42108da8b547457ca5de52737fca94887cc7f0db3639714f139",
-        "at": "2026-11-04T13:01:15.421Z",
+        "number": 7,
+        "contentHash": "7d6ff57bb30c7339d9e9db23d7a45126c2f8223913a1d625b65659e320157a82",
+        "at": "2026-11-04T14:26:58.168Z",
         "by": {
           "id": "codex:controller",
           "kind": "agent",
@@ -324,6 +324,10 @@
             {
               "type": "DesignReviewError",
               "condition": "Sealed unit, exhausted budget without direction, invalid user decision or changed subject. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]"
+            },
+            {
+              "type": "DesignReviewError (invalid_checkpoint)",
+              "condition": "With chunk absent, explicit/default preparationKind disagrees with admitted attempt.preparationKind (missing stored marker means planning). This is an internal reservation/context inconsistency, not reviewer output, and is terminal/nonretryable. [[c6]] [[c9]] [[c13]]"
             }
           ],
           "preconditions": [
@@ -331,7 +335,8 @@
             "The explicit preparationKind discriminator must agree with the admitted immutable attempt marker when chunk is absent; mismatches reject rather than reserving a different phase. [[c6]] [[c9]]"
           ],
           "postconditions": [
-            "Impact planning failures consume only impact reservations. Controller/native routes share output schema, policy, activity and recovery semantics. No fixed deadline; active tools and real model activity retain S2 behavior. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]"
+            "Impact planning failures consume only impact reservations. Controller/native routes share output schema, policy, activity and recovery semantics. No fixed deadline; active tools and real model activity retain S2 behavior. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
+            "Check preparationKind agreement before mutating unit/current, counters, executionId or actions. On mismatch throw invalid_checkpoint, persist no new reservation, dispatch no provider/controller assignment, and stop the owner with a visible failed state using existing sc3 nonretry handling. Never reinterpret an impact unit as planning to recover automatically. [[c4]] [[c6]] [[c13]]"
           ]
         },
         {
@@ -480,6 +485,46 @@
             "On an impact final chunk with baseline findings, missing findingDecisions or omitted source decisions is a mandatory coverage gap, not permission to remove findings: append pointed limitations, require/normalize incomplete status under existing status rules, and leave the affected origins unresolved for conservative carry at consolidation. No fabricated resolved decision is synthesized. When no baseline findings exist, absent/empty findingDecisions is valid. [[c1]] [[c5]]",
             "A structurally valid incomplete assessment (including missing required references or reconciliation evidence) is accepted without technical retry; all unresolved origins remain carried and the report stays incomplete. Other valid findings and advice retain existing semantics; every limitations entry means mandatory unavailable coverage, while optional execution omissions belong in advice. Native and controller chunk validators call this same function. [[c1]] [[c5]] [[c13]]"
           ]
+        },
+        {
+          "name": "observeDesignCheckpoint",
+          "signature": "observeDesignCheckpoint(checkpoint: DesignReviewCheckpoint, options?: { active?: boolean; liveProgress?: DesignReviewProgress; afterCompletedChunk?: number; includeResult?: boolean }): DesignObservation",
+          "parameters": [
+            {
+              "name": "checkpoint",
+              "type": "DesignReviewCheckpoint",
+              "purpose": "Existing validated host-owned snapshot. Derive selective counters from accepted plan/impact and fresh results, not a caller-supplied fraction. [[c3]] [[c14]]",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "Existing observation options",
+              "purpose": "Existing live/stored metadata choice and fresh-result cursor; no model execution or state mutation. [[c14]]",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DesignObservation",
+            "meaning": "Bounded existing observation plus optional coverageProgress. completedChunks/totalChunks is the fresh selected fraction; retained coverage is labelled separately. [[c14]]"
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError (invalid_cursor)",
+              "condition": "Cursor is not a safe integer in 0..accepted fresh result count; no change from existing behavior. [[c14]]"
+            },
+            {
+              "type": "DesignReviewError (invalid_checkpoint)",
+              "condition": "Accepted plan/impact/fresh-result counts cannot form the validated selected/retained partition. Observation refuses inconsistent counts; no model retry. [[c3]] [[c6]] [[c13]] [[c14]]"
+            }
+          ],
+          "preconditions": [
+            "No model work or next-attempt admission is triggered by observation. Validate the accepted execution selection and retained origins before deriving counters. [[c1]] [[c6]] [[c14]]"
+          ],
+          "postconditions": [
+            "For complete plan [keep-A, change-B, keep-C, final] and accepted fresh results [change-B, final], return completedChunks=2,totalChunks=2 and coverageProgress={plannedChunks:4,selectedChunks:2,reviewedChunks:2,retainedChunks:2,effectiveCompletedChunks:4}. After only change-B, return 1/2 with effectiveCompletedChunks=3, not 1/4. A full review reports N/N and retained0. [[c6]] [[c14]]",
+            "afterCompletedChunk/nextCompletedChunk page only actual fresh completedResults, one per page as before. Retained result bodies are not copied into those pages or counted as newly inspected; origins remain explicit checkpoint references. The final complete fraction does not override an incomplete/changes_requested status. [[c1]] [[c14]]",
+            "Stored tracker snapshots and live overrides use this same selected-count derivation before persistence/response; observeDesignCheckpoint must replace its current unconditional attempt.plan?.chunks.length assignment with selected executionOrder length. Loading old snapshots without coverageProgress remains valid; observation computes the breakdown if an accepted plan exists. [[c6]] [[c9]] [[c14]]"
+          ]
         }
       ]
     },
@@ -537,6 +582,17 @@
           "src/workflow/review/design-review/contracts.ts",
           "src/workflow/review/design-review/checkpoint.ts"
         ]
+      },
+      {
+        "entity": "DesignReviewProgress selective counters",
+        "change": "field-add",
+        "details": "Update DesignProgressSchema/DesignReviewProgress with the optional coverageProgress breakdown below and derive existing completedChunks/totalChunks consistently in both stored tracker snapshots and observeDesignCheckpoint, for native and controller routes. completedChunks remains the count of accepted fresh results only. Once plan/impact is accepted, totalChunks is executionOrder.length (selected chunks, including the fresh final consistency chunk), not the complete plan length. coverageProgress shows planned/selected/retained scope separately; effectiveCompletedChunks counts accepted fresh results plus retained origins and never asserts all mandatory evidence is verified. Report status can still be incomplete. Before a plan is accepted, use totalChunks=0 and omit coverageProgress; after a full/no-impact plan, selectedChunks=plannedChunks and retainedChunks=0. Existing checkpoints may omit the field and derive it on observation; do not rewrite old attempts. [[c1]] [[c6]] [[c9]] [[c14]]",
+        "schemaDiff": "DesignProgressSchema/DesignReviewProgress += coverageProgress?: { plannedChunks: number; selectedChunks: number; reviewedChunks: number; retainedChunks: number; effectiveCompletedChunks: number }. All counts are integers in 0..DESIGN_LIMITS.chunks; object rejects extra fields. plannedChunks=plan.chunks.length; selectedChunks=validated executionOrder.length; reviewedChunks=attempt.completedChunks.length; retainedChunks=impact?.retainedCoverage.length ?? 0; effectiveCompletedChunks=reviewedChunks+retainedChunks. Require plannedChunks=selectedChunks+retainedChunks, reviewedChunks<=selectedChunks, effectiveCompletedChunks<=plannedChunks; existing completedChunks=reviewedChunks and totalChunks=selectedChunks. A bad persisted/derived partition is invalid_checkpoint, never coerced into a percentage. [[c6]] [[c9]] [[c14]]",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/progress.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
       }
     ],
     "interactionWithShared": [
@@ -585,10 +641,17 @@
           "recoverable": true
         },
         {
-          "scenario": "Corrupt or missing checkpoint source",
-          "detection": "Existing bounded no-follow load and schema/integrity checks fail, or an explicit retained source attempt/result cannot be resolved. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
-          "response": "Corrupt checkpoint rejects admission without overwrite. A readable history lacking usable baseline information triggers full review, never invented reuse; unresolved known findings with unavailable required evidence remain carried/incomplete. Invalid referenced reuse is rejected. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
-          "userImpact": "No silent history loss or unexplained disappearance of prior blockers. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
+          "scenario": "Corrupt checkpoint or corrupt trusted provenance state",
+          "detection": "No-follow bounded load, JSON/schema validation, identity checks or accepted provenance integrity fails for the stored checkpoint/history. This includes corrupt required baseline fields, not merely uncertainty about semantic impact. [[c3]] [[c9]]",
+          "response": "Reject with invalid_checkpoint/foreign_checkpoint (or existing persistence error), preserve bytes and stop without model retry or automatic replacement/full review. Recovery requires external diagnosis/repair and an explicit subsequent request; no reset of counters/history is implied. [[c3]] [[c13]]",
+          "userImpact": "A terminal state-integrity error is visible and cannot silently erase prior review or be treated as a successful fallback. [[c1]] [[c3]]",
+          "recoverable": false
+        },
+        {
+          "scenario": "Readable history has no usable semantic comparison context",
+          "detection": "Checkpoint and required fields are valid, but reviewer-party mismatch or uncertain current/prior semantic mapping prevents confident reuse; this is not JSON/schema corruption. [[c1]] [[c3]]",
+          "response": "Require explicit full-mode rationale and no retained coverage; review all current chunks. Carry known unresolved findings and mark unavailable mandatory reconciliation evidence incomplete. Admission and user-decision gates still apply; fallback does not auto-start another attempt. [[c1]] [[c5]]",
+          "userImpact": "Correctness is preserved through a full review while genuine state corruption remains a separate terminal failure. [[c1]]",
           "recoverable": true
         },
         {
@@ -638,6 +701,34 @@
           "detection": "Consolidation recomputes P/S/R/F, verifies F=S, S intersect R empty and S union R=P, then resolves eligible origins and finding dispositions against accepted fresh/history records. [[c1]] [[c5]]",
           "response": "Missing accepted selected results yields incomplete_review; corrupt origins/duplicate or overlapping durable coverage yields invalid_checkpoint, with no technical model retry. Leave the report unpublished/incomplete or failed as appropriate and preserve accepted chunks. A malformed proposed impact/result is rejected earlier as invalid_plan/invalid_result; missing reviewer reconciliation evidence is accepted incomplete with unresolved carry as assessDesignResult specifies. [[c3]] [[c5]] [[c13]]",
           "userImpact": "No partial selective report passes approval or hides missing coverage; state errors need diagnosis rather than repeatedly spending model calls. [[c1]] [[c5]]",
+          "recoverable": false
+        },
+        {
+          "scenario": "Preparation-kind mismatch before reservation",
+          "detection": "reserveDesignUnit compares its explicit/default preparationKind to the admitted immutable marker before creating or incrementing a reservation when chunk is absent. [[c6]] [[c9]]",
+          "response": "Throw invalid_checkpoint; mutate no reservation/counters/generation, start no reviewer call and spend no model retry. Existing owner failure reporting exposes the terminal state; no phase reinterpretation or automatic restart. [[c4]] [[c6]] [[c13]]",
+          "userImpact": "An internal scheduling mismatch cannot dispatch the wrong review phase or consume the remaining retry budget. [[c1]] [[c6]]",
+          "recoverable": false
+        },
+        {
+          "scenario": "Malformed retained-source candidate",
+          "detection": "Before accepting impact, resolve every retained link within the same canonical checkpoint history and reject nondecreasing/forward attempt numbers, cycles, foreign artifact/reviewer sources, nonexistent/malformed source results and invalidated source attempts. Consolidation revalidates accepted origins. [[c1]] [[c3]] [[c5]]",
+          "response": "This case covers a bad model candidate only: invalid_plan/invalid_result follows the impact-unit output retry budget. Do not silently reuse a different older result, invent missing feedback or remove prior findings. Already accepted corrupt provenance is the separate terminal corrupt-trusted-state case. [[c3]] [[c5]] [[c13]]",
+          "userImpact": "Invalid provenance cannot produce apparent verified coverage; valid earlier work stays preserved. [[c1]] [[c3]]",
+          "recoverable": true
+        },
+        {
+          "scenario": "Invalid fresh-result cursor",
+          "detection": "observeDesignCheckpoint checks cursor is a safe integer in 0..fresh accepted result count. [[c14]]",
+          "response": "invalid_cursor rejects only that read request without changing state or consuming retries. The caller may correct the cursor. [[c14]]",
+          "userImpact": "Pagination remains stable without extra review work. [[c1]] [[c14]]",
+          "recoverable": true
+        },
+        {
+          "scenario": "Inconsistent accepted observation counts",
+          "detection": "observeDesignCheckpoint cannot derive the required selected/retained count equations from accepted state. [[c6]] [[c14]]",
+          "response": "Terminal invalid_checkpoint; no model retry, state rewrite or fabricated completion fraction. This is distinct from a bad read cursor. [[c3]] [[c13]] [[c14]]",
+          "userImpact": "Corrupt progress state cannot claim complete scope; durable evidence remains available for diagnosis. [[c1]] [[c14]]",
           "recoverable": false
         }
       ],
@@ -728,7 +819,11 @@
             "Selective consolidation exact partition: [keep-A, change-B, keep-C, final] accepts fresh [change-B, final] with retained A/C, and rejects absent C, duplicate/unknown origins, fresh/retained overlap or retained final; report.chunks remains fresh-only. Full mode and no-impact calls retain all-fresh behavior. [[c5]] [[c6]]",
             "Incomplete retention rejection: a structurally identical prior chunk with status incomplete or nonempty limitations must be selected afresh on native and controller routes; reject bypass via an older passed source or an incomplete provenance link. Complete sibling chunks in an overall-incomplete prior report remain eligible. If fresh review still cannot verify mandatory coverage, keep the new report incomplete. [[c5]] [[c9]]",
             "Every same-attempt marker mutation (planning to impact, impact to planning, explicit to absent, absent to explicit) rejects before save; accepted impact rewrite/removal or a half plan/impact pair rejects while previous checkpoint bytes stay unchanged. [[c3]] [[c9]]",
-            "Native/controller candidates invoke the same proposed validateDesignImpact and extended assessDesignResult contracts; output errors use the failed unit's retry budget, wrong-owner/transport and invalid stored-state errors do not. Missing final reconciliation is incomplete with conservative carry, never a fabricated resolution. [[c4]] [[c5]] [[c13]]"
+            "Native/controller candidates invoke the same proposed validateDesignImpact and extended assessDesignResult contracts; output errors use the failed unit's retry budget, wrong-owner/transport and invalid stored-state errors do not. Missing final reconciliation is incomplete with conservative carry, never a fabricated resolution. [[c4]] [[c5]] [[c13]]",
+            "Retained-source rejection matrix at validateDesignImpact AND consolidation: reject forward or equal attempt link, a cycle, cross-artifact or cross-reviewer source, missing source attempt, missing/malformed source result, and invalidated source attempt; verify prior bytes unchanged and no false consolidated coverage. Model-candidate errors use impact retries, already accepted corrupt state stops without model retry. [[c1]] [[c3]] [[c5]] [[c13]]",
+            "Reservation preparationKind mismatch matrix: planning argument on an impact attempt, impact argument on a planning/missing-marker attempt, and omitted default-planning argument on an impact attempt all reject invalid_checkpoint before counters/actions/current change and with zero provider calls. Matching preparation kinds and regular chunk reservations remain valid. [[c6]] [[c9]] [[c13]]",
+            "Selective progress live/stored/native/controller: plan [keep-A, change-B, keep-C, final] shows fresh 1/2 then 2/2 with retained2, effective3/4 then4/4; full attempts preserve N/N with retained0; pre-plan omits breakdown; count bounds and cursor fresh-only semantics reject bad state/request without a model call. An incomplete final report still shows status incomplete even when all selected assessments returned. [[c6]] [[c9]] [[c14]]",
+            "Corrupt stored checkpoint JSON/schema is terminal invalid_checkpoint with no rewrite or retry; readable valid history with semantic uncertainty selects a full review only through valid admission. [[c3]] [[c13]]"
           ],
           "fixturesNeeded": [
             "Many-to-many changed-plan mapping and equivalent rename fixtures",
@@ -791,7 +886,8 @@
           "criterionId": "ac4",
           "provingTests": [
             "Immutable retained origins, multi-attempt chains, carried blockers, removed sections, duplicate local IDs, disposition evidence and mandatory-coverage limits consolidate truthfully.",
-            "Exact fresh/retained coverage partition at consolidation and mandatory fresh reselection of incomplete source chunks, including chained/older-source bypass attempts."
+            "Exact fresh/retained coverage partition at consolidation and mandatory fresh reselection of incomplete source chunks, including chained/older-source bypass attempts.",
+            "Explicit retained-source rejection matrix and truthful fresh/retained progress counters in live and stored observations."
           ]
         },
         {
@@ -1033,6 +1129,11 @@
       "id": "c13",
       "kind": "code",
       "ref": "src/workflow/review/design-review/technical-failure.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/progress.ts"
     }
   ]
 }

@@ -6205,7 +6205,7 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
     const out = createSessionOutput({ root, pollMs: 5 });
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
     const declarations: string[][] = [];
     const presenter = { begin: () => ({ declared: async (docs: readonly string[]) => { declarations.push([...docs]); return { opened: [...docs], notPending: [], unreadable: false }; }, end: () => {} }) };
     const host = createChatPanelHost({
@@ -6216,24 +6216,24 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
       sessionOutput: out,
       observerTimerMs: 20,
       hostPid: 1,
-      isAlive: () => false,
+      isAlive: (pid) => pid !== 999, // owner dead, CLI pid alive: no terminal, no death -> passes keep running
       presenter: presenter as never,
     });
     host.open();
     const s = store.create('claude' as never);
     const seg = await out.beginTurn(s.id, 't-obs');
     appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'call-1', name: 'mcp__insrc__insrc_present', input: { documents: ['LLD-abc-S001'] } }] } }) + '\n');
-    appendFileSync(seg.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n');
-    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    // NO result line: the turn stays unfinished, so the observer runs pass after pass over it
+    await out.endTurn(s.id, 't-obs', { code: null, signal: null });
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
     store.save(cur);
     await waitFor(() => declarations.length >= 1, 5000, 'the detached declaration reached the presenter');
-    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the terminal cleared the cursor');
-    await new Promise((r) => setTimeout(r, 100)); // let any duplicate dispatch land
-    assert.deepEqual(declarations, [['LLD-abc-S001']], 'exactly once — deduped by declarationId across observer passes');
+    await new Promise((r) => setTimeout(r, 300)); // many more observer passes run over the unfinished turn
+    assert.deepEqual(declarations, [['LLD-abc-S001']], 'exactly once across MANY passes — deduped by declarationId');
     assert.deepEqual(store.get(s.id)?.observerCheckpoint?.declaredIds, ['call-1'], 'the dispatched declaration id is persisted in the checkpoint');
+    assert.ok(store.get(s.id)?.liveTurn !== undefined, 'no terminal, live pid: the turn stays unreconciled');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

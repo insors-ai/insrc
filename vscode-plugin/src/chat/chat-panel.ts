@@ -801,14 +801,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const pidDead = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
       // the completion gate: caught up AND (a real terminal OR verified process death)
       if (caughtUp && (pass.sawTerminal || pidDead)) {
-        try {
-          // release the lifecycle's retention pin for this cursor too (the observer's own pin is
-          // released via heldPins above); the refcount makes a double-release a no-op
-          out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
-          delete s.liveTurn;
-          deps.store.save(s);
-        } catch { /* best-effort */ }
-        setChatStatus(s, (s.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+        // A newer turn may have started while this pass was ingesting: re-check the liveTurn identity
+        // before clearing — never erase a new turn's cursor or mark it done from an old pass.
+        const now = deps.store.get(s.id);
+        const same = now?.liveTurn !== undefined && now.liveTurn.cursor.turnId === live.cursor.turnId && now.liveTurn.cursor.generation === live.cursor.generation && now.liveTurn.cursor.offset === live.cursor.offset && now.liveTurn.ownerHostPid === live.ownerHostPid;
+        if (same) {
+          try {
+            // release the lifecycle's retention pin for this cursor too (the observer's own pin is
+            // released via heldPins above); the refcount makes a double-release a no-op
+            out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
+            delete now!.liveTurn;
+            deps.store.save(now!);
+          } catch { /* best-effort */ }
+          setChatStatus(now!, (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+        }
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real
       // terminal drops every pin this tick made; otherwise the unread generation stays archived

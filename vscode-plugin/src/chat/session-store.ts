@@ -200,6 +200,12 @@ export interface ObserverCheckpoint {
 /** A turn still being read from the session output file. */
 export interface LiveTurn {
   readonly cursor: { readonly turnId: string; readonly generation: number; readonly offset: number };
+  /**
+   * E202611031bd72813:S001 t5: the transcript-follow cursor's own decoder state (selectionSeq +
+   * split-marker buffer), saved with the cursor so a reattach between marker fragments resumes with
+   * it — the observer checkpoint is the OTHER cursor's state and stays independent.
+   */
+  readonly decoder?: { readonly selectionSeq: number; readonly selectionBuffer?: string | undefined } | undefined;
   readonly ownerHostPid: number;
   readonly pid?: number | undefined;
   readonly startedAt?: number | null | undefined;

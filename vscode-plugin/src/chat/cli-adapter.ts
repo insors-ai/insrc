@@ -126,7 +126,7 @@ export interface ResumeOptions {
    * E202611031bd72813:S001 t5: the adapter's live decoder state after each ingested line, so the
    * observer can persist it (checkpoint) and a later resume continues with the same ids/buffers.
    */
-  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string }) => void) | undefined;
+  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string; readonly sessionId?: string | undefined }) => void) | undefined;
   /** Aborting it stops following; the process is left running. */
   readonly signal?: AbortSignal | undefined;
   /** Hands over the followed turn's process, so Stop can end it. */
@@ -149,7 +149,7 @@ export interface RunOptions {
    * after each output line, so a detach/reattach of the LIVE run resumes with it (the live cursor's
    * own checkpoint, independent of the observer's).
    */
-  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string }) => void) | undefined;
+  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string; readonly sessionId?: string | undefined }) => void) | undefined;
   /**
    * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
    * kept in that session's file. Pass it only while holding the session's lease.
@@ -1225,7 +1225,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // decoder progress (selectionSeq / split-marker buffer) with it.
         const at = proc.cursor;
         // decoder state FIRST, then the offset (same consistent-save ordering as resume)
-        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
+        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '', ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}) });
         if (at !== undefined) opts?.onProgress?.(at);
       }
       // stdout closed without a terminal event: the process is ending; report how.
@@ -1412,7 +1412,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         }
         // decoder state FIRST, then the offset: the lifecycle saves liveTurn on both, and the
         // later (offset) save must already carry this line's decoder state — no stale-buffer window.
-        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
+        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '', ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}) });
         opts?.onProgress?.(cursor);
       }
     } catch (err) {

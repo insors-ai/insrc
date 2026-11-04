@@ -1603,6 +1603,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
+    if (undelivered && session !== undefined) {
+      // LLD s7 live-unwritable triage: when the original process is still ALIVE but its stdin
+      // write failed and no native session handle was captured (nothing before the first done),
+      // a continuation could not resume the live session — record session-lost instead of
+      // silently starting a fresh one.
+      const probePid = session.liveTurn?.pid;
+      const probeAlive = probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
+      if (probeAlive && session.nativeSessionId === undefined) {
+        markPersistedRequest(session, requestId, true, 'session-lost');
+        reevaluateChatStatus(session);
+        return;
+      }
+    }
     // The follow-up run answers a decision that could not reach the CLI: either a live turn whose
     // decide() reported undelivered (the decision came from the queue, so it is real even when no
     // persisted record exists yet), or a RESTORED request persisted unresolved after a

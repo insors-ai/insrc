@@ -269,8 +269,15 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   const makeDecoderSink = (s: ChatSession, progress: (c: TurnCursor) => void) => {
     let pending: { selectionSeq: number; selectionBuffer: string } | undefined;
     return {
-      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string }): void => {
+      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined }): void => {
         pending = ds; // held, not saved alone — the next progress save carries it with the offset
+        // LLD s7 (E202611031bd72813:S001): the provider's native session id is captured from the
+        // output AS SOON AS the CLI emits it — before any terminal event, so a first turn awaiting
+        // an in-turn request already has the resume handle durably persisted.
+        if (ds.sessionId !== undefined && s.nativeSessionId === undefined) {
+          s.nativeSessionId = ds.sessionId;
+          trySave(s);
+        }
       },
       onProgress: (c: TurnCursor): void => {
         const live = s.liveTurn;

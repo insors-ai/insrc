@@ -21,7 +21,7 @@ import { createProviderRegistry, type ProviderId, type StreamAdapter, type Provi
 import { createSessionOutput } from '../session-output.js';
 import type { TurnEvent } from '../stream-events.js';
 import { markerFor, WAITING_LABEL } from '../markers.js';
-import { fakeLiveProc, patchOf, waitFor, type FakeLiveProc } from './fixtures.js';
+import { fakeLiveProc, makeFakeSpawner, patchOf, waitFor, type FakeLiveProc } from './fixtures.js';
 import type { DiffView } from '../edit-governor.js';
 import type { TranscriptEntry } from '../session-store.js';
 import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } from '../review-presenter.js';
@@ -6999,7 +6999,102 @@ test('E202611031bd72813:S001 t6: a follow-up stalled behind a still-blocked orig
   fc.fireDispose();
 });
 
-test('E202611031bd72813:S001 t4: end-to-end round trip — the shell posts open-chat { chatId } (webview->host) and the host answers session-restored for that exact chat', async () => {
+test('E202611031bd72813:S001 t6/LLD-s7: the native session id is captured from the first turn’s output BEFORE any done and persisted across a reload; the dead-stdin recovery (no preceding done) resumes THAT native session in the follow-up run', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-nat-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const store = createInMemoryChatSessionStore();
+    const init = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-native-1' });
+    const req = JSON.stringify({ type: 'control_request', request: { subtype: 'can_use_tool', request_id: 'perm-nat-1', tool_name: 'Bash', command: 'make x' } });
+    const done = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'sess-native-1' });
+    const spawner = makeFakeSpawner([
+      { lines: [init, req], hangUntilKilled: true, pid: 1234 }, // turn 1: request raised, NO done
+      { lines: [done], exit: { code: 0, signal: null }, pid: 1235 }, // follow-up: completes at once
+    ]);
+    const resumes: unknown[] = [];
+    // a FRESH adapter per host (each window has its own), over the shared spawner
+    const mkAdapter = (): StreamAdapter => {
+      const base = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: (pid) => pid === 1234, processStartTime: () => 1 }).get('claude');
+      return { ...base, run: (r: TurnRequest, o?: RunOptions) => { resumes.push((r as { resume?: unknown }).resume); return base.run(r, o); } };
+    };
+    const mkHost = (fc: ReturnType<typeof fakeChannel>, alive: (pid: number) => boolean) => createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: mkAdapter() }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 600_000,
+      hostPid: 77,
+      isAlive: alive,
+    });
+    const fc1 = fakeChannel();
+    const host1 = mkHost(fc1, () => true);
+    host1.open();
+    fc1.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => turnEvents(fc1).some((e) => e.kind === 'approval-request'), 5000, 'the first turn raised its in-turn request');
+    const id = store.list()[0]!.id;
+    await waitFor(() => store.get(id)?.nativeSessionId === 'sess-native-1', 5000, 'the native id was captured mid-turn from the provider output — BEFORE any done — and persisted');
+    assert.ok(!turnEvents(fc1).some((e) => e.kind === 'done'), 'no done event has happened yet');
+    host1.dispose(); // the reload; the original process never emitted a terminal
+    const fc = fakeChannel();
+    const host = mkHost(fc, () => false); // the original pid is dead now
+    host.open();
+    fc.send(env('open-chat', { chatId: id }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'perm-nat-1'), 5000, 'the persisted request is restored after the reload');
+    fc.send(env('permission-decision', { requestId: 'perm-nat-1', decision: 'approve' }));
+    await waitFor(() => resumes.length >= 2, 5000, 'the dead-stdin decision fell back to a follow-up run');
+    assert.deepEqual(resumes[1], { provider: 'claude', nativeSessionId: 'sess-native-1' }, 'the continuation resumes the native session captured before the first turn’s request — no done preceded it');
+    await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-nat-1')?.resolved === true, 5000);
+    assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-nat-1')!.outcome, 'approved');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
+test('E202611031bd72813:S001 t6/LLD-s7: live-unwritable with NO recoverable native handle records session-lost — no continuation starts a fresh session', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-nat2-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const store = createInMemoryChatSessionStore();
+    // init line with NO session_id: nothing to resume with
+    const init = JSON.stringify({ type: 'system', subtype: 'init' });
+    const req = JSON.stringify({ type: 'control_request', request: { subtype: 'can_use_tool', request_id: 'perm-lost-1', tool_name: 'Bash', command: 'make y' } });
+    const spawner = makeFakeSpawner([{ lines: [init, req], hangUntilKilled: true, pid: 1234 }]);
+    const mkHost = (fc: ReturnType<typeof fakeChannel>, alive: (pid: number) => boolean) => createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: (pid) => pid === 1234, processStartTime: () => 1 }).get('claude') }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 600_000,
+      hostPid: 77,
+      isAlive: alive,
+    });
+    const fc1 = fakeChannel();
+    const host1 = mkHost(fc1, () => true);
+    host1.open();
+    fc1.send(env('submit-turn', { text: 'go' }));
+    await waitFor(() => turnEvents(fc1).some((e) => e.kind === 'approval-request'), 5000);
+    const id = store.list()[0]!.id;
+    assert.equal(store.get(id)?.nativeSessionId, undefined, 'no native handle was ever captured');
+    host1.dispose();
+    const fc = fakeChannel();
+    const host = mkHost(fc, (pid) => pid === 1234); // the original process is STILL ALIVE (live-unwritable)
+    host.open();
+    fc.send(env('open-chat', { chatId: id }));
+    await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'perm-lost-1'), 5000);
+    fc.send(env('permission-decision', { requestId: 'perm-lost-1', decision: 'approve' }));
+    await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-lost-1')?.outcome === 'session-lost', 5000, 'the unrecoverable live handle is recorded session-lost');
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(spawner.calls.length, 1, 'no continuation spawned a fresh session');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
+test('E202611031bd72813:S001 t4: host round trip — the open-chat { chatId } the shell posts (webview->host) is answered session-restored for that exact chat (the shell script execution itself is covered end-to-end in chat-shell.test.ts)', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({

@@ -15,6 +15,7 @@ import assert from 'node:assert/strict';
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { open } from 'lmdb';
 
 import { closeGraphStore, getGraphStore, SCHEMA_VERSION, setGraphStorePath, withWriteTxn } from '../graph/store.js';
 import { encodeRepoKey } from '../graph/keys.js';
@@ -63,20 +64,40 @@ const row = (contentHash: string, generation = 1): DocRelationRow =>
 	({ contentHash, modelId: 'mid-model', computedAtGeneration: generation, proposals: [{ from: 'f', to: 't', rationale: 'r' }] });
 const quality = { extraction: { state: 'ok' as const, examined: 1, failed: 0, updatedAt: '2026-11-04T00:00:00.000Z' } };
 
+const NEW_TABLES = ['docRelationProposals', 'docRelationCarry', 'docRelationQuality'] as const;
+const NEW_NAMES = ['doc_relation_proposals', 'doc_relation_proposals_carry', 'doc_relation_quality'];
+/** Every row of every table the store had before s10, as stored. */
+function snapshot(store: Awaited<ReturnType<typeof getGraphStore>>): Record<string, unknown[]> {
+	const out: Record<string, unknown[]> = {};
+	for (const name of Object.keys(store).sort()) {
+		if (name === 'root' || name === 'meta' || (NEW_TABLES as readonly string[]).includes(name)) continue;
+		out[name] = [...(store as unknown as Record<string, { getRange(o: object): Iterable<{ key: unknown; value: unknown }> }>)[name]!.getRange({})]
+			.map(({ key, value }) => [key, value]);
+	}
+	return out;
+}
+
 test('s10 t1: migration 9 creates empty doc-relation sub-dbs and changes no other row', async () => {
 	assert.equal(SCHEMA_VERSION, 9);
+	// A store with real rows: an indexed repository (entities, edges, pending rows, index state, file index).
+	const svc = new IndexerService(db, new IndexQueue(), watcher, undefined, 600_000);
+	await svc.processJob({ kind: 'full', repoPath: repo });
 	let store = await getGraphStore();
-	const repoId = (await lookupRepoId(repo))!;
-	const repoRow = store.repo.get(encodeRepoKey(repoId));
+	// Make it a v8 store: the three s10 tables do not exist yet.
+	for (const name of NEW_TABLES) store[name].dropSync();
 	await withWriteTxn(s => { s.meta.put('schema_version', 8); });
+	const before = snapshot(store);
+	assert.ok(before['entity']!.length > 0 && before['outEdge']!.length > 0 && before['repo']!.length > 0, 'the snapshot holds real rows');
 	await closeGraphStore();
+	const v8 = open({ path: join(dir, 'graph.lmdb'), readOnly: true, maxDbs: 64 });
+	const v8Names = new Set([...v8.getKeys({})].map(String));
+	await v8.close();
+	for (const name of NEW_NAMES) assert.ok(!v8Names.has(name), `${name} does not exist in the v8 store`);
 
 	store = await getGraphStore();
 	assert.equal(store.meta.get('schema_version'), 9);
-	assert.deepEqual(store.repo.get(encodeRepoKey(repoId)), repoRow, 'the repository row is unchanged');
-	for (const name of ['docRelation', 'docRelationCarry', 'docRelationQuality'] as const) {
-		assert.equal([...store[name].getKeys({})].length, 0, `${name} is empty`);
-	}
+	assert.deepEqual(snapshot(store), before, 'every row of every existing table is unchanged');
+	for (const name of NEW_TABLES) assert.equal([...store[name].getKeys({})].length, 0, `${name} exists and is empty`);
 });
 
 test('s10 t1: a full index clears and carries proposal rows; restore keeps only unchanged documents', async () => {
@@ -137,7 +158,7 @@ test('s10 t1: session-memory reads the new handles and is refused writes', async
 	await runWithConnectionExecution(execution, async () => {
 		assert.equal(readDocRelationRowsInTxn(store, repoId).size, 1, 'the proposal handle is readable');
 		assert.deepEqual(readDocRelationQualityInTxn(store, repoId), quality, 'the quality handle is readable');
-		assert.throws(() => store.docRelation.put(Buffer.from('x'), Buffer.from('y')), ConnectionExecutionError);
+		assert.throws(() => store.docRelationProposals.put(Buffer.from('x'), Buffer.from('y')), ConnectionExecutionError);
 		assert.throws(() => store.docRelationQuality.put(Buffer.from('x'), Buffer.from('y')), ConnectionExecutionError);
 		assert.throws(() => writeDocRelationRowInTxn(store, repoId, 'docs/b.md', row('h')), ConnectionExecutionError);
 	});

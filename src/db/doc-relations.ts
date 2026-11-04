@@ -2,9 +2,9 @@
  * Document relationships proposed by a model, and the quality record that
  * decides whether they are used (Epic c2ba6fa6 s10).
  *
- *   doc_relation          (repoId u32 BE ++ repo-relative document) -> DocRelationRow
- *   doc_relation_carry    the same key and value, held across a full index
- *   doc_relation_quality  (repoId u32 BE)                           -> DocRelationQualityRow
+ *   doc_relation_proposals        (repoId u32 BE ++ repo-relative document) -> DocRelationRow
+ *   doc_relation_proposals_carry  the same key and value, held across a full index
+ *   doc_relation_quality          (repoId u32 BE) -> DocRelationQualityRow
  *
  * The proposal rows are derived data: the doc-relations pass writes them, a
  * whole-repository entity delete clears them, and with `carry` (the full index)
@@ -58,14 +58,14 @@ export function fileEntityHashInTxn(s: GraphStore, repoPath: string, relFile: st
 // ---------------------------------------------------------------------------
 
 export function readDocRelationRowInTxn(s: GraphStore, repoId: number, relFile: string): DocRelationRow | undefined {
-	const buf = s.docRelation.get(documentKey(repoId, relFile)) as Buffer | undefined;
+	const buf = s.docRelationProposals.get(documentKey(repoId, relFile)) as Buffer | undefined;
 	return buf === undefined ? undefined : decodeDocRelationRow(buf);
 }
 
 /** Every proposal row of the repository, by repo-relative document. */
 export function readDocRelationRowsInTxn(s: GraphStore, repoId: number): Map<string, DocRelationRow> {
 	const rows = new Map<string, DocRelationRow>();
-	for (const { key, value } of s.docRelation.getRange(repoRange(repoId))) {
+	for (const { key, value } of s.docRelationProposals.getRange(repoRange(repoId))) {
 		rows.set((key as Buffer).subarray(4).toString('utf8'), decodeDocRelationRow(value as Buffer));
 	}
 	return rows;
@@ -73,12 +73,12 @@ export function readDocRelationRowsInTxn(s: GraphStore, repoId: number): Map<str
 
 export function writeDocRelationRowInTxn(s: GraphStore, repoId: number, relFile: string, row: DocRelationRow): void {
 	assertNoSessionPersistence();
-	s.docRelation.put(documentKey(repoId, relFile), encodeDocRelationRow(row));
+	s.docRelationProposals.put(documentKey(repoId, relFile), encodeDocRelationRow(row));
 }
 
 export function deleteDocRelationRowInTxn(s: GraphStore, repoId: number, relFile: string): void {
 	assertNoSessionPersistence();
-	s.docRelation.remove(documentKey(repoId, relFile));
+	s.docRelationProposals.remove(documentKey(repoId, relFile));
 }
 
 /**
@@ -90,9 +90,9 @@ export function deleteDocRelationRowInTxn(s: GraphStore, repoId: number, relFile
 export function clearDocRelationsInTxn(s: GraphStore, repoId: number, carry: boolean): number {
 	assertNoSessionPersistence();
 	let carried = 0;
-	for (const { key, value } of [...s.docRelation.getRange(repoRange(repoId))]) {
+	for (const { key, value } of [...s.docRelationProposals.getRange(repoRange(repoId))]) {
 		if (carry) { s.docRelationCarry.put(key as Buffer, value as Buffer); carried++; }
-		s.docRelation.remove(key as Buffer);
+		s.docRelationProposals.remove(key as Buffer);
 	}
 	if (!carry) for (const key of [...s.docRelationCarry.getKeys(repoRange(repoId))]) s.docRelationCarry.remove(key as Buffer);
 	return carried;
@@ -114,7 +114,7 @@ export async function restoreCarriedDocRelations(repoPath: string): Promise<{ re
 			const k = key as Buffer;
 			const row = decodeDocRelationRow(value as Buffer);
 			if (fileEntityHashInTxn(s, repoPath, k.subarray(4).toString('utf8')) === row.contentHash) {
-				s.docRelation.put(k, value as Buffer);
+				s.docRelationProposals.put(k, value as Buffer);
 				counts.restored++;
 			} else {
 				counts.dropped++;

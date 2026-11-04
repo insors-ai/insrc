@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "a36aa68a0d47a95f933e166d54716538393ea5611e87b3130f6b0ac942013143",
+        "at": "2026-11-04T05:16:15.983Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "8d7b4704660a5866",
+    "storyId": "s1",
+    "createdAt": "2026-11-04T05:12:53.399Z",
+    "updatedAt": "2026-11-04T05:16:15.912Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T05:07:44.517Z",
+    "epicSlug": "fix-vs-code-setting-convert-escalation",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "8a82006af",
+        "ranAt": "2026-11-04T05:16:15.912Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/config/__tests__/legacy-keys.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/config/__tests__/per-role.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 427,
+            "titles": [
+              {
+                "title": "the renamed escalation id is in the legacy list and its replacement is a mapped id",
+                "result": "pass"
+              },
+              {
+                "title": "a valid value under the old id moves to the new id when the new id still shows its default, and the old id is cleared",
+                "result": "pass"
+              },
+              {
+                "title": "a value already held under the new id, an invalid value or no value is never moved",
+                "result": "pass"
+              },
+              {
+                "title": "a failing clear or apply never throws",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 386,
+            "titles": [
+              {
+                "title": "buildPerRoleKeyMap returns one entry per taxonomy role with the right shape",
+                "result": "pass"
+              },
+              {
+                "title": "a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)",
+                "result": "pass"
+              },
+              {
+                "title": "the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision",
+                "result": "pass"
+              },
+              {
+                "title": "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+                "result": "pass"
+              },
+              {
+                "title": "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+                "result": "pass"
+              },
+              {
+                "title": "nativeRoleKey keeps a role id as it is, and joins a role that extends another role onto its parent in camel case",
+                "result": "pass"
+              },
+              {
+                "title": "the convert escalation role keeps its catalog path and maps to the non-nested native id",
+                "result": "pass"
+              },
+              {
+                "title": "no declared setting id and no key-map native id is a dotted prefix of another (VS Code cannot nest a child under a value)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

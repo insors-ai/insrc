@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793768834757-ymdcu0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:07:44.517Z",
+    "epicCreatedAt": "2026-11-04T05:07:44.517Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 29760,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "8d7b4704660a5866",
+    "epicSlug": "fix-vs-code-setting-convert-escalation",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "400e97d7b5b6854411a371af57897dc85dee5553df973a509ab7fac3b2afe335",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T05:09:16.177Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "8d7b4704660a5866",
+      "slug": "EPIC-8d7b4704660a5866"
+    }
+  },
+  "body": {
+    "title": "Fix the VS Code setting for the convert escalation tier, which VS Code cannot read back",
+    "reproduction": "In VS Code, open Settings and change `insrc.models.tasks.tools.convert.escalate` (a tier: cheap, mid or core) while `insrc.models.tasks.tools.convert` is also set. Observed: the extension shows \"insrc: 'insrc.models.tasks.tools.convert.escalate' must be one of: cheap, mid, core — change not applied\" even though the value entered is one of those three, and the field reverts. Expected: the change is accepted and sent to the daemon. The same value set from the insrc terminal Settings pane works.",
+    "rootCause": "The extension names each native setting `insrc.` plus the catalog path, so the role `tools.convert` becomes `insrc.models.tasks.tools.convert` and the role `tools.convert.escalate` becomes `insrc.models.tasks.tools.convert.escalate`. The second key is a dotted child of the first. VS Code keeps settings in a nested tree, where `tools.convert` is already a string value (\"cheap\") and cannot also hold an `escalate` child, so `workspace.getConfiguration().get('insrc.models.tasks.tools.convert.escalate')` returns undefined. The change listener passes that undefined to the enum validator, which reports it as not one of cheap, mid, core and refuses the edit.",
+    "fixIntent": "Give the escalation role a native setting id that is not a dotted child of another setting id (for example `insrc.models.tasks.tools.convertEscalate`), and map it back to the unchanged catalog path `models.tasks.tools.convert.escalate`, in the key derivation, the manifest generator and the generated manifest. Move a value a user already has under the old id to the new one once, so it is not lost. Add a test that no native setting id is a dotted prefix of another, so the same clash cannot come back for another role. The daemon, its catalog and its protocol are unchanged."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/key-map.ts:28",
+      "quotedText": "export function nativeKeyForPath(path: string): string"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/extension.ts:283",
+      "quotedText": "if (event.affectsConfiguration(entry.nativeKey)) {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/sync-engine.ts:71",
+      "quotedText": "`must be one of: ${allowed.join(', ')}`"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts:96",
+      "quotedText": "{ id: 'tools.convert',"
+    }
+  ]
+}

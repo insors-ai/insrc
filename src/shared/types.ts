@@ -903,7 +903,19 @@ export type IndexJob =
    * the new ones (Epic c2ba6fa6 s8). A summary-lane job, enqueued after a full
    * index, a settle or a clean-up that leaves the repository's graph complete.
    */
-  | { kind: 'subsystems'; repoPath: string };
+  | { kind: 'subsystems'; repoPath: string }
+  /**
+   * Examine a graph-complete repository's new or changed documents with the
+   * mid-tier model and store its proposed relationships (Epic c2ba6fa6 s10).
+   * A summary-lane job, requested on the subsystem pass's triggers.
+   */
+  | { kind: 'doc-relations'; repoPath: string }
+  /**
+   * Measure the mid-tier model's proposals against the repository's
+   * hand-checked set (`setHash`: the set the request validated) and record the
+   * figures (Epic c2ba6fa6 s10). A summary-lane job, queued by docRelations.measure.
+   */
+  | { kind: 'doc-relations-measure'; repoPath: string; setHash: string };
 
 // ---------------------------------------------------------------------------
 // Config management

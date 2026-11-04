@@ -12,6 +12,7 @@ import {
 } from '../db/relations.js';
 import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setEmbeddingAvailable, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
+import { restoreCarriedDocRelations } from '../db/doc-relations.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
@@ -159,6 +160,13 @@ export class IndexerService {
     enqueue:       repoPath => this.queue.enqueue({ kind: 'subsystems', repoPath }),
     isStopping:    () => this.queue.isStopping,
     clock:         this.subsystemSchedulerClock(),
+  });
+  /** When document-relations passes run (Epic c2ba6fa6 s10): the same pacing and retry, its own state. */
+  private readonly docRelations = new SubsystemScheduler({
+    graphComplete: async repoPath => (await readIndexState(repoPath))?.graphComplete === true,
+    enqueue:       repoPath => this.queue.enqueue({ kind: 'doc-relations', repoPath }),
+    isStopping:    () => this.queue.isStopping,
+    clock:         this.docRelationsSchedulerClock(),
   });
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
@@ -456,6 +464,8 @@ export class IndexerService {
       case 'doc-summarise-repo':   await this.docSummariseRepo(job.repoPath);   break;
       case 'doc-summarise-entity': await this.docSummariseEntity(job.entityId); break;
       case 'subsystems':           return this.subsystemPass(job.repoPath);
+      case 'doc-relations':        return this.docRelationsPass(job.repoPath);
+      case 'doc-relations-measure': return this.docRelationsMeasure(job.repoPath, job.setHash);
     }
   }
 
@@ -702,6 +712,30 @@ export class IndexerService {
    */
   protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {
     await this.subsystems.request(repoPath);
+    // The document-relations pass (s10) follows the same triggers: it too starts only from a complete graph.
+    await this.docRelations.request(repoPath);
+  }
+
+  /**
+   * The document-relations pass for one repository (Epic c2ba6fa6 s10): its
+   * outcome is a SubsystemsOutcome for the scheduler, or a non-outcome (the
+   * provider is unavailable), which the scheduler counts as a failed pass.
+   * A seam: a test overrides it.
+   */
+  protected async docRelationsPass(repoPath: string): Promise<unknown> {
+    const { runDocRelationsPass } = await import('./doc-relations-pass.js');
+    return runDocRelationsPass({
+      repoPath,
+      waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+      isCodeIdle:      () => this.queue.isIndexIdle,
+      shouldStop:      () => this.queue.isStopping,
+    });
+  }
+
+  /** The measurement against the repository's hand-checked set (Epic c2ba6fa6 s10). A seam: a test overrides it. */
+  protected async docRelationsMeasure(repoPath: string, setHash: string): Promise<unknown> {
+    const { runDocRelationsMeasurement } = await import('./doc-relations-measure.js');
+    return runDocRelationsMeasurement({ repoPath, setHash, shouldStop: () => this.queue.isStopping });
   }
 
   /**
@@ -710,13 +744,16 @@ export class IndexerService {
    * ran (here, or on the document-summary worker), or a failure.
    */
   async runQueuedJob(job: IndexJob, run: () => Promise<unknown>): Promise<void> {
-    if (job.kind !== 'subsystems') { await run(); return; }
-    this.subsystems.started(job.repoPath);
+    // A subsystems or doc-relations job (s10) tells its own scheduler when it starts and how it ended: an
+    // outcome, or undefined (a failure, an abandoned worker reply, an unavailable provider) -- a failed pass.
+    const scheduler = job.kind === 'subsystems' ? this.subsystems : job.kind === 'doc-relations' ? this.docRelations : undefined;
+    if (scheduler === undefined || !('repoPath' in job)) { await run(); return; }
+    scheduler.started(job.repoPath);
     let outcome: SubsystemsOutcome | undefined;
     try {
       outcome = asSubsystemsOutcome(await run());
     } finally {
-      this.subsystems.finished(job.repoPath, outcome);
+      scheduler.finished(job.repoPath, outcome);
     }
   }
 
@@ -725,9 +762,20 @@ export class IndexerService {
     return undefined;
   }
 
+  /** The document-relations scheduler's time and timers: the real ones (a seam for tests). */
+  protected docRelationsSchedulerClock(): SchedulerClock | undefined {
+    return undefined;
+  }
+
   /** Stop: clear the subsystem scheduler's timers (both stop paths call it). */
   disposeSubsystemScheduler(): void {
     this.subsystems.dispose();
+    this.docRelations.dispose();
+  }
+
+  /** Test seam: the document-relations scheduler's armed timers. */
+  _docRelationsTimersForTest(): { pacing: number; retry: number } {
+    return this.docRelations._timersForTest();
   }
 
   /** Test seam: how many per-repo settle timers are armed. */
@@ -915,6 +963,10 @@ export class IndexerService {
       // Every document the rebuild stores is stored by now (after the index clean-up).
       const summaries = await restoreCarriedDocSummaries(repoPath);
       log.info({ repo: repoPath, ...summaries }, 'full index: carried document summaries written back');
+      // Model-proposed document relationships (s10): restored for documents whose text is unchanged, before
+      // the full index requests the document-relations pass, so that pass does not send them again.
+      const relations = await restoreCarriedDocRelations(repoPath);
+      log.info({ repo: repoPath, ...relations }, 'full index: carried document relationships written back');
       await finishFullIndexState(repoPath, endpointPassFailed);
 
       // Build the entity_vec HNSW index now that the bulk-insert

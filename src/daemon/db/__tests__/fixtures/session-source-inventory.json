@@ -14675,7 +14675,7 @@
    ],
    "siteCount": 7,
    "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
-   "sourceDigest": "7b84c83f6b2d0e1b051b2d60cc2c4c1f457deda6272004e6bb01e73797b7681a",
+   "sourceDigest": "c00ac55422dc96b706b71d1dba783233444f4c2f8ef71dde253f15fc97f0ad78",
    "boundaries": [
     "diagnostic",
     "serialization",
@@ -16973,7 +16973,7 @@
    ],
    "siteCount": 7,
    "sitesDigest": "a09a02d223680bed3842352163e65f5c1ddc24f6e3c65428d6b85b80c3aa6a5c",
-   "sourceDigest": "a683e20669542eeb5a6a6de34a234a7ad42125627eabd408df1fbbe02c125b9b",
+   "sourceDigest": "b59b925e87f002657bc4688140b7057248f2827b431df9a2080c323899554523",
    "boundaries": [
     "serialization"
    ]
@@ -33158,6 +33158,14 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
+     "unresolved-call",
+     "import"
+    ],
+    [
      "storage-call",
      "listEntitiesForRepo"
     ],
@@ -33244,6 +33252,10 @@
     [
      "diagnostic",
      "log.error"
+    ],
+    [
+     "diagnostic",
+     "log.info"
     ],
     [
      "diagnostic",
@@ -33495,7 +33507,15 @@
     ],
     [
      "storage-call",
+     "readIndexState"
+    ],
+    [
+     "storage-call",
      "reconcileEntityVectors"
+    ],
+    [
+     "storage-call",
+     "restoreCarriedDocRelations"
     ],
     [
      "storage-call",
@@ -33582,9 +33602,9 @@
      "writeBackfillVectors"
     ]
    ],
-   "siteCount": 135,
-   "sitesDigest": "5be3d87877faf34ea3ee7931d77567c878877e7b2ed30ed91e18788db08aff60",
-   "sourceDigest": "1e386774cab0838cc38a31707eff466cb9b6ec5b2153102e20ed77eb659a1956",
+   "siteCount": 140,
+   "sitesDigest": "b8f13503790e8dc289febe746059c92eb1220d79af435117739cbb694ef152d7",
+   "sourceDigest": "207b9d9f7fc3014ac789e6a450f8bf3edd3e53f1b4bae817f3c64c9992a16d0f",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -39944,6 +39964,24 @@
    "boundaries": [
     "serialization"
    ]
+  },
+  "src/indexer/doc-relations-pass.ts": {
+   "classification": "background-indexing",
+   "rationale": "The background document-relations pass over a registered repository's new or changed documents (Epic c2ba6fa6 s10): reads stored entities and its own proposal rows and asks the mid-tier CLI model one document at a time; never temporary session configurations or results.",
+   "sites": [],
+   "siteCount": 0,
+   "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "sourceDigest": "285d4b2a0ba27f9015a5570830e0d7f6723bf5974c558dc084b141f01f8e6cbb",
+   "boundaries": []
+  },
+  "src/indexer/doc-relations-measure.ts": {
+   "classification": "background-indexing",
+   "rationale": "The background measurement of the mid-tier model's proposals against a registered repository's own hand-checked set (Epic c2ba6fa6 s10), writing the repository's quality row; never temporary session configurations or results.",
+   "sites": [],
+   "siteCount": 0,
+   "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+   "sourceDigest": "fc9b783ece2cd3854778e0af04507e3967301b1596ced578a7541a4926d89589",
+   "boundaries": []
   }
  },
  "sc6Sources": {

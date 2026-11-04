@@ -1482,8 +1482,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   /** Bind the oldest pending follow-up to a newly started turn and mark it delivered. */
   const confirmFollowUp = (turnId: string, s: ChatSession): void => {
     let rid = followUpTurns.get(turnId);
-    if (rid === undefined && pendingFollowUps.size > 0) {
-      rid = pendingFollowUps.keys().next().value as string;
+    if (rid === undefined) {
+      // bind the oldest pending follow-up that was NOT queued behind this very turn — the
+      // original turn's own events must never confirm its successor's delivery
+      for (const [candidate, pf] of pendingFollowUps) {
+        if (pf.excludeTurnId !== turnId) {
+          rid = candidate;
+          break;
+        }
+      }
+      if (rid === undefined) return;
       followUpTurns.set(turnId, rid);
     }
     if (rid === undefined) return;

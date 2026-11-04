@@ -1212,8 +1212,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // Every event of this line has been handed over: report the position after it, and the
         // decoder progress (selectionSeq / split-marker buffer) with it.
         const at = proc.cursor;
-        if (at !== undefined) opts?.onProgress?.(at);
+        // decoder state FIRST, then the offset (same consistent-save ordering as resume)
         opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
+        if (at !== undefined) opts?.onProgress?.(at);
       }
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
@@ -1349,6 +1350,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
       ...(!ok && message !== undefined ? { message } : {}),
     });
+    let sawTerminalInDrain = false;
     try {
       for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
         let events: TurnEvent[];
@@ -1362,10 +1364,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           // Default: end at the first terminal event. With drain (the observer), keep reading to the
           // segment's end so nothing after the terminal is abandoned.
-          if ((ev.kind === 'done' || ev.kind === 'error') && opts?.drain !== true) return;
+          if (ev.kind === 'done' || ev.kind === 'error') {
+            sawTerminalInDrain = true;
+            if (opts?.drain !== true) return;
+          }
         }
-        opts?.onProgress?.(cursor);
+        // decoder state FIRST, then the offset: the lifecycle saves liveTurn on both, and the
+        // later (offset) save must already carry this line's decoder state — no stale-buffer window.
         opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
+        opts?.onProgress?.(cursor);
       }
     } catch (err) {
       if (err instanceof SegmentGone) {
@@ -1379,7 +1386,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       return;
     }
     if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
-    yield { kind: 'error', turnId, message: 'the turn ended without a result' };
+    // E202611031bd72813:S001 t5: EOF without a terminal event is an OBSERVATION failure (no real
+    // terminal was ingested and the pid may still be alive) — never a synthetic completion. A drain
+    // that DID see a terminal ends cleanly instead (the segment's turn-end marker closed it).
+    if (sawTerminalInDrain && opts?.drain === true) return;
+    yield { kind: 'error', turnId, message: 'the turn ended without a result', observationFailure: true };
   }
 
   return { run, resume, cancel, decide, registerPending, capabilities: { resume: mapper.resume } };

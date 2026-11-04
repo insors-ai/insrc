@@ -22,9 +22,9 @@
 
 import type { AnalyzeConfig } from '../config/analyze.js';
 import type { LLMProvider } from '../shared/types.js';
-import type { ModelRegistry } from '../daemon/model-registry.js';
+import type { ModelRegistry, ResolvedModel } from '../daemon/model-registry.js';
 import { getModelRegistry } from '../daemon/model-registry.js';
-import { resolveRole } from '../analyze/context/role-router.js';
+import { resolveRole, type RoleResolution } from '../analyze/context/role-router.js';
 import { currentRoutingContext, familyProvider } from '../analyze/context/shaper-provider.js';
 
 export const DOC_RELATIONS_ROLE = 'indexer.docRelations';
@@ -33,13 +33,12 @@ export type DocRelationsSelection =
 	| { readonly ok: true; readonly provider: LLMProvider; readonly modelId: string }
 	| { readonly ok: false; readonly reason: string };
 
-/** The mid-tier CLI provider for the repository's document-relations pass, or why there is none. */
-export function selectDocRelationsProvider(
+/** The mid-tier model the capability runs for a repository, or why it cannot run (no provider is built). */
+export function validatedDocRelationsModel(
 	cfg:      AnalyzeConfig,
 	repoPath: string,
-	deps:     { readonly registry?: ModelRegistry | undefined } = {},
-): DocRelationsSelection {
-	const registry = deps.registry ?? getModelRegistry();
+	registry: ModelRegistry = getModelRegistry(),
+): { readonly ok: true; readonly resolution: RoleResolution; readonly model: ResolvedModel } | { readonly ok: false; readonly reason: string } {
 	try {
 		const resolution = resolveRole(DOC_RELATIONS_ROLE, cfg, repoPath, { registry });
 		if (resolution.tier !== 'mid') {
@@ -53,15 +52,32 @@ export function selectDocRelationsProvider(
 		if (model === undefined) {
 			return { ok: false, reason: `the mid tier names no model the definitions list for ${family} ('${resolution.model}')` };
 		}
+		return { ok: true, resolution, model };
+	} catch (err) {
+		return { ok: false, reason: failureMessage(err) };
+	}
+}
+
+/** The mid-tier CLI provider for the repository's document-relations pass, or why there is none. */
+export function selectDocRelationsProvider(
+	cfg:      AnalyzeConfig,
+	repoPath: string,
+	deps:     { readonly registry?: ModelRegistry | undefined } = {},
+): DocRelationsSelection {
+	const registry = deps.registry ?? getModelRegistry();
+	const checked = validatedDocRelationsModel(cfg, repoPath, registry);
+	if (!checked.ok) return checked;
+	const { resolution, model } = checked;
+	try {
 		const ctx = currentRoutingContext();
 		if (ctx !== undefined) {
 			const routed = ctx.router.resolveProviderForRole(DOC_RELATIONS_ROLE, cfg, ctx.repoPath ?? repoPath);
-			if (routed.resolution.tier !== 'mid' || routed.resolution.runner !== family || routed.resolution.model !== resolution.model) {
+			if (routed.resolution.tier !== 'mid' || routed.resolution.runner !== resolution.runner || routed.resolution.model !== resolution.model) {
 				return { ok: false, reason: `the router resolved ${DOC_RELATIONS_ROLE} to tier ${routed.resolution.tier} (${routed.resolution.runner}); this capability runs only on the mid tier` };
 			}
 			return { ok: true, provider: routed.provider, modelId: model.id };
 		}
-		return { ok: true, provider: familyProvider(registry, family, model, { effort: resolution.effort }), modelId: model.id };
+		return { ok: true, provider: familyProvider(registry, resolution.runner, model, { effort: resolution.effort }), modelId: model.id };
 	} catch (err) {
 		return { ok: false, reason: failureMessage(err) };
 	}

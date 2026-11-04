@@ -13596,6 +13596,10 @@
      "import"
     ],
     [
+     "unresolved-call",
+     "import"
+    ],
+    [
      "serialization",
      "JSON.parse"
     ],
@@ -13888,6 +13892,10 @@
      "statSync"
     ],
     [
+     "storage-call",
+     "subsystemsAnswer"
+    ],
+    [
      "filesystem-write",
      "unlinkSync"
     ],
@@ -13912,9 +13920,9 @@
      "writeFileSync"
     ]
    ],
-   "siteCount": 192,
-   "sitesDigest": "d3e62d2375cf1ad3bb2e0edefa5ad6c034d97a3205d8bad9d20548fe41b91cff",
-   "sourceDigest": "5954fd403f4bb51537a66a910326c9e128648cf1fb4b83e8aa5ab0030b5b4cc5",
+   "siteCount": 194,
+   "sitesDigest": "259380a8d3fd1b9f2a2f58fd0c6b692947e250b2b3f40e78818722295f41c33f",
+   "sourceDigest": "ce226a54328720ddf9b7a34107b0f7172c138653d1d25da5a9cdbc0f0e751d5f",
    "boundaries": [
     "diagnostic",
     "filesystem-read",
@@ -21812,8 +21820,28 @@
    "rationale": "Storage helpers for model-proposed document relationships (Epic c2ba6fa6 s10): the proposal, carry and quality rows of registered repositories, written inside the graph store's own write transactions and refused under session memory by assertNoSessionPersistence; no session-derived material is read or written.",
    "sites": [
     [
+     "storage-call",
+     "(() => {\n\t\t\t\tconst rel = relative(repoPath, entity.file);\n\t\t\t\tconst row = readDocRelationRowInTxn(s, repoId, rel);\n\t\t\t\treturn row === undefined ? new Map<string, DocRelationRow>() : new Map([[rel, row]]);\n\t\t\t})"
+    ],
+    [
      "serialization",
      "(key as Buffer).subarray(4).toString"
+    ],
+    [
+     "storage-call",
+     "add"
+    ],
+    [
+     "storage-call",
+     "add"
+    ],
+    [
+     "storage-call",
+     "add"
+    ],
+    [
+     "storage-call",
+     "add"
     ],
     [
      "serialization",
@@ -21885,6 +21913,14 @@
     ],
     [
      "serialization",
+     "decodeEntityByFileKey"
+    ],
+    [
+     "storage-call",
+     "decodeEntityByFileKey"
+    ],
+    [
+     "serialization",
      "decodeEntityRow"
     ],
     [
@@ -21904,6 +21940,10 @@
      "documentKey"
     ],
     [
+     "storage-call",
+     "eligible"
+    ],
+    [
      "serialization",
      "encodeDocRelationQualityRow"
     ],
@@ -21921,6 +21961,22 @@
     ],
     [
      "serialization",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "storage-call",
+     "encodeEntityByFilePrefix"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
+     "storage-call",
      "encodeEntityKey"
     ],
     [
@@ -21981,7 +22037,35 @@
     ],
     [
      "storage-call",
+     "fileEntityHashInTxn"
+    ],
+    [
+     "storage-call",
      "fileEntityId"
+    ],
+    [
+     "storage-call",
+     "fileEntityId"
+    ],
+    [
+     "storage-call",
+     "fileIdOf"
+    ],
+    [
+     "storage-call",
+     "filesNamed"
+    ],
+    [
+     "storage-call",
+     "filesNamed"
+    ],
+    [
+     "storage-call",
+     "getEntity"
+    ],
+    [
+     "storage-call",
+     "getGraphStore"
     ],
     [
      "storage-call",
@@ -21993,15 +22077,47 @@
     ],
     [
      "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
+     "listUnresolvedRelations"
+    ],
+    [
+     "storage-call",
      "lookupRepoIdInTxn"
     ],
     [
      "storage-call",
      "lookupRepoIdInTxn"
+    ],
+    [
+     "storage-call",
+     "lookupRepoIdInTxn"
+    ],
+    [
+     "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "read"
     ],
     [
      "storage-call",
      "readDocRelationQualityInTxn"
+    ],
+    [
+     "storage-call",
+     "readDocRelationRowInTxn"
+    ],
+    [
+     "storage-call",
+     "readDocRelationRowsInTxn"
+    ],
+    [
+     "storage-call",
+     "readIndexState"
     ],
     [
      "storage-call",
@@ -22085,16 +22201,48 @@
     ],
     [
      "storage-call",
+     "s.entityByFile.getKeys"
+    ],
+    [
+     "storage-call",
      "s.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "s.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "s.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "s.entityStringByU64.get"
+    ],
+    [
+     "storage-call",
+     "stored"
+    ],
+    [
+     "storage-call",
+     "stored"
+    ],
+    [
+     "storage-call",
+     "stored"
+    ],
+    [
+     "storage-call",
+     "stored"
     ],
     [
      "storage-call",
      "withWriteTxn"
     ]
    ],
-   "siteCount": 70,
-   "sitesDigest": "007e940ebd44de70fe06e55726f072799cdd18b714c380ece78bab319bb66e6d",
-   "sourceDigest": "9543683ec542b52f362d09f2f3ae0d6e61232e6f42adf8575646a9e64c6dd99b",
+   "siteCount": 105,
+   "sitesDigest": "c671d52aedb1fc4e7c66ef081619a2defab9bc276ec165d91b3fb74416f38468",
+   "sourceDigest": "9e367cd55850d247f08d73b6adc8c4b3af143ccfffbfcf0fba9c9295b2654355",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -33541,7 +33689,7 @@
    ],
    "siteCount": 2,
    "sitesDigest": "db02f250b0be6e4f7b191e88886d273702b770ae680fea5fee9740307f6e980a",
-   "sourceDigest": "113550f6c38731e304127c649f61657f7c4c6434008da2e27518620c40dfcb9f",
+   "sourceDigest": "643700c1f0927742fe6461854e2f0a0927252944c8d58ce64bb2dd15ec76211b",
    "boundaries": [
     "unresolved-call"
    ]
@@ -39715,6 +39863,71 @@
     "filesystem-write",
     "serialization"
    ]
+  },
+  "src/indexer/doc-relations-provider.ts": {
+   "classification": "background-indexing",
+   "rationale": "Builds the mid-tier CLI provider the background document-relations pass (Epic c2ba6fa6 s10) asks for, from the role router's resolution of indexer.docRelations, refusing any tier but mid before a provider is built; it never reads session-derived material and classifies failures by origin.",
+   "sites": [
+    [
+     "provider-factory",
+     "familyProvider"
+    ]
+   ],
+   "siteCount": 1,
+   "sitesDigest": "eae7c8fd62eb88b9d7505f64e8afd1f8a034fdc2fb3b5c5fd4b32caeaf0ea4dd",
+   "sourceDigest": "bac47dd69577832f8fada6d134b352ceee0971461aff2482457ad51e3dabe139",
+   "boundaries": [
+    "provider-factory"
+   ]
+  },
+  "src/indexer/doc-relations-read.ts": {
+   "classification": "persistent-storage-boundary",
+   "rationale": "Composes the document-relationship read (Epic c2ba6fa6 s10): the repository's recorded quality row from the graph store, the hash of the repository's own hand-checked set file and the validated mid-tier model id, then the store's documentRelations; no session-derived material is read or written.",
+   "sites": [
+    [
+     "storage-call",
+     "documentRelations"
+    ],
+    [
+     "storage-call",
+     "getEntity"
+    ],
+    [
+     "storage-call",
+     "readDocRelationQuality"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "storage-call",
+     "switchOf"
+    ]
+   ],
+   "siteCount": 5,
+   "sitesDigest": "2381f0cead43d3a938beeaf998d8825cd63adccb78c9111f0194883c4a6991d4",
+   "sourceDigest": "ee6995ce1d38783ab6780dc659b576d1d7a3150a123d2ce944a3a64a5c2938fe",
+   "boundaries": [
+    "filesystem-read",
+    "storage-call"
+   ]
+  },
+  "src/indexer/parser/markdown-links.ts": {
+   "classification": "background-indexing",
+   "rationale": "Pure reader of the links and file references a registered repository's markdown document writes (Epic c2ba6fa6 s10), for the indexer; text and path operations only, never temporary session configurations or results.",
+   "sites": [
+    [
+     "serialization",
+     "decodeURIComponent"
+    ]
+   ],
+   "siteCount": 1,
+   "sitesDigest": "329ef939545c1d6ca09826a470a6b6a6f99230618a1d63bce01f3e25c1f93412",
+   "sourceDigest": "daba031c6f7dd2678849c2089bfa980dd7974a190d0f6674d8a659178ef0cc9e",
+   "boundaries": [
+    "serialization"
+   ]
   }
  },
  "sc6Sources": {
@@ -39796,7 +40009,7 @@
   "src/daemon/threads/method-class.ts": {
    "classification": "removal-admission-routing",
    "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
-   "sourceDigest": "496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65"
+   "sourceDigest": "34a7985d7aefcd8bd1e9a5220d1ecfae239e6f54363e72d4cca43c640994cb98"
   },
   "src/daemon/db/management-enablement.ts": {
    "classification": "deployment-code-evidence",

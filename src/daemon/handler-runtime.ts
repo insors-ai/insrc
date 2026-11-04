@@ -50,6 +50,7 @@ import { getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
 import { guardSearchRequest, underIndexFilter } from './search-guard.js';
+import { searchDocRelations } from './doc-relations-rpc.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
 import { inferParentCandidates } from '../workflow/locate/infer.js';
 import { buildOwnershipIndex } from '../workflow/locate/ownership.js';
@@ -964,6 +965,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			await guardSearchRequest({ entityIds: [entityId] });
 			return (await underIndexFilter()).entities(await findCallees(db, entityId) as Entity[]);
 		},
+
+		// Document relationships (Epic c2ba6fa6 s10): stored and name links, plus model proposals while switched on.
+		'search.doc_relations': async (params) => searchDocRelations(params),
 
 		// ----- locate.* IPC (S003 / sc3 — the tiered parent-locator) -----
 		// Daemon-side inference for the bugfix parent-locator: it composes the

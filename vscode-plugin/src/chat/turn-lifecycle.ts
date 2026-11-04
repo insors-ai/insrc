@@ -651,7 +651,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     followingSession = undefined;
     following = undefined;
     if (fs2?.liveTurn !== undefined) {
-      unpinLive(fs2, fs2.liveTurn.cursor.turnId); // the observer re-pins when it takes the turn over
+      // NOTE: the pin is NOT released here — the turn's output may be unread, and the observer's
+      // takeover registers the same generation under the same readerId (refcounted), so releasing
+      // here could delete an archive the saved cursor still needs.
       fs2.liveTurn = { ...fs2.liveTurn, ownerHostPid: 0 };
       trySave(fs2);
     }

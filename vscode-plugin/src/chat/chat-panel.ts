@@ -796,6 +796,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the completion gate: caught up AND (a real terminal OR verified process death)
       if (caughtUp && (pass.sawTerminal || pidDead)) {
         try {
+          // release the lifecycle's retention pin for this cursor too (the observer's own pin is
+          // released via heldPins above); the refcount makes a double-release a no-op
+          out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
           delete s.liveTurn;
           deps.store.save(s);
         } catch { /* best-effort */ }

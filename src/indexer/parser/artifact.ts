@@ -22,7 +22,8 @@ import { basename, extname } from 'node:path';
 import type { Entity, Language, EntityKind } from '../../shared/types.js';
 import type { ParseResult, CodeParser } from './base.js';
 import { makeEntityId } from './base.js';
-import { registerParser } from './registry.js';
+import { getParser, registerParser } from './registry.js';
+import { readMarkdownLinks } from './markdown-links.js';
 
 // ---------------------------------------------------------------------------
 // Extension → language mapping
@@ -155,6 +156,7 @@ class ArtifactParser implements CodeParser {
     if (lang === 'markdown') {
       // Split markdown on headings into sections
       const sections = parseMarkdownSections(source, filePath, repo, repoId, lang, now);
+      let doc: Entity | undefined;
       if (sections.length > 0) {
         for (const sec of sections) {
           entities.push(sec);
@@ -162,10 +164,11 @@ class ArtifactParser implements CodeParser {
         }
       } else {
         // No headings — index whole file as a single document entity
-        const doc = makeDocEntity(filePath, repo, repoId, name, lang, source, 1, lines.length, now);
+        doc = makeDocEntity(filePath, repo, repoId, name, lang, source, 1, lines.length, now);
         entities.push(doc);
         define(doc);
       }
+      relations.push(...documentReferences(source, filePath, repo, fileEntity, sections, doc));
     } else {
       // Non-markdown artifacts: single entity for the whole file
       const kind: EntityKind = isConfigLang(lang) ? 'config' : 'document';
@@ -257,6 +260,56 @@ function parseMarkdownSections(
   }
 
   return entities;
+}
+
+// ---------------------------------------------------------------------------
+// Document references (Epic c2ba6fa6 s10)
+// ---------------------------------------------------------------------------
+
+/** Whether a parser reads a file of this name: the registry, the basename rules, minus the files skipped whole. */
+function parserHandles(filePath: string): boolean {
+  const name = basename(filePath);
+  if (SKIP_BASENAMES.has(name)) return false;
+  return getParser(filePath) !== null || BASENAME_LANGUAGE[name] !== undefined;
+}
+
+/**
+ * The REFERENCES the document writes, each 'extracted', at most one per
+ * (source, target). The source is the retained section holding the line, the
+ * whole-file document when there are no sections, else the file entity (the
+ * preamble before the first heading, a skipped tiny section). A path reference
+ * targets the cited file's 'file' entity id and awaits it (the indexer decides
+ * stored or pending); a name reference carries only the name, for the indexer
+ * to store pending and the read to resolve. A document's link to itself is not
+ * written.
+ */
+function documentReferences(
+  source:     string,
+  filePath:   string,
+  repo:       string,
+  fileEntity: Entity,
+  sections:   readonly Entity[],
+  doc:        Entity | undefined,
+): ParseResult['relations'] {
+  const sourceAt = (line: number): string =>
+    sections.find(s => s.startLine <= line && line <= s.endLine)?.id ?? doc?.id ?? fileEntity.id;
+  const seen = new Set<string>();
+  const out: ParseResult['relations'] = [];
+  for (const link of readMarkdownLinks(source, filePath, repo, parserHandles)) {
+    const from = sourceAt(link.line);
+    if (link.kind === 'path') {
+      if (link.target === filePath) continue;
+      const to = makeEntityId(repo, link.target, 'file', link.target);
+      if (seen.has(`${from}\0${to}`)) continue;
+      seen.add(`${from}\0${to}`);
+      out.push({ kind: 'REFERENCES', from, to, resolved: false, evidence: 'extracted', meta: { awaitsId: true, docLink: true, linkTarget: link.target } });
+    } else {
+      if (seen.has(`${from}\0name:${link.name}`)) continue;
+      seen.add(`${from}\0name:${link.name}`);
+      out.push({ kind: 'REFERENCES', from, to: link.name, resolved: false, evidence: 'extracted', meta: { docLink: true, nameRef: link.name } });
+    }
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

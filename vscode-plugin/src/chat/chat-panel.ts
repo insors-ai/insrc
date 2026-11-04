@@ -1122,8 +1122,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         ...(outcome !== undefined ? { outcome } : {}),
       });
     }
-    if (!changed) return; // nothing waiting: leave the stored record byte-identical
+    if (!changed && approvals.snapshot().waiting.length === 0 && pendingSelections.size === 0) return; // nothing waiting: leave the stored record byte-identical
     s.pendingRequests = existing;
+    // the FULL queue state (waiting, batches, ended turns, grant chain) — not just waiting — so a
+    // restore can rebuild the queue exactly, batch decisions and grants included
+    s.queueSnapshot = approvals.snapshot();
     try {
       deps.store.save(s);
     } catch (err) {
@@ -1137,10 +1140,27 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // the same request, and a dead stdin falls back to a follow-up run (relayDecision).
   const restorePendingRequests = (s: ChatSession): void => {
     let restored = 0;
+    // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
+    const snap = s.queueSnapshot;
+    if (snap !== undefined && Array.isArray(snap.waiting)) approvals.restore(snap);
     for (const r of s.pendingRequests ?? []) {
       if (r.resolved) continue;
       restored += 1;
       if (r.kind === 'approval') {
+        if (snap !== undefined && Array.isArray(snap.waiting)) {
+          // already rebuilt from the snapshot — only re-register a followed turn's request with the adapter,
+          // and end the turn of a non-in-turn one so its restored batch can complete on decision
+          const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
+          if (!inTurn && r.turnId !== undefined) approvals.endTurn(r.turnId);
+          if (inTurn && r.turnId !== undefined) {
+            try {
+              deps.providers.get(s.provider).registerPending?.(r.turnId, r.requestId);
+            } catch (err) {
+              log.warn(`[chat] session ${s.id}: restored request ${r.requestId} not re-registered: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
+          continue;
+        }
         const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
         approvals.enqueue({
           requestId: r.requestId,
@@ -1310,6 +1330,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Nothing to run. A single request keeps today's behaviour (its chip says it all); a batch
       // of several says so once.
       if (batch.decisions.length > 1) postInfo(`info-batch-${batch.turnId}`, 'No action was approved, so nothing was run.');
+      // nothing was delivered (no run happens) — the decisions are still recorded with their outcomes
+      for (const d of batch.decisions) markPersistedRequest(session, d.request.requestId, true, d.decision === 'approve' ? 'approved' : 'denied');
       return;
     }
     let prompt: string;
@@ -1325,7 +1347,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (blocked.length > 0) lines.push('Still blocked (outside the allowed working directories) — do not attempt these:', ...blocked.map((r) => `- ${action(r)}`));
       prompt = lines.join('\n');
     }
-    void runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+    // NOT fire-and-forget: mark each decided request with its outcome only once the follow-up has
+    // actually started; if it never starts (dropped chain, no session), the outcome is delivery-failed
+    // — a silent no-op is never recorded as approved. runTurn reports adapter/lock failures as error
+    // events rather than rejecting, so the start is confirmed via busy state in a microtask, with the
+    // promise rejection as a backstop for real throws.
+    const decisions = batch.decisions;
+    const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+    const markBatch = (outcome: (d: (typeof decisions)[number]) => string): void => {
+      for (const d of decisions) markPersistedRequest(session, d.request.requestId, true, outcome(d));
+    };
+    queueMicrotask(() => {
+      if (!turns.busy() && startingTurns === 0) markBatch(() => 'delivery-failed');
+      else markBatch((d) => (d.decision === 'approve' ? 'approved' : 'denied'));
+    });
+    void p.catch((err: unknown) => {
+      log.warn(`[chat] batch follow-up for turn ${batch.turnId} failed to start: ${err instanceof Error ? err.message : String(err)}`);
+      markBatch(() => 'delivery-failed');
+    });
   };
 
   // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
@@ -2696,16 +2735,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
-          // E202611031bd72813:S001 t6: the persisted request is marked resolved with its outcome too —
-          // EXCEPT in-turn decisions, whose delivery relayDecision confirms first (an undelivered
-          // decision must stay unresolved so the follow-up fallback can answer it).
-          if (decided.resolution !== 'in-turn') markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
           if (decided.resolution === 'in-turn') {
+            // t6: relayDecision marks the persisted record once delivery is CONFIRMED (delivered in-turn,
+            // follow-up started, or delivery-failed) — an undelivered decision must stay unresolved
             relayDecision(msg.requestId, msg.decision);
             showApprovalHead();
             return;
           }
+          // turn-ended decisions are delivered by the batch follow-up (runCompletedBatch), which marks
+          // each record once the run starts (or immediately when nothing runs) — never marked approved
+          // before delivery. A dir-block approve never runs at all, so it is marked here.
           if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
+            markPersistedRequest(session, msg.requestId, true, 'approved');
             // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory, so it
             // is never re-run (that produced the confused no-op) and never a grant. Post a
             // self-contained informational message explaining what actually needs to change — no

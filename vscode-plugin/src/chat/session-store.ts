@@ -144,6 +144,9 @@ export interface ChatSession {
   lastActivityAt?: number | undefined;
   /** E202611031bd72813:S001: persisted approval/selection requests (full payload + resolution). */
   pendingRequests?: PersistedRequest[] | undefined;
+  /** E202611031bd72813:S001 t6: the approval queue's full snapshot (waiting, batches, ended,
+   * grants) persisted before the queue is cleared on a chat switch, restored on attach. */
+  queueSnapshot?: ApprovalQueueSnapshot | undefined;
   /** E202611031bd72813:S001: durable checkpoint of the detached-session observer cursor/decoder. */
   observerCheckpoint?: ObserverCheckpoint | undefined;
 }
@@ -187,6 +190,8 @@ export interface PersistedRequest {
  * output segment generation + cursor offset + stateful decoder state (selectionSeq counter and
  * any split selectionBuffer fragment), plus already-dispatched presentation declaration ids.
  */
+import type { ApprovalQueueSnapshot } from './approval-queue.js';
+
 export interface ObserverCheckpoint {
   /** The turn this checkpoint belongs to — a checkpoint of another turn is never reused. */
   readonly turnId: string;

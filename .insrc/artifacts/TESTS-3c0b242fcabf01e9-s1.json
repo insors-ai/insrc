@@ -1,0 +1,399 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 6,
+        "contentHash": "f41f31d75cc752896fb8101d41988ff859edf7166a539eb7eb09b6c1dbcbaca0",
+        "at": "2026-11-04T08:56:14.715Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "createdAt": "2026-11-04T08:41:18.063Z",
+    "updatedAt": "2026-11-04T08:56:14.630Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "epicSlug": "stop-flat-amendment-heads-from-blocking",
+    "revision": 6
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "6315fc633",
+        "ranAt": "2026-11-04T08:41:18.063Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "lifecycle-rollup.test.ts: an unreadable head of another kind does not block a Story roll-up",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "an unreadable head of another kind does not block a Story roll-up",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "lifecycle-rollup.test.ts: an unreadable head of the counted kind still blocks the roll-up",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+                "title": "an unreadable head of the counted kind still blocks the roll-up",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "the Task, Story and Epic roll-up rules, the evidence mapping and the unreadable child",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable head of another kind does not block a Story roll-up",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable head of the counted kind still blocks the roll-up",
+                "result": "pass"
+              },
+              {
+                "title": "rollUp",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "ff58c1a54",
+        "ranAt": "2026-11-04T08:43:46.870Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-lifecycle-backfill.test.ts: an approved head with a string approvedBy gets an approval actor named by it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+                "title": "convert-lifecycle-backfill.test.ts: an approved head with a string approvedBy gets an approval actor named by it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+                "title": "convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 626,
+            "titles": [
+              {
+                "title": "convert-lifecycle-backfill.test.ts: the lifecycle and the migrated entries are computed from the legacy fields",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: the later stamp decides the status and a review older than the revision is not bound",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: an existing lifecycle keeps its approval actor and an unreadable head is refused",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: an approved head with a string approvedBy gets an approval actor named by it",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before",
+                "result": "pass"
+              },
+              {
+                "title": "convert-lifecycle-backfill",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "3cdbbd13d",
+        "ranAt": "2026-11-04T08:45:51.578Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-apply.test.ts: migrateHeads with an id filter leaves heads outside the filter unchanged with no new log entries",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-apply.test.ts",
+                "title": "convert-apply.test.ts: migrateHeads with an id filter leaves heads outside the filter unchanged with no new log entries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-apply.test.ts",
+                "title": "convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/convert/__tests__/convert-apply.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 754,
+            "titles": [
+              {
+                "title": "convert-apply.test.ts: apply converts every artifact in the stated order and refuses while the delivery reader reads legacy stamps",
+                "result": "pass"
+              },
+              {
+                "title": "convert-apply.test.ts: migrateHeads with an id filter leaves heads outside the filter unchanged with no new log entries",
+                "result": "pass"
+              },
+              {
+                "title": "convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter",
+                "result": "pass"
+              },
+              {
+                "title": "convert-apply",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "fcc57c5f2",
+        "ranAt": "2026-11-04T08:49:55.488Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+                "title": "convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts",
+                "title": "store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 678,
+            "titles": [
+              {
+                "title": "childrenOfStrict returns an unreadable child that childrenOf skips",
+                "result": "pass"
+              },
+              {
+                "title": "store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed",
+                "result": "pass"
+              },
+              {
+                "title": "ArtifactStore.childrenOfStrict",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/convert/__tests__/convert-amendments.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 701,
+            "titles": [
+              {
+                "title": "convert-amendments.test.ts: a flat amendment becomes a head with a lifecycle from its stamps",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: flatToHead refuses a record it cannot date or place",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time",
+                "result": "pass"
+              },
+              {
+                "title": "convert-amendments",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "5f4895a88",
+        "ranAt": "2026-11-04T08:56:14.630Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "repair on a copy then on this repository: the two amendments read as approved heads and a BUILD approval needs no move-aside (reported with the before/after output)",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "repair-copy-run.txt and repair-apply-run.txt: both amendments are read by the amendment store as approved by 'Subho Ghosh (in-chat approval)' with their original approval times. scan-unreadable-output.txt: the strict child scan that the completion roll-up uses, run with the unchanged store on this repository, lists unreadable=[] for the Story, the Epic and a Task, where it listed AMD-86197ac660732ceb-1 and -2 before; that scan result was the only cause of the refusal 'cannot roll up: unreadable children', seen on two approvals this session. The approval of this BUILD itself, with no file moved aside, is recorded after it happens."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

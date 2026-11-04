@@ -1,0 +1,222 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "801995cea49eb9b087f2b92e1477e6d2d4f5ee8b4a95140349a56310a83416df",
+        "at": "2026-11-04T08:57:41.665Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T09:28:57.399Z",
+        "override": {
+          "reason": "User-approved override (option 2), 2026-11-04. The daemon code review review-3c0b242fcabf01e9-s1-r1 ran but could not be published: the review tool accepts documents {lld, plan} at start and requires {story, lld, plan} at publication (GitHub issue #100), and t1's reviewer process crashed (\"Review activity CLI failed\"). The daemon passed t2, t3 and t4 and reported t5 incomplete only for the BUILD-approval-without-move-aside clause, which is observed at this approval. The author's read of t1 and the review's results are in docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/CODE-SELF-REVIEW.md; it is not a review by the other party."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-0145dc3b-4063-42c3-bfb2-69e30f59de36",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:41:18.063Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-11-04T08:56:14.630Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "stop-flat-amendment-heads-from-blocking"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": false
+      }
+    ],
+    "summary": "Repair of AMD-86197ac660732ceb-1 and -2 done with the one-off script docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/repair-flat-amendments.ts: first on a copy (repair-copy-run.txt), then on this repository (repair-apply-run.txt, commit f5c9ec5b4); the strict child scan now finds no unreadable head (scan-unreadable-output.txt). Recorded here as the user decided on 2026-11-04: (1) the process that wrote the two flat records after the 2026-10-22 conversion is NOT established; the likeliest cause is an older daemon build handling those amendments (commits 2e2fd5d72, 5a55f9b7d, da59c2669), unverified. (2) The roll-up narrowing in countedChildren (the sc4 lifecycle contract of epic one-common-model-every-artifact, HLD-2f27754d4ad00b8e, owned by that epic's s3) is recorded in ISSUE-3c0b242fcabf01e9 and in this BUILD instead of an HLD amendment; the sc4 signature is unchanged. The LLD was approved with an override after three review rounds (round 3 incomplete: its framing chunk returned placeholder text); its follow-ups were built as t2 to t4. repairFlatAmendments is in repair-amendments.ts, not amendments.ts, to avoid a load-order cycle with apply.ts. The narrowing is live in the installed daemon only after the user pushes v2 and the daemon is updated.",
+    "testRecord": {
+      "md": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/lifecycle-rollup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/amendments/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-lifecycle-backfill.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/backfill.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-apply.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/apply.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/__tests__/store-children-strict.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/__tests__/convert-amendments.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/amendments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/convert/repair-amendments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-86197ac660732ceb-1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-86197ac660732ceb-1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-86197ac660732ceb-2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/AMD-86197ac660732ceb-2.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/repair-apply-run.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/repair-copy-run.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/repair-flat-amendments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/scan-unreadable-output.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/S001/scan-unreadable.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:56:14.630Z"
+      }
+    ],
+    "commit": "5f4895a88"
+  },
+  "citations": []
+}

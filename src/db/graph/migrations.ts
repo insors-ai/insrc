@@ -442,7 +442,7 @@ export const MIGRATION_V7_TO_V8: Migration = {
 export const MIGRATION_V8_TO_V9: Migration = {
 	from: 8,
 	to:   9,
-	description: 'doc_relation, doc_relation_carry and doc_relation_quality databases (s10); opened with the store, empty until a repository is examined or measured',
+	description: 'doc_relation_proposals, doc_relation_proposals_carry and doc_relation_quality databases (s10); opened with the store, empty until a repository is examined or measured',
 	run: () => {
 		log.info('v8->v9: document-relationship tables available; documents are examined after the next complete generation');
 	},

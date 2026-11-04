@@ -624,7 +624,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     try {
       const fresh = deps.store.get(s.id) ?? s;
       const existing = fresh.pendingRequests ?? [];
-      const prior = existing.find((x) => x.requestId === r.requestId);
+      // MR1-R3: replay detection is scoped to the originating turn — a LATER turn reusing the same
+      // request id is a new request, not a replay of the earlier (possibly resolved) one
+      const prior = existing.find((x) => x.requestId === r.requestId && x.turnId === r.turnId);
       if (prior !== undefined) return !prior.resolved; // a replayed, already-resolved request stays resolved
       fresh.pendingRequests = [...existing, r];
       deps.store.save(fresh);
@@ -1087,9 +1089,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // E202611031bd72813:S001 t6: mark one persisted request resolved with its outcome (never deleted mid-flight).
   /** t6: make sure an unresolved persisted record exists for requestId, so a host reload while
    * its follow-up is pending still has a restorable request (card re-posted, re-decidable). */
-  const ensurePersistedUnresolved = (s: ChatSession, requestId: string): void => {
-    if ((s.pendingRequests ?? []).some((r) => r.requestId === requestId)) return;
-    s.pendingRequests = [...(s.pendingRequests ?? []), { requestId, kind: 'approval', turnId: s.liveTurn?.cursor.turnId ?? 'unknown', resolved: false }];
+  const ensurePersistedUnresolved = (s: ChatSession, requestId: string, turnId?: string): void => {
+    if ((s.pendingRequests ?? []).some((r) => r.requestId === requestId && (turnId === undefined || r.turnId === turnId))) return;
+    s.pendingRequests = [...(s.pendingRequests ?? []), { requestId, kind: 'approval', turnId: turnId ?? s.liveTurn?.cursor.turnId ?? 'unknown', resolved: false }];
     try {
       deps.store.save(s);
     } catch (err) {
@@ -1097,15 +1099,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
-  const markPersistedRequest = (s: ChatSession | undefined, requestId: string, resolved: boolean, outcome?: string): void => {
+  const markPersistedRequest = (s: ChatSession | undefined, requestId: string, resolved: boolean, outcome?: string, turnId?: string): void => {
     if (s === undefined) return;
     const list = s.pendingRequests ?? [];
-    const i = list.findIndex((r) => r.requestId === requestId);
+    // MR1-R3: outcome correlation is turn-scoped — a later turn reusing the request id must not
+    // overwrite the earlier turn's record
+    const i = list.findIndex((r) => r.requestId === requestId && (turnId === undefined || r.turnId === turnId || r.turnId === 'unknown'));
+    const matchTurn = turnId ?? s.liveTurn?.cursor.turnId ?? 'unknown';
     if (i < 0) {
       // never persisted (fresh live request): upsert a minimal record so the outcome (e.g.
       // delivery-failed) is not silently dropped
       if (outcome === undefined) return;
-      list.push({ requestId, kind: 'approval', turnId: s.liveTurn?.cursor.turnId ?? 'unknown', resolved, outcome });
+      list.push({ requestId, kind: 'approval', turnId: matchTurn, resolved, outcome });
       s.pendingRequests = list;
       try {
         deps.store.save(s);
@@ -1269,7 +1274,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     shownApproval = undefined;
     persistPendingBeforeClear(session, 'superseded'); // t6: persisted (resolved) before the clear
     for (const r of approvals.clear()) {
-      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
+      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny', r.turnId);
       recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
     }
     reportCards(); // Story S002
@@ -1445,10 +1450,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * continuation can never execute later, after the UI already reported failure.
    */
   const cancelledFollowUps = new Set<string>();
-  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession): void => {
+  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession, originTurnId?: string): void => {
     const s = target ?? session;
-    if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId); // survive a reload while the follow-up waits
-    const rec = s?.pendingRequests?.find((r) => r.requestId === requestId);
+    if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId, originTurnId); // survive a reload while the follow-up waits
+    // MR1-R3: the record lookup is turn-scoped — a later turn reusing the request id carries ITS OWN command
+    const rec = s?.pendingRequests?.find((r) => r.requestId === requestId && (originTurnId === undefined || r.turnId === originTurnId));
     const what = rec?.command ?? rec?.toolName ?? rec?.title ?? 'the requested action';
     const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
     let started = false;
@@ -1458,7 +1464,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
-        pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: requestId });
+        // MR1-R3: the exclusion/origin turn is the decision's originating turn (fall back to the live one)
+        pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, groupId: requestId });
         // MR3: the continuation carries a cancellation identity — if the stall timer below fires
         // first, shouldSpawn returns false and the turn ends WITHOUT spawning the CLI.
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(requestId) }); // resumes s.nativeSessionId when known
@@ -1471,7 +1478,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const stallTimer = setTimeout(() => {
           cancelledFollowUps.add(requestId);
           if (pendingFollowUps.delete(requestId)) {
-            markPersistedRequest(s, requestId, true, 'delivery-failed');
+            markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
             reevaluateChatStatus(s);
           }
         }, deps.followUpDeliveryTimeoutMs ?? 30_000);
@@ -1480,7 +1487,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           clearTimeout(stallTimer);
           cancelledFollowUps.delete(requestId);
           if (pendingFollowUps.delete(requestId)) {
-            markPersistedRequest(s, requestId, true, 'delivery-failed');
+            markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
             reevaluateChatStatus(s);
           }
         };
@@ -1494,7 +1501,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    if (!started) markPersistedRequest(s, requestId, true, 'delivery-failed');
+    if (!started) markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
     if (s !== undefined) reevaluateChatStatus(s);
   };
 
@@ -1503,7 +1510,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * request ids may repeat across chats/turns (MR1-R2): keyed `${sessionId}::${requestId}`.
    */
   const followUpsStarted = new Set<string>();
-  const followUpKey = (sessionId: string | undefined, requestId: string): string => `${sessionId ?? '?'}::${requestId}`;
+  const followUpKey = (sessionId: string | undefined, turnId: string | undefined, requestId: string): string => `${sessionId ?? '?'}::${turnId ?? '?'}::${requestId}`;
   /** Request ids restored from a persisted queue snapshot (they may have no pendingRequests record). */
   const restoredRequestIds = new Set<string>();
   /** Request ids decided through the queue in this host — a valid queued decision must never
@@ -1537,7 +1544,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     for (const [other, opf] of [...pendingFollowUps]) {
       if (opf.groupId === pf.groupId) {
         pendingFollowUps.delete(other);
-        markPersistedRequest(s, other, true, opf.outcome);
+        // MR1-R3: outcome correlation is turn-scoped (the request's originating turn)
+        markPersistedRequest(s, other, true, opf.outcome, opf.excludeTurnId);
       }
     }
     // keep the binding until the turn ENDS: later events of the same follow-up turn must map to
@@ -1572,18 +1580,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         log.warn(`[chat] async delivery failure for ${failedRequestId} (turn ${turnId}) has no known originating conversation — failing closed, no follow-up started`);
         return;
       }
-      ensurePersistedUnresolved(s, failedRequestId);
-      markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
+      ensurePersistedUnresolved(s, failedRequestId, turnId);
+      markPersistedRequest(s, failedRequestId, true, 'delivery-failed', turnId);
       reevaluateChatStatus(s);
-      const fk = followUpKey(s.id, failedRequestId);
+      const fk = followUpKey(s.id, turnId, failedRequestId);
       if (!followUpsStarted.has(fk)) {
         followUpsStarted.add(fk);
-        deliverDecisionAsFollowUp(failedRequestId, failedDecision, s);
+        deliverDecisionAsFollowUp(failedRequestId, failedDecision, s, turnId);
       }
     });
   };
 
-  const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
+  const relayDecision = (requestId: string, decision: 'approve' | 'deny', originTurnId?: string): void => {
     const live = turns.live;
     const probeProvider0 = live?.provider ?? session?.provider;
     if (probeProvider0 !== undefined) wireDeliveryFailure(probeProvider0, deps.providers.get(probeProvider0));
@@ -1591,7 +1599,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // t6: probe delivery through the live turn — or, for a RESTORED request with no live turn in
     // this host, the session's persisted liveTurn (its stdin died with its owner): decide()
     // reports undelivered for it, and the follow-up fallback below answers the decision.
-    const probeTurnId = live?.turnId ?? session?.liveTurn?.cursor.turnId;
+    // MR1-R3: the probe turn is the live turn, else the decision's originating turn (the queue's
+    // record), else the persisted liveTurn — so a later turn reusing a request id is correlated to
+    // its OWN turn, never to an earlier turn's resolved record.
+    const probeTurnId = live?.turnId ?? originTurnId ?? session?.liveTurn?.cursor.turnId;
     const probeProvider = live?.provider ?? session?.provider;
     if (probeTurnId !== undefined && probeProvider !== undefined) {
       // MR1/MR1-R2: record the full delivery identity -> originating conversation, so a later
@@ -1604,7 +1615,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // consumed on failure, so the fallback below can still answer it.
         const res = deps.providers.get(probeProvider).decide(probeTurnId, requestId, decision);
         if (res.delivered) {
-          markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied');
+          markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied', probeTurnId);
           return;
         }
         undelivered = true;
@@ -1615,27 +1626,29 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    if (undelivered && session !== undefined) {
-      // LLD s7 live-unwritable triage: when the original process is still ALIVE but its stdin
-      // write failed and no native session handle was captured (nothing before the first done),
-      // a continuation could not resume the live session — record session-lost instead of
-      // silently starting a fresh one.
-      const probePid = session.liveTurn?.pid;
-      const probeAlive = probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
-      if (probeAlive && session.nativeSessionId === undefined) {
-        markPersistedRequest(session, requestId, true, 'session-lost');
-        reevaluateChatStatus(session);
-        return;
-      }
+    // MR1-R3/MR3-R3: the original process's liveness for this probe turn
+    const probePid = session?.liveTurn?.pid;
+    const probeAlive = undelivered && session !== undefined && probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
+    if (probeAlive && session !== undefined && session.nativeSessionId === undefined) {
+      // LLD s7 live-unwritable triage: the original process is still ALIVE but its stdin write
+      // failed and no native session handle was captured (nothing before the first done) — a
+      // continuation could not resume the live session; record session-lost instead of silently
+      // starting a fresh one.
+      markPersistedRequest(session, requestId, true, 'session-lost', probeTurnId);
+      reevaluateChatStatus(session);
+      return;
     }
     // The follow-up run answers a decision that could not reach the CLI: either a live turn whose
     // decide() reported undelivered (the decision came from the queue, so it is real even when no
     // persisted record exists yet), or a RESTORED request persisted unresolved after a
     // reattach/reload with no live turn. A stale id with no live turn and no unresolved persisted
     // record stays the old silent no-op. followUpsStarted keeps the follow-up one-shot.
-    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId);
-    // a persisted RESOLVED record means this decision was already delivered — a duplicate
-    // (the adapter no-ops on the consumed id, also reporting delivered:false) must not re-follow-up
+    // MR1-R3: the persisted lookup is turn-scoped — a later turn reusing the request id does NOT
+    // inherit the earlier turn's resolved record.
+    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId && (probeTurnId === undefined || r.turnId === probeTurnId));
+    // a persisted RESOLVED record FOR THIS TURN means this decision was already delivered — a
+    // duplicate (the adapter no-ops on the consumed id, also reporting delivered:false) must not
+    // re-follow-up
     if (persisted !== undefined && persisted.resolved) undelivered = false;
     // a snapshot-restored request (in restoredRequestIds) is unresolved by construction — the
     // follow-up must answer it even when no pendingRequests record exists
@@ -1643,10 +1656,28 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // turn already ended and nothing was persisted yet — the follow-up must answer it (delivered or
     // delivery-failed), never a silent no-op recorded as approved
     if (!undelivered && (persisted === undefined ? !(restoredRequestIds.has(requestId) || decidedRequestIds.has(requestId)) : persisted.resolved)) return;
-    const fk = followUpKey(session?.id, requestId);
+    const fk = followUpKey(session?.id, probeTurnId, requestId);
     if (followUpsStarted.has(fk)) return;
     followUpsStarted.add(fk);
-    deliverDecisionAsFollowUp(requestId, decision);
+    if (probeAlive && session !== undefined && session.nativeSessionId !== undefined) {
+      // MR3-R3 / LLD s7 live-unwritable recovery: the original process is alive but unwritable and
+      // its native handle IS known — explicitly stop the original and verify exit BEFORE the
+      // continuation resumes that native session, instead of queueing behind a process that may be
+      // blocked on this very decision. If the stop fails, record delivery-failed and launch nothing.
+      const rs = session;
+      void (async () => {
+        try {
+          await turns.stop();
+          deliverDecisionAsFollowUp(requestId, decision, rs, probeTurnId);
+        } catch (err) {
+          log.warn(`[chat] live-unwritable recovery for ${requestId} could not stop the original: ${err instanceof Error ? err.message : String(err)}`);
+          markPersistedRequest(rs, requestId, true, 'delivery-failed', probeTurnId);
+          reevaluateChatStatus(rs);
+        }
+      })();
+      return;
+    }
+    deliverDecisionAsFollowUp(requestId, decision, undefined, probeTurnId);
   };
 
   // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
@@ -1712,15 +1743,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * present. Legacy persisted ledgers hold the bare call id; those still match their own turn's
    * declaration (compat), without suppressing a different turn's.
    */
-  const declarationIdOf = (ev: { readonly turnId: string; readonly callId?: string | undefined; readonly present?: readonly string[] | undefined }): { readonly id: string; readonly legacy: string | undefined } => {
+  const declarationIdOf = (ev: { readonly turnId: string; readonly callId?: string | undefined; readonly present?: readonly string[] | undefined }): { readonly id: string; readonly legacy: string | undefined; readonly turnId: string } => {
     const call = ev.callId ?? (ev.present ?? []).join(',');
-    return { id: `${ev.turnId}:${call}`, legacy: ev.callId };
+    return { id: `${ev.turnId}:${call}`, legacy: ev.callId, turnId: ev.turnId };
   };
-  const declarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined }): boolean => {
-    const ledger = [...(s.presentedDeclarations ?? []), ...(s.observerCheckpoint?.declaredIds ?? [])];
-    return ledger.includes(decl.id) || (decl.legacy !== undefined && ledger.includes(decl.legacy));
+  const declarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined; readonly turnId: string }): boolean => {
+    if ((s.presentedDeclarations ?? []).includes(decl.id)) return true;
+    // MR4-R3: a LEGACY bare call id (pre-upgrade persisted format) is only a wildcard within the
+    // turn that owns the checkpoint it sits in — the checkpoint's turnId is that provenance. A
+    // bare id never suppresses a different (e.g. later) turn's genuine declaration.
+    const cp = s.observerCheckpoint;
+    if (cp !== undefined && cp.turnId === decl.turnId && decl.legacy !== undefined && (cp.declaredIds ?? []).includes(decl.legacy)) return true;
+    return false;
   };
-  const markDeclarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined }): void => {
+  const markDeclarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined; readonly turnId: string }): void => {
     if (declarationDispatched(s, decl)) return;
     s.presentedDeclarations = [...(s.presentedDeclarations ?? []), decl.id];
     try {
@@ -3003,7 +3039,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // fallback can carry the real action text and a reload can restore it whole
           if (decided.resolution === 'in-turn' && session !== undefined && deps.store.get(session.id) !== undefined) {
             const list = [...(session.pendingRequests ?? [])];
-            if (!list.some((r) => r.requestId === msg.requestId)) {
+            // MR1-R3: the unresolved-record upsert is turn-scoped — a later turn reusing the request
+            // id gets its own full record (command included), not a bare shell
+            if (!list.some((r) => r.requestId === msg.requestId && r.turnId === decided.turnId)) {
               list.push({
                 requestId: msg.requestId,
                 kind: 'approval',
@@ -3024,7 +3062,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (decided.resolution === 'in-turn') {
             // t6: relayDecision marks the persisted record once delivery is CONFIRMED (delivered in-turn,
             // follow-up started, or delivery-failed) — an undelivered decision must stay unresolved
-            relayDecision(msg.requestId, msg.decision);
+            relayDecision(msg.requestId, msg.decision, decided.turnId);
             showApprovalHead();
             return;
           }

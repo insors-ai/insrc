@@ -1,6 +1,47 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReportSchema, decodeDesign, requireDesign } from './contracts.js';
-import type { DesignChunkPlan, DesignChunk, DesignChunkResult, DesignReviewInventory, DesignReviewSubject, DesignReviewConsolidated } from './contracts.js';
+import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReportSchema, DesignImpactOutputSchema, decodeDesign, requireDesign } from './contracts.js';
+import type { DesignChunkPlan, DesignChunk, DesignChunkResult, DesignReviewInventory, DesignReviewSubject, DesignReviewConsolidated, DesignAttempt, DesignImpactAssessment } from './contracts.js';
+import { designFindingKey, effectiveDesignFindingOrigins, validateDesignRetainedSource } from './provenance.js';
+
+const equalIds=(a:readonly string[],b:readonly string[])=>a.length===b.length&&new Set(a).size===a.length&&new Set(b).size===b.length&&a.every(x=>b.includes(x));
+
+/** Validate structural claims; semantic impact assessment belongs to the independent reviewer. */
+export function validateDesignImpact(input:unknown,current:DesignAttempt,history:readonly DesignAttempt[]):{plan:DesignChunkPlan;impact:DesignImpactAssessment}{
+ requireDesign(current.preparationKind==='impact','invalid_checkpoint','Impact output requires an admitted impact attempt');
+ requireDesign(history.length===current.number-1&&history.every((a,i)=>a.number===i+1),'invalid_checkpoint','Comparison history must be the immutable prior prefix');
+ const baseline=history.at(-1);
+ requireDesign(baseline?.report&&['passed','changes_requested','incomplete'].includes(baseline.status)&&baseline.report.status===baseline.status,'invalid_checkpoint','Impact comparison requires the immediately preceding complete report');
+ const candidate=decodeDesign(DesignImpactOutputSchema,input,DESIGN_LIMITS.requestBytes),plan=validateDesignPlan(candidate.plan,current.inventory),impact=candidate.impact;
+ requireDesign(impact.baselineAttempt===baseline.number,'invalid_plan','Impact must compare the immediately preceding attempt');
+ const full=!!impact.uncertainReason||!baseline.plan||!current.reviewer||baseline.reviewer!==current.reviewer;
+ requireDesign(!full||impact.mode==='full','invalid_plan','Uncertainty or unusable comparison context requires explicit full mode');
+ const chunks=new Map(plan.chunks.map(c=>[c.id,c])),prior=new Map(baseline.plan?.chunks.map(c=>[c.id,c])??[]);
+ const substantive=plan.chunks.filter(c=>c.purpose==='substantive').map(c=>c.id),consistency=plan.chunks.filter(c=>c.purpose==='consistency').map(c=>c.id);
+ const selected=[...impact.directChunkIds,...impact.indirectChunkIds],retained=impact.retainedCoverage.map(r=>r.chunkId);
+ requireDesign(new Set(selected).size===selected.length&&selected.every(id=>chunks.get(id)?.purpose==='substantive'),'invalid_plan','Selected substantive IDs are unknown or overlapping');
+ requireDesign(new Set(retained).size===retained.length&&retained.every(id=>chunks.get(id)?.purpose==='substantive'&&!selected.includes(id)),'invalid_plan','Retained IDs are unknown, duplicate or selected');
+ requireDesign(equalIds([...selected,...retained],substantive)&&equalIds(impact.consistencyChunkIds,consistency),'invalid_plan','Impact must cover all substantive chunks and select fresh consistency');
+ if(impact.mode==='full')requireDesign(retained.length===0&&equalIds(selected,substantive),'invalid_plan','Full mode must select the whole current plan');
+ const priorSeen=new Set<string>(),currentSeen=new Set<string>();
+ for(const row of impact.chunkMapping){
+  requireDesign(row.priorIds.length+row.currentIds.length>0,'invalid_plan','Mapping cannot have two empty sides');
+  for(const id of row.priorIds){requireDesign(prior.has(id)&&!priorSeen.has(id),'invalid_plan','Mapping has unknown or repeated prior ID');priorSeen.add(id);}
+  for(const id of row.currentIds){requireDesign(chunks.has(id)&&!currentSeen.has(id),'invalid_plan','Mapping has unknown or repeated current ID');currentSeen.add(id);}
+ }
+ requireDesign(substantive.every(id=>currentSeen.has(id))&&[...prior.values()].filter(c=>c.purpose==='substantive').every(c=>priorSeen.has(c.id)),'invalid_plan','Mapping must explain current and prior substantive scope');
+ for(const ref of impact.retainedCoverage){
+  const row=impact.chunkMapping.find(m=>m.currentIds.includes(ref.chunkId));
+  requireDesign(row?.priorIds.length===1&&row.currentIds.length===1,'invalid_plan','Retention requires a one-to-one mapped source');
+  const old=prior.get(row.priorIds[0]!)!,now=chunks.get(ref.chunkId)!;
+  requireDesign(old.purpose==='substantive'&&equalIds(old.selectors,now.selectors)&&equalIds(old.concerns,now.concerns),'invalid_plan','Retained selectors and concerns must match');
+  const dependencies=old.dependsOn.map(id=>{const mapping=impact.chunkMapping.find(m=>m.priorIds.includes(id));requireDesign(mapping?.priorIds.length===1&&mapping.currentIds.length===1,'invalid_plan','Retained dependency lacks one-to-one compatibility');return mapping.currentIds[0]!;});
+  requireDesign(equalIds(dependencies,now.dependsOn),'invalid_plan','Retained dependencies changed incompatibly');
+  validateDesignRetainedSource(history,baseline.number,old.id,ref,current);
+ }
+ const expected=effectiveDesignFindingOrigins(history,baseline.number).map(designFindingKey);
+ requireDesign(equalIds(impact.carriedFindingIds,expected),'invalid_plan','Impact must carry every known effective finding origin');
+ return{plan,impact};
+}
 
 export function validateDesignPlan(input: unknown, inventory: DesignReviewInventory): DesignChunkPlan {
  const plan=decodeDesign(DesignPlanSchema,input,DESIGN_LIMITS.requestBytes);

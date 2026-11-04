@@ -55,7 +55,7 @@ export function readMarkdownLinks(
 	const clean = (raw: string): string => raw.replace(/^<|>$/g, '').split('#')[0]!.split('?')[0]!;
 
 	const addDestination = (raw: string, line: number): void => {
-		const dest = clean(raw.trim());
+		const dest = clean(raw.trim()).replace(TRAILING, '');
 		if (dest === '' || SCHEME.test(dest)) return;
 		let decoded: string;
 		try { decoded = decodeURIComponent(dest); } catch { decoded = dest; }

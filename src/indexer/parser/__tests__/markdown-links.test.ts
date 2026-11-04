@@ -46,6 +46,8 @@ test("s10 t2: link destinations resolve against the document's directory and men
 	assert.equal(byTarget.get(at('docs/b.md'))!.resolved, false);
 	assert.equal(byTarget.get(at('docs/b.md'))!.meta?.['awaitsId'], true);
 	assert.equal(byTarget.get(at('docs/b.md'))!.meta?.['targetFile'], undefined, 'no targetFile, so the file-target classifier leaves it');
+	// Trailing punctuation after a destination is stripped.
+	assert.deepEqual(pathTargets(refs('docs/a.md', '[ref]: b.md.\nSee [c](c.md), then.\n')), [at('docs/b.md'), at('docs/c.md')]);
 	// Outside the repository, and names no parser reads, are not read.
 	assert.deepEqual(refs('docs/a.md', 'See [out](../../etc/passwd.md), [img](pic.png) and `notes/todo`.\n'), []);
 });
@@ -88,6 +90,13 @@ test('s10 t2: preamble and skipped-section links attribute to the file entity; f
 	assert.deepEqual(pathTargets(fenced), [at('docs/after.md')], 'the link inside the still-open fence is not read');
 	const tildes = refs('docs/g.md', '# G\nText.\n~~~~\n~~~\n[hidden](hidden.md)\n~~~~\n[after](after.md)\n');
 	assert.deepEqual(pathTargets(tildes), [at('docs/after.md')], 'a shorter fence does not close a longer one');
+
+	// When every heading's section is skipped, the parser falls back to a whole-file document; the preamble
+	// link is still the file entity's, since the file has headings.
+	const allSkipped = parse('docs/s.md', 'Intro [p](p.md)\n\n# Tiny\n');
+	const skippedFile = allSkipped.entities.find(e => e.kind === 'file')!;
+	assert.ok(allSkipped.entities.some(e => e.kind === 'document'), 'the fallback whole-file document exists');
+	assert.equal(allSkipped.relations.find(r => r.meta?.['linkTarget'] === at('docs/p.md'))!.from, skippedFile.id);
 
 	// A document with no headings attributes to its whole-file document entity.
 	const flat = parse('docs/flat.md', 'Just [x](x.md).\n');

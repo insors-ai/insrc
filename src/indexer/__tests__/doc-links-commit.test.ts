@@ -29,7 +29,7 @@ import type { IndexJob, LLMProvider } from '../../shared/types.js';
 import { IndexQueue } from '../../daemon/queue.js';
 import type { Watcher } from '../watcher.js';
 import { IndexerService } from '../index.js';
-import { runCrossFileResolver } from '../cross-file-resolver.js';
+import { runCrossFileResolver, sqlReferencesForSettle } from '../cross-file-resolver.js';
 import { detectSourceRoots } from '../source-roots.js';
 import { makeEntityId } from '../parser/base.js';
 
@@ -172,6 +172,19 @@ test('s10 t3: Pass 2, the SQL re-check and the SQL by-name return leave doc-link
 	await settle('db/schema.sql', 'docs/a.md');
 	const after = (await pendingOf('docs/a.md')).map(r => ({ rawTo: r.rawTo, meta: r.meta })).sort((x, y) => x.rawTo.localeCompare(y.rawTo));
 	assert.deepEqual(after, before, 'the cross-file passes changed no document-link row');
+
+	// A table whose name meets the document's name reference by the SQL rule ('schema.sql' -> last segment 'sql'):
+	// the settle of that SQL file does not select the document's row for re-checking, nor does Pass 2 touch it.
+	write('db/more.sql', 'CREATE TABLE sql (id INT);\n');
+	await svc.processJob({ kind: 'file', filePath: join(repo, 'db/more.sql'), event: 'create' });
+	write('docs/n.md', '# N\nSee schema.sql.\n');
+	await svc.processJob({ kind: 'file', filePath: join(repo, 'docs/n.md'), event: 'create' });
+	const nameRow = (await pendingOf('docs/n.md'))[0]!;
+	assert.equal(nameRow.rawTo, 'schema.sql');
+	const selected = await sqlReferencesForSettle({ db, repoRoot: repo, sourceRoots: detectSourceRoots(repo), mode: 'settle', committedFiles: [join(repo, 'db/more.sql')] });
+	assert.ok(!selected.some(r => r.id === nameRow.id), 'the SQL re-check does not select a document link');
+	await settle('db/more.sql');
+	assert.deepEqual((await pendingOf('docs/n.md')).map(r => r.meta), [nameRow.meta], 'and the settle leaves it as it was');
 
 	// The SQL file is removed: the document's stored link returns as a plain row awaiting the file id, not by name.
 	const schema = (await entityU64ForId(fileId('db/schema.sql')))!;

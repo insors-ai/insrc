@@ -851,7 +851,8 @@ async function sqlReferencesAwaitingCommitted(
     r.meta['class'] === 'ambiguous' && Array.isArray(r.meta['candidates']) && (r.meta['candidates'] as unknown[]).some(id => typeof id !== 'string' || !index.byId.has(id));
   const seen = new Set(inScope.map(r => r.id));
   return (await listUnresolvedRelations(opts.db, opts.repoRoot))
-    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && !seen.has(r.id))
+    // A document's link (s10) is never a SQL reference, whatever its name.
+    .filter(r => r.kind === 'REFERENCES' && r.meta['awaitsId'] !== true && r.meta['docLink'] !== true && !seen.has(r.id))
     .filter(r => r.meta[SQL_REPEND_MARKER] === true || names.has(sqlLastSegmentKey(r.rawTo)) || goneCandidate(r));
 }
 

@@ -386,7 +386,15 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       const cur = await generationOf(p.current);
       if (cur !== undefined) candidates.push({ generation: cur, path: p.current });
       for (const c of candidates) {
-        const offset = await turnStartOffset(c.path, turnId);
+        // A candidate whose file was deleted by another process (stale archive entry) is skipped and
+        // pruned — recovery must fall through to later retained files, not throw on the first gap.
+        let offset: number | undefined;
+        try {
+          offset = await turnStartOffset(c.path, turnId);
+        } catch {
+          archived.delete(`${base}:${c.generation}`);
+          continue;
+        }
         if (offset !== undefined) return { sessionId, turnId, generation: c.generation, offset };
       }
       return undefined;

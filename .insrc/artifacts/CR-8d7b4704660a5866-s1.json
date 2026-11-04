@@ -1,0 +1,281 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-1cb7b208-2eba-4ac6-8c2c-36c965eaa9e2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:26:08.975Z",
+    "epicCreatedAt": "2026-11-04T05:07:44.517Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "8d7b4704660a5866",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "fix-vs-code-setting-convert-escalation",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "88a45ef6a3ad2ea111a122ba4f4366e90f2e16a554f56c8b7ed5d29bac90ca44",
+        "at": "2026-11-04T05:26:08.975Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "incomplete",
+    "reviews": [
+      {
+        "reviewId": "review-8d7b4704660a5866-s1-r1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "incomplete",
+        "scope": {
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-8d7b4704660a5866.json",
+              "commit": "ffd812e79bd66e4b89581dd362a0c3be2c4709cc"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "91cce9e62e5649888912760010a9c2b75c67eaab",
+              "parent": "0490b4db61d46239f0aa311aeb946e2dedd07170",
+              "files": [
+                {
+                  "path": "vscode-plugin/package.json",
+                  "segments": [
+                    {
+                      "after": [
+                        741,
+                        741
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        15,
+                        15
+                      ]
+                    },
+                    {
+                      "after": [
+                        29,
+                        29
+                      ]
+                    },
+                    {
+                      "after": [
+                        78,
+                        78
+                      ]
+                    },
+                    {
+                      "after": [
+                        88,
+                        88
+                      ]
+                    },
+                    {
+                      "after": [
+                        96,
+                        124
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/config/key-map.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        32,
+                        46
+                      ]
+                    },
+                    {
+                      "after": [
+                        135,
+                        135
+                      ]
+                    },
+                    {
+                      "after": [
+                        147,
+                        147
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "commit": "8a82006af49749c11cdee01481efe582789ebd99",
+              "parent": "3e632f2e060b423b42b24690bfca7f33cc46d894",
+              "files": [
+                {
+                  "path": "vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        59
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/config/legacy-keys.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        1,
+                        58
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/extension.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        46,
+                        46
+                      ]
+                    },
+                    {
+                      "after": [
+                        276,
+                        285
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "vscode-plugin/src/vscode.d.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        212,
+                        213
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "incomplete",
+            "summary": "The native-id fix (nativeRoleKey camelCase-joining, package.json key rename, prefix-collision test) is correct, narrowly scoped to the one real collision in the current role taxonomy, and well covered by tests that all pass. The second commit's value-migration path, however, reads the stuck legacy value through the exact same VS Code configuration API (nested dotted-path resolution) that the ISSUE's own root cause documents as broken for this specific key pair, so it is likely to silently no-op for the primary repro scenario it was written to fix; no test exercises the real API to catch this.",
+            "findings": [
+              {
+                "severity": "MED",
+                "location": "vscode-plugin/src/extension.ts:279-284",
+                "message": "migrateLegacyKeys reads the stuck legacy value via `vscode.workspace.getConfiguration().inspect('insrc.models.tasks.tools.convert.escalate')?.globalValue`. The ISSUE's own root cause (ISSUE-8d7b4704660a5866, rootCause) states that this exact key returns undefined from `.get()` because its sibling leaf setting `insrc.models.tasks.tools.convert` (vscode-plugin/package.json:730, unchanged, still a string-typed setting) occupies the same node in VS Code's nested configuration tree, so indexing one level deeper for `.escalate` fails. `inspect()` resolves a section's per-scope value (including `globalValue`) through the same underlying nested configuration model as `.get()`, so for the repro's own precondition ('while insrc.models.tasks.tools.convert is also set') the legacy read is very likely to also return undefined. legacy-keys.ts:41-43 then hits `if (entry === undefined || value === undefined) continue;` and silently skips the move — defeating the commit's stated acceptance criterion ('Move a value a user already has under the old id to the new one once, so it is not lost') for the exact scenario the fix targets.",
+                "rationale": "This is the primary functional promise of the second commit (data preservation across the rename), it fails specifically for the scenario the ISSUE reproduces (both sibling keys set), and the failure mode is silent (no error, no notification) — a user who had the old value set would simply find it gone with no explanation, and would have to notice and re-enter the tier manually. Severity is MED rather than HIGH because the failure is not destructive beyond the pre-existing broken state (the value was already functionally inert since the daemon never received it before this fix either) and the underlying write-side bug (the actual VS Code 'change not applied' defect) is still fixed going forward for new edits under the new id.",
+                "evidenceReferences": [
+                  "ffd812e79bd66e4b89581dd362a0c3be2c4709cc:.insrc/artifacts/ISSUE-8d7b4704660a5866.json",
+                  "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/extension.ts",
+                  "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/config/legacy-keys.ts",
+                  "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/package.json"
+                ]
+              }
+            ],
+            "testCoverage": {
+              "assessment": "partial",
+              "explanation": "per-role.test.ts and legacy-keys.test.ts both pass (verified by my own execution) and thoroughly exercise the pure logic: nativeRoleKey's camelCase-join vs. unchanged-id branches, the manifest↔taxonomy exact-cover contract against the real package.json, the no-dotted-prefix invariant across both the manifest and the merged key map, and migrateLegacyKeys' move/skip/never-throw branches. What is not and cannot be covered by this Node-only test suite is the real `vscode.workspace.getConfiguration().inspect()` behavior against VS Code's nested configuration tree — legacy-keys.test.ts injects a plain-object `read`/`apply`/`clear`, so the exact collision described in the MED finding is never exercised. This is a genuine coverage gap on the one piece of behavior that most needed a check against real VS Code semantics (the same semantics the ISSUE itself documents as the root cause).",
+              "evidenceReferences": [
+                "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+                "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/src/config/__tests__/per-role.test.ts"
+              ]
+            },
+            "limitations": [
+              "Required coverage remains partial: per-role.test.ts and legacy-keys.test.ts both pass (verified by my own execution) and thoroughly exercise the pure logic: nativeRoleKey's camelCase-join vs. unchanged-id branches, the manifest↔taxonomy exact-cover contract against the real package.json, the no-dotted-prefix invariant across both the manifest and the merged key map, and migrateLegacyKeys' move/skip/never-throw branches. What is not and cannot be covered by this Node-only test suite is the real `vscode.workspace.getConfiguration().inspect()` behavior against VS Code's nested configuration tree — legacy-keys.test.ts injects a plain-object `read`/`apply`/`clear`, so the exact collision described in the MED finding is never exercised. This is a genuine coverage gap on the one piece of behavior that most needed a check against real VS Code semantics (the same semantics the ISSUE itself documents as the root cause)."
+            ],
+            "advice": [
+              "Optional execution: did not run a live VS Code extension host to empirically confirm the inspect()/get() nested-tree collision for the legacy key; the finding is based on the ISSUE's own documented root cause plus VS Code's standard configuration-model resolution semantics, not a live reproduction.",
+              "Consider verifying the migration against a real VS Code window with both insrc.models.tasks.tools.convert and the legacy ...convert.escalate set in settings.json, to confirm whether inspect().globalValue actually recovers the value; if it does not, reading the raw settings.json file directly (bypassing the configuration API) would be a more robust recovery path for this one key.",
+              "migrateLegacyKeys calls deps.clear(legacy) unconditionally whenever entry+value are both defined, even when the value is not moved (already held under the new id, or invalid) — reasonable as best-effort cleanup of an orphaned/invalid key, but legacy-keys.test.ts does not assert cleared in those two branches, so this behavior is currently unverified by name."
+            ],
+            "inspectedReferences": [
+              "ffd812e79bd66e4b89581dd362a0c3be2c4709cc:.insrc/artifacts/ISSUE-8d7b4704660a5866.json",
+              "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/package.json",
+              "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/src/config/__tests__/per-role.test.ts",
+              "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/src/config/key-map.ts",
+              "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+              "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/config/legacy-keys.ts",
+              "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/extension.ts",
+              "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/vscode.d.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "vscode-plugin/src/config/__tests__/per-role.test.ts",
+                "cases": [
+                  "buildPerRoleKeyMap returns one entry per taxonomy role with the right shape",
+                  "a dotted roleId yields the roleId as a SINGLE literal 3rd segment (not a dot-split)",
+                  "the merged (global + per-role) key map resolves both a global and a per-role key by nativeKey without collision",
+                  "declared insrc.models.tasks.* keys EXACTLY cover the role taxonomy (no missing, no extra)",
+                  "each per-role key is a machine-scoped enum with default = the role's defaultTier",
+                  "nativeRoleKey keeps a role id as it is, and joins a role that extends another role onto its parent in camel case",
+                  "the convert escalation role keeps its catalog path and maps to the non-nested native id",
+                  "no declared setting id and no key-map native id is a dotted prefix of another (VS Code cannot nest a child under a value)"
+                ],
+                "command": "npx tsx --test-force-exit vscode-plugin/src/config/__tests__/per-role.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout at commit 91cce9e62e5649888912760010a9c2b75c67eaab (unchanged since): all 8 cases passed.",
+                "evidenceReferences": [
+                  "91cce9e62e5649888912760010a9c2b75c67eaab:vscode-plugin/src/config/__tests__/per-role.test.ts"
+                ]
+              },
+              {
+                "file": "vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+                "cases": [
+                  "the renamed escalation id is in the legacy list and its replacement is a mapped id",
+                  "a valid value under the old id moves to the new id when the new id still shows its default, and the old id is cleared",
+                  "a value already held under the new id, an invalid value or no value is never moved",
+                  "a failing clear or apply never throws"
+                ],
+                "command": "npx tsx --test-force-exit vscode-plugin/src/config/__tests__/legacy-keys.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout at commit 8a82006af49749c11cdee01481efe582789ebd99 (unchanged since): all 4 cases passed.",
+                "evidenceReferences": [
+                  "8a82006af49749c11cdee01481efe582789ebd99:vscode-plugin/src/config/__tests__/legacy-keys.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): incomplete.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"s1\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"taskId\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"status\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"summary\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"findings\",\"correction\":\"Return findings as a top-level JSON array.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"testCoverage\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"limitations\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"advice\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"inspectedReferences\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-04T05:26:04.985Z",
+        "buildFingerprint": "5cdea42c5c4eacc3c61633712f44267d8a59f142d749b945d3c40c1208f9f2c7"
+      }
+    ]
+  },
+  "citations": []
+}

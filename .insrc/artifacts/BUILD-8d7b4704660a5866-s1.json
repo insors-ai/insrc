@@ -6,7 +6,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 3,
         "contentHash": "b98598755765f43376a6f5a404ee2a5baf444126042da7bc4ae7c5784659e1fa",
@@ -17,7 +17,19 @@
           "properties": {}
         }
       },
-      "signoffs": []
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T05:55:32.881Z",
+        "override": {
+          "reason": "User-approved (a): daemon review r1 ended with one MED finding (the one-time move of the old convert.escalate value reads it through VS Code's nested configuration API and will probably no-op) and an incomplete publication. Accepted as best-effort: the rename fix is covered by tests, and the worst case is the user re-selects the tier once."
+        }
+      }
     },
     "workflow": "build",
     "runId": "store-4cd03f85-5722-4812-ae37-9dc7d13ed32d",

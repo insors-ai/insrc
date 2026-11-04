@@ -14703,6 +14703,10 @@
      "log.debug"
     ],
     [
+     "diagnostic",
+     "log.debug"
+    ],
+    [
      "storage-call",
      "readIndexState"
     ],
@@ -14711,9 +14715,9 @@
      "readUnattributedUnwritable"
     ]
    ],
-   "siteCount": 6,
-   "sitesDigest": "bb882b285db1e3b0dd828381be18aab745e20b75f839f8c5c69cbf03b92897c8",
-   "sourceDigest": "c55dfc0c77b0b1d401daad88e422ddec4403dfbdab24d982100f36a0c2583939",
+   "siteCount": 7,
+   "sitesDigest": "3e67cbffc16efcccfe55a3fd3c2e7e9eb4540bc3c6a89f478cd6be2fdd88df12",
+   "sourceDigest": "d2674c569c2d938dd9ff95ba5419debce0a8f51ade319a677aca782e1fba469e",
    "boundaries": [
     "diagnostic",
     "storage-call"
@@ -40006,6 +40010,10 @@
     ],
     [
      "storage-call",
+     "readDocRelationQuality"
+    ],
+    [
+     "storage-call",
      "readDocRelationRowsInTxn"
     ],
     [
@@ -40021,9 +40029,9 @@
      "switchOf"
     ]
    ],
-   "siteCount": 11,
-   "sitesDigest": "b0896680f51b067a1d2ff1e10541806bc08395ea68dc5fa5fd7f9e8af8ad2645",
-   "sourceDigest": "9569355fa6266e4110f4c3b825f761f9e2b91eb2d4b7f6e254b38a792651e755",
+   "siteCount": 12,
+   "sitesDigest": "5338b9d4e47366c3cb196c2acf4a28c56d0277d2f04c16a4325eb3735c6cfe04",
+   "sourceDigest": "d4afe3e3a55775ce84438dd1447c367aa23c0ca3a54ed9169787abf76b6f21ad",
    "boundaries": [
     "filesystem-read",
     "serialization",

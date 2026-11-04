@@ -354,6 +354,22 @@ data class RepoStatsDto(
     val pendingJobs: Int,
     /** Whether the index is complete (Epic c2ba6fa6 s1); null when the reply has no field (unknown: a daemon before the change). */
     val completeness: RepoCompletenessDto? = null,
+    /** Model-proposed document relationships (Epic c2ba6fa6 s10); null when the reply has no field (a daemon before the change). */
+    val docRelations: DocRelationsDto? = null,
+)
+
+/**
+ * The plugin mirror of the daemon's `DocRelationsStatus` (Epic c2ba6fa6 s10):
+ * the switch, the measured figures (null when never measured) and the last
+ * pass's extraction state with its cause.
+ */
+data class DocRelationsDto(
+    val switch: String,
+    val checked: Int?,
+    val precision: Double?,
+    val recall: Double?,
+    val extractionState: String?,
+    val extractionReason: String?,
 )
 
 /**
@@ -1501,7 +1517,27 @@ class DaemonGatewayImpl(private val rpc: DaemonRpc) : DaemonGateway {
             sizeBytes = (data["sizeBytes"] as? Number)?.toLong() ?: 0L,
             pendingJobs = (data["pendingJobs"] as? Number)?.toInt() ?: 0,
             completeness = parseCompleteness(data["completeness"]),
+            docRelations = parseDocRelations(data["docRelations"]),
         )
+
+        /**
+         * The `docRelations` field of a repo.stats reply (Epic c2ba6fa6 s10), or null when it is
+         * absent or has no string `switch`.
+         */
+        internal fun parseDocRelations(raw: Any?): DocRelationsDto? {
+            val m = raw as? Map<*, *> ?: return null
+            val switch = m["switch"] as? String ?: return null
+            val figures = m["figures"] as? Map<*, *>
+            val extraction = m["extraction"] as? Map<*, *>
+            return DocRelationsDto(
+                switch = switch,
+                checked = (figures?.get("checked") as? Number)?.toInt(),
+                precision = (figures?.get("precision") as? Number)?.toDouble(),
+                recall = (figures?.get("recall") as? Number)?.toDouble(),
+                extractionState = extraction?.get("state") as? String,
+                extractionReason = (extraction?.get("reason") as? String)?.takeIf { it.isNotEmpty() },
+            )
+        }
 
         /**
          * The `completeness` field of a repo.stats reply (Epic c2ba6fa6 s1), or null when it is

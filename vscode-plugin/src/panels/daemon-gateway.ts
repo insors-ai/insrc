@@ -88,6 +88,7 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
         name: r.name,
         ...(r.status !== undefined ? { status: r.status } : {}),
         ...(r.completeness !== undefined ? { completeness: r.completeness } : {}),
+        ...(r.docRelations !== undefined ? { docRelations: r.docRelations } : {}),
       }));
     },
 

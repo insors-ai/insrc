@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { amendmentOfHead } from '../../amendments/store.js';
 import { checkHeadIntegrity, checkIntegrity, contentHash } from '../../artifact-core/lifecycle.js';
 import type { Actor, Lifecycle } from '../../artifact-core/types.js';
 import { readReviewReport } from '../../review/report-log.js';
@@ -118,5 +119,33 @@ describe('convert-lifecycle-backfill', () => {
 		assert.equal((parse(draft.converted.bytes).meta['lifecycle'] as Lifecycle).status, 'approved');
 		assert.throws(() => run({ artifactId: ID, json: { meta: {} } }), ConversionUnreadable);
 		assert.throws(() => run({ artifactId: ID, json: 'x' }), ConversionUnreadable);
+	});
+	it('convert-lifecycle-backfill.test.ts: an approved head with a string approvedBy gets an approval actor named by it', () => {
+		const AMD = `AMD-${H}-1`;
+		const amendment = (body: Record<string, unknown>): RawHead => ({
+			artifactId: AMD,
+			json: { meta: { workflow: 'design.epic', epicHash: H, epicSlug: 'e', createdAt: '2026-10-20T10:00:00.000Z', epicCreatedAt: '2026-10-19T10:00:00.000Z', approvedAt: '2026-10-21T10:00:00.000Z' }, body: { id: AMD, hldBaseRunId: 'wf-1', proposedBy: { stage: 'design.story', storyId: 's1' }, proposedAt: '2026-10-20T10:00:00.000Z', amendment: { type: 'sharedContract.fieldAdd', contractId: 'sc1', field: { name: 'x', type: 'string', optional: false, purpose: 'p' }, breaking: false }, rationale: 'r', ...body }, citations: [] },
+		});
+		const named = run(amendment({ approvedBy: 'Subho Ghosh (in-chat approval)' }));
+		const by = (parse(named.converted.bytes).meta['lifecycle'] as Lifecycle).approval?.by as Actor;
+		assert.deepEqual([by.id, by.kind, by.name], ['local:subho-ghosh-in-chat-approval', 'person', 'Subho Ghosh (in-chat approval)'], 'the id comes from personOf and the name is kept');
+		assert.equal((parse(named.converted.bytes).meta['lifecycle'] as Lifecycle).approval?.at, '2026-10-21T10:00:00.000Z', 'the approval time is the stamp');
+		// the amendment store reads the original approver, not legacy:unknown
+		const record = amendmentOfHead('/nowhere', JSON.parse(named.converted.bytes));
+		assert.equal(record?.status, 'approved');
+		assert.equal(record?.approvedBy, 'Subho Ghosh (in-chat approval)');
+		// a namespaced approver keeps its id as it is
+		const namespaced = run(amendment({ approvedBy: 'github:alice' }));
+		assert.equal(((parse(namespaced.converted.bytes).meta['lifecycle'] as Lifecycle).approval?.by as Actor).id, 'github:alice');
+	});
+
+	it('convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before', () => {
+		const LEGACY: Actor = { id: 'legacy:unknown', kind: 'person', properties: {} };
+		for (const approvedBy of [undefined, '', '   ', 7, null]) {
+			const out = run(legacy({ approvedAt: '2026-10-21T10:00:00.000Z' }, approvedBy === undefined ? { goal: 'g' } : { goal: 'g', approvedBy }));
+			const lifecycle = parse(out.converted.bytes).meta['lifecycle'] as Lifecycle;
+			assert.equal(lifecycle.status, 'approved');
+			assert.deepEqual(lifecycle.approval?.by, LEGACY, `approvedBy ${JSON.stringify(approvedBy)} keeps the legacy actor`);
+		}
 	});
 });

@@ -48,7 +48,7 @@ const serviceFor = (repoPath: string, opts: AmendmentDecisionOptions | undefined
 	opts?.lifecycle ?? createRepoLifecycle(repoPath).service;
 
 /** The actor a decision names: a namespaced id as it is, any other name as `local:<name>` carrying the name it was given. */
-function personOf(who: string): Actor {
+export function personOf(who: string): Actor {
 	if (/^[a-z][a-z0-9-]*:\S+$/.test(who) && who === who.toLowerCase()) return { id: who, kind: 'person', properties: {} };
 	const slug = who.toLowerCase().replace(/[^a-z0-9._-]+/g, '-').replace(/^-+|-+$/g, '');
 	return { id: `local:${slug.length > 0 ? slug : 'unknown'}`, kind: 'person', name: who, properties: {} };

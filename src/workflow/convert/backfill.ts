@@ -18,6 +18,7 @@
  * so it is the last revision-bearing entry and `checkIntegrity` compares the head against it.
  */
 
+import { personOf } from '../amendments/store.js';
 import { contentHash } from '../artifact-core/lifecycle.js';
 import type { Actor, ChangeLogEntry, Lifecycle, Review, Status } from '../artifact-core/types.js';
 import { reviewerPartyOf } from '../review/party.js';
@@ -113,8 +114,11 @@ export function backfillHead(input: BackfillInput): BackfillResult {
 		? { ...existing.revision, contentHash: hash }
 		: { number: revisionNumber, contentHash: hash, at: createdAt ?? now, by: LEGACY_ACTOR };
 	const override = isObj(oldMeta['reviewOverride']) ? text(oldMeta['reviewOverride']['reason']) : undefined;
+	// an amendment keeps its approver's name in body.approvedBy; any other head has none and keeps the legacy actor
+	const approvedByName = typeof body['approvedBy'] === 'string' && body['approvedBy'].trim() !== '' ? body['approvedBy'] : undefined;
+	const approver: Actor = approvedByName !== undefined ? personOf(approvedByName) : LEGACY_ACTOR;
 	const approval = existing?.status === status && existing.approval !== undefined ? existing.approval
-		: status === 'approved' ? { revision: revision.number, by: LEGACY_ACTOR, at: stampedAt(approvedAt), ...(override !== undefined ? { override: { reason: override } } : {}) }
+		: status === 'approved' ? { revision: revision.number, by: approver, at: stampedAt(approvedAt), ...(override !== undefined ? { override: { reason: override } } : {}) }
 		: undefined;
 
 	// the review

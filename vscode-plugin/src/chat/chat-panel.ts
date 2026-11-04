@@ -1575,7 +1575,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId);
     // a snapshot-restored request (in restoredRequestIds) is unresolved by construction — the
     // follow-up must answer it even when no pendingRequests record exists
-    if (!undelivered && (persisted === undefined ? !restoredRequestIds.has(requestId) : persisted.resolved)) return;
+    // a request this host's queue just decided (decidedRequestIds) is a valid decision even if its
+    // turn already ended and nothing was persisted yet — the follow-up must answer it (delivered or
+    // delivery-failed), never a silent no-op recorded as approved
+    if (!undelivered && (persisted === undefined ? !(restoredRequestIds.has(requestId) || decidedRequestIds.has(requestId)) : persisted.resolved)) return;
     if (followUpsStarted.has(requestId)) return;
     followUpsStarted.add(requestId);
     deliverDecisionAsFollowUp(requestId, decision);
@@ -2889,9 +2892,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
-          // an in-turn decision with NO live turn cannot be delivered in-turn — record it resolved
-          // here so it never silently disappears; with a live turn, relayDecision confirms delivery
-          if (decided.resolution === 'in-turn' && turns.live === undefined) markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);

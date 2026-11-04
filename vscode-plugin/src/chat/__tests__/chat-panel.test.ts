@@ -5681,9 +5681,22 @@ test('E202611031bd72813:S001 t2: two pending requests keep waiting-input until B
     { kind: 'approval-request', turnId: 't1', requestId: 'r2', title: 'B', detail: 'd' },
     { kind: 'done', turnId: 't1', ok: true, sessionId: 's1' },
   ];
+  // follow-up runs (run #2+) must not re-raise the same approval/selection events — a real
+  // follow-up prompt ("Approved — run exactly this now: …") is answered, it does not re-ask
+  let runIdxT2 = 0;
+  const adapterT2: StreamAdapter = {
+    ...scriptedAdapter(evs, { gateBeforeDone: gate }),
+    run(req: TurnRequest, opts?: RunOptions) {
+      runIdxT2 += 1;
+      const tid = `t1-r${runIdxT2}`;
+      const followUp = runIdxT2 > 1;
+      const evs2 = followUp ? evs.filter((e) => e.kind === 'done').map((e) => ({ ...e, turnId: tid })) : evs.map((e) => ({ ...e, turnId: tid }));
+      return scriptedAdapter(evs2, { gateBeforeDone: followUp ? undefined : gate }).run(req, opts);
+    },
+  };
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter(evs, { gateBeforeDone: gate }) }, ['claude']),
+    providers: registry({ claude: adapterT2 }, ['claude']),
     store,
     cwd: () => '/repo',
   });

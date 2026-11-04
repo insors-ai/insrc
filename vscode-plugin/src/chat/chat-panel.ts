@@ -1060,6 +1060,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       blockKind: classifyPermissionDenial(ev.detail),
       resolution: resolutionOf(ev),
     });
+    // t6: keep the persisted queue snapshot fresh on every enqueue — otherwise a request arriving
+    // after the last snapshot would be lost on reload (restore replaces the queue with the snapshot)
+    if (session !== undefined && deps.store.get(session.id) !== undefined) {
+      session.queueSnapshot = approvals.snapshot();
+      trySave(session);
+    }
     reportCards(); // Story S002
     showApprovalHead();
   };
@@ -1375,7 +1381,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const decisions = batch.decisions;
     // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
     // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
-    pendingFollowUp = { decisions: decisions.map((d) => ({ requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied' })) };
+    pendingFollowUp = { decisions: decisions.map((d) => ({ requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied' })), excludeTurnId: turns.live?.turnId };
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
     void p.then(
       () => {
@@ -1414,7 +1420,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
-        pendingFollowUp = { decisions: [{ requestId, outcome: decision === 'approve' ? 'approved' : 'denied' }] };
+        pendingFollowUp = { decisions: [{ requestId, outcome: decision === 'approve' ? 'approved' : 'denied' }], excludeTurnId: turns.live?.turnId };
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
         started = true;
         void p.then(
@@ -1447,17 +1453,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const followUpsStarted = new Set<string>();
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
-  let pendingFollowUp: { readonly decisions: readonly { readonly requestId: string; readonly outcome: string }[] } | undefined;
+  let pendingFollowUp: { readonly decisions: readonly { readonly requestId: string; readonly outcome: string }[]; readonly excludeTurnId: string | undefined } | undefined;
 
   /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
   const deliveryWired = new WeakSet<object>();
   const wireDeliveryFailure = (ad: StreamAdapter): void => {
     if (deliveryWired.has(ad) || ad.onDeliveryFailed === undefined) return;
     deliveryWired.add(ad);
-    ad.onDeliveryFailed((_turnId, failedRequestId, failedDecision) => {
+    ad.onDeliveryFailed((turnId, failedRequestId, failedDecision) => {
       // the stdin write failed AFTER decide() reported delivered — correct the persisted outcome
-      // and answer the request with the follow-up run instead of leaving it approved
-      const s = session;
+      // and answer the request with the follow-up run instead of leaving it approved. Resolve the
+      // session by the failed turn's id, not the currently selected chat.
+      const s = deps.store.list().map((sum) => deps.store.get(sum.id)).find((x) => x?.liveTurn?.cursor.turnId === turnId) ?? session;
       if (s === undefined) return;
       markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
       reevaluateChatStatus(s);
@@ -2396,8 +2403,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let dt: DiffTurn | undefined;
     const sink: TurnSink = {
       onSpawn: (cli) => {
-        // a pending follow-up run actually spawned: its decisions were delivered
-        if (pendingFollowUp !== undefined) {
+        // a pending follow-up run actually spawned: its decisions were delivered. Only a spawn of a
+        // DIFFERENT turn than the one the follow-up was queued behind consumes the marker — events of
+        // the original turn must not mark the follow-up delivered before it starts.
+        if (pendingFollowUp !== undefined && turns.live?.turnId !== pendingFollowUp.excludeTurnId) {
           for (const d of pendingFollowUp.decisions) markPersistedRequest(s, d.requestId, true, d.outcome);
           pendingFollowUp = undefined;
         }
@@ -2437,7 +2446,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // delivered (adapters that never call onSpawn are covered here; onSpawn covers spawn-only).
         // An ERROR as the first event means the spawn/setup failed BEFORE onSpawn — leave
         // pendingFollowUp set so the settled run is marked delivery-failed, not approved.
-        if (pendingFollowUp !== undefined && ev.kind !== 'error') {
+        if (pendingFollowUp !== undefined && ev.kind !== 'error' && ev.turnId !== pendingFollowUp.excludeTurnId) {
           for (const d of pendingFollowUp.decisions) markPersistedRequest(s, d.requestId, true, d.outcome);
           pendingFollowUp = undefined;
         }

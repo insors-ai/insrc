@@ -19,7 +19,7 @@
  */
 
 import { appendFile, mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { readFileSync, writeFileSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync, readdirSync, statSync } from 'node:fs';
 import { abortableSleep, errCode } from './async-util.js';
 
 /** Where a reader is in a turn's segment: the byte offset just after the last line it handled. */
@@ -63,6 +63,8 @@ export interface SessionOutputFs {
   rmSync?(path: string): void;
   /** Create-only write (O_EXCL) for lock files. */
   writeFileExclusive?(path: string, data: string): Promise<void>;
+  readdirSync?(path: string): string[];
+  sizeSync?(path: string): number | undefined;
 }
 
 
@@ -112,6 +114,14 @@ export const nodeSessionOutputFs: SessionOutputFs = {
   writeFileSync: (p, data) => writeFileSync(p, data),
   rmSync: (p) => rmSync(p, { force: true }),
   writeFileExclusive: (p, data) => writeFile(p, data, { flag: 'wx' }),
+  readdirSync: (p) => readdirSync(p),
+  sizeSync: (p) => {
+    try {
+      return statSync(p).size;
+    } catch {
+      return undefined;
+    }
+  },
 };
 
 /** The reserved key that marks a host-written line; a CLI stream line never has it at top level. */
@@ -347,6 +357,19 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     return p;
   };
 
+  /** Fully synchronous pin check (seam permitting) — used immediately before a replacing rename,
+   * with no await in between, so a registration that completed cannot be missed. */
+  const genPinnedSync = (sessionId: string, generation: number): boolean => {
+    const prefix = `${sessionFileName(sessionId)}:${generation}:`;
+    for (const key of pinned.keys()) if (key.startsWith(prefix)) return true;
+    if (fs.readdirSync === undefined) return false;
+    try {
+      return fs.readdirSync(deps.root).some((n) => n.startsWith(pinPrefix(sessionId, generation)));
+    } catch {
+      return false;
+    }
+  };
+
   /** The file currently holding a cursor's generation. */
   const fileFor = async (cursor: SegmentCursor): Promise<string> => {
     const p = paths(cursor.sessionId);
@@ -456,20 +479,22 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           // E202611031bd72813:S001 t5: retention tied to registered cursors — a pinned previous
           // generation is archived, not discarded, so its reader never hits SegmentGone.
           const prevGen = await generationOf(p.previous);
+          let archivedPrev = false;
+          const archivePrev = async (): Promise<void> => {
+            if (archivedPrev || prevGen === undefined) return;
+            archivedPrev = true;
+            const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
+            await fs.rename(p.previous, arch);
+            archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
+          };
           // pinned by ANY reader — in this process OR by a durable marker from another one
-          const pinnedHere = prevGen !== undefined && (await genPinned(sessionId, prevGen, false));
-          if (prevGen !== undefined && pinnedHere) {
-            const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
-            await fs.rename(p.previous, arch);
-            archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
-          }
-          // Re-check pins IMMEDIATELY before the replacing rename: a registration that landed between
-          // the check above and here (sync marker write is visible at once) must not lose its generation.
-          if (prevGen !== undefined && !pinnedHere && (await genPinned(sessionId, prevGen, false))) {
-            const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
-            await fs.rename(p.previous, arch);
-            archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
-          }
+          if (prevGen !== undefined && (await genPinned(sessionId, prevGen, false))) await archivePrev();
+          // Re-check pins before the replacing rename: a registration that landed since the check
+          // (marker write is visible at once) must not lose its generation.
+          if (prevGen !== undefined && !archivedPrev && (await genPinned(sessionId, prevGen, false))) await archivePrev();
+          // Final SYNCHRONOUS pin check immediately before the replacing rename — no await between
+          // this scan and the rename, so a registration that completed cannot slip past it.
+          if (prevGen !== undefined && !archivedPrev && genPinnedSync(sessionId, prevGen)) await archivePrev();
           await fs.rename(p.current, p.previous); // replaces the older generation
           generation = undefined;
           });

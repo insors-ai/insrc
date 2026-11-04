@@ -465,13 +465,18 @@ test('E202611031bd72813:S001 t5: registerCursor takes the session lock around it
   const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
   const seg1 = await so.beginTurn('s1', 't1');
   await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor);
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'uncontended: the marker is durable before registerCursor returns');
+  so.unregisterCursor(seg1.cursor);
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.default')), 3000, 'marker removed');
   writeFileSync(join(dir, 's1.lock'), String(process.pid)); // lock held by a LIVE pid (not stale)
   const t0 = Date.now();
   so.registerCursor(seg1.cursor);
   const elapsed = Date.now() - t0;
-  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'the marker is on disk before registerCursor returns, despite the held lock');
   assert.ok(elapsed < 2000, `the lock spin is bounded (took ${elapsed}ms)`);
+  assert.ok(!existsSync(join(dir, 's1.pin.1.default')), 'while the lock is held, the marker is NOT written unlocked — only the queued locked write remains');
   rmSync(join(dir, 's1.lock'), { force: true });
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.default')), 3000, 'the queued locked write lands once the lock is free (tail awaits it before reading)');
   await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });

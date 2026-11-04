@@ -237,7 +237,7 @@ internal fun describeDocRelations(d: ai.insors.insrc.jetbrains.daemon.DocRelatio
     val head = when (d.switch) {
         "on" -> "document links: on$figures"
         "off" -> "document links: off$figures"
-        else -> "document links: not measured"
+        else -> "document links: not-measured"
     }
     if (d.extractionState != "unavailable") return head
     val why = d.extractionReason ?: "no reason recorded"

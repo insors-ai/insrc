@@ -29,9 +29,9 @@ test('s10 t10: CLI ReposPane renders docRelations states', () => {
 	const on = frameOf(repo({ switch: 'on', figures, extraction: { state: 'unavailable', reason: 'signed out', examined: 0, failed: 0, updatedAt: 'x' } }));
 	assert.match(on.split('\n')[1] ?? '', /^\s+document links: on \(P 0\.97 \/ R 0\.64 on 110 links\); new documents not examined: signed out$/, on);
 	const notMeasured = frameOf(repo({ switch: 'not-measured' }));
-	assert.match(notMeasured.split('\n')[1] ?? '', /^\s+document links: not measured$/, notMeasured);
+	assert.match(notMeasured.split('\n')[1] ?? '', /^\s+document links: not-measured$/, notMeasured);
 	const unavailable = frameOf(repo({ switch: 'not-measured', extraction: { state: 'unavailable', reason: 'mid tier not a CLI', examined: 0, failed: 0, updatedAt: 'x' } }));
-	assert.match(unavailable, /document links: not measured; not extracted: mid tier not a CLI/);
+	assert.match(unavailable, /document links: not-measured; not extracted: mid tier not a CLI/);
 	const off = frameOf(repo({ switch: 'off', figures: { ...figures, recall: 0.4 } }));
 	assert.match(off, /document links: off \(P 0\.97 \/ R 0\.40 on 110 links\)/);
 	assert.doesNotMatch(frameOf(repo()), /document links/, 'nothing without the field');

@@ -27,8 +27,8 @@ class DocRelationsRowsTest {
             docRelationsRows(on),
         )
         val notMeasured = DaemonGatewayImpl.parseDocRelations(mapOf("switch" to "not-measured"))!!
-        assertEquals("document links: not measured", describeDocRelations(notMeasured))
-        assertEquals(listOf("Summary" to "document links: not measured", "Switch" to "not-measured"), docRelationsRows(notMeasured))
+        assertEquals("document links: not-measured", describeDocRelations(notMeasured))
+        assertEquals(listOf("Summary" to "document links: not-measured", "Switch" to "not-measured"), docRelationsRows(notMeasured))
         val off = DaemonGatewayImpl.parseDocRelations(mapOf("switch" to "off", "figures" to figures + ("recall" to 0.4)))!!
         assertEquals("document links: off (P 0.97 / R 0.40 on 110 links)", describeDocRelations(off))
         assertNull(DaemonGatewayImpl.parseDocRelations(null), "no field: no group")

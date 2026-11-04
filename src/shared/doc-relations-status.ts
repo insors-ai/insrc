@@ -13,7 +13,7 @@ export function describeDocRelations(status: DocRelationsStatus): string {
 	const figures = f === undefined ? '' : ` (P ${pct(f.precision)} / R ${pct(f.recall)} on ${f.checked} links)`;
 	const head = status.switch === 'on' ? `document links: on${figures}`
 		: status.switch === 'off' ? `document links: off${figures}`
-		: 'document links: not measured';
+		: 'document links: not-measured';
 	const x = status.extraction;
 	if (x?.state !== 'unavailable') return head;
 	const why = x.reason !== undefined && x.reason !== '' ? x.reason : 'no reason recorded';

@@ -17,12 +17,14 @@
  */
 
 import { createHash } from 'node:crypto';
-import { join } from 'node:path';
+import { basename, join, relative } from 'node:path';
 
 import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 import { getGraphStore, withWriteTxn } from './graph/store.js';
 import type { GraphStore } from './graph/store.js';
-import { encodeEntityKey, encodeRepoKey } from './graph/keys.js';
+import { decodeEntityByFileKey, encodeEntityByFilePrefix, encodeEntityKey, encodeRepoKey, prefixSuccessor } from './graph/keys.js';
+import { inNeighbors, outNeighbors } from './graph/edges.js';
+import type { RelationEvidence } from '../shared/types.js';
 import {
 	decodeDocRelationQualityRow,
 	decodeDocRelationRow,
@@ -33,6 +35,9 @@ import {
 	type DocRelationRow,
 } from './graph/codec.js';
 import { lookupRepoIdInTxn } from './repos.js';
+import { getEntity } from './entities.js';
+import { listUnresolvedRelations } from './relations.js';
+import { readIndexState } from './index-state.js';
 
 export type { DocRelationQualityRow, DocRelationRow };
 
@@ -150,4 +155,159 @@ export function deleteDocRelationsForRepoInTxn(s: GraphStore, repoId: number): v
 	assertNoSessionPersistence();
 	clearDocRelationsInTxn(s, repoId, false);
 	s.docRelationQuality.remove(encodeRepoKey(repoId));
+}
+
+// ---------------------------------------------------------------------------
+// The switch (Epic c2ba6fa6 s10, ac2)
+// ---------------------------------------------------------------------------
+
+export type DocRelationSwitchState = 'on' | 'off' | 'not-measured';
+
+/** The bar the measured figures must meet, on at least this many distinct implied links. */
+export const DOC_RELATIONS_BAR = { checked: 100, precision: 0.95, recall: 0.60 } as const;
+
+/**
+ * Whether model-proposed relationships are used: 'on' only when the repository
+ * was measured on at least 100 implied links with precision >= 0.95 and recall
+ * >= 0.60, by the model that runs now, against the hand-checked set as it is
+ * now; 'off' with figures that miss the bar or describe another model or set;
+ * 'not-measured' with no figures.
+ */
+export function switchOf(row: DocRelationQualityRow | undefined, validatedModelId: string | undefined, setHash: string | undefined): DocRelationSwitchState {
+	const f = row?.figures;
+	if (f === undefined) return 'not-measured';
+	const atBar = f.checked >= DOC_RELATIONS_BAR.checked && f.precision >= DOC_RELATIONS_BAR.precision && f.recall >= DOC_RELATIONS_BAR.recall;
+	return atBar && validatedModelId !== undefined && f.modelId === validatedModelId && setHash !== undefined && f.setHash === setHash ? 'on' : 'off';
+}
+
+// ---------------------------------------------------------------------------
+// The read (Epic c2ba6fa6 s10, ac1 + ac3)
+// ---------------------------------------------------------------------------
+
+export interface DocumentRelationRow {
+	readonly from:                  string;
+	readonly to:                    string;
+	readonly kind:                  'REFERENCES';
+	readonly evidence:              RelationEvidence;
+	/** For a model-proposed row: the generation its proposal row was computed at. */
+	readonly computedAtGeneration?: number | undefined;
+}
+
+export interface DocumentRelations {
+	readonly rows:           readonly DocumentRelationRow[];
+	/** The repository's IndexState generation now. */
+	readonly generation:     number;
+	/** How many returned model-proposed rows were computed at an older generation. */
+	readonly staleProposals: number;
+}
+
+/**
+ * The document relationships touching an entity, in one direction: the stored
+ * REFERENCES rows (with their evidence); the entity's name references resolved
+ * now against the repository's files -- returned only while exactly one stored
+ * file has the name, so neither the order files were indexed in nor a later
+ * second file of the name can make a wrong link stand; and, only while the
+ * switch is on, the eligible model proposals (evidence 'model'). A proposal row
+ * is eligible while its document's file entity still has the hash it was
+ * computed from and it was computed by the model that runs now; a proposal is
+ * returned only while both its endpoints are stored. Proposals are not filtered
+ * by generation; one computed at an older generation is counted in
+ * staleProposals so the reader can say so. This is the one place proposals are
+ * read; caller/callee reads and graph traversal never carry them.
+ */
+export async function documentRelations(
+	entityId:  string,
+	direction: 'out' | 'in',
+	sw:        { readonly state: DocRelationSwitchState; readonly modelId?: string | undefined },
+): Promise<DocumentRelations> {
+	const entity = await getEntity(null, entityId);
+	const none: DocumentRelations = { rows: [], generation: 0, staleProposals: 0 };
+	if (entity === null) return none;
+	const repoPath = entity.repo;
+	const s = await getGraphStore();
+	const repoId = lookupRepoIdInTxn(s, repoPath);
+	const u64 = s.entityIdByString.get(entityId) as bigint | number | undefined;
+	if (repoId === undefined || u64 === undefined) return none;
+	const generation = (await readIndexState(repoPath))?.generation ?? 0;
+	const stored = (id: string): boolean => s.entityIdByString.get(id) !== undefined;
+	const rows: DocumentRelationRow[] = [];
+	const seen = new Set<string>();
+	const add = (row: DocumentRelationRow): void => {
+		const key = `${row.from}\0${row.to}`;
+		if (seen.has(key)) return;
+		seen.add(key);
+		rows.push(row);
+	};
+
+	// Stored rows.
+	const read = direction === 'out' ? outNeighbors : inNeighbors;
+	for (const n of await read(BigInt(u64), { kindFilter: ['REFERENCES'], withEvidence: true })) {
+		const other = s.entityStringByU64.get(encodeEntityKey(n.u64)) as string | undefined;
+		if (other === undefined) continue;
+		add(direction === 'out'
+			? { from: entityId, to: other, kind: 'REFERENCES', evidence: n.evidence }
+			: { from: other, to: entityId, kind: 'REFERENCES', evidence: n.evidence });
+	}
+
+	// Name references, resolved against the files stored now.
+	let byName: Map<string, string[]> | undefined;
+	const filesNamed = (name: string): string[] => {
+		if (byName === undefined) {
+			byName = new Map();
+			const prefix = encodeEntityByFilePrefix(repoId);
+			for (const key of s.entityByFile.getKeys({ start: prefix, end: prefixSuccessor(prefix) })) {
+				const rel = decodeEntityByFileKey(key as Buffer).filePath;
+				const list = byName.get(basename(rel)) ?? [];
+				if (!list.includes(rel)) list.push(rel);
+				byName.set(basename(rel), list);
+			}
+		}
+		return byName.get(name) ?? [];
+	};
+	const fileIdOf = (rel: string): string => fileEntityId(repoPath, join(repoPath, rel));
+	if (direction === 'out') {
+		for (const r of await listUnresolvedRelations(null, repoPath, entity.file)) {
+			if (r.fromEntity !== entityId || r.meta['docLink'] !== true || typeof r.meta['nameRef'] !== 'string') continue;
+			const files = filesNamed(r.meta['nameRef']);
+			if (files.length !== 1) continue;
+			const to = fileIdOf(files[0]!);
+			if (stored(to)) add({ from: entityId, to, kind: 'REFERENCES', evidence: 'extracted' });
+		}
+	} else if (entity.kind === 'file') {
+		const rel = relative(repoPath, entity.file);
+		const name = basename(rel);
+		const files = filesNamed(name);
+		if (files.length === 1 && files[0] === rel) {
+			for (const r of await listUnresolvedRelations(null, repoPath)) {
+				if (r.meta['docLink'] === true && r.meta['nameRef'] === name && stored(r.fromEntity)) {
+					add({ from: r.fromEntity, to: entityId, kind: 'REFERENCES', evidence: 'extracted' });
+				}
+			}
+		}
+	}
+
+	// Model proposals, only while the switch is on.
+	let staleProposals = 0;
+	if (sw.state === 'on' && sw.modelId !== undefined) {
+		const eligible = (rel: string, row: DocRelationRow): boolean =>
+			row.modelId === sw.modelId && fileEntityHashInTxn(s, repoPath, rel) === row.contentHash;
+		const docs = direction === 'out'
+			? (() => {
+				const rel = relative(repoPath, entity.file);
+				const row = readDocRelationRowInTxn(s, repoId, rel);
+				return row === undefined ? new Map<string, DocRelationRow>() : new Map([[rel, row]]);
+			})()
+			: readDocRelationRowsInTxn(s, repoId);
+		for (const [rel, row] of docs) {
+			if (!eligible(rel, row)) continue;
+			for (const p of row.proposals) {
+				if ((direction === 'out' ? p.from : p.to) !== entityId) continue;
+				if (!stored(p.from) || !stored(p.to)) continue;
+				const before = rows.length;
+				add({ from: p.from, to: p.to, kind: 'REFERENCES', evidence: 'model', computedAtGeneration: row.computedAtGeneration });
+				if (rows.length > before && row.computedAtGeneration < generation) staleProposals++;
+			}
+		}
+	}
+	return { rows, generation, staleProposals };
 }

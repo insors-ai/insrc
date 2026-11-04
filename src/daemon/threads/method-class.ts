@@ -176,6 +176,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['search.callers', 'session', false],
 	['search.callers_nhop', 'session', false],
 	['search.closure', 'session', false],
+	['search.doc_relations', 'session', false],
 	['search.query', 'session', false],
 	['session.close', 'session', false],
 	['session.delete', 'session', false],

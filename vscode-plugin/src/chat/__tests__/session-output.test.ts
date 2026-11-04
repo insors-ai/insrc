@@ -417,3 +417,19 @@ test('E202611031bd72813:S001 t5: register -> unregister -> register keeps the du
   await so2.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });
+
+test('E202611031bd72813:S001 t5: registerCursor makes the pin marker durable before it returns even when the session lock is held by another live holder', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5r2-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so.beginTurn('s1', 't1');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  writeFileSync(join(dir, 's1.lock'), String(process.pid)); // lock held by a LIVE pid (not stale)
+  const t0 = Date.now();
+  so.registerCursor(seg1.cursor);
+  const elapsed = Date.now() - t0;
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'the marker is on disk synchronously, before registerCursor returns, despite the held lock');
+  assert.ok(elapsed < 2000, `the lock spin is bounded (took ${elapsed}ms)`);
+  rmSync(join(dir, 's1.lock'), { force: true });
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});

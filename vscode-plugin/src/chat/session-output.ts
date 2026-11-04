@@ -390,6 +390,11 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   };
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal);
+  /** Bounded synchronous wait (Node allows Atomics.wait on the main thread) — used only to spin
+   * briefly on the session lock inside the synchronous registerCursor. */
+  const syncSleep = (ms: number): void => {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  };
 
   return {
     registerCursor(cursor: SegmentCursor, readerId = 'default'): void {
@@ -399,29 +404,34 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      // The marker write never bypasses the rollover lock: when the synchronous O_EXCL seam exists,
-      // hold the session lock AROUND the write (all synchronous, so it cannot interleave with the
-      // rollover's final sync pin-check + rename in this process, and the lock file serializes it
-      // against a rollover in another process). When the lock is busy, fall back to a queued,
-      // locked write — never an unlocked one. Without sync seams, queue the locked write.
+      // The marker is durable BEFORE registerCursor returns, and the write is serialized with the
+      // rollover's pin-check + replace whenever the lock can be taken: with the synchronous O_EXCL
+      // seam, spin on the lock file (bounded — a cross-process holder finishes its critical section
+      // independently of our blocked thread; an in-process holder is already covered by the
+      // in-memory pin map, which genPinned/genPinnedSync check first) and write under it. On spin
+      // timeout the marker is still written synchronously (unlocked) so registration never returns
+      // with only a queued write, and a locked rewrite is queued to heal the ordering.
       if (fs.writeFileSync !== undefined && fs.writeFileExclusiveSync !== undefined) {
         const lock = lockPathOf(cursor.sessionId);
+        const deadline = Date.now() + 100;
         let locked = false;
-        try {
-          fs.writeFileExclusiveSync(lock, String(process.pid));
-          locked = true;
-        } catch (e) {
-          if (errCode(e) !== 'EEXIST') throw e;
-        }
-        if (locked) {
+        for (;;) {
           try {
-            fs.writeFileSync(marker, '');
-          } finally {
-            if (fs.rmSync !== undefined) fs.rmSync(lock);
+            fs.writeFileExclusiveSync(lock, String(process.pid));
+            locked = true;
+            break;
+          } catch (e) {
+            if (errCode(e) !== 'EEXIST') throw e;
+            if (Date.now() >= deadline) break;
+            syncSleep(2);
           }
-        } else {
-          enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
         }
+        try {
+          fs.writeFileSync(marker, '');
+        } finally {
+          if (locked && fs.rmSync !== undefined) fs.rmSync(lock);
+        }
+        if (!locked) enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
       } else if (fs.writeFileSync !== undefined) {
         fs.writeFileSync(marker, '');
       } else {

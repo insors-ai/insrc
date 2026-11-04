@@ -1,0 +1,132 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "d6f3dc6fbb3ef7e53ee329c757abe50ac75aef8197098173fc089ddebecef76a",
+        "at": "2026-11-04T05:12:00.774Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d792f3aa6f135f1c",
+    "storyId": "s1",
+    "createdAt": "2026-11-04T05:12:00.700Z",
+    "updatedAt": "2026-11-04T05:12:00.700Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T05:05:39.006Z",
+    "epicSlug": "repair-incomplete-code-review-task-attribution",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "0490b4db6",
+        "ranAt": "2026-11-04T05:12:00.700Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 890,
+            "titles": [
+              {
+                "title": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                "result": "pass"
+              },
+              {
+                "title": "task execution: checkpoint before next task, one inactivity grace, failure continuation and no automatic retry",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint write failure stops scheduling and retains the last complete JSON",
+                "result": "pass"
+              },
+              {
+                "title": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+                "result": "pass"
+              },
+              {
+                "title": "native provider timeout is incomplete even when it returns just before the host timer",
+                "result": "pass"
+              },
+              {
+                "title": "malformed provider result is saved as failed without retrying the task",
+                "result": "pass"
+              },
+              {
+                "title": "native task output refuses placeholder references and foreign locations before host completion",
+                "result": "pass"
+              },
+              {
+                "title": "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution timeout remains incomplete for every remaining task without retry",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution provider failure remains failed for every remaining task without retry",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution corrects omitted unchanged regression evidence before any assessment",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution exhausts three submissions without running assessments or resetting on resume",
+                "result": "pass"
+              },
+              {
+                "title": "controller attribution returns pointed correction frames then accepts complete mapping with replay protection",
+                "result": "pass"
+              },
+              {
+                "title": "native attribution handles the real host-candidate rejection wrapper and preserves diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "controller attribution budget survives disconnect and explicit resume, then exhausts",
+                "result": "pass"
+              },
+              {
+                "title": "attribution omission diagnostics enumerate missing change and test indexes separately",
+                "result": "pass"
+              },
+              {
+                "title": "attribution repair persistence failure stops dispatch without fabricating task failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

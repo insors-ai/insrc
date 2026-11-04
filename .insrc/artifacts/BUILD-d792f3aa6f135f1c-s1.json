@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "fb2c376c701341eaf38a79af2518fb3075b0a44f3353dadca93a2fea29b41528",
+        "at": "2026-11-04T05:13:45.984Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-5009c408-5a34-4f5e-b154-f9ce68b3025c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:07:39.729Z",
+    "epicCreatedAt": "2026-11-04T05:05:39.006Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d792f3aa6f135f1c",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Approved small bugfix; ISSUE is scope, no LLD or PLAN required by bugfix routing.",
+    "epicSlug": "repair-incomplete-code-review-task-attribution",
+    "updatedAt": "2026-11-04T05:12:00.700Z"
+  },
+  "body": {
+    "focus": "Implement approved small bugfix ISSUE-d792f3aa6f135f1c: explicit unchanged regression attribution, precise omitted-entry diagnostics and bounded attribution-only correction; preserve exhaustive validation and accepted assessments. Issue magnitude remains small; using no-LLD build transport because small bugfix route is ISSUE to BUILD.",
+    "producesLld": false,
+    "commit": "0490b4db6",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Fixed code-review attribution omissions with explicit regression-evidence guidance, exact missing change/test index/path diagnostics, and three total mapping submissions per attempt. Checkpoint-owned repair metadata survives reconnects; successful assessments and terminal technical-failure handling are preserved. Focused evidence: 47 tests passed (/tmp/attribution-final-tests.tap), final controller/coordinator rerun 21 passed (/tmp/attribution-controller-final.tap); production build /tmp/attribution-build.log. No broad hosted test sweep.",
+    "testRecord": {
+      "md": "docs/standalone/repair-incomplete-code-review-task-attribution-E20261104d792f3aa/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-d792f3aa6f135f1c.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-d792f3aa6f135f1c.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/repair-incomplete-code-review-task-attribution-E20261104d792f3aa/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/assessment.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/attribution-repair.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/controller.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:12:00.700Z"
+      }
+    ]
+  },
+  "citations": []
+}

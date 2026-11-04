@@ -586,7 +586,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
   // E202611031bd72813:S001 t3: the active-chats dropdown feed — recomputed (purge included) on every
   // status change, on history refresh, and on a 60 s timer so done chats age out of the list.
-  const postActive = (): void => post({ type: 'active-list', chats: [...deps.store.activeChats()] });
+  // E202611031bd72813:S001 t4 ac4: project to the exact protocol ActiveChatEntry wire shape
+  // (id/title/status/lastActivityAt) — the store's entry also carries provider/updatedAt, which
+  // are history-list fields, not active-list fields.
+  const postActive = (): void => post({ type: 'active-list', chats: deps.store.activeChats().map((c) => ({ id: c.id, title: c.title, status: c.status, lastActivityAt: c.lastActivityAt })) });
   let activeTimer: ReturnType<typeof setInterval> | undefined;
   const startActiveTimer = (): void => {
     if (activeTimer !== undefined) return;
@@ -1988,6 +1991,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chrome #insrc-active{max-width:100%;}` +
       `.status-dot{font-style:normal;}` +
       `.status-dot.red{color:var(--red);}.status-dot.yellow{color:var(--warn);}.status-dot.green{color:var(--pass);}` +
+      // E202611031bd72813:S001 t4 ac1: each active-list option carries data-dot red/yellow/green; these
+      // rules are what consume it, so every dropdown entry shows its OWN status colour in the popup.
+      `#insrc-active option[data-dot="red"]{color:var(--red);}` +
+      `#insrc-active option[data-dot="yellow"]{color:var(--warn);}` +
+      `#insrc-active option[data-dot="green"]{color:var(--pass);}` +
       // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).

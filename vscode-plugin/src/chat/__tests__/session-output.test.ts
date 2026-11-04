@@ -245,16 +245,22 @@ test('E202611031bd72813:S001 t5: a registered cursor pins its generation across 
   }
   assert.equal(threw, false, 'the pinned generation survived a second rollover (archived, readable)');
   assert.equal(await so.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldest retained is the pinned one');
-  // unregister: the archive is dropped
+  // unregister: only the pin MARKER is dropped — the archive itself is never deleted by unregister
+  // (a racing register must not end up pinned against a deleted archive); sweep prunes it by age.
   so.unregisterCursor(seg1.cursor);
-  await waitFor(() => !existsSync(`${root}/s1.pinned.1.ndjson`), 3000); // the archive is removed once the last unregister lands
+  await waitFor(() => !existsSync(`${root}/s1.pin.1.default`), 3000); // the marker is removed once the last unregister lands
+  assert.ok(existsSync(`${root}/s1.pinned.1.ndjson`), 'the archive survives unregister');
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(root)) utimesSync(join(root, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(!existsSync(`${root}/s1.pinned.1.ndjson`), 'the unpinned archive is pruned by the sweep');
   let gone = false;
   try {
     for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
   } catch (e) {
     gone = e instanceof SegmentGone;
   }
-  assert.ok(gone, 'after unregister the archived generation is gone (SegmentGone)');
+  assert.ok(gone, 'after the sweep pruned it, the generation is gone (SegmentGone)');
   await so.remove('s1');
   rmSync(root, { recursive: true, force: true });
 });
@@ -383,7 +389,12 @@ test('E202611031bd72813:S001 t5: pins are refcounted PER READER — one unregist
   assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the archive survived reader-a\'s unregister');
   assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'archive still on disk for reader-b');
   so.unregisterCursor(seg1.cursor, 'reader-b');
-  await waitFor(() => !existsSync(join(dir, 's1.pinned.1.ndjson')), 3000, 'the archive is dropped only when the LAST reader unregisters');
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.reader-b')), 3000, 'the last unregister drops the marker');
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'unregister never deletes the archive itself');
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(dir)) utimesSync(join(dir, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(!existsSync(join(dir, 's1.pinned.1.ndjson')), 'the now-unpinned archive is pruned by the sweep');
   let gone = false;
   try {
     for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }

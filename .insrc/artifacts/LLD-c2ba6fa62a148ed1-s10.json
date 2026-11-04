@@ -221,6 +221,15 @@
     "reviewOverride": {
       "reason": "User approved with override 2026-11-04 after 3 review cycles (9 rounds); last round 0 HIGH / 2 MED, both MED fixed after the round (disjoint proposal validation; measurement-failure status write) and not re-reviewed.",
       "at": "2026-11-04T05:06:20.546Z"
+    },
+    "questionResolutions": {
+      "q34308808": {
+        "question": "Who builds the hand-checked set of at least 100 real document links for this repository (.insrc/doc-relations-checked.json): the user by hand, or a subagent drafting candidates that the user then checks? Until it exists the model capability stays off ('not-measured').",
+        "status": "resolved",
+        "choice": "Subagent drafts; user checks",
+        "rationale": "User decision 2026-11-04: a subagent drafted candidates; the user reviewed and approved them; committed as .insrc/doc-relations-checked.json @bbb17eab8 (27 documents, 1140 links).",
+        "resolvedAt": "2026-11-04T05:10:19.325Z"
+      }
     }
   },
   "body": {

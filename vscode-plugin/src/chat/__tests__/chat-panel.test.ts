@@ -6242,53 +6242,69 @@ test('E202611031bd72813:S001 t6: switching chats persists the unresolved request
   fc.fireDispose();
 });
 
+
 test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide reports undelivered) is delivered as a follow-up run and marked approved — never a silent no-op', async () => {
-  const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   let runCount = 0;
+  let decideCalls = 0;
   const evs: TurnEvent[] = [
     { kind: 'status', turnId: 't2', phase: 'tool' },
     { kind: 'approval-request', turnId: 't2', requestId: 'perm-9', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
     { kind: 'done', turnId: 't2', ok: true },
   ];
-  let releaseDone2!: () => void;
-  const gate2 = new Promise<void>((r) => { releaseDone2 = r; });
-  let decideCalls2 = 0;
-  let runIdx = 0;
-  const hooks2 = {
-    gateBeforeDone: gate2, // the turn stays LIVE while the decision is made
+  let releaseDone!: () => void;
+  const gate = new Promise<void>((r) => { releaseDone = r; });
+  const hooks = {
+    gateBeforeDone: gate,
     delivered: false, // the turn's stdin is gone: decide() reports undelivered
     onRun: () => { runCount += 1; },
-    onDecide: () => { decideCalls2 += 1; },
+    onDecide: () => { decideCalls += 1; },
   };
-  // each run gets a FRESH turnId (a follow-up is a new turn, never the original turn's id)
-  const adapter: StreamAdapter = {
-    ...scriptedAdapter(evs, hooks2),
+  let runIdx = 0;
+  const makeAdapter = (): StreamAdapter => ({
+    ...scriptedAdapter(evs, hooks),
     run(req: TurnRequest, opts?: RunOptions) {
       runIdx += 1;
       const tid = `t2-r${runIdx}`;
-      return scriptedAdapter(evs.map((e) => ({ ...e, turnId: tid })), hooks2).run(req, opts);
+      const followUp = runIdx > 1;
+      const evs2 = followUp ? evs.filter((e) => e.kind === 'done').map((e) => ({ ...e, turnId: tid })) : evs.map((e) => ({ ...e, turnId: tid }));
+      return scriptedAdapter(evs2, { ...hooks, gateBeforeDone: followUp ? undefined : gate }).run(req, opts);
     },
-  };
+  });
+  // host 1: the request is raised, then the host "reloads" (a fresh host over the same store)
+  const fc1 = fakeChannel();
+  const host1 = createChatPanelHost({
+    createPanel: () => fc1.channel,
+    providers: registry({ claude: makeAdapter() }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host1.open();
+  fc1.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc1).some((e) => e.kind === 'approval-request'));
+  const id = store.list()[0]!.id;
+  // switch away: the request is persisted UNRESOLVED (this is the record the reload restores)
+  const other = store.create('claude' as never);
+  fc1.send(env('open-chat', { chatId: other.id }));
+  await waitFor(() => (store.get(id)?.pendingRequests ?? []).some((r) => r.requestId === 'perm-9' && !r.resolved), 5000, 'persisted unresolved before the reload');
+  host1.dispose();
+  // host 2 (the reload): the persisted request is restored into the queue and its card re-posted
+  const fc = fakeChannel();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
-    providers: registry({ claude: adapter }, ['claude']),
+    providers: registry({ claude: makeAdapter() }, ['claude']),
     store,
     cwd: () => '/repo',
   });
   host.open();
-  fc.send(env('submit-turn', { text: 'go' }));
-  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
-  const id = store.list()[0]!.id;
-  // decide WHILE the turn is still live (done is gated): decide() is really consulted and reports
-  // undelivered (dead stdin), so the fallback follow-up must carry the decision
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'perm-9'), 5000, 'the restored request re-posted its card after reload');
+  // decide the restored request: no live turn + undelivered stdin -> follow-up runTurn carries it
   fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
-  await waitFor(() => decideCalls2 === 1, 5000, 'decide() was consulted on the live turn');
-  releaseDone2(); // the turn ends, so the follow-up can start
   await waitFor(() => runCount >= 2, 5000, 'the undelivered decision fell back to a follow-up runTurn');
   await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-9')?.resolved === true, 5000);
   assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-9')!.outcome, 'approved', 'correlated onto the persisted request — not a silent no-op');
-  fc.fireDispose();
+  host.dispose();
 });
 
 test('E202611031bd72813:S001 t6: a LIVE turn whose decide() reports UNDELIVERED (dead stdin) falls back to a follow-up run — decide was actually consulted and the follow-up starts exactly once (never a silent no-op)', async () => {

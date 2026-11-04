@@ -63,6 +63,9 @@ export interface SessionOutputFs {
   rmSync?(path: string): void;
   /** Create-only write (O_EXCL) for lock files. */
   writeFileExclusive?(path: string, data: string): Promise<void>;
+  /** Synchronous O_EXCL create — lets the synchronous registerCursor hold the session lock around
+   * its marker write, serialized with sweep's pin-check + archive deletion. */
+  writeFileExclusiveSync?(path: string, data: string): void;
   readdirSync?(path: string): string[];
   sizeSync?(path: string): number | undefined;
 }
@@ -114,6 +117,7 @@ export const nodeSessionOutputFs: SessionOutputFs = {
   writeFileSync: (p, data) => writeFileSync(p, data),
   rmSync: (p) => rmSync(p, { force: true }),
   writeFileExclusive: (p, data) => writeFile(p, data, { flag: 'wx' }),
+  writeFileExclusiveSync: (p, data) => writeFileSync(p, data, { flag: 'wx' }),
   readdirSync: (p) => readdirSync(p),
   sizeSync: (p) => {
     try {
@@ -375,6 +379,11 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   };
 
   const sleep = (ms: number, signal: AbortSignal | undefined): Promise<void> => abortableSleep(ms, signal);
+  /** Bounded synchronous wait (Node allows Atomics.wait on the main thread) — used only to spin
+   * briefly on the session lock inside the synchronous registerCursor. */
+  const syncSleep = (ms: number): void => {
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+  };
 
   return {
     registerCursor(cursor: SegmentCursor, readerId = 'default'): void {
@@ -384,11 +393,37 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      // The marker is durable BEFORE registerCursor returns whenever the sync seam allows, so a
-      // reader never proceeds with only an in-flight registration; without the seam the locked
-      // write is queued (rollover never discards, so ordering against it is not load-bearing).
-      if (fs.writeFileSync !== undefined) fs.writeFileSync(marker, '');
-      else enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      // The marker is durable BEFORE registerCursor returns, and the write is serialized with
+      // sweep's pin-check + archive deletion via the session lock: with the sync O_EXCL seam, spin
+      // on the lock (bounded — a holder's critical section is short) and write under it; on spin
+      // timeout write unlocked anyway (durability first) AND queue a locked rewrite to heal the
+      // ordering. Without sync seams, only the queued locked write exists (single-process seams).
+      if (fs.writeFileSync !== undefined && fs.writeFileExclusiveSync !== undefined) {
+        const lock = lockPathOf(cursor.sessionId);
+        const deadline = Date.now() + 100;
+        let locked = false;
+        for (;;) {
+          try {
+            fs.writeFileExclusiveSync(lock, String(process.pid));
+            locked = true;
+            break;
+          } catch (e) {
+            if (errCode(e) !== 'EEXIST') throw e;
+            if (Date.now() >= deadline) break;
+            syncSleep(2);
+          }
+        }
+        try {
+          fs.writeFileSync(marker, '');
+        } finally {
+          if (locked && fs.rmSync !== undefined) fs.rmSync(lock);
+        }
+        if (!locked) enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      } else if (fs.writeFileSync !== undefined) {
+        fs.writeFileSync(marker, '');
+      } else {
+        enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      }
     },
     unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
       const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
@@ -501,6 +536,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
 
     async *tail(cursor, opts) {
+      await pinIo; // the caller's registerCursor marker write completes before any read
       let file = await fileFor(cursor);
       let offset = cursor.offset;
       if (offset > ((await fs.size(file)) ?? 0)) {
@@ -563,6 +599,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
     },
 
     async remove(sessionId: string): Promise<void> {
+      await pinIo; // pending marker writes/removals settle first, so they cannot recreate files here
       const p = paths(sessionId);
       await fs.rm(p.current);
       await fs.rm(p.previous);
@@ -629,12 +666,23 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         for (const f of files) times.push((await fs.mtimeMs(`${deps.root}/${f}`)) ?? 0);
         if (times.some((t) => t > cutoff)) continue; // written recently: maybe a turn of another window's session
         for (const f of files) {
-          // An archive is deleted only if STILL unpinned — re-scan the directory fresh (not the
-          // sweep-start listing) so a pin registered during this sweep is honored.
-          const am = /^(.*)\.pinned\.(\d+)\.ndjson$/.exec(f);
+          // An archive is deleted only under the session lock, with a FRESH pin re-check inside it,
+          // so a registerCursor (whose marker write also takes the lock) cannot interleave between
+          // the check and the deletion and end up pinned against a deleted archive.
+          const am = /pinned\.(\d+)\.ndjson$/.exec(f);
           if (am !== null) {
-            const fresh = fs.readdirSync !== undefined ? fs.readdirSync(deps.root) : await fs.readdir(deps.root);
-            if (fresh.some((n) => n.startsWith(`${am[1]}.pin.${am[2]}.`))) continue;
+            const base = f.slice(0, f.length - `.pinned.${am[1]}.ndjson`.length);
+            const gen = Number(am[1]);
+            try {
+              await withSessionLock(base, async () => {
+                const fresh = fs.readdirSync !== undefined ? fs.readdirSync(deps.root) : await fs.readdir(deps.root);
+                if (fresh.some((n) => n.startsWith(`${sessionFileName(base)}.pin.${gen}.`))) return; // pinned during the sweep
+                await fs.rm(`${deps.root}/${f}`);
+              });
+            } catch {
+              // lock not acquired: leave the archive for the next sweep (never delete unlocked)
+            }
+            continue;
           }
           await fs.rm(`${deps.root}/${f}`);
         }

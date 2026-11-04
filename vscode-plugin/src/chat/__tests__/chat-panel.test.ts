@@ -6415,3 +6415,49 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: recoverTurn failure falls back to the liveTurn cursor PAIRED with the lifecycle decoder state — a mid-marker offset is not resumed with an empty decoder', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs9-'));
+  try {
+    const realOut = createSessionOutput({ root, pollMs: 5 });
+    // recoverTurn always fails
+    const out = { ...realOut, recoverTurn: async () => { throw new Error('no retained file'); } };
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const marker = '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```';
+    const half = Math.floor(marker.length / 2);
+    const frag1 = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(0, half) }] } }) + '\n';
+    const frag2 = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(half) }] } }) + '\n';
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
+    appendFileSync(seg.outPath, frag1 + frag2 + resultLine);
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    // the lifecycle advanced the cursor to just after frag1 and saved the decoder buffer for it
+    const afterFrag1 = seg.cursor.offset + Buffer.byteLength(frag1);
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: afterFrag1 }, ownerHostPid: 999, pid: 1234, startedAt: 1, decoder: { selectionSeq: 3, selectionBuffer: marker.slice(0, half) } };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'completes via the fallback checkpoint');
+    const after = store.get(s.id)!;
+    const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
+    assert.equal(sels.length, 1, 'the split marker resolved exactly once');
+    assert.equal(sels[0]!.requestId, 'sel-t-obs-3', 'the lifecycle decoder seq (3) was used — not reset to 0');
+    assert.equal(sels[0]!.prompt, 'Pick', 'the restored buffer + frag2 completed the marker');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

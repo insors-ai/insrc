@@ -50,7 +50,7 @@ import { getModelState } from './lifecycle.js';
 import { resolveClosure, searchEntities, findCallers, findCallees, closureEntities, unreachableEntities } from '../db/search.js';
 import { embedQuery } from '../indexer/embedder.js';
 import { guardSearchRequest, underIndexFilter } from './search-guard.js';
-import { searchDocRelations } from './doc-relations-rpc.js';
+import { measureDocRelations, searchDocRelations } from './doc-relations-rpc.js';
 import { getArtifactById, queryArtifactVec } from '../db/lance/artifact-vec.js';
 import { inferParentCandidates } from '../workflow/locate/infer.js';
 import { buildOwnershipIndex } from '../workflow/locate/ownership.js';
@@ -675,6 +675,9 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			// The FreshnessResult is the reply: { isProcessing, inFlight, pendingCodeIndexJobs, staleFiles }.
 			return result;
 		},
+
+		// Measure the mid-tier model's document-relationship proposals against the hand-checked set (Epic c2ba6fa6 s10).
+		'docRelations.measure': async (params) => measureDocRelations(params, { enqueue: job => queue.enqueue(job) }),
 
 		'repo.reindex': async (params) => {
 			const { path: repoPath } = params as { path: string };

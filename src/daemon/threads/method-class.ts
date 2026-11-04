@@ -42,6 +42,7 @@ const TABLE: readonly (readonly [string, MethodClass, boolean])[] = [
 	['repo.add', 'indexing', false],
 	['mcp.register', 'indexing', false],
 	['repo.remove', 'indexing', false],
+	['docRelations.measure', 'indexing', false],
 	['repo.reindex', 'indexing', false],
 	['repo.stats', 'indexing', false],
 	['index.file', 'indexing', false],

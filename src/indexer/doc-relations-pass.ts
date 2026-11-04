@@ -17,9 +17,11 @@
  *     unknown source or an unstored target is dropped and counted; a proposal
  *     that repeats a link the document already writes is dropped.
  *   - A row is published only while its document still has the hash it was
- *     read at and no full index has begun since the pass began ('superseded').
+ *     read at and no full index has begun -- or begun and finished -- since the
+ *     pass began ('superseded', by the repository's reset counter).
  *   - Rows of documents no longer stored are deleted, and proposals whose
- *     endpoints vanished are pruned, without a model call.
+ *     endpoints vanished are pruned, without a model call -- first, so also
+ *     when no provider is available.
  */
 
 import { createHash } from 'node:crypto';
@@ -34,6 +36,7 @@ import { findEntitiesByFile } from '../db/entities.js';
 import { getGraphStore, withWriteTxn } from '../db/graph/store.js';
 import { getIndexStateRowInTxn } from '../db/graph/index-state-rows.js';
 import { lookupRepoIdInTxn } from '../db/repos.js';
+import { readResetCounterInTxn } from '../db/subsystem-changes.js';
 import {
 	deleteDocRelationRowInTxn,
 	documentRelations,
@@ -225,6 +228,9 @@ export async function runDocRelationsPass(deps: DocRelationsPassDeps): Promise<S
 		return { summariesFailed: 0, stopped: false, startedAt, grouped: false };
 	}
 	const generation = state.generation;
+	// A whole-repository delete (the start of every full index) increments the reset counter: a value it
+	// changed since the pass began was computed against entities that were rebuilt, so it is not published.
+	const resetAtStart = readResetCounterInTxn(s, repoId);
 	const now = (): string => new Date().toISOString();
 	const unavailable = async (reason: string, examined: number, failed: number): Promise<DocRelationsUnavailable> => {
 		await withWriteTxn(t => writeDocRelationExtractionInTxn(t, repoId, { state: 'unavailable', reason, examined, failed, computedAtGeneration: generation, updatedAt: now() }));
@@ -232,11 +238,7 @@ export async function runDocRelationsPass(deps: DocRelationsPassDeps): Promise<S
 		return { unavailable: true, reason };
 	};
 
-	const selection = (deps.select ?? (r => selectDocRelationsProvider(loadAnalyzeConfig(), r)))(repoPath);
-	if (!selection.ok) return unavailable(selection.reason, 0, 0);
-	const { provider, modelId } = selection;
-
-	// Without a model call: rows of documents no longer stored go, and proposals whose endpoints vanished are pruned.
+	// First, and without a model call (so also while no provider is available): rows of documents no longer stored go, and proposals whose endpoints vanished are pruned.
 	const docs = storedMarkdownFilesInTxn(s, repoId);
 	const docSet = new Set(docs);
 	const rows = readDocRelationRowsInTxn(s, repoId);
@@ -247,6 +249,10 @@ export async function runDocRelationsPass(deps: DocRelationsPassDeps): Promise<S
 			if (live.length !== row.proposals.length) writeDocRelationRowInTxn(t, repoId, rel, { ...row, proposals: live });
 		}
 	});
+
+	const selection = (deps.select ?? (r => selectDocRelationsProvider(loadAnalyzeConfig(), r)))(repoPath);
+	if (!selection.ok) return unavailable(selection.reason, 0, 0);
+	const { provider, modelId } = selection;
 
 	const files = storedFilesInTxn(s, repoId);
 	let examined = 0;
@@ -281,7 +287,7 @@ export async function runDocRelationsPass(deps: DocRelationsPassDeps): Promise<S
 
 		const published = await withWriteTxn(t => {
 			const current = getIndexStateRowInTxn(t, repoId);
-			if (current === undefined || !current.fullIndexFinished) return 'superseded' as const;
+			if (current === undefined || !current.fullIndexFinished || readResetCounterInTxn(t, repoId) !== resetAtStart) return 'superseded' as const;
 			if (fileEntityHashInTxn(t, repoPath, rel) !== hash) return 'changed' as const;
 			const next: DocRelationRow = { contentHash: hash, modelId, computedAtGeneration: generation, proposals: result.admitted.map(({ from, to, rationale }) => ({ from, to, rationale })) };
 			writeDocRelationRowInTxn(t, repoId, rel, next);

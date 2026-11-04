@@ -22,7 +22,7 @@ import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.j
 import { addRepo, lookupRepoId } from '../../db/repos.js';
 import { findEntitiesByFile } from '../../db/entities.js';
 import { beginFullIndexState } from '../../db/index-state.js';
-import { readDocRelationQualityInTxn, readDocRelationRowsInTxn, storedFilesInTxn } from '../../db/doc-relations.js';
+import { deleteDocRelationRowInTxn, readDocRelationQualityInTxn, readDocRelationRowsInTxn, storedFilesInTxn, writeDocRelationRowInTxn } from '../../db/doc-relations.js';
 import type { DbClient } from '../../db/client.js';
 import type { Entity, IndexJob, LLMMessage, LLMProvider } from '../../shared/types.js';
 import { IndexQueue } from '../../daemon/queue.js';
@@ -145,16 +145,30 @@ test('s10 t7: stale-hash guard and superseded by a full index', async () => {
 	const held = await pass({ select: using(fakeProvider(lexerAnswer).provider), beforePublish: async () => { await beginFullIndexState(repo); } });
 	assert.equal((held as { grouped?: boolean }).grouped, false, 'superseded');
 	assert.equal((await rows()).size, 0, 'no row published across the full index');
+
+	// A full index that begins and finishes while a value is in hand: superseded too, though the hash is unchanged.
+	const completed = await pass({ select: using(fakeProvider(lexerAnswer).provider), beforePublish: async () => { await svc.processJob({ kind: 'full', repoPath: repo }); } });
+	assert.equal((completed as { grouped?: boolean }).grouped, false, 'superseded by the completed full index');
+	assert.equal((await rows()).size, 0, 'nothing computed before the rebuild is published');
 });
 
 test('s10 t7: unavailable provider (resolution, not signed in) writes status and the retry recovers', async () => {
 	await setUp();
+	// Rows for a document that is gone and a proposal whose target vanished: pruned even with no provider.
+	const repoId = (await lookupRepoId(repo))!;
+	const a = await sectionOf('docs/a.md');
+	await withWriteTxn(t => {
+		writeDocRelationRowInTxn(t, repoId, 'docs/gone.md', { contentHash: 'h', modelId: 'm1', computedAtGeneration: 1, proposals: [] });
+		writeDocRelationRowInTxn(t, repoId, 'docs/a.md', { contentHash: 'h', modelId: 'm1', computedAtGeneration: 1, proposals: [{ from: a.id, to: 'vanished', rationale: 'r' }] });
+	});
 	// No provider resolves.
 	const refused = await pass({ select: () => ({ ok: false, reason: 'indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier' }) });
 	assert.deepEqual(refused, { unavailable: true, reason: 'indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier' });
 	assert.equal((await quality())?.extraction.state, 'unavailable');
 	assert.match((await quality())!.extraction.reason!, /tier cheap/);
-	assert.equal((await rows()).size, 0);
+	assert.deepEqual([...(await rows()).keys()], ['docs/a.md'], 'the row of the removed document is deleted');
+	assert.deepEqual((await rows()).get('docs/a.md')!.proposals, [], 'the vanished endpoint is pruned');
+	await withWriteTxn(t => deleteDocRelationRowInTxn(t, repoId, 'docs/a.md'));
 
 	// A provider that resolves but is not signed in: its first call throws.
 	const signedOut = { capabilities: {}, async completeStructured() { throw new CliExitError('claude exited 1', 'Invalid API key · Please run /login'); } } as unknown as LLMProvider;

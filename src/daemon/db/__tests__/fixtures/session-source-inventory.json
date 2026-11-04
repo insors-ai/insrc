@@ -21829,6 +21829,14 @@
     ],
     [
      "serialization",
+     "(key as Buffer).subarray(4).toString"
+    ],
+    [
+     "serialization",
+     "(key as Buffer).subarray(4).toString"
+    ],
+    [
+     "serialization",
      "(key as Buffer).subarray(prefix.length).toString"
     ],
     [
@@ -21846,6 +21854,10 @@
     [
      "storage-call",
      "add"
+    ],
+    [
+     "serialization",
+     "assertNoSessionPersistence"
     ],
     [
      "serialization",
@@ -22020,6 +22032,22 @@
      "encodeRepoKey"
     ],
     [
+     "serialization",
+     "encodeRepoKey"
+    ],
+    [
+     "serialization",
+     "encodeRepoKey"
+    ],
+    [
+     "storage-call",
+     "encodeRepoKey"
+    ],
+    [
+     "storage-call",
+     "encodeRepoKey"
+    ],
+    [
      "storage-call",
      "encodeRepoKey"
     ],
@@ -22113,7 +22141,19 @@
     ],
     [
      "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
+     "prefixSuccessor"
+    ],
+    [
+     "storage-call",
      "read"
+    ],
+    [
+     "storage-call",
+     "readDocRelationQualityInTxn"
     ],
     [
      "storage-call",
@@ -22217,6 +22257,14 @@
     ],
     [
      "storage-call",
+     "s.entityByFile.getKeys"
+    ],
+    [
+     "storage-call",
+     "s.entityByFile.getKeys"
+    ],
+    [
+     "storage-call",
      "s.entityIdByString.get"
     ],
     [
@@ -22254,11 +22302,19 @@
     [
      "storage-call",
      "withWriteTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationQualityInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationQualityInTxn"
     ]
    ],
-   "siteCount": 109,
-   "sitesDigest": "b2698fcf6f1445056833c76a64cf375812849196112671b94739ecfab316382e",
-   "sourceDigest": "eacd546180eb772ce13bb9ca62f8b01750ed9785fc95d0738b1a3a35790cb913",
+   "siteCount": 123,
+   "sitesDigest": "40458e5e7b1c68e352ad77043d3a550985f67db8286b88a383d172e8d936a70f",
+   "sourceDigest": "14537ab3d55b5b2ef38cf9c12323adaeea6807e78bb456f7fc108b0cc629c5a6",
    "boundaries": [
     "serialization",
     "storage-call"
@@ -39968,11 +40024,174 @@
   "src/indexer/doc-relations-pass.ts": {
    "classification": "background-indexing",
    "rationale": "The background document-relations pass over a registered repository's new or changed documents (Epic c2ba6fa6 s10): reads stored entities and its own proposal rows and asks the mid-tier CLI model one document at a time; never temporary session configurations or results.",
-   "sites": [],
-   "siteCount": 0,
-   "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
-   "sourceDigest": "285d4b2a0ba27f9015a5570830e0d7f6723bf5974c558dc084b141f01f8e6cbb",
-   "boundaries": []
+   "sites": [
+    [
+     "storage-call",
+     "deleteDocRelationRowInTxn"
+    ],
+    [
+     "storage-call",
+     "documentRelations"
+    ],
+    [
+     "storage-call",
+     "fileEntityHashInTxn"
+    ],
+    [
+     "storage-call",
+     "fileEntityHashInTxn"
+    ],
+    [
+     "storage-call",
+     "findEntitiesByFile"
+    ],
+    [
+     "storage-call",
+     "findEntitiesByFile"
+    ],
+    [
+     "storage-call",
+     "getGraphStore"
+    ],
+    [
+     "storage-call",
+     "getGraphStore"
+    ],
+    [
+     "storage-call",
+     "getIndexStateRowInTxn"
+    ],
+    [
+     "storage-call",
+     "getIndexStateRowInTxn"
+    ],
+    [
+     "diagnostic",
+     "getLogger"
+    ],
+    [
+     "diagnostic",
+     "log.debug"
+    ],
+    [
+     "diagnostic",
+     "log.debug"
+    ],
+    [
+     "diagnostic",
+     "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.info"
+    ],
+    [
+     "diagnostic",
+     "log.warn"
+    ],
+    [
+     "storage-call",
+     "lookupRepoIdInTxn"
+    ],
+    [
+     "provider-use",
+     "provider.completeStructured"
+    ],
+    [
+     "storage-call",
+     "readDocRelationRowsInTxn"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "filesystem-read",
+     "readFileSync"
+    ],
+    [
+     "storage-call",
+     "s.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "storedFilesInTxn"
+    ],
+    [
+     "storage-call",
+     "storedMarkdownFilesInTxn"
+    ],
+    [
+     "storage-call",
+     "t.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "t.entityIdByString.get"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "storage-call",
+     "withWriteTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationExtractionInTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationRowInTxn"
+    ],
+    [
+     "serialization",
+     "writeDocRelationRowInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationRowInTxn"
+    ],
+    [
+     "storage-call",
+     "writeDocRelationRowInTxn"
+    ]
+   ],
+   "siteCount": 39,
+   "sitesDigest": "ddef6236ce24c066943dbeaeec14da690cff0052b20ed9369516124351901000",
+   "sourceDigest": "5a4d756ca521e42844a163a11a07613ca9cfb2ce7d01cbf95e1adfa4bce4841e",
+   "boundaries": [
+    "diagnostic",
+    "filesystem-read",
+    "provider-use",
+    "serialization",
+    "storage-call"
+   ]
   },
   "src/indexer/doc-relations-measure.ts": {
    "classification": "background-indexing",

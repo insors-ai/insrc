@@ -189,7 +189,9 @@ export interface SessionOutput {
    * While registered, rollover keeps its generation readable (archived instead of discarded).
    */
   registerCursor(cursor: SegmentCursor, readerId?: string): void;
-  /** Drops one reader's registration; the archived generation goes only when NO reader pins it. */
+  /** Drops one reader's registration (its durable pin marker goes too). The archived generation
+   * itself is NOT deleted here — only sweep/remove prune archives, age-gated and pin-checked, so a
+   * registration racing an unregister can never lose the generation under a live pin. */
   unregisterCursor(cursor: SegmentCursor, readerId?: string): void;
   /** The oldest generation still retained for a session (for SegmentGone replay recovery). */
   oldestRetainedGeneration(sessionId: string): Promise<number | undefined>;
@@ -396,26 +398,20 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         pinned.set(key, count - 1);
       } else {
         pinned.delete(key);
-        // drop the archived generation only when NO reader (this process or any other) pins it;
-        // remove this reader's marker FIRST so the disk scan below does not count it
-        const genKey = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
+        // Only this reader's MARKER is removed here. The archive itself is never deleted by
+        // unregister: a register racing this cleanup (same or another process) would otherwise
+        // end up pinned against a deleted archive (unrecoverable SegmentGone). Archives are
+        // pruned exclusively by sweep/remove, which re-check pins right before deleting.
         const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
         // Synchronous marker removal when the seam allows: register -> unregister -> register then
         // preserves order (write, rm, write) because all three are synchronous in this process.
         if (fs.rmSync !== undefined) fs.rmSync(marker);
-        // locked, so the pin-check + archive removal is atomic against a concurrent register
+        // queued + locked fallback for async-only seams; re-check the refcount inside the task so a
+        // register that happened after this unregister keeps its re-created marker
         enqueuePinIo(() =>
           withSessionLock(cursor.sessionId, async () => {
-            // A register that happened AFTER this unregister re-created the marker — the queued
-            // deletion must not erase the new active pin. Re-check the refcount before touching disk.
-            if (pinned.has(key)) return;
+            if (pinned.has(key)) return; // re-registered: the new pin's marker must survive
             await fs.rm(marker).catch(() => {});
-            const still = await genPinned(cursor.sessionId, cursor.generation, false);
-            const arch = archived.get(genKey);
-            if (!still && arch !== undefined) {
-              archived.delete(genKey);
-              await fs.rm(arch).catch(() => {});
-            }
           }),
         );
       }
@@ -632,7 +628,16 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         const times: number[] = [];
         for (const f of files) times.push((await fs.mtimeMs(`${deps.root}/${f}`)) ?? 0);
         if (times.some((t) => t > cutoff)) continue; // written recently: maybe a turn of another window's session
-        for (const f of files) await fs.rm(`${deps.root}/${f}`);
+        for (const f of files) {
+          // An archive is deleted only if STILL unpinned — re-scan the directory fresh (not the
+          // sweep-start listing) so a pin registered during this sweep is honored.
+          const am = /^(.*)\.pinned\.(\d+)\.ndjson$/.exec(f);
+          if (am !== null) {
+            const fresh = fs.readdirSync !== undefined ? fs.readdirSync(deps.root) : await fs.readdir(deps.root);
+            if (fresh.some((n) => n.startsWith(`${am[1]}.pin.${am[2]}.`))) continue;
+          }
+          await fs.rm(`${deps.root}/${f}`);
+        }
       }
     },
   };

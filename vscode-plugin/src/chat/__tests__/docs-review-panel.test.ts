@@ -7401,6 +7401,60 @@ test('E202611031bd72813:S001 t8: each presentKey opens its OWN editor panel (tit
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t8/MR2: two presentKey panels hold INDEPENDENT document state — a decision from panel A is validated against A’s own open document, reaches the daemon, and is answered only on A’s channel; a boot ping on B re-posts B’s own document on B’s channel; disposing one sibling leaves the other fully working', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const docs = [
+    { id: 'LLD-a-S001', kind: 'LLD', title: 'A', status: 'pending' },
+    { id: 'LLD-b-S001', kind: 'LLD', title: 'B', status: 'pending' },
+  ];
+  const { client, calls } = fakeClient({
+    pending: () => docs as DocsArtifactSummary[],
+    content: (id) => ({ markdown: `# body of ${id}`, openQuestions: [], blocked: false, docPath: `docs/${id}.md` }),
+  });
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      made.push(rec);
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => { rec.reveals += 1; }, dispose: ch.dispose };
+    },
+    client,
+  });
+  host.openArtifact({ artifactId: 'LLD-a-S001', mdPath: 'docs/LLD-a-S001.md', quiet: true, presentKey: 'A#1' });
+  host.openArtifact({ artifactId: 'LLD-b-S001', mdPath: 'docs/LLD-b-S001.md', quiet: true, presentKey: 'B#2' });
+  await tick(); await tick(); await tick(); await tick();
+  assert.equal(made.length, 2);
+  const contentsOf = (fc: ReturnType<typeof fakeChannel>): string[] => fc.posted.filter((p) => p.payload.type === 'docs-content').map((p) => (p.payload as { artifactId: string }).artifactId);
+  assert.deepEqual(contentsOf(made[0]!.fc), ['LLD-a-S001'], 'panel A loaded A');
+  assert.deepEqual(contentsOf(made[1]!.fc), ['LLD-b-S001'], 'panel B loaded B — not superseded by A');
+  // a decision from panel A on A's artifact: validated against A's open document, daemon called, answered on A only
+  made[0]!.fc.send(env('docs-decision', { artifactId: 'LLD-a-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'the decision reached the daemon');
+  assert.equal(calls.decide[0]!.path, 'docs/LLD-a-S001.md', 'decided by A’s own docPath');
+  assert.equal(made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 1, 'the result was answered on A’s channel');
+  assert.equal(made[1]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 0, 'and never on B’s');
+  // a boot ping (shell reload) on B re-posts B's OWN document on B's channel
+  const aContentsBefore = contentsOf(made[0]!.fc).length;
+  made[1]!.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(made[1]!.fc).at(-1), 'LLD-b-S001', 'B’s reload re-posted B’s document');
+  assert.equal(contentsOf(made[0]!.fc).length, aContentsBefore, 'A’s channel was untouched by B’s ping');
+  // a decision for B's artifact sent from panel A is refused on A (not the open document there)
+  made[0]!.fc.send(env('docs-decision', { artifactId: 'LLD-b-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'a decision for another panel’s document never reaches the daemon');
+  const refused = made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!.payload as { ok: boolean };
+  assert.equal(refused.ok, false, 'refused on the sending panel');
+  // disposing sibling B leaves A fully working
+  made[1]!.fc.fireDispose();
+  made[0]!.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(made[0]!.fc).at(-1), 'LLD-a-S001', 'A still reloads its own document after B was disposed');
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:artifactId — two panels showing the same artifact keep isolated drafts, and A->B->A within one panel restores A', () => {
   const DOC_A = { ...INLINE_DOC, artifactId: 'LLD-a' };
   const DOC_B = { ...INLINE_DOC, artifactId: 'LLD-b' };

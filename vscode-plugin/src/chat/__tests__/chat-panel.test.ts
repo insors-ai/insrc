@@ -6563,7 +6563,7 @@ test('E202611031bd72813:S001 t5: an observer-completed detached chat persists it
     const cur = store.get(s.id)!;
     // the DEAD host's live reader had already persisted the assistant row (liveTurn.transcriptLen)
     cur.transcript.push({ role: 'assistant', text: 'detached answer', at: '2026-01-01T00:00:00.000Z' });
-    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1, transcriptLen: 1 };
+    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1, transcriptLen: 1, turnStartLen: 0 };
     store.save(cur);
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the observer completed the detached turn');
     const after = store.get(s.id)!;
@@ -6573,6 +6573,47 @@ test('E202611031bd72813:S001 t5: an observer-completed detached chat persists it
     assert.ok(after.transcript.some((r) => r.role === 'assistant'), 'the detached assistant output is in the persisted transcript (reopening shows it)');
     assert.equal(after.nativeSessionId, 'native-42', 'the done event\'s native session id is kept for resume');
     assert.ok(after.observerCheckpoint?.transcriptLen === after.transcript.length, 'the checkpoint records the persisted transcript length');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
+test('E202611031bd72813:S001 t5: when recoverTurn cannot re-anchor (turn retained nowhere), the observer falls back to the ADVANCED live cursor and must NOT truncate the transcript to a turn-start length — persisted rows are kept, not deleted', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs7-'));
+  try {
+    const out = createSessionOutput({ root, maxBytes: 1, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg1 = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg1.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'x' }] } }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    // the turn's output is retained NOWHERE (files deleted) -> recoverTurn returns undefined
+    for (const f of readdirSync(root)) if (f.endsWith('.ndjson')) rmSync(pathJoin(root, f));
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    // earlier history + this turn's row, as the dead host's live reader had persisted them
+    cur.transcript.push({ role: 'user', text: 'earlier', at: '2026-01-01T00:00:00.000Z' });
+    cur.transcript.push({ role: 'assistant', text: 'x', at: '2026-01-01T00:00:01.000Z' });
+    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1, transcriptLen: 2 }; // legacy: no turnStartLen
+    store.save(cur);
+    await new Promise((r) => setTimeout(r, 300)); // several observer passes run the fallback path
+    const after = store.get(s.id)!;
+    assert.equal(after.transcript.length, 2, 'the fallback to the advanced live cursor did NOT delete persisted transcript rows');
+    assert.ok(after.liveTurn !== undefined, 'the unreadable segment keeps the turn unreconciled (observation failure), not silently done');
     host.dispose();
   } finally {
     await rmrf(root);

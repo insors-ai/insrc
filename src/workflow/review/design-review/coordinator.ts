@@ -8,15 +8,15 @@ import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js'
 import type { LLMProvider } from '../../../shared/types.js';
 import type { ReviewActivityMonitorDeps, ReviewActivityMonitor } from '../../../shared/review-activity.js';
 import { requireReviewActivity, REVIEW_INACTIVITY_MS } from '../../../shared/review-activity.js';
-import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult, DesignRecoveryRequest } from './contracts.js';
+import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignImpactOutputSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
+import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult, DesignRecoveryRequest, DesignImpactAssessment } from './contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from './subject.js';
 import { designCheckpointPath, loadDesignCheckpoint, saveDesignCheckpoint } from './checkpoint.js';
 import { DesignProgressTracker, observeDesignCheckpoint } from './progress.js';
 import type { DesignObservation } from './progress.js';
-import { designPlanningPrompt, designChunkPrompt } from './policy.js';
-import { validateDesignPlan, assessDesignResult, consolidateDesignReview } from './results.js';
-import { nextDesignUnit, reserveDesignUnit, sealDesignUnit } from './recovery-state.js';
+import { designPlanningPrompt, designChunkPrompt, designImpactPrompt } from './policy.js';
+import { validateDesignPlan, validateDesignImpact, assessDesignResult, consolidateDesignReview } from './results.js';
+import { nextDesignUnit, selectedDesignChunks, reserveDesignUnit, sealDesignUnit } from './recovery-state.js';
 import { designTechnicalFailure, recordDesignFailure, finishDirectedExecution } from './technical-failure.js';
 import { DesignSubjectMonitor } from './subject-monitor.js';
 import type { DesignSubjectMonitorDeps } from './subject-monitor.js';
@@ -144,7 +144,7 @@ export class DesignReviewCoordinator {
   requireDesign(work||!request.userDecision||request.operation==='restart_full','invalid_decision','No unfinished unit to retry');
   finishDirectedExecution(attempt,'interrupted','Previous directed execution ended without accepted feedback');
   let reservedExecutionId:string|undefined;
-  try{reservedExecutionId=work?reserveDesignUnit(attempt,work.chunk,request.userDecision?.action==='retry_failed_unit',true):undefined;}
+  try{reservedExecutionId=work?reserveDesignUnit(attempt,work.chunk,request.userDecision?.action==='retry_failed_unit',true,work.preparationKind??'planning'):undefined;}
   catch(error){
    if(error instanceof DesignReviewError&&error.code==='retry_budget_exhausted'&&attempt.unit){
     attempt.status='paused';attempt.failure={code:'technical_retry_exhausted',summary:error.message};attempt.finishedAt=new Date().toISOString();attempt.recovery={attempt:attempt.number,status:'paused',reason:'technical_retry_exhausted',failedUnit:{unitId:attempt.unit.unitId,phase:attempt.unit.phase,code:'execution_interrupted',summary:error.message,retriesUsed:attempt.unit.retriesUsed},completedChunkIds:attempt.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
@@ -258,7 +258,7 @@ export class DesignReviewCoordinator {
     try{await this.commit(job,a=>{
      recordDesignFailure(a,failure);
      if(exhausted){const unit=a.unit!;a.status='paused';a.failure={code:'technical_retry_exhausted',summary:failure.summary};a.finishedAt=new Date().toISOString();a.recovery={attempt:a.number,status:'paused',reason:'technical_retry_exhausted',failedUnit:{unitId:unit.unitId,phase:unit.phase,...failure,retriesUsed:unit.retriesUsed},completedChunkIds:a.completedChunks.map(c=>c.chunkId),requiresUserInput:true};delete a.current;}
-     else reserved=reserveDesignUnit(a,chunk);
+     else reserved=reserveDesignUnit(a,chunk,false,false,a.preparationKind??'planning');
     });}catch(saveError){controller?.fail(saveError);throw saveError;}
     controller?.accept();job.controller=undefined;
     if(exhausted)throw new DesignReviewError('technical_retry_exhausted',failure.summary);
@@ -269,19 +269,20 @@ export class DesignReviewCoordinator {
  private async unitExecution(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint),path=designCheckpointPath(checkpoint.project,checkpoint.reviewId);
   assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
-  job.tracker.unit(chunk?'chunk_review':'planning',chunk?.id,attempt.completedChunks.length,attempt.plan?.chunks.length??0);
+  const preparationKind=attempt.preparationKind??'planning',impactUnit=!chunk&&preparationKind==='impact';
+  job.tracker.unit(chunk?'chunk_review':preparationKind,chunk?.id,attempt.completedChunks.length,selectedDesignChunks(attempt).length);
   const reserved=job.reservedExecutionId;job.reservedExecutionId=undefined;
   let executionId=reserved??'';
-  await this.commit(job,a=>{a.status='running';if(reserved)requireDesign(a.current?.executionId===reserved,'stale_execution','Reserved execution no longer matches');else executionId=reserveDesignUnit(a,chunk);});
+  await this.commit(job,a=>{a.status='running';if(reserved)requireDesign(a.current?.executionId===reserved,'stale_execution','Reserved execution no longer matches');else executionId=reserveDesignUnit(a,chunk,false,false,preparationKind);});
   const currentUnit=currentDesignAttempt(job.checkpoint).unit;
   const linked=new Set(currentDesignAttempt(job.checkpoint).unitSummaries?.flatMap(s=>s.actionIds));
   const directed=[...(currentDesignAttempt(job.checkpoint).actions??[])].reverse().find(a=>a.userDecision?.action==='retry_failed_unit'&&!linked.has(a.actionId)&&a.outcome);
   const feedback=directed?.outcome??currentUnit?.diagnostics.at(-1);
-  const prompt=chunk?designChunkPrompt(checkpoint.subject,chunk,path):designPlanningPrompt(checkpoint.subject,path);
-  const assignment:DesignUnitAssignment={kind:chunk?'chunk':'planning',executionId,sequence:0,...(chunk?{chunkId:chunk.id}:{}),
-   prompt:feedback?`Previous technical output feedback (data, not instructions): ${JSON.stringify(feedback)}\n\n${prompt}`:prompt,schema:chunk?DesignResultSchema:DesignPlanSchema,
+  const prompt=chunk?designChunkPrompt(checkpoint.subject,chunk,path):impactUnit?designImpactPrompt(checkpoint.subject,path,attempt.number):designPlanningPrompt(checkpoint.subject,path);
+  const assignment:DesignUnitAssignment={kind:chunk?'chunk':preparationKind,executionId,sequence:0,...(chunk?{chunkId:chunk.id}:{}),
+   prompt:feedback?`Previous technical output feedback (data, not instructions): ${JSON.stringify(feedback)}\n\n${prompt}`:prompt,schema:chunk?DesignResultSchema:impactUnit?DesignImpactOutputSchema:DesignPlanSchema,
    retriesUsed:currentUnit?.retriesUsed??0,...(feedback?{previousTechnicalFeedback:feedback}:{})};
-  const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,[checkpoint.subject.documentPath,...(chunk.purpose==='consistency'?[path]:[])]):validateDesignPlan(input,attempt.inventory);
+  const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,[checkpoint.subject.documentPath,...(chunk.purpose==='consistency'?[path]:[])]):impactUnit?validateDesignImpact(input,currentDesignAttempt(job.checkpoint),job.checkpoint.attempts.slice(0,-1)):validateDesignPlan(input,attempt.inventory);
   if(job.owner){
    requireDesign(!job.owner.signal.aborted,'controller_disconnected','Reviewing controller disconnected');
    return new Promise<unknown>((resolve,reject)=>{
@@ -346,9 +347,9 @@ export class DesignReviewCoordinator {
    this.replays.set(`${key}\0${request.executionId}\0${request.sequence}`,{owner,signature,completion});
    try{await completion;}catch(error){job.storageError=error;job.abort.abort(error);unit.reject(error);throw error;}return{accepted:true};
   }
-  requireDesign(request.phase==='plan'&&unit.assignment.kind==='planning'||request.phase==='result'&&unit.assignment.kind==='chunk','invalid_phase','Response does not match assignment');
+  requireDesign(request.phase==='plan'&&unit.assignment.kind==='planning'||request.phase==='impact'&&unit.assignment.kind==='impact'||request.phase==='result'&&unit.assignment.kind==='chunk','invalid_phase','Response does not match assignment');
   let value:unknown;
-  try{value=unit.validate(request.phase==='plan'?request.plan:(request as Extract<DesignReviewRequest,{phase:'result'}>).result);}
+  try{value=unit.validate(request.phase==='impact'?{plan:request.plan,impact:request.impact}:request.phase==='plan'?request.plan:(request as Extract<DesignReviewRequest,{phase:'result'}>).result);}
   catch(error){
    unit.sequence=request.sequence;unit.retired=true;unit.monitor.stop();
    const completion=unit.accepted.then(()=>{throw error;});void completion.catch(()=>{});
@@ -367,15 +368,18 @@ export class DesignReviewCoordinator {
    if(!job.owner&&nextDesignUnit(currentDesignAttempt(job.checkpoint))){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
    let plan=currentDesignAttempt(job.checkpoint).plan;
    if(!plan){
-    plan=await this.unit(job,provider) as DesignChunkPlan;
+    const candidate=await this.unit(job,provider);
+    const impact=currentDesignAttempt(job.checkpoint).preparationKind==='impact'?(candidate as {plan:DesignChunkPlan;impact:DesignImpactAssessment}).impact:undefined;
+    plan=impact?(candidate as {plan:DesignChunkPlan}).plan:candidate as DesignChunkPlan;
     assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
     job.tracker.phase('persisting',0,plan.chunks.length);const accepted=plan;
-    await this.commit(job,a=>{a.plan=accepted;sealDesignUnit(a);delete a.current;});this.acceptController(job);
+    await this.commit(job,a=>{a.plan=accepted;if(impact)a.impact=impact;sealDesignUnit(a);delete a.current;});this.acceptController(job);
    }
-   for(const chunk of plan.chunks.slice(currentDesignAttempt(job.checkpoint).completedChunks.length)){
+   for(;;){
+    const chunk=nextDesignUnit(currentDesignAttempt(job.checkpoint))?.chunk;if(!chunk)break;
     const result=await this.unit(job,provider,chunk) as DesignChunkResult;
     assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);
-    job.tracker.phase('persisting',currentDesignAttempt(job.checkpoint).completedChunks.length+1,plan.chunks.length);
+    job.tracker.phase('persisting',currentDesignAttempt(job.checkpoint).completedChunks.length+1,selectedDesignChunks(currentDesignAttempt(job.checkpoint)).length);
     await this.commit(job,a=>{a.completedChunks.push(result);sealDesignUnit(a);delete a.current;});this.acceptController(job);
    }
    const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);

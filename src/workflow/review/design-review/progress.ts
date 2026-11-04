@@ -9,14 +9,15 @@ const clock:DesignClock={now:()=>performance.now(),wall:()=>new Date().toISOStri
 export class DesignProgressTracker {
  private readonly started:number;
  private unitStarted:number|undefined;
+ private unitPhase:'planning'|'impact'|'chunk_review'='planning';
  private readonly sessions=new Map<string,number>();
  private readonly tools=new Set<string>();
  private value:DesignReviewProgress;
  constructor(path:string,private readonly time:DesignClock=clock,previous?:DesignReviewProgress){
   this.started=time.now()-(previous?.reviewElapsedMs??0);this.value={status:'pending',phase:'planning',completedChunks:0,totalChunks:0,lastMeaningfulActivityAt:null,activeToolCount:0,requiresUserInput:false,checkpointPath:path,sequence:previous?.sequence??0,reviewElapsedMs:0,unitElapsedMs:null,observedAt:time.wall(),freshness:'live'};
  }
- unit(phase:'planning'|'chunk_review',chunkId?:string,completed=0,total=0):void{
-  this.sessions.clear();this.tools.clear();this.unitStarted=this.time.now();
+ unit(phase:'planning'|'impact'|'chunk_review',chunkId?:string,completed=0,total=0):void{
+  this.unitPhase=phase;this.sessions.clear();this.tools.clear();this.unitStarted=this.time.now();
   this.value.status='running';this.value.phase=phase;this.value.completedChunks=completed;this.value.totalChunks=total;
   this.value.lastMeaningfulActivityAt=null;this.value.activeToolCount=0;
   if(chunkId)this.value.activeChunkId=chunkId;else delete this.value.activeChunkId;
@@ -43,7 +44,7 @@ export class DesignProgressTracker {
   }
   this.sessions.set(event.sessionId,event.sequence);this.value.activeToolCount=this.tools.size;
   if(event.kind!=='session_started')this.value.lastMeaningfulActivityAt=this.time.wall();
-  if(this.tools.size)this.value.phase='tool_running';else if(this.value.phase==='tool_running')this.value.phase=this.value.activeChunkId?'chunk_review':'planning';
+  if(this.tools.size)this.value.phase='tool_running';else if(this.value.phase==='tool_running')this.value.phase=this.unitPhase;
   this.touch();return true;
  }
  snapshot():DesignReviewProgress{

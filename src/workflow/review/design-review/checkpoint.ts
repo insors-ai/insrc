@@ -25,6 +25,7 @@ function checkRecovery(attempt:DesignAttempt):void {
   checkUnit(summary);const key=`${summary.phase}\0${summary.unitId}`;
   requireDesign(!keys.has(key),'invalid_checkpoint','Duplicate completed unit summary');keys.add(key);
   requireDesign(new Set(summary.actionIds).size===summary.actionIds.length&&summary.actionIds.every(id=>actions.some(a=>a.actionId===id)),'invalid_checkpoint','Unit summary names an unknown or duplicate action');
+  if(summary.phase==='impact')requireDesign(attempt.plan&&attempt.impact,'invalid_checkpoint','Completed impact summary has no atomic plan/impact pair');
   if(summary.phase==='planning')requireDesign(attempt.plan,'invalid_checkpoint','Completed planning summary has no accepted plan');
   if(summary.phase==='chunk_review')requireDesign(attempt.completedChunks.some(c=>c.chunkId===summary.unitId),'invalid_checkpoint','Completed unit summary has no accepted chunk');
  }

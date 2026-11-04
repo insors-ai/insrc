@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { DesignPlanSchema, DesignResultSchema } from './contracts.js';
+import { DesignPlanSchema, DesignResultSchema, DesignImpactOutputSchema } from './contracts.js';
 import type { DesignReviewSubject, DesignChunk } from './contracts.js';
 
 export const DESIGN_POLICY_VERSION = 'design-review-v1';
@@ -17,6 +17,9 @@ function context(subject: DesignReviewSubject, checkpointPath: string): string {
 }
 export function designPlanningPrompt(subject: DesignReviewSubject, checkpointPath: string): string {
  return `${DESIGN_REVIEW_POLICY}\n\n${context(subject,checkpointPath)}\n\nRead the live subject and the checkpoint inventory, then propose coherent chunks. Do not copy document contents into assignments. Every inventory unit must map to at least one substantive chunk via coverage; list those unit selectors on that chunk. Shared concerns can map to multiple related chunks. Size alone is not a semantic boundary. Chunks must be in dependency order. End with exactly one consistency chunk depending on every substantive chunk: check missing requirements, cross-chunk contradictions, shared contracts and actual upstream alignment. Its selectors may be empty (whole-artifact check), but it cannot replace substantive unit coverage. Use short stable chunk ids.\n\nOutput schema (structural reference):\n${JSON.stringify(DesignPlanSchema)}`;
+}
+export function designImpactPrompt(subject:DesignReviewSubject,checkpointPath:string,attempt:number):string {
+ return `${DESIGN_REVIEW_POLICY}\n\n${context(subject,checkpointPath)}\n\nImpact preparation for attempt ${attempt}; compare the immediately preceding complete attempt ${attempt-1} through the checkpoint path. Read the current live subject, prior baseline, accepted plans and feedback. Propose a COMPLETE current inventory-covering plan and an impact assessment, not a subset plan. Analyze direct changes AND indirect effects on unchanged requirements, interfaces, ownership, dependencies, tests, workflow-specific ancestors and linked visuals. Explain affected scope even where dependencies are implicit. Map prior/current substantive chunks including additions/removals/regrouping. Retain only justified one-to-one equivalent selectors/concerns and compatible dependencies from passed/changes_requested results with no limitations, following strictly backward same-party provenance. Never bypass newer incomplete coverage with an older pass. Select all affected chunks and always select fresh final consistency. Retained chunks must not be submitted as newly reviewed. If uncertain or comparison context/reviewer is incompatible, explicitly submit full mode with rationale, no retained coverage and all current substantive chunks selected; the host will reject unsafe selective output, never rewrite it for you. Carry every known effective finding using canonical JSON.stringify([attempt,chunkId,findingId]) keys from accepted history; do not resolve findings before fresh inspection. Return {plan,impact} atomically, with no copied document or historical result bodies.\n\nOutput schema (structural reference):\n${JSON.stringify(DesignImpactOutputSchema)}`;
 }
 export function designChunkPrompt(subject: DesignReviewSubject, chunk: DesignChunk, checkpointPath: string): string {
  const check = chunk.purpose === 'consistency'

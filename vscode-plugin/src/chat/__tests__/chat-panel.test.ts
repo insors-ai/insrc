@@ -6704,3 +6704,45 @@ test('E202611031bd72813:S001 t6: fresh-host reload restores a snapshot-only requ
   assert.ok(restoredIdx !== -1 && cardIdx > restoredIdx, 'the card is posted AFTER session-restored, so it survives the webview clear');
   host.dispose();
 });
+
+test('E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let runCount = 0;
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't1', requestId: 'perm-drop', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
+  ];
+  let releaseGate!: () => void;
+  const gate = new Promise<void>((r) => { releaseGate = r; });
+  const base = scriptedAdapter(evs, {
+    hang: true, // the turn never ends on its own
+    delivered: false,
+    onRun: () => { runCount += 1; },
+  });
+  const proc = fakeLiveProc(4322);
+  const adapter: StreamAdapter = {
+    ...base,
+    run(req: TurnRequest, opts?: RunOptions) {
+      opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 't1', generation: 1, offset: 0 }, outPath: '/out/s.ndjson' });
+      return base.run(req);
+    },
+  };
+  void gate; void releaseGate;
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  const id = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'perm-drop', decision: 'approve' }));
+  // stop the turn BEFORE the follow-up can spawn: the chained follow-up is dropped -> delivery-failed
+  fc.send(env('cancel-turn', {}));
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-drop')?.outcome === 'delivery-failed', 8000, 'the abandoned follow-up is recorded delivery-failed, not approved');
+  assert.equal(runCount, 1, 'the follow-up never ran');
+  fc.fireDispose();
+});

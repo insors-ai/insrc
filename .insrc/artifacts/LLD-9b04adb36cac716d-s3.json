@@ -1,0 +1,829 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793779743636-doc30v",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:18:15.118Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 549476,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s3",
+    "hldBaseRunId": "wf-1793694252789-heyhey",
+    "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Review corrected designs by assessing direct and indirect impact before selecting chunks. Preserve unaffected prior coverage with explicit provenance, carry unresolved findings forward, and run a fresh consistency check. Fall back to full review whenever safe reuse cannot be established."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a small, design-specific background coordinator; reuse the existing LLMProvider activity-mode review session, role routing, IPC/session routing and artifact store/history. Do not generalize or migrate the working task-review coordinator. New production code belongs under a dedicated design-review subdirectory of the existing src/workflow/review boundary (proposed location, not an existing module claim). Normal insrc_review_step and daemon design-review routes delegate to it; removed claim/judge/autofix execution stays removed. [[c1]] [[c2]]\n\nA review has one canonical subject and sequential attempts. Each attempt owns its baseline, semantic chunk plan, accepted completed results and terminal summary. Current review prompts contain policy, subject/related document paths, chunk assignment and output schema, never the artifact body. Prior feedback and impact baselines are accessible by checkpoint/history references rather than repeated full input. Read-only reviewers inspect live artifact paths and any necessary code; the daemon validates structure and completeness without inventing semantic judgments. Shared substantive policy assesses correctness against requirements/upstream designs, functional completeness, contracts and ownership/cardinality, errors/test coverage where relevant, consistency, applicable conventions, and necessary linked diagrams/UX artifacts. Report unavailable verification honestly; optional advice does not become a false blocking or unverified finding.",
+      "ownedContracts": [
+        {
+          "id": "sc4",
+          "name": "Impact-selected attempt and retained coverage",
+          "purpose": "Make selective re-review defensible and preserve unresolved feedback and coverage provenance.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "interfaceSketch": "interface DesignImpactAssessment { readonly baselineAttempt: number; readonly mode: 'affected_chunks' | 'full'; readonly changes: readonly string[]; readonly directChunkIds: readonly string[]; readonly indirectChunkIds: readonly string[]; readonly rationale: string; readonly uncertainReason?: string | undefined; readonly chunkMapping: readonly { readonly priorIds: readonly string[]; readonly currentIds: readonly string[]; readonly explanation: string; }[]; readonly retainedCoverage: readonly { readonly chunkId: string; readonly fromAttempt: number; readonly fromChunkId: string; readonly justification: string; }[]; readonly carriedFindingIds: readonly string[]; readonly consistencyChunkIds: readonly string[]; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Design review subject, policy and semantic chunk contract",
+          "purpose": "One minimal subject request, common substantive policy and coherent chunk plans for both reviewer parties.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignArtifactKind = 'DEF' | 'HLD' | 'LLD';\ninterface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ninterface DesignReviewSubject { readonly artifactId: string; readonly kind: DesignArtifactKind; readonly documentPath: string; readonly canonicalPath: string; readonly reviewer: 'daemon' | 'controller'; }\ninterface DesignChunk { readonly id: string; readonly title: string; readonly selectors: readonly string[]; readonly concerns: readonly string[]; readonly dependsOn: readonly string[]; readonly purpose: 'substantive' | 'consistency'; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Durable review attempts, feedback and progress",
+          "purpose": "Persist one source of review state and expose completed feedback without a long-lived request.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignBaseline { readonly subjectFingerprints: Readonly<Record<string,string>>; readonly reviewedContent: unknown; readonly capturedAt: string; }\ninterface DesignFinding { readonly id: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly location: string; readonly message: string; readonly evidenceReferences: readonly string[]; }\ninterface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignAttempt { readonly number: number; readonly status: DesignReviewStatus; readonly baseline: DesignBaseline; readonly plan?: DesignChunkPlan | undefined; readonly completedChunks: readonly DesignChunkResult[]; readonly summary?: string | undefined; }\ninterface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Change invalidation and bounded technical recovery",
+          "purpose": "Keep mutation, interruption, technical retries and user decisions distinct without losing completed work.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "interface DesignFailure { readonly unitId: string; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'publication'; readonly code: string; readonly summary: string; readonly retriesUsed: number; }\ninterface DesignRecoveryState { readonly attempt: number; readonly status: 'interrupted' | 'paused' | 'invalidated'; readonly reason: 'connection_lost' | 'daemon_restarted' | 'technical_retry_exhausted' | 'artifact_changed'; readonly failedUnit?: DesignFailure | undefined; readonly completedChunkIds: readonly string[]; readonly requiresUserInput: boolean; }\ninterface DesignRecoveryAction { readonly operation: 'resume' | 'restart_full' | 'retry_publication'; readonly reviewId: string; readonly attempt: number; readonly userDecision?: { readonly action: string; readonly reason: string; readonly recordedAt: string; } | undefined; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s3",
+        "owns": [
+          "sc4"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3"
+        ],
+        "internal": "Own reviewer-led direct/indirect impact assessment, old/new plan mapping, conservative full-review fallback, retained coverage and finding reconciliation. Its document comparison/selection implementation stays private; expose only auditable scope reasoning and provenance, not a generic dependency engine."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Deliver the first useful normal-entrypoint review: latest-subject resolution, opposite-party execution, shared artifact-specific policy, reviewer chunk planning, sequential inspection, durable completed results, visible progress and a retrievable consolidated report. Keep prompt construction, native/controller exchange and checkpoint IO private; no shared-engine migration. Produce real narrow hosted-review evidence as well as deterministic fixtures."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own interruption/recovery transitions, reviewed-subject monitoring, cancellation/late-response rejection, the single retry budget and user-decision pause. Native activity integration is private; callers consume recovery state/actions, not process internals. Preserve sc1/sc2 semantics and no external-file invalidation."
+        },
+        {
+          "storyId": "s4",
+          "owns": [
+            "sc5"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3",
+            "sc4"
+          ],
+          "internal": "Own lifecycle version-aware record publication/readers, normal approval integration, history-preserving cleanup, multi-session routing qualification and final compiled/live verification. Keep cleanup fence and publication retries internal. No new review dashboard, activation state or legacy compatibility execution."
+        }
+      ],
+      "rolloutPhase": "C — impact-aware corrections",
+      "nonFunctional": {
+        "performance": "Initial acknowledgement and progress are model-independent short operations; target <=2 seconds on an idle local daemon, measured separately from filesystem/model time. Review calls remain sequential per review; independent subjects may run concurrently. Bound checkpoint size and payloads explicitly in LLD; reject exceeded limits without silent truncation or loss of coverage. Persist completed chunks before advancing and coalesce activity-only progress writes.",
+        "security": "Daemon owns state/store access. Canonical registered repo and artifact identity, no-follow bounded checkpoint reads, literal review IDs and private file modes follow existing patterns. Native review uses read-only grants with no code-task command grant. Opposite reviewer party derives from trusted host/session context and artifact metadata, not request claims. No cloud REST, trust-key service or raw reasoning/prompt archive.",
+        "observability": "Expose review/attempt/chunk identity, phase, elapsed times, accepted completed feedback, current technical retry count, paused reason, user-input requirement, activity/tool state and publication state. Polling observes only. Separate optional advice from findings and unavailable evidence. Controller reports progress but does not edit or resolve intermediate findings.",
+        "durability": "Atomic validated checkpoint snapshots and completed-chunk flushes; immutable prior attempts and idempotent history publication. Reviewer disconnect, daemon restart, publication interruption and approval cleanup have explicit recovery cases. Permanent history retains baselines/impact/feedback and technical attempt summaries, not native transcripts. Never delete a checkpoint until every attempt is preserved and approval succeeded."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "DesignReviewCoordinator",
+          "signature": "class DesignReviewCoordinator { start(request: DesignReviewStart, context?: DesignReviewerContext): Promise<DesignReviewAcknowledgement>; exchange(request: DesignExchangeRequest, owner: DesignControllerOwner): Promise<unknown>; }",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "DesignReviewStart | DesignExchangeRequest",
+              "purpose": "Existing minimal repo/reviewId/attempt/artifactPath identity; start accepts a positive sequential attempt and controller exchange adds an impact response phase. No submitter-supplied change list, plan, selection, prior body or baseline is trusted.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "DesignReviewerContext",
+              "purpose": "Existing trusted independent reviewer identity/connection; current subject and workflow context are derived afresh.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DesignReviewAcknowledgement | unknown>",
+            "meaning": "Short durable acknowledgement or existing bounded exchange frame; a correction attempt starts impact analysis in the background."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Noncontiguous attempt, mismatched artifact/project, active subject, untrusted party, invalid impact scope, byte/count bounds or persistence failure."
+            }
+          ],
+          "preconditions": [
+            "Initial attempt1 behaves unchanged. A subsequent start is only latest.number+1 after a terminal complete report (passed, changes_requested or incomplete), not pending/running/interrupted/paused/failed/invalidated. Recovery of an interrupted/paused attempt remains sc3; an invalidated attempt requires user-approved restart_full and never reuses coverage.",
+            "Same review/attempt replay is observe-only; conflicting identity cannot replace pinned admission. Current live subject representations must be valid. No generic Git/HEAD diff defines design scope."
+          ],
+          "postconditions": [
+            "Append one new baseline/inventory, with prior attempts frozen. Choose the latest complete report as impact baseline only if artifact identity and reviewer party match; otherwise full review with explicit reason, no retained coverage.",
+            "Subsequent impact unit returns {plan,impact}; initial and approved restart_full use ordinary full planning, never impact reuse. Monitoring starts before impact and aborts on subject mutation. No next-attempt admission occurs automatically from polling."
+          ]
+        },
+        {
+          "name": "validateDesignPlan",
+          "signature": "validateDesignPlan(input: unknown, inventory: DesignReviewInventory): DesignChunkPlan",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Complete current plan proposed with impact output, not a subset plan.",
+              "optional": false
+            },
+            {
+              "name": "inventory",
+              "type": "DesignReviewInventory",
+              "purpose": "Fresh inventory of the current DEF/HLD/LLD including relevant visuals and workflow references.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "DesignChunkPlan",
+            "meaning": "Existing complete inventory/selector/dependency validation. Selection is a separate sc4 decision."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Unknown, duplicate, omitted or inconsistent units/chunks/dependencies; final consistency absent or not last."
+            }
+          ],
+          "preconditions": [
+            "Validate complete current plan before validating its impact selection."
+          ],
+          "postconditions": [
+            "Every current inventory unit has substantive coverage; final consistency depends on all substantive chunks, including retained coverage. Changed grouping is represented explicitly, not silently treated as equivalent."
+          ]
+        },
+        {
+          "name": "nextDesignUnit",
+          "signature": "nextDesignUnit(attempt: DesignAttempt): { kind: 'planning' | 'impact' | 'chunk'; chunk?: DesignChunk | undefined } | undefined",
+          "parameters": [
+            {
+              "name": "attempt",
+              "type": "DesignAttempt",
+              "purpose": "Current attempt, accepted impact selection and fresh completed results.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{kind:'planning'|'impact'|'chunk';chunk?:DesignChunk}|undefined",
+            "meaning": "One unfinished execution unit: full initial planning, subsequent impact, or next selected chunk in current plan order."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Corrupt selection, missing provenance or fresh-results order that does not match selected execution order."
+            }
+          ],
+          "preconditions": [
+            "No current plan/decision mutation after acceptance; retained coverage must not appear in completedChunks."
+          ],
+          "postconditions": [
+            "Only selected substantive chunks and a fresh final consistency chunk dispatch. Reused chunks spend no execution reservation. Resume skips accepted impact and accepted selected chunks; it never resets sc3 counters."
+          ]
+        },
+        {
+          "name": "reserveDesignUnit",
+          "signature": "reserveDesignUnit(attempt: DesignAttempt, chunk?: DesignChunk, allowExtra?: boolean, recovering?: boolean, preparationKind?: 'planning' | 'impact'): string",
+          "parameters": [
+            {
+              "name": "attempt",
+              "type": "DesignAttempt",
+              "purpose": "Existing attempt-local durable reservation state.",
+              "optional": false
+            },
+            {
+              "name": "chunk",
+              "type": "DesignChunk",
+              "purpose": "Fresh selected chunk; absent for planning or impact.",
+              "optional": true
+            },
+            {
+              "name": "allowExtra",
+              "type": "boolean",
+              "purpose": "Existing user-approved one-dispatch grant after exhaustion.",
+              "optional": true
+            },
+            {
+              "name": "recovering",
+              "type": "boolean",
+              "purpose": "Existing conservative interrupted reservation handling.",
+              "optional": true
+            },
+            {
+              "name": "preparationKind",
+              "type": "'planning'|'impact'",
+              "purpose": "Additive internal discriminator; default planning preserves S1/S2 callers. Impact uses its own unit id/phase.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "Fresh fenced execution generation saved before dispatch."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Sealed unit, exhausted budget without direction, invalid user decision or changed subject."
+            }
+          ],
+          "preconditions": [
+            "Use existing sc3 initial+three retry policy; no new retry subsystem."
+          ],
+          "postconditions": [
+            "Impact planning failures consume only impact reservations. Controller/native routes share output schema, policy, activity and recovery semantics. No fixed deadline; active tools and real model activity retain S2 behavior."
+          ]
+        },
+        {
+          "name": "consolidateDesignReview",
+          "signature": "consolidateDesignReview(reviewId: string, attempt: number, subject: DesignReviewSubject, contentIdentity: string, plan: DesignChunkPlan, results: readonly DesignChunkResult[], impactContext?: { impact: DesignImpactAssessment; attempts: readonly DesignAttempt[]; findingDecisions: readonly DesignFindingDecision[] }): DesignReviewConsolidated",
+          "parameters": [
+            {
+              "name": "reviewId, attempt, subject, contentIdentity, plan, results",
+              "type": "Existing consolidation arguments",
+              "purpose": "Current complete plan and fresh selected results; old all-fresh calls remain unchanged.",
+              "optional": false
+            },
+            {
+              "name": "impactContext",
+              "type": "Impact context with immutable source attempts and final finding dispositions",
+              "purpose": "Validate retained origins, effective coverage and finding lineage without copying prior feedback as fresh.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "DesignReviewConsolidated",
+            "meaning": "Counts/status over fresh and retained effective coverage plus carried unresolved findings; exposes provenance and resolved/superseded dispositions."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Missing fresh selected result, unknown/mismatched origin, duplicate effective coverage, unresolved finding omitted, invalid resolution or changed baseline."
+            }
+          ],
+          "preconditions": [
+            "Final consistency is newly reviewed. Every current chunk is exactly fresh or explicitly retained. Known earlier findings, including LOW and incomplete coverage limitations, must be accounted for."
+          ],
+          "postconditions": [
+            "No unresolved earlier HIGH/MED disappears by selection, full fallback, rename or omission. Dispositions carry/resolved/superseded name immutable source tuples and evidence; resolving a finding requires fresh selected inspection and final confirmation.",
+            "Optional execution omissions stay advice; mandatory evidence gaps yield incomplete. Reviewer semantics are not replaced by host textual inference."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "DesignImpactAssessment (sc4)",
+        "change": "new",
+        "details": "Attempt owns 0..1 accepted sc4 decision, immutable after acceptance. It records baselineAttempt, mode affected_chunks/full, changes, directChunkIds, indirectChunkIds, rationale, optional uncertainReason, chunkMapping, retainedCoverage, carriedFindingIds and consistencyChunkIds exactly as HLD sc4. The complete current plan is accepted atomically with it. Every substantive current chunk is selected or retained, disjointly; all consistency chunks are selected. Mapping may be many-to-many for explanation, but retaining requires an auditable one-to-one equivalent prior substantive chunk with matching selectors/concerns and compatible dependencies. Split, merged, added, removed, unsupported or ambiguous mappings force affected chunks or full fallback. Host validates structure/coverage/claims, reviewer assesses implicit semantics, ownership, constraints, interfaces, diagrams and workflow-specific requirements. Uncertainty promotes to full with retainedCoverage empty and direct+indirect union covering all current substantive chunks.",
+        "callSites": [
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/workflow/review/design-review/results.ts",
+          "src/workflow/review/design-review/policy.ts"
+        ]
+      },
+      {
+        "entity": "DesignAttempt impact execution and origins",
+        "change": "field-add",
+        "details": "Proposed optional impact metadata and accepted-plan pair, plus immutable execution selection derived from sc4. completedChunks continues to own only newly accepted results in selected plan order; retainedCoverage holds current chunkId -> exactly one {fromAttempt,fromChunkId,justification} link. A source may link to an earlier retained result; validate strictly decreasing attempt numbers, resolve to an actual accepted substantive result and preserve the chain. No forward links, cross-artifact/reviewer links, cycles, missing source or invalidated-source reuse. Fresh attempts own fresh baseline/inventory; start is sequential and explicit. Existing S1/S2 checkpoints without impact are full plans. Only the new review engine understands new optional fields; no legacy executable fallback is introduced.",
+        "schemaDiff": "DesignAttempt += impact?: DesignImpactAssessment; current.kind += 'impact'; DesignUnitAssignment.kind += 'impact'; DesignRequestSchemas.start.attempt := positive integer; controller phases += 'impact' with {plan,impact}; impact preparation outputs use the same strict bounded schema on both routes.",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/checkpoint.ts",
+          "src/workflow/review/design-review/recovery-state.ts",
+          "src/workflow/review/design-review/coordinator.ts"
+        ]
+      },
+      {
+        "entity": "DesignFindingDecision and effective findings",
+        "change": "new",
+        "details": "Use source tuples {attempt,chunkId,findingId}, scoped to this review and canonical artifact. sc4 carriedFindingIds contains canonical JSON tuple strings derived by the host, not assumed globally unique bare ids. Initial impact carries all known effective findings; it cannot resolve them before inspection. A fresh final consistency result supplies bounded decisions carry/resolved/superseded for all baseline effective findings. Resolved/superseded requires current selected inspection references, rationale and evidence; superseded also points to an accepted current finding. Findings in untouched retained coverage cannot be silently resolved: select their owning chunk plus necessary consistency work, otherwise carry. Findings on removed sections still require evidence-backed disposition by the selected consistency/relevant chunk. No valid decision means carry; missing required reconciliation is incomplete rather than an optimistic pass. Counts deduplicate by source tuple, not message text. Prior result bodies and statuses are immutable.",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/results.ts",
+          "src/workflow/review/design-review/policy.ts"
+        ]
+      },
+      {
+        "entity": "DesignReviewConsolidated provenance",
+        "change": "field-add",
+        "details": "Add optional sc4 scope/provenance and finding dispositions; initial all-fresh reports preserve existing fields. report.chunks contains fresh results only on selective attempts and is explicitly accompanied by retainedCoverage references and effective finding/status/coverage summaries. Effective view must cover every current plan chunk and inventory unit exactly as fresh or retained; fresh consistency is mandatory. Progress reports reviewed/retained/selected totals separately, never claims reused chunks were newly inspected. Bounded progress/assignment responses reference checkpoint paths for full history. Checkpoints are the only S3 store; S4 will consume these fields for permanent publication, lifecycle approval and cleanup.",
+        "callSites": [
+          "src/workflow/review/design-review/results.ts",
+          "src/workflow/review/design-review/progress.ts",
+          "src/workflow/review/design-review/checkpoint.ts"
+        ]
+      },
+      {
+        "entity": "Impact relationships, bounds and ownership",
+        "change": "invariant-change",
+        "details": "Relationships: review owns ordered attempts 1..128; each attempt owns baseline/inventory exactly1 and plan+impact 0..1 pair for a correction; current plan owns 2..128 chunks; each current substantive chunk has exactly1 coverage origin (fresh current result or referenced prior result); retained edge current chunk -> earlier same-review chunk is many-to-one across attempts but one-to-one for current semantic mapping. Each effective finding has exactly1 origin tuple and 0..1 current disposition. Preserve S1 subject/request/result/checkpoint byte bounds and S2 retry/action limits. Bound mapping rows/retained rows/selected ids to128, prior/current ids per mapping to128, selectors/changes/evidence to existing limits; accept no raw transcript/reasoning or artifact body in impact output. If larger legitimate scope exceeds limits, fail explicitly without truncating coverage or history. Relationship table/prose is sufficient; no new persistent database/entity ownership or UI layout is introduced.",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/checkpoint.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc4",
+        "role": "implements",
+        "howDetails": "Own impact analysis, mapping, conservative full fallback and retained/finding lineage; one accepted current plan+impact pair drives selective execution. A reviewer must consider implicit dependencies beyond text changes; host validates enumerated coverage and provenance."
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reuse subject resolution and complete artifact-specific chunk policy, including canonical Epic DEF/HLD/Story context versus standalone LLD and ISSUE-rooted LLD. No invented upstream requirements; preserve relevant visuals/citations. Current live paths, not commits, define design content."
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reuse atomic checkpoints, immutable earlier attempts, accepted chunk flushes and bounded progress; add only S3-owned impact/provenance metadata and truthful effective coverage. Reference prior baseline/history paths, never repeat document bodies in prompts."
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Schedule impact as an existing supported phase with the same serial technical retries, user-directed pause, activity supervision and generation fencing. Any subject mutation during impact/execution invalidates the attempt; only explicit user-approved full restart may follow, with no retained coverage. External-file changes alone do not invalidate."
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Noncontiguous or overlapping subsequent attempt",
+          "detection": "Compare request attempt to latest stored number, terminal complete report, canonical artifact identity and active subject registry.",
+          "response": "Reject without state replacement; observe exact admitted replays only. Paused/interrupted reviews use existing recovery; invalidated reviews require approved restart_full.",
+          "userImpact": "No duplicate review or accidental loss of unfinished work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Impact output omits changed units or proposes invalid reuse",
+          "detection": "Validate complete current plan, disjoint selected/retained partition, current inventory coverage, source tuples, same reviewer/artifact, mapping equivalence and fresh consistency selection.",
+          "response": "Reject malformed output as invalid_output in the impact unit and apply sc3 retry/pause policy. Do not silently infer a replacement semantic impact decision.",
+          "userImpact": "Explicit technical failure instead of false complete selective review.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Impact cannot be bounded confidently",
+          "detection": "Reviewer reports uncertainReason or unsupported mapping; host sees missing usable prior baseline or a legitimate mapping that cannot meet safe retention requirements.",
+          "response": "Use full mode with no retained coverage and all current chunks selected. Record why; prior known findings still need reconciliation. Do not claim selective completeness.",
+          "userImpact": "More review work, with preserved correctness.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Corrupt or missing checkpoint source",
+          "detection": "Existing bounded no-follow load and schema/integrity checks fail, or an explicit retained source attempt/result cannot be resolved.",
+          "response": "Corrupt checkpoint rejects admission without overwrite. A readable history lacking usable baseline information triggers full review, never invented reuse; unresolved known findings with unavailable required evidence remain carried/incomplete. Invalid referenced reuse is rejected.",
+          "userImpact": "No silent history loss or unexplained disappearance of prior blockers.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Subject changes during impact, selected execution or consolidation",
+          "detection": "Existing subject monitor and boundary fingerprint checks compare canonical JSON/document to the new attempt baseline.",
+          "response": "Persist invalidated, cancel active generation, reject late output; notify user and require approved restart_full. Full restart discards selective reuse and runs all chunks.",
+          "userImpact": "No valid result for a moving artifact; explicit user control.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Reviewer omits or falsely closes a previous finding",
+          "detection": "Enumerate baseline effective finding origin tuples; require disposition for each, fresh selected evidence for resolution, and current replacement finding for supersession. Host checks structure/provenance, not semantic truth.",
+          "response": "Carry unresolved findings by default; missing mandatory reconciliation evidence makes the final result incomplete. HIGH/MED still block via effective counts.",
+          "userImpact": "Earlier problems remain visible despite chunk regrouping or selective scope.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Technical failure or interruption of impact work",
+          "detection": "Existing provider/controller error classification, trusted generation/sequence and active-tool/inactivity monitor.",
+          "response": "Retry only impact initial+three, persist before dispatch, then pause for user direction. Resume accepted plan+impact atomically and skip already accepted fresh chunks. Storage/owner/context errors retain existing nonretry behavior.",
+          "userImpact": "No repeated completed work and no automatic budget reset.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Impact/provenance exceeds bounded storage or payload limits",
+          "detection": "Strict schema counts, UTF-8 byte checks and full checkpoint serialization bound before acceptance.",
+          "response": "Reject explicitly and retain previous checkpoint bytes; never truncate chunks, findings or coverage to fit.",
+          "userImpact": "An actionable failure instead of partial work reported as complete.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "No subject changes after a previous passed review",
+          "expected": "Reviewer may retain justified substantive coverage but must run fresh final consistency; current baseline and origins remain explicit."
+        },
+        {
+          "input": "Textually unchanged chunk depends on a changed shared interface or constraint",
+          "expected": "Select it indirectly, with rationale and affected upstream/cross-chunk consistency; no text-only exclusion rule."
+        },
+        {
+          "input": "Chunk renamed with equivalent selectors/concerns",
+          "expected": "Explicit one-to-one mapping may retain it if reviewer justifies semantic equivalence and dependency compatibility."
+        },
+        {
+          "input": "Split/merged/new/removed sections",
+          "expected": "Review affected regrouped chunks afresh; preserve prior finding lineage including removed sections. Expand to full when impact uncertain."
+        },
+        {
+          "input": "Previous report was semantically incomplete",
+          "expected": "Incomplete source coverage cannot be retained as verified. Select all chunks with limitations or unresolved mandatory coverage; preserve remaining limitations if current evidence is still unavailable."
+        },
+        {
+          "input": "Different derived independent reviewer party",
+          "expected": "No reuse across reviewer parties; full review with rationale. No caller-controlled party labels."
+        },
+        {
+          "input": "Referenced source/upstream files change while subject does not",
+          "expected": "Do not invalidate solely for those changes. Reviewer can voluntarily widen impact after consulting current context; unavailable evidence stays explicit."
+        },
+        {
+          "input": "Multiple correction attempts reference already retained coverage",
+          "expected": "Resolve strictly backward provenance to actual accepted result, preserve chain and avoid counting a finding twice; no copying as newly reviewed."
+        },
+        {
+          "input": "Concurrent reviews of independent subjects",
+          "expected": "Keep existing main-owned subject fences; impact analyses are serial per review, independent subjects remain allowed."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Read latest live subject paths; baseline/history accessible by reference only, not repeated artifact bodies in prompts.",
+          "source": "c1"
+        },
+        {
+          "text": "Use existing serial activity-mode providers; no direct cloud REST, code-task grants, generic engine, activation flags or trust-key system.",
+          "source": "c2"
+        },
+        {
+          "text": "Existing accepted baselines, plans, chunks, unit counters, action outcomes and prior attempts remain immutable; S3 owns only additive impact/provenance semantics.",
+          "source": "c3"
+        },
+        {
+          "text": "S4 alone owns permanent history publication, approval and cleanup; S3 report is checkpoint-visible and makes no lifecycle-completion claim.",
+          "source": "c1"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Existing TypeScript node:test plus node:assert/strict, run with tsx under Node22. Extend design-review fixture patterns discovered in the module and inspected directly; analyzer's broad test lookup was incomplete/off-topic, so no exhaustive graph-test claim.",
+      "testLevels": [
+        {
+          "level": "contract",
+          "purpose": "Strict sc4 and additive attempt/report boundaries, bounded messages and complete source/evidence attribution.",
+          "subjects": [
+            "Impact {plan,impact} envelope round-trips; missing/extra fields, byte/count limits and positive sequential attempt constraints reject without dispatch.",
+            "Complete current plan and selected/retained partition: no omitted/duplicate/unknown chunk, all consistency fresh, no unsafe split/merge retention, same artifact/reviewer backward-only sources.",
+            "Finding tuple identities and explicit dispositions: duplicate IDs across attempts/chunks do not conflate; unknown/resolved/superseded references reject or remain incomplete."
+          ],
+          "fixturesNeeded": [
+            "Existing S1/S2 checkpoint shapes and complete/incomplete report fixtures",
+            "Current/prior DEF/HLD/LLD inventories with changed ownership/interface/visual selectors"
+          ]
+        },
+        {
+          "level": "unit",
+          "purpose": "Reviewer-led selection validation, conservative fallback and truthful effective consolidation.",
+          "subjects": [
+            "Direct correction selects edited concern and indirect dependent chunks even when their text is unchanged; final consistency always executes.",
+            "Uncertainty, missing usable baseline, incompatible grouping or reviewer-party change produces explicit full mode without retained results.",
+            "Retained coverage remains references to immutable accepted source; full report counts include carried HIGH/MED/LOW and unresolved mandatory limits; no copied-as-fresh chunks.",
+            "Fresh final consistency must account for all prior effective findings; carry by default, evidence-backed resolution and supersession require selected inspection, including removed sections.",
+            "Atomic accepted plan+impact and prior attempt immutability; failed saves preserve last accepted bytes and dispatch zero further work."
+          ],
+          "fixturesNeeded": [
+            "Many-to-many changed-plan mapping and equivalent rename fixtures",
+            "Multi-attempt reference chains and duplicate-local-finding-id cases"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Native/controller behavior and workflow contexts with deterministic providers, no installed-daemon lifecycle changes.",
+          "subjects": [
+            "Explicit next-attempt admission after terminal complete review; exact replay, conflicting identity, active/paused/invalidated paths and no automatic next attempt.",
+            "Both reviewer parties use identical impact schema/guidelines; selected units execute in dependency order, retained units make zero model calls, complete final consistency and visible provenance.",
+            "Impact crash/transport/schema failure preserves accepted work, spends at most initial+three per impact unit, pauses for user direction and resumes with no extra accepted-unit calls.",
+            "Mutation during blocked impact, selective execution and final save latches invalidation; restoration cannot revive; approved restart_full reviews every chunk without reuse.",
+            "Epic DEF/HLD/Story LLD versus standalone and ISSUE-rooted LLD resolve correct current context without invented upstream artifacts; external changes do not trigger invalidation."
+          ],
+          "fixturesNeeded": [
+            "Existing designFixture and trusted controller owner fixtures",
+            "Virtual activity/tool clocks and injected persistence failures",
+            "Disposable project/home/socket and fake providers only"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Compiled normal-entrypoint correction review and regression qualification without broad hosted re-execution.",
+          "subjects": [
+            "Extend compiled disposable fake-CLI MCP/IPC smoke: full first review, corrected artifact, indirect impact, retained coverage, fresh consistency and auditable finding carry/resolution; inspect recorded call counts/provenance.",
+            "Typecheck/production build plus scoped design-review/MCP/schema/recovery regressions; existing code-review remains unaffected. S4 owns full approval/permanent-history/live rollout qualification."
+          ],
+          "fixturesNeeded": [
+            "Disposable isolated compiled owner/CLI fixture; do not restart installed daemon",
+            "Explicit synthetic-versus-hosted evidence labels and logs under /tmp"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Explicit next-attempt admission and direct correction impact; accepted plan+impact reference prior baseline/feedback; unchanged chunks are retained without model calls."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Unchanged dependent text selected by changed shared interface/constraint; fresh final cross-chunk/upstream consistency and explained scope."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Uncertainty/missing usable baseline/regrouping triggers full-mode explicit rationale; no invented selective completeness."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Immutable retained origins, multi-attempt chains, carried blockers, removed sections, duplicate local IDs, disposition evidence and mandatory-coverage limits consolidate truthfully."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Mutation during impact/execution/final save invalidates, fences late output and restoration; explicit approved full restart uses no retained chunks."
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Attempt-local impact plan with referenced retained coverage",
+        "oneLineSummary": "One reviewer output supplies the current complete chunk plan plus sc4 scope; unaffected results remain references to immutable prior attempts.",
+        "approach": "Extend existing checkpoint attempts with a single accepted impact decision and explicit coverage origins. Subsequent completed-review corrections run one impact unit that reads the current document and prior checkpoint paths, proposes the complete current plan and direct/indirect selection, and records conservative full fallback. Fresh results and retained references stay distinct; final consistency reconciles prior findings. Reuse existing checkpoint, validation, activity and recovery services identified in discovery.",
+        "pros": [
+          "Smallest complete extension; no copied historical result bodies or new stores.",
+          "One current inventory remains fully covered while provenance distinguishes inspected and reused coverage.",
+          "Impact analysis and execution share existing recovery and mutation rules."
+        ],
+        "cons": [
+          "Scheduler and consolidation must account for coverage references rather than only a completed prefix.",
+          "Retaining split/merged chunks needs conservative re-review when one-to-one equivalence cannot be established."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Materialized effective result slots with source labels",
+        "oneLineSummary": "Store a current-plan result slot for each chunk, containing fresh feedback or a labelled historical projection.",
+        "approach": "Use sc4 to record selection and copy retained historical feedback into separate current effective-result slots with immutable source-attempt/chunk labels. Keep fresh completedChunks separate, but persist an effective projection alongside it for readers and final consistency. Preserve original results and unresolved finding lineage while rebuilding the projection after accepted output.",
+        "pros": [
+          "Consumers can read a complete current-plan view without following references.",
+          "Explicit source labels can preserve truthful provenance."
+        ],
+        "cons": [
+          "Duplicates result bodies and consumes checkpoint space.",
+          "Projection reconciliation creates extra consistency and failure cases.",
+          "More moving state than reference-based coverage; no user requirement needs a second effective-result ledger."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Semantically viable but duplicates checkpoint feedback and adds a second effective-state projection without required user value."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "s3-impact-correction",
+      "narrative": "Explicit correction attempts assess direct and indirect impact, persist selection before execution, and retain prior coverage by reference. The successful path shows fresh final consistency and finding reconciliation; subject mutation at any active stage instead invalidates and requires an approved full restart.",
+      "participants": [
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Submits explicit subsequent review and observes progress without intermediate edits."
+        },
+        {
+          "id": "owner",
+          "label": "Design coordinator",
+          "description": "Existing main-owned coordinator validates and persists state; S3 adds impact selection."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Checkpoint",
+          "description": "Immutable prior baselines/results plus new attempt baseline, impact decision and fresh results."
+        },
+        {
+          "id": "reviewer",
+          "label": "Independent reviewer",
+          "description": "Native CLI or trusted controller follows identical impact and substantive policy."
+        },
+        {
+          "id": "subject",
+          "label": "Live artifact",
+          "description": "Current DEF/HLD/LLD and relevant code/reference paths; monitored for subject-only changes."
+        }
+      ],
+      "messages": [
+        {
+          "from": "controller",
+          "to": "owner",
+          "label": "Start next sequential attempt",
+          "description": "Only after a complete terminal report; invalidated attempts use S2 full restart instead."
+        },
+        {
+          "from": "owner",
+          "to": "subject",
+          "label": "Resolve current identity and baseline",
+          "description": "Derive correct Epic/Standalone/Issue context and independent party; start subject monitoring."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Append attempt; reserve impact unit",
+          "description": "Prior history freezes; persist current baseline and reservation before model work."
+        },
+        {
+          "from": "owner",
+          "to": "controller",
+          "kind": "return",
+          "label": "Short acknowledgement",
+          "description": "Review continues independently of request lifetime."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "Analyze impact using paths and history references",
+          "description": "Guidelines/schema/current paths and baseline checkpoint reference; no artifact bodies in prompt."
+        },
+        {
+          "from": "reviewer",
+          "to": "subject",
+          "label": "Inspect corrections and implicit dependencies",
+          "description": "Read latest artifact and relevant code/designs; compare prior baseline and findings from checkpoint."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "kind": "return",
+          "label": "Complete current plan plus sc4 decision",
+          "note": "Uncertain impact selects full review; every consistency chunk stays fresh.",
+          "description": "Explicit selected/retained partition, mapping, rationale and finding origins."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Validate and save plan + impact atomically",
+          "description": "Check complete inventory coverage and safe origins before advancing."
+        },
+        {
+          "from": "owner",
+          "to": "reviewer",
+          "label": "Review selected chunks; fresh final consistency",
+          "note": "Retained chunks make zero model calls; persist each newly accepted result.",
+          "description": "Serial dependency order; existing retries/recovery/mutation policy applies to each unit."
+        },
+        {
+          "from": "reviewer",
+          "to": "owner",
+          "kind": "return",
+          "label": "Fresh feedback and finding dispositions",
+          "description": "Carry or explicitly reconcile prior findings with current evidence; no silent blocker removal."
+        },
+        {
+          "from": "owner",
+          "to": "checkpoint",
+          "label": "Save consolidated result with provenance",
+          "description": "Fresh and retained coverage remain distinguishable; no lifecycle approval or permanent history publication in S3."
+        },
+        {
+          "from": "controller",
+          "to": "owner",
+          "label": "Poll complete findings and scope",
+          "description": "Observation triggers no model calls and no intermediate corrections."
+        },
+        {
+          "from": "owner",
+          "to": "controller",
+          "kind": "return",
+          "label": "Report effective coverage, origins and findings",
+          "description": "Counts include unresolved carried blockers; mandatory gaps remain incomplete."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S003/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/HLD-9b04adb36cac716d.json"
+    },
+    {
+      "id": "c2",
+      "kind": "stakeholder",
+      "ref": "Project principles and review-design decisions supplied in this session: local CLI providers, current design paths, subject-only invalidation, explicit user restarts and identical reviewer behavior."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/results.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/recovery-state.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "step-output",
+      "ref": "s4 contract.detail; s5 error.paths; s6 test.strategy; s2/s3 alternatives"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/DEF-9b04adb36cac716d.json"
+    }
+  ]
+}

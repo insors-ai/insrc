@@ -274,3 +274,17 @@ Do a1. For the data, write a script outside the product source that reimplements
 ## 9. Open questions
 
 - countedChildren implements the sc4 lifecycle contract of the approved epic one-common-model-every-artifact (HLD-2f27754d4ad00b8e, owned by that epic's s3), and migrateHeads and applyAmendments belong to its s9. This Story keeps the sc4 signature and changes only which unreadable heads block a completion. Does that narrowing need an amendment to the HLD of that epic, or is recording it in this ISSUE and the BUILD enough? The plan assumes the latter; confirm or ask for the amendment.
+
+## Resolved questions
+
+- `q250a3a35` — countedChildren implements the sc4 lifecycle contract of the approved epic one-common-model-every-artifact (HLD-2f27754d4ad00b8e, owned by that epic's s3), and migrateHeads and applyAmendments belong to its s9. This Story keeps the sc4 signature and changes only which unreadable heads block a completion. Does that narrowing need an amendment to the HLD of that epic, or is recording it in this ISSUE and the BUILD enough? The plan assumes the latter; confirm or ask for the amendment.
+  - **resolved**: No amendment — ISSUE+BUILD only (plan's assumption) — User decided on 2026-11-04 ("recording is fine"): the sc4 signature is unchanged; the narrowing is recorded in the ISSUE and the BUILD record. _(2026-11-04T08:33:05.860Z)_
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/artifact-core/store.ts:130-161`
+- **[[c2]]** `code` `src/workflow/artifact-core/lifecycle.ts:303-323`
+- **[[c3]]** `code` `src/workflow/amendments/store.ts:128-158`
+- **[[c4]]** `code` `src/workflow/convert/apply.ts:84-98`
+- **[[c5]]** `code` `src/workflow/convert/amendments.ts:27-85`
+- **[[c6]]** `prior-artifact` `docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/ISSUE.md`

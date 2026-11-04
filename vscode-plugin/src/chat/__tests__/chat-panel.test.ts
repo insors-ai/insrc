@@ -6336,31 +6336,33 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
   }
 });
 
-test('E202611031bd72813:S001 t5: an unterminated trailing line after the terminal is NOT lost — flushed when the writer is dead, held (not flushed) while it lives', async () => {
+test('E202611031bd72813:S001 t5: an unterminated trailing line after the terminal — flushed when the writer is DEAD (no turn-end marker, no endTurn call), held while it lives and ingested when completed', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs8-'));
   try {
     const out = createSessionOutput({ root, pollMs: 5 });
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const marker = '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```';
+    const selLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker }] } });
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
+
+    // --- phase 1: writer DEAD, no turn-end marker (endTurn NOT called — its appendMarker would
+    // add the missing newline): the unterminated trailing line is final and must be flushed.
+    const adapterDead = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
-      providers: registry({ claude: adapter }, ['claude']),
+      providers: registry({ claude: adapterDead }, ['claude']),
       store,
       cwd: () => '/repo',
       sessionOutput: out,
       observerTimerMs: 20,
       hostPid: 1,
-      isAlive: () => false, // pid verified dead
+      isAlive: () => false,
     });
     host.open();
     const s = store.create('claude' as never);
     const seg = await out.beginTurn(s.id, 't-obs');
-    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
-    // a selection marker AFTER the terminal, as an unterminated final line (no trailing newline)
-    const tail = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```' }] } });
-    appendFileSync(seg.outPath, resultLine + tail); // no trailing newline on the last line
-    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    appendFileSync(seg.outPath, resultLine + selLine); // trailing line unterminated (no newline, no turn-end marker)
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
@@ -6369,8 +6371,46 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     const after = store.get(s.id)!;
     assert.equal(after.status, 'waiting-input', 'the request in the trailing line was ingested before the completion transition');
     const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
-    assert.equal(sels.length, 1, 'the unterminated trailing line (after the terminal) was not abandoned');
+    assert.equal(sels.length, 1, 'the unterminated trailing line (after the terminal, no turn-end marker) was not abandoned');
     assert.equal(sels[0]!.prompt, 'Pick');
+
+    // --- phase 2: writer ALIVE (own store+output so phase 1's host does not observe it): the same
+    // shape must NOT complete early — the partial line is held, and once the writer completes it
+    // (newline), a later pass ingests it.
+    const root2 = mkdtempSync(pathJoin(tmpdir(), 'chat-obs8b-'));
+    const out2 = createSessionOutput({ root: root2, pollMs: 5 });
+    const store2 = createInMemoryChatSessionStore();
+    const adapterLive = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out2, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
+    const host2 = createChatPanelHost({
+      createPanel: () => fakeChannel().channel,
+      providers: registry({ claude: adapterLive }, ['claude']),
+      store: store2,
+      cwd: () => '/repo',
+      sessionOutput: out2,
+      observerTimerMs: 20,
+      observerTickBudgetMs: 30,
+      hostPid: 2,
+      isAlive: (pid) => pid !== 999, // owner dead, CLI pid alive
+    });
+    host2.open();
+    const s2 = store2.create('claude' as never);
+    const seg2 = await out2.beginTurn(s2.id, 't-live');
+    appendFileSync(seg2.outPath, resultLine + selLine); // same unterminated trailing line
+    store2.setStatus(s2.id, 'working');
+    const cur2 = store2.get(s2.id)!;
+    cur2.liveTurn = { cursor: { turnId: 't-live', generation: seg2.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store2.save(cur2);
+    await new Promise((r) => setTimeout(r, 250)); // several budget-limited passes with the live writer
+    assert.ok(store2.get(s2.id)?.liveTurn !== undefined, 'live writer: the turn does NOT complete at the soft EOF');
+    assert.equal((store2.get(s2.id)?.pendingRequests ?? []).filter((r) => r.kind === 'selection').length, 0, 'the unterminated line is held, not flushed early');
+    // the writer completes the line (newline) — a later pass ingests it; terminal already ingested -> completes
+    appendFileSync(seg2.outPath, '\n');
+    await waitFor(() => (store2.get(s2.id)?.pendingRequests ?? []).some((r) => r.kind === 'selection'), 5000, 'once the writer completes the line, a later pass ingests the request');
+    assert.ok(store2.get(s2.id)?.liveTurn !== undefined, 'live writer, no turn-end marker yet: still unreconciled');
+    // the writer ends the turn (turn-end marker): the next pass drains and completes
+    await out2.endTurn(s2.id, 't-live', { code: 0, signal: null });
+    await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'turn-end marker: the turn completes (terminal already ingested)');
+    assert.equal(store2.get(s2.id)?.status, 'waiting-input', 'the ingested request keeps waiting-input');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

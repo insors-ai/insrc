@@ -51,6 +51,8 @@ interface Resume {
   readonly req: ResumeRequest;
   readonly proc: Proc;
   readonly feed: Feed;
+  /** E202611031bd72813:S001 t5: report decoder progress to the follow's onDecoderState. */
+  readonly decoderState?: ((ds: { selectionSeq: number; selectionBuffer: string }) => void) | undefined;
 }
 interface Run {
   readonly turnId: string;
@@ -102,7 +104,7 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
       const f = feed();
       void proc.exit.then(() => f.end());
       o?.signal?.addEventListener('abort', () => f.end());
-      resumes.push({ req, proc, feed: f });
+      resumes.push({ req, proc, feed: f, decoderState: (ds) => o?.onDecoderState?.(ds) });
       o?.onAttach?.(proc);
       let offset = req.cursor.offset;
       for (;;) {
@@ -1446,4 +1448,20 @@ test('E202611031bd72813:S001 t5: detach orphans the saved turn (ownerHostPid 0) 
   assert.ok(live !== undefined, 'the cursor stays saved after detach');
   assert.equal(live!.ownerHostPid, 0, 'orphaned: owner 0 = no live window, any observer may follow');
   runs[0]!.proc.exitNow();
+});
+
+test('E202611031bd72813:S001 t5: follow() restores the follow cursor\'s OWN decoder state into the resume and saves it back as it advances (reattach between marker fragments loses nothing)', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = { cursor: { turnId: 'old', generation: 2, offset: 100 }, ownerHostPid: 99, pid: 900, startedAt: 5, decoder: { selectionSeq: 4, selectionBuffer: '```insrc:selec' } };
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => resumes.length === 1);
+  assert.deepEqual(resumes[0]!.req.decoderState, { selectionSeq: 4, selectionBuffer: '```insrc:selec' }, 'the saved decoder state is restored into the resume (not started empty)');
+  // when the adapter reports decoder progress, it is saved onto the liveTurn
+  resumes[0]!.decoderState?.({ selectionSeq: 5, selectionBuffer: 'more' });
+  await waitFor(() => h.session.liveTurn?.decoder !== undefined);
+  assert.deepEqual(h.session.liveTurn!.decoder, { selectionSeq: 5, selectionBuffer: 'more' }, 'advanced decoder state saved with the cursor');
+  resumes[0]!.feed.push(done('old', 'n1'));
+  await waitFor(() => f.calls.includes('end'));
 });

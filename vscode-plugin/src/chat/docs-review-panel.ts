@@ -1319,9 +1319,24 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     return { cancel: () => clearTimeout(t) };
   });
 
+  // E202611031bd72813:S001 t8: one editor panel per presentKey (each insrc_present opens its own
+  // panel instead of replacing the open one). The legacy single channel serves presentKey-less opens.
+  const panels = new Map<string, ChatPanelChannel>();
+  // Opens on presentKey panels are serialized through this queue, and while one runs, post() targets
+  // its panel — so two panels' contents never race (the first panel's content stays unchanged).
+  let panelQueue: Promise<void> = Promise.resolve();
+  let openPostTarget: ChatPanelChannel | undefined;
+
   const post = (msg: HostToWebview): void => {
-    if (disposed || channel === undefined) return;
-    channel.postMessage(envelope(msg));
+    const c = openPostTarget ?? channel;
+    if (disposed || c === undefined) return;
+    c.postMessage(envelope(msg));
+  };
+  /** Post a list-level message (the pending docs) to every live panel, legacy included. */
+  const postToAll = (msg: HostToWebview): void => {
+    if (disposed) return;
+    if (channel !== undefined) channel.postMessage(envelope(msg));
+    for (const ch of panels.values()) ch.postMessage(envelope(msg));
   };
 
   /** (Re)load the pending set from the daemon and post it; a throw -> empty list + notice. */
@@ -1402,7 +1417,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq === refreshSeq) {
         pending.clear();
         for (const a of artifacts) pending.set(a.id, a);
-        post({ type: 'docs-list', artifacts });
+        postToAll({ type: 'docs-list', artifacts });
       }
       summary = artifacts.find((a) => a.id === target.artifactId);
     } catch (err) {
@@ -2474,11 +2489,50 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     startPoll();
   }
 
+  /**
+   * E202611031bd72813:S001 t8: the panel for one presentKey — created on first present (titled with
+   * the key), revealed on a repeat, removed from the map when disposed. The legacy single-panel
+   * path (show) is unchanged for presentKey-less opens.
+   */
+  function showPanel(presentKey: string, quiet: boolean): ChatPanelChannel {
+    const existing = panels.get(presentKey);
+    if (existing !== undefined) {
+      if (quiet) existing.reveal({ preserveFocus: true });
+      else existing.reveal();
+      void refreshPending();
+      return existing;
+    }
+    const ch = deps.createPanel({ viewType: VIEW_TYPE, title: `insrc docs review — ${presentKey}`, ...(quiet ? { quiet: true } : {}) });
+    panels.set(presentKey, ch);
+    ch.onDidDispose(() => {
+      panels.delete(presentKey);
+      if (openPostTarget === ch) openPostTarget = undefined;
+    });
+    ch.onMessage(handleMessage);
+    ch.setHtml(renderShell());
+    void refreshPending();
+    startPoll();
+    return ch;
+  }
+
   const host: DocsReviewHost = {
     open(): void {
       show(false);
     },
     openArtifact(target): void {
+      if (target.presentKey !== undefined) {
+        // Each insrc_present opens its OWN panel (keyed by presentKey), never replacing another.
+        const key = target.presentKey;
+        panelQueue = panelQueue.then(() => {
+          const ch = showPanel(key, target.quiet === true);
+          openPostTarget = ch;
+          if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
+          return openArtifactFrom(target).finally(() => {
+            if (openPostTarget === ch) openPostTarget = undefined;
+          });
+        });
+        return;
+      }
       show(target.quiet === true);
       // A quiet open is a chat-presented document: remember it so the pane can offer every
       // presented document, not just the last one (ISSUE-7fa297efd4bd1c59).
@@ -2491,6 +2545,9 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       pollTimer = undefined;
       channel?.dispose();
       channel = undefined;
+      for (const ch of panels.values()) ch.dispose();
+      panels.clear();
+      openPostTarget = undefined;
       pending.clear();
       presentedIds = [];
       setOpened(undefined);

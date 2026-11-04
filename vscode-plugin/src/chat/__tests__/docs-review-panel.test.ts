@@ -7342,3 +7342,56 @@ test('docs review shell: a BUILD row is listed between ISSUE and CR, counted in 
   assert.equal(w.controls().approve, 'on');
   assert.equal(w.controls().reject, 'on');
 });
+
+test('E202611031bd72813:S001 t8: each presentKey opens its OWN editor panel (titled with the key); a repeat present reveals instead of replacing; dispose removes only its entry; the legacy single-panel path is unchanged', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const { client } = fakeClient({});
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      const ch = fc.channel;
+      made.push(rec);
+      return {
+        setHtml: ch.setHtml,
+        postMessage: ch.postMessage,
+        onMessage: ch.onMessage,
+        onDidDispose: ch.onDidDispose,
+        reveal: () => { rec.reveals += 1; },
+        dispose: ch.dispose,
+      };
+    },
+    client,
+  });
+  // double present: two distinct presentKeys -> two panels, first panel's content unchanged
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#1' });
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#2' });
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 2, 'double present -> two editor panels');
+  assert.deepEqual(made.map((m) => m.title), ['insrc docs review — LLD-abc-s7#1', 'insrc docs review — LLD-abc-s7#2'], 'each panel titled with its presentKey');
+  assert.ok(made[0]!.fc.posted.some((p) => p.payload.type === 'docs-content'), 'panel #1 got its document');
+  assert.ok(made[1]!.fc.posted.some((p) => p.payload.type === 'docs-content'), 'panel #2 got its document');
+  assert.equal(made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-content').length, 1, "panel #1's content was not replaced by #2");
+  // repeat present on #1: reveals, no new panel
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#1' });
+  await tick(); await tick();
+  assert.equal(made.length, 2, 'a repeat presentKey does not create a panel');
+  assert.ok(made[0]!.reveals >= 1, 'it reveals the existing one');
+  // dispose of panel #2 removes only its entry; presenting #2 again creates a fresh panel
+  made[1]!.fc.fireDispose();
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#2' });
+  await tick(); await tick();
+  assert.equal(made.length, 3, 'after dispose the entry is gone: presenting again creates a new panel');
+  assert.equal(made[2]!.title, 'insrc docs review — LLD-abc-s7#2');
+  // legacy path: open() + openArtifact without presentKey still use the single 'insrc docs review' panel
+  host.open();
+  await tick();
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true });
+  await tick(); await tick();
+  assert.equal(made.length, 4, 'the legacy open created the one shared panel');
+  assert.equal(made[3]!.title, 'insrc docs review', 'legacy title unchanged');
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH });
+  await tick();
+  assert.equal(made.length, 4, 'a presentKey-less openArtifact reuses the shared panel (no new panel)');
+  host.dispose();
+});

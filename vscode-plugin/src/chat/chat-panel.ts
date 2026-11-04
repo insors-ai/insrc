@@ -681,7 +681,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf };
+        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
@@ -708,10 +708,42 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             } else if (ev.kind === 'selection-request') {
               persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false });
               setChatStatus(s, 'waiting-input');
+            } else if (ev.kind === 'tool-call' && ev.present !== undefined) {
+              // E202611031bd72813:S001 t8: a DETACHED chat's insrc_present is still dispatched to the
+              // presenter (each declaration opens its own presentKey panel), deduped by declarationId.
+              const declId = ev.callId ?? `${ev.turnId}:${ev.present.join(',')}`;
+              const declared = new Set(s.observerCheckpoint?.declaredIds ?? []);
+              if (!declared.has(declId)) {
+                declared.add(declId);
+                const base = s.observerCheckpoint ?? { turnId, generation: cp.generation, offset: cp.offset, selectionSeq: cp.selectionSeq };
+                s.observerCheckpoint = { ...base, declaredIds: [...declared] };
+                try {
+                  deps.store.save(s);
+                } catch { /* best-effort */ }
+                const presenter = deps.presenter;
+                if (presenter !== undefined) {
+                  try {
+                    const shown = presenter.begin();
+                    void shown
+                      .declared(ev.present)
+                      .then((outcome) => {
+                        shown.end();
+                        if (outcome.unreadable) log.warn(`[chat] session ${s.id}: a detached insrc_present could not be read`);
+                      })
+                      .catch((err: unknown) => log.error(`chat: the review presenter failed on a detached declaration: ${err instanceof Error ? err.message : String(err)}`));
+                  } catch (err) {
+                    log.error(`chat: the review presenter failed on a detached declaration: ${err instanceof Error ? err.message : String(err)}`);
+                  }
+                }
+              }
             } else if (ev.kind === 'error') {
               if (ev.observationFailure === true) st.sawObservationFailure = true;
-              else st.sawTerminal = true;
+              else {
+                st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset };
+                st.sawTerminal = true;
+              }
             } else if (ev.kind === 'done') {
+              st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset };
               st.sawTerminal = true;
             }
             if (Date.now() > deadline && !ctl.signal.aborted) {
@@ -742,16 +774,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // caught up = the iterator drained to the end of the available output without a budget abort,
       // an observation failure, or a thrown pass
       const caughtUp = pass.ingestedAny && !pass.abortedByBudget && !pass.sawObservationFailure && !pass.threw;
-      // persist the checkpoint (turn-scoped: own cursor + decoder progress)
+      // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
+      // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
+      // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
+      const persistAt = pass.sawTerminal && !caughtUp ? (pass.preTerminal ?? pass.last) : pass.last;
       try {
-        s.observerCheckpoint = { turnId, generation: pass.last.generation, offset: pass.last.offset, selectionSeq: pass.seq, ...(pass.buf !== '' ? { selectionBuffer: pass.buf } : {}) };
+        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: pass.seq, ...(pass.buf !== '' ? { selectionBuffer: pass.buf } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a
       // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
       // caught-up observer; budget exhaustion and observation failures keep the last known status
       const pidDead = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
-      if (pass.sawTerminal || (pidDead && caughtUp)) {
+      // the completion gate: caught up AND (a real terminal OR verified process death)
+      if (caughtUp && (pass.sawTerminal || pidDead)) {
         try {
           delete s.liveTurn;
           deps.store.save(s);

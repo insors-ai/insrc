@@ -6198,3 +6198,43 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-9')!.outcome, 'approved', 'correlated onto the persisted request — not a silent no-op');
   fc.fireDispose();
 });
+
+test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insrc_present to the presenter, deduped by declarationId across passes', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs5-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const declarations: string[][] = [];
+    const presenter = { begin: () => ({ declared: async (docs: readonly string[]) => { declarations.push([...docs]); return { opened: [...docs], notPending: [], unreadable: false }; }, end: () => {} }) };
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+      presenter: presenter as never,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'call-1', name: 'mcp__insrc__insrc_present', input: { documents: ['LLD-abc-S001'] } }] } }) + '\n');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => declarations.length >= 1, 5000, 'the detached declaration reached the presenter');
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the terminal cleared the cursor');
+    await new Promise((r) => setTimeout(r, 100)); // let any duplicate dispatch land
+    assert.deepEqual(declarations, [['LLD-abc-S001']], 'exactly once — deduped by declarationId across observer passes');
+    assert.deepEqual(store.get(s.id)?.observerCheckpoint?.declaredIds, ['call-1'], 'the dispatched declaration id is persisted in the checkpoint');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

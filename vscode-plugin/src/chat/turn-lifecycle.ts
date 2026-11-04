@@ -498,13 +498,21 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     followingSession = s;
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
+    // E202611031bd72813:S001 t5: the follow cursor's OWN decoder state, restored into the resume and
+    // saved back as it advances — a reattach between selection-marker fragments loses nothing.
+    const saveDecoder = (ds: { selectionSeq: number; selectionBuffer: string }): void => {
+      const cur = s.liveTurn;
+      if (cur === undefined || cur.cursor.turnId !== turnId) return;
+      s.liveTurn = { ...cur, decoder: { selectionSeq: ds.selectionSeq, ...(ds.selectionBuffer !== '' ? { selectionBuffer: ds.selectionBuffer } : {}) } };
+      trySave(s);
+    };
     let attached: TurnProcess | undefined;
     void (async () => {
       let outcome: FollowOutcome | undefined;
       let observationFailure = false;
       try {
         const events = adapter.resume(
-          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
+          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}) } } : {}), },
           {
             signal: ctl.signal,
             onAttach: (p) => {
@@ -513,6 +521,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
               reportSpawn(sink, p);
             },
             onProgress: cursor.progress,
+            onDecoderState: saveDecoder,
           },
         );
         for await (const ev of events) {

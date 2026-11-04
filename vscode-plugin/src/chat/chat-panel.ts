@@ -2889,6 +2889,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
+          // an in-turn decision with NO live turn cannot be delivered in-turn — record it resolved
+          // here so it never silently disappears; with a live turn, relayDecision confirms delivery
+          if (decided.resolution === 'in-turn' && turns.live === undefined) markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);

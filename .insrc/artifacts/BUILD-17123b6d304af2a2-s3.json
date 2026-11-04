@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s3",
     "createdAt": "2026-11-03T12:09:27.140Z",
-    "updatedAt": "2026-11-03T19:30:32.391Z",
+    "updatedAt": "2026-11-04T08:54:53.539Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -374,13 +374,6 @@
       },
       {
         "target": {
-          "file": "packages/project-memory/src/store/lance-store.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T19:30:32.391Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t4-gate-first.json"
         },
         "author": "insrc-build",
@@ -424,13 +417,6 @@
       {
         "target": {
           "file": "packages/project-memory/src/store/guards.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T19:30:32.391Z"
-      },
-      {
-        "target": {
-          "file": "packages/project-memory/src/store/plan.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T19:30:32.391Z"
@@ -585,13 +571,6 @@
       {
         "target": {
           "file": "packages/project-memory/src/store/native-reads.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T19:30:32.391Z"
-      },
-      {
-        "target": {
-          "file": "packages/project-memory/src/store/reads.ts"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T19:30:32.391Z"
@@ -997,13 +976,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-coverage.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T19:30:32.391Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t16-evidence-test.tap"
         },
         "author": "insrc-build",
@@ -1235,13 +1207,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T19:30:32.391Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis-inventory.json"
         },
         "author": "insrc-build",
@@ -1281,8 +1246,136 @@
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T19:30:32.391Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/store/lance-store.ts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/store/plan.ts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/store/reads.ts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-coverage.md",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-review-attempt-1.json",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/SELF-REVIEW.md",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-evidence.json",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-focused.tap",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/backward-clock.mts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/cold-missing-marker.mts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/missing-forget-marker.mts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "packages/project-memory/src/__tests__/store-self-review.test.ts",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/SELF-REVIEW-ROUND-2.md",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-round-2-store.tap",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-round-2.json",
+          "version": "0b5c7f403"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T08:54:53.539Z"
       }
     ],
-    "commit": "08544844a"
+    "commit": "0b5c7f403"
   }
 }

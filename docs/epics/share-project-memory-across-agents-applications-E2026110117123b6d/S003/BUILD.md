@@ -2,9 +2,9 @@
 
 # Build (plan-driven) — Story s3
 
-**Standalone:** no  ·  **Created:** 2026-11-03T12:09:27.140Z  ·  **Updated:** 2026-11-03T19:30:32.391Z
+**Standalone:** no  ·  **Created:** 2026-11-03T12:09:27.140Z  ·  **Updated:** 2026-11-04T08:54:53.539Z
 
-**Commit:** 08544844a
+**Commit:** 0b5c7f403
 
 ## Summary
 
@@ -75,7 +75,6 @@ All S3 production tasks are implemented; final standalone package qualification 
 - `packages/project-memory/src/__tests__/fixtures/store-cleanup-peer.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/__tests__/store-initialization.test.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/store/format.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
-- `packages/project-memory/src/store/lance-store.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t4-gate-first.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t4-retry-tests.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t5-tests.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
@@ -83,7 +82,6 @@ All S3 production tasks are implemented; final standalone package qualification 
 - `packages/project-memory/src/__tests__/fixtures/store-plans.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/__tests__/store-guards.test.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/store/guards.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
-- `packages/project-memory/src/store/plan.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t5-gate-first.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t6-tests.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t6.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
@@ -106,7 +104,6 @@ All S3 production tasks are implemented; final standalone package qualification 
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t9.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/__tests__/store-reads.test.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/store/native-reads.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
-- `packages/project-memory/src/store/reads.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t9-gate-first.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t9-retry-tests.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t10-focused.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
@@ -164,7 +161,6 @@ All S3 production tasks are implemented; final standalone package qualification 
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t15.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `src/indexer/__tests__/project-memory-isolation.test.ts` — **insrc-build** (2026-11-03T19:30:32.391Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-coverage.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t16-evidence-test.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t16-method.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t16-resource.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
@@ -198,10 +194,25 @@ All S3 production tasks are implemented; final standalone package qualification 
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-platforms.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-source-after.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-source-before.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
-- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis-inventory.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis-kotlin-four.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis-kotlin-one.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis-worker-port-cleanup.tap` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-analysis.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
 - `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-deferral.json` — **insrc-build** (2026-11-03T19:30:32.391Z)
+- `packages/project-memory/src/store/lance-store.ts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `packages/project-memory/src/store/plan.ts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `packages/project-memory/src/store/reads.ts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-coverage.md` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17.md` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/completion-review-attempt-1.json` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/SELF-REVIEW.md` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-evidence.json` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-focused.tap` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/backward-clock.mts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/cold-missing-marker.mts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-probes/missing-forget-marker.mts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `packages/project-memory/src/__tests__/store-self-review.test.ts` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/SELF-REVIEW-ROUND-2.md` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-round-2-store.tap` — **insrc-build** (2026-11-04T08:54:53.539Z)
+- `docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/self-review-round-2.json` — **insrc-build** (2026-11-04T08:54:53.539Z)

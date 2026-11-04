@@ -32,6 +32,19 @@ import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
 
+/** rmSync that tolerates a still-running observer pass recreating a lock file mid-teardown. */
+async function rmrf(p: string): Promise<void> {
+  for (let i = 0; i < 40; i++) {
+    try {
+      rmSync(p, { recursive: true, force: true });
+      return;
+    } catch {
+      await new Promise((r) => setTimeout(r, 25));
+    }
+  }
+  rmSync(p, { recursive: true, force: true });
+}
+
 /** Epic E20261014613abdb3 Story S001: a repository queue on a temp file, as deps.queue builds it. */
 function tempQueue(): { queue: (runner: QueuedTurnRunner) => ReturnType<typeof createChatQueueWorker>; store: ReturnType<typeof createChatQueueStore>; done(): void } {
   const dir = mkdtempSync(pathJoin(tmpdir(), 'insrc-chat-q-'));
@@ -3052,7 +3065,7 @@ test('a turn records its cursor on the session as lines are handled and clears i
   assert.equal(seen[0], id, 'the adapter is told which session the turn belongs to');
   await waitFor(() => store.get(id)?.liveTurn !== undefined);
   // Recorded at spawn (offset 40, owned by this host) and advanced as lines are handled (offset 90).
-  assert.deepEqual(store.get(id)?.liveTurn, { cursor: { turnId: 't1', generation: 2, offset: 90 }, ownerHostPid: 4242, pid: 1001, startedAt: 77 }, 'recorded, owned by this host, and advanced');
+  assert.deepEqual(store.get(id)?.liveTurn, { cursor: { turnId: 't1', generation: 2, offset: 90 }, ownerHostPid: 4242, pid: 1001, startedAt: 77, transcriptLen: 2, turnStartLen: 1 }, 'recorded, owned by this host, advanced, and stamped with the persisted transcript lengths');
 
   release();
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
@@ -5889,7 +5902,7 @@ test('E202611031bd72813:S001 t5 integration: observer ingests a REAL session-out
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.selectionSeq >= 1, 'decoder checkpoint carried selectionSeq');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -5943,7 +5956,7 @@ test('E202611031bd72813:S001 t5: the observer resumes from the PERSISTED checkpo
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq === 6, 'checkpoint persisted turn-scoped with the advanced seq');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -5995,7 +6008,7 @@ test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a 
     assert.equal(after.observerCheckpoint!.generation, 1, 'recovered into the archived generation 1, not the discarded 2');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6042,7 +6055,7 @@ test('E202611031bd72813:S001 t5: a FAILED final transition save leaves liveTurn 
     assert.equal(store.get(s.id)!.status, 'done', 'status landed together with the liveTurn clear');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6089,7 +6102,7 @@ test('E202611031bd72813:S001 t5: a checkpoint of ANOTHER turn is ignored — the
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq < 9, 'the persisted checkpoint is for THIS turn with a fresh decoder, not the stale seq 9');
   } finally {
     await new Promise((r) => setTimeout(r, 30)); // let queued pin-marker IO land before cleanup
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6290,7 +6303,7 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
     assert.ok(store.get(s.id)?.liveTurn !== undefined, 'no terminal, live pid: the turn stays unreconciled');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6354,7 +6367,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     assert.equal(after.status, 'waiting-input', 'the unresolved request keeps waiting-input across the terminal');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6391,7 +6404,7 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
     assert.equal(store.get(s.id)?.status, 'done', 'a crashed CLI with fully consumed output reconciles to done');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6472,7 +6485,7 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     assert.equal(store2.get(s2.id)?.status, 'waiting-input', 'the ingested request keeps waiting-input');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6519,7 +6532,7 @@ test('E202611031bd72813:S001 t5: recoverTurn failure falls back to the liveTurn 
     assert.equal(sels[0]!.prompt, 'Pick', 'the restored buffer + frag2 completed the marker');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });
 
@@ -6548,16 +6561,20 @@ test('E202611031bd72813:S001 t5: an observer-completed detached chat persists it
     await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;
-    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // the DEAD host's live reader had already persisted the assistant row (liveTurn.transcriptLen)
+    cur.transcript.push({ role: 'assistant', text: 'detached answer', at: '2026-01-01T00:00:00.000Z' });
+    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1, transcriptLen: 1 };
     store.save(cur);
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the observer completed the detached turn');
     const after = store.get(s.id)!;
     assert.equal(after.status, 'done');
-    assert.ok(after.transcript.some((r) => r.role === 'assistant' && (r as { text?: string }).text === 'detached answer'), 'the detached assistant output is in the persisted transcript (reopening shows it)');
+    const answers = after.transcript.filter((r) => r.role === 'assistant' && (r as { text?: string }).text === 'detached answer');
+    assert.equal(answers.length, 1, 'the observer replay does NOT duplicate rows the live reader already persisted (truncated to liveTurn.transcriptLen first)');
+    assert.ok(after.transcript.some((r) => r.role === 'assistant'), 'the detached assistant output is in the persisted transcript (reopening shows it)');
     assert.equal(after.nativeSessionId, 'native-42', 'the done event\'s native session id is kept for resume');
     assert.ok(after.observerCheckpoint?.transcriptLen === after.transcript.length, 'the checkpoint records the persisted transcript length');
     host.dispose();
   } finally {
-    rmSync(root, { recursive: true, force: true });
+    await rmrf(root);
   }
 });

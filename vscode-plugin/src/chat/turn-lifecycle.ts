@@ -406,6 +406,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           s.liveTurn = {
             cursor: { turnId, generation: gen, offset },
             ownerHostPid: deps.hostPid,
+            transcriptLen: s.transcript.length,
+            turnStartLen: s.transcript.length,
             ...(proc.pid !== undefined ? { pid: proc.pid, startedAt: deps.processStartTime(proc.pid) ?? null } : {}),
           };
           // E202611031bd72813:S001 t5: a new turn invalidates the observer's checkpoint (it is

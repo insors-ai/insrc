@@ -5777,10 +5777,16 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
   host.open();
   const activeLists = () => fc.posted.filter((p) => p.payload.type === 'active-list');
   await waitFor(() => activeLists().length >= 1, 5000, 'active-list posted on open');
+  // the REAL host-posted wire shape: exact key sets on the envelope and on each entry
+  const firstList = activeLists()[0]!.payload as Record<string, unknown>;
+  assert.deepEqual(Object.keys(firstList).sort(), ['chats', 'type'], 'active-list envelope keys');
   fc.send(env('submit-turn', { text: 'hi' }));
   await waitFor(() => store.list().length === 1);
   const id = store.list()[0]!.id;
-  await waitFor(() => activeLists().some((p) => (p.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id)), 5000, 'status change reposts active-list with the chat');
+  await waitFor(() => activeLists().some((p) => (p.payload as { chats: Record<string, unknown>[] }).chats.some((c) => c.id === id)), 5000, 'status change reposts active-list with the chat');
+  const withChat = activeLists().find((p) => (p.payload as { chats: Record<string, unknown>[] }).chats.some((c) => c.id === id))!.payload as { chats: Record<string, unknown>[] };
+  assert.deepEqual(Object.keys(withChat.chats[0]!).sort(), ['id', 'lastActivityAt', 'status', 'title'], 'each ActiveChatEntry the host posts has exactly id/title/status/lastActivityAt');
+  assert.ok(['waiting-input', 'working', 'done'].includes(withChat.chats[0]!.status as string));
   // age the done chat past the purge window (mutate the stored record directly) and let the timer fire
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));
   store.get(id)!.lastActivityAt = Date.now() - 31 * 60 * 1000;

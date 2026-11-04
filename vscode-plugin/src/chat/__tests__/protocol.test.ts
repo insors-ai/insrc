@@ -259,6 +259,10 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   const msg: HostToWebview = { type: 'active-list', chats: [entry] };
   assert.equal(msg.type, 'active-list');
   assert.deepEqual(msg.chats[0], { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 123 });
+  // exact wire shape: no extra field may ride along on the message or on an entry
+  assert.deepEqual(Object.keys(msg), ['type', 'chats']);
+  assert.deepEqual(Object.keys(entry), ['id', 'title', 'status', 'lastActivityAt']);
+  assert.ok(['waiting-input', 'working', 'done'].includes(entry.status));
   // selection reuses the existing open-chat { chatId } — no new webview->host kind was added
   assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-chat'));
   assert.ok(!WEBVIEW_TO_HOST_TYPES.includes('open-active' as WebviewToHostType));

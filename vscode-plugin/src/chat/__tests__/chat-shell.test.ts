@@ -689,11 +689,18 @@ test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right hist
   assert.match(String((opts[0] as { textContent: string }).textContent), /^● Chat A/, 'dot + title');
   assert.match(String((opts[1] as { textContent: string }).textContent), /^● Chat B/);
   assert.match(String((opts[2] as { textContent: string }).textContent), /^● Chat C/);
+  // ac1: EACH entry carries its OWN indicator — waiting-input red, working yellow, done green —
+  // and the shell CSS consumes data-dot, so the popup paints every option in its status colour
+  assert.deepEqual((opts as { dataset: Record<string, string> }[]).map((o) => o.dataset.dot), ['red', 'yellow', 'green'], 'per-option data-dot: red/yellow/green by status');
+  assert.ok(s.html.includes('#insrc-active option[data-dot="red"]{color:var(--red);}'), 'CSS consumes data-dot=red');
+  assert.ok(s.html.includes('#insrc-active option[data-dot="yellow"]{color:var(--warn);}'), 'CSS consumes data-dot=yellow');
+  assert.ok(s.html.includes('#insrc-active option[data-dot="green"]{color:var(--pass);}'), 'CSS consumes data-dot=green');
   // the dot colour rides on the option's dataset in a real browser; here the chip glyph carries it
   const chip = s.el('insrc-actchip') as unknown as { dataset: Record<string, string> };
   assert.equal(chip.dataset.urgent, 'waiting-input', 'chip glyph shows the most urgent status (red)');
   s.msg({ type: 'active-list', chats: [{ id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 }] });
   assert.equal(chip.dataset.urgent, 'done', 'with only a done chat left, the chip goes green');
+  assert.equal((opts.at(-1) as { dataset: Record<string, string> }).dataset.dot, 'green', 'the re-rendered entry carries data-dot=green');
   // selecting an entry posts the SAME open-chat { chatId } the history dropdown posts
   act.value = 'b';
   fire(act as never, 'change');

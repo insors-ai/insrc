@@ -332,6 +332,10 @@ test("chat theme: every selector and element id of the shell and the row rendere
   // Every selector from before is still there; what is new is listed here and nowhere else.
   assert.deepEqual(before.selectors.filter((s) => !now.has(s)), [], 'no selector was removed or renamed');
   assert.deepEqual([...now].filter((s) => !before.selectors.includes(s)).sort(), [
+    // E202611031bd72813:S001 t4 ac1: the per-option status-colour rules that consume data-dot.
+    '#insrc-active option[data-dot="green"]',
+    '#insrc-active option[data-dot="red"]',
+    '#insrc-active option[data-dot="yellow"]',
     '#insrc-prompt:focus-visible,#insrc-older:focus-visible,.segsel:focus-visible,.attachbtn:focus-visible,.attchip__x:focus-visible,.insrc-attchip:focus-visible',
     '.histchip',
     '.histchip::before',

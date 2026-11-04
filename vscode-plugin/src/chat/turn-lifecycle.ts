@@ -476,6 +476,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     });
   }
 
+  // The session whose turn this host is currently FOLLOWING (resumed read), for detach's orphaning.
+  let followingSession: ChatSession | undefined;
+
   function follow(s: ChatSession, sink: FollowSink): void {
     const live = s.liveTurn;
     if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;
@@ -492,6 +495,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     trySave(s);
     const ctl = new AbortController();
     following = { sessionId: s.id, ctl };
+    followingSession = s;
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
     let attached: TurnProcess | undefined;
@@ -606,6 +610,15 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     waitCtl?.abort();
     waitCtl = undefined;
     following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
+    // E202611031bd72813:S001 t5: orphan the FOLLOWED turn's saved cursor too (owner 0), so the
+    // background observer reconciles it after the detach instead of stranding it locally owned.
+    const fs2 = followingSession;
+    followingSession = undefined;
+    following = undefined;
+    if (fs2?.liveTurn !== undefined) {
+      fs2.liveTurn = { ...fs2.liveTurn, ownerHostPid: 0 };
+      trySave(fs2);
+    }
     resumedProc = undefined;
     const detachThis = detachLive;
     if (detachThis !== undefined && liveProc?.cursor !== undefined) {

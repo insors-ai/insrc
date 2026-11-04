@@ -1,0 +1,52 @@
+# S010 t11 — live measurement and installed-daemon smoke (2026-11-04)
+
+The installed daemon (`~/.insrc/daemon`) ran a21ea79d (s10 complete, pushed). Requests were sent over daemon IPC with `rpc()` from the daemon's own `out/shared/ipc-client.js`.
+
+## Live measurement on this repository against the hand-checked set
+
+- **Before:** a full reindex of this repository (`repo.reindex`), so every stored document carries the links it writes. It finished with status `ready`, 5,103 files, generation 23,173.
+- **Request:** `docRelations.measure { repoPath: <this repo> }` answered `{ queued: true, setHash: 9b19488b…a75, checked: 961 }`.
+  - The set (`.insrc/doc-relations-checked.json`, approved by the user) has 1,140 real links from 27 documents. 179 of them are links the documents already write, so 961 links are implied.
+- **Model:** the mid tier's CLI provider, `gpt-6.1-sol` (cli-codex), one document at a time on the summary lane.
+- **Recorded** 2026-11-04T18:12:16Z (daemon log, `doc-relations measurement recorded`):
+
+| Figure | Value |
+|---|---|
+| implied links (checked) | 961 |
+| admitted proposals | 185 |
+| admitted and real | 144 |
+| admitted and implied (found) | 144 |
+| precision | 0.778 (144 / 185) |
+| recall | 0.150 (144 / 961) |
+| extractedRecovery | 1.0 |
+
+- **Switch:** `off`. The bar is ≥ 100 implied links (met), precision ≥ 0.95 (not met) and recall ≥ 0.60 (not met).
+  - As lc1 states, a result below the bar is a valid outcome: the capability stays off and the figures are recorded.
+  - Readers do not see model proposals while the switch is off; written links (`extracted`) are unaffected.
+- **repo.stats** for this repository after the measurement:
+
+```json
+"docRelations": {
+  "switch": "off",
+  "figures": { "checked": 961, "precision": 0.7783783783783784, "recall": 0.14984391259105098,
+               "extractedRecovery": 1, "modelId": "gpt-6.1-sol", "measuredAt": "2026-11-04T18:12:16.642Z" },
+  "extraction": { "state": "ok", "examined": 0, "failed": 0, "updatedAt": "2026-11-04T18:12:16.643Z" }
+}
+```
+
+- **Three earlier requests** (16:50, 22:05 and the one before a daemon update) were dropped by daemon restarts before they ran. The job queue is in memory, and nothing reports a lost measurement job. Noted as a follow-up, not filed.
+
+## Installed-daemon smoke
+
+- **Written links:** `search.doc_relations { entityId, direction: 'out' }` on the sections of `docs/workflow.md` (entities from `search.by_file`) returned `REFERENCES` rows with `evidence: 'extracted'`, at generation 23,173 with 0 stale proposals.
+  - "Install" → `docs/daemon.md` (`01b4493f…697`, resolved with `entity.summary`), which the section does link to.
+  - The same holds for "insrc workflow framework" (2), "Register the MCP server", "Add the steering block" (2), "Per-output model attribution" and "Can I re-run a workflow after approval?".
+- **Status before measuring:** `repo.stats` reported `docRelations: { switch: 'not-measured' }`; after measuring, the block above.
+  - The cause path (`extraction.state 'unavailable'` with its reason) is covered by the t10 integration test. It was not produced live here, because the provider was available.
+- **The pass on the installed daemon:**
+  - It examined documents of registered repositories whose graph is complete. Examples: insors-extraction `README.md`, 9 admitted; in one hour, AFM 58 documents and FieldML 26.
+  - It does not examine this repository. 5 relationships point at files an ignore rule excludes, so the graph is not complete, which is the sc1 gate as designed.
+
+## Full sweep
+
+See `t11-sweep.md`.

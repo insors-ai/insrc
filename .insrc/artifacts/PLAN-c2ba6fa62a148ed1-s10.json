@@ -1,0 +1,730 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793769085679-fjh5wl",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-04T05:15:59.144Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 273415,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "c2ba6fa62a148ed1",
+    "epicSlug": "complete-consistent-richer-code-index-one",
+    "storyId": "s10",
+    "lldRunId": "wf-1793734261118-907e8o",
+    "lldEffectiveHash": "85da4a2df479c54c89b7b5fcab0d050d9f71d0a6c90ce50a4a7c3d8d7edb8dc2",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-04T05:18:30.483Z",
+    "rangeBase": "e62b581d13ca933ee6261916d4ed5c49b8e91892"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Building s10 adds a deterministic link reader to markdown indexing and the storage, reads and status around it, then a mid-tier model pass on the summary lane whose proposals stay in their own table and are only used behind a measured switch. The store gains two tables and one migration; the indexer gains a link reader and a pre-commit target check; the daemon gains two summary-lane jobs, two requests and a status field shown in the CLI and both plugins; the analyzer attaches document links at read so caches never serve stale model links. The Story ends with a live measurement against the approved hand-checked set, an installed-daemon smoke and one full test sweep."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Store: proposal and quality sub-dbs, migration 9, carry across a full index",
+        "summary": "Declare doc_relation_proposals (+ its carry area) and doc_relation_quality in src/db/graph/store.ts with codecs in src/db/graph/codec.ts; migration step 9 (SCHEMA_VERSION 8 -> 9) in src/db/graph/migrations.ts; add both handles to structuralTables; read/write helpers in a new src/db/doc-relations.ts; deleteEntitiesForRepo clears and (with carryDocSummaries) carries proposal rows; a restore helper writes back rows whose document file-entity hash is unchanged; removeRepo deletes rows and carry area. Update the store-namespace count test and the inventory fixtures.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A store at version 8 opens and migrates to 9 with both sub-dbs empty and no other row changed",
+          "deleteEntitiesForRepo with carryDocSummaries leaves no readable proposal row; restore writes back only rows whose document hash is unchanged",
+          "removeRepo deletes the repository's proposal, carry and quality rows",
+          "A session-memory execution can read both handles and is refused any write"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11",
+          "c17"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s10 t1: migration 9 creates empty doc-relation sub-dbs and changes no other row"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t1: a full index clears and carries proposal rows; restore keeps only unchanged documents"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t1: removeRepo deletes proposal, carry and quality rows"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t1: session-memory reads the new handles and is refused writes"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Markdown link reader in ArtifactParser",
+        "summary": "Extend ArtifactParser.parse (src/indexer/parser/artifact.ts) to emit REFERENCES with evidence 'extracted': link destinations resolved against the document's directory (leading / = repository root), path mentions with a slash resolved against the repository root (./ ../ against the directory), bare file-name mentions as pending name-reference relations; skip fenced/indented code, URLs with a scheme, mailto, pure anchors; strip anchors and trailing punctuation; require a parser-handled file name; attribute to the containing retained section, the whole-file document, or the file entity (preamble, skipped sections); dedupe per (source, target); no self links.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "In docs/guide/a.md, 'b.md', 'docs/b.md' and '/docs/b.md' link destinations resolve to docs/guide/b.md, docs/guide/docs/b.md and docs/b.md; the mentions `docs/b.md` and `./b.md` to docs/b.md and docs/guide/b.md",
+          "A preamble link is attributed to the file entity; links in fenced code, http(s) and mailto are not read",
+          "A bare 'README.md' yields a pending name-reference relation with meta.nameRef and no awaitsId",
+          "The parser touches neither the file system nor a model"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "s10 t2: link destinations resolve against the document's directory and mentions against the repository root"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t2: preamble and skipped-section links attribute to the file entity; fenced code, URLs and mailto are not read"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t2: one REFERENCES per (source, target) with evidence 'extracted'; no self links"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t2: a bare file name yields a pending name reference"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Indexer boundary for document links and their lifecycle",
+        "summary": "In IndexerService.indexFile (src/indexer/index.ts), before commitFile: path-reference targets that are stored become { stored: id }, absent ones pending rows with meta { file, repo, awaitsId, docLink, class 'no-candidate', reason 'doc-link-target-absent' }; name references become pending rows with file/repo and class 'no-candidate', reason 'doc-name-ref'. Guard Pass 2 and the SQL re-check in src/indexer/cross-file-resolver.ts to skip meta.docLink rows. On removal of a target file, re-read each markdown document holding a returned pending REFERENCES (s1's lookup by awaited id).",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Links to missing, ignored and unselected files are stored as 'no-candidate' pending rows with file and repo; unwritable stays 0 and the repository reads complete",
+          "Creating a missing target later promotes its row on the next settle via Pass 0 with evidence 'extracted', without re-reading the citing document",
+          "Removing a target re-reads the citing document and the repository reads complete again",
+          "Pass 2 and the SQL re-check leave doc-link rows untouched; the SQL by-name return leaves document links as plain rows"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c14",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s10 t3: two linked documents store an extracted REFERENCES with zero provider calls"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t3: links to missing, ignored and unselected targets are no-candidate pending rows; repository complete"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t3: a target created later is promoted by Pass 0 on settle"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t3: removing a target re-reads the citing document"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t3: Pass 2, the SQL re-check and the SQL by-name return leave doc-link rows alone"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Mid-tier role, provider selection and failure classification",
+        "summary": "Add { id: 'indexer.docRelations', criticality: 'peripheral', defaultTier: 'mid' } to src/config/role-taxonomy.ts; a selector that runs resolveRole('indexer.docRelations', cfg, repoPath), refuses any tier other than mid, requires a CLI family with a listed model, and builds the provider from that resolution (or checks the router's ResolvedProvider under a routing context), returning the validated model id; a classifier that treats every error thrown by the provider call as a provider failure (message chain kept) and only a wrong-shape returned value as DocRelationsOutputInvalid.",
+        "size": "S",
+        "order": 4,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An override to the cheap tier (per-repo or global) is refused with a reason naming the tier, with and without a routing context",
+          "A CLI family with no listed model is refused before any call",
+          "Codex error/turn.failed, Claude is_error, Vibe wrapped, CliExitError, CliStallError and ModelCallFailedError errors classify as provider failures"
+        ],
+        "derivedFrom": [
+          "c3",
+          "c13",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "s10 t4: role taxonomy has indexer.docRelations as peripheral mid"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t4: a cheap-tier override is refused with and without a routing context"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t4: a CLI family with no listed model is refused before any call"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t4: provider-failure classification across CLI error shapes"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "documentRelations read API, the switch, and search.doc_relations",
+        "summary": "documentRelations(entityId, direction) in src/db/doc-relations.ts: stored REFERENCES via outNeighbors/inNeighbors (kindFilter REFERENCES, withEvidence), name references resolved at read through the name index (exactly one file of that name), and, while the switch is on, eligible proposals (hash, model, live endpoints) with evidence 'model' and computedAtGeneration; returns { rows, generation, staleProposals }. The pure switchOf(qualityRow, validatedModelId, setHash) lives here. New session-class request search.doc_relations in src/daemon/handler-runtime.ts behind guardSearchRequest, classified in src/daemon/threads/method-class.ts.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "A name reference resolves only while exactly one file has the name, independent of indexing order",
+          "switchOf is on only with checked >= 100, precision >= 0.95, recall >= 0.60 and matching model and set hash; 'not-measured' without figures",
+          "Ineligible proposals (changed hash, other model, missing endpoint) are not returned; older-generation proposals are counted in staleProposals",
+          "search.doc_relations about a repository being indexed is refused with the named error and progress; findCallers / findCallees and closure traversal are unchanged"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c11",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "s10 t5: switchOf on only at the bar with matching model and set hash"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t5: name references resolve across full-index order and stop on a second same-named file"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t5: proposals read as 'model' only while on and eligible; older generations counted as stale"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t5: search.doc_relations registered, session-class, refused while indexing"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t5: callers, callees and closure are unchanged by proposals"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Job plumbing for the two new summary-lane jobs",
+        "summary": "New IndexJob kinds 'doc-relations' and 'doc-relations-measure' (src/shared/types.ts); both isSummaryJob classifiers (src/daemon/queue.ts, src/daemon/threads/summary-link.ts); processJob dispatch and the runQueuedJob lifecycle for 'doc-relations' (src/indexer/index.ts); a second SubsystemScheduler instance requested on the subsystem pass's triggers and disposed on stop; enqueue de-duplication; after a full index, restore carried proposal rows before requesting the pass.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Both job kinds are routed to the summary lane and handed to the summary worker, never the index lane",
+          "A second pass runs after the first; a failed or abandoned run (undefined outcome) re-arms the retry",
+          "Carried rows are restored after a full index before the pass is requested; stop disposes the scheduler's timers"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s10 t6: doc-relations jobs route to the summary lane and the summary worker"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t6: runQueuedJob lifecycle: second pass, failed-pass retry, abandoned reply"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t6: carried rows restored after a full index before the pass; stop disposes timers"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "The doc-relations pass",
+        "summary": "New src/indexer/doc-relations-pass.ts: starts only on graphComplete; selects documents whose hash or validated model differs; one model call at a time through the t4 provider; validates each returned value; drops proposals with unknown source or unstored target and those duplicating extracted links; publishes rows with the content-hash and generation guard ('superseded' on a full index); prunes rows of removed documents and vanished endpoints without a model call; writes the extraction status; returns a non-outcome result when the provider is unavailable.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t4",
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Model calls are serial (max concurrency 1)",
+          "After one pass, changing one document sends only that document; repo.reindex of an unchanged repository sends none",
+          "An unavailable provider writes extraction 'unavailable' with the cause and arms the retry; restoring the provider lets the retry run without a file event",
+          "A value with two valid proposals and one with an unknown source publishes the two and counts one; a wrong-shape value leaves the earlier row and retries the document"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c10",
+          "c15"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s10 t7: serial calls; only changed documents; reindex of an unchanged repository sends none"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t7: stale-hash guard and superseded by a full index"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t7: unavailable provider (resolution, not signed in) writes status and the retry recovers"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t7: proposal validation, resolution and dedupe against extracted links"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Measurement against the hand-checked set",
+        "summary": "Validator for .insrc/doc-relations-checked.json (schema, canonical identity, duplicates, conflicting labels, >= 100 distinct implied links); docRelations.measure request (handler-runtime + method class 'indexing') that validates and queues 'doc-relations-measure'; the job normalises admitted proposals (after extracted-link de-duplication) and computes precision over admitted, recall over implied, extractedRecovery for information; writes figures, or on provider failure keeps figures and sets extraction 'unavailable' (creating the row).",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Duplicate and conflicting pairs, and fewer than 100 distinct implied links, are rejected with DocRelationsSetInvalid naming the cause",
+          "100 duplicates of extracted links plus 5 wrong proposals measure precision 0/5 and the switch reads off",
+          "A provider failure before any quality row creates the row with no figures and extraction 'unavailable'; with figures it keeps them"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c11",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "s10 t8: set validation and proposal normalisation"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t8: quality computation over admitted and implied links"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t8: docRelations.measure records figures over a 100+ link fixture; below the bar reads exclude proposals"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t8: measurement provider failure creates or keeps the row with extraction unavailable"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Analyzer consumers and cache freshness",
+        "summary": "evidenceOrigin gains an optional noun (src/analyze/explore/usage-example.ts), default wording byte-identical; doc.mention stores outputs without 'related'; attachDocRelations adds 'related' and the staleness line after every fresh run, every executor cache hit (executePlanWithContext, stepPlanWithContext, third path) and every restored output on resume (outputsById and results); context bundles that include doc.mention carry docRelationsRevision (generation, quality row, latest publication, validated model, set hash) and are stale when it differs. Ordered after the measurement task so its cache tests can switch proposals on and off through a real quality row.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t5",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A cached doc.mention result read after proposals are switched off returns no model link through both executor paths and after resume",
+          "A warm bundle is rebuilt after a measurement, a publication, an endpoint deletion or a second same-named file",
+          "evidenceOrigin with the document noun produces the document sentence; without it the existing sentence is unchanged"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "s10 t9: evidenceOrigin document noun and unchanged default wording"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWithContext hits"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t9: resume of a paused step recomputes related links"
+          },
+          {
+            "level": "integration",
+            "name": "s10 t9: bundle cache stale by docRelationsRevision"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Status surfaces: repo.stats, status board, CLI and both plugins",
+        "summary": "repo.stats (src/daemon/repo-stats.ts) and withCompleteness (src/daemon/repo-completeness.ts) add docRelations { switch, figures?, extraction } read from the quality row; the CLI ReposPane, VS Code daemon-gateway + detail-renderers, and JetBrains DaemonGateway + RepoStatusDialog render one line with the switch, figures and the extraction reason.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t7",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "repo.stats and the status board store slot show 'unavailable' with its cause written by the pass on the summary worker",
+          "Each display shows 'on (P / R); new documents not examined: <cause>' and 'not-measured'",
+          "completeness is unchanged by any docRelations state"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "s10 t10: repo.stats and the status board read the persisted docRelations status"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t10: CLI ReposPane renders docRelations states"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t10: VS Code repositoryList renders docRelations states"
+          },
+          {
+            "level": "unit",
+            "name": "s10 t10: JetBrains RepoStatusDialog renders docRelations states"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Live measurement, installed-daemon smoke and full sweep",
+        "summary": "Run the measurement on this repository against .insrc/doc-relations-checked.json with the real mid-tier CLI provider (INSRC_LIVE_TESTS=1) and record the figures and the switch state; smoke on the installed daemon after update: extracted REFERENCES read with evidence 'extracted' and repo.stats docRelations state and reason; then the full test sweep once.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9",
+          "t10"
+        ],
+        "acceptanceChecks": [
+          "Measured precision, recall, implied count and extractedRecovery are recorded in the BUILD evidence with the switch state they produce; below the bar the capability stays off and the figures are recorded (lc1), which is a valid outcome",
+          "The installed daemon returns extracted document links and reports docRelations state and reason",
+          "The full sweep passes, or every failure is shown to pre-exist this Story"
+        ],
+        "derivedFrom": [
+          "c12",
+          "c16"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "s10 t11: measurement on this repository against the hand-checked set"
+          },
+          {
+            "level": "smoke",
+            "name": "s10 t11: installed daemon returns extracted document links and docRelations status"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/indexer/parser/artifact.ts link reader",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "proposal resolution and dedupe against extracted links",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "quality computation and the on/off switch rule",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "role taxonomy entry indexer.docRelations",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "evidenceOrigin with the document noun (complete sentence) and unchanged default wording",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "hand-checked set validation (duplicates, conflicting labels, distinct count) and proposal normalisation",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/indexer/index.ts",
+        "coveredByTaskIds": [
+          "t3",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db/entities.ts commitFile",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "doc-relations pass and its scheduler",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "doc_relation_proposals / doc_relation_quality sub-dbs and migration step",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "repo.stats docRelations field",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "traversal reads and analyzer lookup merge",
+        "coveredByTaskIds": [
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "queue routing: a doc-relations job lands on the summary lane (src/daemon/queue.ts) and is handed to the summary worker (src/daemon/threads/summary-link.ts)",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "docRelations.measure and search.doc_relations registration and method classes",
+        "coveredByTaskIds": [
+          "t5",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "proposal eligibility at read and across a full index",
+        "coveredByTaskIds": [
+          "t1",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "runQueuedJob lifecycle for doc-relations: second pass, failed-pass retry, abandoned worker reply",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "target created after its citing document; target removed",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "SQL by-name return does not apply to document links",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "session-memory analyzer read of the new handles",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "docRelations status persistence and its two read sites (repo.stats, status board)",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "mid-tier enforcement under role overrides",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "attachDocRelations on every executor path (fresh, executePlanWithContext hit, stepPlanWithContext hit)",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "name-reference resolution through the name index",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "name references across full-index order and a second same-named file",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "resume of a paused analyze step; bundle cache staleness by docRelationsRevision",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "CLI ReposPane, VS Code repositoryList and JetBrains RepoStatusDialog rendering of docRelations",
+        "coveredByTaskIds": [
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "Pass 2 and the SQL re-check skip doc-link rows",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "measurement daemon request",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "installed daemon",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract ArtifactParser.parse"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract commitFile"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract resolveRoleProvider"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract IndexerService.docSummariseRepo (job inventory)"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract completenessOf (docRelations status and display sites)"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract evidenceOrigin"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract docRelations.measure"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 contract documentRelations"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 data model REFERENCES relationship from a document section"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 data model doc_relation_proposals"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 data model doc_relation_quality"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 data model hand-checked set"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 data model role indexer.docRelations"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 interactionWithShared sc1 sc2 sc3"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 errorPaths"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 testStrategy"
+    },
+    {
+      "id": "c17",
+      "kind": "prior-artifact",
+      "ref": "LLD s10 migration"
+    }
+  ]
+}

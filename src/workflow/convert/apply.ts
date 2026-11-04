@@ -82,10 +82,15 @@ export function deliveryReadsLifecycle(): boolean {
 	return !('reason' in lifted) && lifted.approval.state === 'approved';
 }
 
-/** Migrate every head that has no lifecycle or still carries a legacy field. Answers how many were written. */
-async function migrateHeads(repo: string, deps: ConversionDeps, seams: MigratedHeadSeams | undefined): Promise<number> {
+/**
+ * Migrate every head that has no lifecycle or still carries a legacy field. Answers how many were written. With `only`, heads
+ * whose artifact id is not in the set are skipped before anything about them is read or written. A head with a `meta` object
+ * but no `body` object is refused with ConversionUnreadable; a head with no `meta` object is skipped.
+ */
+export async function migrateHeads(repo: string, deps: ConversionDeps, seams: MigratedHeadSeams | undefined, only?: ReadonlySet<string>): Promise<number> {
 	let written = 0;
 	for (const head of readRawHeads(repo).heads) {
+		if (only !== undefined && !only.has(head.artifactId)) continue;
 		const meta = (head.json as { meta?: Record<string, unknown> }).meta;
 		if (meta === undefined || typeof meta !== 'object') continue;
 		const hasLog = (await deps.history.log(head.artifactId)).length > 0;

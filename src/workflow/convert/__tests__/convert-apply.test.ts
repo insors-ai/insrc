@@ -10,7 +10,7 @@ import { artifactJsonPath } from '../../storage.js';
 import { readBinding } from '../../tracker/binding.js';
 import { H, setKit, threeRows, taskId } from '../../tasks/__tests__/task-set-kit.js';
 import { citations } from '../../tasks/__tests__/task-kit.js';
-import { applyConversion, CONVERSION_RULES, PROGRESS_FILE } from '../apply.js';
+import { applyConversion, CONVERSION_RULES, migrateHeads, PROGRESS_FILE } from '../apply.js';
 import type { ApplyStep } from '../apply.js';
 import { planConversion } from '../plan.js';
 import { ConversionRefused } from '../types.js';
@@ -98,6 +98,42 @@ describe('convert-apply', () => {
 			const again = await applyConversion(kit.k.repo, await planConversion(kit.k.repo, { rules: CONVERSION_RULES, resume: true }), deps, { deliveryReadsLifecycle: () => true });
 			assert.deepEqual(again.written, []);
 			assert.equal(r.git('status', '--porcelain'), before);
+		} finally { kit.done(); }
+	});
+	it('convert-apply.test.ts: migrateHeads with an id filter leaves heads outside the filter unchanged with no new log entries', async () => {
+		const kit = setKit();
+		try {
+			const dir = join(kit.k.repo, '.insrc', 'artifacts');
+			mkdirSync(dir, { recursive: true });
+			const legacy = (id: string) => ({ meta: { workflow: 'design.story', epicHash: H, storyId: id, createdAt: AT, epicCreatedAt: AT, revision: 1, approvedAt: AT }, body: { goal: id }, citations: [] });
+			const inside = `LLD-${H}-s1`;
+			const outside = `LLD-${H}-s2`;
+			for (const id of [inside, outside]) writeFileSync(join(dir, `${id}.json`), JSON.stringify(legacy(id.endsWith('s1') ? 's1' : 's2'), null, 2) + '\n');
+			const before = readFileSync(join(dir, `${outside}.json`), 'utf8');
+			const history = new History(kit.k.sidecar);
+			const deps = { store: kit.k.store, history, taskSets: kit.sets, now: () => new Date('2026-10-22T00:00:00.000Z'), actor: MIGRATION } as unknown as ConversionDeps;
+
+			assert.equal(await migrateHeads(kit.k.repo, deps, undefined, new Set([inside])), 1);
+			assert.notEqual(JSON.parse(readFileSync(join(dir, `${inside}.json`), 'utf8')).meta.lifecycle, undefined, 'the head in the filter is migrated');
+			assert.equal(readFileSync(join(dir, `${outside}.json`), 'utf8'), before, 'the head outside the filter is byte for byte unchanged');
+			assert.equal((await history.log(outside)).length, 0, 'and has no log entry');
+			assert.ok((await history.log(inside)).length > 0, 'the migrated head has its entries');
+			assert.equal(await migrateHeads(kit.k.repo, deps, undefined, new Set()), 0, 'an empty filter examines nothing');
+		} finally { kit.done(); }
+	});
+
+	it('convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter', async () => {
+		const kit = setKit();
+		try {
+			const dir = join(kit.k.repo, '.insrc', 'artifacts');
+			mkdirSync(dir, { recursive: true });
+			const ids = [`LLD-${H}-s1`, `LLD-${H}-s2`];
+			for (const id of ids) writeFileSync(join(dir, `${id}.json`), JSON.stringify({ meta: { workflow: 'design.story', epicHash: H, storyId: id.slice(-2), createdAt: AT, epicCreatedAt: AT, revision: 1, approvedAt: AT }, body: { goal: id }, citations: [] }, null, 2) + '\n');
+			const history = new History(kit.k.sidecar);
+			const deps = { store: kit.k.store, history, taskSets: kit.sets, now: () => new Date('2026-10-22T00:00:00.000Z'), actor: MIGRATION } as unknown as ConversionDeps;
+			assert.equal(await migrateHeads(kit.k.repo, deps, undefined), 2, 'without a filter every head with a legacy field is migrated');
+			for (const id of ids) assert.notEqual(JSON.parse(readFileSync(join(dir, `${id}.json`), 'utf8')).meta.lifecycle, undefined);
+			assert.equal(await migrateHeads(kit.k.repo, deps, undefined), 0, 'a second pass finds nothing to do');
 		} finally { kit.done(); }
 	});
 });

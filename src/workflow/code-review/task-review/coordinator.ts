@@ -1,3 +1,4 @@
+import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
 import type { FailureDiagnostic } from './diagnostic-schema.js';
@@ -10,7 +11,7 @@ import { ReviewActivityMonitor, ReviewInactivityError, REVIEW_INACTIVITY_MS, req
 import { ReviewSessionTimeoutError } from '../../../agent/providers/cli-provider.js';
 import { getLogger } from '../../../shared/logger.js';
 import type { LLMProvider, ReviewSessionOpts } from '../../../shared/types.js';
-import { requireReview } from './contracts.js';
+import { requireReview, TaskReviewInputError } from './contracts.js';
 import type { ReviewAttempt, ReviewCheckpoint, TaskReviewResult, ReviewOperation, ReviewStatus, TaskResultOrigin } from './contracts.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
@@ -209,7 +210,13 @@ export class TaskReviewCoordinator {
      if(!assignments){
       const acceptScope=(raw:unknown)=>serial(async()=>{
        check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;
-       assignments=reviewAssignments(review,raw);
+       try { assignments=reviewAssignments(review,raw); }
+       catch (error) {
+        if (!(error instanceof TaskReviewInputError)) throw error;
+        try { await recordAttributionRejection(review,error,()=>save(path,checkpoint)); }
+        catch (failure) { persistenceError=failure; throw failure; }
+        throw error;
+       }
        if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){
         if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
         if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
@@ -217,11 +224,24 @@ export class TaskReviewCoordinator {
        }
        return{accepted:true};
       });
-      const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));
-      check();if(!assignments)assignments=reviewAssignments(review,raw);
+      for (;;) {
+       requireReview((entry.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');
+       const priorRejections=entry.header.attributionRepair?.rejections ?? 0;
+       try {
+        const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));
+        check();if(!assignments)await acceptScope(raw);
+        break;
+       } catch (error) {
+        check();if(persistenceError)throw persistenceError;
+        const cause=error instanceof ReviewOutputFailureError ? error.cause : error;
+        if (!(cause instanceof TaskReviewInputError) || !entry.header.attributionRepair || entry.header.attributionRepair.rejections <= priorRejections || entry.header.attributionRepair.rejections >= MAX_ATTRIBUTION_SUBMISSIONS) throw error;
+        if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,'attribution',undefined,error.diagnostic,()=>save(path,checkpoint)));
+       }
+      }
      }
     }
     tracker.phase('task_review');progress.request(true);
+    requireReview(assignments,'attribution','No accepted task mapping');
     const assignment=assignments.find(a=>a.taskId===task.id)!;
     const references=await taskReferences(this.deps.sources,prepared,assignment);check();
     if(assignment.reassessment?.action==='reuse'){

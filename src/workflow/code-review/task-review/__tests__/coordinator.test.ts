@@ -200,3 +200,121 @@ test('shared attribution provider failure remains failed for every remaining tas
   assert.equal(complete.attempts[0]!.header.status, 'failed'); assert.equal(calls, 1);
  } finally { await f.cleanup(); }
 });
+
+test('shared attribution corrects omitted unchanged regression evidence before any assessment', async () => {
+ const f=await fixture(false);let scopes=0, assessments=0;
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,provider:()=>provider(async(prompt)=>{
+  if(prompt.startsWith('Derive task attribution')){
+   scopes++;
+   assert.match(prompt,/including unchanged regression tests/);
+   if(scopes===1)return{tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[]}))};
+   assert.match(prompt,/missing tests:.*index.*0.*test\.ts/);
+   assert.equal(assessments,0);
+   return{tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))};
+  }
+  assessments++;return assessment(`t${assessments}`);
+ })});
+ try{
+  const ack=await coordinator.start(f.project,'attribution-repair',1,f.packet);await coordinator.settled(f.project,'attribution-repair');
+  const a=(await f.read(ack.path)).attempts[0]!;
+  assert.equal(a.header.status,'passed');assert.equal(scopes,2);assert.equal(assessments,3);
+  assert.equal(a.header.attributionRepair?.rejections,1);
+ }finally{await f.cleanup();}
+});
+
+test('shared attribution exhausts three submissions without running assessments or resetting on resume', async () => {
+ const f=await fixture(false);let calls=0;
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,provider:()=>provider(async()=>{
+  calls++;return{tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[]}))};
+ })});
+ try{
+  const ack=await coordinator.start(f.project,'attribution-exhaustion',1,f.packet);await coordinator.settled(f.project,'attribution-exhaustion');
+  const a=(await f.read(ack.path)).attempts[0]!;
+  assert.equal(calls,3);assert.equal(a.header.attributionRepair?.rejections,3);
+  assert.deepEqual(a['review-response'].tasks.map(t=>t.status),['failed','failed','failed']);
+  await coordinator.start(f.project,'attribution-exhaustion',1,undefined,{operation:'resume'});await coordinator.settled(f.project,'attribution-exhaustion');
+  assert.equal(calls,3);
+ }finally{await f.cleanup();}
+});
+
+test('controller attribution returns pointed correction frames then accepts complete mapping with replay protection', async () => {
+ const f=await fixture(false);const signal=new AbortController();const owner={id:'review-controller',signal:signal.signal};
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,provider:()=>{throw new Error('No native provider on controller route');}});
+ const bad={tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[]}))};
+ try{
+  const initial=await coordinator.startController(f.project,'controller-attribution-repair',1,f.packet,owner);
+  assert.equal(initial.kind,'scope');
+  const envelope={taskId:initial.taskId,executionId:initial.executionId,sequence:initial.nextSequence};
+  const corrected=await coordinator.controllerScope(f.project,'controller-attribution-repair',1,bad,owner,envelope);
+  assert.equal(corrected.kind,'scope');assert.match(corrected.prompt!,/missing tests:.*test\.ts/);
+  const replay=await coordinator.controllerScope(f.project,'controller-attribution-repair',1,bad,owner,envelope);
+  assert.equal(replay.kind,corrected.kind);assert.equal(replay.nextSequence,corrected.nextSequence);assert.equal(replay.prompt,corrected.prompt);
+  assert.equal((await f.read(initial.path)).attempts[0]!.header.attributionRepair?.rejections,1);
+  const next=await coordinator.controllerScope(f.project,'controller-attribution-repair',1,{tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))},owner,{taskId:corrected.taskId,executionId:corrected.executionId,sequence:corrected.nextSequence});
+  assert.equal(next.kind,'task');assert.equal(next.taskId,'t1');
+ }finally{signal.abort();await coordinator.settled(f.project,'controller-attribution-repair');await f.cleanup();}
+});
+
+test('native attribution handles the real host-candidate rejection wrapper and preserves diagnostics', async () => {
+ const {ReviewOutputFailureError}=await import('../../../../shared/review-diagnostics.js');
+ const f=await fixture(false);let scopes=0;
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,provider:()=>provider(async(prompt,_schema,opts)=>{
+  if(prompt.startsWith('Derive task attribution')){
+   scopes++;const value={tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:scopes===1?[]:[0]}))};
+   try{if(opts.mode==='activity')await opts.onCandidate(value);}catch(error){
+    throw new ReviewOutputFailureError('Rejected mapping',{provider:'codex',issues:[{code:'HOST_VALIDATION_ERROR',field:'attribution',correction:'Cover every submitted test.',occurrences:1}]},error);
+   }
+   return value;
+  }
+  const id=/"taskId":"(t\d+)"/.exec(prompt)![1]!;return assessment(id);
+ })});
+ try{
+  const ack=await coordinator.start(f.project,'wrapped-attribution-repair',1,f.packet);await coordinator.settled(f.project,'wrapped-attribution-repair');
+  const a=(await f.read(ack.path)).attempts[0]!;
+  assert.equal(a.header.status,'passed');assert.equal(scopes,2);
+  assert.equal(a['review-response'].failureDiagnostics?.[0]?.resolved,true);
+ }finally{await f.cleanup();}
+});
+
+test('controller attribution budget survives disconnect and explicit resume, then exhausts', async () => {
+ const f=await fixture(false);const first=new AbortController(),second=new AbortController();
+ const owner1={id:'first',signal:first.signal},owner2={id:'second',signal:second.signal};
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,provider:()=>{throw new Error('No native calls');}});
+ const bad={tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[]}))};
+ const submit=(frame:import('../controller.js').ControllerFrame,owner:typeof owner1)=>coordinator.controllerScope(f.project,'controller-budget',1,bad,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+ try{
+  let frame=await coordinator.startController(f.project,'controller-budget',1,f.packet,owner1);
+  frame=await submit(frame,owner1);assert.equal(frame.kind,'scope');
+  first.abort();await coordinator.settled(f.project,'controller-budget');
+  frame=await coordinator.startController(f.project,'controller-budget',1,undefined,owner2,undefined,'resume');
+  frame=await submit(frame,owner2);assert.equal(frame.kind,'scope');
+  frame=await submit(frame,owner2);assert.equal(frame.kind,'done');assert.equal(frame.status,'failed');
+  const a=(await f.read(frame.path)).attempts[0]!;assert.equal(a.header.attributionRepair?.rejections,3);
+  assert.equal(a['review-response'].tasks.length,3);
+ }finally{first.abort();second.abort();await coordinator.settled(f.project,'controller-budget');await f.cleanup();}
+});
+
+test('attribution omission diagnostics enumerate missing change and test indexes separately', async () => {
+ const f=await fixture(false);
+ try{
+  const prepared=await prepareReviewPacket(f.packet,f.sources);
+  assert.throws(()=>deriveTaskAssignments(prepared,['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[],testIndexes:[]}))),error=>{
+   assert.match(String(error),/Missing changes: \[\{"index":0,"path":"source.ts"\}\]/);
+   assert.match(String(error),/missing tests: \[\{"index":0,"path":"test.ts"\}\]/);return true;
+  });
+ }finally{await f.cleanup();}
+});
+
+test('attribution repair persistence failure stops dispatch without fabricating task failures', async () => {
+ const f=await fixture(false);let calls=0;
+ const coordinator=new TaskReviewCoordinator({sources:f.sources,save:async(path,checkpoint)=>{
+  if(checkpoint.attempts[0]?.header.attributionRepair)throw new Error('fixture storage unavailable');
+  await saveCheckpoint(path,checkpoint);
+ },provider:()=>provider(async()=>{calls++;return{tasks:['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[]}))};})});
+ try{
+  const ack=await coordinator.start(f.project,'repair-storage-failure',1,f.packet);await coordinator.settled(f.project,'repair-storage-failure');
+  const a=(await f.read(ack.path)).attempts[0]!;assert.equal(calls,1);
+  assert.equal(a.header.attributionRepair,undefined);assert.equal(a['review-response'].tasks.length,0);
+  assert.notEqual(a.header.status,'passed');
+ }finally{await f.cleanup();}
+});

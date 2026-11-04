@@ -1,3 +1,4 @@
+import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
 import { DiagnosticSnapshotSchema } from './diagnostic-schema.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
@@ -61,7 +62,11 @@ export class ControllerTaskReview {
   requireReview(!this.assignments&&!directReviewAssignments(this.review),'scope','Task attribution is not awaiting a response');
   this.checkTime();
   let assignments:readonly TaskAssignment[];
-  try{assignments=reviewAssignments(this.review,input);}catch(error){
+  try{
+   requireReview((this.review.attempt.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');
+   assignments=reviewAssignments(this.review,input);
+  }catch(error){
+   if(await recordAttributionRejection(this.review,error,()=>this.persist()))return this.frame(owner);
    this.monitor?.stop();this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
    for(const task of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id))){
     this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Task attribution failed: ${error instanceof Error?error.message:String(error)}`,false)];

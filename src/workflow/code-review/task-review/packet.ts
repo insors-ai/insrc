@@ -196,7 +196,9 @@ export function deriveTaskAssignments(prepared: PreparedReviewPacket, attributio
   const tests = scope.testIndexes.map(i => { requireReview(Number.isSafeInteger(i) && prepared.packet.tests[i], 'attribution', 'Unknown test'); assignedTests.add(i); return prepared.packet.tests[i]!; });
   return { taskId: task.id, size: task.size, timeoutMs: { S: 300000, M: 600000, L: 900000 }[task.size], changes, tests, acceptanceChecks: task.acceptanceChecks };
  });
- requireReview(covered.size === prepared.changes.length && assignedTests.size === prepared.packet.tests.length, 'attribution', 'Derived task scopes omit submitted changes or tests');
+ const missingChanges = prepared.changes.flatMap((change, index) => covered.has(index) ? [] : [{ index, path: change.path }]);
+ const missingTests = prepared.packet.tests.flatMap((test, index) => assignedTests.has(index) ? [] : [{ index, path: test.file }]);
+ requireReview(!missingChanges.length && !missingTests.length, 'attribution', `Derived task scopes omit submitted changes or tests. Missing changes: ${JSON.stringify(missingChanges)}; missing tests: ${JSON.stringify(missingTests)}. Assign every missing entry to an applicable task; unchanged regression tests remain required evidence.`);
  return assignments;
 }
 

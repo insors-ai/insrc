@@ -87,7 +87,7 @@ export function parsePacket(input: unknown, historical = false): ReviewPacket {
 }
 export interface ReviewAttempt {
  progress?: ReviewProgress;
- header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; reassessmentSummary?: string };
+ header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; attributionRepair?: { rejections: number; feedback: string }; reassessmentSummary?: string };
  submitted: ReviewPacket;
  'review-response': { failureDiagnostics?: readonly FailureDiagnostic[]; summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string; origins?: readonly TaskResultOrigin[] };
 }
@@ -104,6 +104,6 @@ export interface TaskBasedCodeReviewRecord {
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
  progress:Type.Optional(ProgressSchema),
- header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), derived:Type.Optional(DerivedSchema), buildFingerprint:Type.Optional(text), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
+ header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), derived:Type.Optional(DerivedSchema), buildFingerprint:Type.Optional(text), attributionRepair:Type.Optional(object({rejections:Type.Integer({minimum:1,maximum:3}),feedback:Type.String({minLength:1,maxLength:8192})})), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
  submitted:StoredPacketSchema, 'review-response':Type.Object({ failureDiagnostics:Type.Optional(FailureDiagnosticsSchema), summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
  },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

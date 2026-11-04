@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793768701532-0bj43z",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:05:39.006Z",
+    "epicCreatedAt": "2026-11-04T05:05:39.006Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 37472,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "d792f3aa6f135f1c",
+    "epicSlug": "repair-incomplete-code-review-task-attribution",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3720003e798fe8b9860652a5d88814783c50dcf87a2f64a054d3a52319fb64f2",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T05:06:53.163Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "d792f3aa6f135f1c",
+      "slug": "EPIC-d792f3aa6f135f1c"
+    }
+  },
+  "body": {
+    "title": "Repair incomplete code-review task attribution before assessment",
+    "reproduction": "Submit a whole-story review packet with unchanged cross-engine regression tests. In design-review S2 attempt 2, reviewer omitted test indexes 19–22 as another story's tests despite exhaustive attribution instructions. Host rejected the mapping; all eight tasks became failed without assessment.",
+    "rootCause": "attributionPrompt requires every test but does not explicitly distinguish regression evidence from changed-source scope. deriveTaskAssignments detects missing coverage but emits a generic combined error without omitted indexes or paths. Native output host validation terminates the session; the coordinator has no attribution-only correction loop and caches the shared failure for remaining tasks.",
+    "fixIntent": "Make unchanged/cross-engine regression evidence explicitly attributable without expanding source scope; identify omitted entries precisely; allow a bounded correction cycle for invalid shared attribution using pointed host feedback, while preserving exhaustive validation, accepted assessments and native/controller semantics. Do not retry unrelated CLI or assessment failures or alter provider-wide behavior."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts:17"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts:188"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": ".insrc/tmp/code-review/design-review-s2-1793721015585.json"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:198"
+    },
+    {
+      "id": "c5",
+      "kind": "doc",
+      "ref": "src/agent/providers/review-activity-stream.ts:109"
+    }
+  ]
+}

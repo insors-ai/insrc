@@ -1,3 +1,4 @@
+import { docRelationsRevision } from '../../indexer/doc-relations-read.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
 /*---------------------------------------------------------------------------------------------
@@ -418,7 +419,20 @@ async function servedFromCache(
 		await scopeCheck({ kind: 'repo', value: repo, repoPath: repo, lookupPath: repo });
 	}
 	const current = await lastIndexedOf(repo);
-	return current === undefined || !isStaleByIndexer(bundle, current);
+	if (current !== undefined && isStaleByIndexer(bundle, current)) return false;
+	return docRelationsFresh(bundle);
+}
+
+/**
+ * Whether a cached bundle's document relationships still hold (Epic c2ba6fa6
+ * s10): a bundle over a repository is fresh only while it carries the current
+ * docRelationsRevision -- one with another, or none (written before it was
+ * recorded), may carry links that were switched off, removed or made ambiguous.
+ */
+export async function docRelationsFresh(bundle: AnalyzeContextBundle): Promise<boolean> {
+	const repo = bundle.meta?.repoPath;
+	if (typeof repo !== 'string') return true;
+	return bundle.meta?.docRelationsRevision !== undefined && bundle.meta.docRelationsRevision === await docRelationsRevision(repo);
 }
 
 type ShaperEntryArgs = Omit<RunShaperArgs, 'connectionExecution'>;
@@ -533,6 +547,8 @@ async function buildShaperBundle(args: RunShaperArgs): Promise<AnalyzeContextBun
 	// invocation's freshness check.
 	const currentLastIndexedAt = await lastIndexedOf(freshnessPathOf(scope));
 	const repoPath = bundleRepoPathOf(scope);
+	// Captured with the inputs, before the lookups run: a change during the build makes the bundle stale.
+	const currentDocRelationsRevision = typeof repoPath === 'string' ? await docRelationsRevision(repoPath) : undefined;
 
 	// (4.6) The lookup pipeline: plan lookups -> execute them -> write
 	// the answer. Every run-mode request goes through it. It returns a
@@ -559,6 +575,7 @@ async function buildShaperBundle(args: RunShaperArgs): Promise<AnalyzeContextBun
 			emptyLayers:   deriveEmptyLayers(raw),
 			schemaVersion: SCHEMA_VERSION,
 			...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+			...(currentDocRelationsRevision !== undefined ? { docRelationsRevision: currentDocRelationsRevision } : {}),
 			repoPath,
 		},
 	}));
@@ -625,6 +642,7 @@ async function buildShaperBundle(args: RunShaperArgs): Promise<AnalyzeContextBun
 			emptyLayers:   deriveEmptyLayers(rawBundle),
 			schemaVersion: SCHEMA_VERSION,
 			...(currentLastIndexedAt !== undefined ? { repoLastIndexedAt: currentLastIndexedAt } : {}),
+			...(currentDocRelationsRevision !== undefined ? { docRelationsRevision: currentDocRelationsRevision } : {}),
 			repoPath,
 		},
 	};

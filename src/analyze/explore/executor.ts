@@ -34,6 +34,7 @@ import type { RepoCompleteness } from '../../shared/types.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
+import { attachDocRelations } from './doc-relations-attach.js';
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import { createRepoIgnoreFilter } from '../context/repo-ignore-filter.js';
@@ -260,6 +261,8 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 		const elapsedMs = Date.now() - runnerStart;
 		await assertSessionReuse(execution);
 		assertSessionReuseNow(execution);
+		// Document relationships are attached here, on every path -- fresh or any cache hit -- never cached (s10).
+		output = await attachDocRelations(output);
 		outputsById.set(exp.id, output);
 		results.push({ exploration: exp, output, cached, elapsedMs });
 	}
@@ -495,10 +498,11 @@ async function stepPlanWithContext(
 	if (args.resumeState !== undefined) {
 		await assertSessionContinuation(args.resumeState, execution);
 		assertSessionReuseNow(execution);
+		// Restored outputs get their document relationships recomputed (s10): they may have changed since the pause.
 		for (const { id, output } of args.resumeState.outputs) {
-			outputsById.set(id, output);
+			outputsById.set(id, await attachDocRelations(output));
 		}
-		for (const r of args.resumeState.results) results.push(r);
+		for (const r of args.resumeState.results) results.push({ ...r, output: await attachDocRelations(r.output) });
 		totalCached = args.resumeState.totalCached;
 		priorMs = args.resumeState.totalMsSoFar;
 	}
@@ -645,6 +649,8 @@ async function stepPlanWithContext(
 		const elapsedMs = Date.now() - runnerStart;
 		await assertSessionReuse(execution);
 		assertSessionReuseNow(execution);
+		// Document relationships are attached here, on every path -- fresh or any cache hit -- never cached (s10).
+		output = await attachDocRelations(output);
 		outputsById.set(exp.id, output);
 		results.push({ exploration: exp, output, cached, elapsedMs });
 	}

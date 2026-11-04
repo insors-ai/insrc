@@ -153,6 +153,10 @@ export const ANALYZE_CONTEXT_BUNDLE_SCHEMA = {
 					type:    'integer',
 					minimum: 0,
 				},
+				docRelationsRevision: {
+					type:      'string',
+					minLength: 1,
+				},
 			},
 		},
 		// The answer report. Derived by code; see MODEL_FACING_BUNDLE_SCHEMA.

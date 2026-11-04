@@ -19,7 +19,7 @@
  */
 
 import { appendFile, mkdir, open, readdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, rmSync } from 'node:fs';
 import { abortableSleep, errCode } from './async-util.js';
 
 /** Where a reader is in a turn's segment: the byte offset just after the last line it handled. */
@@ -57,6 +57,10 @@ export interface SessionOutputFs {
   rm(path: string): Promise<void>;
   readdir(path: string): Promise<string[]>;
   readTextSync(path: string): string | undefined;
+  /** E202611031bd72813:S001 t5: synchronous write/rm, so a pin marker is visible to OTHER
+   * processes immediately (async writes are invisible to a concurrent rollover in another window). */
+  writeFileSync?(path: string, data: string): void;
+  rmSync?(path: string): void;
 }
 
 
@@ -103,6 +107,8 @@ export const nodeSessionOutputFs: SessionOutputFs = {
       return undefined;
     }
   },
+  writeFileSync: (p, data) => writeFileSync(p, data),
+  rmSync: (p) => rmSync(p, { force: true }),
 };
 
 /** The reserved key that marks a host-written line; a CLI stream line never has it at top level. */
@@ -325,7 +331,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // E202611031bd72813:S001 t5: the pin is also durable — a marker file per (generation, reader),
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
-      enqueuePinIo(() => fs.writeFile(pinPath(cursor.sessionId, cursor.generation, readerId), ''));
+      const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
+      if (fs.writeFileSync !== undefined) fs.writeFileSync(marker, ''); // visible to other processes at once
+      else enqueuePinIo(() => fs.writeFile(marker, ''));
     },
     unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
       const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
@@ -338,7 +346,9 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         // drop the archived generation only when NO reader (this process or any other) pins it;
         // remove this reader's marker FIRST so the disk scan below does not count it
         const genKey = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
-        enqueuePinIo(() => fs.rm(pinPath(cursor.sessionId, cursor.generation, readerId)));
+        const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
+        if (fs.rmSync !== undefined) fs.rmSync(marker);
+        else enqueuePinIo(() => fs.rm(marker));
         void pinIo
           .then(() => genPinned(cursor.sessionId, cursor.generation))
           .then((still) => {

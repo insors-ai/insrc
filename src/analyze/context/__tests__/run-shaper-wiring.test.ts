@@ -18,9 +18,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
-import { upsertEntities } from '../../../db/entities.js';
-import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo, removeRepo, updateRepoStatus } from '../../../db/repos.js';
+import { commitFile, upsertEntities } from '../../../db/entities.js';
+import { writeDocRelationQualityInTxn, writeDocRelationRowInTxn } from '../../../db/doc-relations.js';
+import { makeEntityId } from '../../../indexer/parser/base.js';
+import { closeGraphStore, setGraphStorePath, withWriteTxn } from '../../../db/graph/store.js';
+import { addRepo, lookupRepoId, removeRepo, updateRepoStatus } from '../../../db/repos.js';
 import { resolveTaskScope } from '../../runtimes/shared/task-scope.js';
 import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -628,4 +630,41 @@ test("runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold 
 	// A caller that checked the scope already (runAnalyze) is served from the cache, not checked again.
 	const served = await callWith(intent, wid, standIns().steps, { opts: { runId: wid, scopeChecked: true } }, 'docs');
 	assert.equal(served.summary, 'CACHED');
+});
+
+test('s10 t9: bundle cache stale by docRelationsRevision', async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('doc-relations');
+	const repoId = (await lookupRepoId(repo))!;
+	const fileEntity = (file: string): Entity =>
+		({ id: makeEntityId(repo, file, 'file', file), repo, repoId, file, kind: 'file', name: file, language: 'typescript', startLine: 1, endLine: 1, body: '', embedding: [], indexedAt: '2026-11-04T00:00:00.000Z' }) as unknown as Entity;
+	await commitFile({ repoPath: repo, filePath: `${repo}/src/b.ts`, contentHash: 'hb', relations: [], entities: [fileEntity(`${repo}/src/b.ts`)] });
+	const cold = standIns();
+	const built = await callWith(intent, id, cold.steps);
+	assert.equal(cold.seen.synthesize, 1, 'built cold');
+	assert.ok(built.meta?.docRelationsRevision, 'the bundle carries the revision it was built at');
+	const servedWarm = async (label: string): Promise<void> => {
+		const warm = standIns();
+		await callWith(intent, id, warm.steps);
+		assert.equal(warm.seen.synthesize, 0, `${label}: served from the warm cache`);
+	};
+	const rebuiltAfter = async (label: string, change: () => Promise<void>): Promise<void> => {
+		await change();
+		const again = standIns();
+		await callWith(intent, id, again.steps);
+		assert.equal(again.seen.synthesize, 1, `${label}: the warm bundle is rebuilt`);
+		await servedWarm(`after ${label}`);
+	};
+	await servedWarm('nothing changed');
+	const proposal = (to: string) => ({ contentHash: 'h', modelId: 'm1', computedAtGeneration: 1, proposals: [{ from: 'e-fixture', to, rationale: 'r' }] });
+	await rebuiltAfter('a measurement', async () => withWriteTxn(t => writeDocRelationQualityInTxn(t, repoId, {
+		figures: { checked: 100, proposed: 1, right: 1, found: 1, precision: 1, recall: 1, extractedRecovery: 1, modelId: 'm1', setHash: 'h', measuredAt: 'x' },
+		extraction: { state: 'ok', examined: 1, failed: 0, updatedAt: 'x' },
+	})));
+	await rebuiltAfter('a publication', async () => withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/a.md', proposal('one'))));
+	await rebuiltAfter('a proposal replaced by one with another endpoint', async () => withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/a.md', proposal('two'))));
+	await rebuiltAfter('an endpoint deletion', async () => { await commitFile({ repoPath: repo, filePath: `${repo}/src/b.ts`, contentHash: null, entities: [], relations: [] }); });
+	await rebuiltAfter('a second same-named file', async () => {
+		await commitFile({ repoPath: repo, filePath: `${repo}/lib/a.ts`, contentHash: 'h2', relations: [], entities: [fileEntity(`${repo}/lib/a.ts`)] });
+	});
 });

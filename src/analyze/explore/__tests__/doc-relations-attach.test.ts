@@ -10,9 +10,10 @@
  * Run: npx tsx --test src/analyze/explore/__tests__/doc-relations-attach.test.ts
  */
 
+import './helpers/mid-tier-home.js';   // first: a known mid tier for the computed switch
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -27,13 +28,13 @@ import type { Entity } from '../../../shared/types.js';
 import { IndexQueue } from '../../../daemon/queue.js';
 import type { Watcher } from '../../../indexer/watcher.js';
 import { IndexerService } from '../../../indexer/index.js';
-import { _overrideDocRelationsSwitchForTest, docRelationsRevision } from '../../../indexer/doc-relations-read.js';
+import { DOC_RELATIONS_SET_FILE, docRelationsSetHash } from '../../../indexer/doc-relations-read.js';
+import { validatedDocRelationsModel } from '../../../indexer/doc-relations-provider.js';
+import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import { executeSavedPlan, stepSavedPlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
-import { _getRunnersForTest, _overrideRunnerForTest } from '../executor.js';
+import { _getRunnersForTest, _overrideNarrowRunnerForTest, _overrideRunnerForTest, getNarrowRunner } from '../executor.js';
 import { evidenceOrigin, DOCUMENT_LINK_NOUN } from '../usage-example.js';
 import type { DocMentionOutput, Exploration, ExplorationOutput, ExplorationPlan } from '../types.js';
-import { docRelationsFresh } from '../../context/driver.js';
-import type { AnalyzeContextBundle } from '../../context/types.js';
 import { makeEntityId } from '../../../indexer/parser/base.js';
 
 useTemporaryLance();
@@ -44,7 +45,6 @@ let store: string;
 let repo: string;
 let svc: IndexerService;
 let section: Entity;
-let switchState: 'on' | 'off' = 'on';
 const savedRunner = _getRunnersForTest()['doc.mention'];
 
 const write = (rel: string, text: string): void => { mkdirSync(dirname(join(repo, rel)), { recursive: true }); writeFileSync(join(repo, rel), text); };
@@ -71,22 +71,32 @@ async function setUp(): Promise<void> {
 	const s = await getGraphStore();
 	const repoId = (await lookupRepoId(repo))!;
 	await withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/a.md', {
-		contentHash: fileEntityHashInTxn(s, repo, 'docs/a.md')!, modelId: 'm1', computedAtGeneration: 1,
+		contentHash: fileEntityHashInTxn(s, repo, 'docs/a.md')!, modelId: (validatedDocRelationsModel(loadAnalyzeConfig(), repo) as { model: { id: string } }).model.id, computedAtGeneration: 1,
 		proposals: [{ from: section.id, to: fileId('src/lexer.ts'), rationale: 'names the lexer' }],
 	}));
-	_overrideDocRelationsSwitchForTest(() => ({ state: switchState, modelId: 'm1' }));
+	write(DOC_RELATIONS_SET_FILE, JSON.stringify({ links: [] }));
 	_overrideRunnerForTest('doc.mention', async () => runnerOutput());
+	await measured(0.96);   // switched on by a real measurement row
+}
+
+/** Record a measurement: figures for the validated mid-tier model and the current set, at the given precision. */
+async function measured(precision: number): Promise<void> {
+	const model = validatedDocRelationsModel(loadAnalyzeConfig(), repo);
+	assert.ok(model.ok, 'the test HOME names a CLI mid tier');
+	const repoId = (await lookupRepoId(repo))!;
+	await withWriteTxn(t => writeDocRelationQualityInTxn(t, repoId, {
+		figures: { checked: 100, proposed: 100, right: Math.round(precision * 100), found: 70, precision, recall: 0.7, extractedRecovery: 1, modelId: model.model.id, setHash: docRelationsSetHash(repo)!, measuredAt: '2026-11-04T00:00:00.000Z' },
+		extraction: { state: 'ok', examined: 1, failed: 0, updatedAt: '2026-11-04T00:00:00.000Z' },
+	}));
 }
 
 test.beforeEach(async () => {
 	await closeGraphStore();
-	switchState = 'on';
 	store = mkdtempSync(join(tmpdir(), 'insrc-s10-t9-store-'));
 	setGraphStorePath(join(store, 'graph.lmdb'));
 	repo = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-s10-t9-repo-')));
 });
 test.afterEach(async () => {
-	_overrideDocRelationsSwitchForTest(undefined);
 	_overrideRunnerForTest('doc.mention', savedRunner);
 	svc?.disposeSubsystemScheduler();
 	await closeGraphStore();
@@ -119,8 +129,8 @@ test('s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWi
 	assert.ok(cachedRow !== null);
 	assert.equal((cachedRow as DocMentionOutput).relatedOrigin, undefined);
 
-	// A measurement switches proposals off: both executors' cache hits drop the model link.
-	switchState = 'off';
+	// A new measurement below the bar switches proposals off: both executors' cache hits drop the model link.
+	await measured(0.5);
 	const hit = await executeSavedPlan(run());
 	assert.equal(hit.results[0]!.cached, true, 'served from the cache');
 	assert.deepEqual(relatedOf(hit.results[0]!.output), [['docs/b.md', 'extracted']]);
@@ -130,53 +140,49 @@ test('s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWi
 		assert.equal(stepped.executed.results[0]!.cached, true);
 		assert.deepEqual(relatedOf(stepped.executed.results[0]!.output), [['docs/b.md', 'extracted']]);
 	}
-	// Switched back on, without clearing the cache.
-	switchState = 'on';
+	// Switched back on by another measurement, without clearing the cache.
+	await measured(0.96);
 	assert.deepEqual(relatedOf((await executeSavedPlan(run())).results[0]!.output).sort(), [['docs/b.md', 'extracted'], ['src/lexer.ts', 'model']]);
 });
 
 test('s10 t9: resume of a paused step recomputes related links', async () => {
 	await setUp();
-	const first = await executeSavedPlan(run());
-	const carried = first.results[0]!;
-	assert.deepEqual(relatedOf(carried.output).sort(), [['docs/b.md', 'extracted'], ['src/lexer.ts', 'model']], 'the paused output carried the proposal');
-	switchState = 'off';
-	const resumed = await stepSavedPlan(run({ resumeState: { results: [carried], outputs: [{ id: exp.id, output: carried.output }], totalCached: 0, totalMsSoFar: 0 } }));
-	assert.equal(resumed.kind, 'done');
-	if (resumed.kind === 'done') {
-		assert.deepEqual(relatedOf(resumed.executed.results[0]!.output), [['docs/b.md', 'extracted']], 'the restored result is recomputed');
-		assert.equal(resumed.executed.results.length, 1, 'the restored exploration is not run again');
+	// A plan that pauses after doc.mention at a narrow lookup, and a third lookup that reads doc.mention's output.
+	const narrowExp: Exploration = { id: 'n1', type: 'doc.decision.trace', purpose: 'test', params: { topic: 'lexer' } };
+	const readerExp: Exploration = { id: 'c1', type: 'concept.resolve', purpose: 'test', params: { query: 'lexer' }, dependsOn: ['d1'] } as Exploration;
+	const pausing: ExplorationPlan = { explorations: [exp, narrowExp, readerExp] } as unknown as ExplorationPlan;
+	const savedNarrow = getNarrowRunner('doc.decision.trace');
+	const savedReader = _getRunnersForTest()['concept.resolve'];
+	let seenByReader: ExplorationOutput | undefined;
+	_overrideNarrowRunnerForTest('doc.decision.trace', {
+		schema: { type: 'object' },
+		async prepare() { return { kind: 'narrow-llm', systemPrompt: 's', userTurn: 'u', schema: { type: 'object' }, prepared: {} }; },
+		finalize: () => ({ type: 'doc.decision.trace', topic: 'lexer', decisions: [], completeness: { complete: true } } as unknown as ExplorationOutput),
+	});
+	_overrideRunnerForTest('concept.resolve', async (_e, ctx) => { seenByReader = ctx.readDep('d1'); return { type: 'concept.resolve', query: 'lexer', candidates: [], completeness: { complete: true } } as unknown as ExplorationOutput; });
+	try {
+		const paused = await stepSavedPlan(run({ plan: pausing }));
+		assert.equal(paused.kind, 'pending', 'the step paused at the narrow lookup');
+		if (paused.kind !== 'pending') return;
+		const carried = paused.resumeState.outputs.find(o => o.id === 'd1')!.output;
+		assert.deepEqual(relatedOf(carried).sort(), [['docs/b.md', 'extracted'], ['src/lexer.ts', 'model']], 'the paused output carried the proposal');
+
+		// While paused, a measurement switches proposals off. The narrow answer arrives and the step resumes.
+		await measured(0.5);
+		const finalized = getNarrowRunner('doc.decision.trace')!.finalize({}, {}, 'r1');
+		const resumeState = {
+			...paused.resumeState,
+			results: [...paused.resumeState.results, { exploration: narrowExp, output: finalized, cached: false, elapsedMs: 0 }],
+			outputs: [...paused.resumeState.outputs, { id: narrowExp.id, output: finalized }],
+		};
+		const resumed = await stepSavedPlan(run({ plan: pausing, resumeState }));
+		assert.equal(resumed.kind, 'done');
+		if (resumed.kind !== 'done') return;
+		const restored = resumed.executed.results.find(r => r.exploration.id === 'd1')!;
+		assert.deepEqual(relatedOf(restored.output), [['docs/b.md', 'extracted']], 'the restored result is recomputed');
+		assert.deepEqual(relatedOf(seenByReader!), [['docs/b.md', 'extracted']], 'and so is the restored output a later lookup reads');
+	} finally {
+		_overrideNarrowRunnerForTest('doc.decision.trace', savedNarrow);
+		_overrideRunnerForTest('concept.resolve', savedReader);
 	}
-});
-
-test('s10 t9: bundle cache stale by docRelationsRevision', async () => {
-	await setUp();
-	_overrideDocRelationsSwitchForTest(undefined);
-	const driver = readFileSync(new URL('../../context/driver.ts', import.meta.url), 'utf8');
-	assert.match(driver, /if \(current !== undefined && isStaleByIndexer\(bundle, current\)\) return false;\n\treturn docRelationsFresh\(bundle\);/, 'servedFromCache applies the check');
-	const bundleAt = async (): Promise<AnalyzeContextBundle> => ({ meta: { repoPath: repo, docRelationsRevision: await docRelationsRevision(repo) } } as unknown as AnalyzeContextBundle);
-	const repoId = (await lookupRepoId(repo))!;
-
-	let b = await bundleAt();
-	assert.equal(await docRelationsFresh(b), true, 'fresh when nothing changed');
-	assert.equal(await docRelationsFresh({ meta: { repoPath: repo } } as unknown as AnalyzeContextBundle), false, 'a bundle written before the revision was recorded');
-	assert.equal(await docRelationsFresh({ meta: { repoPath: null } } as unknown as AnalyzeContextBundle), true, 'a bundle over no repository keeps the old rule');
-
-	// A measurement.
-	await withWriteTxn(t => writeDocRelationQualityInTxn(t, repoId, { figures: { checked: 100, proposed: 1, right: 1, found: 1, precision: 1, recall: 1, extractedRecovery: 1, modelId: 'm1', setHash: 'h', measuredAt: 'x' }, extraction: { state: 'ok', examined: 1, failed: 0, updatedAt: 'x' } }));
-	assert.equal(await docRelationsFresh(b), false, 'after a measurement');
-	b = await bundleAt();
-	// A publication.
-	await withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/b.md', { contentHash: 'h', modelId: 'm1', computedAtGeneration: 2, proposals: [] }));
-	assert.equal(await docRelationsFresh(b), false, 'after a publication');
-	b = await bundleAt();
-	// An endpoint deleted, before any derived pass runs.
-	unlinkSync(join(repo, 'src/lexer.ts'));
-	await svc.processJob({ kind: 'file', filePath: join(repo, 'src/lexer.ts'), event: 'delete' });
-	assert.equal(await docRelationsFresh(b), false, 'after an endpoint deletion');
-	b = await bundleAt();
-	// A second file of a name.
-	write('lib/b.md', '# Another b\nText.\n');
-	await svc.processJob({ kind: 'file', filePath: join(repo, 'lib/b.md'), event: 'create' });
-	assert.equal(await docRelationsFresh(b), false, 'after a second same-named file');
 });

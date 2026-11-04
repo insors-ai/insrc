@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-148bec84-54f7-4bc8-b039-401f475d28ad",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:38:27.280Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Name the approval actor from body.approvedBy in backfillHead",
+      "parent": {
+        "entityId": "STORY-3c0b242fcabf01e9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c0b242fcabf01e9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3fb8989634320c4466e0ad1da15d1d0d4d5b1116203677eb8baed27cb550b83e",
+        "at": "2026-11-04T08:38:27.280Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:38:27.280Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Name the approval actor from body.approvedBy in backfillHead",
+    "summary": "When an approved head has a non-empty string body.approvedBy, set lifecycle.approval.by to a person actor derived with the amendments module's personOf (namespaced id when the string looks namespaced, otherwise local:<slug> plus the original name); every other head keeps the fixed legacy actor. Add tests that an amendment reads back its approver's name and that a head without a string approvedBy gets the same lifecycle as before.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "An approved head with a string body.approvedBy gets approval.by named by it, with an id from personOf",
+      "A head without a string body.approvedBy gets exactly the lifecycle it got before",
+      "The amendment store reads the original approver name for the converted head"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "convert-lifecycle-backfill.test.ts: an approved head with a string approvedBy gets an approval actor named by it"
+      },
+      {
+        "level": "unit",
+        "name": "convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

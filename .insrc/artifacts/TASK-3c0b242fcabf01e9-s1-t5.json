@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ed533307-f8b5-460b-9b4d-08c0ac5acae2",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:38:27.284Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair this repository's two amendments and record the cause",
+      "parent": {
+        "entityId": "STORY-3c0b242fcabf01e9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c0b242fcabf01e9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3c0b242fcabf01e9-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3c0b242fcabf01e9-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8aecb3eccc082cba5085c1a67150dc5f5ae72511d778a696d018bd1dfd67b495",
+        "at": "2026-11-04T08:38:27.284Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:38:27.284Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair this repository's two amendments and record the cause",
+    "summary": "Run repairFlatAmendments through a one-off script kept with its before/after output under the story's docs folder, first on a copy of this repository, comparing AMD-86197ac660732ceb-1 and -2 before and after (id, proposal, rationale and approval time unchanged, the approver reading as the original name, lifecycle added, legacy stamps gone). This comparison is a manual gate with no automated check: only if it shows just those differences, run the script on this repository and commit the two rewritten files in their own commit. Confirm that approving a BUILD works without the move-aside workaround. Record in the BUILD record only (the ISSUE is already approved) that the writer of the flat shape is unverified with the likely older daemon build, and that the sc4 roll-up narrowing was recorded here instead of amending the epic HLD, citing ISSUE-3c0b242fcabf01e9 and the LLD override.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "The comparison on the copy shows only the expected differences",
+      "After the repair on this repository the two amendments decode as heads and the amendment store reads them as approved by the original approver",
+      "A BUILD approval succeeds without moving any file aside",
+      "The BUILD record names the unverified cause and the sc4 recording decision"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "repair on a copy then on this repository: the two amendments read as approved heads and a BUILD approval needs no move-aside (reported with the before/after output)"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

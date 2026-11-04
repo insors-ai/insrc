@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c3b8602a-f310-4c16-b05f-2358db56c7d3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:38:27.277Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Narrow the roll-up to unreadable heads of the counted kind",
+      "parent": {
+        "entityId": "STORY-3c0b242fcabf01e9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c0b242fcabf01e9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e860365d374e34d5e544f388a699d49dba90eb92095c4f8b248431ededf4c135",
+        "at": "2026-11-04T08:38:27.278Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:38:27.279Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Narrow the roll-up to unreadable heads of the counted kind",
+    "summary": "In countedChildren, throw UnreadableChildError only for unreadable ids whose id kind equals the counted kind (and for counted children whose status cannot be read); ignore unreadable heads of other kinds. Keep the signature and the strict scan. Add the ac1 tests through rollUp, using the inline reader(children, statuses, unreadable) factory of lifecycle-rollup.test.ts.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "An unreadable head of a kind other than the counted kind does not block a Story roll-up",
+      "An unreadable head of the counted kind still blocks the roll-up with UnreadableChildError",
+      "countedChildren keeps its signature and stays unexported"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "lifecycle-rollup.test.ts: an unreadable head of another kind does not block a Story roll-up"
+      },
+      {
+        "level": "unit",
+        "name": "lifecycle-rollup.test.ts: an unreadable head of the counted kind still blocks the roll-up"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

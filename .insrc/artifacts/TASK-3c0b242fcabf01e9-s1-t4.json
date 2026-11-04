@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a8de84b9-1a55-4726-a46c-3ca5283f8225",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:38:27.282Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add repairFlatAmendments",
+      "parent": {
+        "entityId": "STORY-3c0b242fcabf01e9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c0b242fcabf01e9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-3c0b242fcabf01e9-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-3c0b242fcabf01e9-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b7221257e6785b73f6ad05f37f4f04851de79f70b7c44180378390931d4a2160",
+        "at": "2026-11-04T08:38:27.282Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:38:27.283Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add repairFlatAmendments",
+    "summary": "First check that exporting migrateHeads from apply.ts and importing it in amendments.ts, which apply.ts already imports, loads without a load-order failure. Then in amendments.ts add repairFlatAmendments(repo, deps): convert flat amendments with flatToHead through convertAll, write the converted heads, return the converted ids and the conversion problems, then call migrateHeads with a filter made of every AMD head currently in the repository, not only the ones converted in this call. Add the ac2 tests on a converted repo built by adding flat amendments with the flat() and put() pattern of convert-amendments.test.ts and writing the version-2 marker with writeRepoSchema.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "The module import between apply.ts and amendments.ts loads without error",
+      "A flat approved amendment becomes a head the amendment store reads as approved by the original approver",
+      "A flat not-yet-approved amendment becomes a draft head",
+      "A flat amendment that cannot be converted is listed in problems and left flat",
+      "A head converted earlier but not yet migrated is finished by a later call",
+      "A second call on the repaired repository converts and migrates nothing"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver"
+      },
+      {
+        "level": "integration",
+        "name": "convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head"
+      },
+      {
+        "level": "integration",
+        "name": "convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat"
+      },
+      {
+        "level": "integration",
+        "name": "convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated"
+      },
+      {
+        "level": "integration",
+        "name": "convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time"
+      },
+      {
+        "level": "integration",
+        "name": "store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

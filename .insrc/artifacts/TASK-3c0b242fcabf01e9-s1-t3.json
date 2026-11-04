@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-123fad5d-043b-453c-913c-5846d67f0760",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T08:38:27.281Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Export migrateHeads with an optional id filter",
+      "parent": {
+        "entityId": "STORY-3c0b242fcabf01e9-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-3c0b242fcabf01e9-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "29ab158f5acdebf574699623bb753b3b43212bb184b9fda4f826e0bd98ff8675",
+        "at": "2026-11-04T08:38:27.281Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:38:27.282Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Export migrateHeads with an optional id filter",
+    "summary": "Export migrateHeads from apply.ts with an optional trailing set of artifact ids; the full conversion calls it unchanged. Limit its documented unreadable error to a head that has a meta object but no body object. Add a negative test that heads outside the filter are byte-for-byte unchanged and get no new log entries, and a test that the unfiltered call migrates the same heads as before.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "With the filter, heads outside the set are neither read for writing nor changed, and get no new log entries",
+      "Without the filter, the full conversion migrates the same heads as before",
+      "applyConversion's call site is unchanged"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "convert-apply.test.ts: migrateHeads with an id filter leaves heads outside the filter unchanged with no new log entries"
+      },
+      {
+        "level": "integration",
+        "name": "convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -6004,20 +6004,14 @@ test('E202611031bd72813:S001 t5: a FAILED final transition save leaves liveTurn 
   try {
     const out = createSessionOutput({ root, maxBytes: 1, pollMs: 5 });
     const fc = fakeChannel();
-    // a copy-on-read/write wrapper around the in-memory store, mimicking the file store: a FAILED
-    // save leaves the persisted record untouched (the in-memory store mutates in place on get)
-    const base = createInMemoryChatSessionStore();
+    const store = createInMemoryChatSessionStore();
+    // fail exactly the transition save (the one that clears liveTurn): the observer must mutate a
+    // COPY and save that, so the store's cached record keeps liveTurn and the pass is retried
     let failTransition = true;
-    const store: typeof base = {
-      ...base,
-      get: (id) => {
-        const x = base.get(id);
-        return x === undefined ? undefined : structuredClone(x);
-      },
-      save: (x) => {
-        if (failTransition && x.liveTurn === undefined) throw new Error('disk full');
-        base.save(structuredClone(x));
-      },
+    const origSave = store.save.bind(store);
+    store.save = (x) => {
+      if (failTransition && x.liveTurn === undefined) throw new Error('disk full');
+      origSave(x);
     };
     const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
     const host = createChatPanelHost({

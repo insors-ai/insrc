@@ -828,14 +828,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             // release the lifecycle's retention pin for this cursor too (the observer's own pin is
             // released via heldPins above); the refcount makes a double-release a no-op
             out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
-            // ONE atomic write clears liveTurn AND sets the final status together. If it fails,
-            // both stay as they were, so the next observer pass retries — a separate status write
-            // that fails after the liveTurn-clearing save would leave a `working` session with no
-            // liveTurn, which every later pass skips, permanently unreconciled.
-            delete now!.liveTurn;
-            now!.status = (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done';
-            now!.lastActivityAt = Math.max(now!.lastActivityAt ?? 0, Date.now());
-            deps.store.save(now!);
+            // ONE atomic write clears liveTurn AND sets the final status, on a COPY: the store's
+            // get() returns its cached (mutable) record, so mutating it before save would leave the
+            // cache showing no liveTurn even when the write fails — and every later pass skips such
+            // a session, permanently unreconciled. Mutating only the copy means a failed save leaves
+            // both the cache and the disk untouched, so the next pass retries the whole transition.
+            const { liveTurn: _cleared, ...rest } = now!;
+            const next: ChatSession = {
+              ...rest,
+              status: (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done',
+              lastActivityAt: Math.max(now!.lastActivityAt ?? 0, Date.now()),
+            };
+            deps.store.save(next);
             transitionSaved = true;
           } catch { /* best-effort: the next pass retries the whole transition */ }
           if (transitionSaved) postActive();

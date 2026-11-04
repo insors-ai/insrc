@@ -41,6 +41,16 @@ The installed daemon (`~/.insrc/daemon`) ran a21ea79d (s10 complete, pushed). Re
 - **Written links:** `search.doc_relations { entityId, direction: 'out' }` on the sections of `docs/workflow.md` (entities from `search.by_file`) returned `REFERENCES` rows with `evidence: 'extracted'`, at generation 23,173 with 0 stale proposals.
   - "Install" → `docs/daemon.md` (`01b4493f…697`, resolved with `entity.summary`), which the section does link to.
   - The same holds for "insrc workflow framework" (2), "Register the MCP server", "Add the steering block" (2), "Per-output model attribution" and "Can I re-run a workflow after approval?".
+- **State with its reason, live.** For one run I pointed the registered repository `findme` (complete graph) at the cheap tier: `config.write models.byRepo[<findme>].tasks['indexer.docRelations'] = 'cheap'`, then a daemon restart and `repo.reindex`. Its pass recorded the cause, and `repo.stats` on the installed daemon returned:
+
+```json
+"docRelations": { "switch": "not-measured",
+  "extraction": { "state": "unavailable",
+                  "reason": "indexer.docRelations is assigned to tier cheap; this capability runs only on the mid tier",
+                  "examined": 0, "failed": 0, "updatedAt": "2026-11-04T19:29:03.293Z" } }
+```
+
+  The override was then removed (`config.write models.byRepo[<findme>] = null`). The loader checked afterwards: `findme` resolves to tier mid, `gpt-6.1-sol`.
 - **Status before measuring:** `repo.stats` reported `docRelations: { switch: 'not-measured' }`; after measuring, the block above.
   - The cause path (`extraction.state 'unavailable'` with its reason) is covered by the t10 integration test. It was not produced live here, because the provider was available.
 - **The pass on the installed daemon:**

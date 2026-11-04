@@ -54,3 +54,36 @@ Notes:
 - `jetbrains-plugin/__tests__/s10-gradle.test.ts` failed in the sweep and in the 3-at-a-time re-run only while other Gradle bridges were running at the same time. Alone it passes (it also passed the t10 gate).
 - The other files under test — search-filter, search-guard, search-request-contract and repo-completeness — fail at HEAD with the same seeded-daemon boot stall. At pre-s10 they also fail, with the stall or with their own pre-existing assertions.
 - VS Code: `session-lock.test.ts` and `vscode-bundle-catalog.test.ts` failed during the sweep while another session's uncommitted chat edits were in the tree. Both pass when re-run at HEAD. `privacy.test.ts` and `activation.test.ts` fail at pre-s10 too. The detail-renderers source-scan failure (`repoRegisterProviders`) is pre-existing.
+
+## Second full sweep, after the fixes (2026-11-05)
+
+Backend: `npx tsx --test --test-force-exit --test-timeout=180000 'src/**/__tests__/*.test.ts'` at d7b8baa11 (all s10 fixes in). The Gradle bridges were run one at a time afterwards (below), because they fail when run concurrently.
+
+- 7384 tests, 7174 pass, 60 fail, 12 cancelled.
+- All four files this Story broke pass in it: `doc-relations-store`, `handler-runtime`, `run-order` and `indexing-worker`.
+- Every failing file is either one the first sweep already showed to fail without s10 (table above), or one of these 12, each re-run alone:
+
+| File | Alone at HEAD | At pre-s10 e62b581d1 | Cause |
+|---|---|---|---|
+| `src/daemon/db/__tests__/saved-management.test.ts` | pass 16 | — | load only |
+| `src/daemon/db/__tests__/credential-generations.test.ts` | pass 10 | — | load only |
+| `src/daemon/db/__tests__/session-file-matrix.test.ts` | pass 2 | — | load only |
+| `src/daemon/db/__tests__/session-file-resources.test.ts` | pass 2 | — | load only |
+| `src/daemon/steps/__tests__/root-run-memory.test.ts` | pass 1 | — | load only |
+| `src/daemon/steps/__tests__/task-persistence.test.ts` | pass 1 | — | load only |
+| `src/workflow/review-pipeline/__tests__/code-review-material.test.ts` | pass 11 | — | load only |
+| `src/workflow/__tests__/build-review-freshness.test.ts` | pass 9 | — | load only |
+| `src/daemon/db/__tests__/clickhouse-live-probe.test.ts` | fail 1 | fail 1 | needs Docker (OrbStack socket absent) |
+| `src/daemon/steps/__tests__/rpc-diagnostics.test.ts` | fail 1 | fail 1 | pre-existing |
+| `src/shared/__tests__/project-memory-platform-evidence.test.ts` | fail 1 | pass 1 | pins sha256 of `packages/project-memory` sources changed by Epic 17123b6d after e62b581d1 (`store-self-review.test.ts`); no s10 file pinned |
+| `src/shared/__tests__/project-memory-resource-evidence.test.ts` | fail 1 | pass 1 | same: the expected file list names `packages/project-memory` sources (`src/store/lance-store.ts`, `plan.ts`, `reads.ts`) changed by Epic 17123b6d |
+
+### Gradle bridges, one at a time (2026-11-05)
+
+| File | Result |
+|---|---|
+| `jetbrains-plugin/__tests__/b220-s5-gradle.test.ts` | pass 5, fail 0 |
+| `jetbrains-plugin/__tests__/s10-gradle.test.ts` | pass 1, fail 0 |
+| `jetbrains-plugin/__tests__/s7-gradle.test.ts` | pass 11, fail 0 |
+
+Their failures in both sweeps came from running at the same time: concurrent Gradle builds on one project directory. `s10-gradle` is new in this Story, so there is no pre-s10 run of it; it passes alone, and it passed the t10 gate.

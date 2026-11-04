@@ -307,6 +307,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     isAlive: deps.isAlive ?? defaultIsAlive,
     isOpen: () => !disposed,
     logger: log,
+    sessionOutput: deps.sessionOutput, // t5: register live/follow cursors for retention
   });
   // S001 (bugfix): the SINGLE chat mode (Manual / Edit Automatically / Auto). It is now a PERSISTED
   // per-session preference: it tracks the ACTIVE session's stored mode (synced on open/switch/
@@ -686,6 +687,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
             {
+              drain: true, // read the WHOLE segment, past the terminal event — caught-up means drained
               signal: ctl.signal,
               onProgress: (cur) => {
                 st.last = { ...cursor, offset: cur.offset };

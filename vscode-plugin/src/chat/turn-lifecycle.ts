@@ -32,6 +32,11 @@ export interface TurnLifecycleDeps {
   /** Whether the panel is open; a closed panel is told nothing. */
   readonly isOpen: () => boolean;
   readonly logger: ChatPanelLogger;
+  /**
+   * E202611031bd72813:S001 t5: the session-output store, so a live/followed turn's saved cursor is
+   * REGISTERED for retention — a rollover never discards the generation under an unread cursor.
+   */
+  readonly sessionOutput?: import('./session-output.js').SessionOutput | undefined;
 }
 
 /**
@@ -148,6 +153,7 @@ function clearCursor(s: ChatSession, turnId: string): void {
   if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
 }
 
+
 /** A done event carries the provider's native session id: the next turn resumes it. */
 function keepNativeSession(s: ChatSession, ev: TurnEvent): void {
   if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
@@ -157,6 +163,20 @@ const isTerminal = (ev: TurnEvent): ev is TurnEvent & { kind: 'done' | 'error' }
 
 export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   const log = deps.logger;
+  const out = deps.sessionOutput;
+  const readerId = `host-${deps.hostPid}`;
+  const pinLive = (s: ChatSession): void => {
+    if (out !== undefined && s.liveTurn !== undefined) out.registerCursor({ sessionId: s.id, ...s.liveTurn.cursor }, readerId);
+  };
+  const unpinLive = (s: ChatSession, turnId: string): void => {
+    const cur = s.liveTurn?.cursor;
+    if (out !== undefined && cur !== undefined && cur.turnId === turnId) out.unregisterCursor({ sessionId: s.id, ...cur }, readerId);
+  };
+  /** clearCursor + release the retention pin. */
+  const clearCursorPinned = (s: ChatSession, turnId: string): void => {
+    unpinLive(s, turnId);
+    clearCursor(s, turnId);
+  };
   let activeTurnId: string | undefined;
   let activeProvider: ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
@@ -377,6 +397,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           // E202611031bd72813:S001 t5: a new turn invalidates the observer's checkpoint (it is
           // turn-scoped); the observer re-anchors from the fresh liveTurn cursor instead.
           delete s.observerCheckpoint;
+          pinLive(s); // retention: the saved cursor's generation is not discarded under it
           cursor.saveNow();
         }
       };
@@ -387,7 +408,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       let cursorTurnId: string | undefined;
       /** At the turn's terminal event its output has been fully handled: forget its cursor, keep its native session, finish the generator. */
       const endTurn = (ev: TurnEvent, it: AsyncIterator<TurnEvent>): void => {
-        clearCursor(s, ev.turnId);
+        clearCursorPinned(s, ev.turnId);
         keepNativeSession(s, ev);
         finishIterator(it); // the process is left to exit
       };
@@ -430,7 +451,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             // with one): end the turn as an error, so its cursor is not left for a reload to
             // follow and the panel does not stay running.
             const turnId = activeTurnId ?? cursorTurnId ?? 'none';
-            if (cursorTurnId !== undefined) clearCursor(s, cursorTurnId);
+            if (cursorTurnId !== undefined) clearCursorPinned(s, cursorTurnId);
             if (isCurrent(myGen)) {
               const ev: TurnEvent = { kind: 'error', turnId, message: 'the CLI ended without finishing the turn' };
               activeTurnId = turnId;
@@ -504,6 +525,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     if (typeof adapter.resume !== 'function') return;
     s.liveTurn = { ...live, ownerHostPid: deps.hostPid };
     trySave(s);
+    pinLive(s); // the follow cursor is registered too (refcounted with any observer pin)
     const ctl = new AbortController();
     following = { sessionId: s.id, ctl };
     followingSession = s;
@@ -550,7 +572,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             trySave(s); // cursor stays saved for a later follow
             outcome = 'observation-failed';
           } else {
-            clearCursor(s, turnId);
+            clearCursorPinned(s, turnId);
             trySave(s);
             outcome = 'ended';
           }
@@ -629,6 +651,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     followingSession = undefined;
     following = undefined;
     if (fs2?.liveTurn !== undefined) {
+      unpinLive(fs2, fs2.liveTurn.cursor.turnId); // the observer re-pins when it takes the turn over
       fs2.liveTurn = { ...fs2.liveTurn, ownerHostPid: 0 };
       trySave(fs2);
     }

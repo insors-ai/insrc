@@ -126,6 +126,12 @@ export interface ResumeOptions {
   readonly signal?: AbortSignal | undefined;
   /** Hands over the followed turn's process, so Stop can end it. */
   readonly onAttach?: ((proc: TurnProcess) => void) | undefined;
+  /**
+   * E202611031bd72813:S001 t5: keep reading the WHOLE segment past the terminal event (the observer
+   * uses this: 'caught up' means drained, and a request can arrive after the result line). Default
+   * false: resume ends at the first terminal event, as before.
+   */
+  readonly drain?: boolean | undefined;
 }
 
 export interface RunOptions {
@@ -1354,7 +1360,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         }
         for (const ev of events) {
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
-          if (ev.kind === 'done' || ev.kind === 'error') return;
+          // Default: end at the first terminal event. With drain (the observer), keep reading to the
+          // segment's end so nothing after the terminal is abandoned.
+          if ((ev.kind === 'done' || ev.kind === 'error') && opts?.drain !== true) return;
         }
         opts?.onProgress?.(cursor);
         opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });

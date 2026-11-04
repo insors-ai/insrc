@@ -25,7 +25,7 @@
     "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 2,
+    "revision": 3,
     "envelope": {
       "description": "",
       "references": [],
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "847939ecea4c029b9c533ac2e0e042500a107f8112973edc30139fdbb07de119",
-        "at": "2026-11-04T09:26:30.344Z",
+        "number": 3,
+        "contentHash": "3ed76968aee7a6485571a30c35317b48bfd9f15d2991a49ab2c534155b8034bb",
+        "at": "2026-11-04T11:43:47.361Z",
         "by": {
           "id": "codex:controller",
           "kind": "agent",
@@ -353,11 +353,15 @@
             }
           ],
           "preconditions": [
-            "Final consistency is newly reviewed. Every current chunk is exactly fresh or explicitly retained. Known earlier findings, including LOW and incomplete coverage limitations, must be accounted for."
+            "Final consistency is newly reviewed. Every current chunk is exactly fresh or explicitly retained. Known earlier findings, including LOW and incomplete coverage limitations, must be accounted for.",
+            "Retention eligibility is validated when accepting impact and revalidated at consolidation: each referenced effective source chunk, including every backward provenance link, must have status passed or changes_requested and an empty limitations array. An incomplete result is accepted historical feedback but is not reusable verified coverage. Its corresponding current chunk must be selected for fresh review, even if selectors and text are unchanged. A report that is incomplete only because of other chunks does not disqualify a complete source chunk. Do not bypass an incomplete immediately preceding mapped chunk by citing an older passed result. [[c1]] [[c5]] [[c9]]"
           ],
           "postconditions": [
             "No unresolved earlier HIGH/MED disappears by selection, full fallback, rename or omission. Dispositions carry/resolved/superseded name immutable source tuples and evidence; resolving a finding requires fresh selected inspection and final confirmation.",
-            "Optional execution omissions stay advice; mandatory evidence gaps yield incomplete. Reviewer semantics are not replaced by host textual inference."
+            "Optional execution omissions stay advice; mandatory evidence gaps yield incomplete. Reviewer semantics are not replaced by host textual inference.",
+            "Replace the current unconditional results.length === plan.chunks.length check with two explicit branches. Without impactContext, retain the existing all-fresh exact-coverage invariant. With impactContext, define P as all unique chunk IDs in the complete current plan, S as selected substantive IDs plus all consistency IDs, R as retained current chunk IDs, and F as fresh result chunk IDs. Require unique IDs, S intersect R empty, S union R = P, F = S exactly, and fresh results in the selected executionOrder established by nextDesignUnit. Therefore fresh-result count equals selected executionOrder length, not complete plan length. Require one valid retained origin for every R entry; no consistency chunk may be retained. Unknown, duplicate, missing or overlapping coverage rejects consolidation. [[c5]] [[c6]] [[c1]]",
+            "Compute mandatory inventory coverage and effective status/counts from that exact fresh-plus-retained partition and reconciled findings. Do not pad results or report.chunks with copies of retained results: both remain fresh-only, with explicit retained provenance alongside them. Full mode has R empty and S = P, so the same impact branch reduces to the original all-fresh case. [[c5]] [[c1]]",
+            "For plan [keep-A, change-B, keep-C, final], fresh results [change-B, final] plus valid retained origins for keep-A and keep-C complete consolidation. The same fresh results without keep-C provenance reject; a retained change-B overlapping fresh change-B rejects; retained final rejects. A freshly re-reviewed chunk that remains incomplete is accepted feedback but keeps the new report incomplete and cannot become reusable verified coverage in a later attempt. [[c5]] [[c6]]"
           ]
         }
       ]
@@ -366,7 +370,7 @@
       {
         "entity": "DesignImpactAssessment (sc4)",
         "change": "new",
-        "details": "Attempt owns 0..1 accepted sc4 decision, immutable after acceptance. It records baselineAttempt, mode affected_chunks/full, changes, directChunkIds, indirectChunkIds, rationale, optional uncertainReason, chunkMapping, retainedCoverage, carriedFindingIds and consistencyChunkIds exactly as HLD sc4. The complete current plan is accepted atomically with it. Every substantive current chunk is selected or retained, disjointly; all consistency chunks are selected. Mapping may be many-to-many for explanation, but retaining requires an auditable one-to-one equivalent prior substantive chunk with matching selectors/concerns and compatible dependencies. Split, merged, added, removed, unsupported or ambiguous mappings force affected chunks or full fallback. Host validates structure/coverage/claims, reviewer assesses implicit semantics, ownership, constraints, interfaces, diagrams and workflow-specific requirements. Uncertainty promotes to full with retainedCoverage empty and direct+indirect union covering all current substantive chunks. [[c1]] [[c9]] [[c4]] [[c5]]",
+        "details": "Attempt owns 0..1 accepted sc4 decision, immutable after acceptance. It records baselineAttempt, mode affected_chunks/full, changes, directChunkIds, indirectChunkIds, rationale, optional uncertainReason, chunkMapping, retainedCoverage, carriedFindingIds and consistencyChunkIds exactly as HLD sc4. The complete current plan is accepted atomically with it. Every substantive current chunk is selected or retained, disjointly; all consistency chunks are selected. Mapping may be many-to-many for explanation, but retaining requires an auditable one-to-one equivalent prior substantive chunk with matching selectors/concerns and compatible dependencies. Split, merged, added, removed, unsupported or ambiguous mappings force affected chunks or full fallback. Host validates structure/coverage/claims, reviewer assesses implicit semantics, ownership, constraints, interfaces, diagrams and workflow-specific requirements. Uncertainty promotes to full with retainedCoverage empty and direct+indirect union covering all current substantive chunks. [[c1]] [[c9]] [[c4]] [[c5]] Retention eligibility also requires source status passed or changes_requested with no mandatory limitations at every provenance link. An incomplete source, or any source with limitations, requires fresh selection of its mapped current chunk; structural equivalence alone is insufficient. Reject a proposed impact plan that retains ineligible coverage as invalid_output under the existing impact-unit retry policy. Do not silently drop the chunk, mark it complete or auto-alter the accepted selection. [[c5]] [[c9]]",
         "callSites": [
           "src/workflow/review/design-review/contracts.ts",
           "src/workflow/review/design-review/coordinator.ts",
@@ -377,7 +381,7 @@
       {
         "entity": "DesignAttempt impact execution and origins",
         "change": "field-add",
-        "details": "Proposed optional impact metadata and accepted-plan pair, plus immutable execution selection derived from sc4. completedChunks continues to own only newly accepted results in selected plan order; retainedCoverage holds current chunkId -> exactly one {fromAttempt,fromChunkId,justification} link. A source may link to an earlier retained result; validate strictly decreasing attempt numbers, resolve to an actual accepted substantive result and preserve the chain. No forward links, cross-artifact/reviewer links, cycles, missing source or invalidated-source reuse. Fresh attempts own fresh baseline/inventory; start is sequential and explicit. Existing S1/S2 checkpoints without impact are full plans. Only the new review engine understands new optional fields; no legacy executable fallback is introduced. Admission/checkpoint evolution must explicitly allow appending latest.number+1 after a complete terminal report, while still freezing every prior attempt. Keep the separate existing invalidated+user-approved restart_full branch and require that branch to be full with no retained coverage; never relax the S2 mutation rule. Choose the immediately preceding complete report as comparison baseline, not an older convenient passed report; party mismatch forces full review and explicit reconciliation of known findings. [[c3]] [[c4]] [[c3]] [[c4]] [[c6]]",
+        "details": "Proposed optional impact metadata and accepted-plan pair, plus immutable execution selection derived from sc4. completedChunks continues to own only newly accepted results in selected plan order; retainedCoverage holds current chunkId -> exactly one {fromAttempt,fromChunkId,justification} link. A source may link to an earlier retained result; validate strictly decreasing attempt numbers, resolve to an actual accepted substantive result and preserve the chain. No forward links, cross-artifact/reviewer links, cycles, missing source or invalidated-source reuse. Fresh attempts own fresh baseline/inventory; start is sequential and explicit. Existing S1/S2 checkpoints without impact are full plans. Only the new review engine understands new optional fields; no legacy executable fallback is introduced. Admission/checkpoint evolution must explicitly allow appending latest.number+1 after a complete terminal report, while still freezing every prior attempt. Keep the separate existing invalidated+user-approved restart_full branch and require that branch to be full with no retained coverage; never relax the S2 mutation rule. Choose the immediately preceding complete report as comparison baseline, not an older convenient passed report; party mismatch forces full review and explicit reconciliation of known findings. [[c3]] [[c4]] [[c3]] [[c4]] [[c6]] Source resolution checks semantic coverage eligibility in addition to identity/ordering: every linked effective result must be passed/changes_requested with limitations empty, and the immediately preceding mapped chunk cannot be incomplete. Incomplete accepted feedback is preserved historically and its mandatory gaps require current fresh inspection, not retained coverage. [[c5]] [[c9]]",
         "schemaDiff": "DesignAttempt += impact?: DesignImpactAssessment; current.kind += 'impact'; DesignUnitAssignment.kind += 'impact'; DesignRequestSchemas.start.attempt := positive integer; controller phases += 'impact' with {plan,impact}; impact preparation outputs use the same strict bounded schema on both routes.; DesignResultSchema += findingDecisions?: readonly DesignFindingDecision[] (allowed only on fresh final-consistency output; required for impact attempts with baseline effective findings). Validated final output persists these decisions in completedChunks and feeds impactContext.findingDecisions into consolidation; no separate mutable decision ledger.",
         "callSites": [
           "src/workflow/review/design-review/contracts.ts",
@@ -400,7 +404,7 @@
       {
         "entity": "DesignReviewConsolidated provenance",
         "change": "field-add",
-        "details": "Add optional sc4 scope/provenance and finding dispositions; initial all-fresh reports preserve existing fields. report.chunks contains fresh results only on selective attempts and is explicitly accompanied by retainedCoverage references and effective finding/status/coverage summaries. Effective view must cover every current plan chunk and inventory unit exactly as fresh or retained; fresh consistency is mandatory. Progress reports reviewed/retained/selected totals separately, never claims reused chunks were newly inspected. Bounded progress/assignment responses reference checkpoint paths for full history. Checkpoints are the only S3 store; S4 will consume these fields for permanent publication, lifecycle approval and cleanup. [[c3]] [[c5]] [[c6]]",
+        "details": "Add optional sc4 scope/provenance and finding dispositions; initial all-fresh reports preserve existing fields. report.chunks contains fresh results only on selective attempts and is explicitly accompanied by retainedCoverage references and effective finding/status/coverage summaries. Effective view must cover every current plan chunk and inventory unit exactly as fresh or retained; fresh consistency is mandatory. Progress reports reviewed/retained/selected totals separately, never claims reused chunks were newly inspected. Bounded progress/assignment responses reference checkpoint paths for full history. Checkpoints are the only S3 store; S4 will consume these fields for permanent publication, lifecycle approval and cleanup. [[c3]] [[c5]] [[c6]] The consolidation invariant changes explicitly for selective attempts: complete plan IDs equal the disjoint union of fresh selected result IDs and eligible retained current IDs. No assumption results.length equals plan.chunks.length remains in the selective branch. Without impact, preserve the original all-fresh check. Per-inventory-unit coverage is then validated over this complete partition, while report.chunks stays fresh-only. [[c5]] [[c6]]",
         "callSites": [
           "src/workflow/review/design-review/results.ts",
           "src/workflow/review/design-review/progress.ts",
@@ -450,7 +454,7 @@
         },
         {
           "scenario": "Impact output omits changed units or proposes invalid reuse",
-          "detection": "Validate complete current plan, disjoint selected/retained partition, current inventory coverage, source tuples, same reviewer/artifact, mapping equivalence and fresh consistency selection.",
+          "detection": "Validate complete current plan, disjoint selected/retained partition, current inventory coverage, source tuples, same reviewer/artifact, mapping equivalence and fresh consistency selection. Check each retained source and every provenance link for passed/changes_requested status and empty limitations; reject reuse of incomplete coverage even when structural mapping matches.",
           "response": "Reject malformed output as invalid_output in the impact unit and apply sc3 retry/pause policy. Do not silently infer a replacement semantic impact decision.",
           "userImpact": "Explicit technical failure instead of false complete selective review.",
           "recoverable": true
@@ -581,7 +585,9 @@
             "Fresh final consistency must account for all prior effective findings; carry by default, evidence-backed resolution and supersession require selected inspection, including removed sections.",
             "Atomic accepted plan+impact and prior attempt immutability; failed saves preserve last accepted bytes and dispatch zero further work.",
             "Interleaved retention: full plan [keep-A, change-B, keep-C, final], completed fresh [change-B] selects final; out-of-order/duplicate fresh results reject, retained dependencies resolve by ID and receive zero dispatches. [[c6]]",
-            "Final findingDecisions strict union round-trip, missing/foreign/duplicate origins, branch-specific required fields, nonfinal rejection, unresolved carry on missing evidence, and valid resolved/superseded evidence references. [[c5]] [[c9]]"
+            "Final findingDecisions strict union round-trip, missing/foreign/duplicate origins, branch-specific required fields, nonfinal rejection, unresolved carry on missing evidence, and valid resolved/superseded evidence references. [[c5]] [[c9]]",
+            "Selective consolidation exact partition: [keep-A, change-B, keep-C, final] accepts fresh [change-B, final] with retained A/C, and rejects absent C, duplicate/unknown origins, fresh/retained overlap or retained final; report.chunks remains fresh-only. Full mode and no-impact calls retain all-fresh behavior. [[c5]] [[c6]]",
+            "Incomplete retention rejection: a structurally identical prior chunk with status incomplete or nonempty limitations must be selected afresh on native and controller routes; reject bypass via an older passed source or an incomplete provenance link. Complete sibling chunks in an overall-incomplete prior report remain eligible. If fresh review still cannot verify mandatory coverage, keep the new report incomplete. [[c5]] [[c9]]"
           ],
           "fixturesNeeded": [
             "Many-to-many changed-plan mapping and equivalent rename fixtures",
@@ -639,7 +645,8 @@
         {
           "criterionId": "ac4",
           "provingTests": [
-            "Immutable retained origins, multi-attempt chains, carried blockers, removed sections, duplicate local IDs, disposition evidence and mandatory-coverage limits consolidate truthfully."
+            "Immutable retained origins, multi-attempt chains, carried blockers, removed sections, duplicate local IDs, disposition evidence and mandatory-coverage limits consolidate truthfully.",
+            "Exact fresh/retained coverage partition at consolidation and mandatory fresh reselection of incomplete source chunks, including chained/older-source bypass attempts."
           ]
         },
         {

@@ -1247,9 +1247,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
   // ISSUE-7fa297efd4bd1c59: the presented strip (markup + CSS + rvPresented renderer) in the shell.
-  chars:  136357,
-  bytes:  136421,
-  sha256: '7e42432980d18eb93cb31192a3253f1ed8d235b417398c8f47e98788f15eb080',
+  chars:  136787,
+  bytes:  136851,
+  sha256: '848bdcc38400a8cfa003236d51178e64d76297d7d2719e7996a2f4db3a144098',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1862,10 +1862,13 @@ interface WebviewRun {
   controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined; presentKey?: string | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
-  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' });
+  // E202611031bd72813:S001 t9: a presentKey panel embeds its key in the shell (insrcPanelKey)
+  if (opts.presentKey !== undefined) host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: opts.presentKey });
+  else host.open();
   const html = fc.html();
   let script = html.slice(html.indexOf('<script nonce="WV">') + '<script nonce="WV">'.length, html.lastIndexOf('</script>'));
   // Drop the vendored marked bundle (a stub is injected as a global instead) but
@@ -7394,4 +7397,44 @@ test('E202611031bd72813:S001 t8: each presentKey opens its OWN editor panel (tit
   await tick();
   assert.equal(made.length, 4, 'a presentKey-less openArtifact reuses the shared panel (no new panel)');
   host.dispose();
+});
+
+test('E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:artifactId — two panels showing the same artifact keep isolated drafts, and A->B->A within one panel restores A', () => {
+  const DOC_A = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  const DOC_B = { ...INLINE_DOC, artifactId: 'LLD-b' };
+  // panel #1 (presentKey LLD-a#1): draft on LLD-a
+  const p1 = runWebview({ textNodes: true, presentKey: 'LLD-a#1' });
+  p1.deliver({ ...DOC_A, reveal: true });
+  draftOn(p1, SUMMARY_P, 'cut to 8 lines', 'panel one note');
+  p1.bar.field.value = 'field one';
+  fire(p1.bar.field, 'input');
+  const state1 = p1.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state1.rv['LLD-a#1:LLD-a'], 'draft saved under the composite key presentKey:artifactId');
+  assert.equal(state1.rv['LLD-a'], undefined, 'not under the bare artifact id');
+
+  // panel #2 (presentKey LLD-a#2), SAME artifact, SAME saved state: isolated drafts
+  const p2 = runWebview({ textNodes: true, presentKey: 'LLD-a#2', saved: p1.saved });
+  p2.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(p2.body).length, 0, 'panel #2 does not inherit panel #1 drafts');
+  assert.equal(p2.bar.field.value, '', 'nor its field');
+  draftOn(p2, SUMMARY_P, 'cut to 8 lines', 'panel two note');
+  p2.bar.field.value = 'field two';
+  fire(p2.bar.field, 'input');
+  const state2 = p2.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state2.rv['LLD-a#1:LLD-a'] && state2.rv['LLD-a#2:LLD-a'], 'both panels keep their own drafts side by side');
+
+  // within panel #2: A -> B -> A restores A's drafts and field
+  p2.deliver({ ...DOC_B, reveal: true });
+  assert.equal(marksIn(p2.body).length, 0, 'B has none');
+  p2.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(p2.body).length, 1, 'back on A: its draft is restored in this panel');
+  assert.equal(p2.bar.field.value, 'field two', 'and its field');
+
+  // the legacy panel (no presentKey) keeps the bare artifactId key
+  const legacy = runWebview({ textNodes: true, saved: p2.saved });
+  legacy.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(legacy.body).length, 0, 'legacy panel does not see either presentKey panel\'s drafts');
+  draftOn(legacy, SUMMARY_P, 'cut to 8 lines', 'legacy note');
+  const state3 = legacy.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state3.rv['LLD-a'], 'legacy key is the bare artifactId, unchanged');
 });

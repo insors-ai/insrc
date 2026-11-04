@@ -1772,9 +1772,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     post({ type: 'docs-companion', artifactId, relPath, ...(html !== undefined ? { html } : {}) });
   }
 
-  const renderShell = (): string => {
+  const renderShell = (panel?: { readonly presentKey?: string | undefined }): string => {
     const nonce = genNonce();
     shellNonce = nonce;
+    // E202611031bd72813:S001 t9: the panel's own presentKey, embedded once in its shell — the
+    // persisted draft state is keyed by `presentKey:artifactId` (composite), so two panels showing
+    // the same artifact keep isolated drafts. The legacy panel has no key (drafts key by artifactId).
+    const panelKey = panel?.presentKey !== undefined ? `var insrcPanelKey=${JSON.stringify(panel.presentKey)};` : '';
     // Story E202610138d4b90c9:S001 — the pane's own style. Every colour, font and border is
     // a VS Code theme variable, so the pane follows whichever theme is active and has no
     // switch of its own. The `--it-*` tokens the body, functional-requirement, diagram and
@@ -2088,6 +2092,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
       `var items=[];var shown=null;var busy=false;var sent=0;` +
+      panelKey +
       // docs: the documents of the artifact shown. tab: the repo-relative path of the HTML
       // document on show, or '' for the markdown.
       `var docs=[];var tab='';` +
@@ -2509,7 +2514,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (openPostTarget === ch) openPostTarget = undefined;
     });
     ch.onMessage(handleMessage);
-    ch.setHtml(renderShell());
+    ch.setHtml(renderShell({ presentKey }));
     void refreshPending();
     startPoll();
     return ch;
@@ -2522,11 +2527,12 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     openArtifact(target): void {
       if (target.presentKey !== undefined) {
         // Each insrc_present opens its OWN panel (keyed by presentKey), never replacing another.
+        // The panel is created synchronously; only the content load is serialized through the queue.
         const key = target.presentKey;
+        const ch = showPanel(key, target.quiet === true);
+        if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
         panelQueue = panelQueue.then(() => {
-          const ch = showPanel(key, target.quiet === true);
           openPostTarget = ch;
-          if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
           return openArtifactFrom(target).finally(() => {
             if (openPostTarget === ch) openPostTarget = undefined;
           });

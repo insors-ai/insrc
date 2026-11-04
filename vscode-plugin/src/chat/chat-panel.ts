@@ -1077,6 +1077,18 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
 
   // E202611031bd72813:S001 t6: mark one persisted request resolved with its outcome (never deleted mid-flight).
+  /** t6: make sure an unresolved persisted record exists for requestId, so a host reload while
+   * its follow-up is pending still has a restorable request (card re-posted, re-decidable). */
+  const ensurePersistedUnresolved = (s: ChatSession, requestId: string): void => {
+    if ((s.pendingRequests ?? []).some((r) => r.requestId === requestId)) return;
+    s.pendingRequests = [...(s.pendingRequests ?? []), { requestId, kind: 'approval', turnId: s.liveTurn?.cursor.turnId ?? 'unknown', resolved: false }];
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: request ${requestId} not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const markPersistedRequest = (s: ChatSession | undefined, requestId: string, resolved: boolean, outcome?: string): void => {
     if (s === undefined) return;
     const list = s.pendingRequests ?? [];
@@ -1421,6 +1433,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // no-op is never recorded as a success.
   const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession): void => {
     const s = target ?? session;
+    if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId); // survive a reload while the follow-up waits
     const rec = s?.pendingRequests?.find((r) => r.requestId === requestId);
     const what = rec?.command ?? rec?.toolName ?? rec?.title ?? 'the requested action';
     const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
@@ -1519,6 +1532,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // session by the failed turn's id, not the currently selected chat.
       const s = deps.store.list().map((sum) => deps.store.get(sum.id)).find((x) => x?.liveTurn?.cursor.turnId === turnId) ?? session;
       if (s === undefined) return;
+      if (deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, failedRequestId);
       markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
       reevaluateChatStatus(s);
       if (!followUpsStarted.has(failedRequestId)) {

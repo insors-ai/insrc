@@ -40115,6 +40115,14 @@
     ],
     [
      "storage-call",
+     "readResetCounterInTxn"
+    ],
+    [
+     "storage-call",
+     "readResetCounterInTxn"
+    ],
+    [
+     "storage-call",
      "s.entityIdByString.get"
     ],
     [
@@ -40182,9 +40190,9 @@
      "writeDocRelationRowInTxn"
     ]
    ],
-   "siteCount": 39,
-   "sitesDigest": "ddef6236ce24c066943dbeaeec14da690cff0052b20ed9369516124351901000",
-   "sourceDigest": "5a4d756ca521e42844a163a11a07613ca9cfb2ce7d01cbf95e1adfa4bce4841e",
+   "siteCount": 41,
+   "sitesDigest": "dd2715247c422fc76c7613cd05a855896fdcf6fca442a087fa1567f4bef4da91",
+   "sourceDigest": "0299843972f90b97e1fc78e63cf016d037bb4e4e0288135c0885c6f94e4cbe9b",
    "boundaries": [
     "diagnostic",
     "filesystem-read",

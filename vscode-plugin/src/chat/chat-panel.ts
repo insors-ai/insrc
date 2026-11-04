@@ -23,7 +23,7 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, type AttachmentRef, type AttachmentStore } from './attachment-store.js';
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
-import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
+import { classifyPermissionDenial, type ProviderRegistry, type ProviderId, type StreamAdapter } from './cli-adapter.js';
 import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
 import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
@@ -1436,8 +1436,28 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
   let pendingFollowUp: { readonly decisions: readonly { readonly requestId: string; readonly outcome: string }[] } | undefined;
 
+  /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
+  const deliveryWired = new WeakSet<object>();
+  const wireDeliveryFailure = (ad: StreamAdapter): void => {
+    if (deliveryWired.has(ad) || ad.onDeliveryFailed === undefined) return;
+    deliveryWired.add(ad);
+    ad.onDeliveryFailed((_turnId, failedRequestId, failedDecision) => {
+      // the stdin write failed AFTER decide() reported delivered — correct the persisted outcome
+      // and answer the request with the follow-up run instead of leaving it approved
+      const s = session;
+      if (s === undefined) return;
+      markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
+      reevaluateChatStatus(s);
+      if (!followUpsStarted.has(failedRequestId)) {
+        followUpsStarted.add(failedRequestId);
+        deliverDecisionAsFollowUp(failedRequestId, failedDecision);
+      }
+    });
+  };
+
   const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
     const live = turns.live;
+    if (live !== undefined) wireDeliveryFailure(deps.providers.get(live.provider));
     let undelivered = false; // a live turn whose decide() reported dead stdin (or a dead adapter)
     if (live !== undefined) {
       try {

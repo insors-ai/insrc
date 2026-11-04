@@ -187,6 +187,9 @@ export interface StreamAdapter {
   decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { readonly delivered: boolean };
   /** E202611031bd72813:S001 t6: re-register a restored request (reattach/reload) so decide() can answer it. */
   registerPending?(turnId: string, requestId: string): void;
+  /** E202611031bd72813:S001 t6: subscribe to ASYNC write failures of a delivered decision — the
+   * caller corrects the recorded outcome (delivery-failed) and can fall back to a follow-up run. */
+  onDeliveryFailed?(cb: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void): void;
   /** Static capabilities of this provider (e.g. whether native session resume is supported). */
   readonly capabilities: { readonly resume: boolean };
 }
@@ -1084,6 +1087,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
   let outputFallbackLogged = false;
   const live = new Map<string, SpawnedProcess>();
   // S004: outstanding permission requests per live turn (the a2 pending-request registry).
+  // t6: listeners notified when a decision's stdin write fails ASYNChronously (after decide()
+  // already returned delivered:true) so the host can correct the outcome and fall back
+  const deliveryFailedCbs = new Set<(turnId: string, requestId: string, decision: 'approve' | 'deny') => void>();
+
   // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
   const pendingByTurn = new Map<string, Set<string>>();
   let turnSeq = 0;
@@ -1285,10 +1292,24 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     let written = false;
     try {
       written = proc.write(mapper.formatDecision(requestId, decision), (err) => {
-        // async write failure: the CLI never got the decision — re-register the request so a
-        // later decide (or the follow-up fallback) can still answer this requestId
-        void err;
-        pendingByTurn.get(turnId)?.add(requestId);
+        if (err !== null && err !== undefined) {
+          // ASYNC write failure: the CLI never got the decision. Re-register the request (the
+          // entry was consumed synchronously below) so a later decide stays possible, and notify
+          // the host so the recorded outcome is corrected to delivery-failed and the follow-up
+          // fallback answers the request instead of leaving it approved.
+          log.warn(`[chat:${mapper.id}] permission decision for ${requestId} failed asynchronously: ${err instanceof Error ? err.message : String(err)}`);
+          let set2 = pendingByTurn.get(turnId);
+          if (set2 === undefined) {
+            set2 = new Set();
+            pendingByTurn.set(turnId, set2);
+          }
+          set2.add(requestId);
+          for (const cb of deliveryFailedCbs) {
+            try {
+              cb(turnId, requestId, decision);
+            } catch { /* a failing listener must not break the stream loop */ }
+          }
+        }
       });
     } catch {
       written = false;
@@ -1297,11 +1318,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (write failed)`);
       return { delivered: false };
     }
-    // Consume only on success, so a duplicate/late decide is a guaranteed no-op (at most one
-    // control response per requestId).
+    // Consume on write acceptance, so a duplicate/late decide is a guaranteed no-op (at most one
+    // control response per requestId); an async failure re-registers + notifies (see callback).
     set.delete(requestId);
     if (set.size === 0) pendingByTurn.delete(turnId);
     return { delivered: true };
+  }
+
+  function onDeliveryFailed(cb: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void): void {
+    deliveryFailedCbs.add(cb);
   }
 
   function registerPending(turnId: string, requestId: string): void {
@@ -1413,7 +1438,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(verifiedDead ? {} : { observationFailure: true }) };
   }
 
-  return { run, resume, cancel, decide, registerPending, capabilities: { resume: mapper.resume } };
+  return { run, resume, cancel, decide, registerPending, onDeliveryFailed, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {

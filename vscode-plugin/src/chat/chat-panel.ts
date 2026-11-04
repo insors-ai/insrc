@@ -1122,11 +1122,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         ...(outcome !== undefined ? { outcome } : {}),
       });
     }
-    if (!changed && approvals.snapshot().waiting.length === 0 && pendingSelections.size === 0) return; // nothing waiting: leave the stored record byte-identical
+    const snap0 = approvals.snapshot();
+    if (!changed && snap0.waiting.length === 0 && snap0.batches.length === 0 && snap0.ended.length === 0 && snap0.grants.length === 0 && pendingSelections.size === 0) return; // completely empty: leave the stored record byte-identical
     s.pendingRequests = existing;
     // the FULL queue state (waiting, batches, ended turns, grant chain) — not just waiting — so a
     // restore can rebuild the queue exactly, batch decisions and grants included
-    s.queueSnapshot = approvals.snapshot();
+    s.queueSnapshot = snap0;
     try {
       deps.store.save(s);
     } catch (err) {
@@ -1142,12 +1143,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let restored = 0;
     // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
     const snap = s.queueSnapshot;
-    if (snap !== undefined && Array.isArray(snap.waiting)) approvals.restore(snap);
+    if (snap !== undefined && Array.isArray(snap.waiting)) {
+      // revive only requests whose persisted record is still unresolved — decisions update
+      // pendingRequests but not the snapshot, so an unfiltered restore could revive resolved ones
+      const unresolved = new Set((s.pendingRequests ?? []).filter((r) => !r.resolved).map((r) => r.requestId));
+      approvals.restore({ ...snap, waiting: snap.waiting.filter((w) => unresolved.has(w.requestId)) });
+    }
     for (const r of s.pendingRequests ?? []) {
       if (r.resolved) continue;
       restored += 1;
       if (r.kind === 'approval') {
-        if (snap !== undefined && Array.isArray(snap.waiting)) {
+        if (snap !== undefined && Array.isArray(snap.waiting) && snap.waiting.some((w) => w.requestId === r.requestId)) {
           // already rebuilt from the snapshot — only re-register a followed turn's request with the adapter,
           // and end the turn of a non-in-turn one so its restored batch can complete on decision
           const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
@@ -1353,18 +1359,25 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // events rather than rejecting, so the start is confirmed via busy state in a microtask, with the
     // promise rejection as a backstop for real throws.
     const decisions = batch.decisions;
+    // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
+    // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
+    pendingFollowUp = { decisions: decisions.map((d) => ({ requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied' })) };
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
-    const markBatch = (outcome: (d: (typeof decisions)[number]) => string): void => {
-      for (const d of decisions) markPersistedRequest(session, d.request.requestId, true, outcome(d));
-    };
-    queueMicrotask(() => {
-      if (!turns.busy() && startingTurns === 0) markBatch(() => 'delivery-failed');
-      else markBatch((d) => (d.decision === 'approve' ? 'approved' : 'denied'));
-    });
-    void p.catch((err: unknown) => {
-      log.warn(`[chat] batch follow-up for turn ${batch.turnId} failed to start: ${err instanceof Error ? err.message : String(err)}`);
-      markBatch(() => 'delivery-failed');
-    });
+    void p.then(
+      () => {
+        if (pendingFollowUp !== undefined && pendingFollowUp.decisions.some((d) => decisions.some((x) => x.request.requestId === d.requestId))) {
+          pendingFollowUp = undefined;
+          for (const d of decisions) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed');
+        }
+      },
+      (err: unknown) => {
+        log.warn(`[chat] batch follow-up for turn ${batch.turnId} failed: ${err instanceof Error ? err.message : String(err)}`);
+        if (pendingFollowUp !== undefined && pendingFollowUp.decisions.some((d) => decisions.some((x) => x.request.requestId === d.requestId))) {
+          pendingFollowUp = undefined;
+          for (const d of decisions) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed');
+        }
+      },
+    );
   };
 
   // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
@@ -1383,34 +1396,44 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let started = false;
     if (s !== undefined) {
       try {
-        // NOT fire-and-forget: startup failures must still record delivery-failed. runTurn reports
-        // adapter/lock failures as error events rather than rejecting, so after the call we check
-        // whether a turn actually began; the promise rejection is a backstop for real throws.
+        // The outcome is marked only when the follow-up's CLI actually SPAINS (the run sink's
+        // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
+        // no session, adapter/lock failure reported as an error event — the request is marked
+        // delivery-failed. A silent no-op is never recorded as approved.
+        pendingFollowUp = { decisions: [{ requestId, outcome: decision === 'approve' ? 'approved' : 'denied' }] };
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
         started = true;
-        queueMicrotask(() => {
-          if (!started) return;
-          if (!turns.busy() && startingTurns === 0) {
-            // the follow-up never started (empty prompt, no session, dropped chain): not delivered
-            markPersistedRequest(s, requestId, true, 'delivery-failed');
-            reevaluateChatStatus(s);
-          }
-        });
-        void p.catch((err: unknown) => {
-          log.warn(`[chat] follow-up for decision ${requestId} failed to start: ${err instanceof Error ? err.message : String(err)}`);
-          markPersistedRequest(s, requestId, true, 'delivery-failed');
-          reevaluateChatStatus(s);
-        });
+        void p.then(
+          () => {
+            if (pendingFollowUp !== undefined && pendingFollowUp.decisions.some((d) => d.requestId === requestId)) {
+              pendingFollowUp = undefined;
+              markPersistedRequest(s, requestId, true, 'delivery-failed');
+              reevaluateChatStatus(s);
+            }
+          },
+          (err: unknown) => {
+            log.warn(`[chat] follow-up for decision ${requestId} failed: ${err instanceof Error ? err.message : String(err)}`);
+            if (pendingFollowUp !== undefined && pendingFollowUp.decisions.some((d) => d.requestId === requestId)) {
+              pendingFollowUp = undefined;
+              markPersistedRequest(s, requestId, true, 'delivery-failed');
+              reevaluateChatStatus(s);
+            }
+          },
+        );
       } catch (err) {
+        pendingFollowUp = undefined;
         log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    markPersistedRequest(s, requestId, true, started ? (decision === 'approve' ? 'approved' : 'denied') : 'delivery-failed');
+    if (!started) markPersistedRequest(s, requestId, true, 'delivery-failed');
     if (s !== undefined) reevaluateChatStatus(s);
   };
 
   /** Decisions already sent to a follow-up run from this host — a follow-up starts at most once. */
   const followUpsStarted = new Set<string>();
+  /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
+   * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
+  let pendingFollowUp: { readonly decisions: readonly { readonly requestId: string; readonly outcome: string }[] } | undefined;
 
   const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
     const live = turns.live;
@@ -2338,6 +2361,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;
     const sink: TurnSink = {
+      onSpawn: (cli) => {
+        // a pending follow-up run actually spawned: its decisions were delivered
+        if (pendingFollowUp !== undefined) {
+          for (const d of pendingFollowUp.decisions) markPersistedRequest(s, d.requestId, true, d.outcome);
+          pendingFollowUp = undefined;
+        }
+        if (q !== undefined) {
+          q.spawned = true;
+          q.lastCli = cli;
+          try {
+            q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
+          } catch (err) {
+            log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      },
       onWaiting: () => post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } }),
       // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn), so the
       // diff + revert are computed against the true pre-turn content (k8 observer).
@@ -2360,6 +2399,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         dt = active ? openDiffTurn(s) : undefined;
       },
       onEvent: (ev) => {
+        // a pending follow-up run produced an event: it started, so its decisions were delivered
+        // (adapters that never call onSpawn are covered here; onSpawn covers the spawn-only case)
+        if (pendingFollowUp !== undefined) {
+          for (const d of pendingFollowUp.decisions) markPersistedRequest(s, d.requestId, true, d.outcome);
+          pendingFollowUp = undefined;
+        }
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
         presentDeclared(shown, ev, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
@@ -2416,19 +2461,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             .catch((err: unknown) => warnGovernor('settle', err));
         }
       },
-      ...(q !== undefined
-        ? {
-            onSpawn: (cli: SpawnedCli): void => {
-              q.spawned = true;
-              q.lastCli = cli;
-              try {
-                q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
-              } catch (err) {
-                log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
-              }
-            },
-          }
-        : {}),
       onTerminal: (ev) => {
         if (q !== undefined) {
           q.terminal = ev.kind;

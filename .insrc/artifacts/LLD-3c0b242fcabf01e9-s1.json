@@ -1,0 +1,557 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793778200313-5oe9gw",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T07:46:06.238Z",
+    "epicCreatedAt": "2026-11-04T05:59:20.122Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 163062,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "3c0b242fcabf01e9",
+    "epicSlug": "stop-flat-amendment-heads-from-blocking",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793778200313-5oe9gw",
+    "hldEffectiveHash": "6a47f9e368d6ce90b4edc337d285b9c8cddd73253e6bd1da156223593685232e",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "8b85226d6c858b985d6d6bfe2c2b6db3f96293b09c8cef36322da551edd550ae",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T08:29:00.283Z",
+        "override": {
+          "reason": "User-approved override (option 1), 2026-11-04. Design review took three rounds: r1 and r2 asked for changes (r1 3 HIGH/6 MED/1 LOW, r2 4 HIGH/6 MED/4 LOW) and both were answered by revising the LLD; r3 ended incomplete with 0 HIGH, 4 MED, 6 LOW and its framing chunk returned placeholder text, so that chunk was not reviewed. The r3 findings are carried into the PLAN as explicit tasks and tests: repairFlatAmendments passes migrateHeads an only set of every AMD head, not just those converted in the call; a test that heads outside the filter are unchanged byte for byte with no new log entries; amendment tests build a converted repo with flat amendments added through the flat()/put() pattern of convert-amendments.test.ts; the approval actor id is derived with the existing personOf helper in src/workflow/amendments/store.ts; the migrateHeads error wording is limited to a head with a meta object but no body; the ChildStatusReader fake named in lifecycle-rollup.test.ts is the one the ac1 tests use; the step 3 to step 4 gate is a manual runbook step; the module import between apply.ts and amendments.ts is checked at build."
+        }
+      }
+    },
+    "rangeBase": "fe7c2888979b3d4a2506d7a3fd8ac9e1c2770a93"
+  },
+  "body": {
+    "summary": {
+      "prose": "Completion stops failing because of an unrelated unreadable head: the roll-up counts unreadable heads only of the kind it is counting. The two old-shape amendment records are repaired by a new, tested repair function that converts them and gives them their lifecycle, so they read as approved with the original approver's name. The repair works on a repository that is already converted, which the full conversion cannot. The roll-up is the sc4 lifecycle contract of the approved epic one-common-model-every-artifact and the conversion code belongs to that epic's s9; this Story keeps the sc4 signature and changes only which unreadable heads block.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Stop flat amendment heads from blocking every completion roll-up"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "countedChildren",
+          "signature": "async function countedChildren(id: string, kind: 'TASK' | 'STORY', reader: ChildStatusReader): Promise<Status[]>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "The unit being completed.",
+              "optional": false
+            },
+            {
+              "name": "kind",
+              "type": "'TASK' | 'STORY'",
+              "purpose": "The child kind that counts towards the unit's completion.",
+              "optional": false
+            },
+            {
+              "name": "reader",
+              "type": "ChildStatusReader",
+              "purpose": "Lists the unit's children and unreadable heads, and reads child statuses.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<Status[]>",
+            "meaning": "Statuses of the counted children, excluding withdrawn and superseded."
+          },
+          "errors": [
+            {
+              "type": "UnreadableChildError",
+              "condition": "An unreadable head whose id kind is the counted kind, or a counted child whose status cannot be read."
+            }
+          ],
+          "preconditions": [
+            "Module-private; reached through the exported rollUp(id, reader, evidence)",
+            "reader.childrenOfStrict(id) returns the unit's children and every unreadable head id in the artifacts folder"
+          ],
+          "postconditions": [
+            "An unreadable head whose id kind differs from the counted kind never makes the call throw",
+            "An unreadable head of the counted kind still makes the call throw, as before",
+            "Its signature is unchanged"
+          ]
+        },
+        {
+          "name": "migrateHeads",
+          "signature": "export async function migrateHeads(repo: string, deps: ConversionDeps, seams: MigratedHeadSeams | undefined, only?: ReadonlySet<string>): Promise<number>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ConversionDeps",
+              "purpose": "History, clock and actor for the migrated entries.",
+              "optional": false
+            },
+            {
+              "name": "seams",
+              "type": "MigratedHeadSeams | undefined",
+              "purpose": "Test seam between the log append and the head write.",
+              "optional": false
+            },
+            {
+              "name": "only",
+              "type": "ReadonlySet<string>",
+              "purpose": "When given, only heads with these artifact ids are examined.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<number>",
+            "meaning": "How many heads were written."
+          },
+          "errors": [
+            {
+              "type": "ConversionUnreadable",
+              "condition": "A head examined has no meta and body objects."
+            },
+            {
+              "type": "ConversionIncomplete",
+              "condition": "writeMigratedHead refuses because the migration would change the stored revision, status or approval."
+            }
+          ],
+          "preconditions": [
+            "The full conversion passes no filter and behaves exactly as before"
+          ],
+          "postconditions": [
+            "Without `only`, every head with no lifecycle or with legacy fields is migrated as before",
+            "With `only`, heads outside the set are not read or written"
+          ]
+        },
+        {
+          "name": "backfillHead",
+          "signature": "export function backfillHead(input: BackfillInput): BackfillResult",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "BackfillInput",
+              "purpose": "The raw head, whether it has a log, the clock and the migration actor.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "BackfillResult",
+            "meaning": "The converted head with its lifecycle, the legacy fields it removed and the log entries to append."
+          },
+          "errors": [
+            {
+              "type": "ConversionUnreadable",
+              "condition": "The head has no meta and body objects."
+            }
+          ],
+          "preconditions": [],
+          "postconditions": [
+            "When the head's body.approvedBy is a non-empty string and the head is approved, lifecycle.approval.by is a person actor named by that string instead of the fixed legacy actor",
+            "Every head without a string body.approvedBy gets exactly the lifecycle it got before",
+            "The amendment store therefore reads the original approver's name"
+          ]
+        },
+        {
+          "name": "repairFlatAmendments",
+          "signature": "export async function repairFlatAmendments(repo: string, deps: ConversionDeps): Promise<{ converted: string[]; problems: ConversionProblem[] }>",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path; any schema version.",
+              "optional": false
+            },
+            {
+              "name": "deps",
+              "type": "ConversionDeps",
+              "purpose": "History, clock and actor used by the lifecycle migration.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<{ converted: string[]; problems: ConversionProblem[] }>",
+            "meaning": "Ids of the flat amendments written as heads in this call, and the flat amendments that could not be converted."
+          },
+          "errors": [
+            {
+              "type": "ConversionUnreadable",
+              "condition": "An amendment head cannot be read for the lifecycle migration."
+            },
+            {
+              "type": "ConversionIncomplete",
+              "condition": "The lifecycle migration of an amendment head is refused."
+            }
+          ],
+          "preconditions": [
+            "None on the content of the flat records: one that cannot be converted is returned in problems"
+          ],
+          "postconditions": [
+            "Every amendment head that lacks a lifecycle or carries legacy fields, converted in this call or earlier, ends with a lifecycle and none of the legacy stamps",
+            "An approved amendment's lifecycle keeps its original approval time and the approver's name",
+            "A flat amendment that cannot be converted is left untouched and listed in problems",
+            "Running it again converts and migrates nothing"
+          ]
+        },
+        {
+          "name": "applyAmendments",
+          "signature": "export function applyAmendments(repo: string): number",
+          "parameters": [
+            {
+              "name": "repo",
+              "type": "string",
+              "purpose": "Absolute repo path whose flat amendment heads are converted.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "number",
+            "meaning": "How many flat amendments were written as heads."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Unchanged by this Story; it writes converted heads without a lifecycle and drops conversion problems, which is harmless for the full conversion because applyConversion refuses the whole conversion on any plan problem before calling it"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Amendment head (AMD-86197ac660732ceb-1, -2)",
+        "change": "field-modify",
+        "details": "Each record moves from the flat shape to {meta, body, citations}; meta gains lifecycle (status approved, approval at the original approvedAt by a person actor named by the original approvedBy) and loses the legacy approval stamps; body keeps approvedBy. The id, proposal and rationale are unchanged. Invariant it might break: the amendment store reads approval only from meta.lifecycle and takes the approver from lifecycle.approval.by first. No new entity and no relationship change, so no ER definition is needed.",
+        "callSites": [
+          "src/workflow/convert/amendments.ts:27-56",
+          "src/workflow/convert/backfill.ts:73-135",
+          "src/workflow/amendments/store.ts:128-158",
+          "src/workflow/artifact-core/approval-view.ts:24-34",
+          ".insrc/artifacts/AMD-86197ac660732ceb-1.json",
+          ".insrc/artifacts/AMD-86197ac660732ceb-2.json"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A Task or Story head that the unit may own cannot be read during roll-up",
+          "detection": "The strict child scan lists its id as unreadable and the id's kind equals the counted kind",
+          "response": "countedChildren still throws UnreadableChildError naming it",
+          "userImpact": "Completion is refused with the same message as today, for the right reason",
+          "recoverable": true
+        },
+        {
+          "scenario": "A flat amendment cannot be converted (no epicHash, no amendment object, no proposedAt, unknown status, or no work item head to take epicCreatedAt from)",
+          "detection": "flatToHead returns a problem, which convertAll collects; repairFlatAmendments returns it in problems instead of dropping it",
+          "response": "That record is not written and stays flat; the others are repaired",
+          "userImpact": "The caller sees which file and why, and the roll-up is no longer blocked by it once the narrowing is in",
+          "recoverable": true
+        },
+        {
+          "scenario": "The lifecycle migration of an amendment head is refused (the head cannot be read, or writeMigratedHead refuses because the migration would change the stored revision, status or approval)",
+          "detection": "migrateHeads throws ConversionUnreadable or ConversionIncomplete from backfillHead or writeMigratedHead",
+          "response": "repairFlatAmendments lets the error propagate; a head already written without a lifecycle stays as it is",
+          "userImpact": "The amendment reads as not approved until the migration is finished; the error names the head and a second run retries it",
+          "recoverable": true
+        },
+        {
+          "scenario": "The process stops after the converted heads are written and before the lifecycle migration finishes",
+          "detection": "On the next run convertAll finds no flat record, and the migration pass selects amendment heads that still lack a lifecycle or carry legacy fields, so the unfinished heads are found by their state, not by this call's conversion list",
+          "response": "The migration pass completes them; the ids it migrates are every amendment head in that state",
+          "userImpact": "None beyond running the repair again",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "An unreadable head whose id is an amendment, build, review or issue id while a Story is being completed",
+          "expected": "Ignored by the roll-up; the Story completes on its own Tasks and code review"
+        },
+        {
+          "input": "An unreadable head of the counted kind that belongs to a different unit",
+          "expected": "Still blocks, because the parent link of an unreadable head cannot be read; this is the accepted conservative behaviour"
+        },
+        {
+          "input": "repairFlatAmendments on a repo with no flat amendment and every amendment head migrated",
+          "expected": "converted is empty, problems is empty, nothing is written"
+        },
+        {
+          "input": "A flat amendment with no approval stamps and status pending or absent",
+          "expected": "Converted with lifecycle status draft; no approval is invented"
+        },
+        {
+          "input": "A flat approved amendment whose approvedBy is missing or not a string",
+          "expected": "Approved with the legacy actor, exactly as before this Story"
+        },
+        {
+          "input": "A flat amendment whose epic has no work item head",
+          "expected": "Reported in problems; left flat"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A genuinely unreadable Task or Story head still blocks a completion; the strict scan stays strict and the sc4 signature is unchanged",
+          "source": "c2"
+        },
+        {
+          "text": "The amendment store reads approval only from meta.lifecycle and refuses a flat record; the repair gives the heads a lifecycle and does not relax the reader",
+          "source": "c3"
+        },
+        {
+          "text": "The full conversion keeps its order and behaviour: migrateHeads without a filter migrates every head with no lifecycle or with legacy fields, as before, and heads without a string body.approvedBy get the lifecycle they got before",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "ac1: a Story or Task completion is not blocked by an unreadable head whose id kind is not the counted kind, and is still blocked by an unreadable head of the counted kind. The tests reach the module-private countedChildren through the exported rollUp with a fake ChildStatusReader.",
+          "subjects": [
+            "rollUp and the module-private countedChildren in src/workflow/artifact-core/lifecycle.ts"
+          ],
+          "fixturesNeeded": [
+            "the fake ChildStatusReader of src/workflow/artifact-core/__tests__/lifecycle-kit.ts returning children and unreadable ids"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "ac2: on a repository whose schema marker is at version 2, repairFlatAmendments turns a flat approved amendment into a head that the amendment store reads as approved with the original approval time and the approver's name, a flat not-yet-approved amendment into a draft head, lists a flat amendment it cannot convert and leaves it flat, finishes heads that were converted but not yet migrated, and does nothing on a second run. ac3: the strict child scan still reports a flat amendment head as unreadable while real children are still listed, and the full conversion migrates the same heads as before when no id filter is given.",
+          "subjects": [
+            "repairFlatAmendments in src/workflow/convert/amendments.ts",
+            "backfillHead approval actor in src/workflow/convert/backfill.ts",
+            "migrateHeads with and without an id filter in src/workflow/convert/apply.ts",
+            "ArtifactStore child scan with a flat AMD head"
+          ],
+          "fixturesNeeded": [
+            "a temp repo from legacyRepo() in src/workflow/convert/__tests__/legacy-repo.ts, which builds a schema-version-1 repo, with the version-2 marker written afterwards by writeRepoSchema, plus a flat AMD head and its epic's work item head",
+            "the store-kit.ts store for the strict scan test"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "lifecycle-rollup.test.ts: an unreadable head of another kind does not block a Story roll-up",
+            "lifecycle-rollup.test.ts: an unreadable head of the counted kind still blocks the roll-up"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver",
+            "convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head",
+            "convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat",
+            "convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated",
+            "convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed",
+            "convert-apply.test.ts: the full conversion migrates the same heads as before with no id filter",
+            "convert-lifecycle-backfill.test.ts: a head without a string approvedBy gets the same lifecycle as before"
+          ]
+        }
+      ],
+      "testFramework": "node:test run with tsx (npx tsx --test), the existing artifact-core and convert test kits"
+    },
+    "migration": {
+      "stateBefore": "Every Story or Task completion in the repo fails because the child scan lists AMD-86197ac660732ceb-1 and -2 as unreadable (flat records with no meta and body) and countedChildren throws on any unreadable head (src/workflow/artifact-core/store.ts:130-161, src/workflow/artifact-core/lifecycle.ts:303-323). The amendment store refuses the two records. The full conversion cannot repair them: it does nothing at schema version 2 (src/workflow/convert/apply.ts:103-115, src/workflow/convert/plan.ts:120-125). The lifecycle migration that a converted head needs is private to apply.ts (src/workflow/convert/apply.ts:84-98), and it stamps the approval with the fixed legacy actor (src/workflow/convert/backfill.ts:39, src/workflow/convert/backfill.ts:73-135), which the amendment store would read as the approver (src/workflow/amendments/store.ts:128-158).",
+      "stateAfter": "countedChildren throws only for an unreadable head of the counted kind, so unrelated unreadable heads do not block completion. The two amendments are heads with a lifecycle (approved, at their original approval time, with a person actor named by the original approvedBy), readable by the amendment store. A tested repair function exists for any future flat amendment on a converted repo.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Narrow the roll-up so only unreadable heads of the counted kind block it, keeping the sc4 signature; add the tests for it through rollUp; commit.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Make backfillHead name the approval actor from a non-empty string body.approvedBy on an approved head and keep the legacy actor otherwise; export the lifecycle migration with an optional id filter, leaving the full conversion's call unchanged; add the repair function; add its tests on a temporary repository whose schema marker is written at version 2; commit.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Run the repair through a one-off script (confirmed by the user on 2026-11-04) on a copy of this repository first, and compare the two amendment heads before and after: id, proposal, rationale and approval time unchanged; the approver reads as the original name 'Subho Ghosh (in-chat approval)'; lifecycle added; legacy stamps gone. The copy is the preview, because the repair has no preview mode.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run the repair on this repository with the same script, commit the two rewritten files so git history holds the flat originals, and confirm that approving a BUILD no longer needs the move-aside workaround.",
+          "rollbackable": true,
+          "prerequisiteFlags": [
+            "step 3 comparison shows only the expected differences"
+          ]
+        },
+        {
+          "order": 5,
+          "action": "Record in the BUILD record that the writer of the flat shape after 2026-10-22 is unverified and name the likely cause (an older daemon build handling the amendments).",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API changes. The store contract, the strict scan result and the sc4 signature are unchanged. migrateHeads gains an optional trailing parameter and the full conversion calls it as before. backfillHead's output changes only for an approved head whose body.approvedBy is a non-empty string, which in this repository means amendments, and only in the name on the approval actor; it affects the full conversion only if it is run again on an unconverted repository. The two amendments keep their ids, proposals and approval times, so references to AMD-86197ac660732ceb-1 and -2 still resolve; their file shape changes from flat to head.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Narrow the roll-up only",
+        "oneLineSummary": "The roll-up ignores unreadable heads whose id kind is not the counted kind; the two amendments are left flat.",
+        "approach": "Inside the sc4 roll-up (countedChildren, reached through rollUp) keep throwing UnreadableChildError only for unreadable ids of the counted kind (TASK or STORY) and for counted children whose status cannot be read; an unreadable head of another kind no longer blocks. The store scan, the sc4 signature and the two flat amendment records are not touched.",
+        "pros": [
+          "Smallest change, one function",
+          "A genuinely unreadable Task or Story head still blocks",
+          "Keeps the sc4 signature"
+        ],
+        "cons": [
+          "The two approved amendments stay unreadable to the amendment store",
+          "Leaves old-shape records in the repo"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Stops the failure but leaves the two approved records unreadable."
+      },
+      {
+        "id": "a2",
+        "name": "Narrow the roll-up, repair the amendments and keep their approver",
+        "oneLineSummary": "a1 plus a tested repair function; the lifecycle migration takes the approval actor from body.approvedBy when it is a string.",
+        "approach": "Do a1. Add an exported repairFlatAmendments(repo, deps) in src/workflow/convert that converts flat amendments with the existing flatToHead, writes them, returns the conversion problems, then runs the existing lifecycle migration over every amendment head that has no lifecycle or still carries legacy fields (not only the ones converted in this call, so a crash between the two writes is finished on the next run). Export migrateHeads with an optional id filter for that. Change backfillHead so that, when body.approvedBy is a non-empty string, the lifecycle's approval actor is a person actor named by it instead of the fixed legacy actor; heads without it keep the legacy actor. The repair is run through a one-off script, first on a copy.",
+        "pros": [
+          "Amendments come back readable and approved with the original approver visible to the amendment store",
+          "Reuses flatToHead, backfillHead and writeMigratedHead",
+          "Problems are reported, and a crash between the two writes is finished by running again"
+        ],
+        "cons": [
+          "Touches backfillHead, which the full conversion also uses; only heads with a string body.approvedBy (amendments) change",
+          "Rewrites two approved records (the originals stay in git history)"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a3",
+        "name": "Narrow the roll-up and repair the amendments, leaving the approver as the legacy actor",
+        "oneLineSummary": "a2 without the backfillHead change; the reader shows the approver as legacy:unknown.",
+        "approach": "Do a1 and the repair of a2, but leave backfillHead alone. The original approver stays in body.approvedBy but the amendment store reads lifecycle.approval.by first, so it reports the approver as legacy:unknown for these two amendments.",
+        "pros": [
+          "No change to backfillHead or the full conversion",
+          "Smaller"
+        ],
+        "cons": [
+          "The approver of two approved amendments reads as legacy:unknown to the store and its consumers",
+          "The original name survives only in the body"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Same as a2 without touching backfillHead, at the price of reporting the approver as legacy:unknown."
+      },
+      {
+        "id": "a4",
+        "name": "Repair by a one-off script with its own copy of the migration",
+        "oneLineSummary": "a1 plus an untested script that duplicates the conversion and the lifecycle step.",
+        "approach": "Do a1. For the data, write a script outside the product source that reimplements the conversion and the lifecycle step for the two ids and run it once.",
+        "pros": [
+          "No new exported code in the product"
+        ],
+        "cons": [
+          "Duplicates migration logic without tests",
+          "The next flat head needs the same hand work",
+          "Unreviewed code rewrites approved records"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Duplicates logic that already exists and is tested."
+      }
+    ],
+    "chosenAlternative": "a2",
+    "openQuestions": [
+      "countedChildren implements the sc4 lifecycle contract of the approved epic one-common-model-every-artifact (HLD-2f27754d4ad00b8e, owned by that epic's s3), and migrateHeads and applyAmendments belong to its s9. This Story keeps the sc4 signature and changes only which unreadable heads block a completion. Does that narrowing need an amendment to the HLD of that epic, or is recording it in this ISSUE and the BUILD enough? The plan assumes the latter; confirm or ask for the amendment."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts:130-161"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/lifecycle.ts:303-323"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/amendments/store.ts:128-158"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/convert/apply.ts:84-98"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/convert/amendments.ts:27-85"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/stop-flat-amendment-heads-from-blocking-E202611043c0b242f/ISSUE.md"
+    }
+  ]
+}

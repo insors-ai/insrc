@@ -6300,3 +6300,37 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFIED DEAD completes via the death gate even without a terminal event (no synthetic observation failure blocks it)', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs7-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false, // the recorded pid is verified dead
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    // a crashed CLI: output ends with NO result/done event
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'partial answer' }] } }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 1, signal: null }); // turn-end marker, no result line
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'verified death + caught-up drain completes the turn');
+    assert.equal(store.get(s.id)?.status, 'done', 'a crashed CLI with fully consumed output reconciles to done');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

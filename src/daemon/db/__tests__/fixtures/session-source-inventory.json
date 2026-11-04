@@ -21828,6 +21828,10 @@
      "(key as Buffer).subarray(4).toString"
     ],
     [
+     "serialization",
+     "(key as Buffer).subarray(prefix.length).toString"
+    ],
+    [
      "storage-call",
      "add"
     ],
@@ -21913,14 +21917,14 @@
     ],
     [
      "serialization",
-     "decodeEntityByFileKey"
-    ],
-    [
-     "storage-call",
-     "decodeEntityByFileKey"
+     "decodeEntityRow"
     ],
     [
      "serialization",
+     "decodeEntityRow"
+    ],
+    [
+     "storage-call",
      "decodeEntityRow"
     ],
     [
@@ -21961,14 +21965,6 @@
     ],
     [
      "serialization",
-     "encodeEntityByFilePrefix"
-    ],
-    [
-     "storage-call",
-     "encodeEntityByFilePrefix"
-    ],
-    [
-     "serialization",
      "encodeEntityKey"
     ],
     [
@@ -21976,12 +21972,28 @@
      "encodeEntityKey"
     ],
     [
+     "serialization",
+     "encodeEntityKey"
+    ],
+    [
      "storage-call",
      "encodeEntityKey"
     ],
     [
      "storage-call",
      "encodeEntityKey"
+    ],
+    [
+     "storage-call",
+     "encodeEntityKey"
+    ],
+    [
+     "serialization",
+     "encodeNameIndexPrefix"
+    ],
+    [
+     "storage-call",
+     "encodeNameIndexPrefix"
     ],
     [
      "serialization",
@@ -22201,7 +22213,7 @@
     ],
     [
      "storage-call",
-     "s.entityByFile.getKeys"
+     "s.entity.get"
     ],
     [
      "storage-call",
@@ -22218,6 +22230,10 @@
     [
      "storage-call",
      "s.entityStringByU64.get"
+    ],
+    [
+     "storage-call",
+     "s.nameIndex.getRange"
     ],
     [
      "storage-call",
@@ -22240,9 +22256,9 @@
      "withWriteTxn"
     ]
    ],
-   "siteCount": 105,
-   "sitesDigest": "c671d52aedb1fc4e7c66ef081619a2defab9bc276ec165d91b3fb74416f38468",
-   "sourceDigest": "9e367cd55850d247f08d73b6adc8c4b3af143ccfffbfcf0fba9c9295b2654355",
+   "siteCount": 109,
+   "sitesDigest": "b2698fcf6f1445056833c76a64cf375812849196112671b94739ecfab316382e",
+   "sourceDigest": "eacd546180eb772ce13bb9ca62f8b01750ed9785fc95d0738b1a3a35790cb913",
    "boundaries": [
     "serialization",
     "storage-call"

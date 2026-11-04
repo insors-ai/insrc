@@ -108,6 +108,26 @@ test('s10 t5: name references resolve across full-index order and stop on a seco
 	await fileJob('docs/README.md');
 	assert.deepEqual((await documentRelations(src.id, 'out', sw)).rows, [], 'two files of the name: no link stands');
 	assert.deepEqual((await documentRelations(fileId('README.md'), 'in', sw)).rows, []);
+
+	// One full index with both sides present, whatever order the walk commits them in: each of two documents
+	// names the other, so one of the two is always committed before the file it names; a code file named by
+	// its file name resolves too (its file entity is named by its path).
+	rmSync(join(repo, 'docs/README.md'));
+	write('docs/alpha.md', '# Alpha\nSee omega.md and `queue.ts`.\n');
+	write('docs/omega.md', '# Omega\nSee alpha.md.\n');
+	write('src/queue.ts', 'export function enqueue(): void {}\n');
+	await svc.processJob({ kind: 'full', repoPath: repo });
+	const alpha = await section('docs/alpha.md', 'Alpha');
+	const omega = await section('docs/omega.md', 'Omega');
+	assert.deepEqual((await documentRelations(alpha.id, 'out', sw)).rows.map(r => r.to).sort(), [fileId('docs/omega.md'), fileId('src/queue.ts')].sort());
+	assert.deepEqual((await documentRelations(omega.id, 'out', sw)).rows.map(r => r.to), [fileId('docs/alpha.md')]);
+	assert.deepEqual((await documentRelations(fileId('src/queue.ts'), 'in', sw)).rows.map(r => r.from), [alpha.id]);
+
+	// A second file of a name present in the same full index: no link stands.
+	write('lib/queue.ts', 'export function other(): void {}\n');
+	await svc.processJob({ kind: 'full', repoPath: repo });
+	const alpha2 = await section('docs/alpha.md', 'Alpha');
+	assert.deepEqual((await documentRelations(alpha2.id, 'out', sw)).rows.map(r => r.to), [fileId('docs/omega.md')]);
 });
 
 test("s10 t5: proposals read as 'model' only while on and eligible; older generations counted as stale", async () => {

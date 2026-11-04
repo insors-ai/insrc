@@ -22,7 +22,7 @@ import { basename, join, relative } from 'node:path';
 import { assertNoSessionPersistence } from '../shared/connection-persistence.js';
 import { getGraphStore, withWriteTxn } from './graph/store.js';
 import type { GraphStore } from './graph/store.js';
-import { decodeEntityByFileKey, encodeEntityByFilePrefix, encodeEntityKey, encodeRepoKey, prefixSuccessor } from './graph/keys.js';
+import { ENTITY_KIND_BYTE, encodeEntityKey, encodeNameIndexPrefix, encodeRepoKey, prefixSuccessor } from './graph/keys.js';
 import { inNeighbors, outNeighbors } from './graph/edges.js';
 import type { RelationEvidence } from '../shared/types.js';
 import {
@@ -249,17 +249,22 @@ export async function documentRelations(
 			: { from: other, to: entityId, kind: 'REFERENCES', evidence: n.evidence });
 	}
 
-	// Name references, resolved against the files stored now.
+	// Name references, resolved now through the name index's file entries: an artifact's file entity is
+	// named by its file name and a code file's by its path, so an entry matches when the last segment of
+	// its name is the referenced name; each matching entry is resolved to its stored file.
 	let byName: Map<string, string[]> | undefined;
 	const filesNamed = (name: string): string[] => {
 		if (byName === undefined) {
 			byName = new Map();
-			const prefix = encodeEntityByFilePrefix(repoId);
-			for (const key of s.entityByFile.getKeys({ start: prefix, end: prefixSuccessor(prefix) })) {
-				const rel = decodeEntityByFileKey(key as Buffer).filePath;
-				const list = byName.get(basename(rel)) ?? [];
+			const prefix = encodeNameIndexPrefix(repoId, ENTITY_KIND_BYTE.file);
+			for (const { key, value } of s.nameIndex.getRange({ start: prefix, end: prefixSuccessor(prefix) })) {
+				const entryName = (key as Buffer).subarray(prefix.length).toString('utf8');
+				const row = s.entity.get(encodeEntityKey((value as Buffer).readBigUInt64BE(0))) as Buffer | undefined;
+				if (row === undefined) continue;
+				const rel = decodeEntityRow(row).filePath;
+				const list = byName.get(basename(entryName)) ?? [];
 				if (!list.includes(rel)) list.push(rel);
-				byName.set(basename(rel), list);
+				byName.set(basename(entryName), list);
 			}
 		}
 		return byName.get(name) ?? [];

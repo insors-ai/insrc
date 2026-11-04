@@ -246,14 +246,7 @@ test('E202611031bd72813:S001 t5: a registered cursor pins its generation across 
   assert.equal(await so.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldest retained is the pinned one');
   // unregister: the archive is dropped
   so.unregisterCursor(seg1.cursor);
-  await waitFor(async () => {
-    try {
-      for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
-      return false;
-    } catch (e) {
-      return e instanceof SegmentGone;
-    }
-  }, 3000, 'the archive is removed once the last unregister lands');
+  await waitFor(() => !existsSync(`${root}/s1.pinned.1.ndjson`), 3000); // the archive is removed once the last unregister lands
   let gone = false;
   try {
     for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
@@ -398,5 +391,29 @@ test('E202611031bd72813:S001 t5: pins are refcounted PER READER — one unregist
   }
   assert.ok(gone, 'then SegmentGone');
   await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: register -> unregister -> register keeps the durable pin — the queued deletion cannot erase the new marker, and a recreated writer still archives the generation', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5q-')), 'out');
+  const so1 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so1.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so1.endTurn('s1', 't1', { code: 0, signal: null });
+  so1.registerCursor(seg1.cursor);
+  so1.unregisterCursor(seg1.cursor);
+  so1.registerCursor(seg1.cursor); // re-register BEFORE the queued unregister deletion runs
+  await new Promise((r) => setTimeout(r, 200)); // let the queued pin-IO task run
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'the re-registered pin marker survives the queued unregister deletion');
+  await so1.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so1.endTurn('s1', 't2', { code: 0, signal: null });
+  // a NEW writer process over the same root: empty in-memory pin set, only the on-disk marker
+  const so2 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  await so2.beginTurn('s1', 't3'); // must archive gen 1, not discard it
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the recreated writer honored the surviving marker and archived gen 1');
+  const lines: string[] = [];
+  for await (const { line } of so2.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the archived generation is still readable');
+  await so2.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });

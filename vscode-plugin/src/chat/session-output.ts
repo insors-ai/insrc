@@ -63,6 +63,9 @@ export interface SessionOutputFs {
   rmSync?(path: string): void;
   /** Create-only write (O_EXCL) for lock files. */
   writeFileExclusive?(path: string, data: string): Promise<void>;
+  /** Synchronous create-only write (O_EXCL) for lock files — lets a synchronous registerCursor
+   * hold the session lock around its marker write, serialized with a rollover's check + replace. */
+  writeFileExclusiveSync?(path: string, data: string): void;
   readdirSync?(path: string): string[];
   sizeSync?(path: string): number | undefined;
 }
@@ -114,6 +117,7 @@ export const nodeSessionOutputFs: SessionOutputFs = {
   writeFileSync: (p, data) => writeFileSync(p, data),
   rmSync: (p) => rmSync(p, { force: true }),
   writeFileExclusive: (p, data) => writeFile(p, data, { flag: 'wx' }),
+  writeFileExclusiveSync: (p, data) => writeFileSync(p, data, { flag: 'wx' }),
   readdirSync: (p) => readdirSync(p),
   sizeSync: (p) => {
     try {
@@ -395,10 +399,34 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      // Synchronous when the seam allows it: the marker is durable before registerCursor returns,
-      // so any rollover that acquires the lock afterwards sees the pin. Otherwise locked+queued.
-      if (fs.writeFileSync !== undefined) fs.writeFileSync(marker, '');
-      else enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      // The marker write never bypasses the rollover lock: when the synchronous O_EXCL seam exists,
+      // hold the session lock AROUND the write (all synchronous, so it cannot interleave with the
+      // rollover's final sync pin-check + rename in this process, and the lock file serializes it
+      // against a rollover in another process). When the lock is busy, fall back to a queued,
+      // locked write — never an unlocked one. Without sync seams, queue the locked write.
+      if (fs.writeFileSync !== undefined && fs.writeFileExclusiveSync !== undefined) {
+        const lock = lockPathOf(cursor.sessionId);
+        let locked = false;
+        try {
+          fs.writeFileExclusiveSync(lock, String(process.pid));
+          locked = true;
+        } catch (e) {
+          if (errCode(e) !== 'EEXIST') throw e;
+        }
+        if (locked) {
+          try {
+            fs.writeFileSync(marker, '');
+          } finally {
+            if (fs.rmSync !== undefined) fs.rmSync(lock);
+          }
+        } else {
+          enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+        }
+      } else if (fs.writeFileSync !== undefined) {
+        fs.writeFileSync(marker, '');
+      } else {
+        enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      }
     },
     unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
       const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
@@ -412,9 +440,15 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         // remove this reader's marker FIRST so the disk scan below does not count it
         const genKey = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
         const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
+        // Synchronous marker removal when the seam allows: register -> unregister -> register then
+        // preserves order (write, rm, write) because all three are synchronous in this process.
+        if (fs.rmSync !== undefined) fs.rmSync(marker);
         // locked, so the pin-check + archive removal is atomic against a concurrent register
         enqueuePinIo(() =>
           withSessionLock(cursor.sessionId, async () => {
+            // A register that happened AFTER this unregister re-created the marker — the queued
+            // deletion must not erase the new active pin. Re-check the refcount before touching disk.
+            if (pinned.has(key)) return;
             await fs.rm(marker).catch(() => {});
             const still = await genPinned(cursor.sessionId, cursor.generation, false);
             const arch = archived.get(genKey);

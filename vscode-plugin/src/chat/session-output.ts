@@ -61,6 +61,8 @@ export interface SessionOutputFs {
    * processes immediately (async writes are invisible to a concurrent rollover in another window). */
   writeFileSync?(path: string, data: string): void;
   rmSync?(path: string): void;
+  /** Create-only write (O_EXCL) for lock files. */
+  writeFileExclusive?(path: string, data: string): Promise<void>;
 }
 
 
@@ -109,6 +111,7 @@ export const nodeSessionOutputFs: SessionOutputFs = {
   },
   writeFileSync: (p, data) => writeFileSync(p, data),
   rmSync: (p) => rmSync(p, { force: true }),
+  writeFileExclusive: (p, data) => writeFile(p, data, { flag: 'wx' }),
 };
 
 /** The reserved key that marks a host-written line; a CLI stream line never has it at top level. */
@@ -216,11 +219,35 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   const enqueuePinIo = (work: () => Promise<void>): void => {
     pinIo = pinIo.then(work).catch(() => {});
   };
+  // E202611031bd72813:S001 t5: a per-session lock file makes registration vs. rollover/unregister
+  // check-then-act ATOMIC across processes: register/unregister take it around their marker write/rm,
+  // and the rollover takes it around its pin-check + replace. O_EXCL create + spin.
+  const lockPathOf = (sessionId: string): string => `${deps.root}/${sessionFileName(sessionId)}.lock`;
+  const withSessionLock = async <T>(sessionId: string, work: () => Promise<T>): Promise<T> => {
+    const p = lockPathOf(sessionId);
+    for (;;) {
+      try {
+        if (fs.writeFileExclusive !== undefined) await fs.writeFileExclusive(p, String(process.pid));
+        else await fs.writeFile(p, String(process.pid));
+        break;
+      } catch (e) {
+        if (errCode(e) !== 'EEXIST') throw e;
+        await sleep(5, undefined);
+      }
+    }
+    try {
+      return await work();
+    } finally {
+      await fs.rm(p).catch(() => {});
+    }
+  };
   /** Any pin — in-memory or on disk — for this session generation (another process may hold it). */
-  const genPinned = async (sessionId: string, generation: number): Promise<boolean> => {
+  const genPinned = async (sessionId: string, generation: number, awaitIo = true): Promise<boolean> => {
     const prefix = `${sessionFileName(sessionId)}:${generation}:`;
     for (const key of pinned.keys()) if (key.startsWith(prefix)) return true;
-    await pinIo; // in-flight marker writes of THIS process are visible before the disk scan
+    // Await in-flight marker writes before the disk scan — EXCEPT inside a lock section (the lock
+    // already serializes against them; awaiting pinIo there would deadlock).
+    if (awaitIo) await pinIo;
     let names: string[] = [];
     try {
       names = await fs.readdir(deps.root);
@@ -332,8 +359,8 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      if (fs.writeFileSync !== undefined) fs.writeFileSync(marker, ''); // visible to other processes at once
-      else enqueuePinIo(() => fs.writeFile(marker, ''));
+      // locked, so a concurrent rollover in another process cannot check-then-replace past this pin
+      enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
     },
     unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
       const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;
@@ -347,17 +374,18 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         // remove this reader's marker FIRST so the disk scan below does not count it
         const genKey = `${sessionFileName(cursor.sessionId)}:${cursor.generation}`;
         const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-        if (fs.rmSync !== undefined) fs.rmSync(marker);
-        else enqueuePinIo(() => fs.rm(marker));
-        void pinIo
-          .then(() => genPinned(cursor.sessionId, cursor.generation))
-          .then((still) => {
+        // locked, so the pin-check + archive removal is atomic against a concurrent register
+        enqueuePinIo(() =>
+          withSessionLock(cursor.sessionId, async () => {
+            await fs.rm(marker).catch(() => {});
+            const still = await genPinned(cursor.sessionId, cursor.generation, false);
             const arch = archived.get(genKey);
             if (!still && arch !== undefined) {
               archived.delete(genKey);
-              void fs.rm(arch).catch(() => {});
+              await fs.rm(arch).catch(() => {});
             }
-          });
+          }),
+        );
       }
     },
     async oldestRetainedGeneration(sessionId: string): Promise<number | undefined> {
@@ -409,11 +437,12 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         if (open !== undefined) await appendMarker(p.current, { [MARKER_KEY]: 'turn-end', turnId: open, code: null, signal: null, unknown: true });
         // Roll over between turns only, so a segment is never split across files.
         if (((await fs.size(p.current)) ?? 0) > maxBytes) {
+          await withSessionLock(sessionId, async () => {
           // E202611031bd72813:S001 t5: retention tied to registered cursors — a pinned previous
           // generation is archived, not discarded, so its reader never hits SegmentGone.
           const prevGen = await generationOf(p.previous);
           // pinned by ANY reader — in this process OR by a durable marker from another one
-          const pinnedHere = prevGen !== undefined && (await genPinned(sessionId, prevGen));
+          const pinnedHere = prevGen !== undefined && (await genPinned(sessionId, prevGen, false));
           if (prevGen !== undefined && pinnedHere) {
             const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
             await fs.rename(p.previous, arch);
@@ -421,13 +450,14 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           }
           // Re-check pins IMMEDIATELY before the replacing rename: a registration that landed between
           // the check above and here (sync marker write is visible at once) must not lose its generation.
-          if (prevGen !== undefined && !pinnedHere && (await genPinned(sessionId, prevGen))) {
+          if (prevGen !== undefined && !pinnedHere && (await genPinned(sessionId, prevGen, false))) {
             const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
             await fs.rename(p.previous, arch);
             archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
           }
           await fs.rename(p.current, p.previous); // replaces the older generation
           generation = undefined;
+          });
         }
       }
       if (generation === undefined) {

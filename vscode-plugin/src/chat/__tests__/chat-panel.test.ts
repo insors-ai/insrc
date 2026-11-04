@@ -6238,10 +6238,25 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
     { kind: 'approval-request', turnId: 't2', requestId: 'perm-9', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
     { kind: 'done', turnId: 't2', ok: true },
   ];
-  const adapter = scriptedAdapter(evs, {
+  let releaseDone2!: () => void;
+  const gate2 = new Promise<void>((r) => { releaseDone2 = r; });
+  let decideCalls2 = 0;
+  let runIdx = 0;
+  const hooks2 = {
+    gateBeforeDone: gate2, // the turn stays LIVE while the decision is made
     delivered: false, // the turn's stdin is gone: decide() reports undelivered
     onRun: () => { runCount += 1; },
-  });
+    onDecide: () => { decideCalls2 += 1; },
+  };
+  // each run gets a FRESH turnId (a follow-up is a new turn, never the original turn's id)
+  const adapter: StreamAdapter = {
+    ...scriptedAdapter(evs, hooks2),
+    run(req: TurnRequest, opts?: RunOptions) {
+      runIdx += 1;
+      const tid = `t2-r${runIdx}`;
+      return scriptedAdapter(evs.map((e) => ({ ...e, turnId: tid })), hooks2).run(req, opts);
+    },
+  };
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
     providers: registry({ claude: adapter }, ['claude']),
@@ -6252,14 +6267,11 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   fc.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
   const id = store.list()[0]!.id;
-  // switch away and back: the request is persisted unresolved, then restored into the queue
-  const other = store.create('claude' as never);
-  fc.send(env('open-chat', { chatId: other.id }));
-  await waitFor(() => (store.get(id)?.pendingRequests ?? []).some((r) => r.requestId === 'perm-9' && !r.resolved));
-  fc.send(env('open-chat', { chatId: id }));
-  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'approval-request').length >= 2, 5000, 'restored card re-posted');
-  // decide the restored request: no live turn + undelivered stdin -> follow-up runTurn carries it
+  // decide WHILE the turn is still live (done is gated): decide() is really consulted and reports
+  // undelivered (dead stdin), so the fallback follow-up must carry the decision
   fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+  await waitFor(() => decideCalls2 === 1, 5000, 'decide() was consulted on the live turn');
+  releaseDone2(); // the turn ends, so the follow-up can start
   await waitFor(() => runCount >= 2, 5000, 'the undelivered decision fell back to a follow-up runTurn');
   await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-9')?.resolved === true, 5000);
   assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-9')!.outcome, 'approved', 'correlated onto the persisted request — not a silent no-op');

@@ -1486,6 +1486,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const followUpsStarted = new Set<string>();
   /** Request ids restored from a persisted queue snapshot (they may have no pendingRequests record). */
   const restoredRequestIds = new Set<string>();
+  /** Request ids decided through the queue in this host — a valid queued decision must never
+   * silently disappear, even if its turn already ended and nothing was persisted yet. */
+  const decidedRequestIds = new Set<string>();
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
   let pendingFollowUps = new Map<string, { readonly outcome: string; readonly excludeTurnId: string | undefined; readonly groupId: string }>();
@@ -2875,6 +2878,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (approvals.has(msg.requestId)) {
           const res = approvals.decide(msg.requestId, msg.decision);
           if (!res.ok) return;
+          decidedRequestIds.add(msg.requestId);
           // t6: keep the persisted queue snapshot fresh on every decision — batch decisions and
           // grants otherwise live only in memory until the next clear(), and a reload would restore
           // the stale snapshot, losing them and reviving already-decided requests

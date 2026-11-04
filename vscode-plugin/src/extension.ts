@@ -43,6 +43,7 @@ import type { StatusBarHandle } from './surfaces/types.js';
 import { createConfigSyncEngine } from './config/sync-engine.js';
 import { createDaemonConfigGateway } from './config/gateway.js';
 import { MERGED_KEY_MAP } from './config/key-map.js';
+import { migrateLegacyKeys } from './config/legacy-keys.js';
 import type { ChangedKey, Notifier, SettingsStore } from './config/types.js';
 import { createDaemonDataGateway } from './panels/daemon-gateway.js';
 import { createWebviewPanelHost } from './panels/webview-host.js';
@@ -272,7 +273,16 @@ export function activate(context: vscode.ExtensionContext): void {
     onRestartRequired: (keys) => offerRestart(`insrc: ${keys.join(', ')} saved — restart the daemon to apply`),
   });
   // Reconcile the native mirror with the daemon on activation (non-blocking).
-  void activationSettled.then(() => configSync.pullFromDaemon());
+  // Then move a value the user typed under a renamed settings id (ISSUE-8d7b4704660a5866) to its new id, once.
+  void activationSettled.then(async () => {
+    await configSync.pullFromDaemon();
+    await migrateLegacyKeys({
+      keyMap: MERGED_KEY_MAP,
+      read: (key) => vscode.workspace.getConfiguration().inspect<unknown>(key)?.globalValue,
+      apply: (changed) => configSync.applyChanges(changed),
+      clear: async (key) => { await vscode.workspace.getConfiguration().update(key, undefined, vscode.ConfigurationTarget.Global); },
+    });
+  });
   // Live-push each native insrc.* edit to the daemon (diff/validate/write in sc8).
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration((event) => {

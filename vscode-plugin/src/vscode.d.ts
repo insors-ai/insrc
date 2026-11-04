@@ -209,6 +209,8 @@ declare module 'vscode' {
     get<T>(section: string): T | undefined;
     has(section: string): boolean;
     update(section: string, value: unknown, configurationTarget?: ConfigurationTarget | boolean): PromiseLike<void>;
+    /** The value a setting holds at each level; `globalValue` is the user's own settings.json. */
+    inspect<T>(section: string): { globalValue?: T | undefined } | undefined;
   }
 
   /** Emitted when settings change; scopes a listener to the keys it cares about. */

@@ -11,6 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { TranscriptEntry } from '../session-store.js';
 import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode, type ActiveChatEntry, type DocsDocumentTab } from '../protocol.js';
+import { PROTOCOL_CONTRACT_KINDS, contractActiveList, contractDocsContent, contractDocsTab, contractEntryExtra, contractOpenChat } from '../protocol-contract.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -274,4 +275,16 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   const content: HostToWebview = { type: 'docs-content', artifactId: 'a1', markdown: '# LLD', openQuestions: [], blocked: false };
   assert.equal(content.type, 'docs-content');
   if (content.type === 'docs-content') assert.equal(content.artifactId, 'a1');
+  // the compile-time contract (protocol-contract.ts, typechecked with the plugin sources, since
+  // tests are excluded from tsconfig) pins these kinds: assert the runtime arrays cover them and
+  // that the contract objects carry exactly their declared runtime keys
+  for (const kind of PROTOCOL_CONTRACT_KINDS) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(kind as HostToWebviewType) || WEBVIEW_TO_HOST_TYPES.includes(kind as WebviewToHostType), `contract kind ${kind} is a real wire kind`);
+  }
+  assert.deepEqual(Object.keys(contractActiveList), ['type', 'chats'], 'contract active-list keys');
+  assert.deepEqual(Object.keys(contractActiveList.chats[0]!), ['id', 'title', 'status', 'lastActivityAt'], 'contract entry keys');
+  assert.deepEqual(Object.keys(contractOpenChat), ['type', 'chatId']);
+  assert.deepEqual(Object.keys(contractDocsContent).sort(), ['artifactId', 'blocked', 'markdown', 'openQuestions', 'type'], 'contract docs-content keys');
+  assert.deepEqual(Object.keys(contractDocsTab).sort(), ['relPath', 'title', 'type'], 'contract tab keys');
+  assert.ok('provider' in (contractEntryExtra as unknown as Record<string, unknown>), 'the contract’s negative case really carries the extra field the type forbids');
 });

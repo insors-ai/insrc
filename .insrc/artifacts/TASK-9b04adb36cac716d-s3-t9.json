@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-02fc082f-a277-40ab-aeaa-d04b55c46237",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.974Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Qualify S3 across workflow contexts and compiled entrypoints",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f6f4b5736d95bf1d144ffb2518f7aab806441a04b179ca547c3fd7b53ef0cf0e",
+        "at": "2026-11-04T19:34:28.974Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.974Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify S3 across workflow contexts and compiled entrypoints",
+    "summary": "Finish scoped integration qualification and maintain relevant design/sequence documentation.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Deterministic native/controller scenarios cover Epic/Standalone/Issue contexts, indirect dependencies, provenance chains, missing decisions, mutations and interrupted/paused recovery.",
+      "Disposable compiled fake-CLI MCP/IPC smoke proves full initial then selective corrected review, zero retained calls, truthful progress and blocker carry; label synthetic evidence.",
+      "Run production build and scoped regression suites once; keep S4 publication/approval/cleanup and installed-daemon rollout out of this story.",
+      "Verify corrupt trusted provenance, checkpoint-cap/persistence failure, owner/generation errors and candidate bounds have the documented terminal-versus-output-retry behavior. Re-run relevant all-fresh S1/S2 and code-review regression subsets."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "Disposable compiled MCP/IPC initial and corrected review call counts"
+      },
+      {
+        "level": "integration",
+        "name": "Epic standalone issue contexts and S1/S2 regression qualification"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8b10f7a1-1e0e-40b4-b9f7-f24685f66ad5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.967Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Validate current impact selection and explicit full fallback",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9076efba99fbe921e5d247c9b6015adde50ad29873ffadb627e4960a20d38323",
+        "at": "2026-11-04T19:34:28.967Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.968Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Validate current impact selection and explicit full fallback",
+    "summary": "Implement proposed validateDesignImpact over full plan/inventory and validated historical origins.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Validate full plan then disjoint complete selected/retained partition, mandatory fresh consistency and eligible strictly backward same-review origins.",
+      "Reject incomplete/limited sources, older-passed bypass, foreign/cyclic/forward/missing/invalidated origins; raw validation errors normalize only at execution boundary.",
+      "Uncertain context accepts explicit full candidate; affected_chunks is rejected within current-unit retry budget without host rewriting."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Full-plan partition and explicit-full versus rejected-selective retry classification"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

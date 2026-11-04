@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-461e3302-0871-4d45-a975-7891aef1cd84",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.968Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Schedule selected work with existing recovery controls",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4726fa937d33c6b77ff5d6dcb55912287187ba2ea42e26d2430a280441638335",
+        "at": "2026-11-04T19:34:28.968Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.969Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Schedule selected work with existing recovery controls",
+    "summary": "Extend nextDesignUnit/reserveDesignUnit and progress tracking for selected execution without changing S2 policy.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Derive executionOrder by filtering complete dependency order; retained chunks make zero calls; final consistency remains fresh; completedChunks is a fresh prefix.",
+      "Reserve current.kind=impact for impact preparation and use same kind in interrupted matching; reject preparation mismatch before mutations.",
+      "Preserve retry counters, explicit recovery, subject-only invalidation/late-generation fences and active-tool/30-minute inactivity controls; raw stored-state errors remain terminal."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Interleaved selected order and impact reservation kind"
+      },
+      {
+        "level": "integration",
+        "name": "Selected work resume/mutation/generation and persisted retry counters"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

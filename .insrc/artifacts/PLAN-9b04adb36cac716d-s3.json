@@ -1,0 +1,586 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793820782588-o0zzqu",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:33:49.414Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 45076,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s3",
+    "lldRunId": "wf-1793779743636-doc30v",
+    "lldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ec7524d8dd5a9c4deffc5b352c45de7bfbd4f3d63aa26afc2dd32a5f8e19467e",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.574Z"
+      }
+    },
+    "rangeBase": "795b389d1f3d720bffc2c67f9c3a871926bc8c35"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Add impact-aware correction reviews to the existing design-review coordinator. Reviewers assess direct and indirect effects, inspect affected chunks and a fresh consistency check, and retain eligible prior coverage by reference. Strict history, finding reconciliation and visible fresh/retained progress preserve correctness while reusing S1/S2 recovery; permanent history and approval cleanup remain S4."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Bound impact, finding and report schemas",
+        "summary": "Define additive contracts and deterministic schema fixtures before runtime integration.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Strict sc4 assessment, source tuples, finding-decision union, preparationKind, result/report/progress and impact request schemas reject extras and enforce existing count/byte bounds.",
+          "Initial/no-impact checkpoints remain readable; correction report requires complete bounded provenance; no copied historical bodies."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Strict impact/disposition/projection schemas reject extras, wrong branches and bounds; old full checkpoints decode"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Admit sequential correction attempts and freeze history",
+        "summary": "Extend coordinator admission and checkpoint evolution using existing subject fences and recovery gates.",
+        "size": "M",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Initial attempt=1, exact historical replay and latest+1 after complete terminal report are distinct branches; submitted.attempt remains 1.",
+          "checkEvolution permits only ordinary impact correction or existing approved invalidated full restart; freezes all prior attempts and preparationKind; save failure dispatches nothing."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Sequential admission/replay and two checkpoint-growth branches preserve history and reject invalid statuses"
+          }
+        ]
+      },
+      {
+        "title": "Resolve and validate immutable coverage origins",
+        "summary": "Add bounded backward historical-origin resolution and retained coverage eligibility checks shared by impact validation and consolidation.",
+        "size": "M",
+        "acceptanceChecks": [
+          "Resolve strictly decreasing same-artifact/reviewer references to accepted substantive sources; reject cycles, forward/equal/foreign/missing/invalidated or malformed origins.",
+          "Require passed/changes_requested and empty limitations at every link; reject older-passed bypass of immediately preceding incomplete coverage; preserve prior bytes."
+        ],
+        "id": "t3",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Backward provenance eligibility matrix and incomplete-source bypass rejection"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Validate current impact selection and explicit full fallback",
+        "summary": "Implement proposed validateDesignImpact over full plan/inventory and validated historical origins.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "Validate full plan then disjoint complete selected/retained partition, mandatory fresh consistency and eligible strictly backward same-review origins.",
+          "Reject incomplete/limited sources, older-passed bypass, foreign/cyclic/forward/missing/invalidated origins; raw validation errors normalize only at execution boundary.",
+          "Uncertain context accepts explicit full candidate; affected_chunks is rejected within current-unit retry budget without host rewriting."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c9",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Full-plan partition and explicit-full versus rejected-selective retry classification"
+          }
+        ]
+      },
+      {
+        "title": "Schedule selected work with existing recovery controls",
+        "summary": "Extend nextDesignUnit/reserveDesignUnit and progress tracking for selected execution without changing S2 policy.",
+        "size": "M",
+        "acceptanceChecks": [
+          "Derive executionOrder by filtering complete dependency order; retained chunks make zero calls; final consistency remains fresh; completedChunks is a fresh prefix.",
+          "Reserve current.kind=impact for impact preparation and use same kind in interrupted matching; reject preparation mismatch before mutations.",
+          "Preserve retry counters, explicit recovery, subject-only invalidation/late-generation fences and active-tool/30-minute inactivity controls; raw stored-state errors remain terminal."
+        ],
+        "id": "t5",
+        "order": 5,
+        "dependsOn": [
+          "t4"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Interleaved selected order and impact reservation kind"
+          },
+          {
+            "level": "integration",
+            "name": "Selected work resume/mutation/generation and persisted retry counters"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Run impact preparation on native and controller routes",
+        "summary": "Add designImpactPrompt and coordinator impact exchange/execute branches with shared validation and atomic accepted plan+impact.",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "Native and trusted controller use identical impact policy/schema and atomically persist plan+impact before chunk dispatch.",
+          "Derive executionOrder from complete plan, skip retained chunks with zero provider calls, set impact current.kind and preserve reservation/recovery generation fences.",
+          "Use existing initial+three retries, explicit directed recovery, real activity/tool tracking and subject-only invalidation; no new timeouts or auto next attempt."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c5",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Native/controller impact exchange parity and atomic plan-plus-impact save"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Reconcile findings and consolidate effective coverage",
+        "summary": "Extend result assessment and consolidation while preserving all-fresh behavior.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "Exact F=S, S disjoint R and S union R=P; fresh-only result bodies, valid retained origins and complete inventory coverage.",
+          "Extract decisions solely from accepted fresh final consistency result; missing reconciliation carries unresolved findings and produces incomplete.",
+          "Deduplicate findings by immutable source tuple, validate resolved/superseded evidence, compute effective counts and exact report.impact projection; no second disposition argument."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5",
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "Exact coverage partition and effective finding counts"
+          },
+          {
+            "level": "unit",
+            "name": "Final-result-only decisions, missing reconciliation carry, resolved/superseded evidence"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Expose impact transport and truthful progress",
+        "summary": "Update public registrations, observation and workflow guidance to expose implemented S3 semantics.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "Register impact through normal MCP, daemon RPC, handler routing, method class and repo audit with trusted owner/generation/sequence checks.",
+          "Progress total is selected executionOrder length, completed is fresh accepted count; separately report retained/effective breakdown; paginate fresh results only.",
+          "Existing no-impact callers stay valid; polling never dispatches work and complete fraction never masks incomplete status."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c4",
+          "c9",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "Normal impact schema/IPC routing rejects foreign or stale submissions"
+          },
+          {
+            "level": "unit",
+            "name": "Fresh-only progress pagination and retained breakdown"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Qualify S3 across workflow contexts and compiled entrypoints",
+        "summary": "Finish scoped integration qualification and maintain relevant design/sequence documentation.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "Deterministic native/controller scenarios cover Epic/Standalone/Issue contexts, indirect dependencies, provenance chains, missing decisions, mutations and interrupted/paused recovery.",
+          "Disposable compiled fake-CLI MCP/IPC smoke proves full initial then selective corrected review, zero retained calls, truthful progress and blocker carry; label synthetic evidence.",
+          "Run production build and scoped regression suites once; keep S4 publication/approval/cleanup and installed-daemon rollout out of this story.",
+          "Verify corrupt trusted provenance, checkpoint-cap/persistence failure, owner/generation errors and candidate bounds have the documented terminal-versus-output-retry behavior. Re-run relevant all-fresh S1/S2 and code-review regression subsets."
+        ],
+        "derivedFrom": [
+          "c1",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c13",
+          "c14"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "Disposable compiled MCP/IPC initial and corrected review call counts"
+          },
+          {
+            "level": "integration",
+            "name": "Epic standalone issue contexts and S1/S2 regression qualification"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "Impact {plan,impact} envelope round-trips; missing/extra fields, byte/count limits and positive sequential attempt constraints reject without dispatch.",
+        "coveredByTaskIds": [
+          "t1",
+          "t2",
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Complete current plan and selected/retained partition: no omitted/duplicate/unknown chunk, all consistency fresh, no unsafe split/merge retention, same artifact/reviewer backward-only sources.",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Finding tuple identities and explicit dispositions: duplicate IDs across attempts/chunks do not conflate; unknown/resolved/superseded references reject or remain incomplete.",
+        "coveredByTaskIds": [
+          "t1",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Direct correction selects edited concern and indirect dependent chunks even when their text is unchanged; final consistency always executes.",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Uncertainty, missing usable baseline, incompatible grouping or reviewer-party change produces explicit full mode without retained results.",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retained coverage remains references to immutable accepted source; full report counts include carried HIGH/MED/LOW and unresolved mandatory limits; no copied-as-fresh chunks.",
+        "coveredByTaskIds": [
+          "t3",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Fresh final consistency must account for all prior effective findings; carry by default, evidence-backed resolution and supersession require selected inspection, including removed sections.",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Atomic accepted plan+impact and prior attempt immutability; failed saves preserve last accepted bytes and dispatch zero further work.",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Interleaved retention: full plan [keep-A, change-B, keep-C, final], completed fresh [change-B] selects final; out-of-order/duplicate fresh results reject, retained dependencies resolve by ID and receive zero dispatches. [[c6]]",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Final findingDecisions strict union round-trip, missing/foreign/duplicate origins, branch-specific required fields, nonfinal rejection, unresolved carry on missing evidence, and valid resolved/superseded evidence references. [[c5]] [[c9]]",
+        "coveredByTaskIds": [
+          "t1",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Selective consolidation exact partition: [keep-A, change-B, keep-C, final] accepts fresh [change-B, final] with retained A/C, and rejects absent C, duplicate/unknown origins, fresh/retained overlap or retained final; report.chunks remains fresh-only. Full mode and no-impact calls retain all-fresh behavior. [[c5]] [[c6]]",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Incomplete retention rejection: a structurally identical prior chunk with status incomplete or nonempty limitations must be selected afresh on native and controller routes; reject bypass via an older passed source or an incomplete provenance link. Complete sibling chunks in an overall-incomplete prior report remain eligible. If fresh review still cannot verify mandatory coverage, keep the new report incomplete. [[c5]] [[c9]]",
+        "coveredByTaskIds": [
+          "t3",
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "Every same-attempt marker mutation (planning to impact, impact to planning, explicit to absent, absent to explicit) rejects before save; accepted impact rewrite/removal or a half plan/impact pair rejects while previous checkpoint bytes stay unchanged. [[c3]] [[c9]]",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Native/controller candidates invoke the same proposed validateDesignImpact and extended assessDesignResult contracts; output errors use the failed unit's retry budget, wrong-owner/transport and invalid stored-state errors do not. Missing final reconciliation is incomplete with conservative carry, never a fabricated resolution. [[c4]] [[c5]] [[c13]]",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Retained-source rejection matrix at validateDesignImpact AND consolidation: reject forward or equal attempt link, a cycle, cross-artifact or cross-reviewer source, missing source attempt, missing/malformed source result, and invalidated source attempt; verify prior bytes unchanged and no false consolidated coverage. Model-candidate errors use impact retries, already accepted corrupt state stops without model retry. [[c1]] [[c3]] [[c5]] [[c13]]",
+        "coveredByTaskIds": [
+          "t3",
+          "t4",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Reservation preparationKind mismatch matrix: planning argument on an impact attempt, impact argument on a planning/missing-marker attempt, and omitted default-planning argument on an impact attempt all reject invalid_checkpoint before counters/actions/current change and with zero provider calls. Matching preparation kinds and regular chunk reservations remain valid. [[c6]] [[c9]] [[c13]]",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "Selective progress live/stored/native/controller: plan [keep-A, change-B, keep-C, final] shows fresh 1/2 then 2/2 with retained2, effective3/4 then4/4; full attempts preserve N/N with retained0; pre-plan omits breakdown; count bounds and cursor fresh-only semantics reject bad state/request without a model call. An incomplete final report still shows status incomplete even when all selected assessments returned. [[c6]] [[c9]] [[c14]]",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Corrupt stored checkpoint JSON/schema is terminal invalid_checkpoint with no rewrite or retry; readable valid history with semantic uncertainty selects a full review only through valid admission. [[c3]] [[c13]]",
+        "coveredByTaskIds": [
+          "t2",
+          "t3",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Report.impact strict schema and projection: initial/pre-S3/full-restart report omits it; selective and correction-full reports require every declared field. Verify complete fresh/retained coverageOrigins, matching sc4/final-output fields, effective finding deduplication/counts, resolved/superseded exclusion, and carry+incomplete when reconciliation is missing. Reject partial objects, extra fields, wrong origin/justification, duplicate tuples and bounds overflow without silent truncation. [[c3]] [[c5]] [[c9]]",
+        "coveredByTaskIds": [
+          "t1",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Distinguish reviewer output bound failures (current-unit retries then pause) from a checkpoint serialization cap failure (checkpoint_too_large terminal, zero automatic retries or later dispatch, prior bytes unchanged). Verify failed cannot use recover/resume or restart_full; if terminal persistence fails, uncertainty remains visible. Use disposable deterministic fixtures, not hosted model calls. [[c3]] [[c4]] [[c9]] [[c13]]",
+        "coveredByTaskIds": [
+          "t4",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Round-7 correction cases: impact reservation and interrupted matching use current.kind=impact, while ordinary planning and chunk reservations retain their kinds; mismatches mutate nothing. Assert raw invalid_plan/invalid_result/invalid_schema/invalid_json/input_too_large at validator/decode boundaries and normalized invalid_output at the reviewer-execution diagnostic boundary. Stored-state invalid_checkpoint/foreign_checkpoint/result_too_large/invalid_checkpoint_path/invalid_project/invalid_review_id remain terminal with no model retry, and original bytes remain unchanged. [[c3]] [[c5]] [[c6]] [[c9]] [[c13]]",
+        "coveredByTaskIds": [
+          "t4",
+          "t5",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Consolidation has no separate findingDecisions input: extract only the accepted final consistency result array; verify report.impact equality, and omission yields [] with unresolved carry and incomplete. A forged second copy cannot override the accepted final result. [[c5]] [[c9]]",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Uncertain/unusable comparison context accepts an explicit full-mode candidate without retry, but rejects an affected_chunks candidate with raw invalid_plan/invalid_result normalized to invalid_output and spends only the current impact-unit retry budget. The host never silently transforms candidate scope or creates another attempt. [[c5]] [[c13]]",
+        "coveredByTaskIds": [
+          "t4",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Explicit next-attempt admission after terminal complete review; exact replay, conflicting identity, active/paused/invalidated paths and no automatic next attempt.",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Both reviewer parties use identical impact schema/guidelines; selected units execute in dependency order, retained units make zero model calls, complete final consistency and visible provenance.",
+        "coveredByTaskIds": [
+          "t6",
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "Impact crash/transport/schema failure preserves accepted work, spends at most initial+three per impact unit, pauses for user direction and resumes with no extra accepted-unit calls.",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "Mutation during blocked impact, selective execution and final save latches invalidation; restoration cannot revive; approved restart_full reviews every chunk without reuse.",
+        "coveredByTaskIds": [
+          "t5",
+          "t6",
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Epic DEF/HLD/Story LLD versus standalone and ISSUE-rooted LLD resolve correct current context without invented upstream artifacts; external changes do not trigger invalidation.",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Admission branch matrix: initial attempt1; exact historical replay after later attempts; latest+1 after each terminal complete report; skipped/unknown ordinal, different artifact, active subject, uncertain storage, paused/interrupted/invalidated/failed predecessor rejection. Original submitted.attempt stays1, all prior attempt bytes freeze, current baseline is fresh; save failure dispatches zero. [[c3]] [[c4]]",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Checkpoint evolution accepts terminal-complete sequential impact append and separately accepts invalidated+approved full restart; cross-branch preparationKind, changed prior prefix, missing report, changed initial submission and skipped attempt reject. [[c3]]",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "Controller/native impact parity: phase impact/kind impact accepts the same complete plan+sc4 decision and commits them together before acknowledgement; plan/impact or impact/planning mismatches, foreign owners, stale generations/sequences, replay conflicts and malformed envelopes reject with the existing retry distinction. Normal MCP phase schema, unary RPC route and main-owner classification/audit stay in lockstep. [[c4]] [[c9]]",
+        "coveredByTaskIds": [
+          "t6",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "Extend compiled disposable fake-CLI MCP/IPC smoke: full first review, corrected artifact, indirect impact, retained coverage, fresh consistency and auditable finding carry/resolution; inspect recorded call counts/provenance.",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "Typecheck/production build plus scoped design-review/MCP/schema/recovery regressions; existing code-review remains unaffected. S4 owns full approval/permanent-history/live rollout qualification.",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/LLD-9b04adb36cac716d-s3.json",
+      "quotedText": "Approved revision 11 governs S3 sc4 implementation, including contractDetails, dataModelChanges, errorPaths and testStrategy; consume S1/S2 and exclude S4 publication/approval/cleanup."
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/checkpoint.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/results.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/recovery-state.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/contracts.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/technical-failure.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/progress.ts"
+    }
+  ]
+}

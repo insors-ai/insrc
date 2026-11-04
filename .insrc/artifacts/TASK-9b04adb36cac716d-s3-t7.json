@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9d38026e-1f71-46d5-ab03-c26dc1ed07b5",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.971Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Reconcile findings and consolidate effective coverage",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d242088cf7242d44a80d254fa49729129b7dc313e5889f8312ee565d3a4e8021",
+        "at": "2026-11-04T19:34:28.971Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Reconcile findings and consolidate effective coverage",
+    "summary": "Extend result assessment and consolidation while preserving all-fresh behavior.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Exact F=S, S disjoint R and S union R=P; fresh-only result bodies, valid retained origins and complete inventory coverage.",
+      "Extract decisions solely from accepted fresh final consistency result; missing reconciliation carries unresolved findings and produces incomplete.",
+      "Deduplicate findings by immutable source tuple, validate resolved/superseded evidence, compute effective counts and exact report.impact projection; no second disposition argument."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Exact coverage partition and effective finding counts"
+      },
+      {
+        "level": "unit",
+        "name": "Final-result-only decisions, missing reconciliation carry, resolved/superseded evidence"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

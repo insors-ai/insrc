@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-969615ea-1654-405c-8498-8ad4a605f8fa",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.966Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Resolve and validate immutable coverage origins",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "809de32322bdb8d6d7ce024cf031ec24f3c269c6797d5744c53532a2b83b9ee1",
+        "at": "2026-11-04T19:34:28.966Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.966Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Resolve and validate immutable coverage origins",
+    "summary": "Add bounded backward historical-origin resolution and retained coverage eligibility checks shared by impact validation and consolidation.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "Resolve strictly decreasing same-artifact/reviewer references to accepted substantive sources; reject cycles, forward/equal/foreign/missing/invalidated or malformed origins.",
+      "Require passed/changes_requested and empty limitations at every link; reject older-passed bypass of immediately preceding incomplete coverage; preserve prior bytes."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Backward provenance eligibility matrix and incomplete-source bypass rejection"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

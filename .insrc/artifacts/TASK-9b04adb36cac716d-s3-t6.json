@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-30e3c9df-fd0d-44dd-8761-13de20670a10",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.969Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Run impact preparation on native and controller routes",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "28e411c62b577f67f75ae3adbdc8dc15ba47d7b66350b9152f1310447d73174a",
+        "at": "2026-11-04T19:34:28.970Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.970Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run impact preparation on native and controller routes",
+    "summary": "Add designImpactPrompt and coordinator impact exchange/execute branches with shared validation and atomic accepted plan+impact.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Native and trusted controller use identical impact policy/schema and atomically persist plan+impact before chunk dispatch.",
+      "Derive executionOrder from complete plan, skip retained chunks with zero provider calls, set impact current.kind and preserve reservation/recovery generation fences.",
+      "Use existing initial+three retries, explicit directed recovery, real activity/tool tracking and subject-only invalidation; no new timeouts or auto next attempt."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Native/controller impact exchange parity and atomic plan-plus-impact save"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

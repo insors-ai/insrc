@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e879df4-2af5-464d-8d8f-32d16fccd681",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:34:28.962Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Bound impact, finding and report schemas",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b491729d4a2ce891ba5afea48ec16a8351f39c8a3423fbe3ad7134cdd93d9f3d",
+        "at": "2026-11-04T19:34:28.963Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-04T19:34:28.963Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bound impact, finding and report schemas",
+    "summary": "Define additive contracts and deterministic schema fixtures before runtime integration.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "Strict sc4 assessment, source tuples, finding-decision union, preparationKind, result/report/progress and impact request schemas reject extras and enforce existing count/byte bounds.",
+      "Initial/no-impact checkpoints remain readable; correction report requires complete bounded provenance; no copied historical bodies."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Strict impact/disposition/projection schemas reject extras, wrong branches and bounds; old full checkpoints decode"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -5792,6 +5792,9 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
     return lists.length > postsBefore && !(lists.at(-1)!.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id);
   }, 5000, 'the timer repost purges the aged done chat from the LATEST active-list');
   assert.equal(store.get(id)?.status, 'done', 'purge is list-level: the row keeps its status');
+  assert.ok(store.list().some((x) => x.id === id), 'purged from the active list, but the chat REMAINS in history (store.list)');
+  const historyPosts = fc.posted.filter((p) => p.payload.type === 'history');
+  assert.ok(historyPosts.length === 0 || (historyPosts.at(-1)!.payload as { chats: { id: string }[] }).chats.some((c) => c.id === id), 'the latest history post still offers the purged chat');
 });
 
 test('E202611031bd72813:S001 t4: selecting an active-chat entry (open-chat { chatId }) opens that chat exactly like the history dropdown', () => {
@@ -6827,5 +6830,27 @@ test('E202611031bd72813:S001 t6: a follow-up stalled behind a still-blocked orig
   fc.send(env('permission-decision', { requestId: 'perm-stall', decision: 'approve' }));
   await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-stall')?.outcome === 'delivery-failed', 5000, 'the stalled follow-up is recorded delivery-failed by the timeout, not left approved');
   assert.equal(runCount, 1, 'the follow-up never spawned (original turn still holds the lock)');
+  fc.fireDispose();
+});
+
+test('E202611031bd72813:S001 t4: end-to-end round trip — the shell posts open-chat { chatId } (webview->host) and the host answers session-restored for that exact chat', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't1', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  const a = store.create('claude' as never);
+  const b = store.create('claude' as never);
+  store.save(a);
+  store.save(b);
+  // exactly what the shell's active/history dropdown posts on selection (see chat-shell t4 test)
+  fc.send(env('open-chat', { chatId: b.id }));
+  await waitFor(() => fc.posted.some((p) => p.payload.type === 'session-restored' && (p.payload as { sessionId: string }).sessionId === b.id), 5000, 'host answered session-restored for the selected chat');
+  const restored = fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!.payload as { sessionId: string };
+  assert.equal(restored.sessionId, b.id, 'the round trip opened chat B, not the default');
   fc.fireDispose();
 });

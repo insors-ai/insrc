@@ -828,11 +828,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             // release the lifecycle's retention pin for this cursor too (the observer's own pin is
             // released via heldPins above); the refcount makes a double-release a no-op
             out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
+            // ONE atomic write clears liveTurn AND sets the final status together. If it fails,
+            // both stay as they were, so the next observer pass retries — a separate status write
+            // that fails after the liveTurn-clearing save would leave a `working` session with no
+            // liveTurn, which every later pass skips, permanently unreconciled.
             delete now!.liveTurn;
+            now!.status = (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done';
+            now!.lastActivityAt = Math.max(now!.lastActivityAt ?? 0, Date.now());
             deps.store.save(now!);
             transitionSaved = true;
-          } catch { /* best-effort */ }
-          if (transitionSaved) setChatStatus(now!, (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+          } catch { /* best-effort: the next pass retries the whole transition */ }
+          if (transitionSaved) postActive();
         }
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real

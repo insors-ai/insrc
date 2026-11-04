@@ -5887,6 +5887,7 @@ test('E202611031bd72813:S001 t5 integration: observer ingests a REAL session-out
     assert.deepEqual(req!.options, ['Alpha', 'Beta']);
     assert.equal(req!.multi, true, 'multi preserved');
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.selectionSeq >= 1, 'decoder checkpoint carried selectionSeq');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -5940,6 +5941,7 @@ test('E202611031bd72813:S001 t5: the observer resumes from the PERSISTED checkpo
     assert.deepEqual(sels[0]!.options, ['Alpha', 'Beta']);
     assert.equal(after.liveTurn, undefined, 'terminal cleared the cursor');
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq === 6, 'checkpoint persisted turn-scoped with the advanced seq');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -5991,6 +5993,60 @@ test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a 
     assert.equal(after.status, 'done', 'result line replayed from the archive -> done (no unresolved requests)');
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs', 'checkpoint re-persisted for THIS turn');
     assert.equal(after.observerCheckpoint!.generation, 1, 'recovered into the archived generation 1, not the discarded 2');
+    host.dispose();
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('E202611031bd72813:S001 t5: a FAILED final transition save leaves liveTurn AND status intact (one atomic write), so the next observer pass retries instead of skipping a working session with no liveTurn', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs5-'));
+  try {
+    const out = createSessionOutput({ root, maxBytes: 1, pollMs: 5 });
+    const fc = fakeChannel();
+    // a copy-on-read/write wrapper around the in-memory store, mimicking the file store: a FAILED
+    // save leaves the persisted record untouched (the in-memory store mutates in place on get)
+    const base = createInMemoryChatSessionStore();
+    let failTransition = true;
+    const store: typeof base = {
+      ...base,
+      get: (id) => {
+        const x = base.get(id);
+        return x === undefined ? undefined : structuredClone(x);
+      },
+      save: (x) => {
+        if (failTransition && x.liveTurn === undefined) throw new Error('disk full');
+        base.save(structuredClone(x));
+      },
+    };
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg1 = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg1.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await new Promise((r) => setTimeout(r, 200)); // several observer passes hit the failure
+    const mid = store.get(s.id)!;
+    assert.ok(mid.liveTurn !== undefined, 'liveTurn survived the failed save — the pass is retried, not skipped');
+    assert.equal(mid.status, 'working', 'status untouched by the failed transition');
+    failTransition = false;
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the next pass completes the transition in one atomic save');
+    assert.equal(store.get(s.id)!.status, 'done', 'status landed together with the liveTurn clear');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -6238,6 +6294,7 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
     assert.deepEqual(declarations, [['LLD-abc-S001']], 'exactly once across MANY passes — deduped by declarationId');
     assert.deepEqual(store.get(s.id)?.observerCheckpoint?.declaredIds, ['call-1'], 'the dispatched declaration id is persisted in the checkpoint');
     assert.ok(store.get(s.id)?.liveTurn !== undefined, 'no terminal, live pid: the turn stays unreconciled');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -6301,6 +6358,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     assert.equal(sels[0]!.requestId, 'sel-t-obs-0', 'stable requestId: the rewind restored the decoder seq/buffer, so the replay did not re-issue a different id');
     assert.equal(sels[0]!.prompt, 'Pick', 'the restored buffer + frag2 completed the marker (without the rewind, frag2 alone could not)');
     assert.equal(after.status, 'waiting-input', 'the unresolved request keeps waiting-input across the terminal');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -6337,6 +6395,7 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
     store.save(cur);
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'verified death + caught-up drain completes the turn');
     assert.equal(store.get(s.id)?.status, 'done', 'a crashed CLI with fully consumed output reconciles to done');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -6417,6 +6476,7 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     await out2.endTurn(s2.id, 't-live', { code: 0, signal: null });
     await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'turn-end marker: the turn completes (terminal already ingested)');
     assert.equal(store2.get(s2.id)?.status, 'waiting-input', 'the ingested request keeps waiting-input');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
@@ -6463,6 +6523,7 @@ test('E202611031bd72813:S001 t5: recoverTurn failure falls back to the liveTurn 
     assert.equal(sels.length, 1, 'the split marker resolved exactly once');
     assert.equal(sels[0]!.requestId, 'sel-t-obs-3', 'the lifecycle decoder seq (3) was used — not reset to 0');
     assert.equal(sels[0]!.prompt, 'Pick', 'the restored buffer + frag2 completed the marker');
+    host.dispose();
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

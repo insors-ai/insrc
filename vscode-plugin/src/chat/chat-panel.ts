@@ -682,7 +682,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: false, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
@@ -783,12 +783,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
       // Rewind a not-caught-up terminal to just before it — ONCE (a sustained budget exhaustion
       // must not replay the same prefix forever; after one rewind the checkpoint advances normally).
-      const rewind = pass.sawTerminal && !caughtUp && cp.rewound !== true;
+      const rewind = pass.sawTerminal && !caughtUp && cp.sawTerminal !== true;
       const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
       const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
       const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
       try {
-        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(rewind ? { rewound: true } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
+        s.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(s.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: s.observerCheckpoint.declaredIds } : {}) };
         deps.store.save(s);
       } catch { /* best-effort */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a

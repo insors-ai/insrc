@@ -197,6 +197,8 @@ export interface ObserverCheckpoint {
   readonly declaredIds?: readonly string[] | undefined;
   /** Set when the checkpoint was rewound to just before a terminal — rewound only once per terminal. */
   readonly rewound?: boolean | undefined;
+  /** A real terminal (done, or a non-observation error) was ingested at/before this checkpoint. */
+  readonly sawTerminal?: boolean | undefined;
 }
 
 /** A turn still being read from the session output file. */

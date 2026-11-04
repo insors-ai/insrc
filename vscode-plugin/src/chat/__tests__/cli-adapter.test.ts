@@ -18,7 +18,7 @@ import { tick, waitFor } from './fixtures.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, writeReachedStdin } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -1864,4 +1864,11 @@ test('E202611031bd72813:S001 t6: decide() reports delivery — {delivered:true} 
   assert.deepEqual(adapter.decide(appr.turnId, 'restored-req-1', 'deny'), { delivered: true }, 'deliverable after re-registering');
   assert.equal(spawner.procs[0]!.writes().length, 2);
   await adapter.cancel(appr.turnId);
+});
+
+test('E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (false return) is still delivered; only a destroyed/ended stdin is not', () => {
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: false }, false), true, 'backpressure: the chunk is buffered and will flush, so it IS delivered');
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: false }, true), true, 'plain accepted write');
+  assert.equal(writeReachedStdin({ destroyed: true, writableEnded: false }, false), false, 'destroyed stdin: undelivered');
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: true }, true), false, 'ended stdin: undelivered');
 });

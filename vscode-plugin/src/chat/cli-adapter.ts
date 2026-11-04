@@ -1537,6 +1537,16 @@ export async function deriveChatTitle(
   }
 }
 
+/**
+ * E202611031bd72813:S001 t6: whether a stdin write reached the process. `stream.write()` returns
+ * false on BACKPRESSURE — the chunk is already buffered and will be flushed — so that boolean is
+ * NOT a delivery failure; only a destroyed or ended stream is undelivered.
+ */
+export function writeReachedStdin(stream: { readonly destroyed: boolean; readonly writableEnded: boolean }, writeOk: boolean): boolean {
+  void writeOk; // false = backpressure: the chunk is buffered and will flush, so still delivered
+  return !stream.destroyed && !stream.writableEnded;
+}
+
 // ---- production spawner (the only child_process user) ------------------------
 
 /**
@@ -1652,12 +1662,14 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       if (stdin === null || stdin === undefined) return false;
       if (stdin.destroyed || stdin.writableEnded || stdin.writableFinished) return false;
       try {
+        // write() returns false on BACKPRESSURE: the chunk is already buffered and will be
+        // flushed, so it counts as delivered — only a destroyed/closed stream is not.
         const ok = stdin.write(data, (err) => {
           if (err !== null && err !== undefined) {
             onError?.(err); // the caller (decide) re-registers the request; no logger in this seam
           }
         });
-        return ok === true && !stdin.destroyed;
+        return writeReachedStdin(stdin, ok);
       } catch {
         return false;
       }

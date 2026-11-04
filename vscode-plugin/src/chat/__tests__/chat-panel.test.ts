@@ -6541,7 +6541,10 @@ test('E202611031bd72813:S001 t5: an observer-completed detached chat persists it
   try {
     const out = createSessionOutput({ root, maxBytes: 1, pollMs: 5 });
     const fc = fakeChannel();
-    const store = createInMemoryChatSessionStore();
+    // copy-on-get store, like the file store after another window refreshes the record mid-pass:
+    // the observer's appended rows live on its own fetched object and must still be saved with the checkpoint
+    const base = createInMemoryChatSessionStore();
+    const store: typeof base = { ...base, get: (id) => { const x = base.get(id); return x === undefined ? undefined : structuredClone(x); } };
     const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
@@ -6564,7 +6567,7 @@ test('E202611031bd72813:S001 t5: an observer-completed detached chat persists it
     // the DEAD host's live reader had already persisted the assistant row (liveTurn.transcriptLen)
     cur.transcript.push({ role: 'assistant', text: 'detached answer', at: '2026-01-01T00:00:00.000Z' });
     cur.liveTurn = { cursor: { ...seg1.cursor }, ownerHostPid: 999, pid: 1234, startedAt: 1, transcriptLen: 1, turnStartLen: 0 };
-    store.save(cur);
+    base.save(structuredClone(cur));
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the observer completed the detached turn');
     const after = store.get(s.id)!;
     assert.equal(after.status, 'done');

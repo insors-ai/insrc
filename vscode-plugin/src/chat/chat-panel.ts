@@ -841,11 +841,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const persistTranscriptLen = rewind ? (pass.preTerminal?.transcriptLen ?? 0) : undefined;
       let checkpointSaved = false;
       try {
-        // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass)
+        // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass),
+        // but the transcript saved is OURS — rows appended during this pass live on `s`, and a fresh
+        // re-fetch may return a different object (file store refresh from another window); saving
+        // `fresh` alone would advance the checkpoint past rows that were never written.
         const fresh = deps.store.get(s.id) ?? s;
-        if (pass.nativeSessionId !== undefined) fresh.nativeSessionId = pass.nativeSessionId;
-        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: persistTranscriptLen ?? fresh.transcript.length };
-        deps.store.save(fresh);
+        const toSave: ChatSession = fresh === s ? s : { ...fresh, transcript: s.transcript };
+        if (pass.nativeSessionId !== undefined) toSave.nativeSessionId = pass.nativeSessionId;
+        toSave.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: persistTranscriptLen ?? toSave.transcript.length };
+        deps.store.save(toSave);
         checkpointSaved = true;
       } catch { /* best-effort — pins are NOT released below if this failed */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a

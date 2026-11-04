@@ -60,6 +60,18 @@ export type DecideResult =
   | { readonly ok: true; readonly decided: QueuedApproval }
   | { readonly ok: false; readonly reason: 'not-head' | 'unknown' };
 
+/**
+ * E202611031bd72813:S001 t6: a full, restorable snapshot of the queue — waiting requests in queue
+ * order, per-turn batch decisions, ended-turn membership, the grant chain. Written to the session's
+ * persisted pendingRequests before clear() on a chat switch, and restored on attach.
+ */
+export interface ApprovalQueueSnapshot {
+  readonly waiting: readonly QueuedApproval[];
+  readonly batches: readonly { readonly turnId: string; readonly decisions: readonly ApprovalDecision[] }[];
+  readonly ended: readonly string[];
+  readonly grants: readonly string[];
+}
+
 export interface ApprovalQueue {
   /** Adds a request at the back. A requestId already queued is ignored. */
   enqueue(request: QueuedApproval): void;
@@ -80,6 +92,10 @@ export interface ApprovalQueue {
   grantChain(): readonly string[];
   /** Drops every waiting request and batch and resets the grant chain; returns the waiting requests. */
   clear(): readonly QueuedApproval[];
+  /** E202611031bd72813:S001 t6: the full restorable state (see {@link ApprovalQueueSnapshot}). */
+  snapshot(): ApprovalQueueSnapshot;
+  /** E202611031bd72813:S001 t6: replaces all state with the snapshot's (queue order preserved). */
+  restore(snapshot: ApprovalQueueSnapshot): void;
 }
 
 export function createApprovalQueue(): ApprovalQueue {
@@ -157,6 +173,22 @@ export function createApprovalQueue(): ApprovalQueue {
       ended = new Set();
       grants = [];
       return dropped;
+    },
+
+    snapshot() {
+      return {
+        waiting: [...waiting],
+        batches: [...batches.entries()].map(([turnId, decisions]) => ({ turnId, decisions: [...decisions] })),
+        ended: [...ended],
+        grants: [...grants],
+      };
+    },
+
+    restore(snapshot) {
+      waiting = [...snapshot.waiting];
+      batches = new Map(snapshot.batches.map((b) => [b.turnId, [...b.decisions]]));
+      ended = new Set(snapshot.ended);
+      grants = [...snapshot.grants];
     },
   };
 }

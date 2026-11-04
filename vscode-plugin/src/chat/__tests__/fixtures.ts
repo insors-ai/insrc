@@ -35,6 +35,8 @@ export interface FakeProcHandle {
   exitNow(): void;
   /** S004: every string written to the fake process stdin via write(), in call order. */
   writes(): readonly string[];
+  /** E202611031bd72813:S001 t6: make write() report failure (dead stdin) without recording. */
+  failWrites(v: boolean): void;
 }
 
 export interface FakeSpawnCall {
@@ -132,6 +134,7 @@ export function makeFakeSpawner(script: FakeProcScript | FakeProcScript[]): Fake
 function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakeProcHandle } {
   let killed = false;
   const writes: string[] = [];
+  let failWrites = false;
   // Created eagerly so kill() can always resolve it, with no race against the
   // generator reaching the hang `await` (that race deadlocked the cancel test).
   let releaseHang!: () => void;
@@ -189,7 +192,10 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
       resolveExit({ code: null, signal });
     },
     write: (data: string) => {
+      // E202611031bd72813:S001 t6: write() reports delivery; failWrites makes it report failure
+      if (failWrites) return false;
       writes.push(data);
+      return true;
     },
   };
   return {
@@ -197,6 +203,9 @@ function makeFakeProc(s: FakeProcScript): { proc: SpawnedProcess; handle: FakePr
     handle: {
       wasKilled: () => killed,
       writes: () => writes,
+      failWrites: (v: boolean) => {
+        failWrites = v;
+      },
       signals: () => signals,
       exited: () => exited,
       exitNow: () => {

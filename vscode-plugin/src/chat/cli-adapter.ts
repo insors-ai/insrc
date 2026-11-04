@@ -164,8 +164,12 @@ export interface StreamAdapter {
    * the provider control response via the process write() seam and clears it. A
    * decision for an unknown/stale/dead requestId is a no-op (nothing written), and at
    * most one control response is ever written per requestId. Idempotent + safe.
+   * E202611031bd72813:S001 t6: returns whether the decision was DELIVERED — a failed
+   * write does not consume the request, so the caller can fall back to a follow-up run.
    */
-  decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void;
+  decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { readonly delivered: boolean };
+  /** E202611031bd72813:S001 t6: re-register a restored request (reattach/reload) so decide() can answer it. */
+  registerPending?(turnId: string, requestId: string): void;
   /** Static capabilities of this provider (e.g. whether native session resume is supported). */
   readonly capabilities: { readonly resume: boolean };
 }
@@ -198,7 +202,8 @@ export interface SpawnedProcess {
    * compiling and behaving as today (k2); the decision relay guards on its
    * presence before calling. Only review mode uses it; auto mode never does.
    */
-  write?(data: string): void;
+  /** E202611031bd72813:S001 t6: returns whether the write reached the process (false = dead/absent stdin). */
+  write?(data: string): boolean;
   /** With a session output: the position just after the last line lines() yielded. */
   readonly cursor?: SegmentCursor | undefined;
 }
@@ -1247,21 +1252,40 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     await stopTurnProcess(proc);
   }
 
-  function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void {
+  function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { delivered: boolean } {
     const set = pendingByTurn.get(turnId);
-    if (set === undefined || !set.has(requestId)) return; // unknown / stale / already answered — no-op
-    // Consume the entry first so a duplicate/late decide is a guaranteed no-op (at most
-    // one control response per requestId), even if the write below fails.
-    set.delete(requestId);
-    if (set.size === 0) pendingByTurn.delete(turnId);
+    if (set === undefined || !set.has(requestId)) return { delivered: false }; // unknown / stale / already answered — no-op
     const proc = live.get(turnId);
     if (proc === undefined || typeof proc.write !== 'function' || mapper.inputIsPrompt === true) {
-      // Process gone or no write seam: the decision is undeliverable; the entry is already
-      // cleared so the card is not left live. Never throw into the caller.
+      // Process gone or no write seam: the decision is undeliverable — and NOT consumed, so a
+      // later retry or a follow-up run can still answer this requestId. Never throw into the caller.
       log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (no live stdin)`);
-      return;
+      return { delivered: false };
     }
-    proc.write(mapper.formatDecision(requestId, decision));
+    let written = false;
+    try {
+      written = proc.write(mapper.formatDecision(requestId, decision));
+    } catch {
+      written = false;
+    }
+    if (!written) {
+      log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (write failed)`);
+      return { delivered: false };
+    }
+    // Consume only on success, so a duplicate/late decide is a guaranteed no-op (at most one
+    // control response per requestId).
+    set.delete(requestId);
+    if (set.size === 0) pendingByTurn.delete(turnId);
+    return { delivered: true };
+  }
+
+  function registerPending(turnId: string, requestId: string): void {
+    let set = pendingByTurn.get(turnId);
+    if (set === undefined) {
+      set = new Set();
+      pendingByTurn.set(turnId, set);
+    }
+    set.add(requestId);
   }
 
   async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
@@ -1342,7 +1366,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     yield { kind: 'error', turnId, message: 'the turn ended without a result' };
   }
 
-  return { run, resume, cancel, decide, capabilities: { resume: mapper.resume } };
+  return { run, resume, cancel, decide, registerPending, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {
@@ -1548,12 +1572,14 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       child.kill(signal);
     },
     write: (data: string) => {
-      // Best-effort: a closed/absent stdin must never crash the stream loop — the
-      // decision relay treats a failed write as "decision undeliverable" (k3, local stdio only).
+      // E202611031bd72813:S001 t6: report whether the write reached the process; a closed/absent
+      // stdin returns false (never throws into the stream loop) so decide() can fall back.
+      if (child.stdin === null || child.stdin === undefined) return false;
       try {
-        child.stdin?.write(data);
+        child.stdin.write(data);
+        return true;
       } catch {
-        /* stdin closed / process gone — the pending entry is cleared by the caller */
+        return false;
       }
     },
   };

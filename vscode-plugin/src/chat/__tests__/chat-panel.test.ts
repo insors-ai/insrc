@@ -72,6 +72,8 @@ function fakeChannel(): FakeChannel {
 }
 
 interface AdapterHooks {
+  /** E202611031bd72813:S001 t6: what decide() reports (default delivered=true). */
+  delivered?: boolean | undefined;
   onRun?: (r: TurnRequest) => void;
   onCancel?: () => void;
   onReturn?: () => void; // fires when the consumer abandons the iterator (.return())
@@ -104,7 +106,10 @@ function scriptedAdapter(events: TurnEvent[], hooks?: AdapterHooks): StreamAdapt
       }
     },
     cancel: () => { cancelled = true; hooks?.onCancel?.(); },
-    decide: (turnId, requestId, decision) => hooks?.onDecide?.(turnId, requestId, decision),
+    decide: (turnId, requestId, decision) => {
+      hooks?.onDecide?.(turnId, requestId, decision);
+      return { delivered: hooks?.delivered ?? true }; // t6: delivery result; default delivered
+    },
     capabilities: { resume: true },
   };
 }
@@ -182,7 +187,7 @@ test('single-in-flight: a second submit waits for the first, which reports to it
       }
     },
     cancel: async (turnId) => { cancelled.add(turnId); },
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
@@ -887,7 +892,7 @@ function fedAdapter(): { adapter: StreamAdapter; feed: (ev: TurnEvent) => void; 
       }
     },
     cancel: () => { cancelled = true; },
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, feed: (ev) => void queue.push(ev), runs: () => runs };
@@ -2858,7 +2863,7 @@ function procAdapter(text = (n: number) => `answer-${n}`): { adapter: StreamAdap
       yield { kind: 'done', turnId: id, ok: true };
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, procs, runs: () => n };
@@ -3036,7 +3041,7 @@ test('a turn records its cursor on the session as lines are handled and clears i
     },
     resume: async function* () {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 4242, processStartTime: () => 77 });
@@ -3087,7 +3092,7 @@ function resumeAdapter(events: TurnEvent[], gate?: Promise<void>): { adapter: St
       for (const ev of events) yield ev;
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, requests };
@@ -3169,7 +3174,7 @@ test('switching chat or closing the panel stops following a turn writing to the 
       yield { kind: 'done', turnId: 'long', ok: true };
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 3, isAlive: () => true });
@@ -3212,7 +3217,7 @@ test("Stop ends a resumed turn's process through the handle resume() hands over"
       await new Promise<void>((r) => opts?.signal?.addEventListener('abort', () => r(), { once: true }));
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const fc = fakeChannel();
@@ -3240,7 +3245,7 @@ test('closing the panel mid-turn leaves a session-file turn running with its cur
     },
     async *resume(): AsyncIterable<TurnEvent> {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
@@ -3286,7 +3291,7 @@ test('a failing store save or a failing process stop never becomes an unhandled 
       },
       async *resume(): AsyncIterable<TurnEvent> {},
       cancel: async () => {},
-      decide: () => {},
+      decide: () => ({ delivered: true }),
       capabilities: { resume: true },
     };
     const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: adapter2 }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
@@ -3638,7 +3643,7 @@ function sequenceAdapter(scripts: TurnEvent[][]): { adapter: StreamAdapter; runs
       }
     },
     cancel: () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs };
@@ -3835,7 +3840,7 @@ test('a request joining the queue while the head is shown updates the shown card
       yield { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' };
     },
     cancel: () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
@@ -4000,7 +4005,7 @@ test('a followed turn writes each row before posting it; after a chat switch the
       yield { kind: 'assistant-delta', turnId: 't1', text: 'after the switch' };
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', hostPid: 2, isAlive: (pid) => pid === 2 });
@@ -4999,7 +5004,7 @@ function gatedAdapter(): { adapter: StreamAdapter; runs: GatedRun[]; resumes: Ga
       }
     },
     cancel: () => { cancelled += 1; },
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs, resumes };
@@ -5268,7 +5273,7 @@ test("chat host: a turn followed by a second message still passes its declared d
 
 test('chat host: submitExternal in a window without a queue answers unavailable with a note and keeps nothing', async () => {
   const fc = fakeChannel();
-  const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => {}, capabilities: { resume: true } };
+  const adapter: StreamAdapter = { async *run(): AsyncIterable<TurnEvent> {}, cancel: () => {}, decide: () => ({ delivered: true }), capabilities: { resume: true } };
   const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store: createInMemoryChatSessionStore(), cwd: () => '/repo' });
   try {
     assert.deepEqual(host.submitExternal('Review decision: approved'), { kind: 'unavailable', note: 'the chat queue is not available in this window' });
@@ -5715,7 +5720,7 @@ test('E202611031bd72813:S001 t2: an adapter failure (onError, not onTerminal) is
   const failing: StreamAdapter = {
     run: async function* (): AsyncIterable<TurnEvent> { throw new Error('adapter exploded'); },
     cancel: () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: false },
   };
   const host = createChatPanelHost({
@@ -5805,7 +5810,7 @@ test('E202611031bd72813:S001 t5: the observer reconciles a detached chat with a 
       for (const ev of resumeEvs) { yield ev; if (ev.kind === 'done') return; }
     },
     cancel: () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const host = createChatPanelHost({
@@ -6032,4 +6037,164 @@ test('E202611031bd72813:S001 t5: a checkpoint of ANOTHER turn is ignored — the
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('E202611031bd72813:S001 t5: the observer reconciles an ORPHANED turn (ownerHostPid 0, e.g. left by a detach in this window) — it is not skipped as this host\'s own', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const registered: unknown[] = [];
+  const stubOut = { registerCursor: (c: unknown) => void registered.push(c), unregisterCursor: () => {}, oldestRetainedGeneration: async () => 1, recoverTurn: async () => undefined } as never;
+  const resumeEvs: TurnEvent[] = [{ kind: 'done', turnId: 't9', ok: true, sessionId: 'n9' }];
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(): AsyncIterable<TurnEvent> {
+      for (const ev of resumeEvs) { yield ev; if (ev.kind === 'done') return; }
+    },
+    cancel: () => {},
+    decide: () => ({ delivered: true }),
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    sessionOutput: stubOut,
+    observerTimerMs: 20,
+    hostPid: 7,
+    isAlive: () => false,
+  });
+  host.open();
+  const s = store.create('claude' as never);
+  store.setStatus(s.id, 'working');
+  const cur = store.get(s.id)!;
+  cur.liveTurn = { cursor: { turnId: 't9', generation: 1, offset: 0 }, ownerHostPid: 0, pid: 1234, startedAt: 1 }; // orphaned by a detach
+  store.save(cur);
+  await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the orphaned turn was observed to terminal');
+  assert.equal(store.get(s.id)?.status, 'done');
+  assert.ok(registered.length >= 1, 'the observer ran on the orphaned turn');
+});
+
+test('E202611031bd72813:S001 t5: the observer budget watchdog ends a pass even when the followed process is idle (no events), and later ticks still run (no overlap)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const stubOut = { registerCursor: () => {}, unregisterCursor: () => {}, oldestRetainedGeneration: async () => undefined, recoverTurn: async () => undefined } as never;
+  let resumeCalls = 0;
+  const adapter: StreamAdapter = {
+    async *run(): AsyncIterable<TurnEvent> {},
+    async *resume(_req, o): AsyncIterable<TurnEvent> {
+      resumeCalls += 1;
+      // idle live process: no events, wait until aborted (the watchdog) or forever
+      await new Promise<void>((resolve) => {
+        if (o?.signal?.aborted) return resolve();
+        o?.signal?.addEventListener('abort', () => resolve(), { once: true });
+      });
+    },
+    cancel: () => {},
+    decide: () => ({ delivered: true }),
+    capabilities: { resume: true },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    sessionOutput: stubOut,
+    observerTimerMs: 20,
+    observerTickBudgetMs: 40,
+    hostPid: 1,
+    // the owner HOST is dead (the observer engages), but the followed CLI pid is ALIVE:
+    // without the watchdog the pass would wait on it forever
+    isAlive: (pid) => pid !== 999,
+  });
+  host.open();
+  const s = store.create('claude' as never);
+  store.setStatus(s.id, 'working');
+  const cur = store.get(s.id)!;
+  cur.liveTurn = { cursor: { turnId: 't9', generation: 1, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+  store.save(cur);
+  await waitFor(() => resumeCalls >= 3, 5000, 'several passes ran: each idle pass ended at the budget watchdog and did not block the next tick');
+  assert.equal(store.get(s.id)?.status, 'working', 'a budget-aborted pass keeps the last status (not done)');
+  assert.ok(store.get(s.id)?.liveTurn !== undefined, 'the cursor is kept');
+});
+
+test('E202611031bd72813:S001 t6: switching chats persists the unresolved request; reopening restores it by its original requestId (card re-posted), and deciding it runs the follow-up and marks the persisted outcome', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let runCount = 0;
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't1', requestId: 'perm-1', title: 'Run Edit', detail: 'edit file', toolName: 'Edit' },
+  ];
+  const adapter = scriptedAdapter(evs, {
+    hang: true,
+    onRun: () => { runCount += 1; },
+  });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'do it' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  const firstId = store.list()[0]!.id;
+  // switch to another chat: the waiting request is persisted UNRESOLVED before the queue is dropped
+  const other = store.create('claude' as never);
+  fc.send(env('open-chat', { chatId: other.id }));
+  await waitFor(() => store.get(firstId)?.pendingRequests !== undefined);
+  const persisted = store.get(firstId)!.pendingRequests!;
+  assert.equal(persisted.length, 1);
+  assert.equal(persisted[0]!.requestId, 'perm-1', 'keyed by the original requestId');
+  assert.equal(persisted[0]!.resolved, false, 'unresolved — still actionable across the switch');
+  assert.equal(persisted[0]!.title, 'Run Edit');
+  // reopen the first chat: the request re-enters the queue and its card is re-posted
+  const postedBefore = turnEvents(fc).filter((e) => e.kind === 'approval-request').length;
+  fc.send(env('open-chat', { chatId: firstId }));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'approval-request').length > postedBefore, 5000, 'the restored request re-posted its card');
+  // decide it: the turn is no longer live -> the batch completes -> ONE follow-up run carries the decision
+  fc.send(env('permission-decision', { requestId: 'perm-1', decision: 'approve' }));
+  await waitFor(() => runCount >= 2, 5000, 'the decision started a follow-up runTurn carrying the decision');
+  const after = store.get(firstId)!;
+  assert.equal(after.pendingRequests![0]!.resolved, true, 'the persisted request is resolved');
+  assert.equal(after.pendingRequests![0]!.outcome, 'approved');
+  fc.fireDispose();
+});
+
+test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide reports undelivered) is delivered as a follow-up run and marked approved — never a silent no-op', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let runCount = 0;
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't2', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't2', requestId: 'perm-9', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
+  ];
+  const adapter = scriptedAdapter(evs, {
+    hang: true,
+    delivered: false, // the turn's stdin is gone: decide() reports undelivered
+    onRun: () => { runCount += 1; },
+  });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  const id = store.list()[0]!.id;
+  // switch away and back: the request is persisted unresolved, then restored into the queue
+  const other = store.create('claude' as never);
+  fc.send(env('open-chat', { chatId: other.id }));
+  await waitFor(() => (store.get(id)?.pendingRequests ?? []).some((r) => r.requestId === 'perm-9' && !r.resolved));
+  fc.send(env('open-chat', { chatId: id }));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'approval-request').length >= 2, 5000, 'restored card re-posted');
+  // decide the restored request: no live turn + undelivered stdin -> follow-up runTurn carries it
+  fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+  await waitFor(() => runCount >= 2, 5000, 'the undelivered decision fell back to a follow-up runTurn');
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-9')?.resolved === true, 5000);
+  assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-9')!.outcome, 'approved', 'correlated onto the persisted request — not a silent no-op');
+  fc.fireDispose();
 });

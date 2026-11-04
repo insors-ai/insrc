@@ -342,7 +342,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S004 (dev-chat ux polish): pending selection requests, requestId -> the widget's options.
   // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
   // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
-  const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }> }>();
+  const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }>; prompt?: string | undefined; multi?: boolean | undefined }>();
   // Epic E20261014613abdb3 Story S001: the queued message this window is running, and what its
   // turns (the message's own and its continuations) have reported so far.
   interface QueuedRun {
@@ -596,6 +596,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // cursor, registered for retention), persisting requests before any completion/death transition.
   let observerTimer: ReturnType<typeof setInterval> | undefined;
   let observerRunning = false; // passes never overlap: a tick is skipped while one is in flight
+  // Generations this host's observer currently pins (key `${sessionId}:${generation}`), held
+  // ACROSS ticks while there may be unread output; registered once per generation (refcounted),
+  // released only when a pass caught up or the turn reached a real terminal.
+  const heldPins = new Map<string, { sessionId: string; turnId: string; generation: number; offset: number }>();
   const runObserverPass = async (): Promise<void> => {
     if (observerRunning || disposed) return;
     observerRunning = true;
@@ -657,15 +661,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       if (typeof ad.resume !== 'function') continue;
       const resume = ad.resume.bind(ad);
-      // One ingest pass from `from` with the given decoder state. Pins its generation for retention
-      // while it runs and records it in `pins` (dropped only when the pass caught up or reached a
-      // real terminal — between ticks an unread generation stays pinned, never archived away).
-      const pins: { sessionId: string; turnId: string; generation: number; offset: number }[] = [];
+      // One ingest pass from `from` with the given decoder state. Its generation is pinned via
+      // heldPins (once per generation, across passes/ticks) — dropped only when the pass caught
+      // up or reached a real terminal; between ticks an unread generation stays pinned.
       const readerId = `host-${hostPid}`; // one pin per reader: another window's observer may pin the same generation
       const ingest = async (from: { generation: number; offset: number }, decSeq: number, decBuf: string) => {
         const cursor = { sessionId: s.id, turnId, generation: from.generation, offset: from.offset };
-        out.registerCursor(cursor, readerId);
-        pins.push(cursor);
+        const pinKey = `${s.id}:${cursor.generation}`;
+        if (!heldPins.has(pinKey)) {
+          out.registerCursor(cursor, readerId);
+          heldPins.set(pinKey, cursor);
+        }
         const ctl = new AbortController();
         const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
         // Budget watchdog: bounds the pass even while the followed process is idle and no events
@@ -754,7 +760,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real
       // terminal drops every pin this tick made; otherwise the unread generation stays archived
-      if (caughtUp || pass.sawTerminal) for (const p of pins) out.unregisterCursor(p, readerId);
+      if (caughtUp || pass.sawTerminal) {
+        for (const [key, cur] of [...heldPins]) {
+          if (key.startsWith(`${s.id}:`)) {
+            heldPins.delete(key);
+            out.unregisterCursor(cur, readerId);
+          }
+        }
+      }
     }
   };
 
@@ -906,9 +919,120 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     showApprovalHead();
   };
 
+  // E202611031bd72813:S001 t6: mark one persisted request resolved with its outcome (never deleted mid-flight).
+  const markPersistedRequest = (s: ChatSession | undefined, requestId: string, resolved: boolean, outcome?: string): void => {
+    if (s === undefined) return;
+    const list = s.pendingRequests ?? [];
+    const i = list.findIndex((r) => r.requestId === requestId);
+    if (i < 0) return;
+    const cur = list[i]!;
+    if (cur.resolved === resolved && cur.outcome === outcome) return;
+    const next = [...list];
+    next[i] = { ...cur, resolved, ...(outcome !== undefined ? { outcome } : {}) };
+    s.pendingRequests = next;
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: request ${requestId} outcome not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  // E202611031bd72813:S001 t6: write the queue's waiting requests + pending selections onto the
+  // session's persisted pendingRequests BEFORE they are dropped (outcome set when they are being
+  // resolved as rejected/superseded/timed-out; unresolved when they stay actionable across a switch).
+  const persistPendingBeforeClear = (s: ChatSession | undefined, outcome?: string): void => {
+    if (s === undefined) return;
+    // A DRAFT session is not in history yet (it persists on its first turn) — nothing to save onto.
+    if (deps.store.get(s.id) === undefined) return;
+    const existing = [...(s.pendingRequests ?? [])];
+    let changed = false;
+    const upsert = (rec: import('./session-store.js').PersistedRequest): void => {
+      const i = existing.findIndex((r) => r.requestId === rec.requestId);
+      if (i >= 0) existing[i] = rec;
+      else existing.push(rec);
+      changed = true;
+    };
+    for (const r of approvals.snapshot().waiting) {
+      upsert({
+        requestId: r.requestId,
+        kind: 'approval',
+        turnId: r.turnId,
+        title: r.title,
+        detail: r.detail,
+        blockKind: r.blockKind,
+        ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+        ...(r.command !== undefined ? { command: r.command } : {}),
+        resolved: outcome !== undefined,
+        ...(outcome !== undefined ? { outcome } : {}),
+      });
+    }
+    for (const [requestId, sel] of pendingSelections) {
+      upsert({
+        requestId,
+        kind: 'selection',
+        ...(sel.prompt !== undefined ? { prompt: sel.prompt } : {}),
+        options: sel.options.map((o) => o.label),
+        ...(sel.multi === true ? { multi: true } : {}),
+        resolved: outcome !== undefined,
+        ...(outcome !== undefined ? { outcome } : {}),
+      });
+    }
+    if (!changed) return; // nothing waiting: leave the stored record byte-identical
+    s.pendingRequests = existing;
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: pendingRequests not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  // E202611031bd72813:S001 t6: re-enter a session's unresolved persisted requests into the live
+  // queue/selection map on attach or webview reload, keyed by their ORIGINAL requestId, and
+  // re-register them with the adapter when their turn is (being) followed — so a decision answers
+  // the same request, and a dead stdin falls back to a follow-up run (relayDecision).
+  const restorePendingRequests = (s: ChatSession): void => {
+    let restored = 0;
+    for (const r of s.pendingRequests ?? []) {
+      if (r.resolved) continue;
+      restored += 1;
+      if (r.kind === 'approval') {
+        const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
+        approvals.enqueue({
+          requestId: r.requestId,
+          turnId: r.turnId ?? 'restored',
+          title: r.title ?? r.requestId,
+          detail: r.detail ?? '',
+          blockKind: r.blockKind === 'dir-block' ? 'dir-block' : 'tool-gate',
+          ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+          ...(r.command !== undefined ? { command: r.command } : {}),
+          resolution: inTurn ? 'in-turn' : 'turn-ended',
+        });
+        if (!inTurn && r.turnId !== undefined) approvals.endTurn(r.turnId); // its turn is gone: the restored batch can complete on decision
+        if (inTurn && r.turnId !== undefined) {
+          try {
+            deps.providers.get(s.provider).registerPending?.(r.turnId, r.requestId);
+          } catch (err) {
+            log.warn(`[chat] session ${s.id}: restored request ${r.requestId} not re-registered: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      } else {
+        pendingSelections.set(r.requestId, {
+          options: (r.options ?? []).map((label) => ({ id: label, label })),
+          ...(r.prompt !== undefined ? { prompt: r.prompt } : {}),
+          ...(r.multi === true ? { multi: true } : {}),
+        });
+      }
+    }
+    if (restored === 0) return; // nothing to restore: no card posts, no status rewrite, no save
+    showApprovalHead();
+    reportCards();
+    if (session === s) reevaluateChatStatus(s);
+  };
+
   // ISSUE-6a811b8a: Stop. Each request still waiting is recorded as rejected, and the queue cleared.
   const rejectQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session, 'rejected'); // t6: persisted (resolved) before the clear
     for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
     reportCards(); // Story S002
   };
@@ -919,6 +1043,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // follow-up never carries grants from before the typed message.
   const supersedeQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session, 'superseded'); // t6: persisted (resolved) before the clear
     for (const r of approvals.clear()) {
       if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
       recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
@@ -930,6 +1055,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // queue is dropped without outcome rows.
   const dropQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session); // t6: unresolved but actionable — saved BEFORE the clear
     approvals.clear();
     reportCards(); // Story S002
   };
@@ -974,6 +1100,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         q.waitTimer = setTimeout(() => {
           if (queued !== q) return;
           rejectQueuedApprovals();
+          persistPendingBeforeClear(session, 'timeout');
           pendingSelections.clear();
           endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
           // E202611031bd72813:S001 t2: the timeout cleared every request — re-evaluate so a
@@ -1058,16 +1185,53 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
   // turn's captured adapter (its own provider, never the current session's — it may have
   // switched). decide() no-ops on an unknown/stale/dead requestId, so a late click is safe.
+  // E202611031bd72813:S001 t6: a decision whose original process stdin is gone (no live turn, or
+  // decide() reports undelivered — process exited / live-unwritable) is delivered as a follow-up
+  // runTurn carrying the decision (resuming the native session when one is known); if even that
+  // cannot start, the persisted request is marked resolved with outcome delivery-failed — a silent
+  // no-op is never recorded as a success.
+  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny'): void => {
+    const s = session;
+    const rec = s?.pendingRequests?.find((r) => r.requestId === requestId);
+    const what = rec?.command ?? rec?.toolName ?? rec?.title ?? 'the requested action';
+    const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
+    let started = false;
+    if (s !== undefined) {
+      try {
+        void runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
+        started = true;
+      } catch (err) {
+        log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    markPersistedRequest(s, requestId, true, started ? (decision === 'approve' ? 'approved' : 'denied') : 'delivery-failed');
+    if (s !== undefined) reevaluateChatStatus(s);
+  };
+
   const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
     const live = turns.live;
-    if (live === undefined) return;
-    try {
-      deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
-    } catch (err: unknown) {
-      // Adapter gone / provider unavailable: the decision is undeliverable. Never throw; the
-      // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
-      log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
+    if (live !== undefined) {
+      try {
+        // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
+        // decide() itself reports undelivered for a dead/absent stdin, and the request is NOT
+        // consumed on failure, so the fallback below can still answer it.
+        const res = deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
+        if (res.delivered) {
+          markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied');
+          return;
+        }
+      } catch (err: unknown) {
+        // Adapter gone / provider unavailable: fall through to the fallback. Never throw; the
+        // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
+        log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
+    // The follow-up run is only for a RESTORED request (persisted unresolved after a reattach/
+    // reload) whose stdin is gone. A decision for a request the live queue just consumed is moot
+    // when no live turn exists — the old silent no-op stays.
+    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId && !r.resolved);
+    if (persisted === undefined) return;
+    deliverDecisionAsFollowUp(requestId, decision);
   };
 
   // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
@@ -1161,7 +1325,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             enqueueApproval(ev);
             setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2
           } else if (ev.kind === 'selection-request') {
-            pendingSelections.set(ev.requestId, { options: ev.options });
+            pendingSelections.set(ev.requestId, { options: ev.options, prompt: ev.prompt, ...(ev.multi === true ? { multi: true } : {}) });
             setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2: followed selection request
             if (session === s) reportCards();
             else postLive(ev, rowIndex);
@@ -1205,6 +1369,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
     // post the queue head again (once) with its position so the queue can still be answered.
     shownApproval = undefined;
+    restorePendingRequests(session); // t6: a reloaded webview re-enters the session's unresolved persisted requests
     showApprovalHead();
     postHistory();
     followLiveTurn(session);
@@ -2014,7 +2179,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
-          pendingSelections.set(ev.requestId, { options: ev.options });
+          pendingSelections.set(ev.requestId, { options: ev.options, prompt: ev.prompt, ...(ev.multi === true ? { multi: true } : {}) });
           setChatStatus(s, 'waiting-input'); // mid-turn selection request
           reportCards(); // Story S002
         }
@@ -2292,6 +2457,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         settleQueued();
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
+        restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests
         postRestored(s);
         postPending(s.id); // each chat shows its own pending attachments
         postHistory(); // S005: keep the dropdown selection/order in sync
@@ -2347,6 +2513,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
+          // E202611031bd72813:S001 t6: the persisted request is marked resolved with its outcome too
+          markPersistedRequest(session, msg.requestId, true, msg.decision === 'approve' ? 'approved' : 'denied');
           if (decided.resolution === 'in-turn') {
             relayDecision(msg.requestId, msg.decision);
             showApprovalHead();
@@ -2542,6 +2710,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     dropQueuedApprovals();
     session = s;
     permissionMode = modeOf(s);
+    restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests
     postRestored(s);
     postPending(s.id);
     postHistory();

@@ -117,7 +117,7 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
       cancels.push(turnId);
       if (opts.cancelThrows === true) throw new Error('provider gone');
     },
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs, cancels, resumes };
@@ -720,7 +720,7 @@ test("a generator whose cleanup throws when the turn finishes it is not an unhan
       },
       async *resume(): AsyncIterable<TurnEvent> {},
       cancel: async () => {},
-      decide: () => {},
+      decide: () => ({ delivered: true }),
       capabilities: { resume: true },
     };
     const h = harness({ providers: registry(adapter) });
@@ -823,7 +823,7 @@ test('a throwing onTerminal is logged, still finishes the generator and is not a
     },
     async *resume(): AsyncIterable<TurnEvent> {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter), warnings });
@@ -861,7 +861,7 @@ test("an aborted follow unwinding late does not drop the next follow's process, 
       await proc.exit;
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter), isAlive: () => false });
@@ -899,7 +899,7 @@ test("a throwing onEvent is reported and the turn's generator is finished", asyn
     },
     async *resume(): AsyncIterable<TurnEvent> {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter) });

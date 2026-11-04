@@ -1629,7 +1629,8 @@ test('codex is started with no input stream and claude keeps its input open; a d
   }
   assert.ok(asked, 'the fixture raised an approval request');
   assert.deepEqual(spawner.procs[0]!.writes(), [], 'nothing is written to a process started without an input');
-  assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 1);
+  // E202611031bd72813:S001 t6: a failed decision is NOT consumed, so BOTH clicks report undeliverable
+  assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 2);
 });
 
 test('the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits', async (t) => {
@@ -1835,4 +1836,32 @@ test('E202611031bd72813:S001 t5: resume() on a segment that rolled away (Segment
   assert.ok(evs.every((e) => e.kind !== 'done'), 'no done is fabricated for a lost segment');
   const rc = await out.recoverTurn('s1', 't1');
   assert.ok(rc !== undefined && rc.generation === seg.cursor.generation, 'the turn is recoverable from the retained generation');
+});
+
+test('E202611031bd72813:S001 t6: decide() reports delivery — {delivered:true} on a successful write (consumed once), {delivered:false} on a failed write WITHOUT consuming (a retry can still deliver); registerPending re-registers a restored request', async () => {
+  const { deps, spawner } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter = createProviderRegistry(deps).get('claude');
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr = events.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.ok(appr);
+
+  // a failed write reports undelivered and does NOT consume the request
+  spawner.procs[0]!.failWrites(true);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'approve'), { delivered: false });
+  assert.equal(spawner.procs[0]!.writes().length, 0, 'nothing recorded on a failed write');
+  // a retry with a healthy stdin delivers, exactly once
+  spawner.procs[0]!.failWrites(false);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'approve'), { delivered: true });
+  assert.equal(spawner.procs[0]!.writes().length, 1);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'deny'), { delivered: false }, 'consumed on success: a duplicate decide is a no-op');
+  assert.equal(spawner.procs[0]!.writes().length, 1);
+
+  // a restored request (reattach/reload) is re-registered and then decidable
+  adapter.registerPending?.(appr.turnId, 'restored-req-1');
+  spawner.procs[0]!.failWrites(true);
+  assert.deepEqual(adapter.decide(appr.turnId, 'restored-req-1', 'deny'), { delivered: false }, 'undeliverable: not consumed');
+  spawner.procs[0]!.failWrites(false);
+  assert.deepEqual(adapter.decide(appr.turnId, 'restored-req-1', 'deny'), { delivered: true }, 'deliverable after re-registering');
+  assert.equal(spawner.procs[0]!.writes().length, 2);
+  await adapter.cancel(appr.turnId);
 });

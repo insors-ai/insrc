@@ -47,7 +47,7 @@ function spawningAdapter(opts: { pipe?: boolean } = {}): { adapter: StreamAdapte
       }
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs };

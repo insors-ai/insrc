@@ -6308,7 +6308,9 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
     const out = createSessionOutput({ root, pollMs: 5 });
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    // the adapter sees the CLI ALIVE (so resume synthesizes only an observation failure, no real
+    // terminal), while the host verifies the pid dead — completion must come via the death gate
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
       providers: registry({ claude: adapter }, ['claude']),
@@ -6317,7 +6319,7 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
       sessionOutput: out,
       observerTimerMs: 20,
       hostPid: 1,
-      isAlive: () => false, // the recorded pid is verified dead
+      isAlive: () => false, // the recorded pid is verified dead by the host
     });
     host.open();
     const s = store.create('claude' as never);

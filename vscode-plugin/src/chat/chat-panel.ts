@@ -1197,8 +1197,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // revive every waiting request EXCEPT those with a persisted RESOLVED record — decisions
       // update pendingRequests, so an unfiltered restore could revive already-decided requests;
       // requests with no persisted record at all are kept (they were never persisted)
-      const resolvedIds = new Set((s.pendingRequests ?? []).filter((r) => r.resolved).map((r) => r.requestId));
-      snapWaiting = snap.waiting.filter((w) => !resolvedIds.has(w.requestId));
+      // MR1-R3: resolved-record filtering is turn-scoped — a resolved record from an earlier turn
+      // must not suppress a same-id request from a LATER turn in the snapshot
+      const resolvedRecs = (s.pendingRequests ?? []).filter((r) => r.resolved);
+      snapWaiting = snap.waiting.filter((w) => !resolvedRecs.some((r) => r.requestId === w.requestId && (w.turnId === undefined || r.turnId === w.turnId)));
       approvals.restore({ ...snap, waiting: snapWaiting });
     }
     for (const r of s.pendingRequests ?? []) {

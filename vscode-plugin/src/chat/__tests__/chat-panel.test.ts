@@ -6192,9 +6192,9 @@ test('E202611031bd72813:S001 t6: switching chats persists the unresolved request
   const evs: TurnEvent[] = [
     { kind: 'status', turnId: 't1', phase: 'tool' },
     { kind: 'approval-request', turnId: 't1', requestId: 'perm-1', title: 'Run Edit', detail: 'edit file', toolName: 'Edit' },
+    { kind: 'done', turnId: 't1', ok: true },
   ];
   const adapter = scriptedAdapter(evs, {
-    hang: true,
     onRun: () => { runCount += 1; },
   });
   const host = createChatPanelHost({
@@ -6236,9 +6236,9 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   const evs: TurnEvent[] = [
     { kind: 'status', turnId: 't2', phase: 'tool' },
     { kind: 'approval-request', turnId: 't2', requestId: 'perm-9', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
+    { kind: 'done', turnId: 't2', ok: true },
   ];
   const adapter = scriptedAdapter(evs, {
-    hang: true,
     delivered: false, // the turn's stdin is gone: decide() reports undelivered
     onRun: () => { runCount += 1; },
   });

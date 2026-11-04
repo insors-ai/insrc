@@ -2399,9 +2399,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         dt = active ? openDiffTurn(s) : undefined;
       },
       onEvent: (ev) => {
-        // a pending follow-up run produced an event: it started, so its decisions were delivered
-        // (adapters that never call onSpawn are covered here; onSpawn covers the spawn-only case)
-        if (pendingFollowUp !== undefined) {
+        // a pending follow-up run produced a non-error event: it started, so its decisions were
+        // delivered (adapters that never call onSpawn are covered here; onSpawn covers spawn-only).
+        // An ERROR as the first event means the spawn/setup failed BEFORE onSpawn — leave
+        // pendingFollowUp set so the settled run is marked delivery-failed, not approved.
+        if (pendingFollowUp !== undefined && ev.kind !== 'error') {
           for (const d of pendingFollowUp.decisions) markPersistedRequest(s, d.requestId, true, d.outcome);
           pendingFollowUp = undefined;
         }

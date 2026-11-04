@@ -216,6 +216,12 @@ export interface LiveTurn {
   readonly ownerHostPid: number;
   readonly pid?: number | undefined;
   readonly startedAt?: number | null | undefined;
+  /** Transcript rows persisted when this cursor was last saved — the observer truncates back to
+   * this before replaying from an earlier point, so live-reader rows are never duplicated. */
+  readonly transcriptLen?: number | undefined;
+  /** Transcript rows present when this turn STARTED — an observer replaying from the turn's start
+   * truncates to this, so rows the live reader persisted for this turn are replaced, not duplicated. */
+  readonly turnStartLen?: number | undefined;
 }
 
 export interface ChatSummary {

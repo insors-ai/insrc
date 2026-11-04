@@ -359,7 +359,7 @@ test('the cursor is saved on spawn, throttled on progress and cleared before onT
   });
   const p = h.lc.start(h.session, REQ, a.sink);
   await waitFor(() => runs.length === 1);
-  assert.deepEqual(h.saves, [{ cursor: { turnId: 't1', generation: 1, offset: 0 }, ownerHostPid: 7, pid: 1001, startedAt: 1002 }], 'saved at spawn, owned by this host');
+  assert.deepEqual(h.saves, [{ cursor: { turnId: 't1', generation: 1, offset: 0 }, ownerHostPid: 7, pid: 1001, startedAt: 1002, transcriptLen: 0, turnStartLen: 0 }], 'saved at spawn, owned by this host, stamped with the transcript lengths');
 
   for (let i = 0; i < 5; i++) runs[0]!.feed.push(delta('t1'));
   await waitFor(() => h.session.liveTurn?.cursor.offset === 50);

@@ -652,10 +652,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // dedupe), a mid-stream start could lose a split marker or reuse a selection id.
       const cpRaw = s.observerCheckpoint;
       let cp = cpRaw !== undefined && cpRaw.turnId === turnId ? cpRaw : undefined;
-      // A replaying pass (rewind / SegmentGone re-anchor) re-reads already-ingested events: truncate
-      // the transcript back to the checkpointed length so re-appended rows replace, not duplicate.
-      if (cp?.transcriptLen !== undefined && s.transcript.length > cp.transcriptLen) s.transcript.length = cp.transcriptLen;
+      // Whether the pass anchors at the TURN'S START (no valid checkpoint -> recoverTurn): such a
+      // replay must truncate to the turn-start transcript length, so rows the live reader already
+      // persisted for THIS turn are replaced, not duplicated.
+      let anchorIsTurnStart = false;
+      // A replaying pass (rewind / SegmentGone re-anchor / first pass after detach) re-reads
+      // already-ingested events: truncate the transcript back to the last persisted length at the
+      // anchor point — the checkpoint's transcriptLen, or the liveTurn's turnStartLen for a
+      // turn-start anchor, or the liveTurn's current stamp — so re-appended rows replace, never
+      // duplicate, already-persisted rows.
+      const anchorLen = (): number | undefined =>
+        anchorIsTurnStart ? (live.turnStartLen ?? 0) : (cp?.transcriptLen ?? live.transcriptLen);
       if (cp === undefined) {
+        anchorIsTurnStart = true;
         try {
           const rc = await out.recoverTurn(s.id, turnId);
           if (rc !== undefined) cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
@@ -664,6 +673,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // never the advanced offset with an empty decoder (that would lose a split-marker prefix).
         cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: live.decoder?.selectionSeq ?? 0, ...(live.decoder?.selectionBuffer !== undefined && live.decoder.selectionBuffer !== '' ? { selectionBuffer: live.decoder.selectionBuffer } : {}) };
       }
+      // AFTER the anchor is known: truncate to the persisted length at the anchor point (computed above)
+      const replayLen = anchorLen();
+      if (replayLen !== undefined && s.transcript.length > replayLen) s.transcript.length = replayLen;
       let ad;
       try {
         ad = deps.providers.get(s.provider);
@@ -692,7 +704,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: undefined as string | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: undefined as string | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string; transcriptLen: number } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
@@ -714,6 +726,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           );
           for await (const ev of events) {
             st.ingestedAny = true;
+            // capture the pre-terminal cursor+decoder+transcript length BEFORE the terminal event's
+            // row is appended, so a budget rewind replays from a point whose transcriptLen excludes it
+            if ((ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) && st.preTerminal === undefined) {
+              st.preTerminal = { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf, transcriptLen: s.transcript.length };
+            }
             // persist the event's transcript row exactly like the live path (appendEvent), so an
             // observer-completed detached chat reopens with its output, not an empty transcript
             appendEvent(s, ev);
@@ -759,13 +776,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
                 if (ev.message !== 'the turn ended without a result') st.syntheticEofOnly = false;
               }
               else {
-                // capture the decoder state AS OF just before the terminal too — a rewind must
-                // rewind the seq/buffer with the offset, or the replay re-issues a different id
-                st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf };
                 st.sawTerminal = true;
               }
             } else if (ev.kind === 'done') {
-              st.preTerminal ??= { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf };
               st.sawTerminal = true;
               // keep the provider's native session id (same rule as the live path's keepNativeSession),
               // so the next turn can resume the detached session's CLI thread
@@ -815,12 +828,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
       const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
       const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
+      const persistTranscriptLen = rewind ? (pass.preTerminal?.transcriptLen ?? 0) : undefined;
       let checkpointSaved = false;
       try {
         // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass)
         const fresh = deps.store.get(s.id) ?? s;
         if (pass.nativeSessionId !== undefined) fresh.nativeSessionId = pass.nativeSessionId;
-        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: fresh.transcript.length };
+        fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: persistTranscriptLen ?? fresh.transcript.length };
         deps.store.save(fresh);
         checkpointSaved = true;
       } catch { /* best-effort — pins are NOT released below if this failed */ }
@@ -1243,6 +1257,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const persistInfo = (s: ChatSession, turnId: string, text: string): void => {
     const ev: TurnEvent = { kind: 'assistant-delta', turnId, text };
     const rowIndex = appendEvent(s, ev);
+    stampLiveTranscriptLen(s);
     postLive(ev, rowIndex);
     post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }); // closes the line, not a turn (ISSUE-160fa1bb)
     trySave(s);
@@ -1420,6 +1435,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
         const rowIndex = appendEvent(s, ev);
+        stampLiveTranscriptLen(s);
+    stampLiveTranscriptLen(s);
         if (!disposed && session === s) {
           if (ev.kind === 'approval-request') {
             followedTurns.add(ev.turnId);
@@ -2270,6 +2287,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             pushMarker(open, pathLine(edited));
           }
           const rowIndex = appendEvent(s, ev);
+          stampLiveTranscriptLen(s);
+        stampLiveTranscriptLen(s);
+    stampLiveTranscriptLen(s);
           if (ev.kind === 'approval-request') {
             enqueueApproval(ev);
             setChatStatus(s, 'waiting-input'); // mid-turn: the agent is blocked on this request
@@ -2406,6 +2426,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   }
 
   // Returns the absolute transcript index of the row the event wrote, or undefined when it wrote none.
+  /** After a live-path appendEvent, record the persisted transcript length on the liveTurn, so a
+   * later observer replay from an earlier cursor truncates instead of duplicating these rows. */
+  function stampLiveTranscriptLen(s: ChatSession): void {
+    if (s.liveTurn !== undefined && s.liveTurn.transcriptLen !== s.transcript.length) {
+      s.liveTurn = { ...s.liveTurn, transcriptLen: s.transcript.length };
+    }
+  }
+
   function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
     if (ev.kind === 'assistant-delta') {
       s.transcript.push({ role: 'assistant', text: ev.text, at: now() });

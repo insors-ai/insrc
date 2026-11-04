@@ -225,6 +225,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
   const lockPathOf = (sessionId: string): string => `${deps.root}/${sessionFileName(sessionId)}.lock`;
   const withSessionLock = async <T>(sessionId: string, work: () => Promise<T>): Promise<T> => {
     const p = lockPathOf(sessionId);
+    const deadline = Date.now() + 10_000;
     for (;;) {
       try {
         if (fs.writeFileExclusive !== undefined) await fs.writeFileExclusive(p, String(process.pid));
@@ -232,6 +233,18 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
         break;
       } catch (e) {
         if (errCode(e) !== 'EEXIST') throw e;
+        // stale-lock recovery: if the recorded holder pid is dead, break the lock and retry
+        try {
+          const holder = Number((await fs.readFile(p)).toString('utf8'));
+          if (Number.isInteger(holder) && holder > 0) {
+            try {
+              process.kill(holder, 0); // throws ESRCH when dead
+            } catch (ke) {
+              if (errCode(ke) === 'ESRCH') await fs.rm(p).catch(() => {});
+            }
+          }
+        } catch { /* unreadable lock — just spin */ }
+        if (Date.now() > deadline) throw new Error(`session-output: lock ${p} not acquired within 10s`);
         await sleep(5, undefined);
       }
     }
@@ -359,8 +372,10 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       // so a RECREATED writer (another window's process) does not discard a generation this
       // (possibly reloaded) reader still needs.
       const marker = pinPath(cursor.sessionId, cursor.generation, readerId);
-      // locked, so a concurrent rollover in another process cannot check-then-replace past this pin
-      enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
+      // Synchronous when the seam allows it: the marker is durable before registerCursor returns,
+      // so any rollover that acquires the lock afterwards sees the pin. Otherwise locked+queued.
+      if (fs.writeFileSync !== undefined) fs.writeFileSync(marker, '');
+      else enqueuePinIo(() => withSessionLock(cursor.sessionId, () => fs.writeFile(marker, '')));
     },
     unregisterCursor(cursor: SegmentCursor, readerId = 'default'): void {
       const key = `${sessionFileName(cursor.sessionId)}:${cursor.generation}:${readerId}`;

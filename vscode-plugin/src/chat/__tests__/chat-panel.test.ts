@@ -6035,6 +6035,7 @@ test('E202611031bd72813:S001 t5: a checkpoint of ANOTHER turn is ignored — the
     assert.equal(after.pendingRequests![0]!.prompt, 'Pick');
     assert.ok(after.observerCheckpoint !== undefined && after.observerCheckpoint.turnId === 't-obs' && after.observerCheckpoint.selectionSeq < 9, 'the persisted checkpoint is for THIS turn with a fresh decoder, not the stale seq 9');
   } finally {
+    await new Promise((r) => setTimeout(r, 30)); // let queued pin-marker IO land before cleanup
     rmSync(root, { recursive: true, force: true });
   }
 });

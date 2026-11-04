@@ -276,7 +276,7 @@ function parserHandles(filePath: string): boolean {
 /**
  * The REFERENCES the document writes, each 'extracted', at most one per
  * (source, target). The source is the retained section holding the line, the
- * whole-file document when there are no sections, else the file entity (the
+ * whole-file document when the file has no headings, else the file entity (the
  * preamble before the first heading, a skipped tiny section). A path reference
  * targets the cited file's 'file' entity id and awaits it (the indexer decides
  * stored or pending); a name reference carries only the name, for the indexer
@@ -291,8 +291,11 @@ function documentReferences(
   sections:   readonly Entity[],
   doc:        Entity | undefined,
 ): ParseResult['relations'] {
+  // The whole-file document is the source only for a file with no headings at all; in a file with
+  // headings, a line outside every retained section (the preamble, a skipped section) is the file's.
+  const wholeFile = doc !== undefined && !source.split('\n').some(l => /^(#{1,6})\s+(.+)/.test(l)) ? doc : undefined;
   const sourceAt = (line: number): string =>
-    sections.find(s => s.startLine <= line && line <= s.endLine)?.id ?? doc?.id ?? fileEntity.id;
+    sections.find(s => s.startLine <= line && line <= s.endLine)?.id ?? wholeFile?.id ?? fileEntity.id;
   const seen = new Set<string>();
   const out: ParseResult['relations'] = [];
   for (const link of readMarkdownLinks(source, filePath, repo, parserHandles)) {

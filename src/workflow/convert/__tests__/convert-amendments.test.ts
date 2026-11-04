@@ -5,11 +5,17 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { amendmentOfHead } from '../../amendments/store.js';
+import { durableKit } from '../../artifact-core/__tests__/durable-kit.js';
 import { decodeArtifactHead } from '../../artifact-core/decode.js';
+import { History } from '../../artifact-core/history.js';
+import { RepoSchemaGate, writeRepoSchema } from '../../artifact-core/repo-schema.js';
 import type { Actor, Lifecycle } from '../../artifact-core/types.js';
 import { amendmentRule, applyAmendments, flatToHead } from '../amendments.js';
 import { backfillHead } from '../backfill.js';
 import { planConversion } from '../plan.js';
+import { repairFlatAmendments } from '../repair-amendments.js';
+import type { ConversionDeps } from '../types.js';
 
 const E = '2f27754d4ad00b8e';
 const MIGRATION: Actor = { id: 'insrc:migration', kind: 'system', properties: {} };
@@ -78,5 +84,86 @@ describe('convert-amendments', () => {
 		assert.deepEqual(flatToHead({ ...flat(1), epicHash: undefined }, 'x'), { problem: 'has no epicHash' });
 		assert.deepEqual(flatToHead(flat(1), undefined), { problem: `has no work item head to take epicCreatedAt from (epic ${E})` });
 		assert.ok('head' in flatToHead(flat(1), '2026-10-19T00:00:00.000Z'));
+	});
+	/** A repository that was converted (schema marker at version 2) with the work item head of epic E and the given flat amendments added afterwards. */
+	function convertedRepo(flats: Record<string, unknown>): { repo: string; deps: ConversionDeps; read: (id: string) => Record<string, any>; done(): void } {
+		const kit = durableKit();
+		const dir = join(kit.repo, '.insrc', 'artifacts');
+		mkdirSync(dir, { recursive: true });
+		const put = (id: string, v: unknown): void => writeFileSync(join(dir, `${id}.json`), JSON.stringify(v, null, 2) + '\n');
+		put(`DEF-${E}`, { meta: { epicHash: E, workflow: 'define', createdAt: '2026-10-19T09:22:37.764Z', epicCreatedAt: '2026-10-19T09:22:37.764Z', lifecycle: { status: 'draft', revision: { number: 1, contentHash: 'h', at: '2026-10-19T09:22:37.764Z', by: MIGRATION }, signoffs: [] } }, body: {}, citations: [] });
+		for (const [id, v] of Object.entries(flats)) put(id, v);
+		writeRepoSchema(kit.repo, { version: 2, convertedAt: '2026-10-22T00:00:00.000Z' });
+		assert.equal(RepoSchemaGate.read(kit.repo).version, 2, 'the fixture is a converted repository');
+		const deps = { store: kit.store, history: new History(kit.sidecar), now: () => new Date('2026-11-04T00:00:00.000Z'), actor: MIGRATION } as unknown as ConversionDeps;
+		return { repo: kit.repo, deps, read: id => JSON.parse(readFileSync(join(dir, `${id}.json`), 'utf8')), done: () => kit.done() };
+	}
+
+	it('convert-amendments.test.ts: repairFlatAmendments makes a flat approved amendment a head the amendment store reads as approved by the original approver', async () => {
+		const r = convertedRepo({ [`AMD-${E}-1`]: flat(1, { status: 'approved', approvedAt: '2026-10-28T05:23:44.099Z', approvedBy: 'Subho Ghosh (in-chat approval)' }) });
+		try {
+			const out = await repairFlatAmendments(r.repo, r.deps);
+			assert.deepEqual([out.converted, out.problems], [[`AMD-${E}-1`], []]);
+			const head = r.read(`AMD-${E}-1`);
+			assert.equal(head.meta.lifecycle.status, 'approved');
+			assert.equal(head.meta.lifecycle.approval.at, '2026-10-28T05:23:44.099Z', 'the original approval time');
+			assert.equal(head.meta.approvedAt, undefined, 'the legacy stamp is gone');
+			const record = amendmentOfHead(r.repo, head);
+			assert.equal(record?.status, 'approved');
+			assert.equal(record?.approvedBy, 'Subho Ghosh (in-chat approval)', 'not legacy:unknown');
+			assert.doesNotThrow(() => decodeArtifactHead(`AMD-${E}-1`, JSON.stringify(head)));
+		} finally { r.done(); }
+	});
+
+	it('convert-amendments.test.ts: repairFlatAmendments makes a flat not-yet-approved amendment a draft head', async () => {
+		const r = convertedRepo({ [`AMD-${E}-1`]: flat(1) });
+		try {
+			const out = await repairFlatAmendments(r.repo, r.deps);
+			assert.deepEqual(out.converted, [`AMD-${E}-1`]);
+			const head = r.read(`AMD-${E}-1`);
+			assert.equal(head.meta.lifecycle.status, 'draft');
+			assert.equal(head.meta.lifecycle.approval, undefined, 'no approval is invented');
+			assert.equal(amendmentOfHead(r.repo, head)?.status, 'pending');
+		} finally { r.done(); }
+	});
+
+	it('convert-amendments.test.ts: repairFlatAmendments lists a flat amendment it cannot convert and leaves it flat', async () => {
+		const bad = { ...flat(2), amendment: 'x' };
+		const r = convertedRepo({ [`AMD-${E}-1`]: flat(1), [`AMD-${E}-2`]: bad });
+		try {
+			const before = readFileSync(join(r.repo, '.insrc', 'artifacts', `AMD-${E}-2.json`), 'utf8');
+			const out = await repairFlatAmendments(r.repo, r.deps);
+			assert.deepEqual(out.converted, [`AMD-${E}-1`], 'the convertible one is repaired');
+			assert.equal(out.problems.length, 1);
+			assert.match(out.problems[0]!.reason, /no amendment/);
+			assert.match(out.problems[0]!.file, new RegExp(`AMD-${E}-2\\.json$`));
+			assert.equal(readFileSync(join(r.repo, '.insrc', 'artifacts', `AMD-${E}-2.json`), 'utf8'), before, 'the unconvertible record is untouched');
+		} finally { r.done(); }
+	});
+
+	it('convert-amendments.test.ts: repairFlatAmendments finishes a head that was converted but not migrated', async () => {
+		// the state a run leaves when it stops after writing the converted heads and before the lifecycle migration
+		const r = convertedRepo({ [`AMD-${E}-1`]: flat(1, { status: 'approved', approvedAt: '2026-10-28T05:23:44.099Z', approvedBy: 'subho' }) });
+		try {
+			applyAmendments(r.repo);
+			assert.equal(r.read(`AMD-${E}-1`).meta.lifecycle, undefined, 'converted, not migrated');
+			const out = await repairFlatAmendments(r.repo, r.deps);
+			assert.deepEqual(out.converted, [], 'nothing is flat any more');
+			assert.equal(r.read(`AMD-${E}-1`).meta.lifecycle.status, 'approved', 'the migration is finished anyway');
+			assert.equal(amendmentOfHead(r.repo, r.read(`AMD-${E}-1`))?.approvedBy, 'subho');
+		} finally { r.done(); }
+	});
+
+	it('convert-amendments.test.ts: repairFlatAmendments on a repo at schema version 2 does nothing the second time', async () => {
+		const r = convertedRepo({ [`AMD-${E}-1`]: flat(1, { status: 'approved', approvedAt: '2026-10-28T05:23:44.099Z', approvedBy: 'subho' }) });
+		try {
+			await repairFlatAmendments(r.repo, r.deps);
+			const bytes = readFileSync(join(r.repo, '.insrc', 'artifacts', `AMD-${E}-1.json`), 'utf8');
+			const def = readFileSync(join(r.repo, '.insrc', 'artifacts', `DEF-${E}.json`), 'utf8');
+			const second = await repairFlatAmendments(r.repo, r.deps);
+			assert.deepEqual([second.converted, second.problems], [[], []]);
+			assert.equal(readFileSync(join(r.repo, '.insrc', 'artifacts', `AMD-${E}-1.json`), 'utf8'), bytes, 'the repaired head is not rewritten');
+			assert.equal(readFileSync(join(r.repo, '.insrc', 'artifacts', `DEF-${E}.json`), 'utf8'), def, 'a head of another kind is not touched');
+		} finally { r.done(); }
 	});
 });

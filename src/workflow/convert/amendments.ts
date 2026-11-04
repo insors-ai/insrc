@@ -57,7 +57,8 @@ export function flatToHead(flat: Obj, epicCreatedAt: string | undefined): { head
 
 const isFlat = (h: RawHead): boolean => h.artifactId.startsWith('AMD-') && isObj(h.json) && !isObj(h.json['meta']);
 
-function convertAll(heads: readonly RawHead[]): { converted: { id: string; head: Obj }[]; problems: ConversionProblem[] } {
+/** Converts every flat amendment among `heads`; the ones that cannot be converted come back as problems. */
+export function convertAll(heads: readonly RawHead[]): { converted: { id: string; head: Obj }[]; problems: ConversionProblem[] } {
 	const converted: { id: string; head: Obj }[] = [];
 	const problems: ConversionProblem[] = [];
 	for (const h of heads.filter(isFlat)) {

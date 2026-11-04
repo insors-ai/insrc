@@ -33,4 +33,17 @@ describe('ArtifactStore.childrenOfStrict', () => {
 			await assert.rejects(k.store.childrenOfStrict('nope'), InvalidArtifactKeyError);
 		} finally { k.done(); }
 	});
+	it('store-children-strict.test.ts: a flat amendment head is reported unreadable while real children are still listed', async () => {
+		const k = kit();
+		try {
+			await k.store.write(artifact(`DEF-${H}`), alice);
+			await k.store.write(artifact(`EPIC-${H}`), alice);
+			await k.store.write(artifact(STORY), alice);
+			await k.store.write(artifact(`TASK-${H}-s1-t1`, { parent }), alice);
+			// an amendment left in the flat shape: no meta and no body
+			writeFileSync(artifactJsonPath(k.repo, `AMD-${H}-1`), JSON.stringify({ id: `AMD-${H}-1`, epicHash: H, amendment: { type: 'sharedContract.fieldAdd' }, status: 'approved' }));
+			const strict = await k.store.childrenOfStrict(STORY);
+			assert.deepEqual(strict, { children: [`TASK-${H}-s1-t1`], unreadable: [`AMD-${H}-1`] }, 'the Task is listed and the flat amendment is reported, not hidden');
+		} finally { k.done(); }
+	});
 });

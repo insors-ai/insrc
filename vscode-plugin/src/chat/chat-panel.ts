@@ -1144,10 +1144,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
     const snap = s.queueSnapshot;
     if (snap !== undefined && Array.isArray(snap.waiting)) {
-      // revive only requests whose persisted record is still unresolved — decisions update
-      // pendingRequests but not the snapshot, so an unfiltered restore could revive resolved ones
-      const unresolved = new Set((s.pendingRequests ?? []).filter((r) => !r.resolved).map((r) => r.requestId));
-      approvals.restore({ ...snap, waiting: snap.waiting.filter((w) => unresolved.has(w.requestId)) });
+      // revive every waiting request EXCEPT those with a persisted RESOLVED record — decisions
+      // update pendingRequests, so an unfiltered restore could revive already-decided requests;
+      // requests with no persisted record at all are kept (they were never persisted)
+      const resolvedIds = new Set((s.pendingRequests ?? []).filter((r) => r.resolved).map((r) => r.requestId));
+      approvals.restore({ ...snap, waiting: snap.waiting.filter((w) => !resolvedIds.has(w.requestId)) });
     }
     for (const r of s.pendingRequests ?? []) {
       if (r.resolved) continue;
@@ -2760,6 +2761,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (approvals.has(msg.requestId)) {
           const res = approvals.decide(msg.requestId, msg.decision);
           if (!res.ok) return;
+          // t6: keep the persisted queue snapshot fresh on every decision — batch decisions and
+          // grants otherwise live only in memory until the next clear(), and a reload would restore
+          // the stale snapshot, losing them and reviving already-decided requests
+          if (session !== undefined && deps.store.get(session.id) !== undefined) {
+            session.queueSnapshot = approvals.snapshot();
+            try {
+              deps.store.save(session);
+            } catch (err) {
+              log.warn(`[chat] session ${session.id}: queue snapshot not saved: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
           if (session !== undefined) reevaluateChatStatus(session); // E202611031bd72813:S001 t2: resolution re-evaluates precedence
           // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
           queueMicrotask(settleQueued);

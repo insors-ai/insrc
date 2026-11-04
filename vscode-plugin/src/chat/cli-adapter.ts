@@ -220,7 +220,7 @@ export interface SpawnedProcess {
    * presence before calling. Only review mode uses it; auto mode never does.
    */
   /** E202611031bd72813:S001 t6: returns whether the write reached the process (false = dead/absent stdin). */
-  write?(data: string): boolean;
+  write?(data: string, onError?: (err: unknown) => void): boolean;
   /** With a session output: the position just after the last line lines() yielded. */
   readonly cursor?: SegmentCursor | undefined;
 }
@@ -1284,7 +1284,12 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     }
     let written = false;
     try {
-      written = proc.write(mapper.formatDecision(requestId, decision));
+      written = proc.write(mapper.formatDecision(requestId, decision), (err) => {
+        // async write failure: the CLI never got the decision — re-register the request so a
+        // later decide (or the follow-up fallback) can still answer this requestId
+        void err;
+        pendingByTurn.get(turnId)?.add(requestId);
+      });
     } catch {
       written = false;
     }
@@ -1613,13 +1618,21 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       if (ownGroup && pid !== undefined && signalGroup(pid, signal)) return;
       child.kill(signal);
     },
-    write: (data: string) => {
-      // E202611031bd72813:S001 t6: report whether the write reached the process; a closed/absent
-      // stdin returns false (never throws into the stream loop) so decide() can fall back.
-      if (child.stdin === null || child.stdin === undefined) return false;
+    write: (data: string, onError?: (err: unknown) => void) => {
+      // E202611031bd72813:S001 t6: report whether the write reached the process. A closed/absent
+      // stdin (destroyed/ended/writableEnded) returns false synchronously — never delivered —
+      // and an ASYNC write failure is reported through onError (decide re-registers the request,
+      // so it stays actionable). Never throws into the stream loop.
+      const stdin = child.stdin;
+      if (stdin === null || stdin === undefined) return false;
+      if (stdin.destroyed || stdin.writableEnded || stdin.writableFinished) return false;
       try {
-        child.stdin.write(data);
-        return true;
+        const ok = stdin.write(data, (err) => {
+          if (err !== null && err !== undefined) {
+            onError?.(err); // the caller (decide) re-registers the request; no logger in this seam
+          }
+        });
+        return ok === true && !stdin.destroyed;
       } catch {
         return false;
       }

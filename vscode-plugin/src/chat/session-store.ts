@@ -199,6 +199,9 @@ export interface ObserverCheckpoint {
   readonly rewound?: boolean | undefined;
   /** A real terminal (done, or a non-observation error) was ingested at/before this checkpoint. */
   readonly sawTerminal?: boolean | undefined;
+  /** Transcript rows the observer had persisted when this checkpoint was saved — a replaying pass
+   * truncates back to this length before re-appending, so re-ingested events never duplicate rows. */
+  readonly transcriptLen?: number | undefined;
 }
 
 /** A turn still being read from the session output file. */

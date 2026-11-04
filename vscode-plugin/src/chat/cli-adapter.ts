@@ -1352,7 +1352,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     });
     let sawTerminalInDrain = false;
     try {
-      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
+      // E202611031bd72813:S001 t5: with drain, once a terminal event was ingested the read stops at
+      // the end of the AVAILABLE output (a live process must not make the observer poll forever).
+      const finished = (): boolean => !isTheProcess() || (opts?.drain === true && sawTerminalInDrain);
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
           events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);

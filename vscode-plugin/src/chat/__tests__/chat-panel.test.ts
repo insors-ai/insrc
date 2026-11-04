@@ -6271,7 +6271,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
       observerTimerMs: 20,
       observerTickBudgetMs: 1, // pass 1: reads frag1 + the terminal, then budget-aborts on frag2
       hostPid: 1,
-      isAlive: () => false,
+      isAlive: (pid) => pid !== 999, // owner host dead, the CLI pid ALIVE: completion must come via the ingested terminal
     });
     host.open();
     const s = store.create('claude' as never);

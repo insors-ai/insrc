@@ -246,7 +246,14 @@ test('E202611031bd72813:S001 t5: a registered cursor pins its generation across 
   assert.equal(await so.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldest retained is the pinned one');
   // unregister: the archive is dropped
   so.unregisterCursor(seg1.cursor);
-  await new Promise((r) => setTimeout(r, 20));
+  await waitFor(async () => {
+    try {
+      for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+      return false;
+    } catch (e) {
+      return e instanceof SegmentGone;
+    }
+  }, 3000, 'the archive is removed once the last unregister lands');
   let gone = false;
   try {
     for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }

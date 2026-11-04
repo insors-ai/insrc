@@ -25,7 +25,7 @@
     "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 7,
+    "revision": 8,
     "envelope": {
       "description": "",
       "references": [],
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "7d6ff57bb30c7339d9e9db23d7a45126c2f8223913a1d625b65659e320157a82",
-        "at": "2026-11-04T14:26:58.168Z",
+        "number": 8,
+        "contentHash": "4bf9683c570ea735e7986e60fa93059ff0cc6bf5f4d6b6b34f1f1e14fb96c2fa",
+        "at": "2026-11-04T15:35:00.099Z",
         "by": {
           "id": "codex:controller",
           "kind": "agent",
@@ -375,7 +375,8 @@
             "Optional execution omissions stay advice; mandatory evidence gaps yield incomplete. Reviewer semantics are not replaced by host textual inference. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
             "Replace the current unconditional results.length === plan.chunks.length check with two explicit branches. Without impactContext, retain the existing all-fresh exact-coverage invariant. With impactContext, define P as all unique chunk IDs in the complete current plan, S as selected substantive IDs plus all consistency IDs, R as retained current chunk IDs, and F as fresh result chunk IDs. Require unique IDs, S intersect R empty, S union R = P, F = S exactly, and fresh results in the selected executionOrder established by nextDesignUnit. Therefore fresh-result count equals selected executionOrder length, not complete plan length. Require one valid retained origin for every R entry; no consistency chunk may be retained. Unknown, duplicate, missing or overlapping coverage rejects consolidation. [[c5]] [[c6]] [[c1]]",
             "Compute mandatory inventory coverage and effective status/counts from that exact fresh-plus-retained partition and reconciled findings. Do not pad results or report.chunks with copies of retained results: both remain fresh-only, with explicit retained provenance alongside them. Full mode has R empty and S = P, so the same impact branch reduces to the original all-fresh case. [[c5]] [[c1]]",
-            "For plan [keep-A, change-B, keep-C, final], fresh results [change-B, final] plus valid retained origins for keep-A and keep-C complete consolidation. The same fresh results without keep-C provenance reject; a retained change-B overlapping fresh change-B rejects; retained final rejects. A freshly re-reviewed chunk that remains incomplete is accepted feedback but keeps the new report incomplete and cannot become reusable verified coverage in a later attempt. [[c5]] [[c6]]"
+            "For plan [keep-A, change-B, keep-C, final], fresh results [change-B, final] plus valid retained origins for keep-A and keep-C complete consolidation. The same fresh results without keep-C provenance reject; a retained change-B overlapping fresh change-B rejects; retained final rejects. A freshly re-reviewed chunk that remains incomplete is accepted feedback but keeps the new report incomplete and cannot become reusable verified coverage in a later attempt. [[c5]] [[c6]]",
+            "Construct report.impact exactly as the DesignReportImpact schema in §3.4: complete coverageOrigins partition, accepted final findingDecisions, and deduplicated unresolved effectiveFindingOrigins. Require every nested field for an impact attempt, exact equality with accepted sc4/final-output source data where applicable, and valid backward source resolution. Without impactContext omit report.impact and preserve the original all-fresh report contract. Never synthesize retained result bodies to satisfy the old chunks-length invariant. [[c1]] [[c3]] [[c5]] [[c9]]"
           ]
         },
         {
@@ -567,12 +568,14 @@
       {
         "entity": "DesignReviewConsolidated provenance",
         "change": "field-add",
-        "details": "Add optional sc4 scope/provenance and finding dispositions; initial all-fresh reports preserve existing fields. report.chunks contains fresh results only on selective attempts and is explicitly accompanied by retainedCoverage references and effective finding/status/coverage summaries. Effective view must cover every current plan chunk and inventory unit exactly as fresh or retained; fresh consistency is mandatory. Progress reports reviewed/retained/selected totals separately, never claims reused chunks were newly inspected. Bounded progress/assignment responses reference checkpoint paths for full history. Checkpoints are the only S3 store; S4 will consume these fields for permanent publication, lifecycle approval and cleanup. [[c3]] [[c5]] [[c6]] The consolidation invariant changes explicitly for selective attempts: complete plan IDs equal the disjoint union of fresh selected result IDs and eligible retained current IDs. No assumption results.length equals plan.chunks.length remains in the selective branch. Without impact, preserve the original all-fresh check. Per-inventory-unit coverage is then validated over this complete partition, while report.chunks stays fresh-only. [[c5]] [[c6]]",
+        "details": "Add optional sc4 scope/provenance and finding dispositions; initial all-fresh reports preserve existing fields. report.chunks contains fresh results only on selective attempts and is explicitly accompanied by retainedCoverage references and effective finding/status/coverage summaries. Effective view must cover every current plan chunk and inventory unit exactly as fresh or retained; fresh consistency is mandatory. Progress reports reviewed/retained/selected totals separately, never claims reused chunks were newly inspected. Bounded progress/assignment responses reference checkpoint paths for full history. Checkpoints are the only S3 store; S4 will consume these fields for permanent publication, lifecycle approval and cleanup. [[c3]] [[c5]] [[c6]] The consolidation invariant changes explicitly for selective attempts: complete plan IDs equal the disjoint union of fresh selected result IDs and eligible retained current IDs. No assumption results.length equals plan.chunks.length remains in the selective branch. Without impact, preserve the original all-fresh check. Per-inventory-unit coverage is then validated over this complete partition, while report.chunks stays fresh-only. [[c5]] [[c6]] The concrete report.impact projection is defined below in contracts.ts, validated by consolidation, and persists only as part of the immutable accepted report. Progress metadata remains bounded counts/status plus checkpoint path; it does not inline coverageOrigins or finding bodies. Consumers needing full provenance read the checkpoint report. [[c3]] [[c5]] [[c9]] [[c14]]",
         "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
           "src/workflow/review/design-review/results.ts",
           "src/workflow/review/design-review/progress.ts",
           "src/workflow/review/design-review/checkpoint.ts"
-        ]
+        ],
+        "schemaDiff": "Proposed report-only projection types in contracts.ts; DesignReportImpact is distinct from the attempt's full sc4 DesignImpactAssessment:\ntype DesignCoverageOrigin =\n | { readonly chunkId: string; readonly kind: 'fresh'; }\n | { readonly chunkId: string; readonly kind: 'retained'; readonly fromAttempt: number; readonly fromChunkId: string; readonly justification: string; };\ninterface DesignReportImpact {\n readonly baselineAttempt: number;\n readonly mode: 'affected_chunks' | 'full';\n readonly coverageOrigins: readonly DesignCoverageOrigin[];\n readonly findingDecisions: readonly DesignFindingDecision[];\n readonly effectiveFindingOrigins: readonly DesignFindingOrigin[];\n}\nDesignReportSchema/DesignReviewConsolidated += impact?: DesignReportImpact;\nEvery nested object rejects extra fields. baselineAttempt/fromAttempt use positive attempt bounds and must refer backward within this review; IDs/text use existing strict bounded schemas. coverageOrigins has 1..DESIGN_LIMITS.chunks unique current chunk entries. findingDecisions/effectiveFindingOrigins have 0..DESIGN_LIMITS.findings entries, with unique source tuples; evidence and branch bounds reuse the defined DesignFindingDecision union. Exceeding bounds is explicit failure, never truncation. No prior result body or baseline content is copied into this projection.\nThe entire impact object is required when the current attempt has an accepted sc4 impact (including mode full), and absent for an initial/full-restart or existing pre-S3 attempt without impact. All its nested fields are required when present. baselineAttempt/mode must equal the accepted attempt.impact fields. coverageOrigins must cover the full current plan exactly once: fresh entries match report.chunks/selected executionOrder exactly, and retained entries exactly match accepted sc4 retainedCoverage (including their justification). A consistency chunk is always fresh. report.chunks remains fresh-only.\nfindingDecisions is the accepted fresh final consistency result's explicit decision array, or [] when omitted under the incomplete-reconciliation rule; it is a derived projection, not independently writable state. effectiveFindingOrigins lists every new current finding plus unresolved carried prior origin exactly once, excluding validly resolved or superseded origins (the replacement current finding remains). Missing required decisions imply unresolved carry AND an incomplete report, never an optimistic pass. Host defaults do not invent resolved decisions. Compute existing counts from the referenced immutable findings' severities; existing report.limitations includes all current mandatory gaps and missing-reconciliation limitations. Follow provenance to the true original finding rather than minting a new ID for reused feedback. [[c1]] [[c3]] [[c5]] [[c9]]"
       },
       {
         "entity": "Impact relationships, bounds and ownership",
@@ -676,11 +679,18 @@
           "recoverable": true
         },
         {
-          "scenario": "Impact/provenance exceeds bounded storage or payload limits",
-          "detection": "Strict schema counts, UTF-8 byte checks and full checkpoint serialization bound before acceptance. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
-          "response": "Reject explicitly and retain previous checkpoint bytes; never truncate chunks, findings or coverage to fit. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
-          "userImpact": "An actionable failure instead of partial work reported as complete. [[c1]] [[c4]] [[c5]] [[c6]] [[c9]] [[c13]]",
+          "scenario": "Reviewer candidate exceeds impact/result schema or payload bounds",
+          "detection": "Strict candidate schema counts or decodeDesign UTF-8 request/result-byte limits reject model-produced plan/impact/result output before acceptance. This case excludes checkpoint serialization overflow and malformed incoming transport envelopes. [[c5]] [[c9]]",
+          "response": "Classify invalid_schema/input_too_large as existing invalid_output; retry only the current unit within initial+three, then pause for user direction. Do not truncate legitimate findings/coverage or replace prior bytes. A malformed controller request is rejected at the request boundary without spending a model retry. [[c4]] [[c9]] [[c13]]",
+          "userImpact": "The failed reviewer unit may correct its bounded output; previously accepted work remains. Legitimate scope that cannot fit requires explicit user direction rather than silent omissions. [[c1]] [[c13]]",
           "recoverable": true
+        },
+        {
+          "scenario": "Checkpoint serialization exceeds the durable storage cap",
+          "detection": "saveDesignCheckpoint checks full serialized UTF-8 checkpoint against DESIGN_LIMITS.checkpointBytes (64 MiB) and raises checkpoint_too_large before rename. This includes a valid accepted candidate that would exceed total history capacity. [[c3]] [[c9]]",
+          "response": "Terminal nonretryable state/storage failure: preserve the last durable bytes, dispatch no later unit and expose failed/persistence-uncertain status under existing error handling. Do not retry a model, truncate history or pretend it paused. Existing recover/resume refuses failed attempts and restart_full requires invalidated status; overflow grants neither path. If terminal failure itself cannot be persisted, retain the last durable checkpoint and surface that uncertainty. User-directed diagnosis/storage or scope changes and a separately admitted new review may be needed; no automatic new review or extra retry budget is created. [[c3]] [[c4]] [[c13]]",
+          "userImpact": "The current execution cannot complete within the storage cap. All saved history remains available, but there is no claimed same-attempt recovery path for this failure. [[c1]] [[c3]]",
+          "recoverable": false
         },
         {
           "scenario": "Untrusted owner or mismatched controller impact response",
@@ -823,7 +833,9 @@
             "Retained-source rejection matrix at validateDesignImpact AND consolidation: reject forward or equal attempt link, a cycle, cross-artifact or cross-reviewer source, missing source attempt, missing/malformed source result, and invalidated source attempt; verify prior bytes unchanged and no false consolidated coverage. Model-candidate errors use impact retries, already accepted corrupt state stops without model retry. [[c1]] [[c3]] [[c5]] [[c13]]",
             "Reservation preparationKind mismatch matrix: planning argument on an impact attempt, impact argument on a planning/missing-marker attempt, and omitted default-planning argument on an impact attempt all reject invalid_checkpoint before counters/actions/current change and with zero provider calls. Matching preparation kinds and regular chunk reservations remain valid. [[c6]] [[c9]] [[c13]]",
             "Selective progress live/stored/native/controller: plan [keep-A, change-B, keep-C, final] shows fresh 1/2 then 2/2 with retained2, effective3/4 then4/4; full attempts preserve N/N with retained0; pre-plan omits breakdown; count bounds and cursor fresh-only semantics reject bad state/request without a model call. An incomplete final report still shows status incomplete even when all selected assessments returned. [[c6]] [[c9]] [[c14]]",
-            "Corrupt stored checkpoint JSON/schema is terminal invalid_checkpoint with no rewrite or retry; readable valid history with semantic uncertainty selects a full review only through valid admission. [[c3]] [[c13]]"
+            "Corrupt stored checkpoint JSON/schema is terminal invalid_checkpoint with no rewrite or retry; readable valid history with semantic uncertainty selects a full review only through valid admission. [[c3]] [[c13]]",
+            "Report.impact strict schema and projection: initial/pre-S3/full-restart report omits it; selective and correction-full reports require every declared field. Verify complete fresh/retained coverageOrigins, matching sc4/final-output fields, effective finding deduplication/counts, resolved/superseded exclusion, and carry+incomplete when reconciliation is missing. Reject partial objects, extra fields, wrong origin/justification, duplicate tuples and bounds overflow without silent truncation. [[c3]] [[c5]] [[c9]]",
+            "Distinguish reviewer output bound failures (current-unit retries then pause) from a checkpoint serialization cap failure (checkpoint_too_large terminal, zero automatic retries or later dispatch, prior bytes unchanged). Verify failed cannot use recover/resume or restart_full; if terminal persistence fails, uncertainty remains visible. Use disposable deterministic fixtures, not hosted model calls. [[c3]] [[c4]] [[c9]] [[c13]]"
           ],
           "fixturesNeeded": [
             "Many-to-many changed-plan mapping and equivalent rename fixtures",
@@ -887,7 +899,8 @@
           "provingTests": [
             "Immutable retained origins, multi-attempt chains, carried blockers, removed sections, duplicate local IDs, disposition evidence and mandatory-coverage limits consolidate truthfully.",
             "Exact fresh/retained coverage partition at consolidation and mandatory fresh reselection of incomplete source chunks, including chained/older-source bypass attempts.",
-            "Explicit retained-source rejection matrix and truthful fresh/retained progress counters in live and stored observations."
+            "Explicit retained-source rejection matrix and truthful fresh/retained progress counters in live and stored observations.",
+            "Concrete report.impact schema, exact origin/final-decision projection and effective counts preserve traceable coverage without copying prior chunk bodies."
           ]
         },
         {

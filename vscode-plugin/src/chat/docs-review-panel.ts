@@ -2520,12 +2520,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     const ctx = makeCtx(ch, undefined);
     legacy = ctx;
     ch.onDidDispose(() => {
-      disposed = true;
+      // MR2-R2: legacy disposal is LOCAL to its context — closing the legacy panel must not set
+      // the host-wide disposed flag or tear down shared services while keyed panels survive.
+      // Host-wide shutdown is reserved for host.dispose(). Shared services (poll, pending) are
+      // retained while any panel remains, and released when the last one goes.
       legacy = undefined;
-      pollTimer?.cancel();
-      pollTimer = undefined;
-      pending.clear();
       clearCtx(ctx);
+      if (allCtxs().length === 0) {
+        pollTimer?.cancel();
+        pollTimer = undefined;
+        pending.clear();
+      }
     });
     ch.onMessage((m) => handleMessage(ctx, m));
     ch.setHtml(renderShell(ctx));

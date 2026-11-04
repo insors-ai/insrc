@@ -763,12 +763,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             } else if (ev.kind === 'tool-call' && ev.present !== undefined) {
               // E202611031bd72813:S001 t8: a DETACHED chat's insrc_present is still dispatched to the
               // presenter (each declaration opens its own presentKey panel), deduped by declarationId.
-              const declId = ev.callId ?? `${ev.turnId}:${ev.present.join(',')}`;
+              const decl = declarationIdOf(ev);
               // MR4: the shared durable identity covers the follow reader's replays too
-              if (!declarationDispatched(s, declId)) {
-                markDeclarationDispatched(s, declId);
+              if (!declarationDispatched(s, decl)) {
+                markDeclarationDispatched(s, decl);
                 const declared = new Set(s.observerCheckpoint?.declaredIds ?? []);
-                declared.add(declId);
+                declared.add(decl.id);
                 const base = s.observerCheckpoint ?? { turnId, generation: cp.generation, offset: cp.offset, selectionSeq: cp.selectionSeq };
                 s.observerCheckpoint = { ...base, declaredIds: [...declared] };
                 try {
@@ -1540,27 +1540,29 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
   const deliveryWired = new WeakSet<object>();
   /**
-   * MR1 (manual code review): explicit ownership of a delivery attempt — the conversation the
-   * decision was relayed for at decide() time. The async stdin-failure callback resolves through
-   * THIS binding only: a terminal event may have cleared the original chat's liveTurn and the user
-   * may have switched chats, so searching by turn id or falling back to the selected session would
-   * reroute the failure (and its follow-up) into the wrong conversation. An unknown/stale binding
-   * fails closed: nothing is mutated, no follow-up starts.
+   * MR1 + MR1-R2 (manual code review): explicit ownership of a delivery attempt, keyed by the FULL
+   * identity — provider adapter, turn, request, and originating conversation. Request ids are NOT
+   * globally unique (they may repeat across turns, conversations and providers), so a requestId-only
+   * key would let a later decision overwrite an earlier attempt's owner. The async stdin-failure
+   * callback resolves through THIS binding only: a terminal event may have cleared the original
+   * chat's liveTurn and the user may have switched chats, so falling back to the selected session
+   * would reroute the failure (and its follow-up) into the wrong conversation. An unknown/stale
+   * binding fails closed: nothing is mutated, no follow-up starts.
    */
-  const deliveryOwners = new Map<string, string>(); // requestId -> originating session id
-  const wireDeliveryFailure = (ad: StreamAdapter): void => {
+  const deliveryKey = (provider: ProviderId, turnId: string, requestId: string): string => `${provider}::${turnId}::${requestId}`;
+  const deliveryOwners = new Map<string, string>(); // deliveryKey -> originating session id
+  const wireDeliveryFailure = (provider: ProviderId, ad: StreamAdapter): void => {
     if (deliveryWired.has(ad) || ad.onDeliveryFailed === undefined) return;
     deliveryWired.add(ad);
     ad.onDeliveryFailed((turnId, failedRequestId, failedDecision) => {
       // the stdin write failed AFTER decide() reported delivered — correct the persisted outcome
       // and answer the request with the follow-up run instead of leaving it approved. Resolve the
-      // session through the recorded ownership binding, never the currently selected chat.
-      void turnId;
-      const ownerId = deliveryOwners.get(failedRequestId);
-      deliveryOwners.delete(failedRequestId);
+      // session through the recorded full-identity binding, never the currently selected chat.
+      const ownerId = deliveryOwners.get(deliveryKey(provider, turnId, failedRequestId));
+      deliveryOwners.delete(deliveryKey(provider, turnId, failedRequestId));
       const s = ownerId !== undefined ? deps.store.get(ownerId) : undefined;
       if (s === undefined || deps.store.get(s.id) === undefined) {
-        log.warn(`[chat] async delivery failure for ${failedRequestId} has no known originating conversation — failing closed, no follow-up started`);
+        log.warn(`[chat] async delivery failure for ${failedRequestId} (turn ${turnId}) has no known originating conversation — failing closed, no follow-up started`);
         return;
       }
       ensurePersistedUnresolved(s, failedRequestId);
@@ -1575,7 +1577,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
     const live = turns.live;
-    if (live !== undefined) wireDeliveryFailure(deps.providers.get(live.provider));
+    const probeProvider0 = live?.provider ?? session?.provider;
+    if (probeProvider0 !== undefined) wireDeliveryFailure(probeProvider0, deps.providers.get(probeProvider0));
     let undelivered = false; // a live turn whose decide() reported dead stdin (or a dead adapter)
     // t6: probe delivery through the live turn — or, for a RESTORED request with no live turn in
     // this host, the session's persisted liveTurn (its stdin died with its owner): decide()
@@ -1583,9 +1586,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const probeTurnId = live?.turnId ?? session?.liveTurn?.cursor.turnId;
     const probeProvider = live?.provider ?? session?.provider;
     if (probeTurnId !== undefined && probeProvider !== undefined) {
-      // MR1: record which conversation this delivery attempt belongs to, so a later async
-      // stdin failure resolves to it even after a terminal or a chat switch.
-      if (session !== undefined) deliveryOwners.set(requestId, session.id);
+      // MR1/MR1-R2: record the full delivery identity -> originating conversation, so a later
+      // async stdin failure resolves to THIS attempt even after a terminal or a chat switch —
+      // repeated request ids in other turns/conversations keep their own bindings.
+      if (session !== undefined) deliveryOwners.set(deliveryKey(probeProvider, probeTurnId, requestId), session.id);
       try {
         // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
         // decide() itself reports undelivered for a dead/absent stdin, and the request is NOT
@@ -1692,11 +1696,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * records a NEW dispatch durably so a later replay — reattach, reload, the observer after the
    * follow reader — never opens a second panel for the same declaration.
    */
-  const declarationDispatched = (s: ChatSession, declId: string): boolean =>
-    (s.presentedDeclarations ?? []).includes(declId) || (s.observerCheckpoint?.declaredIds ?? []).includes(declId);
-  const markDeclarationDispatched = (s: ChatSession, declId: string): void => {
-    if (declarationDispatched(s, declId)) return;
-    s.presentedDeclarations = [...(s.presentedDeclarations ?? []), declId];
+  /**
+   * MR4-R2: the declaration identity is conversation+turn+call scoped — `${turnId}:${callId}` —
+   * because provider item ids may repeat across turns/CLI invocations: a replay of one declaration
+   * (reattach/reload/observer) must open once, while a NEW turn reusing the same call id must still
+   * present. Legacy persisted ledgers hold the bare call id; those still match their own turn's
+   * declaration (compat), without suppressing a different turn's.
+   */
+  const declarationIdOf = (ev: { readonly turnId: string; readonly callId?: string | undefined; readonly present?: readonly string[] | undefined }): { readonly id: string; readonly legacy: string | undefined } => {
+    const call = ev.callId ?? (ev.present ?? []).join(',');
+    return { id: `${ev.turnId}:${call}`, legacy: ev.callId };
+  };
+  const declarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined }): boolean => {
+    const ledger = [...(s.presentedDeclarations ?? []), ...(s.observerCheckpoint?.declaredIds ?? [])];
+    return ledger.includes(decl.id) || (decl.legacy !== undefined && ledger.includes(decl.legacy));
+  };
+  const markDeclarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined }): void => {
+    if (declarationDispatched(s, decl)) return;
+    s.presentedDeclarations = [...(s.presentedDeclarations ?? []), decl.id];
     try {
       deps.store.save(s);
     } catch { /* best-effort, as the observer's checkpoint save */ }
@@ -1706,9 +1723,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (shown === undefined || ev.kind !== 'tool-call' || ev.present === undefined) return;
     // MR4: a declaration already dispatched (e.g. by the detached observer) is never re-presented
     // when the follow reader replays the same tool call on reattach.
-    const declId = ev.callId ?? `${ev.turnId}:${ev.present.join(',')}`;
-    if (declarationDispatched(s, declId)) return;
-    markDeclarationDispatched(s, declId);
+    const decl = declarationIdOf(ev);
+    if (declarationDispatched(s, decl)) return;
+    markDeclarationDispatched(s, decl);
     try {
       shown
         .declared(ev.present)

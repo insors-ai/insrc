@@ -151,6 +151,12 @@ export interface RunOptions {
    */
   readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string; readonly sessionId?: string | undefined }) => void) | undefined;
   /**
+   * MR3-R2 (manual review): cancellation predicate rechecked immediately BEFORE the child spawn —
+   * the session-output beginTurn() await above can outlast the delivery timeout, so the lifecycle's
+   * pre-run check alone cannot stop a timed-out continuation from launching.
+   */
+  readonly shouldSpawn?: (() => boolean) | undefined;
+  /**
    * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
    * kept in that session's file. Pass it only while holding the session's lease.
    */
@@ -1126,6 +1132,15 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             errTail: () => sessionOutput.errTail(sessionId),
           }
         : undefined;
+    // MR3-R2: recheck cancellation immediately before the actual spawn; a timed-out continuation
+    // whose delivery-failed was already recorded must not launch a child. The begun output segment
+    // is closed again so no orphaned turn file remains.
+    if (opts?.shouldSpawn !== undefined && !opts.shouldSpawn()) {
+      if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+        void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
+      }
+      return;
+    }
     let proc: SpawnedProcess;
     try {
       proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {

@@ -7455,6 +7455,58 @@ test('E202611031bd72813:S001 t8/MR2: two presentKey panels hold INDEPENDENT docu
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t8/MR2-R2: closing the LEGACY panel leaves keyed presentation panels fully alive — their posts, boot reloads, watches and decision results keep flowing; reopening the legacy panel works', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const docs = [
+    { id: 'LLD-a-S001', kind: 'LLD', title: 'A', status: 'pending' },
+    { id: 'LLD-b-S001', kind: 'LLD', title: 'B', status: 'pending' },
+  ];
+  const { client, calls } = fakeClient({
+    pending: () => docs as DocsArtifactSummary[],
+    content: (id) => ({ markdown: `# body of ${id}`, openQuestions: [], blocked: false, docPath: `docs/${id}.md` }),
+  });
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      made.push(rec);
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => { rec.reveals += 1; }, dispose: ch.dispose };
+    },
+    client,
+    pollMs: 0,
+  });
+  // legacy panel + two keyed panels
+  host.open();
+  await tick();
+  host.openArtifact({ artifactId: 'LLD-a-S001', mdPath: 'docs/LLD-a-S001.md', quiet: true, presentKey: 'A#1' });
+  host.openArtifact({ artifactId: 'LLD-b-S001', mdPath: 'docs/LLD-b-S001.md', quiet: true, presentKey: 'B#2' });
+  await tick(); await tick(); await tick(); await tick();
+  assert.equal(made.length, 3, 'legacy + two keyed panels');
+  const legacy = made[0]!;
+  const keyedA = made[1]!;
+  const contentsOf = (fc: ReturnType<typeof fakeChannel>): string[] => fc.posted.filter((p) => p.payload.type === 'docs-content').map((p) => (p.payload as { artifactId: string }).artifactId);
+  assert.deepEqual(contentsOf(keyedA.fc), ['LLD-a-S001']);
+  // close ONLY the legacy panel
+  legacy.fc.fireDispose();
+  await tick();
+  // the surviving keyed panel still gets a boot reload with its own document
+  keyedA.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(keyedA.fc).at(-1), 'LLD-a-S001', 'keyed panel A still reloads its document after the legacy panel closed');
+  // a decision from the surviving keyed panel still reaches the daemon AND is answered on its channel
+  keyedA.fc.send(env('docs-decision', { artifactId: 'LLD-a-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'the decision still reached the daemon');
+  assert.equal(keyedA.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 1, 'and its result reached the surviving panel');
+  // reopening the legacy panel works and gets the list
+  host.open();
+  await tick(); await tick();
+  assert.equal(made.length, 4, 'a new legacy panel was created on reopen');
+  assert.ok(made[3]!.fc.posted.some((p) => p.payload.type === 'docs-list'), 'the reopened legacy panel got the pending list');
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:artifactId — two panels showing the same artifact keep isolated drafts, and A->B->A within one panel restores A', () => {
   const DOC_A = { ...INLINE_DOC, artifactId: 'LLD-a' };
   const DOC_B = { ...INLINE_DOC, artifactId: 'LLD-b' };

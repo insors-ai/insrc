@@ -22,7 +22,7 @@ export interface PendingDocument {
 
 export interface ReviewPresenterDeps {
   pendingDocuments(): Promise<readonly PendingDocument[]>;
-  open(target: { readonly artifactId: string; readonly mdPath: string }): void;
+  open(target: { readonly artifactId: string; readonly mdPath: string; readonly presentKey: string }): void;
   readonly log: ChatPanelLogger;
 }
 
@@ -54,12 +54,18 @@ export interface ReviewPresenter {
 
 /** What a turn knows. */
 interface TurnState {
-  readonly opened: Set<string>;
-  /** The ids whose open call threw (they are in `opened` too, so they are not tried again). */
+  /** The ids whose open call threw this turn, so they are not tried again. */
   readonly failed: Set<string>;
   /** The turn's declarations, one behind another. */
   queue: Promise<void>;
 }
+
+/**
+ * E202611031bd72813:S001 t7: the presentation key of one declaration — `<artifactId>#<n>` with a
+ * HOST-WIDE counter, so every insrc_present that opens the same artifact gets its own editor panel
+ * (two declarations of one document, even from two chat sessions, never share a panel).
+ */
+const presentKeyOf = (artifactId: string, seq: number): string => `${artifactId}#${seq}`;
 
 /** A declared name names a pending document by its artifact id (compared without regard to case: the daemon lists `-s5` for some records and `-S001` for others) or by its path, absolute or repo-relative. */
 // The daemon-side twin is `namesPending` in src/mcp/server.ts (insrc_present's answer): keep the two in step.
@@ -70,6 +76,9 @@ const errorText = (err: unknown): string => (err instanceof Error ? err.message 
 
 export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresenter {
   const { log } = deps;
+  // E202611031bd72813:S001 t7: the host-wide presentKey sequence — one presenter per extension host,
+  // shared by every chat session, so presentKeys are unique across all of them.
+  let hostPresentSeq = 0;
 
   async function read(what: string): Promise<readonly PendingDocument[] | undefined> {
     try {
@@ -80,12 +89,15 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
     }
   }
 
-  function open(state: TurnState, doc: PendingDocument): void {
-    if (state.opened.has(doc.id)) return;
+  function open(state: TurnState, doc: PendingDocument, openedThisDeclaration: Set<string>): void {
+    // Dedup is PER DECLARATION (E202611031bd72813:S001 t7): the same document named twice in ONE
+    // insrc_present opens once, but a LATER declaration opens again under a fresh presentKey.
+    // An open that threw is never retried within the turn.
+    if (openedThisDeclaration.has(doc.id) || state.failed.has(doc.id)) return;
     // Marked first: an open that throws is not tried again in this turn.
-    state.opened.add(doc.id);
+    openedThisDeclaration.add(doc.id);
     try {
-      deps.open({ artifactId: doc.id, mdPath: doc.mdPath });
+      deps.open({ artifactId: doc.id, mdPath: doc.mdPath, presentKey: presentKeyOf(doc.id, ++hostPresentSeq) });
     } catch (err) {
       state.failed.add(doc.id);
       log.error(`review presenter: ${doc.id} could not be opened: ${errorText(err)}`);
@@ -94,12 +106,13 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
 
   return {
     begin(): PresentedTurn {
-      const state: TurnState = { opened: new Set(), failed: new Set(), queue: Promise.resolve() };
+      const state: TurnState = { failed: new Set(), queue: Promise.resolve() };
       return {
         declared(documents: readonly string[]): Promise<DeclaredOutcome> {
           return new Promise<DeclaredOutcome>((resolve) => {
             state.queue = state.queue.then(async () => {
               const outcome: { opened: string[]; notPending: string[]; unreadable: boolean } = { opened: [], notPending: [], unreadable: false };
+              const openedThisDeclaration = new Set<string>();
               try {
                 const docs = await read('for a declared document');
                 if (docs === undefined) {
@@ -114,9 +127,10 @@ export function createReviewPresenter(deps: ReviewPresenterDeps): ReviewPresente
                       outcome.notPending.push(name);
                       continue;
                     }
-                    open(state, doc);
-                    // Shown in this turn, now or by an earlier declaration; an open that failed is left out.
-                    if (!state.failed.has(doc.id)) outcome.opened.push(name);
+                    open(state, doc, openedThisDeclaration);
+                    // The name is shown when its document is open (this declaration opened it, or an
+                    // earlier name in the same declaration did); a failed open is left out.
+                    if (!state.failed.has(doc.id) && openedThisDeclaration.has(doc.id)) outcome.opened.push(name);
                   }
                 }
               } catch (err) {

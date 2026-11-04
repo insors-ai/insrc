@@ -22,6 +22,7 @@ interface Kit {
   /** What the pending list holds now. */
   list: PendingDocument[];
   opened: string[];
+  presentKeys: string[];
   reads: number;
   logged: string[];
   failReads: boolean;
@@ -29,7 +30,7 @@ interface Kit {
 }
 function kit(initial: PendingDocument[] = [], o: { open?: (id: string) => void; gate?: () => Promise<void> } = {}): Kit {
   const k: Kit = {
-    list: [...initial], opened: [], reads: 0, logged: [], failReads: false,
+    list: [...initial], opened: [], presentKeys: [], reads: 0, logged: [], failReads: false,
     presenter: createReviewPresenter({
       pendingDocuments: async () => {
         k.reads += 1;
@@ -41,6 +42,7 @@ function kit(initial: PendingDocument[] = [], o: { open?: (id: string) => void; 
       },
       open: (t) => {
         k.opened.push(`${t.artifactId}@${t.mdPath}`);
+        k.presentKeys.push(t.presentKey);
         o.open?.(t.artifactId);
       },
       log: { warn: (m) => void k.logged.push(m), error: (m) => void k.logged.push(m) },
@@ -210,16 +212,23 @@ test('a declared name that is not pending opens nothing and is reported by name'
   assert.deepEqual(partial.notPending, ['LLD.md']);
 });
 
-test('the same document declared twice in a turn opens once', async () => {
+test('E202611031bd72813:S001 t7: dedup is PER DECLARATION — the same document declared twice in one insrc_present opens once, but a second declaration opens again under a fresh presentKey; keys are host-wide unique', async () => {
   const A = doc('LLD-aaa-S001');
   const k = kit([A]);
   const turn = k.presenter.begin();
   const first = await turn.declared(['LLD-aaa-S001']);
-  const second = await turn.declared(['lld-aaa-s001', 'LLD-aaa-S001']);
-  assert.equal(k.opened.length, 1, 'opened once for the turn');
+  const second = await turn.declared(['lld-aaa-s001', 'LLD-aaa-S001']); // same doc twice in ONE declaration
+  assert.equal(k.opened.length, 2, 'once per declaration: the duplicate inside the second declaration did not re-open');
   assert.deepEqual(first.opened, ['LLD-aaa-S001']);
-  assert.deepEqual(second.opened, ['lld-aaa-s001', 'LLD-aaa-S001'], 'still shown, so not reported as missing');
-  assert.deepEqual(second.notPending, []);
+  assert.deepEqual(second.opened, ['lld-aaa-s001', 'LLD-aaa-S001'], 'both names shown, none re-opened');
+  const third = await turn.declared(['LLD-aaa-S001']); // a LATER declaration
+  assert.deepEqual(third.opened, ['LLD-aaa-S001'], 'the later declaration opened again');
+  assert.equal(k.opened.length, 3, 'three opens total: one per declaration');
+  assert.deepEqual(k.presentKeys, ['LLD-aaa-S001#1', 'LLD-aaa-S001#2', 'LLD-aaa-S001#3'], 'each open carries its own presentKey');
+  // host-wide uniqueness: another turn (another chat session, same host presenter) gets the next key
+  const turn2 = k.presenter.begin();
+  await turn2.declared(['LLD-aaa-S001']);
+  assert.deepEqual(k.presentKeys, ['LLD-aaa-S001#1', 'LLD-aaa-S001#2', 'LLD-aaa-S001#3', 'LLD-aaa-S001#4'], 'two chat sessions presenting the same artifact get distinct keys');
 });
 
 test('an unreadable pending list and a failing open are logged and never thrown', async () => {

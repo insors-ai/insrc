@@ -101,7 +101,7 @@ export interface DocsReviewHost {
    * Story E20261013e62a9269:S001: with quiet (a document the chat presents) the pane is
    * created or brought to the front without taking keyboard focus.
    */
-  openArtifact(target: { readonly artifactId: string; readonly mdPath: string; readonly quiet?: boolean | undefined }): void;
+  openArtifact(target: { readonly artifactId: string; readonly mdPath: string; readonly quiet?: boolean | undefined; readonly presentKey?: string | undefined }): void;
 }
 
 const VIEW_TYPE = 'insrc.docsReviewPanel';
@@ -1394,7 +1394,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * read-only is decided from this answer either way, so a later refresh that
    * supersedes it cannot turn a pending artifact read-only.
    */
-  async function openArtifactFrom(target: { readonly artifactId: string; readonly mdPath: string }): Promise<void> {
+  async function openArtifactFrom(target: { readonly artifactId: string; readonly mdPath: string; readonly presentKey?: string | undefined }): Promise<void> {
     const mySeq = ++refreshSeq;
     let summary: DocsArtifactSummary | undefined;
     try {

@@ -3818,6 +3818,7 @@ test("a live provider with a queued in-turn request, then the user types a messa
     decide: (t, r, d) => {
       order.push(`decide:${t}:${r}:${d}`);
       if (order.filter((o) => o.startsWith('decide:')).length === 2) answered();
+      return { delivered: true }; // t6 contract
     },
     capabilities: { resume: true },
   };

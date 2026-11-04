@@ -47,7 +47,10 @@ function spawningAdapter(decisions: string[]): { adapter: StreamAdapter; runs: R
       }
     },
     cancel: async () => {},
-    decide: (_turnId, requestId, decision) => void decisions.push(`${requestId}:${decision}`),
+    decide: (_turnId, requestId, decision) => {
+      decisions.push(`${requestId}:${decision}`);
+      return { delivered: true }; // t6 contract: decide reports delivery
+    },
     capabilities: { resume: true },
   };
   return { adapter, runs };

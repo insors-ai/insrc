@@ -206,6 +206,8 @@ export interface ObserverCheckpoint {
   readonly offset: number;
   readonly selectionSeq: number;
   readonly selectionBuffer?: string | undefined;
+  /** The decoder's captured native session id (codex thread.started / claude init), so a budget-limited pass that consumed it before completing still persists it on the next pass. */
+  readonly sessionId?: string | undefined;
   readonly declaredIds?: readonly string[] | undefined;
   /** Set when the checkpoint was rewound to just before a terminal — rewound only once per terminal. */
   readonly rewound?: boolean | undefined;
@@ -224,7 +226,7 @@ export interface LiveTurn {
    * split-marker buffer), saved with the cursor so a reattach between marker fragments resumes with
    * it — the observer checkpoint is the OTHER cursor's state and stays independent.
    */
-  readonly decoder?: { readonly selectionSeq: number; readonly selectionBuffer?: string | undefined } | undefined;
+  readonly decoder?: { readonly selectionSeq: number; readonly selectionBuffer?: string | undefined; readonly sessionId?: string | undefined } | undefined;
   readonly ownerHostPid: number;
   readonly pid?: number | undefined;
   readonly startedAt?: number | null | undefined;

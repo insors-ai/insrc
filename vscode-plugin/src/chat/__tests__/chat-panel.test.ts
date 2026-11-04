@@ -5984,6 +5984,48 @@ test('E202611031bd72813:S001 t5: the observer resumes from the PERSISTED checkpo
   }
 });
 
+test('E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs-sid-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn in this test'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('codex');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ codex: adapter }, ['codex']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('codex' as never);
+    const seg = await out.beginTurn(s.id, 't-sid');
+    const startedLine = JSON.stringify({ type: 'thread.started', thread_id: 'thread-x' }) + '\n';
+    // the terminal line carries NO thread id — the native id can only come from the decoder state
+    const doneLine = JSON.stringify({ type: 'turn.completed' }) + '\n';
+    appendFileSync(seg.outPath, startedLine + doneLine);
+    await out.endTurn(s.id, 't-sid', { code: 0, signal: null });
+    store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-sid', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // a PREVIOUS budget-limited pass consumed thread.started (decoder captured thread-x) and persisted this checkpoint
+    cur.observerCheckpoint = { turnId: 't-sid', generation: seg.cursor.generation, offset: seg.cursor.offset + Buffer.byteLength(startedLine), selectionSeq: 0, sessionId: 'thread-x' };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the pass caught up through the terminal and cleared the cursor');
+    const after = store.get(s.id)!;
+    assert.equal(after.nativeSessionId, 'thread-x', 'the native session id captured by the decoder in the earlier pass is persisted on completion, not lost across passes');
+    assert.equal(after.observerCheckpoint?.sessionId, 'thread-x', 'and stays in the checkpoint for the next resume');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
 test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs3-'));
   try {

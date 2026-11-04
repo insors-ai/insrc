@@ -112,7 +112,7 @@ export interface ResumeRequest {
    * a split selection marker's buffer), so a resumed read never reuses a selection id or loses a
    * marker that spans chunks. Absent -> an empty state (today's behaviour).
    */
-  readonly decoderState?: { readonly selectionSeq?: number | undefined; readonly selectionBuffer?: string | undefined } | undefined;
+  readonly decoderState?: { readonly selectionSeq?: number | undefined; readonly selectionBuffer?: string | undefined; readonly sessionId?: string | undefined } | undefined;
   /**
    * E202611031bd72813:S001 t5: a terminal was already ingested at/before this cursor (checkpoint
    * flag) — the resume must not report a synthetic EOF failure for it.
@@ -1393,6 +1393,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     const state: TurnState = {};
     if (req.decoderState?.selectionSeq !== undefined) state.selectionSeq = req.decoderState.selectionSeq;
     if (req.decoderState?.selectionBuffer !== undefined) state.selectionBuffer = req.decoderState.selectionBuffer;
+    // the native session id captured by an earlier pass (codex thread.started / claude init) survives the resume
+    if (req.decoderState?.sessionId !== undefined) state.sessionId = req.decoderState.sessionId;
     const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
       kind: 'done',
       turnId,

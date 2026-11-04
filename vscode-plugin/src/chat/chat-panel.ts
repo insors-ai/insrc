@@ -683,7 +683,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         } catch { /* fall back below */ }
         // Fallback: the liveTurn cursor PAIRED WITH the lifecycle's own decoder state for this turn —
         // never the advanced offset with an empty decoder (that would lose a split-marker prefix).
-        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: live.decoder?.selectionSeq ?? 0, ...(live.decoder?.selectionBuffer !== undefined && live.decoder.selectionBuffer !== '' ? { selectionBuffer: live.decoder.selectionBuffer } : {}) };
+        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: live.decoder?.selectionSeq ?? 0, ...(live.decoder?.selectionBuffer !== undefined && live.decoder.selectionBuffer !== '' ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder?.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}) };
       }
       // AFTER the anchor is known: the persisted rows below this cut are kept; everything the pass
       // re-reads past the anchor is collected as pending rows and REPLACES the persisted rows above
@@ -723,7 +723,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: undefined as string | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string; rows: number } | undefined };
         try {
           const events = resume(
-            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
+            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}), ...(cp.sessionId !== undefined ? { sessionId: cp.sessionId } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
             {
               drain: true, // read the WHOLE segment, past the terminal event — caught-up means drained
               signal: ctl.signal,
@@ -737,6 +737,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               onDecoderState: (ds) => {
                 st.seq = ds.selectionSeq;
                 st.buf = ds.selectionBuffer;
+                // capture the native session id as soon as the decoder sees it (codex thread.started /
+                // claude init) — a budget-limited pass that consumed it before completing still persists it
+                if (ds.sessionId !== undefined) st.nativeSessionId = ds.sessionId;
               },
             },
           );
@@ -871,7 +874,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const merged = [...fresh.transcript.slice(0, cut), ...pendingRows.slice(0, keptRows), ...concurrentSuffix];
         const toSave: ChatSession = { ...fresh, transcript: merged };
         if (pass.nativeSessionId !== undefined) toSave.nativeSessionId = pass.nativeSessionId;
-        toSave.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: cut + keptRows };
+        toSave.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.nativeSessionId !== undefined ? { sessionId: pass.nativeSessionId } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: cut + keptRows };
         deps.store.save(toSave);
         checkpointSaved = true;
       } catch { /* best-effort — pins are NOT released below if this failed; a takeover retries next pass */ }

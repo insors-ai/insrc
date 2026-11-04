@@ -29,6 +29,21 @@ export function nativeKeyForPath(path: string): string {
   return NATIVE_KEY_PREFIX + path;
 }
 
+/**
+ * The native settings id of a per-role tier override. VS Code keeps settings in a nested tree, so an id
+ * that is a dotted child of another id (`...tools.convert.escalate` under the string setting
+ * `...tools.convert`) cannot be stored or read back. A role whose id extends another role's id with a
+ * dot therefore joins the rest onto the parent in camel case (`tools.convert` + `escalate` becomes
+ * `tools.convertEscalate`); every other role keeps `insrc.models.tasks.<roleId>`. The catalog path of the
+ * role is unchanged.
+ */
+export function nativeRoleKey(roleId: string, roleIds: readonly string[]): string {
+  const parent = roleIds.filter((other) => roleId.startsWith(other + '.')).sort((x, y) => y.length - x.length)[0];
+  if (parent === undefined) return NATIVE_KEY_PREFIX + PER_ROLE_PATH_PREFIX + roleId;
+  const tail = roleId.slice(parent.length + 1).split('.').map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('');
+  return NATIVE_KEY_PREFIX + PER_ROLE_PATH_PREFIX + parent + tail;
+}
+
 /** Build a ConfigKeyMap (both O(1) indexes) over a pre-computed entry list. */
 function mapFromEntries(entries: readonly ConfigKeyEntry[]): ConfigKeyMap {
   const byNative = new Map<string, ConfigKeyEntry>();
@@ -117,6 +132,7 @@ export function buildConfigKeyMap(manifest: ManifestConfiguration = MANIFEST_CON
  * drift (checked by a manifest↔taxonomy contract test).
  */
 export function buildPerRoleKeyMap(): readonly ConfigKeyEntry[] {
+  const roleIds = reasoningRoleTaxonomy().roles.map((role) => role.id);
   return reasoningRoleTaxonomy().roles.map((role) => {
     const path = PER_ROLE_PATH_PREFIX + role.id;
     const option: ConfigOption = {
@@ -128,7 +144,7 @@ export function buildPerRoleKeyMap(): readonly ConfigKeyEntry[] {
       group: 'Models — per-role tiers',
     };
     return {
-      nativeKey: NATIVE_KEY_PREFIX + path,
+      nativeKey: nativeRoleKey(role.id, roleIds),
       path,
       option,
       segments: ['models', 'tasks', role.id],

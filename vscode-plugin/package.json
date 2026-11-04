@@ -738,7 +738,7 @@
             "markdownDescription": "Model tier for the `tools.convert` role (peripheral): converts the text output of a tool into its declared shape. Leave at the default to use the daemon's routing.",
             "scope": "machine"
           },
-          "insrc.models.tasks.tools.convert.escalate": {
+          "insrc.models.tasks.tools.convertEscalate": {
             "type": "string",
             "enum": [
               "cheap",

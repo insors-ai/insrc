@@ -1394,7 +1394,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const decisions = batch.decisions;
     // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
     // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
-    for (const d of decisions) pendingFollowUps.set(d.request.requestId, { outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId });
+    for (const d of decisions) pendingFollowUps.set(d.request.requestId, { outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: batch.turnId });
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
     void p.then(
       () => {
@@ -1431,7 +1431,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
-        pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId });
+        pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: requestId });
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s }); // resumes s.nativeSessionId when known
         started = true;
         // If the follow-up never spawns (the original CLI still holds the turn lock and stays
@@ -1475,7 +1475,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const restoredRequestIds = new Set<string>();
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
-  let pendingFollowUps = new Map<string, { readonly outcome: string; readonly excludeTurnId: string | undefined }>();
+  let pendingFollowUps = new Map<string, { readonly outcome: string; readonly excludeTurnId: string | undefined; readonly groupId: string }>();
   /** turnId -> requestId: each follow-up is bound to the turn it actually started, so a spawn/event
    * of one follow-up's turn never marks another pending follow-up delivered. */
   const followUpTurns = new Map<string, string>();
@@ -1497,10 +1497,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (rid === undefined) return;
     const pf = pendingFollowUps.get(rid);
     if (pf === undefined) return;
-    pendingFollowUps.delete(rid);
+    // one follow-up turn confirms its WHOLE group (a batch follow-up carries several decisions)
+    for (const [other, opf] of [...pendingFollowUps]) {
+      if (opf.groupId === pf.groupId) {
+        pendingFollowUps.delete(other);
+        markPersistedRequest(s, other, true, opf.outcome);
+      }
+    }
     // keep the binding until the turn ENDS: later events of the same follow-up turn must map to
     // it (already confirmed -> no-op), never re-bind to another pending follow-up
-    markPersistedRequest(s, rid, true, pf.outcome);
   };
 
   /** Adapters already wired for async delivery failures (one subscription per adapter per host). */

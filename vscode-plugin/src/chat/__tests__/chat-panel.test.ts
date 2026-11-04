@@ -28,7 +28,7 @@ import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } fro
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
 import { DatabaseSync } from 'node:sqlite';
-import { appendFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join as pathJoin } from 'node:path';
 
@@ -5970,12 +5970,15 @@ test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a 
     appendFileSync(seg1.outPath, JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 'n-obs' }) + '\n');
     await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
     out.registerCursor(seg1.cursor, 'host-old');
-    // real rollovers: gen 1 -> previous -> ARCHIVED (pinned); gen 2 -> previous -> DISCARDED (unpinned)
+    // real rollovers: gen 1 -> previous -> ARCHIVED (pinned); gen 2 -> previous -> archived too
+    // (rollover never discards since E202611031bd72813:S001 t5), so force the loss the way a
+    // sweep/unregister prune would: delete gen 2's archive by hand
     await out.beginTurn(s.id, 'x2');
     await out.endTurn(s.id, 'x2', { code: 0, signal: null });
     await out.beginTurn(s.id, 'x3');
     await out.endTurn(s.id, 'x3', { code: 0, signal: null });
-    await out.beginTurn(s.id, 'x4'); // gen 2 is replaced here — discarded for real
+    await out.beginTurn(s.id, 'x4'); // gen 2 rolls out here
+    for (const f of readdirSync(root)) if (f.endsWith('.pinned.2.ndjson')) rmSync(pathJoin(root, f)); // pruned -> SegmentGone
     store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;

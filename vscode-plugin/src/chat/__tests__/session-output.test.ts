@@ -163,17 +163,18 @@ test('the file rolls over at a turn start once past maxBytes, keeping one previo
   await r.done;
   assert.equal(r.lines.length, 2);
 
-  // Rolling over again drops generation 1: its cursor reports the segment gone.
+  // Rolling over again ARCHIVES generation 1 (E202611031bd72813:S001 t5: lossless by construction —
+  // rollover never discards): its cursor replays from the on-disk archive.
   appendFileSync(b.outPath, big);
   appendFileSync(b.outPath, big);
   await out.endTurn('s1', 'b', { code: 0, signal: null });
   const c = await out.beginTurn('s1', 'c');
   assert.equal(c.cursor.generation, 3);
   const files = readdirSync(dir).filter((f) => f.startsWith('s1')).sort();
-  assert.deepEqual(files, ['s1.1.ndjson', 's1.err.log', 's1.ndjson'], 'exactly one previous generation is kept');
-  await assert.rejects(async () => {
-    for await (const _ of out.tail(a.cursor, { finished: () => true })) void _;
-  }, SegmentGone);
+  assert.deepEqual(files, ['s1.1.ndjson', 's1.err.log', 's1.ndjson', 's1.pinned.1.ndjson'], 'one previous generation is kept; the outgoing one is archived, not discarded');
+  const r2 = follow(out.tail(a.cursor, { finished: () => true }));
+  await r2.done;
+  assert.equal(r2.lines.length, 2, 'generation 1 replays losslessly from the archive');
 
   // A cursor past the end of its (truncated) file re-reads its turn from the start, with a warning.
   const d = await out.beginTurn('s2', 'd');
@@ -418,18 +419,32 @@ test('E202611031bd72813:S001 t5: register -> unregister -> register keeps the du
   rmSync(dir, { recursive: true, force: true });
 });
 
-test('E202611031bd72813:S001 t5: registerCursor makes the pin marker durable before it returns even when the session lock is held by another live holder', async () => {
-  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5r2-')), 'out');
+test('E202611031bd72813:S001 t5: rollover NEVER discards — an UNPINNED outgoing generation is archived too (lossless by construction, no registration race); sweep later prunes old unpinned archives of kept sessions but keeps pinned ones', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5s-')), 'out');
   const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
   const seg1 = await so.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
   await so.endTurn('s1', 't1', { code: 0, signal: null });
-  writeFileSync(join(dir, 's1.lock'), String(process.pid)); // lock held by a LIVE pid (not stale)
-  const t0 = Date.now();
-  so.registerCursor(seg1.cursor);
-  const elapsed = Date.now() - t0;
-  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'the marker is on disk synchronously, before registerCursor returns, despite the held lock');
-  assert.ok(elapsed < 2000, `the lock spin is bounded (took ${elapsed}ms)`);
-  rmSync(join(dir, 's1.lock'), { force: true });
+  // NO registerCursor — nobody pins generation 1
+  await so.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  await so.beginTurn('s1', 't3'); // gen 1 rolls out of previous: archived, NOT discarded
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'even an unpinned outgoing generation is archived at rollover');
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'readable losslessly with no pin at all');
+  // sweep with the session kept: a FRESH old archive is pruned, a PINNED one survives
+  so.registerCursor(seg1.cursor); // pin gen 1 (marker on disk)
+  const seg4 = await so.beginTurn('s1', 't4'); // gen 2 rolls out -> archived (unpinned)
+  await so.endTurn('s1', 't4', { code: 0, signal: null });
+  assert.ok(existsSync(join(dir, 's1.pinned.2.ndjson')), 'gen 2 archived');
+  // age everything, then sweep: kept session, old files — pinned gen 1 survives, unpinned gen 2 goes
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(dir)) utimesSync(join(dir, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the pinned archive survives the sweep');
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'its pin marker survives the sweep');
+  assert.ok(!existsSync(join(dir, 's1.pinned.2.ndjson')), 'the unpinned archive is pruned by age');
   await so.remove('s1');
   rmSync(dir, { recursive: true, force: true });
 });

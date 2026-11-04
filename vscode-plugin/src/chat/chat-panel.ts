@@ -1069,7 +1069,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (s === undefined) return;
     const list = s.pendingRequests ?? [];
     const i = list.findIndex((r) => r.requestId === requestId);
-    if (i < 0) return;
+    if (i < 0) {
+      // never persisted (fresh live request): upsert a minimal record so the outcome (e.g.
+      // delivery-failed) is not silently dropped
+      if (outcome === undefined) return;
+      list.push({ requestId, kind: 'approval', turnId: s.liveTurn?.cursor.turnId ?? 'unknown', resolved, outcome });
+      s.pendingRequests = list;
+      try {
+        deps.store.save(s);
+      } catch (err) {
+        log.warn(`[chat] session ${s.id}: request ${requestId} outcome not saved: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      return;
+    }
     const cur = list[i]!;
     if (cur.resolved === resolved && cur.outcome === outcome) return;
     const next = [...list];
@@ -1154,7 +1166,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (r.resolved) continue;
       restored += 1;
       if (r.kind === 'approval') {
-        if (snap !== undefined && Array.isArray(snap.waiting) && snap.waiting.some((w) => w.requestId === r.requestId)) {
+        const decidedInBatch = snap !== undefined && Array.isArray(snap.batches) && snap.batches.some((b) => b.decisions.some((d: { readonly request: { readonly requestId: string } }) => d.request.requestId === r.requestId));
+        if (snap !== undefined && Array.isArray(snap.waiting) && (snap.waiting.some((w) => w.requestId === r.requestId) || decidedInBatch)) {
           // already rebuilt from the snapshot — only re-register a followed turn's request with the adapter,
           // and end the turn of a non-in-turn one so its restored batch can complete on decision
           const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;

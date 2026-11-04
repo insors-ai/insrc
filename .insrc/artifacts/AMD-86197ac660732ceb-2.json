@@ -1,20 +1,64 @@
 {
-  "id": "AMD-86197ac660732ceb-2",
-  "epicHash": "86197ac660732ceb",
-  "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
-  "hldBaseRunId": "wf-1792588079400-heeqp4",
-  "amendment": {
-    "type": "sharedContract.fieldAdd",
-    "contractId": "sc4",
-    "field": {
-      "name": "role",
-      "type": "'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state' | undefined",
-      "optional": true,
-      "purpose": "What a thread is for, so daemon.status can tell the code-indexing and document-summary threads apart (the summary worker serves no request class) and mark the unattributed and shared-state session workers, which ThreadStatus.cls and session alone cannot."
+  "meta": {
+    "workflow": "design.epic",
+    "epicHash": "86197ac660732ceb",
+    "epicSlug": "multi-threaded-daemon-sessions-admin-indexing",
+    "createdAt": "2026-10-29T07:22:10.637Z",
+    "epicCreatedAt": "2026-10-21T10:47:43.545Z",
+    "envelope": {
+      "references": [],
+      "attachments": [],
+      "description": ""
     },
-    "breaking": false
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "7a8484da03b562131f2c44a2103ab5951f5859f93ddb81f66a3f716d2e95b455",
+        "at": "2026-10-29T07:22:10.637Z",
+        "by": {
+          "id": "legacy:unknown",
+          "kind": "person",
+          "properties": {}
+        }
+      },
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "local:subho-ghosh-in-chat-approval",
+          "kind": "person",
+          "name": "Subho Ghosh (in-chat approval)",
+          "properties": {}
+        },
+        "at": "2026-10-29T08:39:53.304Z"
+      },
+      "signoffs": []
+    }
   },
-  "rationale": "s4 ac4 lists each thread with its class and the session it serves, including the code-indexing and document-summary threads; ThreadStatus.cls is MethodClass | 'router', which gives both indexing threads the same value (the summary worker has no request class) and cannot mark the unattributed or shared-state session worker. One optional field fixes that without changing any existing field.",
+  "body": {
+    "id": "AMD-86197ac660732ceb-2",
+    "hldBaseRunId": "wf-1792588079400-heeqp4",
+    "amendment": {
+      "type": "sharedContract.fieldAdd",
+      "contractId": "sc4",
+      "field": {
+        "name": "role",
+        "type": "'admin' | 'code-indexing' | 'document-summary' | 'session' | 'unattributed' | 'shared-state' | undefined",
+        "optional": true,
+        "purpose": "What a thread is for, so daemon.status can tell the code-indexing and document-summary threads apart (the summary worker serves no request class) and mark the unattributed and shared-state session workers, which ThreadStatus.cls and session alone cannot."
+      },
+      "breaking": false
+    },
+    "rationale": "s4 ac4 lists each thread with its class and the session it serves, including the code-indexing and document-summary threads; ThreadStatus.cls is MethodClass | 'router', which gives both indexing threads the same value (the summary worker has no request class) and cannot mark the unattributed or shared-state session worker. One optional field fixes that without changing any existing field.",
+    "proposedBy": {
+      "workflow": "design.story",
+      "runId": "wf-1793257999487-zc3lem",
+      "storyId": "s4",
+      "stepId": "s4"
+    },
+    "proposedAt": "2026-10-29T07:22:10.637Z",
+    "approvedBy": "Subho Ghosh (in-chat approval)"
+  },
   "citations": [
     {
       "id": "c1",
@@ -26,15 +70,5 @@
       "kind": "code",
       "ref": "src/daemon/threads/supervisor.ts:36"
     }
-  ],
-  "proposedBy": {
-    "workflow": "design.story",
-    "runId": "wf-1793257999487-zc3lem",
-    "storyId": "s4",
-    "stepId": "s4"
-  },
-  "proposedAt": "2026-10-29T07:22:10.637Z",
-  "status": "approved",
-  "approvedAt": "2026-10-29T08:39:53.304Z",
-  "approvedBy": "Subho Ghosh (in-chat approval)"
+  ]
 }

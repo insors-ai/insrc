@@ -768,7 +768,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // SegmentGone / output-read failure recovery: re-anchor into the oldest retained generation
       // that still holds this turn and replay from its start with a FRESH decoder. Replay is
       // lossless, not duplicating: persisted requests dedupe by requestId on re-ingest.
-      if (pass.sawObservationFailure && !pass.sawTerminal && !pass.abortedByBudget && !pass.threw) {
+      if (pass.sawObservationFailure && !pass.abortedByBudget && !pass.threw) { // a prior terminal in the checkpoint does not block re-anchoring
         try {
           const oldest = await out.oldestRetainedGeneration(s.id);
           const rc = oldest !== undefined ? await out.recoverTurn(s.id, turnId) : undefined;

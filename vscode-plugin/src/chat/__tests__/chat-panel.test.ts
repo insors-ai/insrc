@@ -6239,7 +6239,7 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
   }
 });
 
-test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewinds the checkpoint INCLUDING the decoder seq/buffer — the retry pass re-reads the terminal under the gate and never re-issues a different requestId', async () => {
+test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewinds the checkpoint INCLUDING the decoder seq/buffer — a marker split ACROSS the terminal completes on the retry with a stable requestId', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs6-'));
   try {
     const out = createSessionOutput({ root, pollMs: 5 });
@@ -6253,27 +6253,31 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
       cwd: () => '/repo',
       sessionOutput: out,
       observerTimerMs: 20,
-      observerTickBudgetMs: 1, // pass 1 sees the terminal but cannot drain the trailing output
+      observerTickBudgetMs: 1, // pass 1: reads frag1 + the terminal, then budget-aborts on frag2
       hostPid: 1,
       isAlive: () => false,
     });
     host.open();
     const s = store.create('claude' as never);
     const seg = await out.beginTurn(s.id, 't-obs');
-    const selLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```' }] } }) + '\n';
+    const marker = '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```';
+    const half = Math.floor(marker.length / 2);
+    const frag1 = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(0, half) }] } }) + '\n';
     const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
-    const tailLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'after the result' }] } }) + '\n';
-    appendFileSync(seg.outPath, selLine + resultLine + tailLine);
+    const frag2 = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: marker.slice(half) }] } }) + '\n';
+    // the marker is SPLIT ACROSS the terminal: frag1, result, frag2
+    appendFileSync(seg.outPath, frag1 + resultLine + frag2);
     await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
     store.setStatus(s.id, 'working');
     const cur = store.get(s.id)!;
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
     store.save(cur);
-    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the terminal is re-read under the caught-up gate and completes');
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the retry pass drained under the caught-up gate and completed');
     const after = store.get(s.id)!;
     const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
-    assert.equal(sels.length, 1, 'exactly one selection request across the rewind+retry (same id, no duplicate)');
-    assert.equal(sels[0]!.requestId, 'sel-t-obs-0', 'the requestId is stable across the replay');
+    assert.equal(sels.length, 1, 'exactly one selection request — the split marker completed once');
+    assert.equal(sels[0]!.requestId, 'sel-t-obs-0', 'stable requestId: the rewind restored the decoder seq/buffer, so the replay did not re-issue a different id');
+    assert.equal(sels[0]!.prompt, 'Pick', 'the restored buffer + frag2 completed the marker (without the rewind, frag2 alone could not)');
     assert.equal(after.status, 'waiting-input', 'the unresolved request keeps waiting-input across the terminal');
   } finally {
     rmSync(root, { recursive: true, force: true });

@@ -83,6 +83,12 @@ test('s10 t2: preamble and skipped-section links attribute to the file entity; f
 	const tinyFile = tiny.entities.find(e => e.kind === 'file')!;
 	assert.equal(tiny.relations.find(r => r.meta?.['linkTarget'] === at('docs/t2.md'))!.from, tinyFile.id);
 
+	// A fence closes only on a line holding nothing but the fence: an info-string line inside does not close it.
+	const fenced = refs('docs/f.md', '# F\nText.\n```markdown\n```not-a-close\n[hidden](hidden.md)\n```\n[after](after.md)\n');
+	assert.deepEqual(pathTargets(fenced), [at('docs/after.md')], 'the link inside the still-open fence is not read');
+	const tildes = refs('docs/g.md', '# G\nText.\n~~~~\n~~~\n[hidden](hidden.md)\n~~~~\n[after](after.md)\n');
+	assert.deepEqual(pathTargets(tildes), [at('docs/after.md')], 'a shorter fence does not close a longer one');
+
 	// A document with no headings attributes to its whole-file document entity.
 	const flat = parse('docs/flat.md', 'Just [x](x.md).\n');
 	const flatDoc = flat.entities.find(e => e.kind === 'document')!;

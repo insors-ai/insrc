@@ -27,7 +27,7 @@ export type MarkdownLink =
 	| { readonly kind: 'path'; readonly line: number; readonly target: string }   // absolute path
 	| { readonly kind: 'name'; readonly line: number; readonly name: string };
 
-const FENCE = /^\s{0,3}(`{3,}|~{3,})/;
+const FENCE = /^\s{0,3}(`{3,}|~{3,})/;   // an opening fence; its info string may follow
 const INLINE_LINK = /!?\[[^\]]*\]\(\s*(<[^>]*>|[^\s)]+)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*\)/g;
 const REFERENCE_DEF = /^\s{0,3}\[[^\]]+\]:\s*(<[^>]*>|\S+)/;
 const CODE_SPAN = /(`+)([^`]+?)\1/g;
@@ -83,7 +83,9 @@ export function readMarkdownLinks(
 		const line = i + 1;
 		const fenceMatch = FENCE.exec(text);
 		if (fence !== undefined) {
-			if (fenceMatch !== null && fenceMatch[1]![0] === fence[0] && fenceMatch[1]!.length >= fence.length) fence = undefined;
+			// A closing fence: the same character, at least as long, and nothing after it but spaces (CommonMark).
+			const close = /^\s{0,3}(`{3,}|~{3,})\s*$/.exec(text);
+			if (close !== null && close[1]![0] === fence[0] && close[1]!.length >= fence.length) fence = undefined;
 			continue;
 		}
 		if (fenceMatch !== null) { fence = fenceMatch[1]; continue; }

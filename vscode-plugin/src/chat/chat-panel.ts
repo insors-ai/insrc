@@ -1498,7 +1498,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const pf = pendingFollowUps.get(rid);
     if (pf === undefined) return;
     pendingFollowUps.delete(rid);
-    followUpTurns.delete(turnId);
+    // keep the binding until the turn ENDS: later events of the same follow-up turn must map to
+    // it (already confirmed -> no-op), never re-bind to another pending follow-up
     markPersistedRequest(s, rid, true, pf.outcome);
   };
 
@@ -2558,6 +2559,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         }
       },
       onTerminal: (ev) => {
+        followUpTurns.delete(ev.turnId);
         if (q !== undefined) {
           q.terminal = ev.kind;
           if (ev.kind === 'error') q.error = ev.message;

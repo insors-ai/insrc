@@ -6335,3 +6335,43 @@ test('E202611031bd72813:S001 t5: a fully drained segment whose process is VERIFI
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+test('E202611031bd72813:S001 t5: an unterminated trailing line after the terminal is NOT lost — flushed when the writer is dead, held (not flushed) while it lives', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs8-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false, // pid verified dead
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    const resultLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false }) + '\n';
+    // a selection marker AFTER the terminal, as an unterminated final line (no trailing newline)
+    const tail = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: '```insrc:select\n' + JSON.stringify({ prompt: 'Pick', options: [{ id: 'a', label: 'A' }] }) + '\n```' }] } });
+    appendFileSync(seg.outPath, resultLine + tail); // no trailing newline on the last line
+    await out.endTurn(s.id, 't-obs', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'dead writer: the unterminated trailing line is flushed and the turn completes');
+    const after = store.get(s.id)!;
+    assert.equal(after.status, 'waiting-input', 'the request in the trailing line was ingested before the completion transition');
+    const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
+    assert.equal(sels.length, 1, 'the unterminated trailing line (after the terminal) was not abandoned');
+    assert.equal(sels[0]!.prompt, 'Pick');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

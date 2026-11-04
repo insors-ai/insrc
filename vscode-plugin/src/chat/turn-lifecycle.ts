@@ -254,14 +254,28 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   };
 
   /**
-   * E202611031bd72813:S001 t5: persist a turn's decoder progress (selectionSeq + split-marker
-   * buffer) onto its liveTurn, so a detach/reattach resumes the LIVE or FOLLOW cursor with it.
+   * E202611031bd72813:S001 t5: decoder progress (selectionSeq + split-marker buffer) is held and
+   * stamped onto liveTurn ATOMICALLY with the cursor offset in the same save — the adapter reports
+   * decoder state before the offset for each line, and this holder makes every persisted snapshot
+   * pair offset N with decoder N (never an advanced decoder behind an old offset, whose replay
+   * would re-issue different request ids).
    */
-  const saveLiveDecoder = (s: ChatSession, turnId: string) => (ds: { selectionSeq: number; selectionBuffer: string }): void => {
-    const cur = s.liveTurn;
-    if (cur === undefined || cur.cursor.turnId !== turnId) return;
-    s.liveTurn = { ...cur, decoder: { selectionSeq: ds.selectionSeq, ...(ds.selectionBuffer !== '' ? { selectionBuffer: ds.selectionBuffer } : {}) } };
-    trySave(s);
+  const makeDecoderSink = (s: ChatSession, progress: (c: TurnCursor) => void) => {
+    let pending: { selectionSeq: number; selectionBuffer: string } | undefined;
+    return {
+      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string }): void => {
+        pending = ds; // held, not saved alone — the next progress save carries it with the offset
+      },
+      onProgress: (c: TurnCursor): void => {
+        const live = s.liveTurn;
+        if (live !== undefined && live.cursor.turnId === c.turnId && pending !== undefined) {
+          // stamp offset AND decoder together, then let the throttled save persist the whole liveTurn
+          s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset }, decoder: { selectionSeq: pending.selectionSeq, ...(pending.selectionBuffer !== '' ? { selectionBuffer: pending.selectionBuffer } : {}) } };
+          pending = undefined;
+        }
+        progress(c);
+      },
+    };
   };
 
   /**
@@ -427,7 +441,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
-        const it = adapter.run(req, { onSpawn, onProgress: cursor.progress, onDecoderState: (ds) => { if (cursorTurnId !== undefined) saveLiveDecoder(s, cursorTurnId)(ds); }, sessionId: s.id })[Symbol.asyncIterator]();
+        const dec = makeDecoderSink(s, cursor.progress);
+        const it = adapter.run(req, { onSpawn, onProgress: (c) => dec.onProgress(c), onDecoderState: dec.onDecoderState, sessionId: s.id })[Symbol.asyncIterator]();
         iterator = it;
         activeIterator = it;
         activeProvider = s.provider;
@@ -531,7 +546,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     followingSession = s;
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
-    const saveDecoder = saveLiveDecoder(s, turnId);
+    const dec = makeDecoderSink(s, cursor.progress);
     let attached: TurnProcess | undefined;
     void (async () => {
       let outcome: FollowOutcome | undefined;
@@ -546,8 +561,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
               resumedProc = p;
               reportSpawn(sink, p);
             },
-            onProgress: cursor.progress,
-            onDecoderState: saveDecoder,
+            onProgress: (c) => dec.onProgress(c),
+            onDecoderState: dec.onDecoderState,
           },
         );
         for await (const ev of events) {

@@ -1552,12 +1552,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const live = turns.live;
     if (live !== undefined) wireDeliveryFailure(deps.providers.get(live.provider));
     let undelivered = false; // a live turn whose decide() reported dead stdin (or a dead adapter)
-    if (live !== undefined) {
+    // t6: probe delivery through the live turn — or, for a RESTORED request with no live turn in
+    // this host, the session's persisted liveTurn (its stdin died with its owner): decide()
+    // reports undelivered for it, and the follow-up fallback below answers the decision.
+    const probeTurnId = live?.turnId ?? session?.liveTurn?.cursor.turnId;
+    const probeProvider = live?.provider ?? session?.provider;
+    if (probeTurnId !== undefined && probeProvider !== undefined) {
       try {
         // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
         // decide() itself reports undelivered for a dead/absent stdin, and the request is NOT
         // consumed on failure, so the fallback below can still answer it.
-        const res = deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
+        const res = deps.providers.get(probeProvider).decide(probeTurnId, requestId, decision);
         if (res.delivered) {
           markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied');
           return;

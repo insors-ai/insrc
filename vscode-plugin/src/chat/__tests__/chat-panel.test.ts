@@ -6263,8 +6263,8 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
     { kind: 'approval-request', turnId: 't2', requestId: 'perm-9', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
     { kind: 'done', turnId: 't2', ok: true },
   ];
-  let releaseDone!: () => void;
-  const gate = new Promise<void>((r) => { releaseDone = r; });
+  // never released: the window "dies" mid-turn, so the turn's stdin is gone for good
+  const gate = new Promise<void>(() => {});
   const hooks = {
     gateBeforeDone: gate,
     delivered: false, // the turn's stdin is gone: decide() reports undelivered
@@ -6273,38 +6273,41 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   };
   let runIdx = 0;
   let lastProc: FakeLiveProc | undefined;
-  let releaseLive!: () => void;
-  const liveGate = new Promise<void>((r) => { releaseLive = r; });
   const makeAdapter = (): StreamAdapter => ({
     ...scriptedAdapter(evs, hooks),
     run(req: TurnRequest, opts?: RunOptions) {
       runIdx += 1;
       const tid = `t2-r${runIdx}`;
-      const followUp = runIdx > 2; // run 1: original (gated) turn; run 2: the restored host's LIVE turn (gated); run 3+: follow-ups (done only)
+      // run 1: the original turn (stays gated — the window "dies" mid-turn, keeping liveTurn);
+      // run 2+: follow-ups (done only)
       const proc = fakeLiveProc(4000 + runIdx);
       lastProc = proc;
       opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: tid, generation: 1, offset: 0 }, outPath: '/out/s.ndjson' });
-      const evs2 = followUp ? evs.filter((e) => e.kind === 'done').map((e) => ({ ...e, turnId: tid })) : evs.map((e) => ({ ...e, turnId: tid }));
-      return scriptedAdapter(evs2, { ...hooks, gateBeforeDone: runIdx === 1 ? gate : runIdx === 2 ? liveGate : undefined }).run(req, opts);
+      const evs2 = runIdx === 1
+        ? evs.map((e) => ({ ...e, turnId: tid }))
+        : evs.filter((e) => e.kind === 'done').map((e) => ({ ...e, turnId: tid }));
+      return scriptedAdapter(evs2, { ...hooks, gateBeforeDone: runIdx === 1 ? gate : undefined }).run(req, opts);
     },
   });
-  // host 1: the request is raised, then the host "reloads" (a fresh host over the same store)
+  // host 1: the request is raised, then the host "reloads" mid-turn (a fresh host over the same store)
   const fc1 = fakeChannel();
   const host1 = createChatPanelHost({
     createPanel: () => fc1.channel,
     providers: registry({ claude: makeAdapter() }, ['claude']),
     store,
     cwd: () => '/repo',
+    observerTimerMs: 600_000,
   });
   host1.open();
   fc1.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fc1).some((e) => e.kind === 'approval-request'));
   const id = store.list()[0]!.id;
-  releaseDone();
-  // switch away: the request is persisted UNRESOLVED (this is the record the reload restores)
+  // switch away while the turn is STILL LIVE: the request is persisted UNRESOLVED and the
+  // session keeps its liveTurn (its stdin dies with this host) — the reload restores both
   const other = store.create('claude' as never);
   fc1.send(env('open-chat', { chatId: other.id }));
   await waitFor(() => (store.get(id)?.pendingRequests ?? []).some((r) => r.requestId === 'perm-9' && !r.resolved), 5000, 'persisted unresolved before the reload');
+  await waitFor(() => store.get(id)?.liveTurn !== undefined, 5000, 'the live turn is persisted (dead stdin with the old host)');
   host1.dispose();
   // host 2 (the reload): the persisted request is restored into the queue and its card re-posted
   const fc = fakeChannel();
@@ -6313,14 +6316,18 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
     providers: registry({ claude: makeAdapter() }, ['claude']),
     store,
     cwd: () => '/repo',
+    observerTimerMs: 600_000,
   });
   host.open();
   fc.send(env('open-chat', { chatId: id }));
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'perm-9'), 5000, 'the restored request re-posted its card after reload');
-  // decide the restored request: no live turn + undelivered stdin -> follow-up runTurn carries it
+  // decide the restored request: no live turn in this host, so relayDecision probes the persisted
+  // liveTurn — decide() reports dead stdin (undelivered) — and a follow-up runTurn carries it
   fc.send(env('permission-decision', { requestId: 'perm-9', decision: 'approve' }));
+  await waitFor(() => decideCalls === 1, 5000, 'decide() was consulted (via the persisted liveTurn) and reported undelivered');
   await waitFor(() => runCount >= 2, 5000, 'the undelivered decision fell back to a follow-up runTurn');
   await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-9')?.resolved === true, 5000);
+  assert.equal(decideCalls, 1, 'decide consulted exactly once for the restored request');
   assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'perm-9')!.outcome, 'approved', 'correlated onto the persisted request — not a silent no-op');
   host.dispose();
 });

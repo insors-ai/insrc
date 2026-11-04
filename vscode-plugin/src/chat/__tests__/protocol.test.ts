@@ -11,7 +11,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { TranscriptEntry } from '../session-store.js';
 import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode, type ActiveChatEntry, type DocsDocumentTab } from '../protocol.js';
-import { PROTOCOL_CONTRACT_KINDS, contractActiveList, contractDocsContent, contractDocsTab, contractEntryExtra, contractOpenChat } from '../protocol-contract.js';
+import { PROTOCOL_CONTRACT_KINDS, contractActiveList, contractDocsContent, contractDocsTab, contractEntryExtra, contractOpenChat, contractOpenCompanion, contractOpenDoc, contractDocsDecision, contractSelectionDecision } from '../protocol-contract.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -68,9 +68,13 @@ test("S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (add
 });
 
 test('S004 (ux polish): a selection-decision message typechecks with requestId + selected ids', () => {
+  // the compile-time half of the proof lives in protocol-contract.ts (typechecked with the plugin
+  // sources): contractSelectionDecision is exactly { type, requestId, selected }
   const msg: WebviewToHost = { type: 'selection-decision', requestId: 'sel-1', selected: ['a', 'b'] };
   assert.equal(msg.type, 'selection-decision');
   assert.deepEqual(msg.type === 'selection-decision' ? msg.selected : undefined, ['a', 'b']);
+  assert.deepEqual(Object.keys(contractSelectionDecision).sort(), ['requestId', 'selected', 'type'], 'contract selection-decision keys');
+  assert.deepEqual(contractSelectionDecision, { type: 'selection-decision', requestId: 'sel-1', selected: ['a', 'b'] });
   // A single-select confirm carries exactly one id.
   const single: WebviewToHost = { type: 'selection-decision', requestId: 'sel-2', selected: ['only'] };
   assert.deepEqual(single.type === 'selection-decision' ? single.selected : undefined, ['only']);
@@ -287,4 +291,7 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
   assert.deepEqual(Object.keys(contractDocsContent).sort(), ['artifactId', 'blocked', 'markdown', 'openQuestions', 'type'], 'contract docs-content keys');
   assert.deepEqual(Object.keys(contractDocsTab).sort(), ['relPath', 'title', 'type'], 'contract tab keys');
   assert.ok('provider' in (contractEntryExtra as unknown as Record<string, unknown>), 'the contract’s negative case really carries the extra field the type forbids');
+  assert.deepEqual(Object.keys(contractOpenDoc).sort(), ['artifactId', 'type'], 'contract open-doc keys');
+  assert.deepEqual(Object.keys(contractDocsDecision).sort(), ['artifactId', 'comments', 'decision', 'type'], 'contract docs-decision keys');
+  assert.deepEqual(Object.keys(contractOpenCompanion).sort(), ['artifactId', 'relPath', 'type'], 'contract open-companion keys');
 });

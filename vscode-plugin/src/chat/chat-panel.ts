@@ -661,13 +661,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // anchor point — the checkpoint's transcriptLen, or the liveTurn's turnStartLen for a
       // turn-start anchor, or the liveTurn's current stamp — so re-appended rows replace, never
       // duplicate, already-persisted rows.
+      // anchorIsTurnStart means the pass replays from the TURN'S START; only a successful recoverTurn
+      // sets it — the fallback below replays from the ADVANCED live cursor, where truncating to the
+      // turn-start length would delete consumed rows without replaying them.
       const anchorLen = (): number | undefined =>
-        anchorIsTurnStart ? (live.turnStartLen ?? 0) : (cp?.transcriptLen ?? live.transcriptLen);
+        anchorIsTurnStart
+          ? (live.turnStartLen ?? live.transcriptLen ?? cp?.transcriptLen) // never 0: a missing stamp must not delete earlier history
+          : (cp?.transcriptLen ?? live.transcriptLen);
       if (cp === undefined) {
-        anchorIsTurnStart = true;
         try {
           const rc = await out.recoverTurn(s.id, turnId);
-          if (rc !== undefined) cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
+          if (rc !== undefined) {
+            cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
+            anchorIsTurnStart = true;
+          }
         } catch { /* fall back below */ }
         // Fallback: the liveTurn cursor PAIRED WITH the lifecycle's own decoder state for this turn —
         // never the advanced offset with an empty decoder (that would lose a split-marker prefix).
@@ -732,8 +739,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               st.preTerminal = { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf, transcriptLen: s.transcript.length };
             }
             // persist the event's transcript row exactly like the live path (appendEvent), so an
-            // observer-completed detached chat reopens with its output, not an empty transcript
-            appendEvent(s, ev);
+            // observer-completed detached chat reopens with its output, not an empty transcript.
+            // Observation failures are transient read errors, not durable output — never persisted.
+            if (!(ev.kind === 'error' && ev.observationFailure === true)) appendEvent(s, ev);
             if (ev.kind === 'approval-request') {
               // waiting-input only if the request is actually unresolved — a replayed, already
               // resolved request must not flip the chat back to waiting-input
@@ -806,7 +814,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           const oldest = await out.oldestRetainedGeneration(s.id);
           const rc = oldest !== undefined ? await out.recoverTurn(s.id, turnId) : undefined;
           if (rc !== undefined && (rc.generation !== pass.cursor.generation || rc.offset !== pass.cursor.offset)) {
-            s.transcript.length = transcriptAtPassStart; // the replay re-appends from the turn start: no duplicates
+            // the re-anchor replays from the TURN'S START: truncate to the turn-start length (never
+            // below the pass-start prefix when the stamp is missing — duplication, not loss)
+            s.transcript.length = live.turnStartLen ?? transcriptAtPassStart;
             pass = await ingest(rc, 0, '');
           }
         } catch { /* keep the failed pass */ }

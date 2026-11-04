@@ -1,0 +1,160 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f8a3ba73c4100cea9de3d509b2fb425d2a40169a7651f8b78aceddf718f6649a",
+        "at": "2026-11-04T19:39:24.198Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-ce0a8372-4f5c-4e77-b63b-89466e81a4ba",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T19:38:13.003Z",
+    "epicCreatedAt": "2026-11-04T15:40:52.348Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7c5a1921cb45a8d8",
+    "storyId": "s1",
+    "revision": 1,
+    "updatedAt": "2026-11-04T19:38:13.003Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "epicSlug": "apply-artifact-page-theme-whole-document"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "The theme root is the body in every shell, so the light or dark mode reaches the whole document and the body background paints the canvas (the root has min-height 100vh and 56px top padding). Pages open in light unless a mode was stored; the OS colour-scheme preference is no longer consulted in either script. The font-face rules sit in a style element instead of showing as text. The theme switch is a fixed 32px top-right button, a direct child of the body, in the companion, docgen and fallback pages. The companion header stacks and its table shrinks at 480px and below. A live headless Chrome test (INSRC_LIVE_TESTS=1) checks the companion page at 1280px and 360px and the docgen page; screenshots are under S001/screenshots. Left out: the companion .vp-bar toolbar is still not styled by the shared .iv-bar rules (existing).",
+    "testRecord": {
+      "md": "docs/standalone/apply-artifact-page-theme-whole-document-E202611047c5a1921/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-7c5a1921cb45a8d8-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/LLD-7c5a1921cb45a8d8-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/apply-artifact-page-theme-whole-document-E202611047c5a1921/S001/LLD.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/apply-artifact-page-theme-whole-document-E202611047c5a1921/S001/screenshots/companion-dark.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/apply-artifact-page-theme-whole-document-E202611047c5a1921/S001/screenshots/companion-light.png"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/theme-browser.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/__tests__/viewer-script.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/artifact-theme/theme.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/fallback.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/fallback.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/docgen/render/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifacts/companion/shell.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T19:38:13.003Z"
+      }
+    ],
+    "commit": "e673bdfb5"
+  },
+  "citations": []
+}

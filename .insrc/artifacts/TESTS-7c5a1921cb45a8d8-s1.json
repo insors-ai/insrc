@@ -1,0 +1,484 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "c869bfdcd4684659030504f9f8b9e0cfefa84b072bb37e85a960f70697727002",
+        "at": "2026-11-04T19:38:13.098Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "7c5a1921cb45a8d8",
+    "storyId": "s1",
+    "createdAt": "2026-11-04T19:38:13.003Z",
+    "updatedAt": "2026-11-04T19:38:13.003Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T15:40:52.348Z",
+    "epicSlug": "apply-artifact-page-theme-whole-document",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "e673bdfb5",
+        "ranAt": "2026-11-04T19:38:13.003Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "pageStyleTags and pageCssFor in src/artifact-theme/theme.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: pageStyleTags puts the font-face rules inside a style element",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: pageCssFor gives .insrc-viewer the surface background, min-height:100vh, box-sizing:border-box and padding-top:56px in light and dark, and no rule gives html a background",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: pageCssFor makes the theme switch a fixed 32px top-right control with a z-index in both modes",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: pageStyleTags is the one shared page-style composition for every shell (R1)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "viewerBootScript in src/artifact-theme/theme.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/artifact-theme/__tests__/viewer-script.test.ts",
+                "title": "viewer-script.test.ts: the boot script defaults to light and does not consult prefers-color-scheme, and a stored mode still wins",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/viewer-script.test.ts",
+                "title": "viewer-script.test.ts: run in a stub DOM, a throwing localStorage read and a throwing write fall back without error, an invalid stored value is ignored, and a missing #iv-theme is tolerated",
+                "result": "pass"
+              },
+              {
+                "file": "src/artifact-theme/__tests__/theme.test.ts",
+                "title": "theme.test.ts: viewerBootScript carries the readable clamp, theme persistence, safe re-render, export and error+source",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "renderCompanionPage in src/workflow/artifacts/companion/shell.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "companion/__tests__/shell.test.ts: the companion page carries class insrc-viewer, data-theme and the export CSS on the body",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "companion/__tests__/shell.test.ts: the companion layout rule targets the page inside the theme root",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "companion/__tests__/shell.test.ts: the theme switch is a direct child of the body in the companion page, and the companion CSS has the max-width:480px rule for header.hdr and table.ref",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+                "title": "companion/__tests__/shell.test.ts: the export CSS attribute still carries the fonts and the diagram overrides unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "assembleShell in src/docgen/render/shell.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/docgen/render/__tests__/shell.test.ts",
+                "title": "docgen/render/__tests__/shell.test.ts: the docgen page keeps the theme root on the body and docgenPageStyle has no .insrc-viewer html rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "assembleFallbackShell in src/docgen/render/fallback.ts",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/docgen/render/__tests__/fallback.test.ts",
+                "title": "docgen/render/__tests__/fallback.test.ts: the fallback script defaults to light, does not consult prefers-color-scheme and uses the same storage key as the shared script",
+                "result": "pass"
+              },
+              {
+                "file": "src/docgen/render/__tests__/fallback.test.ts",
+                "title": "docgen/render/__tests__/fallback.test.ts: the theme switch is a direct child of the body in the fallback page",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "A generated ER companion page opened in headless Chrome at desktop and 360px widths",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "INSRC_LIVE_TESTS=1 npx tsx --test src/artifact-theme/__tests__/theme-browser.live.test.ts: both tests pass (2026-11-05); screenshots docs/standalone/apply-artifact-page-theme-whole-document-E202611047c5a1921/S001/screenshots/companion-light.png and companion-dark.png"
+            }
+          },
+          {
+            "name": "A generated docgen page opened in headless Chrome",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "INSRC_LIVE_TESTS=1 npx tsx --test src/artifact-theme/__tests__/theme-browser.live.test.ts: the docgen test passes (2026-11-05)"
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/artifact-theme/__tests__/theme.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 410,
+            "titles": [
+              {
+                "title": "theme.test.ts: THEME_VERSION is stamped and brand tokens are exact",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: both modes produce a Mermaid config on the 10.9.1 base theme with Poppins + strict security",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: DIAGRAM_OVERRIDES_CSS is scoped to the shared wrapper and fixes ER labels in both modes",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: page CSS is scoped under .insrc-viewer, has both surface variants, and never references a remote URL",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: role palette + legend render only for given roles (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: font-face CSS embeds the three packaged weights as base64 data URIs, no CDN",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: contrast pairs exist for both modes with NFR1 targets",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: viewerBootScript carries the readable clamp, theme persistence, safe re-render, export and error+source",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: exportableSvg embeds background + fonts + overrides and keeps the whole diagram",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: diagramRoles reads :::role, classDef, class and DOT class= roles only (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: legendSlotHtml wraps both modes for the boot script to toggle; empty when no roles (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: pageStyleTags is the one shared page-style composition for every shell (R1)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: the boot script embeds the tested exportableSvg and toggles the legend with the theme (R4/R12)",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: pageStyleTags puts the font-face rules inside a style element",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: pageCssFor gives .insrc-viewer the surface background, min-height:100vh, box-sizing:border-box and padding-top:56px in light and dark, and no rule gives html a background",
+                "result": "pass"
+              },
+              {
+                "title": "theme.test.ts: pageCssFor makes the theme switch a fixed 32px top-right control with a z-index in both modes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/artifact-theme/__tests__/viewer-script.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 619,
+            "titles": [
+              {
+                "title": "viewer-script.test.ts: the generated boot script parses (node --check)",
+                "result": "pass"
+              },
+              {
+                "title": "viewer-script.test.ts: the shipped panzoom runtime parses and exposes the readable-fit floor + transform accessors",
+                "result": "pass"
+              },
+              {
+                "title": "viewer-script.test.ts: boot keeps the diagram source verbatim and the readable clamp, and re-runs the same source on theme switch",
+                "result": "pass"
+              },
+              {
+                "title": "viewer-script.test.ts: structural preservation — a rendered companion page carries the mermaid source byte-identical (NFR4)",
+                "result": "pass"
+              },
+              {
+                "title": "viewer-script.test.ts: the boot script defaults to light and does not consult prefers-color-scheme, and a stored mode still wins",
+                "result": "pass"
+              },
+              {
+                "title": "viewer-script.test.ts: run in a stub DOM, a throwing localStorage read and a throwing write fall back without error, an invalid stored value is ignored, and a missing #iv-theme is tolerated",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/docgen/render/__tests__/fallback.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 674,
+            "titles": [
+              {
+                "title": "oversized: false at/below the limit, true above it (strict >, ac4/ac1)",
+                "result": "pass"
+              },
+              {
+                "title": "oversized: default OVERSIZED_LIMIT applied when no limit passed; injected limit overrides",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: valid digraph — n<i> aliases, one node + one edge each",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: DOT-hostile label chars are escaped into well-formed DOT",
+                "result": "pass"
+              },
+              {
+                "title": "toGraphvizDot: an edge to an alias-less node is skipped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleFallbackShell: sc3 shape, inlined SVG + svg-pan-zoom, offline (ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(small IR): primary-inline path; renderer NEVER invoked (ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(small IR): byte-identical to the default-renderer output (ac4 regression)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(oversized IR, ok renderer): fallback-subprocess shell (ac1/ac2)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell(oversized IR, unavailable renderer): fallback-unavailable naming tried binaries + remedy (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "live: graphvizSubprocessRenderer renders real DOT to an <svg> root",
+                "result": "skipped"
+              },
+              {
+                "title": "live: generateDocument for an oversized component-dependency scope → ok fallback shell",
+                "result": "skipped"
+              },
+              {
+                "title": "live: both binaries absent → unavailable naming the tried binaries (ac3)",
+                "result": "pass"
+              },
+              {
+                "title": "live: a present binary that fails on bad DOT → unavailable(reason), never throws",
+                "result": "skipped"
+              },
+              {
+                "title": "generateDocument: unknown docType still → not-found (s5 leaves the surface intact)",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/fallback.test.ts: the fallback script defaults to light, does not consult prefers-color-scheme and uses the same storage key as the shared script",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/fallback.test.ts: the theme switch is a direct child of the body in the fallback page",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/docgen/render/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 452,
+            "titles": [
+              {
+                "title": "documentIRToMermaid: classDiagram with class decls + inherit/implement arrows",
+                "result": "pass"
+              },
+              {
+                "title": "documentIRToMermaid: an edge to an alias-less node is skipped; labels are escaped",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: offline self-contained shell — runtime INLINED, no external fetch",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: assets absent → sc4 fallbackUnavailable naming copy-assets (UNCHANGED s1 degrade), not a throw",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the s5 fallback backend is ALSO self-contained offline (both backends, ac4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the primary Mermaid shell is branded — shared classes, theme meta, fonts, controls, no theme neutral / old colors",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the legend renders iff the diagram source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "assembleShell: the fallback subprocess shell is branded too (shared classes + meta + theme toggle + export)",
+                "result": "pass"
+              },
+              {
+                "title": "docgen/render/__tests__/shell.test.ts: the docgen page keeps the theme root on the body and docgenPageStyle has no .insrc-viewer html rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/artifacts/companion/__tests__/shell.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 589,
+            "titles": [
+              {
+                "title": "d9f85b3c t3 — Header, Narrative, View and Description appear in that order",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the header table has the four rows: Work item, Source doc (linked), Date, User",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — no http(s) URL appears: none in the shell markup, none at all on an HTML page",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — both visuals get the toolbar, the pan/zoom runtime and its init",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a Mermaid page inlines Mermaid and the branded theme boot drives the render",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the legend renders iff the mermaid source carries role classes (R4)",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an HTML page inlines no Mermaid, fits on load and carries the visual and its CSS",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — an inlined runtime cannot close its script element early",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — every header, narrative and table string is escaped",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a null cell renders as an em dash, and a tagged cell as its badge",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing narrative renders only the context line; a present one renders its paragraphs",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — the runtime loader reads the shipped assets: pan/zoom always, Mermaid for a Mermaid visual only",
+                "result": "pass"
+              },
+              {
+                "title": "d9f85b3c t3 — a missing runtime asset raises DiagramGenerationError",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the companion page carries class insrc-viewer, data-theme and the export CSS on the body",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the companion layout rule targets the page inside the theme root",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the theme switch is a direct child of the body in the companion page, and the companion CSS has the max-width:480px rule for header.hdr and table.ref",
+                "result": "pass"
+              },
+              {
+                "title": "companion/__tests__/shell.test.ts: the export CSS attribute still carries the fonts and the diagram overrides unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

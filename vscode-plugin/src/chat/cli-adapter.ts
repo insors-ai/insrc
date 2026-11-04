@@ -1360,7 +1360,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // E202611031bd72813:S001 t5: the read ends at the segment's turn-end marker or when the writer
       // is dead — never at a soft EOF while it lives (an unterminated trailing line may still be
       // completed by the writer and must not be abandoned).
-      const finished = (): boolean => !isTheProcess();
+      // E202611031bd72813:S001 t5: an ABSENT pid is not 'finished' (unverifiable) — the read ends at
+      // the turn-end marker or a verified-dead recorded pid only.
+      const finished = (): boolean => pid !== undefined && !isTheProcess();
       for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {

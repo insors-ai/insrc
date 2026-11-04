@@ -52,6 +52,12 @@ export interface SpawnedCli {
 
 /** The panel's side of a live turn. Called only while the turn is current. */
 export interface TurnSink {
+  /**
+   * MR3 (manual code review of E202611031bd72813:S001): checked immediately BEFORE the CLI
+   * spawns; when it returns false the turn ends without spawning (the lease is released), so a
+   * continuation whose delivery was already recorded as failed can never execute later.
+   */
+  shouldSpawn?(): boolean;
   /** Every CLI process the turn starts, as it starts (Story S001: the queue's lease records it). */
   onSpawn?(cli: SpawnedCli): void;
   /** The turn is queued behind the session's previous process. */
@@ -440,6 +446,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         }
         // Superseded, closed or stopped while beforeRun ran: start nothing (the lease is released).
         if (setup.signal.aborted || !isCurrent(myGen)) return;
+        // MR3: a cancelled continuation (delivery already recorded failed) never reaches the CLI.
+        if (sink.shouldSpawn !== undefined && !sink.shouldSpawn()) return;
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).

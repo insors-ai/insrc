@@ -764,8 +764,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               // E202611031bd72813:S001 t8: a DETACHED chat's insrc_present is still dispatched to the
               // presenter (each declaration opens its own presentKey panel), deduped by declarationId.
               const declId = ev.callId ?? `${ev.turnId}:${ev.present.join(',')}`;
-              const declared = new Set(s.observerCheckpoint?.declaredIds ?? []);
-              if (!declared.has(declId)) {
+              // MR4: the shared durable identity covers the follow reader's replays too
+              if (!declarationDispatched(s, declId)) {
+                markDeclarationDispatched(s, declId);
+                const declared = new Set(s.observerCheckpoint?.declaredIds ?? []);
                 declared.add(declId);
                 const base = s.observerCheckpoint ?? { turnId, generation: cp.generation, offset: cp.offset, selectionSeq: cp.selectionSeq };
                 s.observerCheckpoint = { ...base, declaredIds: [...declared] };
@@ -1434,6 +1436,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // runTurn carrying the decision (resuming the native session when one is known); if even that
   // cannot start, the persisted request is marked resolved with outcome delivery-failed — a silent
   // no-op is never recorded as a success.
+  /**
+   * MR3 (manual code review): follow-ups whose stall timer already recorded delivery-failed.
+   * The lifecycle checks `shouldSpawn` immediately before spawning the CLI, so a timed-out
+   * continuation can never execute later, after the UI already reported failure.
+   */
+  const cancelledFollowUps = new Set<string>();
   const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession): void => {
     const s = target ?? session;
     if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId); // survive a reload while the follow-up waits
@@ -1448,36 +1456,38 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // no session, adapter/lock failure reported as an error event — the request is marked
         // delivery-failed. A silent no-op is never recorded as approved.
         pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: requestId });
-        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s }); // resumes s.nativeSessionId when known
+        // MR3: the continuation carries a cancellation identity — if the stall timer below fires
+        // first, shouldSpawn returns false and the turn ends WITHOUT spawning the CLI.
+        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(requestId) }); // resumes s.nativeSessionId when known
         started = true;
         // If the follow-up never spawns (the original CLI still holds the turn lock and stays
         // blocked), the settled-promise path above may never run — bound the wait with a timer so
         // the outcome is always recorded (delivery-failed), never left approved indefinitely.
+        // MR3: the timer also CANCELS the scheduled continuation (cancelledFollowUps), so when the
+        // original turn later ends, the queued follow-up does not execute after the recorded failure.
         const stallTimer = setTimeout(() => {
+          cancelledFollowUps.add(requestId);
           if (pendingFollowUps.delete(requestId)) {
             markPersistedRequest(s, requestId, true, 'delivery-failed');
             reevaluateChatStatus(s);
           }
         }, deps.followUpDeliveryTimeoutMs ?? 30_000);
         stallTimer.unref?.();
-        void p.finally(() => clearTimeout(stallTimer));
-        void p.then(
-          () => {
-            if (pendingFollowUps.delete(requestId)) {
-              markPersistedRequest(s, requestId, true, 'delivery-failed');
-              reevaluateChatStatus(s);
-            }
-          },
-          (err: unknown) => {
-            log.warn(`[chat] follow-up for decision ${requestId} failed: ${err instanceof Error ? err.message : String(err)}`);
-            if (pendingFollowUps.delete(requestId)) {
-              markPersistedRequest(s, requestId, true, 'delivery-failed');
-              reevaluateChatStatus(s);
-            }
-          },
-        );
+        const settle = (): void => {
+          clearTimeout(stallTimer);
+          cancelledFollowUps.delete(requestId);
+          if (pendingFollowUps.delete(requestId)) {
+            markPersistedRequest(s, requestId, true, 'delivery-failed');
+            reevaluateChatStatus(s);
+          }
+        };
+        void p.then(settle, (err: unknown) => {
+          log.warn(`[chat] follow-up for decision ${requestId} failed: ${err instanceof Error ? err.message : String(err)}`);
+          settle();
+        });
       } catch (err) {
         pendingFollowUps.delete(requestId);
+        cancelledFollowUps.delete(requestId);
         log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
@@ -1529,16 +1539,31 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
   const deliveryWired = new WeakSet<object>();
+  /**
+   * MR1 (manual code review): explicit ownership of a delivery attempt — the conversation the
+   * decision was relayed for at decide() time. The async stdin-failure callback resolves through
+   * THIS binding only: a terminal event may have cleared the original chat's liveTurn and the user
+   * may have switched chats, so searching by turn id or falling back to the selected session would
+   * reroute the failure (and its follow-up) into the wrong conversation. An unknown/stale binding
+   * fails closed: nothing is mutated, no follow-up starts.
+   */
+  const deliveryOwners = new Map<string, string>(); // requestId -> originating session id
   const wireDeliveryFailure = (ad: StreamAdapter): void => {
     if (deliveryWired.has(ad) || ad.onDeliveryFailed === undefined) return;
     deliveryWired.add(ad);
     ad.onDeliveryFailed((turnId, failedRequestId, failedDecision) => {
       // the stdin write failed AFTER decide() reported delivered — correct the persisted outcome
       // and answer the request with the follow-up run instead of leaving it approved. Resolve the
-      // session by the failed turn's id, not the currently selected chat.
-      const s = deps.store.list().map((sum) => deps.store.get(sum.id)).find((x) => x?.liveTurn?.cursor.turnId === turnId) ?? session;
-      if (s === undefined) return;
-      if (deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, failedRequestId);
+      // session through the recorded ownership binding, never the currently selected chat.
+      void turnId;
+      const ownerId = deliveryOwners.get(failedRequestId);
+      deliveryOwners.delete(failedRequestId);
+      const s = ownerId !== undefined ? deps.store.get(ownerId) : undefined;
+      if (s === undefined || deps.store.get(s.id) === undefined) {
+        log.warn(`[chat] async delivery failure for ${failedRequestId} has no known originating conversation — failing closed, no follow-up started`);
+        return;
+      }
+      ensurePersistedUnresolved(s, failedRequestId);
       markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
       reevaluateChatStatus(s);
       if (!followUpsStarted.has(failedRequestId)) {
@@ -1558,6 +1583,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const probeTurnId = live?.turnId ?? session?.liveTurn?.cursor.turnId;
     const probeProvider = live?.provider ?? session?.provider;
     if (probeTurnId !== undefined && probeProvider !== undefined) {
+      // MR1: record which conversation this delivery attempt belongs to, so a later async
+      // stdin failure resolves to it even after a terminal or a chat switch.
+      if (session !== undefined) deliveryOwners.set(requestId, session.id);
       try {
         // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
         // decide() itself reports undelivered for a dead/absent stdin, and the request is NOT
@@ -1644,8 +1672,30 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       postInfo(`present-note-${++presentNotes}`, `Not shown for review (not pending approval, or the name matches more than one document): ${outcome.notPending.join(', ')}.`);
     }
   };
-  const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {
+  /**
+   * MR4 (manual code review): one durable declaration identity per conversation, shared by the
+   * live, follow and observer paths. `declarationDispatched` checks the persisted union (the
+   * observer checkpoint's declaredIds plus presentedDeclarations); `markDeclarationDispatched`
+   * records a NEW dispatch durably so a later replay — reattach, reload, the observer after the
+   * follow reader — never opens a second panel for the same declaration.
+   */
+  const declarationDispatched = (s: ChatSession, declId: string): boolean =>
+    (s.presentedDeclarations ?? []).includes(declId) || (s.observerCheckpoint?.declaredIds ?? []).includes(declId);
+  const markDeclarationDispatched = (s: ChatSession, declId: string): void => {
+    if (declarationDispatched(s, declId)) return;
+    s.presentedDeclarations = [...(s.presentedDeclarations ?? []), declId];
+    try {
+      deps.store.save(s);
+    } catch { /* best-effort, as the observer's checkpoint save */ }
+  };
+
+  const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, s: ChatSession, canShow: () => boolean): void => {
     if (shown === undefined || ev.kind !== 'tool-call' || ev.present === undefined) return;
+    // MR4: a declaration already dispatched (e.g. by the detached observer) is never re-presented
+    // when the follow reader replays the same tool call on reattach.
+    const declId = ev.callId ?? `${ev.turnId}:${ev.present.join(',')}`;
+    if (declarationDispatched(s, declId)) return;
+    markDeclarationDispatched(s, declId);
     try {
       shown
         .declared(ev.present)
@@ -1675,7 +1725,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     turns.follow(s, {
       onEvent: (ev) => {
         if (shown === undefined) shown = beginPresented();
-        presentDeclared(shown, ev, () => session === s);
+        presentDeclared(shown, ev, s, () => session === s);
         // A followed turn's approval requests go through the queue like a live one's.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
@@ -2397,7 +2447,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function runTurn(
     text: unknown,
     allowedTools?: readonly string[],
-    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined },
+    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined; readonly shouldSpawn?: (() => boolean) | undefined },
   ): Promise<void> {
     // Story E202610138d4b90c9:S001: counted as starting until turns.start has been called (from
     // then on the lifecycle says a turn is in progress), so no waiting pane message is run between.
@@ -2418,7 +2468,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function startTurn(
     text: unknown,
     allowedTools: readonly string[] | undefined,
-    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined } | undefined,
+    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined; readonly shouldSpawn?: (() => boolean) | undefined } | undefined,
     started: () => void,
   ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
@@ -2495,6 +2545,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;
     const sink: TurnSink = {
+      // MR3: checked by the lifecycle immediately before the CLI spawns; false ends the turn without spawning
+      ...(opts?.shouldSpawn !== undefined ? { shouldSpawn: opts.shouldSpawn } : {}),
       onSpawn: (cli) => {
         // a pending follow-up run actually spawned: its decisions were delivered. Only a spawn of a
         // DIFFERENT turn than the one the follow-up was queued behind consumes the marker — events of
@@ -2541,7 +2593,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // turn only — never marks other pending follow-ups delivered
         if (ev.kind !== 'error' && pendingFollowUps.size > 0) confirmFollowUp(ev.turnId, s);
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
-        presentDeclared(shown, ev, () => true);
+        presentDeclared(shown, ev, s, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
         if (q !== undefined && (ev.kind === 'tool-call' || ev.kind === 'file-edit' || ev.kind === 'tool-result')) q.acted = true;
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.

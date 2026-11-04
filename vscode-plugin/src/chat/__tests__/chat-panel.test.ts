@@ -6383,6 +6383,112 @@ test('E202611031bd72813:S001 t6: a LIVE turn whose decide() reports UNDELIVERED 
   fc.fireDispose();
 });
 
+test('E202611031bd72813:S001 t6/MR1: an ASYNC stdin failure after the original turn ended and the user switched chats resolves to the ORIGINATING chat — never the selected one', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { sessionId: string | undefined; resume: unknown }[] = [];
+  let failedCb: ((turnId: string, requestId: string, decision: 'approve' | 'deny') => void) | undefined;
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const proc = fakeLiveProc(4321);
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: true }), // initially delivered; the ASYNC write failure comes later
+    onDeliveryFailed: (fn) => { failedCb = fn as typeof failedCb; },
+    cancel: () => { proc.exitNow(); release(); },
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push({ sessionId: opts?.sessionId, resume: (req as { resume?: unknown }).resume });
+      if (runs.length === 1) {
+        opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 'A-turn', generation: 1, offset: 0 } });
+        yield { kind: 'approval-request', turnId: 'A-turn', requestId: 'A-request', title: 'A action', detail: 'permission', command: 'A-command', resolution: 'in-turn' };
+        await gate;
+        proc.exitNow();
+        yield { kind: 'done', turnId: 'A-turn', ok: true };
+      } else {
+        const p2 = fakeLiveProc(4322);
+        opts?.onSpawn?.(p2);
+        p2.exitNow();
+        yield { kind: 'done', turnId: 'followup', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'A prompt' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'), 5000);
+  const a = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'A-request', decision: 'approve' }));
+  release();
+  await waitFor(() => store.get(a)?.liveTurn === undefined, 5000, 'A reached terminal (liveTurn cleared)');
+  // the user switches to another chat with its own native session
+  const b = store.create('claude' as never);
+  b.nativeSessionId = 'native-B';
+  store.save(b);
+  fc.send(env('open-chat', { chatId: b.id }));
+  // NOW the async write failure for A's original turn/request arrives
+  failedCb?.('A-turn', 'A-request', 'approve');
+  await waitFor(() => runs.length === 2, 5000, 'the failure was answered with a follow-up run');
+  assert.equal(runs[1]!.sessionId, a, 'the follow-up targets the ORIGINATING chat A, not the selected B');
+  assert.notEqual((runs[1]!.resume as { nativeSessionId?: string } | undefined)?.nativeSessionId, 'native-B', 'it never resumes the selected chat B’s native session');
+  assert.ok(!store.get(b.id)?.pendingRequests?.some((r) => r.requestId === 'A-request'), 'nothing was inserted into the selected chat B');
+  assert.equal(store.get(a)?.pendingRequests?.find((r) => r.requestId === 'A-request')?.outcome, 'approved', 'A’s record was corrected (delivery-failed) and then answered by the follow-up — never left as a silent no-op');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: TurnRequest[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const proc = fakeLiveProc(4331);
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }), // dead stdin: the decision cannot be delivered in-turn
+    cancel: () => { proc.exitNow(); release(); },
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push(req);
+      if (runs.length === 1) {
+        opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 'original', generation: 1, offset: 0 } });
+        yield { kind: 'approval-request', turnId: 'original', requestId: 'req-1', title: 'Write fixture', detail: 'needs permission', toolName: 'Bash', command: 'echo fixture', resolution: 'in-turn' };
+        await gate; // the original turn stays blocked (holding the lease) until released
+        proc.exitNow();
+        yield { kind: 'done', turnId: 'original', ok: true };
+      } else {
+        const q = fakeLiveProc(4332);
+        opts?.onSpawn?.(q);
+        q.exitNow();
+        yield { kind: 'done', turnId: 'followup', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    followUpDeliveryTimeoutMs: 30, // the stall timer fires almost immediately
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'begin' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'), 5000);
+  const id = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'req-1', decision: 'approve' }));
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'req-1')?.outcome === 'delivery-failed', 5000, 'the stall timer recorded delivery-failed');
+  const before = runs.length;
+  release(); // the original turn ends, freeing the lease the follow-up was waiting on
+  proc.exitNow();
+  await new Promise((r) => setTimeout(r, 300));
+  assert.equal(runs.length, before, 'NO late continuation spawned after the recorded delivery-failed');
+  assert.equal(store.get(id)?.pendingRequests?.find((r) => r.requestId === 'req-1')?.outcome, 'delivery-failed', 'the outcome stays delivery-failed — the late run could not correct it');
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insrc_present to the presenter, deduped by declarationId across passes', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs5-'));
   try {
@@ -6418,6 +6524,52 @@ test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insr
     assert.deepEqual(declarations, [['LLD-abc-S001']], 'exactly once across MANY passes — deduped by declarationId');
     assert.deepEqual(store.get(s.id)?.observerCheckpoint?.declaredIds, ['call-1'], 'the dispatched declaration id is persisted in the checkpoint');
     assert.ok(store.get(s.id)?.liveTurn !== undefined, 'no terminal, live pid: the turn stays unreconciled');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
+test('E202611031bd72813:S001 t8/MR4: a declaration the OBSERVER dispatched is NOT re-presented when the follow reader replays the same tool call on reattach — one panel per declaration across readers', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-mr4-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
+    const opened: { presentKey: string | undefined }[] = [];
+    const presenter = createReviewPresenter({ pendingDocuments: async () => [{ id: 'LLD-abc-S001', mdPath: '/repo/docs/LLD.md' }], open: (t) => { opened.push(t); }, log: { warn() {}, error() {} } });
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      observerTickBudgetMs: 8,
+      hostPid: 77,
+      isAlive: () => false,
+      presenter: presenter as never,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-obs');
+    appendFileSync(seg.outPath, JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'call-1', name: 'mcp__insrc__insrc_present', input: { documents: ['LLD-abc-S001'] } }] } }) + '\n');
+    await out.endTurn(s.id, 't-obs', { code: null, signal: null });
+    store.setStatus(s.id, 'working');
+    store.get(s.id)!.lastActivityAt = Date.now();
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 0, pid: 1234, startedAt: 1 };
+    store.save(cur);
+    await waitFor(() => store.get(s.id)?.observerCheckpoint?.declaredIds?.includes('call-1'), 5000, 'the observer dispatched + checkpointed the declaration');
+    await new Promise((r) => setTimeout(r, 60));
+    const panelsAfterObserver = opened.length;
+    assert.equal(panelsAfterObserver, 1, 'the observer opened one panel');
+    // reattach: the normal follow reader replays the SAME tool call from the session file
+    fc.send(env('open-chat', { chatId: s.id }));
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(opened.length, panelsAfterObserver, 'the replayed declaration did NOT open a second panel — shared durable identity across observer and follow readers');
+    assert.deepEqual(store.get(s.id)?.presentedDeclarations, ['call-1'], 'the dispatch is recorded in the per-conversation durable set');
     host.dispose();
   } finally {
     await rmrf(root);

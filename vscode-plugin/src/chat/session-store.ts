@@ -195,6 +195,8 @@ export interface ObserverCheckpoint {
   readonly selectionSeq: number;
   readonly selectionBuffer?: string | undefined;
   readonly declaredIds?: readonly string[] | undefined;
+  /** Set when the checkpoint was rewound to just before a terminal — rewound only once per terminal. */
+  readonly rewound?: boolean | undefined;
 }
 
 /** A turn still being read from the session output file. */

@@ -6254,7 +6254,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
             yield x;
             // after the terminal (result) line, stall past the 1ms tick budget so pass 1
             // budget-aborts before the trailing fragment — forcing the rewind+retry
-            if (tailCalls === 1 && x.line.includes('"result"')) await new Promise((r) => setTimeout(r, 50));
+            if (tailCalls <= 2 && x.line.includes('"result"')) await new Promise((r) => setTimeout(r, 50)); // sustained exhaustion on passes 1-2
           }
         })();
       },
@@ -6289,7 +6289,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
     store.save(cur);
     await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the retry pass drained under the caught-up gate and completed');
-    assert.ok(tailCalls >= 2, `a retry pass really ran after the budget-aborted terminal pass (tail calls: ${tailCalls})`);
+    assert.ok(tailCalls >= 3, `sustained budget exhaustion rewound once, then a later pass drained and completed (tail calls: ${tailCalls})`);
     const after = store.get(s.id)!;
     const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
     assert.equal(sels.length, 1, 'exactly one selection request — the split marker completed once');

@@ -1049,6 +1049,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     else if (s.liveTurn === undefined) setChatStatus(s, 'done');
   };
 
+  /** t6: persist the queue's full snapshot onto the active session (when it is in the store). */
+  const persistQueueSnapshot = (): void => {
+    if (session === undefined || deps.store.get(session.id) === undefined) return;
+    session.queueSnapshot = approvals.snapshot();
+    trySave(session);
+  };
+
   const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
     approvals.enqueue({
       requestId: ev.requestId,
@@ -1062,10 +1069,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     });
     // t6: keep the persisted queue snapshot fresh on every enqueue — otherwise a request arriving
     // after the last snapshot would be lost on reload (restore replaces the queue with the snapshot)
-    if (session !== undefined && deps.store.get(session.id) !== undefined) {
-      session.queueSnapshot = approvals.snapshot();
-      trySave(session);
-    }
+    persistQueueSnapshot();
     reportCards(); // Story S002
     showApprovalHead();
   };
@@ -1408,8 +1412,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // runTurn carrying the decision (resuming the native session when one is known); if even that
   // cannot start, the persisted request is marked resolved with outcome delivery-failed — a silent
   // no-op is never recorded as a success.
-  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny'): void => {
-    const s = session;
+  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession): void => {
+    const s = target ?? session;
     const rec = s?.pendingRequests?.find((r) => r.requestId === requestId);
     const what = rec?.command ?? rec?.toolName ?? rec?.title ?? 'the requested action';
     const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
@@ -1470,7 +1474,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       reevaluateChatStatus(s);
       if (!followUpsStarted.has(failedRequestId)) {
         followUpsStarted.add(failedRequestId);
-        deliverDecisionAsFollowUp(failedRequestId, failedDecision);
+        deliverDecisionAsFollowUp(failedRequestId, failedDecision, s);
       }
     });
   };
@@ -1606,7 +1610,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             if (session === s) reportCards();
             else postLive(ev, rowIndex);
           } else postLive(ev, rowIndex);
-          if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) approvals.endTurn(ev.turnId); // t2: observation failure is not terminal
+          if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+          approvals.endTurn(ev.turnId); // t2: observation failure is not terminal
+          persistQueueSnapshot(); // t6: the ended set must be fresh for reload restoration
+        }
         }
       },
       onEnd: (outcome) => {
@@ -2478,7 +2485,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           } else postLive(ev, rowIndex);
         }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
-        if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) approvals.endTurn(ev.turnId); // E202611031bd72813:S001 t2: an observation failure is not terminal
+        if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+          approvals.endTurn(ev.turnId); // E202611031bd72813:S001 t2: an observation failure is not terminal
+          persistQueueSnapshot(); // t6: the ended set must be fresh for reload restoration
+        }
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
@@ -2806,14 +2816,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // t6: keep the persisted queue snapshot fresh on every decision — batch decisions and
           // grants otherwise live only in memory until the next clear(), and a reload would restore
           // the stale snapshot, losing them and reviving already-decided requests
-          if (session !== undefined && deps.store.get(session.id) !== undefined) {
-            session.queueSnapshot = approvals.snapshot();
-            try {
-              deps.store.save(session);
-            } catch (err) {
-              log.warn(`[chat] session ${session.id}: queue snapshot not saved: ${err instanceof Error ? err.message : String(err)}`);
-            }
-          }
+          persistQueueSnapshot();
           if (session !== undefined) reevaluateChatStatus(session); // E202611031bd72813:S001 t2: resolution re-evaluates precedence
           // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
           queueMicrotask(settleQueued);

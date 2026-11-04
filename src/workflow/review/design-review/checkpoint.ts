@@ -42,7 +42,13 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
  requireDesign(next.attempts.length>=previous.attempts.length&&next.attempts.length<=previous.attempts.length+1,'immutable_history','Cannot remove or skip attempts');
  if(next.attempts.length>previous.attempts.length){
   const source=next.attempts[previous.attempts.length-1];
-  requireDesign(previous.attempts.at(-1)?.status==='invalidated'&&source?.status==='invalidated'&&source.actions?.some(a=>a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===next.attempts.length),'immutable_history','New attempt requires an approved full restart of invalidated work');
+  const old=previous.attempts.at(-1)!,added=next.attempts.at(-1)!;
+  const correction=['passed','changes_requested','incomplete'].includes(old.status)&&old.report?.status===old.status&&
+   added.preparationKind==='impact'&&previous.attempts.every((a,i)=>same(a,next.attempts[i]));
+  const restart=old.status==='invalidated'&&source?.status==='invalidated'&&
+   (added.preparationKind??'planning')==='planning'&&!added.impact&&
+   source.actions?.some(a=>a.operation==='restart_full'&&a.userDecision?.action==='restart_full'&&a.resultAttempt===next.attempts.length);
+  requireDesign(correction||restart,'immutable_history','New attempt requires a complete terminal correction or approved full restart of invalidated work');
  }
  if(next.attempts.length===previous.attempts.length)requireDesign(same(previous.subject,next.subject),'immutable_history','Cannot replace an active subject');
  for(const old of previous.attempts){
@@ -50,6 +56,8 @@ function checkEvolution(previous:DesignReviewCheckpoint,next:DesignReviewCheckpo
   requireDesign(current,'immutable_history','Cannot remove an admitted attempt');
   if(old.number<previous.attempts.length){requireDesign(same(old,current),'immutable_history','Cannot change a prior attempt');continue;}
   requireDesign(same(current.baseline,old.baseline)&&same(current.inventory,old.inventory),'immutable_history','Cannot replace an admitted baseline/inventory');
+  requireDesign(same(current.preparationKind,old.preparationKind),'immutable_history','Cannot replace preparation kind');
+  requireDesign(!old.impact||same(current.impact,old.impact),'immutable_history','Cannot replace accepted impact');
   requireDesign(!old.plan||same(current.plan,old.plan),'immutable_history','Cannot replace an accepted plan');
   requireDesign(old.completedChunks.every((r,i)=>same(r,current.completedChunks[i])),'immutable_history','Cannot replace completed feedback');
   requireDesign(!old.report||same(current.report,old.report),'immutable_history','Cannot replace an accepted report');
@@ -104,6 +112,7 @@ function checkIdentity(project: string, id: string, checkpoint: DesignReviewChec
  requireDesign(new Set(actionIds).size===actionIds.length,'invalid_checkpoint','Duplicate recovery action identity');
  for(const attempt of checkpoint.attempts) {
   checkRecovery(attempt);
+  requireDesign((attempt.preparationKind??'planning')==='impact'?!!attempt.plan===!!attempt.impact:!attempt.impact,'invalid_checkpoint','Impact preparation requires an atomic plan/impact pair; full planning cannot retain coverage');
   requireDesign((attempt.actions??[]).every(a=>a.resultAttempt<=checkpoint.attempts.length),'invalid_checkpoint','Recovery action names an absent attempt');
   requireDesign(attempt.progress.checkpointPath===designCheckpointPath(project,id),'foreign_checkpoint','Progress names another checkpoint');
   requireDesign(attempt.completedChunks.every(r=>Buffer.byteLength(JSON.stringify(r))<=DESIGN_LIMITS.resultBytes),'result_too_large','Stored chunk result exceeds page limit');

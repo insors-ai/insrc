@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { loadAnalyzeConfig, type AnalyzeConfig } from '../config/analyze.js';
+import type { DocRelationsStatus } from '../shared/types.js';
 import { getEntity } from '../db/entities.js';
 import { documentRelations, readDocRelationQuality, readDocRelationRowsInTxn, switchOf, type DocRelationSwitchState, type DocumentRelations } from '../db/doc-relations.js';
 import { getGraphStore } from '../db/graph/store.js';
@@ -66,4 +67,17 @@ export async function docRelationsRevision(repoPath: string, cfg: AnalyzeConfig 
 		model:      model.ok ? model.model.id : null,
 		set:        docRelationsSetHash(repoPath) ?? null,
 	})).digest('hex');
+}
+
+/** The repository's document-relations status as repo.stats and the status board show it (Epic c2ba6fa6 s10). */
+export async function docRelationsStatusFor(repoPath: string): Promise<DocRelationsStatus> {
+	const quality = await readDocRelationQuality(repoPath);
+	const { state } = await currentDocRelationsSwitch(repoPath);
+	const f = quality?.figures;
+	const x = quality?.extraction;
+	return {
+		switch: state,
+		...(f !== undefined ? { figures: { checked: f.checked, precision: f.precision, recall: f.recall, extractedRecovery: f.extractedRecovery, modelId: f.modelId, measuredAt: f.measuredAt } } : {}),
+		...(x !== undefined ? { extraction: { state: x.state, ...(x.reason !== undefined ? { reason: x.reason } : {}), examined: x.examined, failed: x.failed, updatedAt: x.updatedAt } } : {}),
+	};
 }

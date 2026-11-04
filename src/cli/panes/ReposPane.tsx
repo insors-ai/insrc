@@ -20,6 +20,7 @@ import { useServices, useUi, useCaptured } from '../ui/context.js';
 import { formatMcpOutcome } from '../services/repo.js';
 import { Panel, KeyHints, TextPrompt, ConfirmPrompt } from '../ui/widgets.js';
 import { formatWhen } from '../ui/format.js';
+import { describeDocRelations } from '../../shared/doc-relations-status.js';
 import { trackerStatusGlyph, trackerReportSummary } from './tracker-report.js';
 import { RepoModelsView } from './RepoModelsView.js';
 import type { TrackerSetupReport } from '../../workflow/tracker/setup.js';
@@ -219,7 +220,9 @@ export function ReposPane(props: {
 
 /** One repository: its status and, for an incomplete index, the number of causes and the
  *  first one (Epic c2ba6fa6 s1). A complete index, or an unknown one (no field: a daemon
- *  before the change), shows the status alone. */
+ *  before the change), shows the status alone. When the daemon reports it, a line for the
+ *  model-proposed document links follows (s10): the switch, the figures, and why new
+ *  documents are not examined when the provider is unavailable. */
 export function RepoRow(props: { repo: RegisteredRepo; selected: boolean }): ReactElement {
 	const r = props.repo;
 	const sel = props.selected ? { color: 'cyan' as const } : {};
@@ -237,6 +240,9 @@ export function RepoRow(props: { repo: RegisteredRepo; selected: boolean }): Rea
 			</Box>
 			{incomplete !== undefined
 				? <Text color="yellow" wrap="truncate-end">{`      ${causes} ${causes === 1 ? 'cause' : 'causes'}${incomplete.reasons[0] !== undefined ? `: ${incomplete.reasons[0]}` : ''}`}</Text>
+				: null}
+			{r.docRelations !== undefined
+				? <Text {...(r.docRelations.extraction?.state === 'unavailable' ? { color: 'yellow' as const } : { dimColor: true })} wrap="truncate-end">{`      ${describeDocRelations(r.docRelations)}`}</Text>
 				: null}
 		</Box>
 	);

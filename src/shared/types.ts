@@ -827,6 +827,20 @@ export interface RegisteredRepo {
    * absent when it cannot be read, which a consumer reads as unknown.
    */
   completeness?: RepoCompleteness | undefined;
+  /** Model-proposed document relationships (Epic c2ba6fa6 s10), beside completeness and never part of it. */
+  docRelations?: DocRelationsStatus | undefined;
+}
+
+/**
+ * The state of model-proposed document relationships for a repository (Epic
+ * c2ba6fa6 s10): the switch (decided by the measured figures, the model that
+ * runs now and the hand-checked set) and the last pass's extraction state. An
+ * 'unavailable' extraction never hides proposals that are switched on.
+ */
+export interface DocRelationsStatus {
+  switch:      'on' | 'off' | 'not-measured';
+  figures?:    { checked: number; precision: number; recall: number; extractedRecovery: number; modelId: string; measuredAt: string } | undefined;
+  extraction?: { state: 'ok' | 'unavailable'; reason?: string | undefined; examined: number; failed: number; updatedAt: string } | undefined;
 }
 
 /** The class of a pending relationship (Epic c2ba6fa6 s1, sc1 PendingClass). */
@@ -1229,6 +1243,8 @@ export interface RepoStats {
   pendingJobs:       number;
   /** Whether the index is complete (Epic c2ba6fa6 s1); absent when it cannot be read. */
   completeness?:     RepoCompleteness | undefined;
+  /** Model-proposed document relationships (Epic c2ba6fa6 s10); absent when they cannot be read. */
+  docRelations?:     DocRelationsStatus | undefined;
 }
 
 // ---------------------------------------------------------------------------

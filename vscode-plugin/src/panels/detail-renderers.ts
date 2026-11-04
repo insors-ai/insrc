@@ -12,6 +12,7 @@
 
 import { escapeHtml } from './html.js';
 import { GatewayReadError, type DaemonDataGateway, type RepoRef, type TabRenderer, type WorkflowChainRow } from './types.js';
+import { describeDocRelations } from '../../../src/shared/doc-relations-status.js';
 
 /** The Refresh control both tabs render; its click posts {type:'refresh'} (wired by the host bootstrap). */
 const REFRESH_CONTROL = `<button type="button" id="insrc-refresh" class="refresh" title="Re-read from the daemon">Refresh</button>`;
@@ -53,7 +54,11 @@ async function repositoryList(gateway: DaemonDataGateway): Promise<string> {
       : c.complete
         ? ` <span class="completeness complete">complete</span>`
         : ` <span class="completeness incomplete">incomplete</span><ul class="reasons">${c.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join('')}</ul>`;
-    return `<li class="repo"><span class="repo-name" title="${escapeHtml(r.path)}">${escapeHtml(r.name !== '' ? r.name : r.path)}</span>${status}${completeness}</li>`;
+    // Model-proposed document links (Epic c2ba6fa6 s10): the switch, the figures, and why new documents are not examined.
+    const docRelations = r.docRelations === undefined
+      ? ''
+      : `<p class="doc-relations${r.docRelations.extraction?.state === 'unavailable' ? ' unavailable' : ''}">${escapeHtml(describeDocRelations(r.docRelations))}</p>`;
+    return `<li class="repo"><span class="repo-name" title="${escapeHtml(r.path)}">${escapeHtml(r.name !== '' ? r.name : r.path)}</span>${status}${completeness}${docRelations}</li>`;
   });
   return `<section class="repos"><h3>Repositories</h3><ul class="repo-list">${items.join('')}</ul></section>`;
 }

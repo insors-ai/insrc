@@ -120,6 +120,15 @@ class RepoStatusDialog(
                 expanded = s.completeness?.complete == false,
             ),
         )
+        s.docRelations?.let { d ->
+            column.add(
+                InsrcCollapsible.collapsiblePanel(
+                    "Document links",
+                    keyValueTable("Property", "Value", docRelationsRows(d)),
+                    expanded = d.extractionState == "unavailable",
+                ),
+            )
+        }
 
         column.add(
             InsrcCollapsible.collapsiblePanel(
@@ -205,6 +214,34 @@ class RepoStatusDialog(
         }
         return String.format("%.1f %s", value, units[unit])
     }
+}
+
+/**
+ * The rows of the "Document links" group (Epic c2ba6fa6 s10): one summary line in
+ * the words the CLI uses, then the switch, the figures when measured, and the
+ * cause when new documents are not being examined.
+ */
+internal fun docRelationsRows(d: ai.insors.insrc.jetbrains.daemon.DocRelationsDto): List<Pair<String, String>> = buildList {
+    add("Summary" to describeDocRelations(d))
+    add("Switch" to d.switch)
+    if (d.checked != null) add("Checked links" to d.checked.toString())
+    d.precision?.let { add("Precision" to String.format("%.2f", it)) }
+    d.recall?.let { add("Recall" to String.format("%.2f", it)) }
+    if (d.extractionState == "unavailable") add("Not examined because" to (d.extractionReason ?: "no reason recorded"))
+}
+
+/** The one-line wording of src/shared/doc-relations-status.ts, so the plugins and the CLI say the same thing. */
+internal fun describeDocRelations(d: ai.insors.insrc.jetbrains.daemon.DocRelationsDto): String {
+    val figures = if (d.precision != null && d.recall != null && d.checked != null)
+        String.format(" (P %.2f / R %.2f on %d links)", d.precision, d.recall, d.checked) else ""
+    val head = when (d.switch) {
+        "on" -> "document links: on$figures"
+        "off" -> "document links: off$figures"
+        else -> "document links: not measured"
+    }
+    if (d.extractionState != "unavailable") return head
+    val why = d.extractionReason ?: "no reason recorded"
+    return if (d.switch == "on") "$head; new documents not examined: $why" else "$head; not extracted: $why"
 }
 
 /**

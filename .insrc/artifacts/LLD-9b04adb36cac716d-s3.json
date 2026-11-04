@@ -25,7 +25,7 @@
     "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "hldAmendmentsApplied": [],
     "authoredBy": "controller",
-    "revision": 3,
+    "revision": 4,
     "envelope": {
       "description": "",
       "references": [],
@@ -34,9 +34,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "3ed76968aee7a6485571a30c35317b48bfd9f15d2991a49ab2c534155b8034bb",
-        "at": "2026-11-04T11:43:47.361Z",
+        "number": 4,
+        "contentHash": "27ca90dc391fb8d6f5a1f09e0acade9de341c48191575fa8ea1cbbfbccca586a",
+        "at": "2026-11-04T12:21:21.928Z",
         "by": {
           "id": "codex:controller",
           "kind": "agent",
@@ -200,11 +200,17 @@
           "preconditions": [
             "Initial attempt1 behaves unchanged. A subsequent start is only latest.number+1 after a terminal complete report (passed, changes_requested or incomplete), not pending/running/interrupted/paused/failed/invalidated. Recovery of an interrupted/paused attempt remains sc3; an invalidated attempt requires user-approved restart_full and never reuses coverage.",
             "Same review/attempt replay is observe-only; conflicting identity cannot replace pinned admission. Current live subject representations must be valid. No generic Git/HEAD diff defines design scope.",
-            "These are proposed S3 behavioral extensions to existing start/exchange methods, not newly invented public wrapper interfaces. Existing unknown inputs are intentional trust boundaries, not missing schema definitions. [[c4]] [[c9]]"
+            "These are proposed S3 behavioral extensions to existing start/exchange methods, not newly invented public wrapper interfaces. Existing unknown inputs are intentional trust boundaries, not missing schema definitions. [[c4]] [[c9]]",
+            "Admission uses three explicit branches, replacing admit()'s current single saved.submitted.attempt comparison. (1) No checkpoint: require requested attempt=1; create initial full-planning attempt and immutable submitted={artifactPath,attempt:1}. (2) Requested attempt already exists: require the original admitted artifactPath/identity and return only that attempt's saved acknowledgement (active only if it is the active generation); do not append, re-prepare or dispatch. A conflicting identity remains an error. (3) Requested attempt is latest.number+1: require no active job/subject, no uncertain failed save, and latest terminal passed/changes_requested/incomplete with a complete report matching its accepted plan, baseline and results. Reject any other ordinal/status. Crucially, branch 3 does NOT compare requested attempt N to saved.submitted.attempt=1 and never rewrites submitted. [[c4]] [[c3]]"
           ],
           "postconditions": [
             "Append one new baseline/inventory, with prior attempts frozen. Choose the latest complete report as impact baseline only if artifact identity and reviewer party match; otherwise full review with explicit reason, no retained coverage.",
-            "Subsequent impact unit returns {plan,impact}; initial and approved restart_full use ordinary full planning, never impact reuse. Monitoring starts before impact and aborts on subject mutation. No next-attempt admission occurs automatically from polling."
+            "Subsequent impact unit returns {plan,impact}; initial and approved restart_full use ordinary full planning, never impact reuse. Monitoring starts before impact and aborts on subject mutation. No next-attempt admission occurs automatically from polling.",
+            "In the sequential-correction branch, re-prepare current subject/context and trusted reviewer, require same canonical project/artifact identity, append exactly one fresh baseline/inventory attempt with immutable preparationKind=impact, acquire existing subject fence, and persist atomically before launch. Baseline comparison is the immediately preceding complete attempt. Previously admitted attempts, including the immediately preceding one, remain byte-for-byte frozen on this append. Save/admission failure releases the fence and dispatches nothing. Initial admission and approved restart_full set preparationKind=planning; absent preparationKind in existing checkpoints means planning. [[c4]] [[c3]]",
+            "Extend checkEvolution()'s attempt-growth guard with two disjoint allowed cases. Existing invalidated predecessor + approved matching restart_full action still permits only a full preparationKind=planning attempt and no retained coverage; preserve its existing action semantics. New ordinary correction permits a terminal complete predecessor (passed/changes_requested/incomplete) plus exactly number N+1, preparationKind=impact, matching artifact/project and a byte-identical entire prior-attempt prefix. All other growth, changed original submitted metadata, skipped attempts and replacement baselines/results reject. The impact decision itself is not required at admission; it is later accepted with the plan. Freeze preparationKind after admission. [[c3]] [[c4]]",
+            "Extend controller exchange()'s exact phase/kind dispatch table to plan/planning, impact/impact and result/chunk. The new impact request is {phase:impact,repo,reviewId,attempt,executionId,sequence,plan,impact}; define its strict schema in DesignRequestSchemas, include it in DesignRequestSchema and DESIGN_REVIEW_PHASES, and expose it through normal MCP and main-owned daemon routes. Keep owner, current attempt, execution generation, next sequence and subject checks before dispatch exactly as for plan/result. A mismatched phase/kind is invalid_phase with no accepted output. [[c4]] [[c9]]",
+            "For phase impact with kind impact, validate request.plan as a complete current plan, then request.impact against that validated plan, immutable prior history and current inventory using the SAME validator supplied to the native impact output candidate. Persist the accepted {plan,impact} pair and seal its impact reservation atomically before resolving unit.accepted/acknowledging. Exact owner/execution/sequence/input replay returns the same acceptance and never repeats work; conflicting replay rejects. Structurally valid invalid impact output retires that generation and uses sc3 retry/pause; malformed envelopes spend no retry. No plan/result branch may accept impact output. [[c4]] [[c5]] [[c9]]",
+            "Normal transport inventory is explicit: src/mcp/design-review/schema.ts derives the impact phase/input; src/daemon/design-review-rpc.ts handles both step and unary impact; src/daemon/handler-runtime.ts registers designReview.impact; src/daemon/threads/method-class.ts classifies and main-owns it; src/daemon/repo-call-audit.ts marks it modifying with required repo. These are S3 integration extensions, not a provider or threading redesign. [[c11]] [[c12]]"
           ]
         },
         {
@@ -264,7 +270,8 @@
           ],
           "preconditions": [
             "No current plan/decision mutation after acceptance; retained coverage must not appear in completedChunks.",
-            "Validate the complete current plan first; validate selected/retained disjointness and exact coverage by ID. A retained chunk has a resolvable immutable source before it can satisfy a dependency. The full plan is never destructively shortened. [[c5]] [[c6]]"
+            "Validate the complete current plan first; validate selected/retained disjointness and exact coverage by ID. A retained chunk has a resolvable immutable source before it can satisfy a dependency. The full plan is never destructively shortened. [[c5]] [[c6]]",
+            "Use immutable preparationKind to choose the unplanned preparation unit: impact means correction, planning or missing marker means full planning. Do not infer this solely from number>1 because approved restart_full also creates number>1. [[c6]] [[c9]]"
           ],
           "postconditions": [
             "Replace the existing completedChunks-vs-plan positional prefix invariant with completedChunks-vs-executionOrder: every fresh result at position i must have the unique chunkId executionOrder[i].id. Reject duplicates, out-of-order or unknown fresh results. The next work item is executionOrder[completedChunks.length]; exhaustion means fresh execution is complete, not that retained chunks were inspected again. [[c6]]",
@@ -319,7 +326,8 @@
             }
           ],
           "preconditions": [
-            "Use existing sc3 initial+three retry policy; no new retry subsystem."
+            "Use existing sc3 initial+three retry policy; no new retry subsystem.",
+            "The explicit preparationKind discriminator must agree with the admitted immutable attempt marker when chunk is absent; mismatches reject rather than reserving a different phase. [[c6]] [[c9]]"
           ],
           "postconditions": [
             "Impact planning failures consume only impact reservations. Controller/native routes share output schema, policy, activity and recovery semantics. No fixed deadline; active tools and real model activity retain S2 behavior."
@@ -381,8 +389,8 @@
       {
         "entity": "DesignAttempt impact execution and origins",
         "change": "field-add",
-        "details": "Proposed optional impact metadata and accepted-plan pair, plus immutable execution selection derived from sc4. completedChunks continues to own only newly accepted results in selected plan order; retainedCoverage holds current chunkId -> exactly one {fromAttempt,fromChunkId,justification} link. A source may link to an earlier retained result; validate strictly decreasing attempt numbers, resolve to an actual accepted substantive result and preserve the chain. No forward links, cross-artifact/reviewer links, cycles, missing source or invalidated-source reuse. Fresh attempts own fresh baseline/inventory; start is sequential and explicit. Existing S1/S2 checkpoints without impact are full plans. Only the new review engine understands new optional fields; no legacy executable fallback is introduced. Admission/checkpoint evolution must explicitly allow appending latest.number+1 after a complete terminal report, while still freezing every prior attempt. Keep the separate existing invalidated+user-approved restart_full branch and require that branch to be full with no retained coverage; never relax the S2 mutation rule. Choose the immediately preceding complete report as comparison baseline, not an older convenient passed report; party mismatch forces full review and explicit reconciliation of known findings. [[c3]] [[c4]] [[c3]] [[c4]] [[c6]] Source resolution checks semantic coverage eligibility in addition to identity/ordering: every linked effective result must be passed/changes_requested with limitations empty, and the immediately preceding mapped chunk cannot be incomplete. Incomplete accepted feedback is preserved historically and its mandatory gaps require current fresh inspection, not retained coverage. [[c5]] [[c9]]",
-        "schemaDiff": "DesignAttempt += impact?: DesignImpactAssessment; current.kind += 'impact'; DesignUnitAssignment.kind += 'impact'; DesignRequestSchemas.start.attempt := positive integer; controller phases += 'impact' with {plan,impact}; impact preparation outputs use the same strict bounded schema on both routes.; DesignResultSchema += findingDecisions?: readonly DesignFindingDecision[] (allowed only on fresh final-consistency output; required for impact attempts with baseline effective findings). Validated final output persists these decisions in completedChunks and feeds impactContext.findingDecisions into consolidation; no separate mutable decision ledger.",
+        "details": "Proposed optional impact metadata and accepted-plan pair, plus immutable execution selection derived from sc4. completedChunks continues to own only newly accepted results in selected plan order; retainedCoverage holds current chunkId -> exactly one {fromAttempt,fromChunkId,justification} link. A source may link to an earlier retained result; validate strictly decreasing attempt numbers, resolve to an actual accepted substantive result and preserve the chain. No forward links, cross-artifact/reviewer links, cycles, missing source or invalidated-source reuse. Fresh attempts own fresh baseline/inventory; start is sequential and explicit. Existing S1/S2 checkpoints without impact are full plans. Only the new review engine understands new optional fields; no legacy executable fallback is introduced. Admission/checkpoint evolution must explicitly allow appending latest.number+1 after a complete terminal report, while still freezing every prior attempt. Keep the separate existing invalidated+user-approved restart_full branch and require that branch to be full with no retained coverage; never relax the S2 mutation rule. Choose the immediately preceding complete report as comparison baseline, not an older convenient passed report; party mismatch forces full review and explicit reconciliation of known findings. [[c3]] [[c4]] [[c3]] [[c4]] [[c6]] Source resolution checks semantic coverage eligibility in addition to identity/ordering: every linked effective result must be passed/changes_requested with limitations empty, and the immediately preceding mapped chunk cannot be incomplete. Incomplete accepted feedback is preserved historically and its mandatory gaps require current fresh inspection, not retained coverage. [[c5]] [[c9]] The existing immutable initial submission remains attempt1 forever. Ordinary correction admission is a new explicit branch, not a replay of that submission; checkpoint evolution separately validates terminal-report sequential append and S2 invalidated+approved-full restart. The preparationKind marker lets nextDesignUnit distinguish an unplanned correction from an unplanned full restart without consulting or rewriting old attempts. [[c3]] [[c4]] [[c6]]",
+        "schemaDiff": "DesignAttempt += impact?: DesignImpactAssessment; current.kind += 'impact'; DesignUnitAssignment.kind += 'impact'; DesignRequestSchemas.start.attempt := positive integer; controller phases += 'impact' with {plan,impact}; impact preparation outputs use the same strict bounded schema on both routes.; DesignResultSchema += findingDecisions?: readonly DesignFindingDecision[] (allowed only on fresh final-consistency output; required for impact attempts with baseline effective findings). Validated final output persists these decisions in completedChunks and feeds impactContext.findingDecisions into consolidation; no separate mutable decision ledger.; DesignAttempt += preparationKind?: planning | impact (immutable after admission; default planning for old checkpoints). Initial/restart_full=planning; ordinary sequential correction=impact. Schema start.attempt becomes positive and admit() dispatches replay vs sequential append without comparing N to immutable submitted.attempt=1. Controller impact schema has identity/generation/sequence plus separate plan and impact fields; native candidate is the equivalent {plan,impact} object.",
         "callSites": [
           "src/workflow/review/design-review/contracts.ts",
           "src/workflow/review/design-review/checkpoint.ts",
@@ -447,7 +455,7 @@
       "errorCases": [
         {
           "scenario": "Noncontiguous or overlapping subsequent attempt",
-          "detection": "Compare request attempt to latest stored number, terminal complete report, canonical artifact identity and active subject registry.",
+          "detection": "Compare request attempt to latest stored number, terminal complete report, canonical artifact identity and active subject registry. Explicitly distinguish no checkpoint, existing-attempt replay and latest+1 correction; never compare a legitimate new ordinal to the initial submitted.attempt=1.",
           "response": "Reject without state replacement; observe exact admitted replays only. Paused/interrupted reviews use existing recovery; invalidated reviews require approved restart_full.",
           "userImpact": "No duplicate review or accidental loss of unfinished work.",
           "recoverable": true
@@ -602,7 +610,10 @@
             "Both reviewer parties use identical impact schema/guidelines; selected units execute in dependency order, retained units make zero model calls, complete final consistency and visible provenance.",
             "Impact crash/transport/schema failure preserves accepted work, spends at most initial+three per impact unit, pauses for user direction and resumes with no extra accepted-unit calls.",
             "Mutation during blocked impact, selective execution and final save latches invalidation; restoration cannot revive; approved restart_full reviews every chunk without reuse.",
-            "Epic DEF/HLD/Story LLD versus standalone and ISSUE-rooted LLD resolve correct current context without invented upstream artifacts; external changes do not trigger invalidation."
+            "Epic DEF/HLD/Story LLD versus standalone and ISSUE-rooted LLD resolve correct current context without invented upstream artifacts; external changes do not trigger invalidation.",
+            "Admission branch matrix: initial attempt1; exact historical replay after later attempts; latest+1 after each terminal complete report; skipped/unknown ordinal, different artifact, active subject, uncertain storage, paused/interrupted/invalidated/failed predecessor rejection. Original submitted.attempt stays1, all prior attempt bytes freeze, current baseline is fresh; save failure dispatches zero. [[c3]] [[c4]]",
+            "Checkpoint evolution accepts terminal-complete sequential impact append and separately accepts invalidated+approved full restart; cross-branch preparationKind, changed prior prefix, missing report, changed initial submission and skipped attempt reject. [[c3]]",
+            "Controller/native impact parity: phase impact/kind impact accepts the same complete plan+sc4 decision and commits them together before acknowledgement; plan/impact or impact/planning mismatches, foreign owners, stale generations/sequences, replay conflicts and malformed envelopes reject with the existing retry distinction. Normal MCP phase schema, unary RPC route and main-owner classification/audit stay in lockstep. [[c4]] [[c9]]"
           ],
           "fixturesNeeded": [
             "Existing designFixture and trusted controller owner fixtures",
@@ -627,7 +638,8 @@
         {
           "criterionId": "ac1",
           "provingTests": [
-            "Explicit next-attempt admission and direct correction impact; accepted plan+impact reference prior baseline/feedback; unchanged chunks are retained without model calls."
+            "Explicit next-attempt admission and direct correction impact; accepted plan+impact reference prior baseline/feedback; unchanged chunks are retained without model calls.",
+            "Explicit sequential correction admission bypasses the immutable initial-attempt ordinal check without mutating submitted; controller impact phase reaches the shared native validator and atomic accepted plan+impact commit."
           ]
         },
         {
@@ -696,7 +708,7 @@
     "openQuestions": [],
     "sequenceDefinition": {
       "id": "s3-impact-correction",
-      "narrative": "Explicit correction attempts assess direct and indirect impact, persist selection before execution, and retain prior coverage by reference. The successful path shows fresh final consistency and finding reconciliation; subject mutation at any active stage instead invalidates and requires an approved full restart.",
+      "narrative": "Explicit correction attempts assess direct and indirect impact, persist selection before execution, and retain prior coverage by reference. The successful path shows fresh final consistency and finding reconciliation; subject mutation at any active stage instead invalidates and requires an approved full restart. Uncertain impact selects full review; every consistency chunk stays fresh. Retained chunks make zero model calls; persist each newly accepted result.",
       "participants": [
         {
           "id": "controller",
@@ -767,8 +779,7 @@
           "to": "owner",
           "kind": "return",
           "label": "Complete current plan plus sc4 decision",
-          "note": "Uncertain impact selects full review; every consistency chunk stays fresh.",
-          "description": "Explicit selected/retained partition, mapping, rationale and finding origins."
+          "description": "Explicit selected/retained partition, mapping, rationale and finding origins. Uncertain impact selects full review; every consistency chunk stays fresh."
         },
         {
           "from": "owner",
@@ -780,8 +791,7 @@
           "from": "owner",
           "to": "reviewer",
           "label": "Review selected chunks; fresh final consistency",
-          "note": "Retained chunks make zero model calls; persist each newly accepted result.",
-          "description": "Serial dependency order; existing retries/recovery/mutation policy applies to each unit."
+          "description": "Serial dependency order; existing retries/recovery/mutation policy applies to each unit. Retained chunks make zero model calls; persist each newly accepted result."
         },
         {
           "from": "reviewer",
@@ -875,6 +885,16 @@
       "id": "c10",
       "kind": "code",
       "ref": "src/workflow/review/design-review/__tests__/fixtures.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/mcp/design-review/schema.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/design-review-rpc.ts"
     }
   ]
 }

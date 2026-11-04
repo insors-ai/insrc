@@ -307,10 +307,14 @@ export interface CompletionEvidence {
 
 const IGNORED_CHILD: readonly Status[] = ['withdrawn', 'superseded'];
 
-/** The children of `id` of one kind that count towards its completion, with their statuses. Throws when any head cannot be read. */
+/**
+ * The children of `id` of one kind that count towards its completion, with their statuses. Throws when a head of that kind
+ * cannot be read: an unreadable head of any other kind can never be a counted child, so it does not block the completion.
+ */
 async function countedChildren(id: string, kind: 'TASK' | 'STORY', reader: ChildStatusReader): Promise<Status[]> {
 	const { children, unreadable } = await reader.childrenOfStrict(id);
-	if (unreadable.length > 0) throw new UnreadableChildError(unreadable);
+	const unreadableOfKind = unreadable.filter(u => ArtifactIds.parse(u)?.kind === kind);
+	if (unreadableOfKind.length > 0) throw new UnreadableChildError(unreadableOfKind);
 	const statuses: Status[] = [];
 	const vanished: string[] = [];
 	for (const child of children) {

@@ -59,4 +59,21 @@ describe('rollUp', () => {
 		// a child whose head vanished between the listing and the read is unreadable too
 		await assert.rejects(rollUp(STORY, reader({ [STORY]: [task(1)] }, {}), evidence([], clean)), UnreadableChildError);
 	});
+	it('an unreadable head of another kind does not block a Story roll-up', async () => {
+		const kids = { [STORY]: [task(1), task(2)] };
+		const done = { [task(1)]: 'completed', [task(2)]: 'completed' } as const;
+		// an amendment, a build record and a review that cannot be read are never children of a Story
+		const other = [`AMD-${H}-1`, `BUILD-${H}-s9`, `CR-${H}-s9`];
+		assert.equal(await rollUp(STORY, reader(kids, done, other), evidence([], clean)), 'completed');
+		assert.equal(await rollUp(EPIC, reader({ [EPIC]: [STORY] }, { [STORY]: 'completed' }, other), evidence([], clean)), 'completed');
+	});
+
+	it('an unreadable head of the counted kind still blocks the roll-up', async () => {
+		const kids = { [STORY]: [task(1)] };
+		const done = { [task(1)]: 'completed' } as const;
+		// a Task head that cannot be read blocks the Story even when other kinds are unreadable too
+		await assert.rejects(rollUp(STORY, reader(kids, done, [`AMD-${H}-1`, task(7)]), evidence([], clean)), (e: unknown) => e instanceof UnreadableChildError && e.unreadable.length === 1 && e.unreadable[0] === task(7));
+		// a Story head that cannot be read blocks the Epic
+		await assert.rejects(rollUp(EPIC, reader({ [EPIC]: [STORY] }, { [STORY]: 'completed' }, [`STORY-${H}-s9`]), evidence([], clean)), UnreadableChildError);
+	});
 });

@@ -32,7 +32,8 @@ interface Lane {
 
 /** Document-summary and subsystem jobs call a model: they run in their own lane, after code work. */
 const isSummaryJob = (job: IndexJob): boolean =>
-  job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity' || job.kind === 'subsystems';
+  job.kind === 'doc-summarise-repo' || job.kind === 'doc-summarise-entity' || job.kind === 'subsystems'
+  || job.kind === 'doc-relations' || job.kind === 'doc-relations-measure';
 
 /** The vector backfill (reembed) runs in a lane of its own beside the index lane
  *  (Epic c2ba6fa6 s2, user decision 2026-11-01): file, full and clean-up jobs are
@@ -274,6 +275,11 @@ export class IndexQueue {
     // One queued subsystem pass per repository: it groups the graph as it is when it runs.
     if (job.kind === 'subsystems') {
       if (queue.some(j => j.kind === 'subsystems' && j.repoPath === job.repoPath)) return;
+    }
+
+    // One queued document-relations pass, and one queued measurement, per repository (s10).
+    if (job.kind === 'doc-relations' || job.kind === 'doc-relations-measure') {
+      if (queue.some(j => j.kind === job.kind && j.repoPath === job.repoPath)) return;
     }
 
     // Deduplicate doc-summarise-entity jobs for the same entity.

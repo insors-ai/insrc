@@ -1344,8 +1344,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let started = false;
     if (s !== undefined) {
       try {
-        void runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
+        // NOT fire-and-forget: an async startup failure (spawn refused, nothing to resume) must
+        // still record delivery-failed, so the promise's rejection re-marks the request.
+        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true }); // resumes s.nativeSessionId when known
         started = true;
+        void p.catch((err: unknown) => {
+          log.warn(`[chat] follow-up for decision ${requestId} failed to start: ${err instanceof Error ? err.message : String(err)}`);
+          markPersistedRequest(s, requestId, true, 'delivery-failed');
+          reevaluateChatStatus(s);
+        });
       } catch (err) {
         log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
       }
@@ -1354,8 +1361,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (s !== undefined) reevaluateChatStatus(s);
   };
 
+  /** Decisions already sent to a follow-up run from this host — a follow-up starts at most once. */
+  const followUpsStarted = new Set<string>();
+
   const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
     const live = turns.live;
+    let undelivered = false; // a live turn whose decide() reported dead stdin (or a dead adapter)
     if (live !== undefined) {
       try {
         // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
@@ -1366,17 +1377,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied');
           return;
         }
+        undelivered = true;
       } catch (err: unknown) {
         // Adapter gone / provider unavailable: fall through to the fallback. Never throw; the
         // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
+        undelivered = true;
         log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
       }
     }
-    // The follow-up run is only for a RESTORED request (persisted unresolved after a reattach/
-    // reload) whose stdin is gone. A decision for a request the live queue just consumed is moot
-    // when no live turn exists — the old silent no-op stays.
-    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId && !r.resolved);
-    if (persisted === undefined) return;
+    // The follow-up run answers a decision that could not reach the CLI: either a live turn whose
+    // decide() reported undelivered (the decision came from the queue, so it is real even when no
+    // persisted record exists yet), or a RESTORED request persisted unresolved after a
+    // reattach/reload with no live turn. A stale id with no live turn and no unresolved persisted
+    // record stays the old silent no-op. followUpsStarted keeps the follow-up one-shot.
+    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId);
+    if (!undelivered && (persisted === undefined || persisted.resolved)) return;
+    if (followUpsStarted.has(requestId)) return;
+    followUpsStarted.add(requestId);
     deliverDecisionAsFollowUp(requestId, decision);
   };
 
@@ -1466,7 +1483,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // index. The write does not depend on whether the session is shown.
         const rowIndex = appendEvent(s, ev);
         stampLiveTranscriptLen(s);
-    stampLiveTranscriptLen(s);
         if (!disposed && session === s) {
           if (ev.kind === 'approval-request') {
             followedTurns.add(ev.turnId);
@@ -2318,8 +2334,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           }
           const rowIndex = appendEvent(s, ev);
           stampLiveTranscriptLen(s);
-        stampLiveTranscriptLen(s);
-    stampLiveTranscriptLen(s);
           if (ev.kind === 'approval-request') {
             enqueueApproval(ev);
             setChatStatus(s, 'waiting-input'); // mid-turn: the agent is blocked on this request

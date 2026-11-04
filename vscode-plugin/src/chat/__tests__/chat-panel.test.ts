@@ -6266,6 +6266,57 @@ test('E202611031bd72813:S001 t6: a RESTORED request whose stdin is dead (decide 
   fc.fireDispose();
 });
 
+test('E202611031bd72813:S001 t6: a LIVE turn whose decide() reports UNDELIVERED (dead stdin) falls back to a follow-up run — decide was actually consulted and the follow-up starts exactly once (never a silent no-op)', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let runCount = 0;
+  let decideCalls = 0;
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't1', requestId: 'perm-live', title: 'Run Bash', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
+    { kind: 'done', turnId: 't1', ok: true },
+  ];
+  let releaseDone!: () => void;
+  const gateBeforeDone = new Promise<void>((r) => { releaseDone = r; });
+  const base = scriptedAdapter(evs, {
+    gateBeforeDone, // the turn stays LIVE (decide consulted) until released
+    delivered: false, // the live turn's stdin is gone: decide() reports undelivered
+    onRun: () => { runCount += 1; },
+    onDecide: () => { decideCalls += 1; },
+  });
+  const proc = fakeLiveProc(4321);
+  const adapter: StreamAdapter = {
+    ...base,
+    run(req: TurnRequest, opts?: RunOptions) {
+      opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 't1', generation: 1, offset: 0 }, outPath: '/out/s.ndjson' });
+      return base.run(req);
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  const id = store.list()[0]!.id;
+  // decide it while the turn is still live: relayDecision consults decide(), gets undelivered, and
+  // falls back to the follow-up run
+  fc.send(env('permission-decision', { requestId: 'perm-live', decision: 'approve' }));
+  await waitFor(() => decideCalls === 1, 5000, 'decide() was consulted on the live turn');
+  releaseDone(); // the turn's output ends…
+  proc.exitNow(); // …and its (fake) process exits, releasing the turn lock for the follow-up
+  await waitFor(() => runCount >= 2, 5000, 'the undelivered decision fell back to exactly one follow-up runTurn');
+  assert.equal(decideCalls, 1, 'decide() was consulted exactly once');
+  // a second decision for the same id must not start another follow-up
+  fc.send(env('permission-decision', { requestId: 'perm-live', decision: 'deny' }));
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(runCount, 2, 'the undelivered decision produced exactly one follow-up — no silent no-op, no double run');
+  fc.fireDispose();
+});
+
 test('E202611031bd72813:S001 t8: the observer dispatches a DETACHED chat\'s insrc_present to the presenter, deduped by declarationId across passes', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs5-'));
   try {

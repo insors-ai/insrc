@@ -6261,7 +6261,8 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     };
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    // the CLI pid is ALIVE in both the adapter and the host — completion must come via the ingested terminal
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
       providers: registry({ claude: adapter }, ['claude']),
@@ -6271,7 +6272,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
       observerTimerMs: 20,
       observerTickBudgetMs: 1, // pass 1: reads frag1 + the terminal, then budget-aborts on frag2
       hostPid: 1,
-      isAlive: (pid) => pid !== 999, // owner host dead, the CLI pid ALIVE: completion must come via the ingested terminal
+      isAlive: (pid) => pid !== 999, // owner host dead, the CLI pid ALIVE
     });
     host.open();
     const s = store.create('claude' as never);

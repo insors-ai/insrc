@@ -685,7 +685,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
         try {
           const events = resume(
-            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) } },
+            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
             {
               drain: true, // read the WHOLE segment, past the terminal event — caught-up means drained
               signal: ctl.signal,
@@ -777,7 +777,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       // caught up = the iterator drained to the end of the available output without a budget abort,
       // an observation failure, or a thrown pass
-      const caughtUp = pass.ingestedAny && !pass.abortedByBudget && !pass.sawObservationFailure && !pass.threw;
+      // caught up = drained to the end of the available output without an abort/failure — reading
+      // nothing new also counts when the checkpoint already holds an ingested terminal.
+      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.sawObservationFailure && !pass.threw;
       // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
       // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.

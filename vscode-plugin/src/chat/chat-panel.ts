@@ -199,6 +199,8 @@ export interface ChatPanelHostDeps {
   readonly observerTimerMs?: number | undefined;
   /** E202611031bd72813:S001 t5: per-tick ingestion budget for the observer (ms). Default 2000. */
   readonly observerTickBudgetMs?: number | undefined;
+  /** t6: how long a follow-up run may wait to spawn before the decision is recorded delivery-failed. */
+  readonly followUpDeliveryTimeoutMs?: number | undefined;
   /**
    * Epic E20261014613abdb3 Story S001: builds this window's worker over the repository's chat queue,
    * given the host's runner. Present: typed messages go through the queue and run in order. Absent
@@ -1432,6 +1434,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         pendingFollowUps.set(requestId, { outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId });
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s }); // resumes s.nativeSessionId when known
         started = true;
+        // If the follow-up never spawns (the original CLI still holds the turn lock and stays
+        // blocked), the settled-promise path above may never run — bound the wait with a timer so
+        // the outcome is always recorded (delivery-failed), never left approved indefinitely.
+        const stallTimer = setTimeout(() => {
+          if (pendingFollowUps.delete(requestId)) {
+            markPersistedRequest(s, requestId, true, 'delivery-failed');
+            reevaluateChatStatus(s);
+          }
+        }, deps.followUpDeliveryTimeoutMs ?? 30_000);
+        stallTimer.unref?.();
+        void p.finally(() => clearTimeout(stallTimer));
         void p.then(
           () => {
             if (pendingFollowUps.delete(requestId)) {

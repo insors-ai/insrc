@@ -6746,3 +6746,37 @@ test('E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, th
   assert.equal(runCount, 1, 'the follow-up never ran');
   fc.fireDispose();
 });
+
+test('E202611031bd72813:S001 t6: a follow-up stalled behind a still-blocked original turn is recorded delivery-failed by the stall timer — never left approved indefinitely', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  let runCount = 0;
+  const evs: TurnEvent[] = [
+    { kind: 'status', turnId: 't1', phase: 'tool' },
+    { kind: 'approval-request', turnId: 't1', requestId: 'perm-stall', title: 'Run', detail: 'd', toolName: 'Bash', resolution: 'in-turn' },
+  ];
+  const base = scriptedAdapter(evs, { hang: true, delivered: false, onRun: () => { runCount += 1; } });
+  const proc = fakeLiveProc(4323); // never exits: the turn lock is held forever
+  const adapter: StreamAdapter = {
+    ...base,
+    run(req: TurnRequest, opts?: RunOptions) {
+      opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 't1', generation: 1, offset: 0 }, outPath: '/out/s.ndjson' });
+      return base.run(req);
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    followUpDeliveryTimeoutMs: 200,
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'));
+  const id = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'perm-stall', decision: 'approve' }));
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'perm-stall')?.outcome === 'delivery-failed', 5000, 'the stalled follow-up is recorded delivery-failed by the timeout, not left approved');
+  assert.equal(runCount, 1, 'the follow-up never spawned (original turn still holds the lock)');
+  fc.fireDispose();
+});

@@ -236,6 +236,12 @@
         "choice": "Assign declarations to s10",
         "rationale": "'s1' in this audit note is the LLD's context step, not Story s1. The two new sub-dbs belong to s10, so the s10 plan declares them in src/db/graph/store.ts.",
         "resolvedAt": "2026-11-04T05:10:57.644Z"
+      },
+      "qe72800be": {
+        "question": "ep3 (partial): invariants cite DEF constraint ids; the bundles that show them are the s1 summary-lane and store bundles.",
+        "status": "ignored",
+        "rationale": "Audit bookkeeping only: the invariants cite DEF constraint ids by schema; the evidence is in the LLD's context step. Nothing to build.",
+        "resolvedAt": "2026-11-04T05:11:18.497Z"
       }
     }
   },

@@ -460,6 +460,8 @@ The link reader is as in a1. The summariser driver (src/analyze/summariser/drive
   - **resolved**: Subagent drafts; user checks — User decision 2026-11-04: a subagent drafted candidates; the user reviewed and approved them; committed as .insrc/doc-relations-checked.json @bbb17eab8 (27 documents, 1140 links). _(2026-11-04T05:10:19.325Z)_
 - `q249b87de` — dm1 (partial): the new sub-dbs are declared in src/db/graph/store.ts, which the s1 bundles did not cite; it is the existing home of every sub-db.
   - **resolved**: Assign declarations to s10 — 's1' in this audit note is the LLD's context step, not Story s1. The two new sub-dbs belong to s10, so the s10 plan declares them in src/db/graph/store.ts. _(2026-11-04T05:10:57.644Z)_
+- `qe72800be` — ep3 (partial): invariants cite DEF constraint ids; the bundles that show them are the s1 summary-lane and store bundles.
+  - **ignored**: left to implementer judgment — Audit bookkeeping only: the invariants cite DEF constraint ids by schema; the evidence is in the LLD's context step. Nothing to build. _(2026-11-04T05:11:18.497Z)_
 
 ## Citations
 

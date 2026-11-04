@@ -7208,6 +7208,32 @@ test('E202611031bd72813:S001 t6: fresh-host reload restores a snapshot-only requ
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t6/LLD-s7: multi-select restoration after LiveTurn cleared — reattaching re-posts the actionable selection card with prompt AND multi preserved', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const adapter = scriptedAdapter([], { decide: () => ({ delivered: false }) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  // a session persisted by ANOTHER host: a selection request with prompt+multi, and NO liveTurn
+  const s = store.create('claude' as never);
+  store.save({
+    ...s,
+    pendingRequests: [{ requestId: 'sel-1', kind: 'selection', turnId: 't-old', prompt: 'Pick modules', options: ['alpha', 'beta'], multi: true, resolved: false }],
+  });
+  fc.send(env('open-chat', { chatId: s.id }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'selection-request' && (e as { requestId?: string }).requestId === 'sel-1'), 5000, 'the restored selection card is posted as actionable');
+  const ev = turnEvents(fc).find((e) => e.kind === 'selection-request' && (e as { requestId?: string }).requestId === 'sel-1') as Extract<TurnEvent, { kind: 'selection-request' }>;
+  assert.equal(ev.prompt, 'Pick modules', 'the prompt survives restoration (not just the options)');
+  assert.equal(ev.multi, true, 'multi-select stays multi — not silently converted to single-select');
+  assert.deepEqual(ev.options.map((o) => o.label), ['alpha', 'beta']);
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();

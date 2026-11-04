@@ -1256,6 +1256,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
     if (restored === 0) return; // nothing to restore: no card posts, no status rewrite, no save
     showApprovalHead();
+    // LLD s7: restored SELECTIONS re-post their actionable card too (prompt + multi preserved), so
+    // a chat whose LiveTurn cleared still shows its resolvable selection after reattach
+    for (const [requestId, sel] of pendingSelections) {
+      const rec = (s.pendingRequests ?? []).find((r) => r.requestId === requestId);
+      post({
+        type: 'turn-event',
+        event: {
+          kind: 'selection-request',
+          turnId: rec?.turnId ?? 'restored',
+          requestId,
+          prompt: sel.prompt ?? '',
+          options: sel.options,
+          ...(sel.multi === true ? { multi: true } : {}),
+        },
+      });
+    }
     reportCards();
     if (session === s) reevaluateChatStatus(s);
   };

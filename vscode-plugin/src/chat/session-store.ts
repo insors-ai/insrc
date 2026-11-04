@@ -149,6 +149,13 @@ export interface ChatSession {
   queueSnapshot?: ApprovalQueueSnapshot | undefined;
   /** E202611031bd72813:S001: durable checkpoint of the detached-session observer cursor/decoder. */
   observerCheckpoint?: ObserverCheckpoint | undefined;
+  /**
+   * E202611031bd72813:S001 (manual review MR4): durable per-conversation set of insrc_present
+   * declaration ids already dispatched to the presenter — shared by the live-turn, follow-reader
+   * and detached-observer paths, so a replayed declaration (reattach/reload) never opens a second
+   * panel for a declaration that was already presented. Distinct call ids still open distinct panels.
+   */
+  presentedDeclarations?: string[] | undefined;
 }
 
 /** E202611031bd72813:S001 — active-chat lifecycle status: working | waiting-input | done. */

@@ -684,7 +684,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
@@ -741,7 +741,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
                 }
               }
             } else if (ev.kind === 'error') {
-              if (ev.observationFailure === true) st.sawObservationFailure = true;
+              if (ev.observationFailure === true) {
+                st.sawObservationFailure = true;
+                // only the synthetic EOF error ('the turn ended without a result') is excusable by
+                // verified death; a real read failure / SegmentGone must block caught-up
+                if (ev.message !== 'the turn ended without a result') st.syntheticEofOnly = false;
+              }
               else {
                 // capture the decoder state AS OF just before the terminal too — a rewind must
                 // rewind the seq/buffer with the offset, or the replay re-issues a different id
@@ -784,7 +789,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const pidDead0 = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
       // caught up = drained without abort/throw; an observation failure does not block it when the
       // process is VERIFIED dead (the synthetic EOF error is expected then).
-      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.threw && (!pass.sawObservationFailure || pidDead0);
+      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.threw && (!pass.sawObservationFailure || (pidDead0 && pass.syntheticEofOnly));
       // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
       // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
       // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.

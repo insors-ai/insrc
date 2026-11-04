@@ -615,11 +615,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
   };
   const persistRequest = (s: ChatSession, r: PersistedRequest): void => {
-    const existing = s.pendingRequests ?? [];
-    if (existing.some((x) => x.requestId === r.requestId)) return;
+    // Write onto the FRESH record and UNION by requestId — another window may have persisted its own
+    // requests meanwhile; a stale-snapshot save must never discard either side's requests.
     try {
-      s.pendingRequests = [...existing, r];
-      deps.store.save(s); // mergeActiveChatFields keeps the newer record's fields
+      const fresh = deps.store.get(s.id) ?? s;
+      const existing = fresh.pendingRequests ?? [];
+      if (existing.some((x) => x.requestId === r.requestId)) return;
+      fresh.pendingRequests = [...existing, r];
+      deps.store.save(fresh);
     } catch (err) {
       log.warn(`[chat] session ${s.id}: pendingRequest not saved: ${err instanceof Error ? err.message : String(err)}`);
     }

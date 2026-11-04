@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "671a136ab9d07f9c4f305383d128d1741f60621d12110944b0377c343b5f241b",
+        "at": "2026-11-04T05:36:15.700Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-8098ea53-a8f9-44d8-aeb4-2a97a72bbd6b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-04T05:33:21.549Z",
+    "epicCreatedAt": "2026-11-04T05:32:36.945Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "6fab702a7015853e",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix: one adapter module, one additive optional seam, one test.",
+    "epicSlug": "end-claude-cli-s-stdin-after",
+    "updatedAt": "2026-11-04T05:34:16.390Z"
+  },
+  "body": {
+    "focus": "End the Claude CLI's stdin after the correlated result so the chat lock is released: add an optional endInput() seam to SpawnedProcess (vscode-plugin/src/chat/cli-adapter.ts), implement it in nodeSpawner by ending child.stdin, call it in run() when a correlated Claude turn reaches its terminal event, and add a fake-spawner unit test.",
+    "producesLld": false,
+    "commit": "31ebd07c2",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Added an optional endInput() to SpawnedProcess, implemented in nodeSpawner by ending the child's stdin, and called it when a correlated Claude turn reaches its own terminal result, so the CLI exits and the chat lock is released. Two fake-spawner tests added; one existing run-config argv test in cli-adapter.test.ts already failed before this change (it expects the old prompt-on-argv form) and is left alone.",
+    "testRecord": {
+      "md": "docs/standalone/end-claude-cli-s-stdin-after-E202611046fab702a/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:34:16.390Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:34:16.390Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-04T05:34:16.390Z"
+      }
+    ]
+  },
+  "citations": []
+}

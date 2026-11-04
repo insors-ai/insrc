@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "b4584463613d6e9e32930f51ddf58d46309e7b11a0f217c852f4e57c330a4f9f",
+        "at": "2026-11-04T05:34:16.474Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "6fab702a7015853e",
+    "storyId": "s1",
+    "createdAt": "2026-11-04T05:34:16.390Z",
+    "updatedAt": "2026-11-04T05:34:16.390Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-04T05:32:36.945Z",
+    "epicSlug": "end-claude-cli-s-stdin-after",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "31ebd07c2",
+        "ranAt": "2026-11-04T05:34:16.390Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 553,
+            "titles": [
+              {
+                "title": "queued results cannot truncate the actual user reply",
+                "result": "pass"
+              },
+              {
+                "title": "only singular or merged request UUID results complete, including empty and failed own results",
+                "result": "pass"
+              },
+              {
+                "title": "stream input preserves exact prompt and options, and missing correlation cannot synthesize success",
+                "result": "pass"
+              },
+              {
+                "title": "initial input write failure stops the process and returns a visible error without retry",
+                "result": "pass"
+              },
+              {
+                "title": "correlated resume reconstructs identity after acknowledgement and checkpoints its own terminal",
+                "result": "pass"
+              },
+              {
+                "title": "correlated EOF retains partial output and reports native nonzero exit or missing result",
+                "result": "pass"
+              },
+              {
+                "title": "live pipe and retained output preserve tools and final reply after a queued result",
+                "result": "pass"
+              },
+              {
+                "title": "legacy failed result survives two reloads without duplicate visible output",
+                "result": "pass"
+              },
+              {
+                "title": "checkpointed own terminal is recovered on reattach without duplicated content",
+                "result": "pass"
+              },
+              {
+                "title": "Codex item completion retains content and native turn completion does not wait for exit",
+                "result": "pass"
+              },
+              {
+                "title": "legacy replay waits through multiple results and reports missing retained prefixes explicitly",
+                "result": "pass"
+              },
+              {
+                "title": "a correlated Claude turn ends the CLI stdin at its own result, not before",
+                "result": "pass"
+              },
+              {
+                "title": "a prompt-argument CLI turn never has an input to end",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

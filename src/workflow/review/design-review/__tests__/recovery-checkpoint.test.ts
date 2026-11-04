@@ -74,3 +74,23 @@ test('checkpoint recovery counters actions outcomes and completed-unit summaries
  const removed=structuredClone(cp);removed.attempts.pop();await assert.rejects(saveDesignCheckpoint(f.repo,removed));
  assert.equal((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts.length,2);
 });
+
+test('completed-unit summary guards reject duplicates unknown actions and missing accepted work without changing saved bytes',async t=>{
+ const f=designFixture(t),cp=structuredClone(f.checkpoint),a=cp.attempts[0]!;
+ a.plan={chunks:[{id:'content',title:'Content',selectors:['/body/summary'],concerns:['Completeness'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'All content',finalConsistencyChunkId:'final',coverage:[{unitId:'/body/summary',chunkIds:['content']}]};
+ a.actions=[{actionId:'resume-1',signature:'a'.repeat(64),operation:'resume',sourceAttempt:1,resultAttempt:1,acceptedAt:time}];
+ a.unitSummaries=[{unitId:'planning',phase:'planning',automaticDispatches:1,retriesUsed:0,userDirectedDispatches:0,diagnostics:[],actionIds:['resume-1']}];
+ await saveDesignCheckpoint(f.repo,cp);const bytes=await fs.readFile(f.path,'utf8');
+ const cases:[string,(value:typeof a)=>void][]=[
+  ['Duplicate completed unit summary',x=>{x.unitSummaries!.push(structuredClone(x.unitSummaries![0]!));}],
+  ['Unit summary names an unknown or duplicate action',x=>{x.unitSummaries![0]!.actionIds=['unknown'];}],
+  ['Unit summary names an unknown or duplicate action',x=>{x.unitSummaries![0]!.actionIds=['resume-1','resume-1'];}],
+  ['Completed planning summary has no accepted plan',x=>{delete x.plan;}],
+  ['Completed unit summary has no accepted chunk',x=>{x.unitSummaries![0]!.phase='chunk_review';x.unitSummaries![0]!.unitId='content';}],
+ ];
+ for(const [message,edit] of cases){
+  const invalid=structuredClone(cp);edit(invalid.attempts[0]!);
+  await assert.rejects(saveDesignCheckpoint(f.repo,invalid),error=>error instanceof DesignReviewError&&error.code==='invalid_checkpoint'&&error.message.includes(message));
+  assert.equal(await fs.readFile(f.path,'utf8'),bytes);
+ }
+});

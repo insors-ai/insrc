@@ -84,3 +84,26 @@ test('failed retry reservation stops execution and an orphan exhausted reservati
  await assert.rejects(restored.recover({phase:'recover',...base(orphan),actionId:'resume-orphan',operation:'resume'}),/budget exhausted/);
  assert.equal((await restored.progress(orphan.repo,'review-1',1)).status,'paused');
 });
+
+test('recovery seals an orphaned directed execution as interrupted before reserving a fresh approved execution',async t=>{
+ const f=designFixture(t),a=f.checkpoint.attempts[0]!,time='2026-11-03T00:00:00.000Z';
+ a.status='running';
+ a.unit={unitId:'planning',phase:'planning',executionId:'lost-directed',dispatches:4,retriesUsed:3,userDirectedDispatches:1,diagnostics:Array.from({length:4},()=>({code:'process_failed',summary:'Previous automatic failure'}))};
+ a.actions=[{actionId:'orphan-extra',signature:'a'.repeat(64),operation:'resume',sourceAttempt:1,resultAttempt:1,acceptedAt:time,userDecision:{action:'retry_failed_unit',reason:'Approved before crash',recordedAt:time}}];
+ await saveDesignCheckpoint(f.repo,f.checkpoint);const original=structuredClone(a.actions[0]!);
+ let release!:()=>void,calls=0;const barrier=new Promise<void>(r=>release=r);t.after(()=>release());
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string)=>{calls++;const m=prompt.match(/Chunk assignment: (.+)\n/);if(!m){await barrier;return plan(f);}return result(f,JSON.parse(m[1]!).id as string);}} as unknown as LLMProvider;
+ const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fixture'})});
+ const request={phase:'recover',...base(f),operation:'resume',actionId:'fresh-extra',userDecision:{action:'retry_failed_unit',reason:'Approve one fresh execution',recordedAt:time}};
+ await c.recover(request);
+ const reserved=(await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!;
+ assert.deepEqual(reserved.actions![0],{...original,outcome:{code:'interrupted',summary:'Previous directed execution ended without accepted feedback'}});
+ assert.equal(reserved.actions![1]!.actionId,'fresh-extra');assert.equal(reserved.actions![1]!.outcome,undefined);
+ assert.equal(reserved.unit!.dispatches,4);assert.equal(reserved.unit!.retriesUsed,3);assert.equal(reserved.unit!.userDirectedDispatches,2);
+ assert.notEqual(reserved.unit!.executionId,'lost-directed');
+ release();assert.equal((await terminal(c,f)).status,'passed');assert.equal(calls,3);
+ const finished=(await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!;
+ assert.equal(finished.actions![0]!.outcome!.code,'interrupted');assert.equal(finished.actions![1]!.outcome!.code,'completed');
+ assert.equal(finished.unitSummaries![0]!.userDirectedDispatches,2);
+ await c.recover(request);assert.equal(calls,3);assert.deepEqual((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0],finished);
+});

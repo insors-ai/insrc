@@ -80,3 +80,22 @@ test('failed invalidation persistence stays visibly failed and never retries nat
  let view=await c.progress(f.repo,'review-1',1);for(let i=0;i<1000&&view.status!=='failed';i++){await pause(2);view=await c.progress(f.repo,'review-1',1);}assert.equal(view.status,'failed');assert.equal(view.failure?.code,'persistence_failed');assert.equal(view.report,undefined);
  release(plan(f));await pause(5);assert.equal(calls,1);
 });
+
+test('an opened watcher error closes and rearms it while fingerprint checks still invalidate a changed subject',async t=>{
+ const f=designFixture(t);let opened=0,closed=0,cancelled=0,changes=0;
+ const handles:{directory:string;error:()=>void;event:(kind:string,name:string|null)=>void;closes:number}[]=[];
+ const monitor=new DesignSubjectMonitor(f.prepared.subject,f.prepared.baseline,()=>changes++,{
+  interval:()=>()=>cancelled++,watch:(directory,event)=>{
+   opened++;const handle={directory,error:()=>{},event,closes:0};handles.push(handle);
+   return{close:()=>{closed++;handle.closes++;},onError:handler=>{handle.error=handler;}};
+  },
+ });t.after(()=>monitor.stop());
+ assert.equal(opened,2);const failed=handles.find(h=>h.directory===dirname(f.md))!;
+ failed.error();await pause(0);
+ assert.equal(failed.closes,1);assert.equal(closed,1);assert.equal(opened,3);assert.equal(changes,0);
+ const replacement=handles.at(-1)!;assert.equal(replacement.directory,failed.directory);
+ failed.event('rename',basename(f.md));await pause(0);assert.equal(opened,3);assert.equal(closed,1);
+ appendFileSync(f.md,'Changed after watcher rearm');replacement.event('change',basename(f.md));await pause(0);
+ assert.equal(changes,1);assert.equal(closed,opened);assert.equal(cancelled,1);
+ replacement.event('change',basename(f.md));await pause(0);assert.equal(changes,1);
+});

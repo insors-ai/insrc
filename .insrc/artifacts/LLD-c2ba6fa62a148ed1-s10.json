@@ -229,6 +229,13 @@
         "choice": "Subagent drafts; user checks",
         "rationale": "User decision 2026-11-04: a subagent drafted candidates; the user reviewed and approved them; committed as .insrc/doc-relations-checked.json @bbb17eab8 (27 documents, 1140 links).",
         "resolvedAt": "2026-11-04T05:10:19.325Z"
+      },
+      "q249b87de": {
+        "question": "dm1 (partial): the new sub-dbs are declared in src/db/graph/store.ts, which the s1 bundles did not cite; it is the existing home of every sub-db.",
+        "status": "resolved",
+        "choice": "Assign declarations to s10",
+        "rationale": "'s1' in this audit note is the LLD's context step, not Story s1. The two new sub-dbs belong to s10, so the s10 plan declares them in src/db/graph/store.ts.",
+        "resolvedAt": "2026-11-04T05:10:57.644Z"
       }
     }
   },

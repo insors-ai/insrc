@@ -1476,6 +1476,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
   let pendingFollowUps = new Map<string, { readonly outcome: string; readonly excludeTurnId: string | undefined }>();
+  /** turnId -> requestId: each follow-up is bound to the turn it actually started, so a spawn/event
+   * of one follow-up's turn never marks another pending follow-up delivered. */
+  const followUpTurns = new Map<string, string>();
+  /** Bind the oldest pending follow-up to a newly started turn and mark it delivered. */
+  const confirmFollowUp = (turnId: string, s: ChatSession): void => {
+    let rid = followUpTurns.get(turnId);
+    if (rid === undefined && pendingFollowUps.size > 0) {
+      rid = pendingFollowUps.keys().next().value as string;
+      followUpTurns.set(turnId, rid);
+    }
+    if (rid === undefined) return;
+    const pf = pendingFollowUps.get(rid);
+    if (pf === undefined) return;
+    pendingFollowUps.delete(rid);
+    followUpTurns.delete(turnId);
+    markPersistedRequest(s, rid, true, pf.outcome);
+  };
 
   /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
   const deliveryWired = new WeakSet<object>();
@@ -2432,13 +2449,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // a pending follow-up run actually spawned: its decisions were delivered. Only a spawn of a
         // DIFFERENT turn than the one the follow-up was queued behind consumes the marker — events of
         // the original turn must not mark the follow-up delivered before it starts.
-        // a spawn of a DIFFERENT turn than each pending follow-up was queued behind marks it delivered
-        for (const [rid, pf] of [...pendingFollowUps]) {
-          if (turns.live?.turnId !== pf.excludeTurnId) {
-            pendingFollowUps.delete(rid);
-            markPersistedRequest(s, rid, true, pf.outcome);
-          }
-        }
+        // a spawn of a NEW turn binds + confirms the oldest pending follow-up (per-turn correlation)
+        if (pendingFollowUps.size > 0 && turns.live?.turnId !== undefined) confirmFollowUp(turns.live.turnId, s);
         if (q !== undefined) {
           q.spawned = true;
           q.lastCli = cli;
@@ -2475,14 +2487,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // delivered (adapters that never call onSpawn are covered here; onSpawn covers spawn-only).
         // An ERROR as the first event means the spawn/setup failed BEFORE onSpawn — leave
         // pendingFollowUp set so the settled run is marked delivery-failed, not approved.
-        if (ev.kind !== 'error') {
-          for (const [rid, pf] of [...pendingFollowUps]) {
-            if (ev.turnId !== pf.excludeTurnId) {
-              pendingFollowUps.delete(rid);
-              markPersistedRequest(s, rid, true, pf.outcome);
-            }
-          }
-        }
+        // a non-error event of a NEW turn binds + confirms the oldest pending follow-up to THAT
+        // turn only — never marks other pending follow-ups delivered
+        if (ev.kind !== 'error' && pendingFollowUps.size > 0) confirmFollowUp(ev.turnId, s);
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
         presentDeclared(shown, ev, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.

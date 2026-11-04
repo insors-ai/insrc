@@ -24,7 +24,7 @@
  */
 
 import { readFileSync } from 'node:fs';
-import { join, posix, relative } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { getLogger } from '../shared/logger.js';
 import { loadAnalyzeConfig } from '../config/analyze.js';
@@ -39,7 +39,9 @@ import {
 	writeDocRelationQualityInTxn,
 	type DocRelationQualityRow,
 } from '../db/doc-relations.js';
-import { examineDocument } from './doc-relations-pass.js';
+import { canonicalPath, canonicalTarget, examineDocument } from './doc-relations-pass.js';
+
+export { canonicalTarget };
 import { classifyDocRelationsFailure, failureMessage, selectDocRelationsProvider, type DocRelationsSelection } from './doc-relations-provider.js';
 import { DOC_RELATIONS_SET_FILE, docRelationsSetHash } from './doc-relations-read.js';
 
@@ -57,23 +59,6 @@ export class DocRelationsSetInvalid extends Error {
 export interface CheckedLink { readonly from: string; readonly to: string; readonly real: boolean }
 
 const DOC = /\.mdx?$/i;
-
-/** A repository-relative path in canonical form, or undefined when it is not one. */
-function canonicalPath(raw: string): string | undefined {
-	// Separators first, then POSIX normalisation, so 'src\\sub\\..\\x.ts' and './src/x.ts' are the same 'src/x.ts'.
-	const p = posix.normalize(raw.trim().replace(/\\/g, '/')).replace(/^\.\//, '').replace(/\/$/, '');
-	if (p === '' || p === '.' || p.startsWith('../') || p === '..' || p.startsWith('/')) return undefined;
-	return p;
-}
-
-/** The canonical identity of a link's target: path, or path#symbol; an anchor on a document is dropped. */
-export function canonicalTarget(raw: string): string | undefined {
-	const [pathPart, symbol] = raw.split('#', 2) as [string, string | undefined];
-	const path = canonicalPath(pathPart);
-	if (path === undefined) return undefined;
-	if (symbol === undefined || symbol === '' || DOC.test(path)) return path;
-	return `${path}#${symbol}`;
-}
 
 /** Parse and check the set: shape, canonical identity, no duplicate or conflicting pair. */
 export function parseCheckedSet(text: string): { readonly documents: readonly string[]; readonly links: readonly CheckedLink[] } {

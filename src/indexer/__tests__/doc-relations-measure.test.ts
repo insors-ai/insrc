@@ -19,14 +19,14 @@ import { closeGraphStore, getGraphStore, setGraphStorePath, withWriteTxn } from 
 import { useTemporaryLance } from '../../db/lance/__tests__/helpers/temp-lance.js';
 import { addRepo, lookupRepoId } from '../../db/repos.js';
 import { findEntitiesByFile } from '../../db/entities.js';
-import { documentRelations, readDocRelationQualityInTxn, switchOf, writeDocRelationQualityInTxn } from '../../db/doc-relations.js';
+import { documentRelations, readDocRelationQualityInTxn, storedFilesInTxn, switchOf, writeDocRelationQualityInTxn } from '../../db/doc-relations.js';
 import type { DbClient } from '../../db/client.js';
 import type { IndexJob, LLMMessage, LLMProvider } from '../../shared/types.js';
 import { IndexQueue } from '../../daemon/queue.js';
 import { CliExitError } from '../../agent/providers/cli-provider.js';
 import type { Watcher } from '../watcher.js';
 import { IndexerService } from '../index.js';
-import { runDocRelationsPass } from '../doc-relations-pass.js';
+import { examineDocument, runDocRelationsPass } from '../doc-relations-pass.js';
 import {
 	canonicalTarget,
 	checkDocRelationsSet,
@@ -130,6 +130,21 @@ test('s10 t8: set validation and proposal normalisation', async () => {
 	writeSet([...Array.from({ length: 99 }, (_, i) => ({ from: 'docs/guide.md', to: `src/m${i}.ts`, real: true })), { from: 'docs/guide.md', to: 'docs/other.md', real: true }]);
 	await assert.rejects(checkDocRelationsSet(repo), /holds 99 distinct implied real links; at least 100/);
 	await assert.rejects(measureDocRelations({ repoPath: repo }, { enqueue: () => assert.fail('nothing is queued') }), DocRelationsSetInvalid);
+
+	// Proposals are normalised to the same identity before they are compared with the set.
+	const guide = (await findEntitiesByFile(db, join(repo, 'docs/guide.md'))).find(e => e.kind === 'section')!;
+	const files = storedFilesInTxn(await getGraphStore(), (await lookupRepoId(repo))!);
+	const answer = { capabilities: {}, async completeStructured() { return { proposals: [
+		{ source: guide.id, target: './src/m1.ts', rationale: 'r' },
+		{ source: guide.id, target: 'src\\m2.ts', rationale: 'r' },
+		{ source: guide.id, target: 'src/sub/../m3.ts#m3', rationale: 'r' },
+		{ source: guide.id, target: 'docs/other.md#Other', rationale: 'r' },     // a document's anchor is dropped: it is the written link
+		{ source: guide.id, target: '../outside.ts', rationale: 'r' },
+	] }; } } as unknown as LLMProvider;
+	const r = await examineDocument({ provider: answer, repoPath: repo, relFile: 'docs/guide.md', text: '# Guide\n', sources: [guide], files });
+	assert.deepEqual(r.admitted.map(x => x.target), ['src/m1.ts', 'src/m2.ts', 'src/m3.ts#m3']);
+	assert.equal(r.repeated, 1, 'docs/other.md#Other is the written link to docs/other.md');
+	assert.equal(r.unresolved, 1, 'a path outside the repository');
 });
 
 test('s10 t8: quality computation over admitted and implied links', () => {

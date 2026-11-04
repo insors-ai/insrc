@@ -158,7 +158,7 @@ export interface SessionOutputDeps {
 export interface SessionOutput {
   beginTurn(sessionId: string, turnId: string): Promise<TurnSegment>;
   endTurn(sessionId: string, turnId: string, exit: TurnExit): Promise<void>;
-  tail(cursor: SegmentCursor, opts: { readonly finished: () => boolean; readonly signal?: AbortSignal | undefined; readonly softDone?: (() => boolean) | undefined }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
+  tail(cursor: SegmentCursor, opts: { readonly finished: () => boolean; readonly signal?: AbortSignal | undefined }): AsyncIterable<{ readonly line: string; readonly cursor: SegmentCursor }>;
   /** The last part of the current turn's stderr ('' when there is none). */
   errTail(sessionId: string): string;
   /** Deletes a session's files (its session was removed). */
@@ -422,7 +422,7 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
       await appendMarker(p.current, { [MARKER_KEY]: 'turn-end', turnId, code: exit.code, signal: exit.signal });
     },
 
-    async *tail(cursor, opts: { readonly finished: () => boolean; readonly signal?: AbortSignal | undefined; readonly softDone?: (() => boolean) | undefined }) {
+    async *tail(cursor, opts) {
       let file = await fileFor(cursor);
       let offset = cursor.offset;
       if (offset > ((await fs.size(file)) ?? 0)) {
@@ -468,9 +468,6 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
           continue; // there may be more right away
         }
         if (done) {
-          // A SOFT end (drain past a terminal while the writer lives) must NOT flush an unterminated
-          // trailing line — it may still be written; the reader pauses and picks it up next pass.
-          if (opts.softDone?.() === true) return;
           // The writer has finished: an unterminated last line is complete now.
           if (pending.length > 0) {
             const line = pending.toString('utf8');

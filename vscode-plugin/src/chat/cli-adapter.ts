@@ -1357,11 +1357,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     });
     let sawTerminalInDrain = req.sawTerminal === true;
     try {
-      // E202611031bd72813:S001 t5: with drain, once a terminal event was ingested the read stops at
-      // the end of the AVAILABLE output (a live process must not make the observer poll forever).
-      const finished = (): boolean => !isTheProcess() || (opts?.drain === true && sawTerminalInDrain);
-      // softDone: a drain soft-EOF applies only while the writer lives; a dead writer's unterminated last line is final (flushed)
-      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal, softDone: () => opts?.drain === true && sawTerminalInDrain && isTheProcess() })) {
+      // E202611031bd72813:S001 t5: the read ends at the segment's turn-end marker or when the writer
+      // is dead — never at a soft EOF while it lives (an unterminated trailing line may still be
+      // completed by the writer and must not be abandoned).
+      const finished = (): boolean => !isTheProcess();
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
           events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);

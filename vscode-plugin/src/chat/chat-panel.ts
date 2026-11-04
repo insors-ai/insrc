@@ -1495,8 +1495,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     if (s !== undefined) reevaluateChatStatus(s);
   };
 
-  /** Decisions already sent to a follow-up run from this host — a follow-up starts at most once. */
+  /**
+   * Decisions already sent to a follow-up run — at most one per CONVERSATION+request, because
+   * request ids may repeat across chats/turns (MR1-R2): keyed `${sessionId}::${requestId}`.
+   */
   const followUpsStarted = new Set<string>();
+  const followUpKey = (sessionId: string | undefined, requestId: string): string => `${sessionId ?? '?'}::${requestId}`;
   /** Request ids restored from a persisted queue snapshot (they may have no pendingRequests record). */
   const restoredRequestIds = new Set<string>();
   /** Request ids decided through the queue in this host — a valid queued decision must never
@@ -1568,8 +1572,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ensurePersistedUnresolved(s, failedRequestId);
       markPersistedRequest(s, failedRequestId, true, 'delivery-failed');
       reevaluateChatStatus(s);
-      if (!followUpsStarted.has(failedRequestId)) {
-        followUpsStarted.add(failedRequestId);
+      const fk = followUpKey(s.id, failedRequestId);
+      if (!followUpsStarted.has(fk)) {
+        followUpsStarted.add(fk);
         deliverDecisionAsFollowUp(failedRequestId, failedDecision, s);
       }
     });
@@ -1635,8 +1640,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // turn already ended and nothing was persisted yet — the follow-up must answer it (delivered or
     // delivery-failed), never a silent no-op recorded as approved
     if (!undelivered && (persisted === undefined ? !(restoredRequestIds.has(requestId) || decidedRequestIds.has(requestId)) : persisted.resolved)) return;
-    if (followUpsStarted.has(requestId)) return;
-    followUpsStarted.add(requestId);
+    const fk = followUpKey(session?.id, requestId);
+    if (followUpsStarted.has(fk)) return;
+    followUpsStarted.add(fk);
     deliverDecisionAsFollowUp(requestId, decision);
   };
 

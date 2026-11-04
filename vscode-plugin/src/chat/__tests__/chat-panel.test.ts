@@ -6512,6 +6512,59 @@ test('E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns 
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { sessionId: string | undefined }[] = [];
+  const makeAdapter = (): StreamAdapter => {
+    let n = 0;
+    return {
+      capabilities: { resume: false },
+      decide: () => ({ delivered: false }), // dead stdin everywhere: every decision falls back
+      cancel: () => {},
+      async *run(_req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+        n += 1;
+        const tid = `t${n}`;
+        const p = fakeLiveProc(4400 + n);
+        opts?.onSpawn?.({ ...p, cursor: { sessionId: 'x', turnId: tid, generation: 1, offset: 0 } });
+        runs.push({ sessionId: opts?.sessionId });
+        if (n % 2 === 1) { // original turns raise the shared-id request and hang until the follow-up spawns
+          yield { kind: 'approval-request', turnId: tid, requestId: 'shared', title: 'act', detail: 'd', command: 'cmd', resolution: 'in-turn' };
+          await new Promise<void>((r) => setTimeout(r, 50));
+          p.exitNow();
+          yield { kind: 'done', turnId: tid, ok: true };
+        } else {
+          p.exitNow();
+          yield { kind: 'done', turnId: tid, ok: true };
+        }
+      },
+    };
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: makeAdapter() }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'A' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'), 5000);
+  const a = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'shared', decision: 'approve' }));
+  await waitFor(() => runs.length === 2, 5000, 'A’s undelivered decision got its follow-up');
+  // chat B raises the SAME request id
+  const b = store.create('claude' as never);
+  store.save(b);
+  fc.send(env('open-chat', { chatId: b.id }));
+  fc.send(env('submit-turn', { text: 'B' }));
+  await waitFor(() => turnEvents(fc).filter((e) => e.kind === 'approval-request').length === 2, 5000, 'B raised the shared-id request');
+  fc.send(env('permission-decision', { requestId: 'shared', decision: 'approve' }));
+  await waitFor(() => runs.length === 4, 5000, 'B’s undelivered decision ALSO got its own follow-up — the one-shot guard did not swallow it');
+  assert.equal(runs[3]!.sessionId, b.id, 'B’s follow-up targets B');
+  await waitFor(() => store.get(b.id)?.pendingRequests?.find((r) => r.requestId === 'shared')?.resolved === true, 5000, 'B’s request was recorded, not left as a silent no-op');
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing', async () => {
   const store = createInMemoryChatSessionStore();
   const runs: TurnRequest[] = [];

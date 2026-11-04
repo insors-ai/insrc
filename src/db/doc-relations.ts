@@ -150,6 +150,35 @@ export function writeDocRelationQualityInTxn(s: GraphStore, repoId: number, row:
 	s.docRelationQuality.put(encodeRepoKey(repoId), encodeDocRelationQualityRow(row));
 }
 
+/** Write the pass's operational status into the repository's quality row (creating it), keeping its figures. */
+export function writeDocRelationExtractionInTxn(s: GraphStore, repoId: number, extraction: DocRelationQualityRow['extraction']): void {
+	assertNoSessionPersistence();
+	const prev = readDocRelationQualityInTxn(s, repoId);
+	writeDocRelationQualityInTxn(s, repoId, { ...(prev?.figures !== undefined ? { figures: prev.figures } : {}), extraction });
+}
+
+/** The repo-relative markdown documents the repository stores (from the by-file index). */
+export function storedMarkdownFilesInTxn(s: GraphStore, repoId: number): string[] {
+	const prefix = encodeRepoKey(repoId);
+	const out: string[] = [];
+	for (const key of s.entityByFile.getKeys({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const rel = (key as Buffer).subarray(4).toString('utf8');
+		if (/\.mdx?$/i.test(rel) && out[out.length - 1] !== rel) out.push(rel);
+	}
+	return out;
+}
+
+/** The repo-relative files the repository stores (from the by-file index). */
+export function storedFilesInTxn(s: GraphStore, repoId: number): string[] {
+	const prefix = encodeRepoKey(repoId);
+	const out: string[] = [];
+	for (const key of s.entityByFile.getKeys({ start: prefix, end: prefixSuccessor(prefix) })) {
+		const rel = (key as Buffer).subarray(4).toString('utf8');
+		if (out[out.length - 1] !== rel) out.push(rel);
+	}
+	return out;
+}
+
 /** Every s10 row of the repository: proposals, carry and quality (removeRepo). */
 export function deleteDocRelationsForRepoInTxn(s: GraphStore, repoId: number): void {
 	assertNoSessionPersistence();

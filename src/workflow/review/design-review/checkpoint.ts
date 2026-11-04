@@ -2,6 +2,7 @@
 import { promises as fs, constants } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { consolidateDesignReview } from './results.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import { artifactJsonPath } from '../../storage.js';
 import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewPersistenceError, decodeDesign, requireDesign } from './contracts.js';
@@ -119,6 +120,11 @@ function checkIdentity(project: string, id: string, checkpoint: DesignReviewChec
   requireDesign(attempt.completedChunks.every(r=>Buffer.byteLength(JSON.stringify(r))<=DESIGN_LIMITS.resultBytes),'result_too_large','Stored chunk result exceeds page limit');
   const ids=new Set(attempt.completedChunks.map(r=>r.chunkId));
   requireDesign(ids.size===attempt.completedChunks.length,'invalid_checkpoint','Duplicate accepted chunk results');
+  if(attempt.report&&attempt.impact){
+   requireDesign(attempt.plan,'invalid_checkpoint','Impact report lacks accepted plan');
+   try{const report=consolidateDesignReview(id,attempt.number,{...checkpoint.subject,reviewer:attempt.reviewer??checkpoint.subject.reviewer},attempt.baseline.contentIdentity,attempt.plan,attempt.completedChunks,{impact:attempt.impact,attempts:checkpoint.attempts});requireDesign(same(report,attempt.report),'invalid_checkpoint','Report provenance differs from accepted review');}
+   catch{requireDesign(false,'invalid_checkpoint','Impact report does not match accepted state');}
+  }
   if(attempt.report) requireDesign(attempt.report.reviewId===id&&attempt.report.attempt===attempt.number&&attempt.report.artifactId===checkpoint.artifactId&&attempt.report.reviewedContentIdentity===attempt.baseline.contentIdentity&&JSON.stringify(attempt.report.chunks)===JSON.stringify(attempt.completedChunks),'invalid_checkpoint','Report does not match accepted attempt');
  }
 }

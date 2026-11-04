@@ -796,7 +796,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real
       // terminal drops every pin this tick made; otherwise the unread generation stays archived
-      if (caughtUp || pass.sawTerminal) {
+      // Pins are released only when the pass caught up — a terminal seen in a NOT-caught-up pass
+      // keeps its pins, so the retry pass (re-read from just before the terminal) can still read.
+      if (caughtUp) {
         for (const [key, cur] of [...heldPins]) {
           if (key.startsWith(`${s.id}:`)) {
             heldPins.delete(key);

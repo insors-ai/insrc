@@ -234,6 +234,17 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   };
 
   /**
+   * E202611031bd72813:S001 t5: persist a turn's decoder progress (selectionSeq + split-marker
+   * buffer) onto its liveTurn, so a detach/reattach resumes the LIVE or FOLLOW cursor with it.
+   */
+  const saveLiveDecoder = (s: ChatSession, turnId: string) => (ds: { selectionSeq: number; selectionBuffer: string }): void => {
+    const cur = s.liveTurn;
+    if (cur === undefined || cur.cursor.turnId !== turnId) return;
+    s.liveTurn = { ...cur, decoder: { selectionSeq: ds.selectionSeq, ...(ds.selectionBuffer !== '' ? { selectionBuffer: ds.selectionBuffer } : {}) } };
+    trySave(s);
+  };
+
+  /**
    * One CLI process per session: waits until the session's previous process has exited (in this
    * window or another), stopping it only after the lock timeout. Undefined when the turn was
    * dropped while waiting or is no longer current once granted — nothing is to run then.
@@ -395,7 +406,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
-        const it = adapter.run(req, { onSpawn, onProgress: cursor.progress, sessionId: s.id })[Symbol.asyncIterator]();
+        const it = adapter.run(req, { onSpawn, onProgress: cursor.progress, onDecoderState: (ds) => { if (cursorTurnId !== undefined) saveLiveDecoder(s, cursorTurnId)(ds); }, sessionId: s.id })[Symbol.asyncIterator]();
         iterator = it;
         activeIterator = it;
         activeProvider = s.provider;
@@ -498,14 +509,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     followingSession = s;
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
-    // E202611031bd72813:S001 t5: the follow cursor's OWN decoder state, restored into the resume and
-    // saved back as it advances — a reattach between selection-marker fragments loses nothing.
-    const saveDecoder = (ds: { selectionSeq: number; selectionBuffer: string }): void => {
-      const cur = s.liveTurn;
-      if (cur === undefined || cur.cursor.turnId !== turnId) return;
-      s.liveTurn = { ...cur, decoder: { selectionSeq: ds.selectionSeq, ...(ds.selectionBuffer !== '' ? { selectionBuffer: ds.selectionBuffer } : {}) } };
-      trySave(s);
-    };
+    const saveDecoder = saveLiveDecoder(s, turnId);
     let attached: TurnProcess | undefined;
     void (async () => {
       let outcome: FollowOutcome | undefined;

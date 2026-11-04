@@ -134,6 +134,12 @@ export interface RunOptions {
   /** Called after the events of each output line have been yielded, with the position after that line. */
   readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
   /**
+   * E202611031bd72813:S001 t5: the stateful decoder progress (selectionSeq + split-marker buffer)
+   * after each output line, so a detach/reattach of the LIVE run resumes with it (the live cursor's
+   * own checkpoint, independent of the observer's).
+   */
+  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string }) => void) | undefined;
+  /**
    * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
    * kept in that session's file. Pass it only while holding the session's lease.
    */
@@ -1197,9 +1203,11 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (sawDone || sawError) return;
         }
-        // Every event of this line has been handed over: report the position after it.
+        // Every event of this line has been handed over: report the position after it, and the
+        // decoder progress (selectionSeq / split-marker buffer) with it.
         const at = proc.cursor;
         if (at !== undefined) opts?.onProgress?.(at);
+        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '' });
       }
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;

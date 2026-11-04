@@ -258,6 +258,18 @@
             "default": 900000,
             "markdownDescription": "ms a client session's worker thread may sit idle before it is released (Epic 86197ac6 s3); its step state outlives the release",
             "scope": "machine"
+          },
+          "insrc.daemonUpdate.repoUrl": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "git remote URL the daemon update follows (a fork can be deployed); empty keeps the checkout's origin",
+            "scope": "machine"
+          },
+          "insrc.daemonUpdate.branch": {
+            "type": "string",
+            "default": "",
+            "markdownDescription": "branch the daemon update follows; empty keeps the checkout's current branch",
+            "scope": "machine"
           }
         }
       },
@@ -285,66 +297,6 @@
             "type": "boolean",
             "default": false,
             "markdownDescription": "prompt to confirm the classified intent each turn",
-            "scope": "machine"
-          },
-          "insrc.codeReview.enforce": {
-            "type": "boolean",
-            "default": false,
-            "markdownDescription": "enforce a blocking code-review verdict at Story completion (off \u21d2 advisory)",
-            "scope": "machine"
-          },
-          "insrc.codeReview.freshnessTimeoutMs": {
-            "type": "number",
-            "default": 120000,
-            "markdownDescription": "max ms the code-review freshness gate block-and-polls for a fresh index before re-prompting",
-            "scope": "machine"
-          },
-          "insrc.codeReview.daemonReviewCeilingMs": {
-            "type": "number",
-            "default": 14400000,
-            "markdownDescription": "max ms insrc_code_review_step waits in total for a daemon code review, progress or not",
-            "scope": "machine"
-          },
-          "insrc.codeReview.daemonReviewIdleMs": {
-            "type": "number",
-            "default": 1200000,
-            "markdownDescription": "max ms a daemon code review may go without owner progress; independent of the chunk-derived total budget (legacy streams clamp to their ceiling)",
-            "scope": "machine"
-          },
-          "insrc.designReview.premises.issue": {
-            "type": "number",
-            "default": 8,
-            "markdownDescription": "most premises a design review examines when the design answers an ISSUE",
-            "scope": "machine"
-          },
-          "insrc.designReview.premises.spec": {
-            "type": "number",
-            "default": 16,
-            "markdownDescription": "most premises a design review examines when the design answers a SPEC",
-            "scope": "machine"
-          },
-          "insrc.designReview.timeLimitMs.issue": {
-            "type": "number",
-            "default": 720000,
-            "markdownDescription": "time limit (ms) for the whole review of a design that answers an ISSUE; capped at 30 minutes",
-            "scope": "machine"
-          },
-          "insrc.designReview.timeLimitMs.feature": {
-            "type": "number",
-            "default": 1080000,
-            "markdownDescription": "time limit (ms) for the whole review of a standalone feature design; capped at 30 minutes",
-            "scope": "machine"
-          },
-          "insrc.designReview.timeLimitMs.epic": {
-            "type": "number",
-            "default": 1440000,
-            "markdownDescription": "time limit (ms) for the whole review of a design under an Epic; capped at 30 minutes",
-            "scope": "machine"
-          },
-          "insrc.review.chunkTokens": {
-            "type": "number",
-            "default": 128000,
-            "markdownDescription": "most tokens one review call carries, counted at 3 characters per token (128000 = 384,000 characters), the same for every provider; larger reviews are divided into coherent chunks",
             "scope": "machine"
           }
         }
@@ -949,6 +901,7 @@
     "bundle": "npm run sync-assets && node esbuild.mjs",
     "sync-manifest": "tsx scripts/sync-manifest-catalog.mjs",
     "build": "npm run sync-assets && tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json",
+    "pretest": "npm run sync-assets",
     "test": "tsx --test 'src/**/__tests__/*.test.ts'",
     "vscode:prepublish": "tsx scripts/sync-manifest-catalog.mjs --check && tsc -p tsconfig.json && npm run bundle",
     "package": "npx --yes @vscode/vsce@3.2.1 package",

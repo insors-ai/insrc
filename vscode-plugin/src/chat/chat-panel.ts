@@ -804,38 +804,42 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
       const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
       const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
+      let checkpointSaved = false;
       try {
         // persist onto the FRESH record (a newer turn/takeover may have replaced liveTurn mid-pass)
         const fresh = deps.store.get(s.id) ?? s;
         fresh.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}) };
         deps.store.save(fresh);
-      } catch { /* best-effort */ }
+        checkpointSaved = true;
+      } catch { /* best-effort — pins are NOT released below if this failed */ }
       // transitions: requests were ingested BEFORE any completion/death transition; done requires a
       // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
       // caught-up observer; budget exhaustion and observation failures keep the last known status
       const pidDead = pidDead0;
       // the completion gate: caught up AND (a real terminal OR verified process death)
-      if (caughtUp && (pass.sawTerminal || pidDead)) {
+      if (caughtUp && checkpointSaved && (pass.sawTerminal || pidDead)) {
         // A newer turn may have started while this pass was ingesting: re-check the liveTurn identity
         // before clearing — never erase a new turn's cursor or mark it done from an old pass.
         const now = deps.store.get(s.id);
         const same = now?.liveTurn !== undefined && now.liveTurn.cursor.turnId === live.cursor.turnId && now.liveTurn.cursor.generation === live.cursor.generation && now.liveTurn.cursor.offset === live.cursor.offset && now.liveTurn.ownerHostPid === live.ownerHostPid;
         if (same) {
+          let transitionSaved = false;
           try {
             // release the lifecycle's retention pin for this cursor too (the observer's own pin is
             // released via heldPins above); the refcount makes a double-release a no-op
             out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
             delete now!.liveTurn;
             deps.store.save(now!);
+            transitionSaved = true;
           } catch { /* best-effort */ }
-          setChatStatus(now!, (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
+          if (transitionSaved) setChatStatus(now!, (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done');
         }
       }
       // retention ends only when there is nothing left to protect: a caught-up pass or a real
       // terminal drops every pin this tick made; otherwise the unread generation stays archived
-      // Pins are released only when the pass caught up — a terminal seen in a NOT-caught-up pass
-      // keeps its pins, so the retry pass (re-read from just before the terminal) can still read.
-      if (caughtUp) {
+      // Pins are released only when the pass caught up AND the checkpoint was durably saved —
+      // a failed save must not let the archive be deleted under a checkpoint that needs it.
+      if (caughtUp && checkpointSaved) {
         for (const [key, cur] of [...heldPins]) {
           if (key.startsWith(`${s.id}:`)) {
             heldPins.delete(key);

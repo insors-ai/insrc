@@ -419,6 +419,13 @@ export function createSessionOutput(deps: SessionOutputDeps): SessionOutput {
             await fs.rename(p.previous, arch);
             archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
           }
+          // Re-check pins IMMEDIATELY before the replacing rename: a registration that landed between
+          // the check above and here (sync marker write is visible at once) must not lose its generation.
+          if (prevGen !== undefined && !pinnedHere && (await genPinned(sessionId, prevGen))) {
+            const arch = `${deps.root}/${sessionFileName(sessionId)}.pinned.${prevGen}.ndjson`;
+            await fs.rename(p.previous, arch);
+            archived.set(`${sessionFileName(sessionId)}:${prevGen}`, arch);
+          }
           await fs.rename(p.current, p.previous); // replaces the older generation
           generation = undefined;
         }

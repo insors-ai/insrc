@@ -24,7 +24,7 @@ import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, t
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId, type StreamAdapter } from './cli-adapter.js';
-import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
+import { type QueuedApproval,  createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
 import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
@@ -1165,12 +1165,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     let restored = 0;
     // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
     const snap = s.queueSnapshot;
+    let snapWaiting: readonly QueuedApproval[] = [];
     if (snap !== undefined && Array.isArray(snap.waiting)) {
       // revive every waiting request EXCEPT those with a persisted RESOLVED record — decisions
       // update pendingRequests, so an unfiltered restore could revive already-decided requests;
       // requests with no persisted record at all are kept (they were never persisted)
       const resolvedIds = new Set((s.pendingRequests ?? []).filter((r) => r.resolved).map((r) => r.requestId));
-      approvals.restore({ ...snap, waiting: snap.waiting.filter((w) => !resolvedIds.has(w.requestId)) });
+      snapWaiting = snap.waiting.filter((w) => !resolvedIds.has(w.requestId));
+      approvals.restore({ ...snap, waiting: snapWaiting });
     }
     for (const r of s.pendingRequests ?? []) {
       if (r.resolved) continue;
@@ -1219,7 +1221,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
     }
     for (const r of s.pendingRequests ?? []) if (!r.resolved) restoredRequestIds.add(r.requestId);
-    if (snap !== undefined && Array.isArray(snap.waiting)) for (const w of snap.waiting) restoredRequestIds.add(w.requestId);
+    if (snap !== undefined && Array.isArray(snap.waiting)) {
+      for (const w of snapWaiting) restoredRequestIds.add(w.requestId);
+      restored += snapWaiting.length; // snapshot-only requests (no pendingRequests record) count too
+    }
     if (restored === 0) return; // nothing to restore: no card posts, no status rewrite, no save
     showApprovalHead();
     reportCards();

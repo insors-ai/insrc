@@ -6673,3 +6673,34 @@ test('E202611031bd72813:S001 t5: when recoverTurn cannot re-anchor (turn retaine
     await rmrf(root);
   }
 });
+
+test('E202611031bd72813:S001 t6: fresh-host reload restores a snapshot-only request (no pendingRequests record) AND posts its actionable card after session-restored', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const adapter = scriptedAdapter([], { decide: () => ({ delivered: false }) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  // a session persisted by ANOTHER host with a queue snapshot but no pendingRequests records
+  const s = store.create('claude' as never);
+  store.save({
+    ...s,
+    queueSnapshot: {
+      waiting: [{ requestId: 'snap-1', turnId: 't-old', title: 'Run Edit', detail: 'd', toolName: 'Edit', blockKind: 'tool-gate', resolution: 'turn-ended' }],
+      batches: [],
+      ended: ['t-old'],
+      grants: [],
+    },
+  });
+  fc.send(env('open-chat', { chatId: s.id }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'snap-1'), 5000, 'the snapshot-only request is restored and its card is posted');
+  const posted = fc.posted.map((m) => m.payload);
+  const restoredIdx = posted.findIndex((p) => p.type === 'session-restored');
+  const cardIdx = posted.findIndex((p) => p.type === 'turn-event' && (p['event'] as TurnEvent).kind === 'approval-request' && (p['event'] as { requestId?: string }).requestId === 'snap-1');
+  assert.ok(restoredIdx !== -1 && cardIdx > restoredIdx, 'the card is posted AFTER session-restored, so it survives the webview clear');
+  host.dispose();
+});

@@ -153,7 +153,8 @@ export class ReadLeases {
         const binding = await this.#binding(lease.scope), head = await this.#access.head();
         const rebound = await this.#binding(lease.scope), confirmed = await this.#access.head(); this.#check(lease, true);
         if (canonical(binding) !== canonical(lease.binding) || canonical(rebound) !== canonical(lease.binding) || head.version !== snapshot.version || head.root.generation !== snapshot.generation || confirmed.version !== snapshot.version || confirmed.root.generation !== snapshot.generation) conflict();
-        if (projection.nextValidityBoundary !== null && this.#now() >= projection.nextValidityBoundary) conflict();
+        const finalNow = this.#now();
+        if (finalNow < projection.evaluatedAt || (projection.nextValidityBoundary !== null && finalNow >= projection.nextValidityBoundary)) conflict();
         return projection;
       } catch (error) {
         if (error instanceof MemoryError && error.code === 'BACKPRESSURE') overflow();

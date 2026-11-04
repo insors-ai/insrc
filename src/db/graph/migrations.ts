@@ -439,6 +439,15 @@ export const MIGRATION_V7_TO_V8: Migration = {
 	},
 };
 
+export const MIGRATION_V8_TO_V9: Migration = {
+	from: 8,
+	to:   9,
+	description: 'doc_relation, doc_relation_carry and doc_relation_quality databases (s10); opened with the store, empty until a repository is examined or measured',
+	run: () => {
+		log.info('v8->v9: document-relationship tables available; documents are examined after the next complete generation');
+	},
+};
+
 /**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
@@ -474,6 +483,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V5_TO_V6,
 	MIGRATION_V6_TO_V7,
 	MIGRATION_V7_TO_V8,
+	MIGRATION_V8_TO_V9,
 ];
 
 /**

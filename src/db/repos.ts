@@ -33,6 +33,7 @@ import {
 import { allocateRepoIdInTxn } from './graph/ids.js';
 import { encodeRepoKey } from './graph/keys.js';
 import { deleteSubsystemInputsInTxn } from './subsystem-changes.js';
+import { deleteDocRelationsForRepoInTxn } from './doc-relations.js';
 import {
 	encodeRepoRow,
 	decodeRepoRow,
@@ -208,6 +209,7 @@ export async function removeRepo(_db: DbClient, path: string): Promise<void> {
 		for (const { key } of s.subsystem.getRange(range)) s.subsystem.remove(key);
 		for (const { key } of s.subsystemByFile.getRange(range)) s.subsystemByFile.remove(key);
 		deleteSubsystemInputsInTxn(s, id);   // ISSUE-7d42b5dc
+		deleteDocRelationsForRepoInTxn(s, id);   // Epic c2ba6fa6 s10
 	});
 }
 

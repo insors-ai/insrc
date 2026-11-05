@@ -61,3 +61,16 @@ test('checkpoint report projection is derived and cannot be persisted with inven
  assert.deepEqual((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[1]!.report,f.current.report);
  const wrong=structuredClone(f.checkpoint);wrong.attempts[1]!.report!.counts.HIGH=0;await assert.rejects(saveDesignCheckpoint(f.repo,wrong),/does not match accepted state/);
 });
+
+test('stored impact reports enforce the same document and checkpoint references as live acceptance',async t=>{
+ for(const [chunkId,reference] of [['edit','document'],['final','document'],['final','checkpoint']] as const){
+  const f=setup(t),results=[f.edited,f.assess(f.final)],report=f.report(results);
+  const missing=reference==='document'?f.md:f.path;
+  results.find(r=>r.chunkId===chunkId)!.inspectedReferences=results.find(r=>r.chunkId===chunkId)!.inspectedReferences.filter(r=>r!==missing);
+  assert.throws(()=>f.report(results),{code:'invalid_checkpoint'});
+  f.current.completedChunks=results;f.current.report={...report,chunks:structuredClone(results)};f.current.status=report.status;f.checkpoint.attempts=[f.baseline,f.current];
+  await assert.rejects(saveDesignCheckpoint(f.repo,f.checkpoint),{code:'invalid_checkpoint'});
+ }
+ const f=setup(t),limited=structuredClone(f.final);limited.inspectedReferences=limited.inspectedReferences.filter(r=>r!==f.path);limited.limitations=['Required checkpoint inspection unavailable: '+f.path];limited.status='incomplete';
+ assert.equal(f.report([f.edited,f.assess(limited)]).status,'incomplete');
+});

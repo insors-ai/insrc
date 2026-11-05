@@ -46,3 +46,16 @@ test('retained origin rejection matrix prevents foreign forward cyclic missing i
  assert.throws(()=>validateDesignRetainedSource(newer,2,'keep',{chunkId:'keep',fromAttempt:1,fromChunkId:'keep',justification:'Old pass'},{number:3,reviewer:'daemon'}),/Incomplete coverage/);
  const before=JSON.stringify(base);assert.throws(()=>resolveDesignCoverage(base,3,'keep',3,'daemon'));assert.equal(JSON.stringify(base),before);
 });
+
+test('retained source comparison rejects an older valid result when newer mapped coverage is also valid',t=>{
+ const h=history(t),latest=h[1]!;
+ delete latest.impact;
+ latest.completedChunks=structuredClone(h[0]!.completedChunks);latest.completedChunks[0]!.summary='Newer accepted substantive inspection';latest.report!.chunks=structuredClone(latest.completedChunks);
+ // Both sources are individually eligible: only the baseline/candidate identity comparison must reject the older one.
+ assert.equal(resolveDesignCoverage(h,1,'keep',3,'daemon').attempt,1);
+ assert.equal(resolveDesignCoverage(h,2,'keep',3,'daemon').attempt,2);
+ const before=JSON.stringify(h);
+ assert.throws(()=>validateDesignRetainedSource(h,2,'keep',{chunkId:'keep',fromAttempt:1,fromChunkId:'keep',justification:'Older individually valid pass'},{number:3,reviewer:'daemon'}),/bypasses the immediately preceding mapped coverage/);
+ assert.equal(JSON.stringify(h),before);
+ assert.equal(validateDesignRetainedSource(h,2,'keep',{chunkId:'keep',fromAttempt:2,fromChunkId:'keep',justification:'Current mapped inspection'},{number:3,reviewer:'daemon'}).attempt,2);
+});

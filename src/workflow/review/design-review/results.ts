@@ -5,6 +5,11 @@ import { designFindingKey, effectiveDesignFindingOrigins, validateDesignRetained
 
 const equalIds=(a:readonly string[],b:readonly string[])=>a.length===b.length&&new Set(a).size===a.length&&new Set(b).size===b.length&&a.every(x=>b.includes(x));
 
+/** Live acceptance and stored-report verification must require the same evidence. */
+export function designRequiredReferences(subject:DesignReviewSubject,chunk:DesignChunk,checkpointPath:string):readonly string[]{
+ return[subject.documentPath,...(chunk.purpose==='consistency'?[checkpointPath]:[])];
+}
+
 /** Validate structural claims; semantic impact assessment belongs to the independent reviewer. */
 export function validateDesignImpact(input:unknown,current:DesignAttempt,history:readonly DesignAttempt[]):{plan:DesignChunkPlan;impact:DesignImpactAssessment}{
  requireDesign(current.preparationKind==='impact','invalid_checkpoint','Impact output requires an admitted impact attempt');
@@ -132,7 +137,7 @@ function consolidateImpactReview(reviewId:string,attempt:number,subject:DesignRe
  requireDesign(results.length===selected.length,'incomplete_review','Every selected chunk must have an accepted fresh result');
  requireDesign(results.every((r,i)=>r.chunkId===selected[i]!.id)&&new Set(results.map(r=>r.chunkId)).size===results.length,'invalid_checkpoint','Fresh results do not match selected execution order');
  for(let i=0;i<results.length;i++){
-  const assessed=assessDesignResult(results[i],selected[i]!,results.slice(0,i),[],{attempt:current,history});
+  const assessed=assessDesignResult(results[i],selected[i]!,results.slice(0,i),designRequiredReferences(subject,selected[i]!,current.progress.checkpointPath),{attempt:current,history});
   requireDesign(JSON.stringify(assessed)===JSON.stringify(results[i]),'invalid_checkpoint','Accepted finding reconciliation is incomplete or inconsistent');
  }
  const final=results.find(r=>r.chunkId===plan.finalConsistencyChunkId)!;

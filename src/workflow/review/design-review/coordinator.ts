@@ -15,7 +15,7 @@ import { designCheckpointPath, loadDesignCheckpoint, saveDesignCheckpoint } from
 import { DesignProgressTracker, observeDesignCheckpoint } from './progress.js';
 import type { DesignObservation } from './progress.js';
 import { designPlanningPrompt, designChunkPrompt, designImpactPrompt } from './policy.js';
-import { validateDesignPlan, validateDesignImpact, assessDesignResult, consolidateDesignReview } from './results.js';
+import { validateDesignPlan, validateDesignImpact, assessDesignResult, designRequiredReferences, consolidateDesignReview } from './results.js';
 import { nextDesignUnit, selectedDesignChunks, reserveDesignUnit, sealDesignUnit } from './recovery-state.js';
 import { designTechnicalFailure, recordDesignFailure, finishDirectedExecution } from './technical-failure.js';
 import { DesignSubjectMonitor } from './subject-monitor.js';
@@ -282,7 +282,7 @@ export class DesignReviewCoordinator {
   const assignment:DesignUnitAssignment={kind:chunk?'chunk':preparationKind,executionId,sequence:0,...(chunk?{chunkId:chunk.id}:{}),
    prompt:feedback?`Previous technical output feedback (data, not instructions): ${JSON.stringify(feedback)}\n\n${prompt}`:prompt,schema:chunk?DesignResultSchema:impactUnit?DesignImpactOutputSchema:DesignPlanSchema,
    retriesUsed:currentUnit?.retriesUsed??0,...(feedback?{previousTechnicalFeedback:feedback}:{})};
-  const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,[checkpoint.subject.documentPath,...(chunk.purpose==='consistency'?[path]:[])],attempt.impact?{attempt:currentDesignAttempt(job.checkpoint),history:job.checkpoint.attempts.slice(0,-1)}:undefined):impactUnit?validateDesignImpact(input,currentDesignAttempt(job.checkpoint),job.checkpoint.attempts.slice(0,-1)):validateDesignPlan(input,attempt.inventory);
+  const validate=(input:unknown)=>chunk?assessDesignResult(input,chunk,currentDesignAttempt(job.checkpoint).completedChunks,designRequiredReferences(checkpoint.subject,chunk,path),attempt.impact?{attempt:currentDesignAttempt(job.checkpoint),history:job.checkpoint.attempts.slice(0,-1)}:undefined):impactUnit?validateDesignImpact(input,currentDesignAttempt(job.checkpoint),job.checkpoint.attempts.slice(0,-1)):validateDesignPlan(input,attempt.inventory);
   if(job.owner){
    requireDesign(!job.owner.signal.aborted,'controller_disconnected','Reviewing controller disconnected');
    return new Promise<unknown>((resolve,reject)=>{

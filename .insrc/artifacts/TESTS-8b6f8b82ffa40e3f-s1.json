@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "080ca389f55898b0e4d08ce80129ccc1e9fde560287089750e8f0ebf237982ca",
+        "at": "2026-11-05T05:36:04.524Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "8b6f8b82ffa40e3f",
+    "storyId": "s1",
+    "createdAt": "2026-11-05T05:36:04.460Z",
+    "updatedAt": "2026-11-05T05:36:04.460Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-05T05:24:17.518Z",
+    "epicSlug": "reject-design-review-findings-rest-no",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "fbcd08ecb",
+        "ranAt": "2026-11-05T05:36:04.460Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/coordinator.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/policy-results.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2063,
+            "titles": [
+              {
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              },
+              {
+                "title": "findings and verification gaps continue chunks, while failed durability and mutation stop advancement",
+                "result": "pass"
+              },
+              {
+                "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              },
+              {
+                "title": "contradictory native status retries only the failed unit and pauses with pointed details",
+                "result": "pass"
+              },
+              {
+                "title": "native schema failures retain pointed diagnostic corrections without raw output and pause after three retries",
+                "result": "pass"
+              },
+              {
+                "title": "slow progress persistence coalesces activity instead of accumulating checkpoint writes",
+                "result": "pass"
+              },
+              {
+                "title": "native inactivity is supervised by the owner and observation never renews its grace",
+                "result": "pass"
+              },
+              {
+                "title": "a native provider returning after inactivity cannot publish a late valid plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 464,
+            "titles": [
+              {
+                "title": "artifact-specific prompts contain live paths and trailing schema, never copied artifact content",
+                "result": "pass"
+              },
+              {
+                "title": "chunk plans reject missing units, final-only coverage, duplicate ids, cycles and bad final checks",
+                "result": "pass"
+              },
+              {
+                "title": "required gaps cannot pass and consolidation preserves HIGH/MED, incomplete and advice semantics",
+                "result": "pass"
+              },
+              {
+                "title": "a chunk result with findings must rest on an inspected reference; an honest incomplete and a partial inspection stay valid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

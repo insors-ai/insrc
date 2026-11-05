@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "c6278ac7011afc58ade9995da124d87015cc7c234b27bee791d2239de212bc79",
+        "at": "2026-11-05T05:36:29.197Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-5cbebecc-b344-4b14-a14f-8c280920f782",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T05:34:54.231Z",
+    "epicCreatedAt": "2026-11-05T05:24:17.518Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "8b6f8b82ffa40e3f",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix, magnitude small: one cause in assessDesignResult (design-review/results.ts)",
+    "epicSlug": "reject-design-review-findings-rest-no",
+    "updatedAt": "2026-11-05T05:36:04.460Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-8b6f8b82ffa40e3f (docs/standalone/reject-design-review-findings-rest-no-E202611058b6f8b82/ISSUE.md): assessDesignResult refuses (invalid_result) a chunk result that carries findings but inspected no reference; an honest incomplete (no findings, nothing inspected) and a partially inspected result stay valid.",
+    "producesLld": false,
+    "commit": "fbcd08ecb",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "assessDesignResult refuses with invalid_result a chunk result that carries findings but an empty inspectedReferences, before the coverage limitations are added, so the findings never reach consolidation. An honest incomplete (no findings, nothing inspected) and a partially inspected result with findings stay valid. New test in policy-results.test.ts (fails without the fix); the coordinator.test.ts fixture for findings plus verification gaps now inspects one reference (it used to report a finding with nothing inspected). The 83 design-review tests pass. Left out: part 1 of #101.",
+    "testRecord": {
+      "md": "docs/standalone/reject-design-review-findings-rest-no-E202611058b6f8b82/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-8b6f8b82ffa40e3f.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-8b6f8b82ffa40e3f.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/reject-design-review-findings-rest-no-E202611058b6f8b82/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/policy-results.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T05:36:04.460Z"
+      }
+    ]
+  },
+  "citations": []
+}

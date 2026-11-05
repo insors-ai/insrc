@@ -6712,6 +6712,163 @@ test('E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native hand
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t6/MR3-R4a: an ASYNC stdin failure while the original is alive takes the same live-unwritable recovery — original stopped+verified, continuation resumes the native handle', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { resume: unknown }[] = [];
+  let failedCb: ((turnId: string, requestId: string, decision: 'approve' | 'deny') => void) | undefined;
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const proc = fakeLiveProc(4471);
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: true }), // accepted initially; the write fails ASYNC below
+    onDeliveryFailed: (fn) => { failedCb = fn as typeof failedCb; },
+    cancel: () => { proc.exitNow(); release(); },
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push({ resume: (req as { resume?: unknown }).resume });
+      if (runs.length === 1) {
+        opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 'orig', generation: 1, offset: 0 } });
+        yield { kind: 'approval-request', turnId: 'orig', requestId: 'req-async', title: 'act', detail: 'd', command: 'cmd-async', resolution: 'in-turn' };
+        await gate; // the original stays alive, blocked on the approval
+        proc.exitNow();
+        yield { kind: 'done', turnId: 'orig', ok: true };
+      } else {
+        const q = fakeLiveProc(4472);
+        opts?.onSpawn?.(q);
+        q.exitNow();
+        yield { kind: 'done', turnId: 'cont', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    isAlive: (pid) => pid === 4471, // the original is ALIVE when the async failure arrives
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'), 5000);
+  const id = store.list()[0]!.id;
+  store.get(id)!.nativeSessionId = 'native-async';
+  store.get(id)!.liveTurn = { cursor: { turnId: 'orig', generation: 1, offset: 0 }, ownerHostPid: process.pid, pid: 4471, startedAt: 1 };
+  store.save(store.get(id)!);
+  fc.send(env('permission-decision', { requestId: 'req-async', decision: 'approve' }));
+  await waitFor(() => (store.get(id)?.pendingRequests ?? []).length > 0, 5000, 'the decision was recorded');
+  // NOW the async write failure fires for the exact turn/request, while the original is still alive
+  failedCb?.('orig', 'req-async', 'approve');
+  await waitFor(() => runs.length === 2, 5000, 'the async failure recovered with a continuation');
+  assert.ok(proc.signals.length > 0, 'the original was explicitly stopped (signals recorded) — not left waiting');
+  assert.deepEqual(runs[1]!.resume, { provider: 'claude', nativeSessionId: 'native-async' }, 'the continuation resumed the native handle');
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'req-async')?.resolved === true, 5000);
+  assert.equal(store.get(id)!.pendingRequests!.find((r) => r.requestId === 'req-async')!.outcome, 'approved', 'recovered, not delivery-failed');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL (stop not verified) makes recovery record delivery-failed and launch nothing', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { resume: unknown }[] = [];
+  let release!: () => void;
+  const gate = new Promise<void>((r) => { release = r; });
+  const proc = fakeLiveProc(4481, 'never'); // ignores both signals
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }),
+    cancel: () => { release(); },
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push({ resume: (req as { resume?: unknown }).resume });
+      if (runs.length === 1) {
+        opts?.onSpawn?.({ ...proc, cursor: { sessionId: 'x', turnId: 'orig', generation: 1, offset: 0 }, stopVerified: async () => false }); // exit never confirmed
+        yield { kind: 'approval-request', turnId: 'orig', requestId: 'req-stuck', title: 'act', detail: 'd', command: 'cmd-stuck', resolution: 'in-turn' };
+        await gate;
+        yield { kind: 'done', turnId: 'orig', ok: true };
+      } else {
+        const q = fakeLiveProc(4482);
+        opts?.onSpawn?.(q);
+        q.exitNow();
+        yield { kind: 'done', turnId: 'cont', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    isAlive: () => true, // the original is alive
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request'), 5000);
+  const id = store.list()[0]!.id;
+  store.get(id)!.nativeSessionId = 'native-stuck';
+  store.get(id)!.liveTurn = { cursor: { turnId: 'orig', generation: 1, offset: 0 }, ownerHostPid: process.pid, pid: 4481, startedAt: 1 };
+  store.save(store.get(id)!);
+  fc.send(env('permission-decision', { requestId: 'req-stuck', decision: 'approve' }));
+  await waitFor(() => store.get(id)?.pendingRequests?.find((r) => r.requestId === 'req-stuck')?.outcome === 'delivery-failed', 5000, 'unverified stop -> delivery-failed');
+  release();
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(runs.length, 1, 'no continuation launched without verified exit');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const runs: string[] = [];
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }),
+    cancel: () => {},
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      runs.push(req.prompt);
+      const p = fakeLiveProc(4491);
+      p.exitNow();
+      yield { kind: 'done', turnId: 'fu', ok: true };
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  // the newly supported persisted format: two records named 'shared', an older RESOLVED one and a
+  // current unresolved one, with NO liveTurn
+  const s = store.create('claude' as never);
+  store.save({
+    ...s,
+    pendingRequests: [
+      { requestId: 'shared', kind: 'approval', turnId: 'old-turn', title: 'old', detail: 'd', command: 'old-command', resolved: true, outcome: 'approved' },
+      { requestId: 'shared', kind: 'approval', turnId: 'new-turn', title: 'new', detail: 'd', command: 'new-command', resolved: false },
+    ],
+    queueSnapshot: {
+      waiting: [{ requestId: 'shared', turnId: 'new-turn', title: 'new', detail: 'd', command: 'new-command', toolName: 'Bash', blockKind: 'tool-gate', resolution: 'turn-ended' }],
+      batches: [{ turnId: 'new-turn', decisions: [] }],
+      ended: ['new-turn'],
+      grants: [],
+    },
+  });
+  fc.send(env('open-chat', { chatId: s.id }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && (e as { requestId?: string }).requestId === 'shared'), 5000, 'the restored request card is posted');
+  fc.send(env('permission-decision', { requestId: 'shared', decision: 'approve' }));
+  await waitFor(() => runs.length === 1, 5000, 'the turn-ended batch ran ONE follow-up');
+  assert.ok(runs[0]!.includes('new-command'), 'the continuation carries the NEW turn’s command');
+  await waitFor(() => store.get(s.id)?.pendingRequests?.find((r) => r.turnId === 'new-turn')?.resolved === true, 5000, 'the new record is settled after the run');
+  const recs = store.get(s.id)!.pendingRequests!.filter((r) => r.requestId === 'shared');
+  const oldRec = recs.find((r) => r.turnId === 'old-turn')!;
+  const newRec = recs.find((r) => r.turnId === 'new-turn')!;
+  assert.equal(oldRec.resolved, true);
+  assert.equal(oldRec.outcome, 'approved', 'the OLD record is untouched by the new decision');
+  assert.equal(newRec.resolved, true);
+  assert.equal(newRec.outcome, 'approved', 'only the new record got the outcome');
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-mr4r3-'));
   try {

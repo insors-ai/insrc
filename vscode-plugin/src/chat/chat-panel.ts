@@ -1413,7 +1413,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // of several says so once.
       if (batch.decisions.length > 1) postInfo(`info-batch-${batch.turnId}`, 'No action was approved, so nothing was run.');
       // nothing was delivered (no run happens) — the decisions are still recorded with their outcomes
-      for (const d of batch.decisions) markPersistedRequest(session, d.request.requestId, true, d.decision === 'approve' ? 'approved' : 'denied');
+      for (const d of batch.decisions) markPersistedRequest(session, d.request.requestId, true, d.decision === 'approve' ? 'approved' : 'denied', d.request.turnId);
       return;
     }
     let prompt: string;
@@ -1437,7 +1437,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const decisions = batch.decisions;
     // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
     // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
-    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, d.request.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, groupId: batch.turnId, sessionId: session?.id });
+    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, d.request.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, originTurnId: d.request.turnId, groupId: batch.turnId, sessionId: session?.id });
     const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
     void p.then(
       () => {
@@ -1485,7 +1485,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // delivery-failed. A silent no-op is never recorded as approved.
         // MR1-R3: the exclusion/origin turn is the decision's originating turn (fall back to the live one)
         const pfKey = followUpKey(s.id, originTurnId ?? turns.live?.turnId, requestId);
-        pendingFollowUps.set(pfKey, { requestId, outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, groupId: requestId, sessionId: s.id });
+        pendingFollowUps.set(pfKey, { requestId, outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, originTurnId, groupId: requestId, sessionId: s.id });
         // MR3: the continuation carries a cancellation identity — if the stall timer below fires
         // first, shouldSpawn returns false and the turn ends WITHOUT spawning the CLI.
         const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(pfKey) }); // resumes s.nativeSessionId when known
@@ -1540,7 +1540,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
   // MR1-R3: keyed by the FULL follow-up identity (session::originTurn::request) so repeated request
   // ids across conversations/turns keep separate markers
-  let pendingFollowUps = new Map<string, { readonly requestId: string; readonly outcome: string; readonly excludeTurnId: string | undefined; readonly groupId: string; readonly sessionId: string | undefined }>();
+  let pendingFollowUps = new Map<string, { readonly requestId: string; readonly outcome: string; readonly excludeTurnId: string | undefined; readonly originTurnId: string | undefined; readonly groupId: string; readonly sessionId: string | undefined }>();
   /** turnId -> requestId: each follow-up is bound to the turn it actually started, so a spawn/event
    * of one follow-up's turn never marks another pending follow-up delivered. */
   const followUpTurns = new Map<string, string>();
@@ -1568,8 +1568,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     for (const [other, opf] of [...pendingFollowUps]) {
       if (opf.groupId === pf.groupId && opf.sessionId === s.id) {
         pendingFollowUps.delete(other);
-        // MR1-R3: outcome correlation is turn-scoped (the request's originating turn)
-        markPersistedRequest(s, opf.requestId, true, opf.outcome, opf.excludeTurnId);
+        // MR1-R4: outcome correlation uses the request's ORIGINATING turn — never the live
+        // exclusion turn the follow-up happened to be queued behind
+        markPersistedRequest(s, opf.requestId, true, opf.outcome, opf.originTurnId ?? opf.excludeTurnId);
       }
     }
     // keep the binding until the turn ENDS: later events of the same follow-up turn must map to
@@ -1607,11 +1608,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       ensurePersistedUnresolved(s, failedRequestId, turnId);
       markPersistedRequest(s, failedRequestId, true, 'delivery-failed', turnId);
       reevaluateChatStatus(s);
-      const fk = followUpKey(s.id, turnId, failedRequestId);
-      if (!followUpsStarted.has(fk)) {
-        followUpsStarted.add(fk);
-        deliverDecisionAsFollowUp(failedRequestId, failedDecision, s, turnId);
-      }
+      // MR3-R4a: the async failure takes the SAME owner/turn-bound recovery as the sync path —
+      // including live-unwritable stop+verified-exit and the session-lost triage
+      recoverUndelivered(s, failedRequestId, failedDecision, turnId);
     });
   };
 
@@ -1653,15 +1652,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // MR1-R3/MR3-R3: the original process's liveness for this probe turn
     const probePid = session?.liveTurn?.pid;
     const probeAlive = undelivered && session !== undefined && probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
-    if (probeAlive && session !== undefined && session.nativeSessionId === undefined) {
-      // LLD s7 live-unwritable triage: the original process is still ALIVE but its stdin write
-      // failed and no native session handle was captured (nothing before the first done) — a
-      // continuation could not resume the live session; record session-lost instead of silently
-      // starting a fresh one.
-      markPersistedRequest(session, requestId, true, 'session-lost', probeTurnId);
-      reevaluateChatStatus(session);
-      return;
-    }
+    void probeAlive; // liveness triage happens in recoverUndelivered (shared with the async path)
     // The follow-up run answers a decision that could not reach the CLI: either a live turn whose
     // decide() reported undelivered (the decision came from the queue, so it is real even when no
     // persisted record exists yet), or a RESTORED request persisted unresolved after a
@@ -1680,28 +1671,43 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // turn already ended and nothing was persisted yet — the follow-up must answer it (delivered or
     // delivery-failed), never a silent no-op recorded as approved
     if (!undelivered && (persisted === undefined ? !(restoredRequestIds.has(requestId) || decidedRequestIds.has(requestId)) : persisted.resolved)) return;
-    const fk = followUpKey(session?.id, probeTurnId, requestId);
+    if (session !== undefined) recoverUndelivered(session, requestId, decision, probeTurnId);
+  };
+
+  /**
+   * MR3-R4a: ONE recovery path for synchronous (decide() reports undelivered) and asynchronous
+   * (stdin write fails after acceptance) delivery failure alike, always bound to the ORIGINATING
+   * session/turn — never the selected chat. Applies the LLD s7 triage: live-unwritable with no
+   * native handle -> session-lost; live-unwritable with a handle -> stop the original and VERIFY
+   * exit (MR3-R4b) before the continuation resumes that native session; otherwise the plain
+   * follow-up run. If the verified stop fails, record delivery-failed and launch nothing.
+   */
+  const recoverUndelivered = (s: ChatSession, requestId: string, decision: 'approve' | 'deny', originTurnId: string | undefined): void => {
+    const probePid = s.liveTurn?.pid;
+    const probeAlive = probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
+    if (probeAlive && s.nativeSessionId === undefined) {
+      markPersistedRequest(s, requestId, true, 'session-lost', originTurnId);
+      reevaluateChatStatus(s);
+      return;
+    }
+    const fk = followUpKey(s.id, originTurnId, requestId);
     if (followUpsStarted.has(fk)) return;
     followUpsStarted.add(fk);
-    if (probeAlive && session !== undefined && session.nativeSessionId !== undefined) {
-      // MR3-R3 / LLD s7 live-unwritable recovery: the original process is alive but unwritable and
-      // its native handle IS known — explicitly stop the original and verify exit BEFORE the
-      // continuation resumes that native session, instead of queueing behind a process that may be
-      // blocked on this very decision. If the stop fails, record delivery-failed and launch nothing.
-      const rs = session;
+    if (probeAlive && s.nativeSessionId !== undefined) {
       void (async () => {
         try {
-          await turns.stop();
-          deliverDecisionAsFollowUp(requestId, decision, rs, probeTurnId);
+          const verified = await turns.stop(); // MR3-R4b: true only when the exit was confirmed
+          if (!verified) throw new Error('the original process did not exit even after SIGKILL');
+          deliverDecisionAsFollowUp(requestId, decision, s, originTurnId);
         } catch (err) {
           log.warn(`[chat] live-unwritable recovery for ${requestId} could not stop the original: ${err instanceof Error ? err.message : String(err)}`);
-          markPersistedRequest(rs, requestId, true, 'delivery-failed', probeTurnId);
-          reevaluateChatStatus(rs);
+          markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
+          reevaluateChatStatus(s);
         }
       })();
       return;
     }
-    deliverDecisionAsFollowUp(requestId, decision, undefined, probeTurnId);
+    deliverDecisionAsFollowUp(requestId, decision, s, originTurnId);
   };
 
   // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
@@ -3094,7 +3100,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           // each record once the run starts (or immediately when nothing runs) — never marked approved
           // before delivery. A dir-block approve never runs at all, so it is marked here.
           if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
-            markPersistedRequest(session, msg.requestId, true, 'approved');
+            markPersistedRequest(session, msg.requestId, true, 'approved', decided.turnId);
             // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory, so it
             // is never re-run (that produced the confused no-op) and never a grant. Post a
             // self-contained informational message explaining what actually needs to change — no

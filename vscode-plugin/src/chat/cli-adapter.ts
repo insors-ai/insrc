@@ -93,6 +93,11 @@ export interface TurnProcess {
   kill(signal: 'SIGTERM' | 'SIGKILL'): void;
   /** SIGTERM, then SIGKILL after a grace; resolves once the exit is confirmed (or the grace runs out). */
   stop(): Promise<void>;
+  /**
+   * MR3-R4b: like stop(), but resolves true ONLY when the exit was confirmed (false when the
+   * process ignored even SIGKILL within the grace) — the verified-stop contract recovery needs.
+   */
+  stopVerified?(): Promise<boolean>;
   /** With a session output: where the turn's segment starts (session, turn, generation, offset). */
   readonly cursor?: SegmentCursor | undefined;
   /** With a session output: the session file the process writes to. */
@@ -1200,7 +1205,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         pid: proc.pid,
         exit: proc.exit,
         kill: (signal) => proc.kill(signal),
-        stop: () => stopTurnProcess(proc),
+        stop: () => stopTurnProcess(proc).then(() => {}),
+        stopVerified: () => stopTurnProcess(proc),
         ...(segment !== undefined ? { cursor: segment.cursor, outPath: segment.outPath } : {}),
       });
       for (;;) {
@@ -1281,8 +1287,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     }
   }
 
-  function stopTurnProcess(proc: SpawnedProcess): Promise<void> {
-    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs).then(() => {});
+  function stopTurnProcess(proc: SpawnedProcess): Promise<boolean> {
+    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs);
   }
 
   async function cancel(turnId: string): Promise<void> {
@@ -1385,6 +1391,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         if (pid !== undefined && isTheProcess()) killGroup(pid, signal);
       },
       stop: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs).then(() => {}),
+      stopVerified: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs),
     };
     opts?.onAttach?.(handle);
 

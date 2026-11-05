@@ -111,7 +111,12 @@ export interface TurnLifecycle {
    * The Stop control: ends the live turn, and a turn followed after a reload, with their
    * processes. Resolves once they have exited. Idempotent.
    */
-  stop(): Promise<void>;
+  /**
+   * MR3-R4b: stops the live/followed turn; resolves true only when the process exit was CONFIRMED
+   * (false when it ignored even SIGKILL within the grace) — recovery uses this as its verified-exit
+   * prerequisite. Best-effort callers may ignore the value.
+   */
+  stop(): Promise<boolean>;
   /**
    * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
    * the session file keeps running (with its lease) and its cursor stays saved, so following the
@@ -632,7 +637,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
    * returns the iterator, cancels the provider's turn and stops the newest CLI process. Resolves
    * once the process has exited (or there was none). Idempotent.
    */
-  const stopLive = async (): Promise<void> => {
+  const stopLive = async (): Promise<boolean> => {
     busyGen = undefined;
     chainEpoch += 1; // a start waiting in the chain is dropped
     waitCtl?.abort();
@@ -654,21 +659,32 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         /* provider gone / already finished — nothing to cancel */
       }
     }
+    let verified = true;
     if (proc !== undefined) {
       try {
-        await proc.stop();
+        // MR3-R4b: prefer the verified-stop contract; a best-effort stop() alone cannot confirm exit
+        verified = proc.stopVerified !== undefined ? await proc.stopVerified() : await proc.stop().then(() => true);
       } catch {
-        /* already gone / not signalable — callers fire this and forget it */
+        verified = false; /* not signalable — the exit cannot be confirmed */
       }
     }
+    return verified;
   };
 
-  const stop = async (): Promise<void> => {
+  const stop = async (): Promise<boolean> => {
     following?.ctl.abort();
     const resumed = resumedProc;
     resumedProc = undefined;
-    await stopLive();
-    if (resumed !== undefined) await resumed.stop().catch(() => {});
+    const liveVerified = await stopLive();
+    let resumedVerified = true;
+    if (resumed !== undefined) {
+      try {
+        resumedVerified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
+      } catch {
+        resumedVerified = false;
+      }
+    }
+    return liveVerified && resumedVerified;
   };
 
   const detach = async (): Promise<void> => {

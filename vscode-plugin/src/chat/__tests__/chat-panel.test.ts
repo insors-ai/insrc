@@ -6076,6 +6076,47 @@ test('E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_res
   }
 });
 
+test('E202611031bd72813:S001 t5: an idle budget-aborted observer pass (no onDecoderState callback) does not drop the checkpoint’s decoder fields', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs-idle-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      observerTickBudgetMs: 5, // tiny budget: the pass aborts before ingesting anything new
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-idle');
+    const line = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 's-idle' }) + '\n';
+    appendFileSync(seg.outPath, line);
+    await out.endTurn(s.id, 't-idle', { code: 0, signal: null });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-idle', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // checkpoint captured by an earlier pass, positioned past everything (this pass ingests nothing)
+    cur.observerCheckpoint = { turnId: 't-idle', generation: seg.cursor.generation, offset: seg.cursor.offset + Buffer.byteLength(line), selectionSeq: 3, sessionId: 's-idle', toolCommands: { 'call-9': 'make y' }, editPaths: { 'call-8': '/repo/b.ts' } };
+    store.save(cur);
+    await new Promise((r) => setTimeout(r, 150)); // several budget-aborted passes run
+    const cp = store.get(s.id)?.observerCheckpoint;
+    assert.equal(cp?.sessionId, 's-idle', 'an idle pass does not drop the native session id from the checkpoint');
+    assert.deepEqual(cp?.toolCommands, { 'call-9': 'make y' }, 'nor the tool-command correlations');
+    assert.deepEqual(cp?.editPaths, { 'call-8': '/repo/b.ts' }, 'nor the edit-path correlations');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
 test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs3-'));
   try {

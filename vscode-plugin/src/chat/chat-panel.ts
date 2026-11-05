@@ -722,7 +722,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           ctl.abort();
         }, deps.observerTickBudgetMs ?? 2000);
         watchdog.unref?.();
-        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: undefined as string | undefined, toolCommands: undefined as Record<string, string> | undefined, editPaths: undefined as Record<string, string> | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string; rows: number } | undefined };
+        // seed the decoder-carried fields from the checkpoint: an idle, budget-aborted pass gets no
+        // onDecoderState callback, and the checkpoint write below must not drop what the previous pass captured
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: cp.sessionId, toolCommands: cp.toolCommands !== undefined ? { ...cp.toolCommands } : undefined as Record<string, string> | undefined, editPaths: cp.editPaths !== undefined ? { ...cp.editPaths } : undefined as Record<string, string> | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string; rows: number } | undefined };
         try {
           const events = resume(
             { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}), ...(cp.sessionId !== undefined ? { sessionId: cp.sessionId } : {}), ...(cp.toolCommands !== undefined ? { toolCommands: { ...cp.toolCommands } } : {}), ...(cp.editPaths !== undefined ? { editPaths: { ...cp.editPaths } } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },

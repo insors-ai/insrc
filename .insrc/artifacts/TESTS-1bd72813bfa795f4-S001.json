@@ -4,7 +4,7 @@
     "epicHash": "1bd72813bfa795f4",
     "storyId": "S001",
     "createdAt": "2026-11-03T19:59:20.775Z",
-    "updatedAt": "2026-11-04T17:12:47.804Z",
+    "updatedAt": "2026-11-05T08:20:08.129Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-03T16:24:43.002Z",
     "epicSlug": "multiple-concurrent-chats-chat-panel-active"
@@ -3484,8 +3484,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "50fd8cc9b",
-        "ranAt": "2026-11-04T17:12:47.804Z",
+        "commit": "dfee30261",
+        "ranAt": "2026-11-05T08:10:31.186Z",
         "testsPassed": true,
         "tests": [
           {
@@ -3625,7 +3625,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8701,
+            "durationMs": 9695,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -3888,6 +3888,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t4 UX: both chrome dropdowns paint the provider icon — history options drop the [provider] text for a data-URI icon, the active selection mirrors the current open chat",
+                "result": "pass"
+              },
+              {
                 "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
                 "result": "pass"
               },
@@ -4089,6 +4093,14 @@
               },
               {
                 "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored after a reload — the removal is persisted and resolved decisions are filtered from restored batches, so the follow-up never re-runs",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR6: reload in the removal->spawn window keeps the full actionable record — a turn-ended decision persists the unresolved record (command included) BEFORE the batch removal is persisted; a reloaded host re-enters the requests as cards, never blindly re-runs",
                 "result": "pass"
               },
               {
@@ -4348,6 +4360,18 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_result keeps the command/edit-path correlation — the checkpoint carries toolCommands/editPaths and the resumed pass restores them into the decoder",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an idle budget-aborted observer pass (no onDecoderState callback) does not drop the checkpoint’s decoder fields",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)",
                 "result": "pass"
               },
@@ -4384,7 +4408,43 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing",
+                "title": "E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns keep separate delivery ownership — a late failure for A’s turn never starts B’s continuation",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R3: a LATER turn in the SAME conversation reusing a request id gets its own follow-up and its own record — the earlier turn’s resolution is not inherited",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native handle — the host stops and verifies the original process, then the continuation resumes that native session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4a: an ASYNC stdin failure while the original is alive takes the same live-unwritable recovery — original stopped+verified, continuation resumes the native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL (stop not verified) makes recovery record delivery-failed and launch nothing",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s turn, fired while chat B is selected and running, stops ONLY A’s original process — never the selected chat’s turn — and the continuation resumes A’s native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exists for the originating turn of another chat, recovery records delivery-failed and never stops the selected chat as a substitute",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents",
                 "result": "pass"
               },
               {
@@ -4424,6 +4484,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: multi-select restoration after LiveTurn cleared — reattaching re-posts the actionable selection card with prompt AND multi preserved",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved",
                 "result": "pass"
               },
@@ -4450,7 +4514,7 @@
             "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1378,
+            "durationMs": 1519,
             "titles": [
               {
                 "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
@@ -4847,7 +4911,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1433,
+            "durationMs": 1452,
             "titles": [
               {
                 "title": "a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes",
@@ -4912,7 +4976,7 @@
             "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1896,
+            "durationMs": 1862,
             "titles": [
               {
                 "title": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits",
@@ -5065,8 +5129,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "50fd8cc9b",
-        "ranAt": "2026-11-04T17:07:27.035Z",
+        "commit": "dfee30261",
+        "ranAt": "2026-11-05T08:08:39.478Z",
         "testsPassed": true,
         "tests": [
           {
@@ -5111,7 +5175,7 @@
             "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 347,
+            "durationMs": 316,
             "titles": [
               {
                 "title": "approval queue: requests are kept in arrival order and only the head is actionable; a decision for any other id is refused",
@@ -5136,7 +5200,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8806,
+            "durationMs": 10221,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -5399,6 +5463,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t4 UX: both chrome dropdowns paint the provider icon — history options drop the [provider] text for a data-URI icon, the active selection mirrors the current open chat",
+                "result": "pass"
+              },
+              {
                 "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
                 "result": "pass"
               },
@@ -5600,6 +5668,14 @@
               },
               {
                 "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored after a reload — the removal is persisted and resolved decisions are filtered from restored batches, so the follow-up never re-runs",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR6: reload in the removal->spawn window keeps the full actionable record — a turn-ended decision persists the unresolved record (command included) BEFORE the batch removal is persisted; a reloaded host re-enters the requests as cards, never blindly re-runs",
                 "result": "pass"
               },
               {
@@ -5859,6 +5935,18 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_result keeps the command/edit-path correlation — the checkpoint carries toolCommands/editPaths and the resumed pass restores them into the decoder",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an idle budget-aborted observer pass (no onDecoderState callback) does not drop the checkpoint’s decoder fields",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)",
                 "result": "pass"
               },
@@ -5895,7 +5983,43 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing",
+                "title": "E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns keep separate delivery ownership — a late failure for A’s turn never starts B’s continuation",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R3: a LATER turn in the SAME conversation reusing a request id gets its own follow-up and its own record — the earlier turn’s resolution is not inherited",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native handle — the host stops and verifies the original process, then the continuation resumes that native session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4a: an ASYNC stdin failure while the original is alive takes the same live-unwritable recovery — original stopped+verified, continuation resumes the native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL (stop not verified) makes recovery record delivery-failed and launch nothing",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s turn, fired while chat B is selected and running, stops ONLY A’s original process — never the selected chat’s turn — and the continuation resumes A’s native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exists for the originating turn of another chat, recovery records delivery-failed and never stops the selected chat as a substitute",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents",
                 "result": "pass"
               },
               {
@@ -5935,6 +6059,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: multi-select restoration after LiveTurn cleared — reattaching re-posts the actionable selection card with prompt AND multi preserved",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved",
                 "result": "pass"
               },
@@ -5961,7 +6089,7 @@
             "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1413,
+            "durationMs": 1484,
             "titles": [
               {
                 "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
@@ -6430,8 +6558,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "a3e531ba0",
-        "ranAt": "2026-11-04T16:47:19.787Z",
+        "commit": "76ff96770",
+        "ranAt": "2026-11-04T20:28:05.132Z",
         "testsPassed": true,
         "tests": [
           {
@@ -6466,7 +6594,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8400,
+            "durationMs": 8804,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -7189,6 +7317,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)",
                 "result": "pass"
               },
@@ -7225,7 +7357,23 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing",
+                "title": "E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns keep separate delivery ownership — a late failure for A’s turn never starts B’s continuation",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R3: a LATER turn in the SAME conversation reusing a request id gets its own follow-up and its own record — the earlier turn’s resolution is not inherited",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native handle — the host stops and verifies the original process, then the continuation resumes that native session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents",
                 "result": "pass"
               },
               {
@@ -7273,7 +7421,15 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t4: end-to-end round trip — the shell posts open-chat { chatId } (webview->host) and the host answers session-restored for that exact chat",
+                "title": "E202611031bd72813:S001 t6/LLD-s7: the native session id is captured from the first turn’s output BEFORE any done and persisted across a reload; the dead-stdin recovery (no preceding done) resumes THAT native session in the follow-up run",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: live-unwritable with NO recoverable native handle records session-lost — no continuation starts a fresh session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t4: host round trip — the open-chat { chatId } the shell posts (webview->host) is answered session-restored for that exact chat (the shell script execution itself is covered end-to-end in chat-shell.test.ts)",
                 "result": "pass"
               }
             ],
@@ -7283,7 +7439,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 16579,
+            "durationMs": 21041,
             "titles": [
               {
                 "title": "open() posts the pending list from client.pending()",
@@ -8215,6 +8371,10 @@
               },
               {
                 "title": "E202611031bd72813:S001 t8/MR2: two presentKey panels hold INDEPENDENT document state — a decision from panel A is validated against A’s own open document, reaches the daemon, and is answered only on A’s channel; a boot ping on B re-posts B’s own document on B’s channel; disposing one sibling leaves the other fully working",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR2-R2: closing the LEGACY panel leaves keyed presentation panels fully alive — their posts, boot reloads, watches and decision results keep flowing; reopening the legacy panel works",
                 "result": "pass"
               },
               {
@@ -9200,8 +9360,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "50fd8cc9b",
-        "ranAt": "2026-11-04T17:10:12.423Z",
+        "commit": "dfee30261",
+        "ranAt": "2026-11-05T08:20:08.129Z",
         "testsPassed": true,
         "tests": [
           {
@@ -9756,7 +9916,7 @@
             "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 326,
+            "durationMs": 325,
             "titles": [
               {
                 "title": "approval queue: requests are kept in arrival order and only the head is actionable; a decision for any other id is refused",
@@ -9781,7 +9941,7 @@
             "file": "vscode-plugin/src/chat/__tests__/attachment-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 339,
+            "durationMs": 332,
             "titles": [
               {
                 "title": "attachment store: addBytes and addFile write into the session's own directory under a safe numbered name and return id, original name, kind, size and path",
@@ -9814,7 +9974,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-failure.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 356,
+            "durationMs": 316,
             "titles": [
               {
                 "title": "overloaded, rate limit, 429 and 5xx texts, timeouts and connection failures map to their causes",
@@ -9835,7 +9995,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 339,
+            "durationMs": 320,
             "titles": [
               {
                 "title": "outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named",
@@ -9856,7 +10016,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 8993,
+            "durationMs": 10345,
             "titles": [
               {
                 "title": "submit-turn posts each TurnEvent INCREMENTALLY (deltas observable before done)",
@@ -10119,6 +10279,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t4 UX: both chrome dropdowns paint the provider icon — history options drop the [provider] text for a data-URI icon, the active selection mirrors the current open chat",
+                "result": "pass"
+              },
+              {
                 "title": "UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads",
                 "result": "pass"
               },
@@ -10320,6 +10484,14 @@
               },
               {
                 "title": "a turn followed after reload routes its approval-requests through the queue and its end ends the batch",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored after a reload — the removal is persisted and resolved decisions are filtered from restored batches, so the follow-up never re-runs",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR6: reload in the removal->spawn window keeps the full actionable record — a turn-ended decision persists the unresolved record (command included) BEFORE the batch removal is persisted; a reloaded host re-enters the requests as cards, never blindly re-runs",
                 "result": "pass"
               },
               {
@@ -10579,6 +10751,18 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t5: the decoder-captured native session id survives a budget-limited pass — a checkpoint that consumed codex thread.started before completing restores it into the resume, and the completing pass persists nativeSessionId even when the terminal line carries none",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_result keeps the command/edit-path correlation — the checkpoint carries toolCommands/editPaths and the resumed pass restores them into the decoder",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t5: an idle budget-aborted observer pass (no onDecoderState callback) does not drop the checkpoint’s decoder fields",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)",
                 "result": "pass"
               },
@@ -10615,7 +10799,43 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t6/MR3: when the stall timer records delivery-failed, the scheduled follow-up continuation is CANCELLED — releasing the original turn later spawns nothing",
+                "title": "E202611031bd72813:S001 t6/MR1-R2: repeated request IDs across chats/turns keep separate delivery ownership — a late failure for A’s turn never starts B’s continuation",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R2b: the one-shot follow-up guard is per conversation+request — a repeated request id in ANOTHER chat still gets its own follow-up, never a silent no-op",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R3: a LATER turn in the SAME conversation reusing a request id gets its own follow-up and its own record — the earlier turn’s resolution is not inherited",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R3: live-unwritable WITH a known native handle — the host stops and verifies the original process, then the continuation resumes that native session",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4a: an ASYNC stdin failure while the original is alive takes the same live-unwritable recovery — original stopped+verified, continuation resumes the native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL (stop not verified) makes recovery record delivery-failed and launch nothing",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s turn, fired while chat B is selected and running, stops ONLY A’s original process — never the selected chat’s turn — and the continuation resumes A’s native handle",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exists for the originating turn of another chat, recovery records delivery-failed and never stops the selected chat as a substitute",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload",
+                "result": "pass"
+              },
+              {
+                "title": "E202611031bd72813:S001 t8/MR4-R3: a legacy bare call id in the persisted checkpoint dedups only its OWN turn (observer replay) — a later NEW turn reusing the id still presents",
                 "result": "pass"
               },
               {
@@ -10655,6 +10875,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t6/LLD-s7: multi-select restoration after LiveTurn cleared — reattaching re-posts the actionable selection card with prompt AND multi preserved",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t6: an abandoned follow-up (decided undelivered, then the turn is stopped before the follow-up spawns) records delivery-failed — never approved",
                 "result": "pass"
               },
@@ -10681,7 +10905,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1120,
+            "durationMs": 1111,
             "titles": [
               {
                 "title": "FAULT INJECTION: an overload result before any tool call waits as retrying, runs again when due, and ends done with one user row and the retrying line stored; retry-now runs it at once; an overload after an edit stays failed",
@@ -10694,7 +10918,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3945,
+            "durationMs": 3930,
             "titles": [
               {
                 "title": "chat host outbox: two messages sent while a turn runs are posted in the outbox with their places, and another chat's earlier message is counted ahead",
@@ -10747,7 +10971,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 981,
+            "durationMs": 952,
             "titles": [
               {
                 "title": "chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists",
@@ -10804,7 +11028,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 468,
+            "durationMs": 323,
             "titles": [
               {
                 "title": "extension wiring: the repo key hashes the real path of the git top-level of the chat folder, the window key is kept in workspaceState, the store opens under ~/.insrc/chat-queue, engines.vscode is ^1.141.0 and engines.node >=22.13, isAlive combines the pid and start-time checks, and when node:sqlite cannot load the chat is disabled and the notice is shown once",
@@ -10821,7 +11045,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1029,
+            "durationMs": 885,
             "titles": [
               {
                 "title": "chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows",
@@ -10902,7 +11126,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1417,
+            "durationMs": 1235,
             "titles": [
               {
                 "title": "chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit",
@@ -10991,7 +11215,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 545,
+            "durationMs": 512,
             "titles": [
               {
                 "title": "the shell script runs: a windowed restore shows one page at the bottom with the bar, a page request round-trips and keeps the reader's place, a live row does not move a reader who scrolled up, and an old-style restore still works",
@@ -11056,7 +11280,7 @@
             "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 423,
+            "durationMs": 736,
             "titles": [
               {
                 "title": "chat theme: the chat's own style has no hex, rgb, rgba or hsl value, no radial gradient and no var() with a literal fallback; its only color-mix is the assistant message's ground, declared once; the colour scheme follows the theme kind; a linear gradient is built only from names and transparent",
@@ -11109,7 +11333,7 @@
             "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1424,
+            "durationMs": 1430,
             "titles": [
               {
                 "title": "claude: text turn maps to status + assistant-delta(s) + done(ok)",
@@ -11506,7 +11730,7 @@
             "file": "vscode-plugin/src/chat/__tests__/design-tokens.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 391,
+            "durationMs": 317,
             "titles": [
               {
                 "title": "renderTerminalStyle: opens/closes <style>, contains every token + var(--vscode-*,<fallback>), CSP-safe",
@@ -11583,7 +11807,7 @@
             "file": "vscode-plugin/src/chat/__tests__/diff-click.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 420,
+            "durationMs": 343,
             "titles": [
               {
                 "title": "a click on an added or context line posts open-code-ref with its path and new-side line",
@@ -11608,7 +11832,7 @@
             "file": "vscode-plugin/src/chat/__tests__/diff-highlight.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 372,
+            "durationMs": 351,
             "titles": [
               {
                 "title": "the extension is matched without regard to case and a Dockerfile has a language",
@@ -11637,7 +11861,7 @@
             "file": "vscode-plugin/src/chat/__tests__/diff-sections.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 356,
+            "durationMs": 316,
             "titles": [
               {
                 "title": "parsePatch: one entry per section, with path, ranges, counts and lines, for two sections of one file",
@@ -11674,7 +11898,7 @@
             "file": "vscode-plugin/src/chat/__tests__/diff-tokens.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 394,
+            "durationMs": 340,
             "titles": [
               {
                 "title": "a TypeScript diff line is split into keyword, string and comment tokens carrying their classes",
@@ -11707,7 +11931,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-review-client.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 344,
+            "durationMs": 314,
             "titles": [
               {
                 "title": "ISSUE-6dbf14435972af7a: content() of a document-less artifact id (no mdPath, e.g. AMD) falls back to workflow.deliveryEvidence; pendingDocuments() keeps it",
@@ -11784,7 +12008,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 900,
+            "durationMs": 885,
             "titles": [
               {
                 "title": "docs review host: a docs-decision calls decide once with the open document's docPath and every comment, posts docs-decision-result, re-reads the list and the document by docPath, and hands the chat one message with the decision and the numbered comments",
@@ -11849,7 +12073,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18134,
+            "durationMs": 18314,
             "titles": [
               {
                 "title": "open() posts the pending list from client.pending()",
@@ -12784,6 +13008,10 @@
                 "result": "pass"
               },
               {
+                "title": "E202611031bd72813:S001 t8/MR2-R2: closing the LEGACY panel leaves keyed presentation panels fully alive — their posts, boot reloads, watches and decision results keep flowing; reopening the legacy panel works",
+                "result": "pass"
+              },
+              {
                 "title": "E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:artifactId — two panels showing the same artifact keep isolated drafts, and A->B->A within one panel restores A",
                 "result": "pass"
               },
@@ -12798,7 +13026,7 @@
             "file": "vscode-plugin/src/chat/__tests__/docs-sections.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 576,
+            "durationMs": 542,
             "titles": [
               {
                 "title": "t3: deriveSectionIndex returns anchors in DOCUMENT ORDER with level set to the ATX depth",
@@ -12855,7 +13083,7 @@
             "file": "vscode-plugin/src/chat/__tests__/edit-governor.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 359,
+            "durationMs": 385,
             "titles": [
               {
                 "title": "governor: check passes the reconciled operations to showSections and calls nothing when nothing changed",
@@ -12920,7 +13148,7 @@
             "file": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 342,
+            "durationMs": 338,
             "titles": [
               {
                 "title": "the adapter spawns the CLI directly via node:child_process (k1)",
@@ -12949,7 +13177,7 @@
             "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 426,
+            "durationMs": 360,
             "titles": [
               {
                 "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
@@ -13062,7 +13290,7 @@
             "file": "vscode-plugin/src/chat/__tests__/fake-dom.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 371,
+            "durationMs": 333,
             "titles": [
               {
                 "title": "the shared fake DOM records writes, parses and traps innerHTML, clears children on textContent, and models namespaces, text nodes, parent and sibling links, moves, querying and listeners",
@@ -13087,7 +13315,7 @@
             "file": "vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1080,
+            "durationMs": 1015,
             "titles": [
               {
                 "title": "git-baseline (real git): tracked, untracked, new, deleted, binary and ignored files in a subfolder give the expected sections, read returns start content from the tree id, and the index and status are unchanged",
@@ -13100,7 +13328,7 @@
             "file": "vscode-plugin/src/chat/__tests__/git-baseline.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 359,
+            "durationMs": 324,
             "titles": [
               {
                 "title": "git-baseline: snapshot resolves the printed index path against cwd, copies it, adds and writes a tree with GIT_INDEX_FILE set to the copy, and returns the tree id and the copy's path",
@@ -13125,7 +13353,7 @@
             "file": "vscode-plugin/src/chat/__tests__/group-lock.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 579,
+            "durationMs": 341,
             "titles": [
               {
                 "title": "isChatTabInput: true for the host-prefixed runtime form and the bare view type",
@@ -13194,7 +13422,7 @@
             "file": "vscode-plugin/src/chat/__tests__/link-markup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 431,
+            "durationMs": 358,
             "titles": [
               {
                 "title": "a code reference with a line in running text becomes a link carrying its path and line",
@@ -13247,7 +13475,7 @@
             "file": "vscode-plugin/src/chat/__tests__/link-opener.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 408,
+            "durationMs": 359,
             "titles": [
               {
                 "title": "the host opens a valid http url externally and refuses a non-http url",
@@ -13284,7 +13512,7 @@
             "file": "vscode-plugin/src/chat/__tests__/markers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 414,
+            "durationMs": 329,
             "titles": [
               {
                 "title": "markerFor maps every sc2 status phase to the right class + label",
@@ -13345,7 +13573,7 @@
             "file": "vscode-plugin/src/chat/__tests__/mocks-contract.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 361,
+            "durationMs": 335,
             "titles": [
               {
                 "title": "mock round-trip: each mock's <style> equals renderTerminalStyle(terminalTheme) byte-for-byte",
@@ -13378,7 +13606,7 @@
             "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 353,
+            "durationMs": 332,
             "titles": [
               {
                 "title": "WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)",
@@ -13433,7 +13661,7 @@
                 "result": "pass"
               },
               {
-                "title": "E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/status/lastActivityAt; open-chat stays the only open message",
+                "title": "E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/provider/status/lastActivityAt; open-chat stays the only open message",
                 "result": "pass"
               }
             ],
@@ -13443,7 +13671,7 @@
             "file": "vscode-plugin/src/chat/__tests__/render-registry.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 417,
+            "durationMs": 357,
             "titles": [
               {
                 "title": "renderRow dispatches to a registered renderer for its kind",
@@ -13752,7 +13980,7 @@
             "file": "vscode-plugin/src/chat/__tests__/resolve-within.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 362,
+            "durationMs": 325,
             "titles": [
               {
                 "title": "resolveWithin refuses .. escapes, absolute paths, missing files and a symlink that points outside the root",
@@ -13765,7 +13993,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-column.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 373,
+            "durationMs": 315,
             "titles": [
               {
                 "title": "chooseReviewColumn picks a group without the chat tab, the active one first, else the lowest column, and none when only the chat's group is open",
@@ -13782,7 +14010,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 380,
+            "durationMs": 353,
             "titles": [
               {
                 "title": "vscode-plugin/src/chat/__tests__/review-frame-message.test.ts: a reference from the companion frame is posted to the host as an open-code-ref message",
@@ -13807,7 +14035,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-icon.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 333,
+            "durationMs": 317,
             "titles": [
               {
                 "title": "review icon: the light and dark SVG pair exists, draws the insrc spiral behind a document glyph with no background, ships in the package, and is declared by the insrc.chat.docsReview command",
@@ -13820,7 +14048,7 @@
             "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 528,
+            "durationMs": 508,
             "titles": [
               {
                 "title": "a turn with no declaration opens nothing at its end, and a tool result carrying a pendingApproval block opens nothing",
@@ -13869,7 +14097,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 394,
+            "durationMs": 402,
             "titles": [
               {
                 "title": "over a real temporary directory with two store instances on one session: each appends, then the first saves its held object twice more with a get between; the rows file holds every row of both, was never replaced, and a torn last line written by hand is dropped and cut back",
@@ -13886,7 +14114,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 362,
+            "durationMs": 341,
             "titles": [
               {
                 "title": "a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)",
@@ -13987,7 +14215,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-lock.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1243,
+            "durationMs": 1230,
             "titles": [
               {
                 "title": "one lease per session; a second acquire waits until the holder's process exits, then is granted",
@@ -14064,7 +14292,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1503,
+            "durationMs": 1424,
             "titles": [
               {
                 "title": "a turn's segment is the lines between its turn-start and turn-end markers; tail yields only complete CLI lines with the cursor after each, skips marker lines, holds back a half-written line until its newline, and follows growth until the writer finishes",
@@ -14129,7 +14357,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 383,
+            "durationMs": 339,
             "titles": [
               {
                 "title": "draft(): an in-memory session NOT persisted until saved (no empty chats in history)",
@@ -14258,7 +14486,7 @@
             "file": "vscode-plugin/src/chat/__tests__/session-title.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 368,
+            "durationMs": 349,
             "titles": [
               {
                 "title": "clampSessionTitle: a name longer than 32 chars -> 32 chars + a trailing ellipsis (ac4)",
@@ -14287,7 +14515,7 @@
             "file": "vscode-plugin/src/chat/__tests__/stream-events.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 367,
+            "durationMs": 320,
             "titles": [
               {
                 "title": "TURN_EVENT_KINDS reserves 'approval-request' alongside every prior kind (additive)",
@@ -14324,7 +14552,7 @@
             "file": "vscode-plugin/src/chat/__tests__/transcript-pager.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 587,
+            "durationMs": 525,
             "titles": [
               {
                 "title": "a live row rendered by the registry while the view is scrolled up leaves scrollTop unchanged and trims nothing, even with more than 300 rows held",
@@ -14381,7 +14609,7 @@
             "file": "vscode-plugin/src/chat/__tests__/transcript-window.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 340,
+            "durationMs": 326,
             "titles": [
               {
                 "title": "latestWindow: a transcript no longer than one page is returned whole with firstIndex 0",
@@ -14414,7 +14642,7 @@
             "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1903,
+            "durationMs": 1885,
             "titles": [
               {
                 "title": "start waits for the session lease, reports waiting, runs, and releases the lease when the process exits",
@@ -14567,7 +14795,7 @@
             "file": "vscode-plugin/src/chat/__tests__/webview-hljs.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 354,
+            "durationMs": 428,
             "titles": [
               {
                 "title": "evaluating the highlighter module highlights TypeScript, JSON and Python text as span markup",

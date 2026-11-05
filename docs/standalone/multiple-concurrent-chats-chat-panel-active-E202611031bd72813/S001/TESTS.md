@@ -100,7 +100,7 @@ Run at 2026-11-03T22:26:01.370Z on commit `375209e20`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-04T17:12:47.804Z on commit `50fd8cc9b`. Tests check: **passed**. 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-05T08:10:31.186Z on commit `dfee30261`. Tests check: **passed**. 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: observer own-cursor + retention + SegmentGone + decoder checkpoints (session-output.ts, cli-adapter.ts, turn-lifecycle.ts)**
 
@@ -139,14 +139,14 @@ Run at 2026-11-04T17:12:47.804Z on commit `50fd8cc9b`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 204 | 8.7 s |  |
-| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 97 | 1.4 s |  |
-| `vscode-plugin/src/chat/__tests__/session-output.test.ts` | 0 | 14 | 1.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 220 | 9.7 s |  |
+| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 97 | 1.5 s |  |
+| `vscode-plugin/src/chat/__tests__/session-output.test.ts` | 0 | 14 | 1.5 s |  |
 | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 36 | 1.9 s |  |
 
 ## t6
 
-Run at 2026-11-04T17:07:27.035Z on commit `50fd8cc9b`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-05T08:08:39.478Z on commit `dfee30261`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: approval-queue snapshot/restore round-trip + delivery result correlation (approval-queue.ts, cli-adapter.ts)**
 
@@ -167,8 +167,8 @@ Run at 2026-11-04T17:07:27.035Z on commit `50fd8cc9b`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/approval-queue.test.ts` | 0 | 4 | 0.3 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 204 | 8.8 s |  |
-| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 97 | 1.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 220 | 10.2 s |  |
+| `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 97 | 1.5 s |  |
 
 ## t7
 
@@ -188,7 +188,7 @@ Run at 2026-11-04T12:28:55.104Z on commit `4e2987f81`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-04T16:47:19.787Z on commit `a3e531ba0`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-04T20:28:05.132Z on commit `76ff96770`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: panels map create/reveal/dispose + title (docs-review-panel.ts)**
 
@@ -206,8 +206,8 @@ Run at 2026-11-04T16:47:19.787Z on commit `a3e531ba0`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 202 | 8.4 s |  |
-| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 235 | 16.6 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 209 | 8.8 s |  |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 236 | 21 s |  |
 
 ## t9
 
@@ -227,7 +227,7 @@ Run at 2026-11-04T12:42:28.777Z on commit `853cee732`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-04T17:10:12.423Z on commit `50fd8cc9b`. Tests check: **passed**. 106 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-05T08:20:08.129Z on commit `dfee30261`. Tests check: **passed**. 106 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: all unit subjects incl. protocol shapes unchanged (protocol.ts)**
 
@@ -351,53 +351,53 @@ Run at 2026-11-04T17:10:12.423Z on commit `50fd8cc9b`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `vscode-plugin/src/chat/__tests__/approval-queue.test.ts` | 0 | 4 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/attachment-store.test.ts` | 0 | 6 | 0.3 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-failure.test.ts` | 0 | 3 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-failure.test.ts` | 0 | 3 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-outbox.test.ts` | 0 | 3 | 0.3 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 204 | 9 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-panel.test.ts` | 0 | 220 | 10.3 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts` | 0 | 1 | 1.1 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts` | 0 | 11 | 3.9 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts` | 0 | 12 | 1 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts` | 0 | 2 | 0.5 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` | 0 | 18 | 1 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 20 | 1.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts` | 0 | 2 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts` | 0 | 18 | 0.9 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts` | 0 | 20 | 1.2 s |  |
 | `vscode-plugin/src/chat/__tests__/chat-shell.test.ts` | 0 | 14 | 0.5 s |  |
-| `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` | 0 | 11 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/chat-theme.test.ts` | 0 | 11 | 0.7 s |  |
 | `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` | 0 | 97 | 1.4 s |  |
-| `vscode-plugin/src/chat/__tests__/design-tokens.test.ts` | 0 | 17 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/diff-click.test.ts` | 0 | 4 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/design-tokens.test.ts` | 0 | 17 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/diff-click.test.ts` | 0 | 4 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/diff-highlight.test.ts` | 0 | 5 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/diff-sections.test.ts` | 0 | 7 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/diff-tokens.test.ts` | 0 | 6 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/diff-sections.test.ts` | 0 | 7 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/diff-tokens.test.ts` | 0 | 6 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/docs-review-client.test.ts` | 0 | 17 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/docs-review-decision.test.ts` | 0 | 14 | 0.9 s |  |
-| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 235 | 18.1 s |  |
-| `vscode-plugin/src/chat/__tests__/docs-sections.test.ts` | 0 | 12 | 0.6 s |  |
+| `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts` | 0 | 236 | 18.3 s |  |
+| `vscode-plugin/src/chat/__tests__/docs-sections.test.ts` | 0 | 12 | 0.5 s |  |
 | `vscode-plugin/src/chat/__tests__/edit-governor.test.ts` | 0 | 14 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts` | 0 | 5 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts` | 0 | 26 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` | 0 | 4 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts` | 0 | 1 | 1.1 s |  |
-| `vscode-plugin/src/chat/__tests__/git-baseline.test.ts` | 0 | 4 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/group-lock.test.ts` | 0 | 15 | 0.6 s |  |
+| `vscode-plugin/src/chat/__tests__/fake-dom.test.ts` | 0 | 4 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/git-baseline.integration.test.ts` | 0 | 1 | 1 s |  |
+| `vscode-plugin/src/chat/__tests__/git-baseline.test.ts` | 0 | 4 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/group-lock.test.ts` | 0 | 15 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/link-markup.test.ts` | 0 | 11 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/link-opener.test.ts` | 0 | 7 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/markers.test.ts` | 0 | 13 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/mocks-contract.test.ts` | 0 | 6 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 14 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/markers.test.ts` | 0 | 13 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/mocks-contract.test.ts` | 0 | 6 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/protocol.test.ts` | 0 | 14 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/render-registry.test.ts` | 0 | 75 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/resolve-within.test.ts` | 0 | 1 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/review-column.test.ts` | 0 | 2 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/resolve-within.test.ts` | 0 | 1 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/review-column.test.ts` | 0 | 2 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/review-frame-message.test.ts` | 0 | 4 | 0.4 s |  |
 | `vscode-plugin/src/chat/__tests__/review-icon.test.ts` | 0 | 1 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/review-presenter.test.ts` | 0 | 10 | 0.5 s |  |
 | `vscode-plugin/src/chat/__tests__/session-file-store.integration.test.ts` | 0 | 2 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 23 | 0.4 s |  |
+| `vscode-plugin/src/chat/__tests__/session-file-store.test.ts` | 0 | 23 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/session-lock.test.ts` | 0 | 17 | 1.2 s |  |
-| `vscode-plugin/src/chat/__tests__/session-output.test.ts` | 0 | 14 | 1.5 s |  |
-| `vscode-plugin/src/chat/__tests__/session-store.test.ts` | 0 | 30 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/session-title.test.ts` | 0 | 5 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/stream-events.test.ts` | 0 | 7 | 0.4 s |  |
-| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 12 | 0.6 s |  |
+| `vscode-plugin/src/chat/__tests__/session-output.test.ts` | 0 | 14 | 1.4 s |  |
+| `vscode-plugin/src/chat/__tests__/session-store.test.ts` | 0 | 30 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/session-title.test.ts` | 0 | 5 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/stream-events.test.ts` | 0 | 7 | 0.3 s |  |
+| `vscode-plugin/src/chat/__tests__/transcript-pager.test.ts` | 0 | 12 | 0.5 s |  |
 | `vscode-plugin/src/chat/__tests__/transcript-window.test.ts` | 0 | 6 | 0.3 s |  |
 | `vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts` | 0 | 36 | 1.9 s |  |
 | `vscode-plugin/src/chat/__tests__/webview-hljs.test.ts` | 0 | 2 | 0.4 s |  |

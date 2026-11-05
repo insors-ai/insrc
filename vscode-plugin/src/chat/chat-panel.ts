@@ -321,7 +321,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
   // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
   // loaded once at host start; when they land, a wired panel re-renders with them.
-  let runCatalog: readonly RunProviderView[] = [];
+  let runCatalog: readonly RunProviderView[] = deps.providers.available.map((id) => ({ id, label: id, models: [] }));
   const refreshRunCatalog = (): void => {
     if (deps.definitions === undefined) return;
     void deps.definitions().then((d) => {
@@ -2133,9 +2133,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `@keyframes insrc-rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}` +
       `.popup,.slider-pop{position:absolute;bottom:calc(100% + 8px);right:0;display:none;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:10px;box-shadow:0 12px 32px var(--pop-shadow);z-index:20;animation:insrc-rise .12s ease-out;color:var(--dropdown-fg);}` +
       `.popup.open,.slider-pop.open{display:flex;}` +
-      `.popup{flex-direction:column;padding:6px;min-width:400px;}` +
+      `.popup{flex-direction:column;padding:6px;box-sizing:border-box;min-width:0;width:min(560px,calc(100vw - 28px));max-width:calc(100vw - 28px);}` +
       `.popup .panes{display:flex;gap:2px;}` +
-      `.popup .pane{display:flex;flex-direction:column;min-width:180px;max-height:264px;overflow-y:auto;}` +
+      `.popup .pane{display:flex;flex-direction:column;min-width:0;flex:1;max-height:min(264px,45vh);overflow:auto;}` +
       `.popup .pane + .pane{border-left:1px solid var(--border-lit);padding-left:2px;}` +
       `.popup .pane-h{padding:6px 10px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
       `.popup .item{display:flex;align-items:center;gap:8px;margin:1px;padding:5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;}` +
@@ -2147,7 +2147,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.popup .item.sel .lbl{color:var(--fg-strong);}` +
       `.popup .item .sub{margin-left:auto;color:var(--muted);font-size:11px;font-family:var(--font);}` +
       `.popup .foot{margin-top:6px;padding:6px 10px 2px;border-top:1px solid var(--border-lit);color:var(--muted);font-size:11px;}` +
-      `.slider-pop{flex-direction:column;width:330px;padding:10px 14px 12px;}` +
+      `.slider-pop{flex-direction:column;width:330px;max-width:calc(100vw - 28px);box-sizing:border-box;padding:10px 14px 12px;}` +
       `.slider-pop .pane-h{padding:2px 2px 8px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
       `.slider-pop input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;}` +
       `.ticks{display:flex;justify-content:space-between;padding:0 7px;}` +
@@ -2239,8 +2239,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const runProvider = session?.provider ?? available[0];
     const runModelId = session?.model;
     const runEffort = session?.effort;
-    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => m.id === runModelId);
-    const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : 'default';
+    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => runModelId !== undefined && (m.id === runModelId || m.alias === runModelId));
+    const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : (runModelId || 'default');
     const runEffortLabel = runEffort !== undefined && runEffort !== '' ? runEffort : 'default';
     const catalogJson = attr(JSON.stringify(runCatalog));
     // Story E2026101259da3204:S001: the attachment controls, present only with the host's seams.
@@ -2374,20 +2374,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
       `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
-      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m;})[0]:undefined;}` +
-      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+(s.provider||'…')+' · '+(m?(m.alias||m.name):'default')+' <span class="chev">▾</span>';}` +
+      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m;})[0]:undefined;}` +
+      `function rtext(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}` +
+      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+rtext(s.provider||'…')+' · '+rtext(m?(m.alias||m.name):(s.model||'default'))+' <span class="chev">▾</span>';}` +
       `function elabel(){var s=rstate();document.getElementById('insrc-effortlabel').textContent=s.effort||'default';}` +
       `function rlevels(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);if(!f)return[];if(m)return m.efforts.slice();var u=[];f.models.forEach(function(x){x.efforts.forEach(function(e){if(u.indexOf(e)<0)u.push(e);});});return u;}` +
       `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');}` +
       `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
       `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
-      `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&s.model===m.id,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
+      `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&rmodel(s.provider,s.model)===m,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
       `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});rb.setAttribute('data-model',id);rlabel();closePops();}}` +
       `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=s.provider==='vibe'?'vibe has no per-call thinking flag — the level is informational; the model’s \`thinking\` in ~/.vibe/config.toml applies.':'Applies to the next turns of this chat.';}` +
       `function applyEffort(){var s=rstate(),levels=['default'].concat(rlevels()),i=Number(document.getElementById('insrc-effortslider').value);var e=levels[i]==='default'?'':levels[i];vs.postMessage({v:1,payload:{type:'set-run-config',effort:e}});rb.setAttribute('data-effort',e);elabel();renderEffortPop();}` +
       `if(rb)rb.onclick=function(e){e.stopPropagation();var was=rp.classList.contains('open');closePops();if(!was){renderProvPane();rp.classList.add('open');rb.setAttribute('aria-expanded','true');}};` +
       `if(gb)gb.onclick=function(e){e.stopPropagation();if(gb.classList.contains('dim'))return;var was=ep.classList.contains('open');closePops();if(!was){renderEffortPop();ep.classList.add('open');gb.setAttribute('aria-expanded','true');}};` +
       `var esl=document.getElementById('insrc-effortslider');if(esl){esl.addEventListener('change',applyEffort);}` +
+      `if(rp)rp.addEventListener('click',function(e){e.stopPropagation();});` +
+      `if(ep)ep.addEventListener('click',function(e){e.stopPropagation();});` +
       `document.addEventListener('click',closePops);` +
       `document.addEventListener('keydown',function(e){if(e.key==='Escape')closePops();});` +
       `rlabel();elabel();` +

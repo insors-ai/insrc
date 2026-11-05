@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "43e0b651654e0757",
+    "storyId": "S001",
+    "createdAt": "2026-11-05T11:35:38.156Z",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue → build; existing per-session configuration and IPC contracts reused.",
+    "epicCreatedAt": "2026-11-05T11:35:38.156Z"
+  },
+  "body": {
+    "focus": "Fix approved ISSUE-3fdb2b75703e6f09: preserve per-session provider/model/effort on history switches and ensure new-session selectors open and work. Diagnose runtime webview failure, preserve legacy defaults, and add executable restoration/selector regression tests.",
+    "producesLld": false,
+    "commit": "6d4d09062"
+  }
+}

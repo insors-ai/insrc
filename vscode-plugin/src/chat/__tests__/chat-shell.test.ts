@@ -39,7 +39,7 @@ interface Shell {
   tickIntervals: () => void;
 }
 /** `attach` gives the host its attachment seams, so the shell has the attach controls. */
-function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined } = {}): Shell {
+function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefined; clock?: { t: number } | undefined; store?: ReturnType<typeof createInMemoryChatSessionStore> | undefined; channel?: ChatPanelChannel | undefined; catalog?: unknown } = {}): Shell {
   let html = '';
   const inner: ChatPanelChannel = opts.channel ?? { setHtml: (h) => { html = h; }, postMessage: () => {}, onMessage: () => {}, onDidDispose: () => {}, reveal: () => {}, dispose: () => {} };
   // keep runShell's own html snapshot in sync when a caller supplies the channel
@@ -65,12 +65,20 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
   // What the shell touches beyond the shared fake DOM's surface, as inert stand-ins.
   const dress = (e: BodyStub): Stub => {
     const s = e as Stub;
+    const query = e.querySelector.bind(e);
+    const labels = new Map<string, BodyStub>();
+    e.querySelector = (sel: string) => {
+      if (!['.lbl', '.sub', '.pane-h'].includes(sel)) return query(sel);
+      if (!labels.has(sel)) labels.set(sel, bodyStub('span'));
+      return labels.get(sel)!;
+    };
     s['options'] = [];
     s['dataset'] = {};
     s['remove'] = () => {};
     s['focus'] = () => {};
     s['removeAttribute'] = () => {};
-    s['classList'] = { add() {}, remove() {}, toggle() {}, contains: () => false };
+    const classes = new Set<string>();
+    s['classList'] = { add: (c: string) => classes.add(c), remove: (c: string) => classes.delete(c), toggle: (c: string) => { if (classes.has(c)) classes.delete(c); else classes.add(c); }, contains: (c: string) => classes.has(c) };
     return s;
   };
   const byId = new Map<string, Stub>();
@@ -81,6 +89,7 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
       // The progress widget's label is one stable element, so the test can read what the page set on it.
       const label = id === 'insrc-progress' ? dress(bodyStub('span')) : undefined;
       e['querySelector'] = (sel: string) => (label !== undefined && sel === '.plabel' ? label : dress(bodyStub('span')));
+      if (id === 'insrc-catalog' && opts.catalog !== undefined) e.setAttribute('data-catalog', JSON.stringify(opts.catalog));
       byId.set(id, e);
     }
     return e;
@@ -747,4 +756,58 @@ test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdo
   const restored = posted.filter((m) => (m as { payload?: { type?: string } }).payload?.type === 'session-restored').at(-1) as { payload: { sessionId: string } };
   assert.ok(restored !== undefined, 'the host answered session-restored');
   assert.equal(restored.payload.sessionId, b.id, 'the round trip opened chat B end to end (shell selection -> host -> restore)');
+});
+
+
+// ISSUE-3fdb2b75703e6f09: execute the real restore handler and selector callbacks.
+const runConfigCatalog = [{ id: 'claude', label: 'Claude CLI', models: [{ id: 'claude-opus', alias: 'opus', name: 'Opus', efforts: ['medium', 'high'] }] }];
+const clickControl = (e: BodyStub): void => {
+  const handler = (e as Stub)['onclick'] as ((event: { stopPropagation(): void }) => void) | undefined;
+  assert.ok(handler, `${e.id} has a working click binding`);
+  handler({ stopPropagation() {} });
+};
+
+test('history run-config restores provider model and effort across sessions and legacy defaults in the executable shell', () => {
+  const v = runShell({ catalog: runConfigCatalog });
+  const restore = (provider: string, model: string, effort: string): void => {
+    v.msg({ type: 'session-restored', sessionId: provider, transcript: [], total: 0 });
+    v.msg({ type: 'run-config', provider, model, effort });
+  };
+  restore('claude', 'opus', 'high');
+  assert.match(v.el('insrc-runbtn').innerHTML, /claude.*opus/);
+  assert.equal(v.el('insrc-effortlabel').textContent, 'high');
+  restore('codex', 'saved-model-outside-catalog', 'medium');
+  assert.match(v.el('insrc-runbtn').innerHTML, /codex.*saved-model-outside-catalog/);
+  assert.equal(v.el('insrc-effortlabel').textContent, 'medium');
+  restore('claude', 'opus', 'high');
+  assert.equal(v.el('insrc-runbtn').getAttribute('data-model'), 'opus');
+  assert.equal(v.el('insrc-runbtn').getAttribute('data-provider'), 'claude');
+  assert.equal(v.el('insrc-effortlabel').textContent, 'high');
+  restore('claude', '<img onerror=alert(1)>', '');
+  assert.match(v.el('insrc-runbtn').innerHTML, /&lt;img/);
+  assert.doesNotMatch(v.el('insrc-runbtn').innerHTML, /<img/);
+  restore('claude', '', '');
+  assert.match(v.el('insrc-runbtn').innerHTML, /default/);
+  assert.equal(v.el('insrc-effortlabel').textContent, 'default');
+});
+
+test('new-session model and effort controls open and apply selections in the executable shell', () => {
+  const v = runShell({ catalog: runConfigCatalog });
+  v.msg({ type: 'session-restored', sessionId: 'draft', transcript: [], total: 0 });
+  v.msg({ type: 'run-config', provider: 'claude', model: '', effort: '' });
+  clickControl(v.el('insrc-runbtn'));
+  assert.equal(v.el('insrc-runbtn').getAttribute('aria-expanded'), 'true');
+  const modelRows = v.el('insrc-modelpane').children;
+  assert.ok(modelRows.length >= 2, 'catalog model rows are rendered');
+  clickControl(modelRows.at(-1)!);
+  assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', model: 'claude-opus' });
+  assert.match(v.el('insrc-runbtn').innerHTML, /opus/);
+  clickControl(v.el('insrc-effortbtn'));
+  assert.equal(v.el('insrc-runbtn').getAttribute('aria-expanded'), 'false');
+  assert.equal(v.el('insrc-effortbtn').getAttribute('aria-expanded'), 'true');
+  clickControl(v.el('insrc-notches').children.at(-1)!);
+  assert.deepEqual(v.sent.at(-1), { type: 'set-run-config', effort: 'high' });
+  assert.equal(v.el('insrc-effortlabel').textContent, 'high');
+  assert.ok(v.el('insrc-runpop').listeners['click']?.length, 'menu consumes inside clicks before document dismissal');
+  assert.ok(v.el('insrc-effortpop').listeners['click']?.length, 'slider consumes inside clicks before document dismissal');
 });

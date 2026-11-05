@@ -7938,3 +7938,36 @@ test('E202611031bd72813:S001 t4: host round trip — the open-chat { chatId } th
   assert.equal(restored.sessionId, b.id, 'the round trip opened chat B, not the default');
   fc.fireDispose();
 });
+
+// ISSUE-3fdb2b75703e6f09: use a new store instance so object identity cannot fake persistence.
+test('history reopen from disk preserves each provider model effort and next-turn request after reload', async () => {
+  const fs = fakeSessionFs();
+  const seed = createFileChatSessionStore({ root: '/sessions', fs: fs.fs });
+  const a = seed.create('claude', { model: 'opus', effort: 'high' });
+  const b = seed.create('codex', { model: 'gpt-6.1-sol', effort: 'medium' });
+  const fc = fakeChannel();
+  const reqs: TurnRequest[] = [];
+  const adapter = scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }], { onRun: (r) => reqs.push(r) });
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter, codex: adapter }, ['claude', 'codex']),
+    store: createFileChatSessionStore({ root: '/sessions', fs: fs.fs }),
+    cwd: () => '/repo',
+  });
+  try {
+    host.open();
+    for (const s of [a, b, a]) {
+      fc.send(env('open-chat', { chatId: s.id }));
+      const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
+      assert.deepEqual(echo, { type: 'run-config', provider: s.provider, model: s.model, effort: s.effort });
+    }
+    fc.send(env('submit-turn', { text: 'continue restored session' }));
+    await waitFor(() => reqs.length === 1);
+    assert.equal(reqs[0]!.provider, 'claude');
+    assert.equal(reqs[0]!.model, 'opus');
+    assert.equal(reqs[0]!.effort, 'high');
+    fc.send(env('new-chat', { provider: 'claude' }));
+    const echo = fc.posted.filter((m) => m.payload.type === 'run-config').at(-1)!.payload;
+    assert.deepEqual(echo, { type: 'run-config', provider: 'claude', model: '', effort: '' });
+  } finally { host.dispose(); }
+});

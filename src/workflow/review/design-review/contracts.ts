@@ -255,9 +255,19 @@ export function decodeDesign<T extends TSchema>(schema: T, input: unknown, maxBy
  requireDesign(!error, 'invalid_schema', `${error?.path ?? 'input'}: ${error?.message ?? 'Invalid schema'}`);
  return value as Static<T>;
 }
+/** The union of every phase fails with an empty path and no hint; name the caller's phase and the first offending field instead. */
+function refuseUnmatchedRequest(input: unknown): void {
+ const phase = typeof input === 'object' && input !== null ? (input as { phase?: unknown }).phase : undefined;
+ const schema = typeof phase === 'string' && Object.hasOwn(DesignRequestSchemas, phase) ? DesignRequestSchemas[phase as keyof typeof DesignRequestSchemas] : undefined;
+ requireDesign(schema, 'invalid_schema', `phase: Expected one of ${DESIGN_REVIEW_PHASES.join(', ')}`);
+ const error = Value.Errors(schema, input).First();
+ requireDesign(!error, 'invalid_schema', `${String(phase)} request: ${error?.path || 'input'}: ${error?.message ?? 'Invalid schema'}`);
+}
 export function parseDesignRequest(input: unknown): DesignReviewRequest {
  try {
-  const request = decodeDesign(DesignRequestSchema, input, DESIGN_LIMITS.requestBytes);
+  let request: DesignReviewRequest;
+  try { request = decodeDesign(DesignRequestSchema, input, DESIGN_LIMITS.requestBytes); }
+  catch (error) { if (error instanceof DesignReviewError && error.code === 'invalid_schema') refuseUnmatchedRequest(input); throw error; }
   requireDesign(isAbsolute(request.repo),'invalid_project','Expected an absolute project path');
   if (request.phase === 'result') decodeDesign(DesignResultSchema, request.result, DESIGN_LIMITS.resultBytes);
   if (request.phase === 'recover') {

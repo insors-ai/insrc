@@ -53,3 +53,12 @@ test('S1 checkpoints remain readable and bounded recovery metadata round-trips w
  }
  assert.throws(()=>decodeDesign(DesignProgressSchema,{...progress,retriesUsed:4}));
 });
+
+test('design request validation names the phase and the first offending field, and lists the valid phases for an unknown one',()=>{
+ const base={repo:'/x',reviewId:'review',attempt:1};
+ assert.throws(()=>parseDesignRequest({phase:'result',...base}),(e:unknown)=>e instanceof DesignReviewInputError&&e.code==='invalid_schema'&&/^result request: \/executionId: /.test(e.message));
+ assert.throws(()=>parseDesignRequest({phase:'recover',...base,operation:'resume'}),(e:unknown)=>e instanceof DesignReviewInputError&&e.code==='invalid_schema'&&/^recover request: \/actionId: /.test(e.message));
+ for(const bad of [{phase:'nope',...base},{...base},null,'start'])
+  assert.throws(()=>parseDesignRequest(bad),(e:unknown)=>e instanceof DesignReviewInputError&&e.code==='invalid_schema'&&/^phase: Expected one of start, progress, assignment, plan, impact, activity, result, recover, failure$/.test(e.message));
+ assert.equal(parseDesignRequest({phase:'start',...base,attempt:2,artifactPath:'/x/y'}).phase,'start','a valid request stays valid');
+});

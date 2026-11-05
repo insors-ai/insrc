@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793852725585-0fexgd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T04:25:47.665Z",
+    "epicCreatedAt": "2026-11-05T04:25:47.665Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 22079,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "76b6e6635afe5530",
+    "epicSlug": "name-phase-field-when-design-review",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c47241152fd8d82e11db78a15b6e664e6a7f511fa23cea76caee8b94f46d0c3a",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T04:31:37.782Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "76b6e6635afe5530",
+      "slug": "EPIC-76b6e6635afe5530"
+    }
+  },
+  "body": {
+    "title": "Name the phase and field when a design review request is malformed",
+    "reproduction": "Call insrc_review_step with a request that does not carry everything its phase needs. 1. phase 'result' with only repo, reviewId and attempt (no executionId, sequence or result). 2. phase 'recover' with operation 'resume' and no actionId. 3. an unknown phase such as 'nope'. Observed: each is refused with code invalid_schema and the message \": Expected union value\" (an empty path), which names neither the phase nor the missing field. Expected: the message names the phase and the first offending field (for example that a result request needs executionId), and for an unknown or missing phase lists the valid phases. A valid request, such as a start with an attempt of 2, is accepted.",
+    "rootCause": "parseDesignRequest validates every request against DesignRequestSchema, a Type.Union of the nine per-phase schemas, through decodeDesign, which reports only the first TypeBox error. When a request fits none of the union members, that first error is the union-level one, with an empty path and the message 'Expected union value', so it carries nothing about which phase the caller meant or which field is missing. The per-phase schemas already exist keyed by phase (DesignRequestSchemas) and the valid phase names are listed (DESIGN_REVIEW_PHASES), but the validation does not use them to choose the schema. The only production caller is the daemon RPC entry designReviewStep, so every malformed request a caller sends reaches the user with this message.",
+    "fixIntent": "A malformed design review request is refused with a message that names its phase and the first offending field. A request with an unknown or missing phase is refused with a message listing the valid phases. The refusal keeps its code (invalid_schema) and error class (DesignReviewInputError), and requests that are valid today stay valid. The stored review format and the request shapes do not change. Parts 1 and 3 of issue #101 (retrying a failed reviewer attempt, and placeholder findings stored as findings) are separate stories and not part of this fix."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/contracts.ts:196-208"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/contracts.ts:244-257"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/contracts.ts:258-262"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/design-review-rpc.ts:15-16"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts:10-24"
+    }
+  ]
+}

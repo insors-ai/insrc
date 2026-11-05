@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "db47f0a704478ea81e3684281e56c7e83f21f44d206d8a28a1ed6771586795b4",
+        "at": "2026-11-05T09:51:51.326Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "f5af0500294370bc",
+    "storyId": "s1",
+    "createdAt": "2026-11-05T09:51:51.270Z",
+    "updatedAt": "2026-11-05T09:51:51.270Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-05T09:24:33.752Z",
+    "epicSlug": "recover-design-reviews-stranded-consolidation-failure",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "103bdd443",
+        "ranAt": "2026-11-05T09:51:51.270Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 705,
+            "titles": [
+              {
+                "title": "failed consolidation recovers durable accepted chunks without provider calls and remains replay safe",
+                "result": "pass"
+              },
+              {
+                "title": "failed consolidation recovery refuses changed subjects unrelated failures and missing accepted work",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 710,
+            "titles": [
+              {
+                "title": "exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result",
+                "result": "pass"
+              },
+              {
+                "title": "missing reconciliation is accepted incomplete with conservative carry and supersession references a real current finding",
+                "result": "pass"
+              },
+              {
+                "title": "invalid dispositions cannot close retained-only concerns or cite unknown duplicate or uninspected sources",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              },
+              {
+                "title": "stored impact reports enforce the same document and checkpoint references as live acceptance",
+                "result": "pass"
+              },
+              {
+                "title": "partial reconciliation with final self-inspection is idempotent and preserves omitted blockers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

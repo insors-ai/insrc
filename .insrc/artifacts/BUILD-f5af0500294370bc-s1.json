@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "506f6e84de4807dcae7be4fde6964144565f8cb83c31642c0165bbba0d68eeac",
+        "at": "2026-11-05T09:52:54.619Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-d62af41b-21ea-42b8-ab8e-ce523dbfe37c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T09:47:41.248Z",
+    "epicCreatedAt": "2026-11-05T09:24:33.752Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "f5af0500294370bc",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed directly to build.",
+    "epicSlug": "recover-design-reviews-stranded-consolidation-failure",
+    "updatedAt": "2026-11-05T09:51:51.270Z"
+  },
+  "body": {
+    "focus": "Approved ISSUE-f5af0500294370bc: repair design-review consolidation validation and explicit failed-checkpoint recovery.",
+    "producesLld": false,
+    "commit": "103bdd443",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Makes partial finding reconciliation idempotent while carrying omitted blockers and keeping genuine inspection gaps strict; enables explicit recovery of invalid-result consolidation failures from accepted chunks without model calls. Verified 91 design-review/MCP tests, strengthened durable recovery regression and typecheck; read-only replay of the actual stranded checkpoint produces an incomplete report without mutating it.",
+    "testRecord": {
+      "md": "docs/standalone/recover-design-reviews-stranded-consolidation-failure-E20261105f5af0500/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f5af0500294370bc.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-f5af0500294370bc.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/recover-design-reviews-stranded-consolidation-failure-E20261105f5af0500/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/consolidation-recovery.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T09:51:51.270Z"
+      }
+    ]
+  },
+  "citations": []
+}

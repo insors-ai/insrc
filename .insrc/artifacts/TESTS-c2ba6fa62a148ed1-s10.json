@@ -4,7 +4,7 @@
     "epicHash": "c2ba6fa62a148ed1",
     "storyId": "s10",
     "createdAt": "2026-11-04T05:25:24.967Z",
-    "updatedAt": "2026-11-04T07:13:02.393Z",
+    "updatedAt": "2026-11-05T04:32:36.489Z",
     "epicCreatedAt": "2026-10-11T05:19:32.803Z",
     "epicSlug": "complete-consistent-richer-code-index-one"
   },
@@ -1004,6 +1004,38 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "992618f97",
+        "ranAt": "2026-11-05T04:32:36.489Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t11: measurement on this repository against the hand-checked set",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#re-measurement-after-the-code-review-fix-2026-11-05"
+            }
+          },
+          {
+            "name": "s10 t11: installed daemon returns extracted document links and docRelations status",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#installed-daemon-smoke"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   }

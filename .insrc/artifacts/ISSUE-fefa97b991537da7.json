@@ -1,0 +1,115 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793820618719-durlzg",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-04T19:31:14.890Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 56168,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "fefa97b991537da7",
+    "epicSlug": "open-saved-connections-demand-read-all",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-04T19:35:03.102Z",
+    "parentRef": {
+      "slug": "open-saved-connections-demand-read-all"
+    }
+  },
+  "body": {
+    "title": "Open saved connections on demand and read all credentials with one keychain prompt per daemon run",
+    "reproduction": "1. Save one or more data connections with credentials (they are stored in the macOS login Keychain under the service 'insrc'; this machine has 9 such items).\n2. Change the program that reads them, for example a Homebrew node upgrade, or on a first start after install.\n3. Restart the insrc daemon (an update, the TUI restart, or a plugin restart).\n\nObserved: macOS shows a Keychain access dialog (the SecurityAgent process) for an insrc item. The daemon process runs, but it does not open its socket until the dialog is answered, so the CLI, MCP tools and both IDE plugins report the daemon as not running. The dialog appears once per stored item, so the user types the login password for every saved secret. Seeded test daemons stall the same way and their tests time out at start. Seen on 2026-11-01 and repeatedly on 2026-11-04.\n\nExpected: the daemon starts and serves requests without touching the Keychain. The first request that needs a saved secret asks for the Keychain password once; after that, no request asks again until the daemon restarts.",
+    "rootCause": "Two causes.\n\n1. The daemon reads secrets at boot, before it listens. main() in src/daemon/index.ts:458 calls ensureDefaultManagedRoot for every registered repository before await server.listen() at src/daemon/index.ts:522. ensureDefaultManagedRoot (src/daemon/db/management-defaults.ts:58) calls openManagedRoot (src/daemon/db/management-startup.ts:24), which opens SavedTicketAuthority with the keystore (src/daemon/db/management-startup.ts:44, which reads its key through options.keystore.getKey at src/daemon/db/management-tickets.ts:110), reads every rollback copy (src/daemon/db/management-startup.ts:53) and, through enabled() (called at src/daemon/db/management-startup.ts:90), reads every secret each saved connection refers to (src/daemon/db/management-startup.ts:85). Each read is keytar.getPassword (src/shared/keystore.ts:16), which blocks until the OS answers; a pending access dialog therefore holds the whole boot.\n\n2. Each secret is its own Keychain item, read again on every use. src/shared/keystore.ts stores every key as a separate item under the service 'insrc' (src/shared/keystore.ts:10, :23) and every getKey goes to the Keychain. macOS keeps an access list per item, so when the reading program is not on an item's list, every item prompts separately: several saved secrets mean several password prompts.",
+    "fixIntent": "1. Daemon start does not read the Keychain: the socket opens and requests are served without any secret being read. Saved connections are opened on demand: a connection's secrets, and the integrity and recovery checks that need them, are read when a request first uses them, not at boot. A connection whose secrets cannot be read is reported unavailable to that request with its cause, and nothing else waits for it.\n2. The user is asked for the Keychain password once per daemon run. On the first request that needs any saved secret, every saved secret is read in that one Keychain access and kept in a secret store held in the daemon's memory, which serves every later read until the daemon exits. A daemon restart or update asks once again. Nothing decrypted is written to disk. Because one access can prompt only once if it reads one item, the saved secrets are consolidated so that a single Keychain item covers all of them. Saving, replacing or removing a secret keeps the in-memory store and the Keychain consistent.\n3. The other users of the same keystore wrapper (tool configuration, the notify and web builtins, the connection maintenance tool) follow the same method.\n4. Existing per-item secrets migrate to the consolidated form without loss; a failed migration leaves the existing items readable."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:458",
+      "quotedText": "await ensureDefaultManagedRoot(registered.path, {"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:522",
+      "quotedText": "await server.listen();"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/daemon/db/management-defaults.ts:58",
+      "quotedText": "export async function ensureDefaultManagedRoot(root:string,ports:StartupPorts=...):Promise<void>{"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/db/management-startup.ts:44",
+      "quotedText": "const tickets = await SavedTicketAuthority.open({ root, registryId: envelope.registryId, adopted: true, keystore, isRegistered: ports.isRegistered });"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/db/management-startup.ts:53",
+      "quotedText": "const value = await keystore.getKey(rollback.copyRef);"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/daemon/db/management-startup.ts:85",
+      "quotedText": "if (!generations.owns(ref) || await keystore.getKey(ref) === null)"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/db/management-tickets.ts:110",
+      "quotedText": "try { stored = await options.keystore.getKey(ref); } catch { throw new TicketError('secret-unavailable'); }"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/shared/keystore.ts:16",
+      "quotedText": "return keytar.getPassword(SERVICE, name);"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/shared/keystore.ts:10",
+      "quotedText": "const SERVICE = 'insrc';"
+    },
+    {
+      "id": "c10",
+      "kind": "stakeholder",
+      "ref": "Subho Ghosh, in chat 2026-11-05",
+      "quotedText": "connections should only be opened on demand. also, this seems to ask for each connection. we need to figure out a less intrusive method for getting credentials, if the user needs to enter the keychain passowrd for every registered connection we might as well not save the password itself"
+    },
+    {
+      "id": "c11",
+      "kind": "stakeholder",
+      "ref": "Subho Ghosh, in chat 2026-11-05 (refinement)",
+      "quotedText": "should ask for password once, fetch everything and then store in a local secret store for use till next reboot ... daemon restart"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-9c92bca604070a4e",
+      "quotedText": "superseded: same defect; fix intent refined by c11"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/daemon/tools/config.ts"
+    }
+  ]
+}

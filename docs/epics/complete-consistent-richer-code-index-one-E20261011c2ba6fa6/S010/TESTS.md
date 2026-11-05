@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 41 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -355,3 +355,17 @@ Run at 2026-11-04T07:13:02.393Z on commit `c7140757c`. Tests check: **passed**. 
 | `src/cli/panes/__tests__/ReposPane-doc-relations.test.ts` | 0 | 1 | 3.9 s |  |
 | `src/daemon/__tests__/doc-relations-status.test.ts` | 0 | 1 | 7.8 s |  |
 | `vscode-plugin/src/panels/__tests__/doc-relations-status.test.ts` | 0 | 1 | 1.2 s |  |
+
+## t11
+
+Run at 2026-11-05T04:32:36.489Z on commit `992618f97`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: s10 t11: measurement on this repository against the hand-checked set**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#re-measurement-after-the-code-review-fix-2026-11-05
+
+**smoke: s10 t11: installed daemon returns extracted document links and docRelations status**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#installed-daemon-smoke

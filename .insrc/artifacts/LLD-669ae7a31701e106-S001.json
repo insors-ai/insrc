@@ -1,0 +1,592 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793866997587-252c8p",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-05T08:30:06.044Z",
+    "epicCreatedAt": "2026-11-05T05:41:33.081Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 408414,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "669ae7a31701e106",
+    "epicSlug": "open-saved-connections-demand-read-all",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793866997587-252c8p",
+    "hldEffectiveHash": "9cfa75910fd8d580900b71bb0008f697b72205690d747bdfe522881c34c2aad3",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "The daemon stops opening every repository's saved connections when it starts, so starting it never touches the macOS Keychain and its socket opens immediately. A repository's saved connections are opened the first time a connection-management request needs them, using the existing per-repository opener that remembers a success and retries after a failure. A first-time set-up that the Keychain refuses now leaves nothing on disk, so the next request simply retries, and a Keychain refusal reaches the client as the existing 'secret-unavailable' error instead of 'recovery-required'. Reducing the number of Keychain prompts to one per run is a separate later Story (user decision 'A', 2026-11-05).",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Bugfix ISSUE-fefa97b991537da7, narrowed scope (user decision \"A\": split). This Story = ON-DEMAND OPENING ONLY: (1) remove the daemon boot loop (src/daemon/index.ts:455-461) that calls ensureDefaultManagedRoot for every registered repo before server.listen, so a daemon start triggers no Keychain reads; (2) open a repository's managed root on its first connection-management use, via the existing memoised ensureDefaultManagedRoot (src/daemon/db/management-defaults.ts) at every main-thread reader of savedManagementFor (connection-management-rpc.ts owner/safeList/capabilities, db-rpc.ts listConnections/upsert/removal); (3) make initializeFreshManagedRoot obtain the ticket key (SavedTicketAuthority.open) before any disk write, so a refused Keychain read leaves no partial state; (4) propagate keystore failure causes so managementRejection reports the existing 'secret-unavailable' code instead of 'recovery-required'. The db_* data tools (withDriver -> acquirePool -> DriverPool.reload -> loadConnections, secrets resolved per connection at driver build) never depended on the boot-time open and stay unchanged. The one-prompt-per-run connection vault is a SEPARATE later Story and a non-goal here."
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "ensureDefaultManagedRoot",
+          "signature": "ensureDefaultManagedRoot(root: string, ports?: StartupPorts): Promise<void>",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "Registered repository whose saved management a request needs.",
+              "optional": false
+            },
+            {
+              "name": "ports",
+              "type": "StartupPorts",
+              "purpose": "Unchanged registration, keystore and enablement seams; the request handlers use the default (lookupRepoId).",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Unchanged contract: resolves once savedManagementFor(root) is installed; memoised per root; a rejected attempt is forgotten so the next call retries. What changes is who calls it: no longer the boot loop, now the main-thread request handlers listed in dataModel."
+          },
+          "errors": [
+            {
+              "type": "TicketError('secret-unavailable')",
+              "condition": "The Keychain refused or failed reading or creating the root's ticket key (existing mapping in SavedTicketAuthority.open)."
+            },
+            {
+              "type": "ManagedStoreError('recovery-required') with cause KeystoreUnavailableError",
+              "condition": "A rollback-copy or connection-secret read inside openManagedRoot was refused or failed in the Keychain."
+            },
+            {
+              "type": "ManagedStoreError('recovery-required')",
+              "condition": "A legacy unmanaged registry (offline adoption needed), damaged metadata, or any non-keystore integrity failure; unchanged."
+            }
+          ],
+          "preconditions": [
+            "Called on the daemon main thread only (db.* and db.connections.v2.* methods), where the owners memo lives."
+          ],
+          "postconditions": [
+            "No call is made before server.listen.",
+            "closeDefaultManagedRoots still closes every root opened on demand at shutdown."
+          ]
+        },
+        {
+          "name": "initializeFreshManagedRoot",
+          "signature": "initializeFreshManagedRoot(root: string, ports: StartupPorts): Promise<void>",
+          "parameters": [
+            {
+              "name": "root",
+              "type": "string",
+              "purpose": "Registered repository with no registry and no management marker.",
+              "optional": false
+            },
+            {
+              "name": "ports",
+              "type": "StartupPorts",
+              "purpose": "Unchanged seams.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Unchanged result. Changed order: after the existing uid/realpath/registration, enablement, absent-registry and no-marker checks, it generates registryId and calls SavedTicketAuthority.open({ adopted: false }) BEFORE the first filesystem write (parent mkdir/chmod, privateDirectory, proveWriterFence, state-directory mkdir, snapshot, preparing.json). The generated registryId is the one written to preparing.json, the state file and the registry envelope."
+          },
+          "errors": [
+            {
+              "type": "TicketError('secret-unavailable')",
+              "condition": "The Keychain refused creating or reading back the new ticket key; nothing has been written to disk, and no management marker exists, so the next ensureDefaultManagedRoot runs a clean initialization."
+            },
+            {
+              "type": "ManagedStoreError('recovery-required')",
+              "condition": "Any later step fails as today; in addition the freshly created ticket key for the abandoned registryId is deleted best-effort (a failed delete is logged by ref name only and leaves only an unused Keychain item)."
+            }
+          ],
+          "preconditions": [
+            "The legacy-registry refusal (before.missing check and managementMarkerExists) still runs before any Keychain access, so a legacy repository never touches the Keychain."
+          ],
+          "postconditions": [
+            "A Keychain refusal leaves no state directory, snapshot, preparing.json or registry on disk."
+          ]
+        },
+        {
+          "name": "managementRejection",
+          "signature": "managementRejection(error: unknown): Extract<MutationOutcome, { status: 'rejected' }>",
+          "parameters": [
+            {
+              "name": "error",
+              "type": "unknown",
+              "purpose": "Any error raised by a management path.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Extract<MutationOutcome, { status: 'rejected' }>",
+            "meaning": "As today, except: when the error is a KeystoreUnavailableError, or its `cause` is one, the code is 'secret-unavailable' with message 'Connection credentials are unavailable.'."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "No secret value and no ref value appears in code or message; only the fixed message for the code."
+          ]
+        },
+        {
+          "name": "ManagedStoreError",
+          "signature": "class ManagedStoreError extends Error { constructor(code: 'registry-unreadable' | 'recovery-required' | 'reconciliation-required' | 'unsupported-filesystem', options?: ErrorOptions | undefined) }",
+          "parameters": [
+            {
+              "name": "code",
+              "type": "'registry-unreadable' | 'recovery-required' | 'reconciliation-required' | 'unsupported-filesystem'",
+              "purpose": "Unchanged.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "ErrorOptions | undefined",
+              "purpose": "New optional standard `cause`, used only to carry a KeystoreUnavailableError.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ManagedStoreError",
+            "meaning": "Unchanged code and message; internal recovery semantics (assertReady, journal pending, retry) are unchanged."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Existing callers that pass only a code are unaffected."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "KeystoreUnavailableError (internal error class in src/daemon/db/secrets.ts)",
+        "change": "new",
+        "details": "Internal marker `class KeystoreUnavailableError extends Error` (name only, fixed message 'keystore unavailable', the original keytar error as `cause` for debugging; never serialised to a client). Thrown by a small wrapper around the keystore port calls that management code makes: CredentialGenerations.current (src/daemon/db/secrets.ts:210), the staged-value reads and writes in stageSnapshot (:272 and the setKey staging loop), and openManagedRoot's rollback-copy read (src/daemon/db/management-startup.ts:53) and enabled() secret reads (:85). A returned null is NOT a keystore failure and keeps its existing recovery-required meaning. The catch sites at src/daemon/db/secrets.ts:212, :236, :242 and the staging-loop catch at :328 keep throwing ManagedStoreError('recovery-required') but pass the KeystoreUnavailableError as cause when the caught error is or wraps one.",
+        "callSites": [
+          "src/daemon/db/secrets.ts:205-219",
+          "src/daemon/db/secrets.ts:221-245",
+          "src/daemon/db/secrets.ts:312-321",
+          "src/daemon/db/management-startup.ts:53",
+          "src/daemon/db/management-startup.ts:85",
+          "src/daemon/db/management.ts:62-68"
+        ]
+      },
+      {
+        "entity": "Saved management opening (daemon start and request handlers)",
+        "change": "invariant-change",
+        "details": "Before: main awaited ensureDefaultManagedRoot for every registered repository before server.listen (src/daemon/index.ts:455-461), reading each repository's ticket key, rollback copies and every connection secret; request handlers assumed a missing service meant recovery/upgrade (owner, safeList) or an unopened managed registry (listConnectionsRpc returns []). After: the loop is deleted; closeDefaultManagedRoots stays in connectionOwners. Rule: a READ opens only an EXISTING managed root, a WRITE or capability probe may also initialize a fresh one. Concretely: owner() (src/daemon/connection-management-rpc.ts:46) awaits ensureDefaultManagedRoot(repoRoot) when savedManagementFor(repoRoot) is unset, swallowing the failure and then keeping its current recovery-required/upgrade-required decision unless the failure is a keystore refusal, which it rethrows so managementRejection reports 'secret-unavailable'; safeList() (:52) does the same only when the registry has a management marker; capabilities (:117) is unchanged (already on demand; failure suppresses mutation features). listConnectionsRpc (src/daemon/db-rpc.ts:79) awaits the open only when a transport is present and the registry has a management marker, and keeps returning [] on failure, logging the rejection code. saveConnection (src/daemon/db-rpc.ts:135) awaits the open for a registered root before reading savedManagementFor; a keystore refusal returns `{ error: 'secret-unavailable: ...' }`; any other failure falls through to today's legacy path. deleteConnection (src/daemon/db-rpc.ts:222) is unchanged: it refuses every managed registry from loaded.file._management and never needs an open service.",
+        "callSites": [
+          "src/daemon/index.ts:455-461",
+          "src/daemon/connection-management-rpc.ts:46-51",
+          "src/daemon/connection-management-rpc.ts:52-66",
+          "src/daemon/connection-management-rpc.ts:117",
+          "src/daemon/db-rpc.ts:79",
+          "src/daemon/db-rpc.ts:135",
+          "src/daemon/db-rpc.ts:222"
+        ]
+      },
+      {
+        "entity": "Fresh-root initialization order",
+        "change": "invariant-change",
+        "details": "Before: initializeFreshManagedRoot wrote the parent directory, the state directory (a management marker), the owner lease, the snapshot and preparing.json (src/daemon/db/management-defaults.ts:25-40) and only then opened the ticket authority (:41), so a Keychain refusal left a marker and every later open failed as recovery-required. After: the ticket authority is opened right after the read-only checks (:20-24) and before the first write; a failure leaves the disk untouched; a later failure deletes the just-created ticket key best-effort.",
+        "callSites": [
+          "src/daemon/db/management-defaults.ts:19-54",
+          "src/daemon/db/management-tickets.ts:99-118"
+        ]
+      },
+      {
+        "entity": "db_* data tools (no change)",
+        "change": "invariant-change",
+        "details": "Documented non-change, not a code change: withDriver -> savedConnectionResolver -> acquirePool -> DriverPool.reload -> loadConnections reads the committed db-connections.json and resolves only the used connection's secrets at driver build; it never read management state, so it never depended on the boot open (and already ran whenever that open failed). Journal recovery (CredentialGenerations.recover) never rewrites the registry; it only deletes refs the committed registry does not reference, so the registry a data tool reads is consistent whether or not recovery has run. The tools run on session workers; no worker-to-main route is added.",
+        "callSites": [
+          "src/daemon/tools/builtins/db/index.ts:148",
+          "src/daemon/db/pool-cache.ts:128-137",
+          "src/daemon/db/pool.ts:57-110",
+          "src/daemon/db/pool.ts:290-301",
+          "src/daemon/db/secrets.ts:336-376"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The user denies the Keychain prompt for a repository's ticket key on its first management request",
+          "detection": "SavedTicketAuthority.open catches the rejected keystore.getKey and throws TicketError('secret-unavailable') inside openManagedRoot, which ensureDefaultManagedRoot propagates after forgetting the attempt",
+          "response": "owner() rethrows it, so managementRejection returns code 'secret-unavailable'; listConnectionsRpc logs the code and returns [] (array contract kept); saveConnection returns { error: 'secret-unavailable: Connection credentials are unavailable.' }; capabilities advertises no mutation features. The next request retries the open.",
+          "userImpact": "That request fails with 'Connection credentials are unavailable.'; the daemon and all non-connection work keep running; allowing the prompt on retry works.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Keychain refuses a rollback-copy or connection-secret read during openManagedRoot",
+          "detection": "The keystore wrapper in openManagedRoot (rollback read, enabled() secret reads) turns the rejected getKey into KeystoreUnavailableError; the enclosing open rethrows ManagedStoreError('recovery-required', { cause })",
+          "response": "ensureDefaultManagedRoot forgets the attempt; managementRejection sees the cause and reports 'secret-unavailable'.",
+          "userImpact": "Same as above: retryable, reported as unavailable credentials instead of a recovery demand.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The Keychain refuses creating the ticket key while a fresh repository is initialised",
+          "detection": "SavedTicketAuthority.open({ adopted:false }), now the first side-effecting step of initializeFreshManagedRoot, throws TicketError('secret-unavailable')",
+          "response": "No directory, marker, snapshot, preparing.json or registry has been written; the error propagates and the attempt is forgotten. The next request runs a clean initialization.",
+          "userImpact": "No partial root, no recovery-required state; retrying works.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A fresh initialization fails AFTER its ticket key was created (e.g. writer-fence proof fails, or a racing process published a registry)",
+          "detection": "Any throw in initializeFreshManagedRoot after SavedTicketAuthority.open",
+          "response": "As today the error propagates (recovery-required, or the racing writer's root is opened next time); additionally keystore.deleteKey for the abandoned db-management:v2:<registryId>:ticket-key is attempted; a failed delete is logged with the ref name only.",
+          "userImpact": "Unchanged outcome; at worst one unused Keychain item remains.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A Keychain read or write fails while credentials are staged or checked during a saved upsert",
+          "detection": "The keystore wrapper in CredentialGenerations.current / stageSnapshot raises KeystoreUnavailableError, caught at the existing catch sites",
+          "response": "The catch sites still throw ManagedStoreError('recovery-required') (journal and assertReady semantics unchanged) but with the KeystoreUnavailableError as cause; managementRejection reports 'secret-unavailable'.",
+          "userImpact": "The save fails with 'Connection credentials are unavailable.' instead of 'requires recovery'; previous secrets are intact; any pending journal is handled exactly as today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A repository has a legacy unmanaged db-connections.json",
+          "detection": "initializeFreshManagedRoot's existing absent-registry check (before.missing false) throws recovery-required before any Keychain access",
+          "response": "ensureDefaultManagedRoot forgets the attempt; owner()/saveConnection keep today's legacy behaviour (upgrade-required / legacy write path); listConnectionsRpc and safeList do not open at all because there is no management marker.",
+          "userImpact": "Unchanged from today; no Keychain prompt.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Daemon start with N registered repositories, some managed",
+          "expected": "No ensureDefaultManagedRoot call and no keystore access before server.listen; the socket opens immediately."
+        },
+        {
+          "input": "Two concurrent first requests for the same repository",
+          "expected": "One open, shared through the owners memo; both requests see the same result."
+        },
+        {
+          "input": "db.listConnections for a registered repository with no registry file",
+          "expected": "Returns [] without creating a managed root and without touching the Keychain."
+        },
+        {
+          "input": "db.listConnections without a transport (internal caller) on a managed registry",
+          "expected": "Returns [] as today without opening the root."
+        },
+        {
+          "input": "A repository registered after the daemon started",
+          "expected": "Opened (or initialised fresh) on its first saved upsert, owner() call or capabilities probe, exactly like a repository registered before start."
+        },
+        {
+          "input": "A data tool (db_*) used before any management request in this run",
+          "expected": "Runs as today: reads the committed registry and resolves only that connection's secrets; the root stays unopened; any pending journal is recovered by the first later management request."
+        },
+        {
+          "input": "Daemon shutdown after roots were opened on demand",
+          "expected": "closeDefaultManagedRoots closes each of them, as for boot-opened roots today."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Journal recovery never rewrites the registry; it only deletes refs the committed registry does not reference, and mutations stay refused while a journal is pending (assertReady).",
+          "source": "c2"
+        },
+        {
+          "text": "ensureDefaultManagedRoot memoises one open per root and forgets a failed attempt so a later call retries.",
+          "source": "c3"
+        },
+        {
+          "text": "A legacy unmanaged registry is never adopted online and is refused before any Keychain access.",
+          "source": "c3"
+        },
+        {
+          "text": "The data-tool path reads only the committed registry and the used connection's secrets, on workers, without management state.",
+          "source": "c1"
+        },
+        {
+          "text": "Client-facing rejections carry only a code and its fixed message; no secret or ref value is exposed.",
+          "source": "c5"
+        },
+        {
+          "text": "deleteConnection refuses every managed registry from the file's _management field without an open service.",
+          "source": "c4"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with node:assert/strict, run by tsx (npx tsx --test), matching src/daemon/db/__tests__/*.test.ts; the keystore is swapped with _setKeystoreForTests (a counting fake with per-call failure injection), never the OS Keychain",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Error classification and fresh-initialization ordering against a fake keystore and temp-directory roots.",
+          "subjects": [
+            "unit: managementRejection maps a KeystoreUnavailableError, and a ManagedStoreError whose cause is one, to 'secret-unavailable' with the fixed message; a plain ManagedStoreError and a null-secret failure stay 'recovery-required'; no secret or ref text in the result",
+            "unit: initializeFreshManagedRoot with a keystore whose setKey rejects throws TicketError('secret-unavailable') and leaves the repository's directory tree byte-identical (no state directory, snapshot, preparing.json or registry); a second call with a working keystore succeeds",
+            "unit: initializeFreshManagedRoot that fails after creating its ticket key (writer-fence failure injected) deletes that ticket key from the fake keystore",
+            "unit: initializeFreshManagedRoot on a legacy registry refuses with zero keystore calls",
+            "unit: CredentialGenerations.current and stage with a getKey/setKey that rejects throw ManagedStoreError('recovery-required') carrying a KeystoreUnavailableError cause; with getKey returning null they throw without that cause"
+          ],
+          "fixturesNeeded": [
+            "A counting fake KeystoreLike (getKey/setKey/deleteKey) with per-call failure injection, installed with _setKeystoreForTests and restored after each test",
+            "Temp-directory registered roots as in src/daemon/db/__tests__/management-defaults.test.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "On-demand opening through the real handlers and real managed roots in temp directories, with the fake keystore.",
+          "subjects": [
+            "integration: connection-management owner() on an unopened, previously managed root opens it on demand and serves the request as a boot-opened root did",
+            "integration: safeList and db.listConnections (with a transport) open an existing managed root on demand and return its connections; for a registered root with no registry they return [] with zero keystore calls and no state directory created",
+            "integration: db.saveConnection on a fresh registered root initialises and opens it on demand and saves; with the keystore refusing it returns 'secret-unavailable: ...' and a retry with a working keystore succeeds",
+            "integration: a keystore refusal during openManagedRoot's ticket, rollback or connection-secret read reaches the client as 'secret-unavailable' from owner(), and the next request retries the open",
+            "integration: two concurrent first requests for one root produce exactly one open (one ticket-key read)",
+            "integration: a db_* data tool (withDriver over savedConnectionResolver) on a managed root that was never opened reads its connections and builds the driver, with keystore reads only for that connection's refs",
+            "integration: daemon start with a registered repository that has no registry creates no management state before or after the socket opens (spawned test daemon with isolated HOME); this test fails on the pre-change boot loop, which initialises the root at start"
+          ],
+          "fixturesNeeded": [
+            "The spawned test daemon harness with an isolated HOME used by the existing daemon tests",
+            "A managed root fixture created with the fake keystore (initializeFreshManagedRoot + one saved connection)"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "integration: daemon start with a registered repository that has no registry creates no management state before or after the socket opens (spawned test daemon with isolated HOME); this test fails on the pre-change boot loop, which initialises the root at start"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "integration: connection-management owner() on an unopened, previously managed root opens it on demand and serves the request as a boot-opened root did",
+            "integration: safeList and db.listConnections (with a transport) open an existing managed root on demand and return its connections; for a registered root with no registry they return [] with zero keystore calls and no state directory created",
+            "integration: db.saveConnection on a fresh registered root initialises and opens it on demand and saves; with the keystore refusing it returns 'secret-unavailable: ...' and a retry with a working keystore succeeds",
+            "integration: two concurrent first requests for one root produce exactly one open (one ticket-key read)"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: initializeFreshManagedRoot with a keystore whose setKey rejects throws TicketError('secret-unavailable') and leaves the repository's directory tree byte-identical (no state directory, snapshot, preparing.json or registry); a second call with a working keystore succeeds",
+            "unit: initializeFreshManagedRoot that fails after creating its ticket key (writer-fence failure injected) deletes that ticket key from the fake keystore",
+            "unit: initializeFreshManagedRoot on a legacy registry refuses with zero keystore calls"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: managementRejection maps a KeystoreUnavailableError, and a ManagedStoreError whose cause is one, to 'secret-unavailable' with the fixed message; a plain ManagedStoreError and a null-secret failure stay 'recovery-required'; no secret or ref text in the result",
+            "unit: CredentialGenerations.current and stage with a getKey/setKey that rejects throw ManagedStoreError('recovery-required') carrying a KeystoreUnavailableError cause; with getKey returning null they throw without that cause",
+            "integration: a keystore refusal during openManagedRoot's ticket, rollback or connection-secret read reaches the client as 'secret-unavailable' from owner(), and the next request retries the open"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "integration: a db_* data tool (withDriver over savedConnectionResolver) on a managed root that was never opened reads its connections and builds the driver, with keystore reads only for that connection's refs"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "At daemon start main awaits ensureDefaultManagedRoot for every registered repository before server.listen (src/daemon/index.ts:455-461), so each start reads every managed repository's ticket key, rollback copies and connection secrets and initialises a fresh managed root for every registered repository without a registry. initializeFreshManagedRoot writes its state directory, snapshot and preparing.json before obtaining the ticket key (src/daemon/db/management-defaults.ts:25-41). Keystore failures in CredentialGenerations and openManagedRoot surface as recovery-required with no cause (src/daemon/db/secrets.ts:212,236,242,328; src/daemon/db/management-startup.ts:53,85), and managementRejection cannot tell them apart (src/daemon/db/management.ts:62-68).",
+      "stateAfter": "Daemon start opens no managed root and touches no Keychain item. The main-thread management handlers open a repository on its first request through the memoised ensureDefaultManagedRoot (reads open only an existing managed root; writes and capability probes may initialise a fresh one). Fresh initialisation obtains the ticket key before writing to disk. Keystore failures keep their internal recovery-required semantics but carry a KeystoreUnavailableError cause, and clients receive 'secret-unavailable'. Data tools are unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional ErrorOptions cause to ManagedStoreError and the internal KeystoreUnavailableError; wrap the keystore port calls in CredentialGenerations and openManagedRoot so a thrown keystore error becomes the cause of the existing recovery-required error; teach managementRejection to report 'secret-unavailable' for that cause.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Reorder initializeFreshManagedRoot so the registryId is generated and SavedTicketAuthority.open runs before the first filesystem write, with best-effort deletion of that new ticket key on any later failure.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Add the on-demand ensureDefaultManagedRoot call to owner(), safeList(), listConnectionsRpc and saveConnection per the read/write rule; leave capabilities and deleteConnection as they are.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Delete the boot loop in main; keep closeDefaultManagedRoots in connectionOwners for shutdown.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No on-disk or wire format change: existing managed roots, legacy registries and Keychain items are used as they are, and the daemon can be rolled back to the previous build at any time. 'secret-unavailable' is an existing wire code that clients already render; some failures that were reported as 'recovery-required' are now reported as 'secret-unavailable'. Repositories without a registry are no longer initialised at daemon start but on their first saved write or capability probe; until then db.listConnections returns [] for them, which is the same answer an empty managed registry gave.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Open on first management request through the existing memoised opener",
+        "oneLineSummary": "Delete the boot loop; the main-thread management handlers that need an open service await ensureDefaultManagedRoot first; fresh initialization takes its ticket key before writing to disk; keystore failures carry their cause to managementRejection. Data tools unchanged.",
+        "approach": "Boot: remove the for-loop at src/daemon/index.ts:455-461 (closeDefaultManagedRoots stays registered for shutdown). On demand: the main-thread handlers that need an open service await the memoised ensureDefaultManagedRoot(root) (forgets failures) and then read savedManagementFor(root). Callers: owner() and safeList() in src/daemon/connection-management-rpc.ts, listConnectionsRpc (only when a transport is present and the registry carries a management marker, so a plain listing of an unmanaged or absent registry never creates state or touches the Keychain) and saveConnection (registered root) in src/daemon/db-rpc.ts; capabilities already does this. deleteConnection needs no open: it already refuses every managed registry from the file's _management field. Fresh init: in initializeFreshManagedRoot, generate registryId and call SavedTicketAuthority.open (adopted:false) right after the absent-registry and marker checks and before the first chmod/mkdir/write; on any later failure delete that freshly created ticket key best-effort. Cause: ManagedStoreError gains an optional ErrorOptions cause; the keystore port calls in CredentialGenerations.current/stage/prepareRemoval and openManagedRoot's rollback and enabled() reads wrap a thrown keystore error as KeystoreUnavailableError and the catch sites keep throwing recovery-required but with that cause; managementRejection reports 'secret-unavailable' when the error or its cause is a KeystoreUnavailableError. Data tools: unchanged, because they never read management state and journal recovery never rewrites the registry they read.",
+        "pros": [
+          "Smallest change that meets all four points; reuses ensureDefaultManagedRoot's memo and retry and the capabilities precedent",
+          "No new thread transport; every caller already runs on the main thread where the memo lives",
+          "No Keychain access at daemon start; a listing of an unmanaged or absent registry never touches the Keychain",
+          "Internal recovery semantics unchanged (still recovery-required internally), only the client-facing code improves"
+        ],
+        "cons": [
+          "Opening a managed root on demand still reads that repo's ticket key, rollback copies and every connection secret (enabled()), so the first use of each repository can still prompt once per item; the one-prompt vault is the separate later Story",
+          "Repositories created fresh at boot today are now created on first saved upsert/capabilities instead"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "a1 plus a recovery gate on the data-tool path",
+        "oneLineSummary": "As a1, and additionally make DriverPool.reload refuse a managed registry whose preparation journal has pending records, as a metadata-only check on the worker.",
+        "approach": "Everything in a1. In addition, DriverPool.reloadNow (src/daemon/db/pool.ts:70) checks, when file._management is present, whether the PreparationJournal for that registryId has pending records (a file read, no Keychain) and throws ConnectionUseError('recovery-required') if so, so a data tool never runs against a root whose staging has not been recovered. Works on any thread without a worker-to-main route because it only reads files.",
+        "pros": [
+          "Data tools never run while a staging journal is pending",
+          "No Keychain access and no cross-thread route on the data path"
+        ],
+        "cons": [
+          "Changes data-tool behaviour that the boot open never provided: today a data tool already runs when the boot open failed, and with on-demand opening a pending journal is only recovered by a management request, so a repo whose user only uses data tools would stay refused indefinitely",
+          "Adds protection without a consistency benefit: recover() only deletes refs the committed registry does not reference, so the registry the tool reads is consistent with or without recovery",
+          "Reaches into PreparationJournal's private file layout from the pool"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Same as a1 plus a gate that adds a new failure mode without protecting the data the tools read."
+      },
+      {
+        "id": "a3",
+        "name": "Make savedManagementFor itself lazy and async",
+        "oneLineSummary": "Turn savedManagementFor(root) into an async accessor that opens the root on first call, so every reader opens implicitly.",
+        "approach": "Change savedManagementFor in src/daemon/db/management.ts to `async savedManagementFor(root)` that awaits ensureDefaultManagedRoot when no service is installed, and update every caller (ensureDefaultManagedRoot's own early return, the RPC readers, deleteConnection) to await it.",
+        "pros": [
+          "No reader can forget to open"
+        ],
+        "cons": [
+          "Creates a call cycle (ensureDefaultManagedRoot uses savedManagementFor for its early return) that must be broken with a second sync accessor",
+          "Opens roots for readers that do not need an open service (deleteConnection, no-transport listings), touching the Keychain needlessly",
+          "Hides a Keychain-reaching side effect behind a getter name"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Opens roots for readers that need no service, touching the Keychain more than a1, and creates an accessor cycle."
+      },
+      {
+        "id": "a4",
+        "name": "Keep eager opening but run it after the socket listens",
+        "oneLineSummary": "Move the boot loop after server.listen so the socket opens first, still opening every registered root in the background.",
+        "approach": "Move src/daemon/index.ts:455-461 after server.listen and run it without awaiting, logging failures as today.",
+        "pros": [
+          "One-line change; socket no longer waits on the Keychain"
+        ],
+        "cons": [
+          "Does not meet the fix intent: every daemon start still reads every repository's ticket key and connection secrets and prompts for each, whether or not connections are used",
+          "Requests racing the background open still see an unopened root"
+        ],
+        "costEstimate": "XS",
+        "reasonRejected": "Does not meet the fix intent."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "Scope refinement (stakeholder decision 'A', 2026-11-05, after design review round 3 of this LLD): ISSUE-fefa97b991537da7 fix intent 3 (at most one Keychain prompt per daemon run for every saved credential, including tool configuration, notify and web keys) is NOT delivered here; it moves to a separate later tracked Story (a connection vault). Until it ships, the first management request for a managed repository can still prompt once per Keychain item of that repository (ticket key, rollback copies, connection secrets), but a daemon start prompts for nothing.",
+      "Carry-over lessons for that vault Story from rounds 2-3 of this LLD: use a separate Keychain service or enforce a reserved account across keys.get/set/delete/list; do not inventory legacy items with keytar findCredentials (on macOS it reads every secret and returns empty pairs on a refused read); define a rollback for a failed or partial migration."
+    ],
+    "adherence": {
+      "dimensions": [
+        "functional-coverage"
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: db_* data-tool read path, thread and independence from the managed-root open"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "s1 how-does-it-work: journal recovery never rewrites the registry"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: ensureDefaultManagedRoot, initializeFreshManagedRoot, openManagedRoot, SavedTicketAuthority.open"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "s1 usage.example: every savedManagementFor reader and its fallback"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "s1 symbol.locate: managementRejection and the management error classes"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "s1 test.locate: tests to extend"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/index.ts:456",
+      "quotedText": "for (const registered of await listRepos(db)) {"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/daemon/db/management-defaults.ts:41",
+      "quotedText": "const tickets=await SavedTicketAuthority.open({root,registryId,adopted:false,keystore:ports.keystore??credentialKeystore,isRegistered:ports.isRegistered});"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/daemon/db/secrets.ts:242",
+      "quotedText": "catch {"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/daemon/db/management-startup.ts:85",
+      "quotedText": "if (!generations.owns(ref) || await keystore.getKey(ref) === null)"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/daemon/connection-management-rpc.ts:117",
+      "quotedText": "if(!savedManagementFor(repoRoot)&&!testPorts.sessionRuntime){try{await ensureDefaultManagedRoot(repoRoot);}catch{/* Existing legacy data or damaged metadata still needs recovery. */}}"
+    },
+    {
+      "id": "c12",
+      "kind": "stakeholder",
+      "ref": "User decision 'A' (split) on 2026-11-05 after LLD-669ae7a31701e106-S001 review round 3: this Story is on-demand opening only; the one-prompt vault is a separate Story"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "ISSUE-fefa97b991537da7"
+    }
+  ]
+}

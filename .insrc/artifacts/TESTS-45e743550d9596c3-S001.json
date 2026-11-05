@@ -1,0 +1,195 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "45e743550d9596c3",
+    "storyId": "S001",
+    "createdAt": "2026-11-05T10:19:27.521Z",
+    "updatedAt": "2026-11-05T10:23:23.356Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-05T10:08:40.649Z"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "S001",
+        "commit": "5cac99fe7",
+        "ranAt": "2026-11-05T10:23:23.356Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+            ]
+          },
+          {
+            "name": "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 387,
+            "titles": [
+              {
+                "title": "extension.ts gates the chat command on insrc.chat.enabled (config read)",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts constructs createChatPanelHost with the real injected vscode seams + memento store",
+                "result": "pass"
+              },
+              {
+                "title": "the chat host + protocol + store modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes the chat command + the insrc.chat.enabled config (default on)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: package.json contributes insrc.chat.diffView (string enum chat|editor, default chat)",
+                "result": "pass"
+              },
+              {
+                "title": "S006: extension.ts reads insrc.chat.diffView (full dotted key) + injects editGovernance seams",
+                "result": "pass"
+              },
+              {
+                "title": "chat wiring: the governance deps carry relPath and no computeDiff, and git is run with the given environment",
+                "result": "pass"
+              },
+              {
+                "title": "S006: the edit-governor module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: package.json contributes insrc.chat.lockGroup (boolean, default true, machine scope)",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: extension.ts wires thin seams into createChatGroupLock and attaches it in the one panel adapter",
+                "result": "pass"
+              },
+              {
+                "title": "group-lock: the module is vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "S007: package.json contributes the insrc.chat.docsReview command",
+                "result": "pass"
+              },
+              {
+                "title": "S007: extension.ts wires the docs-review host inside the chat gate over the shared client",
+                "result": "pass"
+              },
+              {
+                "title": "S007: the docs-review host + client modules are vscode-free",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the chat opens from an editor/title icon, NOT an Activity Bar container",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: the real insrc icon SVGs exist, are non-empty, and ship in the .vsix",
+                "result": "pass"
+              },
+              {
+                "title": "editor-title: extension.ts opens the chat as an editor-tab panel + gates the icon, docs-review intact",
+                "result": "pass"
+              },
+              {
+                "title": "the extension passes a file-backed lock registry and the turnLockTimeoutMs setting",
+                "result": "pass"
+              },
+              {
+                "title": "package.json contributes insrc.chat.turnLockTimeoutMs (number, default 600000, minimum 1000)",
+                "result": "pass"
+              },
+              {
+                "title": "the extension builds a session output on ~/.insrc/chat-output, passes it to the provider registry, and wires onEvict and the start-up sweep",
+                "result": "pass"
+              },
+              {
+                "title": "extension.ts runs the migration before it builds the file store over join(PATHS.insrc, 'chat-sessions') with the session cap and the onEvict, and the output sweep keeps the store's ids and the migration's kept ids",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the store is built on ~/.insrc/chat-attachments, the picker and opener are injected, onEvict removes a session's attachments and the start-up sweep uses the same keep set",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: without a queue the chat command, the chat-ready context, the chat tab serializer and the review host's notifyChat are not set up, and with a queue they are",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: package.json lists insrc.chat.open in menus.commandPalette only when insrc.chat.ready",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: a restored chat tab gets the chat's current title, since VS Code keeps the title a tab was saved with",
+                "result": "pass"
+              },
+              {
+                "title": "extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 448,
+            "titles": [
+              {
+                "title": "ollama-routing.test.ts: local/cloud targets and aliases use the daemon-configured host and canonical model",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: vendor/default and non-Claude calls do not read Ollama configuration",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: unknown/rejected/ambiguous targets and invalid hosts fail closed",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: shared Claude environment removes vendor routing without mutating its input",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: initial/resumed/follow-up/title launches are Ollama-routed; vendor launches still inherit",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: failed definitions/configuration lookup produces an error and no child",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: cancelled continuation and expired title cannot spawn after routing resolves",
+                "result": "pass"
+              },
+              {
+                "title": "ollama-routing.test.ts: Stop during routing IPC prevents a normal lifecycle turn from spawning",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -33,5 +33,15 @@
     "Injected processes; no live model inference or rendered UI test.",
     "Chat force-exit does not prove natural teardown.",
     "No global configuration changes; unrelated screen-recording document preserved."
-  ]
+  ],
+  "narrowedScope": {
+    "commit": "5cac99fe7",
+    "backendNetChange": false,
+    "focusedAndWiringTests": {
+      "passed": 34,
+      "failed": 0,
+      "log": "narrowed-tests.tap"
+    },
+    "note": "Moved environment helper into the extension after build validator scope feedback. Runtime behavior unchanged; plugin typecheck passed again."
+  }
 }

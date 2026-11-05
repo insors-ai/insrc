@@ -1,0 +1,258 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793874333087-ue88aq",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-05T10:25:32.085Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 56913,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "45e743550d9596c3",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "45e743550d9596c3",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "2a294927fd6e9d52b7d9f0a82f7381d019c3271a970eb6a6fab2d97f1d61353a",
+      "contractDigest": "94bca157d055c25f71f8fee743108fd0ad536a07424d7b2877d1e271f640153b",
+      "buildDigest": "3d42d86c2aeafb440cb60d2340f8b0dce5008de62b2a6beefc8b573a7737b5c4",
+      "testsDigest": "8df1546e011e09221a1d2226fc91ab1890e22a3c101feeb420c81bd2585cae16",
+      "digest": "3f22cb48a49155e6c8c145b34d830b6474191bb25b2f7401a75f2b1d0d460143"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-05T10:08:40.649Z",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "45e743550d9596c3",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "src/agent/providers/cli-provider.ts",
+        "src/shared/ollama-claude-env.ts",
+        "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts",
+        "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts",
+        "vscode-plugin/src/chat/ollama-routing.ts",
+        "vscode-plugin/src/chat/turn-lifecycle.ts",
+        "vscode-plugin/src/extension.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/vscode-plugin-screen-recording-script.html"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching claudeReviewSessionArgs are present but failing/unverified: cli-review-session.test.ts is absent from the test record, so passing coverage cannot be confirmed.",
+            "expectationRef": "claudeReviewSessionArgs",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089967"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching codexReviewSessionArgs are present but failing/unverified: cli-review-session.test.ts is absent from the test record, so passing coverage cannot be confirmed.",
+            "expectationRef": "codexReviewSessionArgs",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089970"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching complete are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "expectationRef": "CliProvider.complete",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089976"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching completeStructured are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "expectationRef": "CliProvider.completeStructured",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089978"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching runEditSession are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "expectationRef": "CliProvider.runEditSession",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089982"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching runReviewSession are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "expectationRef": "CliProvider.runReviewSession",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089983"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching embed are present but failing/unverified: cli-provider.live.test.ts is absent from the test record.",
+            "expectationRef": "CliProvider.embed",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089986"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching vibeLastAssistantText are present but failing/unverified: cli-vibe.test.ts is absent from the test record.",
+            "expectationRef": "vibeLastAssistantText",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1089998"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching isTransientCliError are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "expectationRef": "isTransientCliError",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1090003"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching classifyInputTooLarge are present but failing/unverified: input-too-large.test.ts is absent from the test record.",
+            "expectationRef": "classifyInputTooLarge",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1090008"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching transienceText are present but failing/unverified: cli-failure-message.test.ts is absent from the test record.",
+            "expectationRef": "transienceText",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1090012"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching cliExitError are present but failing/unverified: neither reaching test file appears in the test record.",
+            "expectationRef": "cliExitError",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1090013"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "src/agent/providers/cli-provider.ts:1",
+            "message": "Tests reaching cliFailureMessage are present but failing/unverified: cli-failure-message.test.ts is absent from the test record.",
+            "expectationRef": "cliFailureMessage",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1090015"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Tests reaching classifyPermissionDenial are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "expectationRef": "classifyPermissionDenial",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106200"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Tests reaching writeReachedStdin are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "expectationRef": "writeReachedStdin",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106229"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Tests reaching nodeSpawner are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "expectationRef": "nodeSpawner",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106230"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "Tests reaching defaultBinaryProbe are present but failing/unverified: live-cli.test.ts is absent from the test record.",
+            "expectationRef": "defaultBinaryProbe",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106232"
+          },
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/turn-lifecycle.ts:1",
+            "message": "Tests reaching trySaveSession are present but failing/unverified: turn-lifecycle.test.ts is absent from the test record.",
+            "expectationRef": "trySaveSession",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106596"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 18
+    }
+  }
+}

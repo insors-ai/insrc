@@ -1,0 +1,143 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-4e1c510a-91b6-43c6-918a-2a8d6ed3884e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T04:34:46.971Z",
+    "epicCreatedAt": "2026-11-05T04:25:47.665Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "76b6e6635afe5530",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "name-phase-field-when-design-review",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "8dd35115fcd3cd5f38fb252f4a60b4447d4332ec0b192177ec9a4404769f9d95",
+        "at": "2026-11-05T04:34:46.971Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "code-review-76b6e6635afe5530-s1-r1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "scope": {
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/name-phase-field-when-design-review-E2026110576b6e663/ISSUE.md",
+              "commit": "13dce397db82bd020f635b1ffbb689d1b7f37ed8"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "13dce397db82bd020f635b1ffbb689d1b7f37ed8",
+              "parent": "b1d772725cade388734357b9a6fbbc76c948bdfb",
+              "files": [
+                {
+                  "path": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        56,
+                        64
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/review/design-review/contracts.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        258,
+                        265
+                      ]
+                    },
+                    {
+                      "after": [
+                        268,
+                        270
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "refuseUnmatchedRequest in contracts.ts correctly derives the schema from the request's phase, falls back to the fixed valid-phases message when the phase is missing/unknown/non-string, and otherwise re-runs Value.Errors against the phase-specific schema to report the first offending field prefixed with the phase name. parseDesignRequest's catch wiring only invokes this helper for invalid_schema failures, preserving the code and DesignReviewInputError class, and leaves the valid-request fast path (decodeDesign succeeding) completely untouched. The new test and the full 82-test design-review suite pass against the current checkout, which is byte-identical to the pinned commit for both changed files.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "The new test (recovery-contracts.test.ts:56-64) covers: (1) a known phase ('result') with a missing required field, asserting the message is prefixed 'result request: /executionId: ...'; (2) a known phase ('recover') with a missing required field, asserting the prefix 'recover request: /actionId: ...'; (3) four variants of unknown/missing phase (bad literal, absent phase, null, bare string) all asserting the fixed enumeration message; (4) a valid 'start' request still parses successfully. This exercises every branch added in refuseUnmatchedRequest: schema-found-with-error, schema-not-found (covering both the 'object with bad/absent phase' and 'non-object input' sub-cases of the ternary), and the unaffected valid-path. I traced the TypeBox schema property order for both 'result' (phase,...identity,executionId,sequence,result) and 'recover' (phase,...identity,actionId,operation,userDecision) against the asserted first-error field, and confirmed by execution that the ordering/first-error semantics the test asserts actually hold. I also ran the full 82-test design-review suite to confirm no regression elsewhere (e.g., decodeDesign's non-request callers, and the pre-existing recovery/failure envelope test using generic DesignReviewInputError assertions).",
+              "evidenceReferences": [
+                "13dce397db82bd020f635b1ffbb689d1b7f37ed8:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "13dce397db82bd020f635b1ffbb689d1b7f37ed8:src/workflow/review/design-review/contracts.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: ran `npx tsx --test src/workflow/review/design-review/__tests__/recovery-contracts.test.ts` (3/3 pass) and the full `src/workflow/review/design-review/**/*.test.ts` sweep (82/82 pass) on the current checkout, verified byte-identical to the pinned commit for both changed files via `git diff 13dce397d HEAD -- <files>` (no output).",
+              "Minor stylistic nit (non-blocking): refuseUnmatchedRequest uses `error?.path || 'input'` while decodeDesign uses `error?.path ?? 'input'` elsewhere for the same fallback intent — harmless since path is either a non-empty string or absent here, but worth aligning operators for consistency if touched again."
+            ],
+            "inspectedReferences": [
+              "13dce397db82bd020f635b1ffbb689d1b7f37ed8:docs/standalone/name-phase-field-when-design-review-E2026110576b6e663/ISSUE.md",
+              "13dce397db82bd020f635b1ffbb689d1b7f37ed8:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+              "13dce397db82bd020f635b1ffbb689d1b7f37ed8:src/workflow/review/design-review/contracts.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "cases": [
+                  "design request validation names the phase and the first offending field, and lists the valid phases for an unknown one",
+                  "recovery and failure envelopes strictly separate transport phase, operation and user direction",
+                  "S1 checkpoints remain readable and bounded recovery metadata round-trips without content or transcripts"
+                ],
+                "command": "npx tsx --test src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran directly against the current checkout, confirmed byte-identical to commit 13dce397d for both contracts.ts and the test file via git diff (empty). 3/3 pass.",
+                "evidenceReferences": [
+                  "13dce397db82bd020f635b1ffbb689d1b7f37ed8:src/workflow/review/design-review/__tests__/recovery-contracts.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-05T04:34:45.698Z",
+        "buildFingerprint": "593dbc515ff979f41faa59a1cd6b8a3e8170bef8dacd34392e49172206c0f369"
+      }
+    ]
+  },
+  "citations": []
+}

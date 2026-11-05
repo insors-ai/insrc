@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793849919792-oz1vkm",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T03:38:51.412Z",
+    "epicCreatedAt": "2026-11-05T03:38:51.412Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 11620,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "2a3c21b73b79ef9c",
+    "epicSlug": "prevent-repeated-malformed-native-review-submissions",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1
+  },
+  "body": {
+    "title": "Prevent repeated malformed native review submissions and preserve actionable failure diagnostics",
+    "reproduction": "Priority: HIGH. In review code-review-9b04adb36cac716d-s3-r1, t4 ends failed with generic 'Review activity CLI failed'. Saved diagnostics identify error_max_structured_output_retries, exitCode 1, after five StructuredOutput attempts; missing findings occurred five times, followed by missing testCoverage/limitations/advice/inspectedReferences/executedTests and one noncanonical reference. t1 and t5 also needed repairs for missing top-level fields; t1 preview includes XML-style parameter text inside summary and an invalid empty error field. t1/t5 eventually passed; t4 lost a completed usable assessment. Overall elapsed 37m35s; no token-cost total is established here. [[c1]] [[c2]]",
+    "rootCause": "Native output remained incompatible with the required structured result envelope despite supplied schema and CLI validation feedback. The checkpoint has specific native/schema diagnostics, but the task summary collapses them to a generic CLI failure. This is an observed output/diagnostic integration failure, not evidence of network timeout, quota or a concurrency block. The deeper model/tool serialization cause is not yet proven and must be investigated; do not invent it. Existing native execution and assessment boundaries are grounded in the analyze pass. [[c1]] [[c3]] [[c4]]",
+    "fixIntent": "Make the native submission path reliably produce the prescribed top-level JSON result, use pointed prior validation feedback to correct actual errors and stop recurring XML/parameter-fragment submissions. Relay terminal reason, exit code and bounded actionable schema issues in task/CR summaries while retaining full bounded diagnostics. Preserve accepted work and recover only according to explicit attempt/retry rules; never conceal failure with a fabricated pass or unbounded model loops. Include regression cases for the observed missing fields, empty optional error, malformed references and max structured-output exhaustion. Related observation: attribution omitted change index 38 (provenance.ts) once and host feedback repaired it; retain that successful repair as regression evidence, not an unresolved omission. Existing code-review history test expects one attribution call but observes three identically on pre-S3 baseline 19be6f17a; retain this baseline expectation mismatch for follow-up rather than blaming S3. Log only. [[c1]] [[c2]] [[c3]] [[c4]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "doc",
+      "ref": ".insrc/tmp/code-review/code-review-9b04adb36cac716d-s3-r1.json"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S003/CR.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    }
+  ]
+}

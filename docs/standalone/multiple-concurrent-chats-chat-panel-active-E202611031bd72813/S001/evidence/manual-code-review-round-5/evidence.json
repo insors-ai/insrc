@@ -1,0 +1,285 @@
+{
+  "reviewType": "Manual code review, overall round 5 / cycle 2 round 2. No formal daemon CR or approval.",
+  "date": "2026-11-05",
+  "story": "E202611031bd72813:S001",
+  "reviewedHead": "5c5bc0cf189d2f4918411a9d6f6c1f8e7f6ce70d",
+  "base": "f77303f76",
+  "sourceSha256": {
+    "vscode-plugin/src/chat/__tests__/chat-panel.test.ts": "2d81b094937e823dfafc10d5d1a8fef6e5bd44ad1ad56dab1f468dbe0335879d",
+    "vscode-plugin/src/chat/chat-panel.ts": "2f6885a83228c8a4525f312e7e2631514791f65dd28c27712f97b7a2d6a63741",
+    "vscode-plugin/src/chat/cli-adapter.ts": "f76792cdcc9001c98681971aac41f06825e838be781a0428b03eb8e18972d345",
+    "vscode-plugin/src/chat/session-store.ts": "e7ce50e7414cff9dbd30c9879cf4ee2da92c9dfae9acd911aa440084f4b336cf",
+    "vscode-plugin/src/chat/turn-lifecycle.ts": "29f20606b5ffa23d9650f71c11f335c4530035fd3d6937f7984345d4867346d3",
+    "vscode-plugin/src/chat/session-lock.ts": "123ba238a8281de6cc7db6271f68aacfa205e50c4cb1428b4fbce085d9196387",
+    "vscode-plugin/src/chat/docs-review-panel.ts": "453400c568e8950e9f0fa55c0fed6941864959388803472c3533db9b0123b795"
+  },
+  "runtime": "Node 22.23.2, macOS",
+  "tests": {
+    "cwd": "vscode-plugin",
+    "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-force-exit --test-concurrency=1 src/chat/__tests__/approval-queue.test.ts src/chat/__tests__/chat-panel.test.ts src/chat/__tests__/chat-queue-outbox-host.test.ts src/chat/__tests__/chat-queue-runner.test.ts src/chat/__tests__/chat-shell.test.ts src/chat/__tests__/chat-theme.test.ts src/chat/__tests__/cli-adapter.test.ts src/chat/__tests__/docs-review-panel.test.ts src/chat/__tests__/extension-chat-wiring.test.ts src/chat/__tests__/protocol.test.ts src/chat/__tests__/review-presenter.test.ts src/chat/__tests__/session-file-store.test.ts src/chat/__tests__/session-output.test.ts src/chat/__tests__/session-store.test.ts src/chat/__tests__/turn-lifecycle.test.ts src/chat/__tests__/stream-events.test.ts",
+    "testFiles": 16,
+    "pass": 760,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "exitCode": 0,
+    "durationMs": 39823.1395,
+    "testForceExit": true,
+    "testConcurrency": 1,
+    "tap": "affected-tests.tap"
+  },
+  "typecheck": {
+    "cwd": "vscode-plugin",
+    "command": "../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "exitCode": 0,
+    "output": "typecheck.txt"
+  },
+  "observations": {
+    "wrong-chat-stop": {
+      "exitCode": 0,
+      "observation": {
+        "failedOrigin": "mw311uwj-izta7r",
+        "selected": "mw311uwq-ae8jri",
+        "originStillAlive": true,
+        "selectedStillAlive": false,
+        "originSignals": [],
+        "selectedSignals": [
+          "SIGTERM"
+        ],
+        "cancelledTurns": [
+          "B-turn"
+        ],
+        "originOutcome": "delivery-failed",
+        "runs": [
+          {
+            "sessionId": "mw311uwj-izta7r",
+            "prompt": "A prompt"
+          },
+          {
+            "sessionId": "mw311uwq-ae8jri",
+            "prompt": "B prompt"
+          }
+        ]
+      }
+    },
+    "same-chat-request": {
+      "exitCode": 0,
+      "observation": {
+        "expectedRuns": 4,
+        "actualRuns": 4,
+        "decisions": [
+          {
+            "turnId": "t1",
+            "requestId": "shared",
+            "delivered": false
+          },
+          {
+            "turnId": "t3",
+            "requestId": "shared",
+            "delivered": false
+          }
+        ],
+        "runs": [
+          {
+            "sessionId": "mw311v3x-grrl51",
+            "prompt": "first"
+          },
+          {
+            "sessionId": "mw311v3x-grrl51",
+            "prompt": "Approved \u2014 run exactly this now: command-1"
+          },
+          {
+            "sessionId": "mw311v3x-grrl51",
+            "prompt": "second"
+          },
+          {
+            "sessionId": "mw311v3x-grrl51",
+            "prompt": "Approved \u2014 run exactly this now: command-3"
+          }
+        ],
+        "pending": [
+          {
+            "requestId": "shared",
+            "kind": "approval",
+            "turnId": "t1",
+            "title": "action 1",
+            "detail": "permission",
+            "command": "command-1",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "kind": "approval",
+            "turnId": "t3",
+            "title": "action 3",
+            "detail": "permission",
+            "command": "command-3",
+            "resolved": true,
+            "outcome": "approved"
+          }
+        ]
+      }
+    },
+    "legacy-present": {
+      "exitCode": 0,
+      "observation": {
+        "differentTurns": 2,
+        "sameCallId": "item_1",
+        "expectedPanels": 2,
+        "actualPanels": 2,
+        "persisted": [
+          "item_1",
+          "turn-2:item_1"
+        ]
+      }
+    },
+    "sync-live-unwritable": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "approved",
+        "knownNativeHandle": "native-original",
+        "signalsBeforeRelease": [
+          "SIGTERM"
+        ],
+        "originalStillAliveBeforeRelease": false,
+        "runsBeforeOriginalEnds": 2,
+        "runsAfterOriginalEnds": 2,
+        "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+        "nativeResume": {
+          "provider": "claude",
+          "nativeSessionId": "native-original"
+        }
+      }
+    },
+    "async-live-unwritable": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "approved",
+        "knownNativeHandle": "native-original",
+        "signalsBeforeRelease": [
+          "SIGTERM"
+        ],
+        "originalStillAliveBeforeRelease": false,
+        "runsBeforeOriginalEnds": 2,
+        "runsAfterOriginalEnds": 2,
+        "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+        "nativeResume": {
+          "provider": "claude",
+          "nativeSessionId": "native-original"
+        }
+      }
+    },
+    "unverified-stop": {
+      "exitCode": 0,
+      "observation": {
+        "stopVerifiedResult": false,
+        "processExitConfirmed": false,
+        "signals": [
+          "SIGTERM",
+          "SIGKILL"
+        ]
+      }
+    },
+    "restored-denial": {
+      "exitCode": 0,
+      "observation": {
+        "records": [
+          {
+            "requestId": "shared",
+            "turnId": "old-turn",
+            "kind": "approval",
+            "command": "old-command",
+            "title": "old",
+            "detail": "",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "turnId": "new-turn",
+            "kind": "approval",
+            "command": "new-command",
+            "title": "new",
+            "detail": "",
+            "resolved": true,
+            "blockKind": "tool-gate",
+            "outcome": "denied"
+          }
+        ],
+        "status": "done"
+      }
+    },
+    "restored-approval": {
+      "exitCode": 0,
+      "observation": {
+        "runs": [
+          "Approved \u2014 run exactly this now: new-command"
+        ],
+        "records": [
+          {
+            "requestId": "shared",
+            "turnId": "old-turn",
+            "kind": "approval",
+            "command": "old-command",
+            "title": "old",
+            "detail": "",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "turnId": "new-turn",
+            "kind": "approval",
+            "command": "new-command",
+            "title": "new",
+            "detail": "",
+            "resolved": true,
+            "blockKind": "tool-gate",
+            "outcome": "approved"
+          }
+        ],
+        "status": "done"
+      }
+    },
+    "routing-collision": {
+      "exitCode": 0,
+      "observation": {
+        "origin": "mw311wv6-wt0i9d",
+        "selected": "mw311ww8-mxtt81",
+        "callbackTurn": "A-turn",
+        "requestId": "shared-request",
+        "followUpTarget": "mw311wv6-wt0i9d",
+        "followUpPrompt": "Approved \u2014 run exactly this now: A-command",
+        "originOutcome": "approved"
+      }
+    },
+    "panel-dispose": {
+      "exitCode": 0,
+      "observation": {
+        "survivingPanelContentBefore": 1,
+        "survivingPanelContentAfter": 3,
+        "decisionReachedDaemon": 1,
+        "decisionReplies": 1
+      }
+    },
+    "original-followup": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "delivery-failed",
+        "runsBeforeOriginalEnds": 1,
+        "runsAfterOriginalEnds": 1,
+        "lateFollowUpPrompt": null,
+        "nativeResume": null
+      }
+    }
+  },
+  "limits": [
+    "Real hosts/lifecycle/presenter and real adapter verified-stop boundary, injected clients/adapters/processes and in-memory session stores. No live provider/model calls, real shell actions or workflow approvals.",
+    "Wrong-chat-stop models an output-backed detach using the real lifecycle cursor/detach path. Its read gate is released after detach without exiting the original process; B then starts before A failure is reported. The diagnostic records cancellation and signals for each process separately.",
+    "The asynchronous successful-recovery probe now waits for the continuation, instead of waiting for the previous defective failure outcome. The verified-stop probe calls the new stopVerified contract, not the intentionally best-effort stop method.",
+    "Configured diagnostic 30 ms delivery timeout; actual-adapter stop probe uses a 5 ms grace with a fake process whose exit never settles.",
+    "Force-exit testing does not verify natural teardown; no full backend sweep, live providers, rendered VS Code UI or JetBrains verification.",
+    "Unrelated backend/doc-relation edits and dirty workflow records were preserved. No production code, runtime config or existing approval records changed by this review."
+  ]
+}

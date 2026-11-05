@@ -3561,6 +3561,77 @@ test('E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored af
   host2.dispose();
 });
 
+test('E202611031bd72813:S001 t6/MR6: reload in the removal->spawn window keeps the full actionable record — a turn-ended decision persists the unresolved record (command included) BEFORE the batch removal is persisted; a reloaded host re-enters the requests as cards, never blindly re-runs', async () => {
+  const store = createInMemoryChatSessionStore();
+  // host 1: the turn emits two turn-ended requests with commands, then ends; the batch follow-up is
+  // gated BEFORE it produces anything (models the async setup/lease window after removal)
+  let releaseFu!: () => void;
+  const fuGate = new Promise<void>((r) => { releaseFu = r; });
+  const runs1: TurnRequest[] = [];
+  let n1 = 0;
+  const adapter1: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }),
+    cancel: () => {},
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      n1 += 1;
+      runs1.push(req);
+      if (n1 === 1) {
+        yield refused('r9', 'Bash', 't1', { command: 'npm run build' });
+        yield refused('r10', 'Edit', 't1', { command: 'npm test' });
+        yield { kind: 'done', turnId: 't1', ok: true };
+      } else {
+        await fuGate; // handoff window: batch removed+persisted, follow-up not yet spawned
+        yield { kind: 'done', turnId: 'fu', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter1 }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'build and test' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'), 5000);
+  const id = store.list()[0]!.id;
+  fc.send(env('permission-decision', { requestId: 'r9', decision: 'approve' }));
+  fc.send(env('permission-decision', { requestId: 'r10', decision: 'approve' }));
+  await waitFor(() => runs1.length === 2, 5000, 'the batch follow-up started (gated)');
+  // MR6 durable state in the handoff window: full unresolved records AND the batch removal persisted
+  const recs = store.get(id)?.pendingRequests ?? [];
+  assert.equal(recs.filter((r) => !r.resolved).length, 2, 'both decided requests have durable UNRESOLVED records before the removal is relied on');
+  assert.equal(recs.find((r) => r.requestId === 'r9')?.command, 'npm run build', 'the record carries the full action payload');
+  assert.equal((store.get(id)?.queueSnapshot?.batches ?? []).length, 0, 'the batch removal is persisted');
+  // reload (process death): a NEW host over the same store — host 1 is abandoned, not disposed
+  const runs2: TurnRequest[] = [];
+  const adapter2: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }),
+    cancel: () => {},
+    async *run(req: TurnRequest): AsyncIterable<TurnEvent> {
+      runs2.push(req);
+      yield { kind: 'done', turnId: 'fu2', ok: true };
+    },
+  };
+  const fc2 = fakeChannel();
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: adapter2 }, ['claude']), store, cwd: () => '/repo' });
+  host2.open();
+  fc2.send(env('open-chat', { chatId: id }));
+  await waitFor(() => fc2.posted.some((m) => m.payload.type === 'session-restored'), 5000);
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(runs2.length, 0, 'the reload does NOT blindly re-run the batch — the requests come back as cards');
+  assert.ok(approvalCards(fc2).some((c) => c.requestId === 'r9'), 'the restored host re-posts the pending request card');
+  // deciding them on the reloaded host runs exactly ONE follow-up naming both commands
+  fc2.send(env('permission-decision', { requestId: 'r9', decision: 'approve' }));
+  await new Promise((r) => setTimeout(r, 100));
+  assert.equal(runs2.length, 0, 'no follow-up while the restored batch is still being decided');
+  fc2.send(env('permission-decision', { requestId: 'r10', decision: 'approve' }));
+  await waitFor(() => runs2.length === 1, 5000, 'exactly one follow-up on the reloaded host');
+  assert.match(runs2[0]!.prompt, /npm run build/);
+  assert.match(runs2[0]!.prompt, /npm test/);
+  assert.equal((store.get(id)?.pendingRequests ?? []).filter((r) => !r.resolved).length, 0, 'both records settled after confirmed delivery');
+  releaseFu();
+  host2.dispose();
+});
+
 test('Stop with requests queued records each as rejected and clears the queue', async () => {
   const fc = fakeChannel();
   const decided: string[] = [];

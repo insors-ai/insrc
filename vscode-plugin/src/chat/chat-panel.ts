@@ -3112,9 +3112,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
-          // persist the full in-turn record (action payload included) unresolved, so a follow-up
-          // fallback can carry the real action text and a reload can restore it whole
-          if (decided.resolution === 'in-turn' && session !== undefined && deps.store.get(session.id) !== undefined) {
+          // persist the full decided record (action payload included) unresolved, so a follow-up
+          // fallback can carry the real action text and a reload can restore it whole. MR6: this
+          // must also cover TURN-ENDED decisions — runCompletedBatch() persists the batch REMOVAL
+          // below, so without a durable unresolved record here a reload in the removal->spawn
+          // window would find no actionable delivery state at all.
+          if (session !== undefined && deps.store.get(session.id) !== undefined) {
             const list = [...(session.pendingRequests ?? [])];
             // MR1-R3: the unresolved-record upsert is turn-scoped — a later turn reusing the request
             // id gets its own full record (command included), not a bare shell

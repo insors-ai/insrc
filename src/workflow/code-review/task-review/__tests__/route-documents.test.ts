@@ -98,3 +98,28 @@ test('src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a 
 		await refused(prepareReviewPacket(f.packetWith({ lld: f.at('lld.json') }), f.sources, false, f.route({ lld: true, storyId: 's2' })), /storyId: Packet belongs to another story/);
 	} finally { f.cleanup(); }
 });
+
+test('src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored review of a Story with a Plan is re-read with the LLD and Plan alone, and a new packet without a route still needs all three', async () => {
+	const f = fixture();
+	try {
+		const pair = f.packetWith({ lld: f.at('lld.json'), plan: f.at('plan.json') });
+		const stored = await prepareReviewPacket(pair, f.sources, true);
+		const atStart = await prepareReviewPacket(pair, f.sources, false, f.route({ plan: true, lld: true }));
+		assert.deepEqual(stored.tasks, atStart.tasks, 'same unit as at start');
+		assert.deepEqual(stored.documents, atStart.documents, 'same document set as at start');
+		assert.equal(stored.epicHash, hash);
+		// the legacy triple still re-reads, and start-side checks stay strict
+		const triple = f.packetWith({ story: f.at('story.json'), lld: f.at('lld.json'), plan: f.at('plan.json') });
+		assert.deepEqual(Object.keys((await prepareReviewPacket(triple, f.sources, true)).documents).sort(), ['lld', 'plan', 'story']);
+		await refused(prepareReviewPacket(pair, f.sources), /Expected story, lld and plan documents/);
+	} finally { f.cleanup(); }
+});
+
+test('src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored re-read still refuses a missing LLD or Plan and documents of another epic or story', async () => {
+	const f = fixture();
+	try {
+		await refused(prepareReviewPacket(f.packetWith({ plan: f.at('plan.json') }), f.sources, true), /Expected story, lld and plan documents/);
+		await refused(prepareReviewPacket(f.packetWith({ lld: f.at('lld.json') }), f.sources, true), /Expected story, lld and plan documents/);
+		await refused(prepareReviewPacket(f.packetWith({ lld: f.at('other-story.json'), plan: f.at('plan.json') }), f.sources, true), /documents\.lld: LLD belongs to another story/);
+	} finally { f.cleanup(); }
+});

@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793849609656-46svjs",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T03:33:56.649Z",
+    "epicCreatedAt": "2026-11-05T03:33:56.649Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 26993,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "a6b56dc93aa3d2fe",
+    "epicSlug": "make-finished-code-review-story-plan",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5d3a6fffc15ab133344817ec2b2bbafbc28dc0ba9ff45f01b34464a631d824a7",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T03:48:55.626Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "a6b56dc93aa3d2fe",
+      "slug": "EPIC-a6b56dc93aa3d2fe"
+    }
+  },
+  "body": {
+    "title": "Make a finished code review of a Story with a Plan publishable and resumable",
+    "reproduction": "1. Take a standalone Story whose route has an approved LLD and PLAN but no story document (a bugfix routed issue, design.story, plan, build, or a standalone feature). 2. Call insrc_code_review_step with phase 'start' and packet.documents = { lld, plan }: it is accepted and the review runs. Adding 'story' or 'issue' is refused with \"Expected the documents lld, plan for this Story's route\". 3. When the review finishes (crPublication pending), call 'publish', 'resume' or a second 'start'. Observed: each fails with \"documents: Expected story, lld and plan documents\", the findings stay only in .insrc/tmp/code-review/<reviewId>.json, and no CR record is written. Expected: publication and resume accept the same document set the route required at start, and the CR record is written.",
+    "rootCause": "Admission validates a new packet against the Story's route (prepareReviewPacket is called with the route, so routedDocuments requires exactly the documents the route produced: lld and plan for a Story with a Plan). But two later paths re-read the stored attempt with no route: publishTaskCheckpoint (publication.ts:25) and the stored-attempt re-read in admission (admission.ts:37). Both pass only attempt.header.derived, and the header keeps derived only for a route WITHOUT a Plan (packet.ts:170, admission.ts:86). For a route with a Plan there is neither a route nor derived, so prepareReviewPacket falls through to pinnedTriple (packet.ts:115), the legacy path from before routes existed, which hard-requires story, lld and plan (packet.ts:49). The stored packet has only lld and plan, so it is refused. The route-aware document check at start and the legacy triple check at re-read disagree for every route that has a Plan and no story document.",
+    "fixIntent": "A stored review of a Story with a Plan is re-read against the same document set the route required when it was admitted, so publication and resume succeed for {lld, plan} (and still for the legacy {story, lld, plan} packets already stored). The start-side checks stay as they are: a packet with the wrong document set is still refused. Reviews already written and the stored review format stay readable. The two other items in the GitHub issue (retrying a unit whose reviewer process crashed, and the design review result phase 'Expected union value') are separate defects and are not part of this fix."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts:47-50"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts:68-73"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts:113-115"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/packet.ts:170-172"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/publication.ts:25"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts:37"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts:83-86"
+    }
+  ]
+}

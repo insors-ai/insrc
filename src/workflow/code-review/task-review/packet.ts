@@ -43,24 +43,31 @@ async function document(ref: CommittedDocument, sources: ReviewSources): Promise
 }
 type LoadedDocument = { text: string; head: Record<string, unknown> };
 const WORKFLOW_OF: Readonly<Record<DocumentRole, string>> = { story: 'define', lld: 'design.story', plan: 'plan', issue: 'issue' };
-/** The story, LLD and Plan every packet pinned before routes existed: all three, from one epic and one story. */
-async function pinnedTriple(packet: ReviewPacket, sources: ReviewSources) {
+/**
+ * The story, LLD and Plan every packet pinned before routes existed: all three, from one epic and one story.
+ * A stored review is re-read (`historical`) without its route; a standalone Story with a Plan pinned only the LLD and
+ * Plan at admission (see requiredDocumentRoles), so there the story document is optional and checked only when pinned.
+ */
+async function pinnedTriple(packet: ReviewPacket, sources: ReviewSources, historical: boolean) {
  const { story: storyRef, lld: lldRef, plan: planRef } = packet.documents;
- requireReview(storyRef && lldRef && planRef, 'documents', 'Expected story, lld and plan documents');
- const docs = { story: await document(storyRef, sources), lld: await document(lldRef, sources), plan: await document(planRef, sources) };
- const plan = docs.plan.head, meta = plan['meta'] as Record<string, unknown> | undefined;
+ requireReview(lldRef && planRef && (storyRef || historical), 'documents', 'Expected story, lld and plan documents');
+ const docs: Partial<Record<'story' | 'lld' | 'plan', LoadedDocument>> = { lld: await document(lldRef, sources), plan: await document(planRef, sources) };
+ if (storyRef) docs.story = await document(storyRef, sources);
+ const plan = docs.plan!.head, meta = plan['meta'] as Record<string, unknown> | undefined;
  requireReview(meta && typeof meta['epicHash'] === 'string' && /^s\d+$/.test(String(meta['storyId'])), 'documents.plan', 'Expected a canonical story Plan');
  const storyId = String(meta['storyId']), hash = String(meta['epicHash']);
  requireReview(packet.storyId === storyId || packet.storyId === `STORY-${hash}-${storyId}`, 'storyId', 'Plan belongs to another story');
  for (const [name, doc] of Object.entries(docs)) {
-  const m = doc.head['meta'] as Record<string, unknown> | undefined;
+  const m = doc!.head['meta'] as Record<string, unknown> | undefined;
   requireReview(m?.['epicHash'] === hash, `documents.${name}`, 'Document belongs to another epic');
   if (name === 'lld') requireReview(m['storyId'] === storyId, 'documents.lld', 'LLD belongs to another story');
  }
- requireReview(meta['workflow'] === 'plan' && (docs.lld.head['meta'] as Record<string, unknown>)['workflow'] === 'design.story', 'documents', 'Expected canonical Plan and LLD artifacts');
- const storyMeta = docs.story.head['meta'] as Record<string, unknown>;
- const storyBody = docs.story.head['body'] as { stories?: { id?: string }[] } | undefined;
- requireReview(storyMeta['storyId'] === storyId || storyBody?.stories?.some(s => s.id === storyId), 'documents.story', 'Story definition does not contain this story');
+ requireReview(meta['workflow'] === 'plan' && (docs.lld!.head['meta'] as Record<string, unknown>)['workflow'] === 'design.story', 'documents', 'Expected canonical Plan and LLD artifacts');
+ if (docs.story) {
+  const storyMeta = docs.story.head['meta'] as Record<string, unknown>;
+  const storyBody = docs.story.head['body'] as { stories?: { id?: string }[] } | undefined;
+  requireReview(storyMeta['storyId'] === storyId || storyBody?.stories?.some(s => s.id === storyId), 'documents.story', 'Story definition does not contain this story');
+ }
  return { docs: docs as Partial<Record<DocumentRole, LoadedDocument>>, hash, storyId };
 }
 const list = (roles: readonly string[]): string => roles.length ? roles.join(', ') : 'none';
@@ -112,7 +119,7 @@ async function storedDocuments(packet: ReviewPacket, stored: StoredDerived, sour
 }
 export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
- const { docs, hash } = route ? await routedDocuments(packet, route, sources) : stored ? await storedDocuments(packet, stored, sources) : await pinnedTriple(packet, sources);
+ const { docs, hash } = route ? await routedDocuments(packet, route, sources) : stored ? await storedDocuments(packet, stored, sources) : await pinnedTriple(packet, sources, historical);
  const plan = docs.plan?.head;
  let tasks: PlanTask[] = [];
  if (plan) {

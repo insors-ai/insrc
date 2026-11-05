@@ -110,3 +110,13 @@ test('canonical story aliases retain original submitted scope while using one CR
   assert.equal(record.body.storyId,'s1');assert.equal(record.body.reviews[0]!.scope.storyId,cp.storyId);
  }finally{f.cleanup();}
 });
+
+test('CR publication: a stored review of a Story with a Plan (LLD and Plan, no story document) publishes',async()=>{
+ const f=await fixture();try{
+  const path=checkpointPath(f.repo,'publication'),stored=f.read(path);
+  delete (stored.attempts[0]!.submitted.documents as { story?: unknown }).story;writeFileSync(path,JSON.stringify(stored));
+  const published=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps);
+  assert.equal(f.readRecord(published.jsonPath).body.reviews.length,1);
+  assert.equal(f.read(path).attempts[0]!['review-response'].crPublication,'complete');
+ }finally{f.cleanup();}
+});

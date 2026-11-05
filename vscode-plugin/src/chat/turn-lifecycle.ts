@@ -272,9 +272,9 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
    * would re-issue different request ids).
    */
   const makeDecoderSink = (s: ChatSession, progress: (c: TurnCursor) => void) => {
-    let pending: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined } | undefined;
+    let pending: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined; toolCommands?: Record<string, string> | undefined; editPaths?: Record<string, string> | undefined } | undefined;
     return {
-      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined }): void => {
+      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined; toolCommands?: Readonly<Record<string, string>> | undefined; editPaths?: Readonly<Record<string, string>> | undefined }): void => {
         pending = ds; // held, not saved alone — the next progress save carries it with the offset
         // LLD s7 (E202611031bd72813:S001): the provider's native session id is captured from the
         // output AS SOON AS the CLI emits it — before any terminal event, so a first turn awaiting
@@ -288,7 +288,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         const live = s.liveTurn;
         if (live !== undefined && live.cursor.turnId === c.turnId && pending !== undefined) {
           // stamp offset AND decoder together, then let the throttled save persist the whole liveTurn
-          s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset }, decoder: { selectionSeq: pending.selectionSeq, ...(pending.selectionBuffer !== '' ? { selectionBuffer: pending.selectionBuffer } : {}), ...(pending.sessionId !== undefined ? { sessionId: pending.sessionId } : {}) } };
+          s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset }, decoder: { selectionSeq: pending.selectionSeq, ...(pending.selectionBuffer !== '' ? { selectionBuffer: pending.selectionBuffer } : {}), ...(pending.sessionId !== undefined ? { sessionId: pending.sessionId } : {}), ...(pending.toolCommands !== undefined ? { toolCommands: { ...pending.toolCommands } } : {}), ...(pending.editPaths !== undefined ? { editPaths: { ...pending.editPaths } } : {}) } };
           pending = undefined;
         }
         progress(c);
@@ -575,7 +575,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       let observationFailure = false;
       try {
         const events = adapter.resume(
-          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}) } } : {}), },
+          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}), ...(live.decoder.toolCommands !== undefined ? { toolCommands: { ...live.decoder.toolCommands } } : {}), ...(live.decoder.editPaths !== undefined ? { editPaths: { ...live.decoder.editPaths } } : {}) } } : {}), },
           {
             signal: ctl.signal,
             onAttach: (p) => {

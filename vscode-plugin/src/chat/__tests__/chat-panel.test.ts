@@ -6026,6 +6026,56 @@ test('E202611031bd72813:S001 t5: the decoder-captured native session id survives
   }
 });
 
+test('E202611031bd72813:S001 t5: a budget boundary between tool_use and tool_result keeps the command/edit-path correlation — the checkpoint carries toolCommands/editPaths and the resumed pass restores them into the decoder', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs-tc-'));
+  try {
+    const out = createSessionOutput({ root, pollMs: 5 });
+    const fc = fakeChannel();
+    const store = createInMemoryChatSessionStore();
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn in this test'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+    const host = createChatPanelHost({
+      createPanel: () => fc.channel,
+      providers: registry({ claude: adapter }, ['claude']),
+      store,
+      cwd: () => '/repo',
+      sessionOutput: out,
+      observerTimerMs: 20,
+      hostPid: 1,
+      isAlive: () => false,
+    });
+    host.open();
+    const s = store.create('claude' as never);
+    const seg = await out.beginTurn(s.id, 't-tc');
+    const useLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'call-1', name: 'Bash', input: { command: 'make x' } }] } }) + '\n';
+    const editLine = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', id: 'call-2', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' } }] } }) + '\n';
+    const resultLine = JSON.stringify({ type: 'user', message: { content: [{ type: 'tool_result', tool_use_id: 'call-1', content: 'ok' }, { type: 'tool_result', tool_use_id: 'call-2', content: 'done' }] } }) + '\n';
+    const doneLine = JSON.stringify({ type: 'result', subtype: 'success', is_error: false, session_id: 's-tc' }) + '\n';
+    appendFileSync(seg.outPath, useLine + editLine + resultLine + doneLine);
+    await out.endTurn(s.id, 't-tc', { code: 0, signal: null });
+    store.append(s.id, { role: 'user', text: 'go', at: '2026-01-01T00:00:00.000Z' });
+    store.setStatus(s.id, 'working');
+    const cur = store.get(s.id)!;
+    cur.liveTurn = { cursor: { turnId: 't-tc', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
+    // a PREVIOUS budget-limited pass consumed the two tool_use lines and persisted the checkpoint
+    // WITH the correlation maps (as the fixed code does)
+    const cpOffset = seg.cursor.offset + Buffer.byteLength(useLine) + Buffer.byteLength(editLine);
+    cur.observerCheckpoint = { turnId: 't-tc', generation: seg.cursor.generation, offset: cpOffset, selectionSeq: 0, toolCommands: { 'call-1': 'make x' }, editPaths: { 'call-2': '/repo/a.ts' } };
+    store.save(cur);
+    fc.send(env('open-chat', { chatId: s.id })); // shown, so the observer posts the ingested events
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 5000, 'the pass caught up through the terminal');
+    const results = turnEvents(fc).filter((e) => e.kind === 'tool-result') as Extract<TurnEvent, { kind: 'tool-result' }>[];
+    const r1 = results.find((e) => e.callId === 'call-1');
+    const r2 = results.find((e) => e.callId === 'call-2');
+    assert.equal(r1?.command, 'make x', 'tool_result for call-1 carried the command from the checkpoint-restored decoder map');
+    assert.equal(r2?.editPath, '/repo/a.ts', 'tool_result for call-2 carried the edit path from the checkpoint-restored decoder map');
+    const cpAfter = store.get(s.id)?.observerCheckpoint;
+    assert.deepEqual(cpAfter?.toolCommands, { 'call-1': 'make x' }, 'the checkpoint still carries the maps after the pass');
+    host.dispose();
+  } finally {
+    await rmrf(root);
+  }
+});
+
 test('E202611031bd72813:S001 t5: the observer recovers a segment lost through a REAL rollover (stale cursor at a discarded generation -> SegmentGone -> oldestRetainedGeneration/recoverTurn replay from the archived generation -> done)', async () => {
   const root = mkdtempSync(pathJoin(tmpdir(), 'chat-obs3-'));
   try {

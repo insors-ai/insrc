@@ -117,7 +117,14 @@ export interface ResumeRequest {
    * a split selection marker's buffer), so a resumed read never reuses a selection id or loses a
    * marker that spans chunks. Absent -> an empty state (today's behaviour).
    */
-  readonly decoderState?: { readonly selectionSeq?: number | undefined; readonly selectionBuffer?: string | undefined; readonly sessionId?: string | undefined } | undefined;
+  readonly decoderState?: {
+    readonly selectionSeq?: number | undefined;
+    readonly selectionBuffer?: string | undefined;
+    readonly sessionId?: string | undefined;
+    /** tool_use id -> command, and -> edit file path: without them a budget boundary between tool_use and tool_result loses the correlation. */
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  } | undefined;
   /**
    * E202611031bd72813:S001 t5: a terminal was already ingested at/before this cursor (checkpoint
    * flag) — the resume must not report a synthetic EOF failure for it.
@@ -131,7 +138,13 @@ export interface ResumeOptions {
    * E202611031bd72813:S001 t5: the adapter's live decoder state after each ingested line, so the
    * observer can persist it (checkpoint) and a later resume continues with the same ids/buffers.
    */
-  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string; readonly sessionId?: string | undefined }) => void) | undefined;
+  readonly onDecoderState?: ((state: {
+    readonly selectionSeq: number;
+    readonly selectionBuffer: string;
+    readonly sessionId?: string | undefined;
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  }) => void) | undefined;
   /** Aborting it stops following; the process is left running. */
   readonly signal?: AbortSignal | undefined;
   /** Hands over the followed turn's process, so Stop can end it. */
@@ -154,7 +167,13 @@ export interface RunOptions {
    * after each output line, so a detach/reattach of the LIVE run resumes with it (the live cursor's
    * own checkpoint, independent of the observer's).
    */
-  readonly onDecoderState?: ((state: { readonly selectionSeq: number; readonly selectionBuffer: string; readonly sessionId?: string | undefined }) => void) | undefined;
+  readonly onDecoderState?: ((state: {
+    readonly selectionSeq: number;
+    readonly selectionBuffer: string;
+    readonly sessionId?: string | undefined;
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  }) => void) | undefined;
   /**
    * MR3-R2 (manual review): cancellation predicate rechecked immediately BEFORE the child spawn —
    * the session-output beginTurn() await above can outlast the delivery timeout, so the lifecycle's
@@ -1246,7 +1265,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         // decoder progress (selectionSeq / split-marker buffer) with it.
         const at = proc.cursor;
         // decoder state FIRST, then the offset (same consistent-save ordering as resume)
-        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '', ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}) });
+        opts?.onDecoderState?.({
+          selectionSeq: state.selectionSeq ?? 0,
+          selectionBuffer: state.selectionBuffer ?? '',
+          ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+          ...(state.toolCommands !== undefined ? { toolCommands: { ...state.toolCommands } } : {}),
+          ...(state.editPaths !== undefined ? { editPaths: { ...state.editPaths } } : {}),
+        });
         if (at !== undefined) opts?.onProgress?.(at);
       }
       // stdout closed without a terminal event: the process is ending; report how.
@@ -1402,6 +1427,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     if (req.decoderState?.selectionBuffer !== undefined) state.selectionBuffer = req.decoderState.selectionBuffer;
     // the native session id captured by an earlier pass (codex thread.started / claude init) survives the resume
     if (req.decoderState?.sessionId !== undefined) state.sessionId = req.decoderState.sessionId;
+    // and so do the tool_use -> command/edit-path correlations, so a pass boundary between
+    // tool_use and tool_result cannot drop them
+    if (req.decoderState?.toolCommands !== undefined) state.toolCommands = { ...req.decoderState.toolCommands };
+    if (req.decoderState?.editPaths !== undefined) state.editPaths = { ...req.decoderState.editPaths };
     const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
       kind: 'done',
       turnId,
@@ -1436,7 +1465,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         }
         // decoder state FIRST, then the offset: the lifecycle saves liveTurn on both, and the
         // later (offset) save must already carry this line's decoder state — no stale-buffer window.
-        opts?.onDecoderState?.({ selectionSeq: state.selectionSeq ?? 0, selectionBuffer: state.selectionBuffer ?? '', ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}) });
+        opts?.onDecoderState?.({
+          selectionSeq: state.selectionSeq ?? 0,
+          selectionBuffer: state.selectionBuffer ?? '',
+          ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+          ...(state.toolCommands !== undefined ? { toolCommands: { ...state.toolCommands } } : {}),
+          ...(state.editPaths !== undefined ? { editPaths: { ...state.editPaths } } : {}),
+        });
         opts?.onProgress?.(cursor);
       }
     } catch (err) {

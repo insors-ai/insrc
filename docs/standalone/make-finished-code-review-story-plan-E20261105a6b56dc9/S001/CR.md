@@ -2,7 +2,7 @@
 
 # Code review: s1
 
-Status: **failed** · task-based schema version 2
+Status: **passed** · task-based schema version 2
 
 ## code-review-a6b56dc93aa3d2fe-s1-r1 — attempt 1
 
@@ -67,3 +67,44 @@ Re-ran independently; 6/6 tests pass in this file.
 
 Test: `npx tsx --test src/workflow/code-review/task-review/__tests__/publication.test.ts` — pass
 Re-ran independently; 8/8 tests pass in this file.
+## code-review-a6b56dc93aa3d2fe-s1-r1 — attempt 2
+
+Scope: whole story · reviewer: daemon · 2026-11-05T04:10:59.055Z
+
+1 selected task assessment(s): passed.
+Native output diagnostics: [{"phase":"assessment","taskId":"s1","provider":"claude","resolved":true,"errors":[{"code":"MISSING_REQUIRED_FIELD","field":"findings","correction":"Return findings as a top-level JSON array.","occurrences":2},{"code":"MISSING_REQUIRED_FIELD","field":"taskId","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"status","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"summary","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"testCoverage","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"limitations","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"advice","correction":"Return the required field in the JSON object.","occurrences":1},{"code":"MISSING_REQUIRED_FIELD","field":"inspectedReferences","correction":"Return the required field in the JSON object.","occurrences":1}]}]
+
+### Submitted scope
+
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/publication.test.ts` — [{"after":[113,122]}]
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/route-documents.test.ts` — [{"after":[101,125]}]
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/packet.ts` — [{"after":[46,51]},{"after":[53,56]},{"after":[61,61]},{"after":[65,70]},{"after":[122,122]}]
+
+Attempt 1 for task s1 terminated as "failed" purely due to host validation errors (missing top-level `findings` array and a rejected `testCoverage` field) — it never produced a usable substantive assessment. Since a failed/incomplete source stays unresolved if reused, s1 must be reassessed in this attempt rather than reused.
+
+### s1: passed
+
+pinnedTriple now takes the story document as optional only when historical=true (stored re-reads: publication, admission resume, admission start-attempt validation of prior entries); start-side admission still always requires story+lld+plan unless a route is present. Traced both call sites (publication.ts:25, admission.ts:37) that pass historical=true and confirmed the standalone Story+Plan scenario (no derived stored, since derived is only set for no-Plan routes) falls through to pinnedTriple, exactly the path the fix targets. The two added tests exercise both the relaxed re-read and the still-strict start path, and both passed under current checkout.
+
+Coverage: **verified** — Ran both new test files (route-documents.test.ts, publication.test.ts) against the current checkout: all 14 tests pass, including the two acceptance tests for the fix. Inspected test bodies: the route-documents test directly compares a historical re-read (story omitted) against the at-start routed admission and asserts identical tasks/documents, and separately confirms the legacy triple and the non-historical (start) path still require story+lld+plan. The publication test deletes the story document from a stored checkpoint's submitted documents and asserts publication still completes. Traced the code path (pinnedTriple, prepareReviewPacket, publication.ts, admission.ts) to confirm the historical flag is wired through exactly the call sites relevant to stored re-reads (publish, resume, and admission's replay of prior attempts), and that fresh starts (historical=false, no route) are unaffected. Did not revert-and-retest packet.ts against the parent commit due to sandbox file-write restrictions outside normal review scope; relying on builder-reported pre-fix failure plus code-level trace for that specific claim.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: did not revert packet.ts to the parent commit and rerun the new tests to directly observe a pre-fix failure (sandbox approval for writing outside the tracked file path was not pursued); relied on builder-reported execution details plus a manual code trace confirming the historical-only relaxation instead.
+
+Inspected references:
+
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/ISSUE.md`
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/publication.test.ts`
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/route-documents.test.ts`
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/packet.ts`
+- `5b04603c216ba3a42cd11c8c054e75081838337b:src/workflow/code-review/task-review/packet.ts`
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/publication.ts`
+- `0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/admission.ts`
+
+Test: `npx tsx --test src/workflow/code-review/task-review/__tests__/route-documents.test.ts src/workflow/code-review/task-review/__tests__/publication.test.ts` — pass
+Ran both files together under current checkout (commit 0556f0dc0); 14/14 tests pass, 0 fail.
+
+Test: `npx tsx --test src/workflow/code-review/task-review/__tests__/route-documents.test.ts src/workflow/code-review/task-review/__tests__/publication.test.ts` — pass
+Ran both files together under current checkout (commit 0556f0dc0); 14/14 tests pass, 0 fail.

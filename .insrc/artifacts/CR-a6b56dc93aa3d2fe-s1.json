@@ -21,9 +21,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 2,
-        "contentHash": "64b016735a47c6ac9a5e38ddb39df99ec079325ae767c05426fa5b3dbbcf3969",
-        "at": "2026-11-05T04:04:55.115Z",
+        "number": 3,
+        "contentHash": "bb493ca94b8fced0bba9555278e33463041dd993670e65b2fa763b76649e8251",
+        "at": "2026-11-05T04:11:07.519Z",
         "by": {
           "id": "insrc:code-review",
           "kind": "system",
@@ -32,13 +32,13 @@
       },
       "signoffs": []
     },
-    "revision": 2
+    "revision": 3
   },
   "body": {
     "kind": "code-review",
     "format": "task-based",
     "storyId": "s1",
-    "status": "failed",
+    "status": "passed",
     "reviews": [
       {
         "reviewId": "code-review-a6b56dc93aa3d2fe-s1-r1",
@@ -277,6 +277,158 @@
         ],
         "summary": "1 selected task assessment(s): passed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"s1\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"taskId\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"status\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"summary\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"findings\",\"correction\":\"Return findings as a top-level JSON array.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"testCoverage\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"limitations\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"advice\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"inspectedReferences\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1}]}]",
         "completedAt": "2026-11-05T04:04:48.916Z",
+        "buildFingerprint": "d5f51f874b4c6e7791a230c12aa0302e37680e518aba5da6da653dd67f834764"
+      },
+      {
+        "reassessmentSummary": "Attempt 1 for task s1 terminated as \"failed\" purely due to host validation errors (missing top-level `findings` array and a rejected `testCoverage` field) — it never produced a usable substantive assessment. Since a failed/incomplete source stays unresolved if reused, s1 must be reassessed in this attempt rather than reused.",
+        "reviewId": "code-review-a6b56dc93aa3d2fe-s1-r1",
+        "attempt": 2,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "scope": {
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/ISSUE.md",
+              "commit": "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d",
+              "parent": "5b04603c216ba3a42cd11c8c054e75081838337b",
+              "files": [
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        113,
+                        122
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        101,
+                        125
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/code-review/task-review/packet.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        46,
+                        51
+                      ]
+                    },
+                    {
+                      "after": [
+                        53,
+                        56
+                      ]
+                    },
+                    {
+                      "after": [
+                        61,
+                        61
+                      ]
+                    },
+                    {
+                      "after": [
+                        65,
+                        70
+                      ]
+                    },
+                    {
+                      "after": [
+                        122,
+                        122
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "pinnedTriple now takes the story document as optional only when historical=true (stored re-reads: publication, admission resume, admission start-attempt validation of prior entries); start-side admission still always requires story+lld+plan unless a route is present. Traced both call sites (publication.ts:25, admission.ts:37) that pass historical=true and confirmed the standalone Story+Plan scenario (no derived stored, since derived is only set for no-Plan routes) falls through to pinnedTriple, exactly the path the fix targets. The two added tests exercise both the relaxed re-read and the still-strict start path, and both passed under current checkout.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Ran both new test files (route-documents.test.ts, publication.test.ts) against the current checkout: all 14 tests pass, including the two acceptance tests for the fix. Inspected test bodies: the route-documents test directly compares a historical re-read (story omitted) against the at-start routed admission and asserts identical tasks/documents, and separately confirms the legacy triple and the non-historical (start) path still require story+lld+plan. The publication test deletes the story document from a stored checkpoint's submitted documents and asserts publication still completes. Traced the code path (pinnedTriple, prepareReviewPacket, publication.ts, admission.ts) to confirm the historical flag is wired through exactly the call sites relevant to stored re-reads (publish, resume, and admission's replay of prior attempts), and that fresh starts (historical=false, no route) are unaffected. Did not revert-and-retest packet.ts against the parent commit due to sandbox file-write restrictions outside normal review scope; relying on builder-reported pre-fix failure plus code-level trace for that specific claim.",
+              "evidenceReferences": [
+                "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/publication.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: did not revert packet.ts to the parent commit and rerun the new tests to directly observe a pre-fix failure (sandbox approval for writing outside the tracked file path was not pursued); relied on builder-reported execution details plus a manual code trace confirming the historical-only relaxation instead."
+            ],
+            "inspectedReferences": [
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/ISSUE.md",
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/publication.test.ts",
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/packet.ts",
+              "5b04603c216ba3a42cd11c8c054e75081838337b:src/workflow/code-review/task-review/packet.ts",
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/publication.ts",
+              "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/admission.ts"
+            ],
+            "executedTests": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+                "cases": [
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored review of a Story with a Plan is re-read with the LLD and Plan alone, and a new packet without a route still needs all three",
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored re-read still refuses a missing LLD or Plan and documents of another epic or story",
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route",
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set",
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists",
+                  "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused"
+                ],
+                "command": "npx tsx --test src/workflow/code-review/task-review/__tests__/route-documents.test.ts src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran both files together under current checkout (commit 0556f0dc0); 14/14 tests pass, 0 fail.",
+                "evidenceReferences": [
+                  "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
+                ]
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "cases": [
+                  "CR publication: a stored review of a Story with a Plan (LLD and Plan, no story document) publishes",
+                  "task-based CR: version-2 validation/rendering and no retired-format fallback",
+                  "CR publication: idempotent scoped summary and retained checkpoint on publication failure",
+                  "concurrent canonical publications preserve both summaries and the latest readable projection",
+                  "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review",
+                  "coordinator marks an attempt terminal only after canonical CR publication is durable",
+                  "publication refuses an unknown stored CR version without overwriting future data",
+                  "canonical story aliases retain original submitted scope while using one CR identity"
+                ],
+                "command": "npx tsx --test src/workflow/code-review/task-review/__tests__/route-documents.test.ts src/workflow/code-review/task-review/__tests__/publication.test.ts",
+                "result": "pass",
+                "executionDetails": "Ran both files together under current checkout (commit 0556f0dc0); 14/14 tests pass, 0 fail.",
+                "evidenceReferences": [
+                  "0556f0dc0c51bde43a4c1a1fc944c872a3bb726d:src/workflow/code-review/task-review/__tests__/publication.test.ts"
+                ]
+              }
+            ]
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.\nNative output diagnostics: [{\"phase\":\"assessment\",\"taskId\":\"s1\",\"provider\":\"claude\",\"resolved\":true,\"errors\":[{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"findings\",\"correction\":\"Return findings as a top-level JSON array.\",\"occurrences\":2},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"taskId\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"status\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"summary\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"testCoverage\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"limitations\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"advice\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1},{\"code\":\"MISSING_REQUIRED_FIELD\",\"field\":\"inspectedReferences\",\"correction\":\"Return the required field in the JSON object.\",\"occurrences\":1}]}]",
+        "completedAt": "2026-11-05T04:10:59.055Z",
         "buildFingerprint": "d5f51f874b4c6e7791a230c12aa0302e37680e518aba5da6da653dd67f834764"
       }
     ]

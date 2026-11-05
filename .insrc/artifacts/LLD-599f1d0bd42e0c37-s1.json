@@ -27,12 +27,31 @@
     "standalone": true,
     "sizeClass": "bugfix",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "3f6039149f7dfc1eb3a38ebecb40b8dd2f3cf7f7b942922baca363acefc54f39",
+        "at": "2026-11-05T05:21:22.851Z",
+        "by": {
+          "id": "codex:controller",
+          "kind": "agent",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    }
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Review each task against one submitter-pinned final code revision while retaining the original commit selections as immutable scope provenance. Derive a bounded final-code view, account explicitly for surviving, superseded and deleted selections, and reject ambiguous or out-of-set changes. Reuse the current review coordinator and source readers; the other three code-review reliability fixes remain separate."
+      "prose": "Review each task against one submitter-pinned final code revision while retaining the original commit selections as immutable scope provenance. Derive a bounded final-code view, account explicitly for surviving, superseded and deleted selections, and reject ambiguous or out-of-set changes. Reuse the current review coordinator and source readers; the other three code-review reliability fixes remain separate. The user-confirmed pin is enforced by fresh schema construction; explicit effective task types and persisted host-computed identity guards define prompt, validation and reuse behavior. Coordination and missing-test non-regression requirements are specified below. Code citations identify current extension points; newly proposed behavior is not claimed to already exist. [[c1]] [[c18]]"
     },
     "hldContextSlice": {
       "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
@@ -81,11 +100,12 @@
           "errors": [
             {
               "type": "TaskReviewInputError",
-              "condition": "Missing/unavailable reviewRevision, non-ancestor origin, unverified original selection, unsafe path/rename, projection ambiguity, out-of-set replacement or bounds overflow. Refuse before admission/model dispatch. [[c2]] [[c3]]"
+              "condition": "field=reviewRevision for missing/symbolic/unavailable/non-commit pin; field=reviewRevision.ancestry for a verified non-ancestor origin; field=scope_conflict for an unprovable mapping/replacement/path; field=projection_limit for explicit budget exhaustion. Existing original-selection/document/source fields retain their current names. These are Error.field identifiers, not a new error.code enum. Source transport/object-integrity errors are not false ancestry. [[c2]] [[c3]] [[c4]]"
             }
           ],
           "preconditions": [
-            "Keep existing strict original hunk/parent/path/document validation. Require each origin commit to be an ancestor of or equal to the pinned final revision. Packet array order never establishes ancestry. Never infer or substitute HEAD. [[c2]] [[c3]] [[c4]]"
+            "Keep existing strict original hunk/parent/path/document validation. Require each origin commit to be an ancestor of or equal to the pinned final revision. Packet array order never establishes ancestry. Never infer or substitute HEAD. [[c2]] [[c3]] [[c4]]",
+            "Build the new submission schema as a fresh TypeBox Object from a separately cloned field-definition map: supply reviewRevision as a non-optional OID field when constructing that Object and preserve additionalProperties=false. StoredPacketSchema constructs reviewRevision as optional for historical reads. Omit before-version selections only from the separately cloned submission shape. Do not merely replace a property on a cloned object whose required array was already computed. Validate that PacketSchema.required contains reviewRevision and decodeReview rejects its absence, while StoredPacketSchema still reads old records. This specifies schema construction, not an API that already exists. [[c2]]"
           ],
           "postconditions": [
             "Project each explicitly selected original +/- span or deletion anchor using committed path/line lineage into reviewRevision. All resulting finding coordinates and embedded reviewed text refer to that revision. Preserve every origin selection as surviving, superseded or deleted, including partial supersession. Keep one stable preparation entry per original file selection so attribution indexes remain accountable. [[c1]] [[c3]]",
@@ -122,8 +142,8 @@
           },
           "errors": [
             {
-              "type": "TaskReviewInputError (scope_conflict / projection_limit)",
-              "condition": "A final replacement is not justified by submitted origins, a partial changed run cannot be mapped unambiguously, or any explicit byte/range/object bound would be exceeded."
+              "type": "TaskReviewInputError",
+              "condition": "field=scope_conflict for unprovable replacement/partial mapping/rename lineage; field=projection_limit for any bound exceeded. Ancestor/pin validation happens first in prepareReviewPacket and uses the fields specified there. [[c2]] [[c3]]"
             }
           ],
           "preconditions": [
@@ -190,8 +210,9 @@
           ],
           "postconditions": [
             "Embed selected final-version code only; give finalRevision:path evidence refs and source-origin pointers. Grants include explicit reads of pinned final and origin objects, never git show HEAD. Superseded-only entries cannot manufacture whole-file finding scope. [[c6]]",
-            "Review actual final requirements, test coverage and acceptance checks. Explain that a historical defect fixed by a later submitted change is not an unresolved final defect; unresolved final defects still block. Other three approved issue fixes remain separate. [[c1]] [[c6]]",
-            "For a task attributed a superseded origin, require the same task's changeIndexes to include the later replacement/deletion witness entries (transitively, with bounded ancestry-ordered closure). Reject an incomplete attribution with pointed missing indexes rather than accepting a vacuous no-finding-scope pass. Cross-task replacement entries remain reusable by multiple tasks; every acceptance check is assessed against active final witness scope. [[c3]] [[c6]]"
+            "Review actual final requirements, test coverage and acceptance checks. Explain that a historical defect fixed by a later submitted change is not an unresolved final defect; unresolved final defects still block. The other approved fixes remain separately owned and sequenced as the coordination section specifies. [[c13]] [[c14]] [[c15]]",
+            "For a task attributed a superseded origin, require the same task's changeIndexes to include the later replacement/deletion witness entries (transitively, with bounded ancestry-ordered closure). Reject an incomplete attribution with pointed missing indexes rather than accepting a vacuous no-finding-scope pass. Cross-task replacement entries remain reusable by multiple tasks; every acceptance check is assessed against active final witness scope. [[c3]] [[c6]]",
+            "The explicit EffectiveTaskChange -> TaskAssignment.changes -> selectedCode/policy.ts -> assignmentResultSchema/TaskResultScope path is defined in §3.2. The same effective objects supply prompt code, read grants, native path constraints and final host range validation. Original SelectedChange objects remain origin evidence only. None-scope rows never authorize arbitrary path findings. [[c3]] [[c5]] [[c8]] [[c16]] [[c17]]"
           ]
         },
         {
@@ -216,11 +237,49 @@
             }
           ],
           "preconditions": [
-            "New starts require the pin. Completed historical records lacking it remain readable/publishable as historical records, without new model execution or a final-version equivalence claim. Old unpinned interrupted work requires a new explicit pinned attempt rather than silently inferring a revision. [[c2]] [[c5]]"
+            "New starts require the pin. Completed historical records lacking it remain readable/publishable as historical records, without new model execution or a final-version equivalence claim. Old unpinned interrupted work requires a new explicit pinned attempt rather than silently inferring a revision. [[c2]] [[c2]] [[c9]] [[c11]]"
           ],
           "postconditions": [
-            "Persist reviewRevision in submitted packet/checkpoint/permanent CR and include it in exact replay/review freshness binding. Never rewrite prior attempts. Reuse is allowed only after existing same-party checks plus exact task final-blob/scope/document/test-input compatibility; otherwise reassess, preserving earlier feedback as context. [[c5]]",
-            "No review-engine fallback, compatibility flag, activation mechanism, new data store, UI or changes to technical retry/activity/approval policy. Keep native/controller behavior identical and preserve all valid historical evidence. [[c1]] [[c5]]"
+            "Persist reviewRevision in submitted packet/checkpoint/permanent CR and include it in exact replay/review freshness binding. Never rewrite prior attempts. Reuse is allowed only after existing same-party checks plus exact task final-blob/scope/document/test-input compatibility; otherwise reassess, preserving earlier feedback as context. [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]",
+            "No review-engine fallback, compatibility flag, activation mechanism, new data store, UI or changes to technical retry/activity/approval policy. Keep native/controller behavior identical and preserve all valid historical evidence. [[c1]] [[c5]]",
+            "Existing validateTaskResult(source results.ts) receives TaskResultScope.changes: readonly EffectiveTaskChange[] for pinned execution. A location must match an active final path/span/deletion anchor; findingScope=none never matches, even when segments=[]. This is the deterministic superseded-coordinate guard. Changed-in-revision code is reviewed at its final coordinates; origin coordinates remain evidence only. [[c3]] [[c5]] [[c17]]"
+          ]
+        },
+        {
+          "name": "taskFinalIdentity / bindTaskFinalIdentities (proposed shared helpers)",
+          "signature": "taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment): string; bindTaskFinalIdentities(review: AdmittedReview, assignments: readonly TaskAssignment[]): void",
+          "parameters": [
+            {
+              "name": "prepared, assignment",
+              "type": "PreparedReviewPacket, TaskAssignment",
+              "purpose": "Host-derived final effective source and accepted task mapping, never a model-supplied digest. [[c3]] [[c8]]",
+              "optional": false
+            },
+            {
+              "name": "review, assignments",
+              "type": "AdmittedReview, readonly TaskAssignment[]",
+              "purpose": "Existing admitted attempt and complete accepted attribution; both reviewer routes call the same binding helper. [[c8]] [[c9]]",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "SHA256 string / void",
+            "meaning": "Deterministic per-task compatibility digest and a once-bound immutable list on the attempt header. [[c8]] [[c10]]"
+          },
+          "errors": [
+            {
+              "type": "TaskReviewInputError",
+              "condition": "field=reuse when a source lacks compatible stored identities; field=projection_identity when recomputation or an attempted same-attempt replacement disagrees with the admitted binding. Storage failure is propagated without publishing or dispatching reuse. [[c8]] [[c10]]"
+            }
+          ],
+          "preconditions": [
+            "prepareReviewAdmission computes and stores header.finalScopeIdentity from reviewRevision and the normalized original-selection/projection identity before acknowledgement. It is recomputed and compared on pinned resume and publication; old no-pin history does not obtain a synthetic identity. [[c9]] [[c10]] [[c11]]",
+            "After either direct assignment or accepted model/controller attribution, bindTaskFinalIdentities computes exactly one digest for every applicable task, persists header.taskScopeIdentities in the same accepted-attribution save before acknowledgement/reuse/task execution, and rejects a later conflicting binding. Add this save even when there were no diagnostics to resolve: the current coordinator conditional diagnostic save is insufficient. Controller and native routes use the same helper and boundary. [[c8]] [[c10]]"
+          ],
+          "postconditions": [
+            "Per-task digest uses canonical key-sorted JSON of taskId, acceptance checks, ordered final path/full-blob OID/none-scope/final spans and deletion anchors, pinned requirement document content identities and full submitted test details (file, cases, command, result, executionDetails, evidence). Arrays preserve semantic order; derived interval normalization is deterministic. It excludes the raw global revision string, so unrelated revision movement may reuse only if all actual task inputs remain byte-identical. Relevant blob/scope/doc/test differences always change the digest. [[c3]] [[c8]]",
+            "Extend sourceAssessment and reuseAssessment to compare the current task digest and stored sourceAttempt.header.taskScopeIdentities row after existing ordinal/same-party checks, before returning/copying a source result. reviewAssignments reports field=reuse with pointed request to choose reassess for an incompatible candidate. reuseAssessment repeats the guard before copying, then keeps its existing exact-result and current-scope validation. Missing historical identities refuse reuse; they never infer equivalence from prose or a passing status. [[c8]]",
+            "Checkpoint save/load validates bounded unique task rows, schema and binding consistency; resume/publication recomputes final projection identity from pinned sources and compares, never accepting caller-provided identities. Historical projection/source inputs and already bound task identities are immutable. CR attempt summaries persist these header bindings for future source-result checks without copying blobs. [[c9]] [[c10]] [[c11]] [[c12]]"
           ]
         }
       ]
@@ -230,7 +289,7 @@
         "entity": "ReviewPacket.reviewRevision",
         "change": "field-add",
         "details": "Required full Git OID on every new submission; optional only in immutable historical storage decoding. The submitter pins it before start, and exact replay includes it. All origin commits must be reachable ancestors/equal. It is a source version, not a generic diff boundary or permission to review unrelated code. [[c2]] [[c3]]",
-        "schemaDiff": "PacketSchema adds required reviewRevision: existing oid schema; StoredPacketSchema retains optional reviewRevision for historical reads. ReviewPacket type represents both; preparation explicitly narrows new execution to a required pin. No caller-supplied final projection is accepted.",
+        "schemaDiff": "StoredPacketSchema adds an optional reviewRevision using the existing OID schema. PacketSchema is rebuilt as a fresh strict TypeBox Object from cloned fields, with reviewRevision supplied as a non-optional field at object creation. Its required array must include reviewRevision; all existing required top-level fields stay required. before is excluded only in the new-submission nested segment schema, without mutating StoredPacketSchema. Replacing only .properties.reviewRevision on CloneType(StoredPacketSchema) is explicitly insufficient because TypeBox already computed required. parsePacket/decodeReview and MCP discovery use this constructed submission schema. Existing historical decode retains the optional field. [[c2]]",
         "callSites": [
           "src/workflow/code-review/task-review/contracts.ts",
           "src/workflow/code-review/task-review/packet.ts",
@@ -241,12 +300,16 @@
         "entity": "ReviewProjection and origin relationships",
         "change": "new",
         "details": "Proposed private prepared-state representation. Packet owns exactly one final revision; it owns 1..10000 original file-selection entries. Each original segment has one disposition with 0..many surviving final spans, 0..many explicit superseded portions, and/or deletion-anchor witnesses. Final spans may have multiple originating selections; origins remain identifiable by stable reviewSet/file/segment indexes. Direction is origin -> final projected scope, never a copied historical result body. Entirely superseded entries stay in attribution with findingScope='none'. Preserve all originals byte-for-byte in submitted history; derived projection is reproducible from their committed objects. [[c3]]",
-        "schemaDiff": "Proposed private TypeScript shapes (all arrays validated against named bounds; no caller JSON projection):\ntype OriginRef = { readonly changeIndex: number; readonly segmentIndex: number };\ntype ReviewedSegment = { readonly after: readonly [number,number] } | { readonly deletionAt: number };\ninterface OriginDisposition {\n readonly source: OriginRef;\n readonly sourcePart: ReviewedSegment;\n readonly kind: 'surviving' | 'superseded' | 'deleted';\n readonly finalSegments: readonly ReviewedSegment[];\n readonly replacementWitnesses: readonly OriginRef[];\n}\ninterface ProjectedEntry {\n readonly originChangeIndex: number;\n readonly commit: string; // equals reviewRevision\n readonly path: string; // verified final path\n readonly after: PinnedBlob | null;\n readonly findingScope: 'selected' | 'none';\n readonly segments: readonly ReviewedSegment[];\n}\ninterface ReviewProjection {\n readonly revision: string;\n readonly entries: readonly ProjectedEntry[];\n readonly dispositions: readonly OriginDisposition[];\n readonly identity: string; // deterministic SHA256 of pin, original selection identities, final blob IDs and normalized projection\n}\nPreparedReviewPacket retains original validated SelectedChange records separately from this derived projection. Preserve original parent/path/previousPath metadata there; projected finding coordinates never pretend the final revision's immediate parent introduced every selected span.\nentries length equals original file-selection count and preserves those stable indexes. A text source interval is partitioned exactly once into disjoint sourcePart intervals by dispositions; original deletion anchors are accounted as boundary singletons. No source portion is lost or double-counted. Surviving dispositions have nonempty finalSegments. A superseded portion has no active historical text and requires nonempty replacementWitnesses pointing to valid later submitted origins whose final scope proves the replacement/deletion; witnesses must follow verified ancestry, never array order. Deletion semantics use explicit verified anchors, including zero at an empty-file boundary. findingScope=none requires segments=[] and forbids findings, never grants whole-file scope. Active selected segments are nonempty final spans or deletion anchors. Normalize/deduplicate final spans without losing origin references. Every path/OID/range/ref/identity is bounded and validated; no raw prior result bodies or model reasoning are added.",
+        "schemaDiff": "Proposed private TypeScript shapes (all arrays validated against named bounds; no caller JSON projection):\ntype OriginRef = { readonly changeIndex: number; readonly segmentIndex: number };\ntype ReviewedSegment = { readonly after: readonly [number,number] } | { readonly deletionAt: number };\ninterface OriginDisposition {\n readonly source: OriginRef;\n readonly sourcePart: ReviewedSegment;\n readonly kind: 'surviving' | 'superseded' | 'deleted';\n readonly finalSegments: readonly ReviewedSegment[];\n readonly replacementWitnesses: readonly OriginRef[];\n}\ninterface ProjectedEntry {\n readonly originChangeIndex: number;\n readonly commit: string; // equals reviewRevision\n readonly path: string; // verified final path\n readonly after: PinnedBlob | null;\n readonly findingScope: 'selected' | 'none';\n readonly segments: readonly ReviewedSegment[];\n}\ninterface ReviewProjection {\n readonly revision: string;\n readonly entries: readonly ProjectedEntry[];\n readonly dispositions: readonly OriginDisposition[];\n readonly identity: string; // deterministic SHA256 of pin, original selection identities, final blob IDs and normalized projection\n}\nPreparedReviewPacket retains original validated SelectedChange records separately from this derived projection. Preserve original parent/path/previousPath metadata there; projected finding coordinates never pretend the final revision's immediate parent introduced every selected span.\nentries length equals original file-selection count and preserves those stable indexes. A text source interval is partitioned exactly once into disjoint sourcePart intervals by dispositions; original deletion anchors are accounted as boundary singletons. No source portion is lost or double-counted. Surviving dispositions have nonempty finalSegments. A superseded portion has no active historical text and requires nonempty replacementWitnesses pointing to valid later submitted origins whose final scope proves the replacement/deletion; witnesses must follow verified ancestry, never array order. Deletion semantics use explicit verified anchors, including zero at an empty-file boundary. findingScope=none requires segments=[] and forbids findings, never grants whole-file scope. Active selected segments are nonempty final spans or deletion anchors. Normalize/deduplicate final spans without losing origin references. Every path/OID/range/ref/identity is bounded and validated; no raw prior result bodies or model reasoning are added.\nConcrete consumer threading (proposed extensions, not existing declarations):\ninterface EffectiveTaskChange {\n readonly originChangeIndex: number;\n readonly commit: string; // pinned reviewRevision\n readonly path: string; // verified final path\n readonly after: PinnedBlob | null;\n readonly findingScope: 'selected' | 'none';\n readonly segments: readonly ReviewedSegment[];\n readonly origin: SelectedChange; // immutable original commit/parent/path/previousPath/segments\n}\nPreparedReviewPacket retains originChanges: readonly SelectedChange[], and exposes changes: readonly EffectiveTaskChange[] plus projection: ReviewProjection for new pinned execution. TaskAssignment.changes becomes readonly EffectiveTaskChange[] on that execution path. original changeIndexes still index entries one-for-one. No projected commit/parent pair is presented as if the final revision introduced all selected lines; origin metadata remains explicit.\nFor each originChangeIndex i, ProjectedEntry.segments is exactly the normalized deduplicated union of finalSegments of its surviving/deleted OriginDispositions. Superseded historical portions contribute no active segments; replacement witness entries supply their own final scope and must be included in the same task's attribution closure. Empty aggregate implies findingScope=none, not unbounded scope. Coalescing preserves all source refs and never merges over unselected gaps.\nselectedCode consumes EffectiveTaskChange.after/path/segments and embeds final-version selected blocks with origin references. deriveTaskAssignments validates origin-index completeness and required witness closure, then passes those same effective objects to TaskAssignment. policy.ts assignmentPrompt and codeTaskCommands consume them; native git-show grants include the explicit final commit/path plus origin evidence, never HEAD. result-schema.ts assignmentResultSchema derives allowable paths from active effective entries only. results.ts TaskResultScope.changes takes the effective type, and validateTaskResult checks final path and exact final spans/anchors, explicitly ignoring none-scope entries. It must not fall through to the old empty-segments whole-file rule. Native/controller callers share these types and validators. Historical rendering reads original records without launching an old execution path. [[c3]] [[c5]] [[c8]] [[c16]] [[c17]]",
         "callSites": [
           "src/workflow/code-review/task-review/packet.ts",
           "src/workflow/code-review/task-review/sources.ts",
           "src/workflow/code-review/task-review/results.ts",
-          "src/workflow/code-review/task-review/result-schema.ts"
+          "src/workflow/code-review/task-review/result-schema.ts",
+          "src/workflow/code-review/task-review/policy.ts",
+          "src/workflow/code-review/task-review/assessment.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts"
         ]
       },
       {
@@ -262,13 +325,27 @@
       {
         "entity": "Saved attempt and CR version provenance",
         "change": "field-add",
-        "details": "An attempt owns one immutable submitted reviewRevision, original selection and final-view identity. Permanent records retain the pin and original selection provenance. Old completed no-pin attempts remain historical; no auto-upgrade, mutable origin rewrite or stale result reuse is allowed. Compare final blob IDs and projected task scope with pinned requirements/tests before reusing results across attempts; unrelated revision changes can reuse only when this complete task identity remains equal. [[c5]]",
+        "details": "An attempt owns one immutable submitted reviewRevision, original selection and final-view identity. Permanent records retain the pin and original selection provenance. Old completed no-pin attempts remain historical; no auto-upgrade, mutable origin rewrite or stale result reuse is allowed. Compare final blob IDs and projected task scope with pinned requirements/tests before reusing results across attempts; unrelated revision changes can reuse only when this complete task identity remains equal. [[c5]] header.finalScopeIdentity is mandatory for a newly admitted pinned attempt and immutable thereafter. header.taskScopeIdentities is absent only before mapping, then is a unique bounded taskId/digest list saved before any task result/reuse. Both bindings remain available in completed CR history. The proposed helpers above specify who computes/persists/compares them; no model authors an identity. [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]",
         "callSites": [
           "src/workflow/code-review/task-review/contracts.ts",
           "src/workflow/code-review/task-review/admission.ts",
           "src/workflow/code-review/task-review/assessment.ts",
           "src/workflow/code-review/task-review/publication.ts",
-          "src/workflow/code-review/task-review/record.ts"
+          "src/workflow/code-review/task-review/record.ts",
+          "src/workflow/code-review/task-review/checkpoint.ts",
+          "src/workflow/code-review/task-review/coordinator.ts",
+          "src/workflow/code-review/task-review/controller.ts"
+        ],
+        "schemaDiff": "ReviewAttempt.header += finalScopeIdentity?: SHA256; taskScopeIdentities?: readonly {taskId: text; identity: SHA256}[] (<=10000, unique taskId). Optional in historical schema only; runtime pinned admission requires finalScopeIdentity, and accepted mapping requires one row per applicable task. Extend checkpoint and CR summary schemas/readers with the same bounded fields, preserving historical no-pin records. Save/load/admission/reuse/publication enforce the phase and immutability rules above; a model-supplied or mismatched digest is refused. [[c2]] [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]"
+      },
+      {
+        "entity": "Coordination with the other approved code-review fixes",
+        "change": "invariant-change",
+        "details": "interactionWithShared remains empty because this standalone ISSUE has no HLD shared-contract IDs; the existing field accepts only real scN references. Coordination is explicit here instead. Build/merge order: (1) ISSUE-599f1d0bd42e0c37 final-version scope and identity contracts; (2) ISSUE-2a3c21b73b79ef9c native output/diagnostic reliability; (3) ISSUE-81e68ebf54745c75 rejected-result correction/preservation; (4) ISSUE-860d6e82ab04d314 coverage-assessment classification. Work sequentially in that order; rebase/merge each later implementation onto reviewed predecessors and rerun shared validation tests before its review. No concurrent edits are assumed safe. This fix owns only effective finding-coordinate inputs and identity guards in results.ts/assessment.ts. It leaves native output repair, rejection handling, status normalization, coverage meaning and optional-execution semantics unchanged for their owning issues. The later rejection-recovery fix consumes the final scope/error fields defined here and must not relax them; the classification fix consumes the same results without adding scope expansion. Any later shared-type change requires an explicit design amendment and affected regression checks, not a claim of automatic non-conflict. [[c1]] [[c13]] [[c14]] [[c15]]",
+        "callSites": [
+          "src/workflow/code-review/task-review/results.ts",
+          "src/workflow/code-review/task-review/assessment.ts",
+          "src/workflow/code-review/task-review/policy.ts"
         ]
       }
     ],
@@ -277,15 +354,15 @@
       "errorCases": [
         {
           "scenario": "Missing or invalid final pin",
-          "detection": "New PacketSchema omits reviewRevision, uses a symbolic ref, unavailable object or non-commit OID. [[c2]] [[c4]]",
-          "response": "Reject before admission/model dispatch. Never substitute HEAD, a document commit, latest origin commit or the working tree. User resubmits an explicit committed pin.",
+          "detection": "Fresh strict PacketSchema requires reviewRevision in its constructed required array; decodeReview rejects absence/non-OID values. prepareReviewPacket then resolves a commit object and rejects unavailable/non-commit pins. See §2.1/§3.1 schema construction, not an in-place optional-field mutation. [[c2]] [[c3]]",
+          "response": "Reject TaskReviewInputError with field=reviewRevision before admission/model dispatch. Never substitute HEAD, a document commit, latest origin commit or the working tree. User resubmits an explicit committed pin. [[c2]] [[c3]]",
           "userImpact": "No accidental review of moving or unrelated code.",
           "recoverable": true
         },
         {
           "scenario": "Origin is not an ancestor of final revision",
           "detection": "Existing committed-object reads and proposed isAncestor return a valid false ancestry result; source errors remain distinct. [[c4]]",
-          "response": "Reject scope_conflict and retain stored history. The submitter must choose a coherent revision and review set; do not reorder commits or silently drop the conflicting origin.",
+          "response": "Reject TaskReviewInputError with field=reviewRevision.ancestry in prepareReviewPacket before projection. Preserve history; the submitter must choose a coherent pin/set. Do not reorder or drop origins. This differs from helper field=scope_conflict for an unprovable final replacement. [[c2]] [[c3]] [[c4]]",
           "userImpact": "No mixed-branch code assembled into a fictitious final state.",
           "recoverable": true
         },
@@ -312,14 +389,14 @@
         },
         {
           "scenario": "Historical result or replay is incompatible with the final view",
-          "detection": "Pin changes on an exact replay, no-pin execution/resume is requested, or reused results have different final blobs/projected scope/documents/tests. [[c2]] [[c5]]",
-          "response": "Conflicting replay is rejected; a changed pin requires a new attempt. No-pin history remains readable but cannot launch a model or claim final-version equivalence. New attempts reassess incompatible tasks and preserve earlier feedback.",
+          "detection": "Admission compares exact packet replay including reviewRevision. bindTaskFinalIdentities saves host-computed per-task inputs; sourceAssessment/reuseAssessment compare the source and current stored task identities before copying feedback. Resume/publication recompute header.finalScopeIdentity from pinned sources. Missing identities on historical no-pin execution/reuse do not pass these checks. [[c8]] [[c9]] [[c10]] [[c11]]",
+          "response": "Conflicting replay uses the existing replay field; missing pin uses reviewRevision, changed recomputed binding uses projection_identity and incompatible source-result reuse uses reuse. A changed pin requires a new attempt; valid old history stays readable but launches no unpinned model and is not silently promoted. The reviewer may choose reassess through the existing attribution policy. [[c2]] [[c8]] [[c9]]",
           "userImpact": "Prior approvals/results cannot silently apply to different code.",
           "recoverable": true
         },
         {
           "scenario": "Finding uses superseded historical coordinates",
-          "detection": "Result scope validation compares locations only to active final projected spans/deletion anchors, never superseded-only rows. [[c5]]",
+          "detection": "TaskAssignment.changes carries EffectiveTaskChange rows to both assignmentResultSchema and TaskResultScope. validateTaskResult matches active final paths/ranges and rejects none-scope entries before the old empty-segment rule. Historical source locations cannot match through origin metadata. [[c3]] [[c5]] [[c17]]",
           "response": "Retain strict scope rejection; point to the pinned final scope. Bounded rejection recovery itself belongs to ISSUE-81e68ebf54745c75, not this fix. Do not auto-relocate the finding or broaden scope.",
           "userImpact": "An obsolete location cannot remain a current blocking finding.",
           "recoverable": true
@@ -352,7 +429,7 @@
         },
         {
           "input": "Other code-review issue or another review runs concurrently",
-          "expected": "Use the existing per-review fences and serial provider calls; do not change retry/activity policy or another review's state. Separate approved issues stay out of this design. [[c1]]"
+          "expected": "Independent review IDs/final pins remain fenced by the existing coordinator. Do not mutate the other review or parallelize its provider calls. Shared implementation edits for the four fixes are sequenced by the coordination section, not treated as concurrent-safe. [[c13]] [[c14]] [[c15]]"
         }
       ],
       "invariantsToPreserve": [
@@ -386,7 +463,8 @@
           "purpose": "Explicit final revision and immutable storage boundary. [[c2]]",
           "subjects": [
             "New packets require a full commit reviewRevision; reject missing/symbolic/unavailable/non-commit pins. Same-attempt replay rejects changed pin; historical completed no-pin records remain readable without granting model execution.",
-            "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller."
+            "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller.",
+            "Schema-construction regression: missing reviewRevision is rejected by the actual PacketSchema/decodeReview path, PacketSchema.required includes it, and historical StoredPacketSchema still decodes no-pin records. Cloning/replacing an optional property without rebuilding required must not satisfy this test. [[c2]]"
           ],
           "fixturesNeeded": [
             "Existing packet/admission/publication fixtures with explicit final pins on all new submissions."
@@ -402,7 +480,9 @@
             "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope.",
             "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope.",
             "Final-only finding locations and native schema agree; superseded-only entries allow no code findings while genuine final defects still block.",
-            "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable."
+            "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable.",
+            "EffectiveTaskChange threading: prove final text reaches selectedCode/assignmentPrompt/native grants, the same final paths/spans reach assignmentResultSchema and validateTaskResult, superseded-only rows reject findings, and ProjectedEntry.segments equals the normalized union of its surviving/deleted dispositions. [[c3]] [[c5]] [[c16]] [[c17]]",
+            "Host reuse binding: both routes persist taskScopeIdentities after direct/model attribution even with no diagnostics; sourceAssessment and reuseAssessment reject a changed relevant final blob, scope, requirement or test input and missing identities. Identical task inputs across unrelated revision movement may reuse; conflicting same-attempt identity writes fail. [[c8]] [[c9]] [[c10]]"
           ],
           "fixturesNeeded": [
             "Small real Git histories with additions, replacement, line shift, selected/unselected commits, rename/delete, merge conflict and restored bytes.",
@@ -413,10 +493,12 @@
           "level": "integration",
           "purpose": "Working pipeline parity and completion history. [[c6]] [[c7]]",
           "subjects": [
-            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks.",
+            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks. Reproduce the actual S3 t3/t9 pair: the t3 first-report lookup is fixed by included commit 76d3d899a, and the final reviewed source must not retain its historical blocker. [[c1]]",
             "Attribution accounts for every original entry, including superseded entries, and every supplied test; cross-task final source is shared with origin references rather than obsolete embedded versions.",
             "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution.",
-            "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected."
+            "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected.",
+            "Genuine current test-coverage/provenance defect non-regression: alongside a historical defect fixed later in the packet, deliberately omit a current provenance or requiredReferences test. The final review must still report that demonstrated coverage defect; final-version reconciliation must not suppress it or auto-pass it. [[c1]]",
+            "Two independent native/controller reviews with different reviewIds and final pins can progress concurrently; changes, bindings, feedback, optional-execution disclosures and completion/cleanup of one never alter or unblock the other. Provider work remains serial within each review and the existing activity/retry policy is unchanged. [[c1]] [[c13]]"
           ],
           "fixturesNeeded": [
             "Existing coordinator/controller/history/route fixtures, scoped current-code regressions and a captured S3-style stale-version reproduction."
@@ -439,7 +521,8 @@
           "criterionId": "ac1",
           "provingTests": [
             "New packets require a full commit reviewRevision; reject missing/symbolic/unavailable/non-commit pins. Same-attempt replay rejects changed pin; historical completed no-pin records remain readable without granting model execution.",
-            "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller."
+            "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller.",
+            "Schema-construction regression: missing reviewRevision is rejected by the actual PacketSchema/decodeReview path, PacketSchema.required includes it, and historical StoredPacketSchema still decodes no-pin records. Cloning/replacing an optional property without rebuilding required must not satisfy this test. [[c2]]"
           ]
         },
         {
@@ -448,7 +531,7 @@
             "Identity and shifted-line projection preserve only selected surviving text, excluding unrelated insertions and working-tree canaries.",
             "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope.",
             "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly.",
-            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks."
+            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks. Reproduce the actual S3 t3/t9 pair: the t3 first-report lookup is fixed by included commit 76d3d899a, and the final reviewed source must not retain its historical blocker. [[c1]]"
           ]
         },
         {
@@ -458,22 +541,26 @@
             "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope.",
             "Final-only finding locations and native schema agree; superseded-only entries allow no code findings while genuine final defects still block.",
             "Attribution accounts for every original entry, including superseded entries, and every supplied test; cross-task final source is shared with origin references rather than obsolete embedded versions.",
-            "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected."
+            "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected.",
+            "EffectiveTaskChange threading: prove final text reaches selectedCode/assignmentPrompt/native grants, the same final paths/spans reach assignmentResultSchema and validateTaskResult, superseded-only rows reject findings, and ProjectedEntry.segments equals the normalized union of its surviving/deleted dispositions. [[c3]] [[c5]] [[c16]] [[c17]]",
+            "Genuine current test-coverage/provenance defect non-regression: alongside a historical defect fixed later in the packet, deliberately omit a current provenance or requiredReferences test. The final review must still report that demonstrated coverage defect; final-version reconciliation must not suppress it or auto-pass it. [[c1]]"
           ]
         },
         {
           "criterionId": "ac4",
           "provingTests": [
             "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable.",
-            "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+            "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution.",
+            "Host reuse binding: both routes persist taskScopeIdentities after direct/model attribution even with no diagnostics; sourceAssessment and reuseAssessment reject a changed relevant final blob, scope, requirement or test input and missing identities. Identical task inputs across unrelated revision movement may reuse; conflicting same-attempt identity writes fail. [[c8]] [[c9]] [[c10]]"
           ]
         },
         {
           "criterionId": "ac5",
           "provingTests": [
-            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks.",
+            "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks. Reproduce the actual S3 t3/t9 pair: the t3 first-report lookup is fixed by included commit 76d3d899a, and the final reviewed source must not retain its historical blocker. [[c1]]",
             "Disposable compiled MCP/IPC review packet pins a final revision over a multi-commit story; task review inspects final blocks, preserves origin provenance, excludes unrelated HEAD/worktree changes and publishes the correct current result.",
-            "Production build and scoped task-review/MCP tests pass; no direct cloud REST, retired engine or installed-daemon activation is introduced."
+            "Production build and scoped task-review/MCP tests pass; no direct cloud REST, retired engine or installed-daemon activation is introduced.",
+            "Two independent native/controller reviews with different reviewIds and final pins can progress concurrently; changes, bindings, feedback, optional-execution disclosures and completion/cleanup of one never alter or unblock the other. Provider work remains serial within each review and the existing activity/retry policy is unchanged. [[c1]] [[c13]]"
           ]
         }
       ]
@@ -484,21 +571,16 @@
       "migrationSteps": [
         {
           "order": 1,
-          "action": "Extend contract/preparation and readers with explicit pin plus derived final-scope metadata, keeping old completed history readable. Update new-packet fixtures, producers, MCP schema and guidance together. Before any newly formatted attempt is admitted this source change can be reverted.",
+          "action": "Implement the new schema, final projection, identity readers/guards, producer/MCP/guidance updates and fixtures offline. Run disposable qualification before deployment. No new-format production attempt is admitted in this development step, so source changes can be reverted here. [[c2]] [[c3]] [[c8]] [[c9]]",
           "rollbackable": true
         },
         {
           "order": 2,
-          "action": "Qualify origin projection, stale-version reproduction, routes, historical reads, freshness and negative boundaries using disposable fixtures. Ship daemon and packet producer updates as one coordinated version change; do not introduce a runtime activation or compatibility flag.",
-          "rollbackable": true
-        },
-        {
-          "order": 3,
-          "action": "Admit new explicitly pinned attempts only after the updated daemon is deployed. Preserve all previous records without backfill. After new-format state exists, a blind downgrade is unsafe because old strict readers may reject the added fields; retain the updated reader or use an explicitly planned operator rollback without deleting/reinterpreting records.",
+          "action": "Coordinate deployment/restart and updated producers as one live transition. Once the updated daemon serves requests, it can immediately admit new pinned attempts; there is no separate activation gate. Conservatively treat this deployment/admission transition as non-rollbackable by blind code downgrade: retain the upgraded reader or plan an explicit operator rollback that preserves new-format state. Prior completed histories are not rewritten. [[c2]] [[c9]] [[c10]] [[c11]]",
           "rollbackable": false
         }
       ],
-      "backwardCompat": "New starts intentionally require the explicit pin and reject old producer input with an actionable validation error. Existing completed attempts remain read-only historical evidence and can be republished without rewriting or claiming a final-version pin. Interrupted unpinned work requires a new explicit pinned attempt; no silent migration, old execution fallback, compatibility flag or automatic history rewrite. Existing in-flight sessions finish on their original daemon before coordinated restart; new semantics apply only to newly admitted pinned attempts.",
+      "backwardCompat": "New starts intentionally require the explicit pin and reject old producer input with an actionable validation error. Existing completed attempts remain read-only historical evidence and can be republished without rewriting or claiming a final-version pin. Interrupted unpinned work requires a new explicit pinned attempt; no silent migration, old execution fallback, compatibility flag or automatic history rewrite. Existing in-flight sessions finish on their original daemon before coordinated restart; new semantics apply only to newly admitted pinned attempts. This is a coordinated release boundary, not two independently switchable deployment/admission steps. No runtime activation flag is added. [[c2]] [[c9]] [[c10]] [[c11]]",
       "zeroDowntime": false,
       "dataRewriteRequired": false
     },
@@ -580,6 +662,61 @@
       "id": "c7",
       "kind": "code",
       "ref": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/admission.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/checkpoint.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/publication.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts"
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/policy.ts"
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/result-schema.ts"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-81e68ebf54745c75.json"
+    },
+    {
+      "id": "c14",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-2a3c21b73b79ef9c.json"
+    },
+    {
+      "id": "c15",
+      "kind": "prior-artifact",
+      "ref": ".insrc/artifacts/ISSUE-860d6e82ab04d314.json"
+    },
+    {
+      "id": "c18",
+      "kind": "stakeholder",
+      "ref": "User confirmed: submitter pins one final review revision; review-set commits remain change pointers."
     }
   ]
 }

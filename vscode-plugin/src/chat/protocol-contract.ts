@@ -14,9 +14,9 @@ import type { TurnEvent } from './stream-events.js';
 /** The message kinds this contract pins (asserted against the runtime type arrays in tests). */
 export const PROTOCOL_CONTRACT_KINDS = ['active-list', 'open-chat', 'docs-content', 'docs-decision-result', 'open-doc', 'docs-decision', 'open-companion', 'selection-decision'] as const;
 
-const entry: ActiveChatEntry = { id: 'a', title: 't', status: 'waiting-input', lastActivityAt: 1 };
-// @ts-expect-error — an ActiveChatEntry carries EXACTLY id/title/status/lastActivityAt; an extra field must not compile
-export const contractEntryExtra: ActiveChatEntry = { id: 'a', title: 't', status: 'done', lastActivityAt: 1, provider: 'claude' };
+const entry: ActiveChatEntry = { id: 'a', title: 't', provider: 'claude', status: 'waiting-input', lastActivityAt: 1 };
+// @ts-expect-error — an ActiveChatEntry carries EXACTLY id/title/provider/status/lastActivityAt; an extra field must not compile
+export const contractEntryExtra: ActiveChatEntry = { id: 'a', title: 't', provider: 'claude', status: 'done', lastActivityAt: 1, updatedAt: 1 };
 
 export const contractActiveList: HostToWebview = { type: 'active-list', chats: [entry] };
 export const contractOpenChat: WebviewToHost = { type: 'open-chat', chatId: 'a' };

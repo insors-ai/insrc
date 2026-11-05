@@ -1708,7 +1708,7 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
   assert.match(html, /type:'set-run-config',model:id/, 'same-provider model pick posts set-run-config');
   assert.match(html, /type:'set-run-config',effort:e/, 'effort slider posts set-run-config');
   // The host→webview run-config echo updates the buttons' data-* + labels.
-  assert.match(html, /else if\(m\.type==='run-config'\)\{if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);/, 'run-config echo branch present');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);/, 'run-config echo branch present (and tracks curProv for the dropdown icons)');
   // The old provider-select lock machinery is gone from the bootstrap.
   assert.doesNotMatch(html, /provLocked|setProvLock/, 'no provider lock remains');
   // A started chat (rows in the transcript) fixes the provider: the flag comes from the
@@ -2029,6 +2029,24 @@ test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider +
   // The read-only session/edits mirror segments + the ✓ idle marker are gone (dedup + progress conveys idle).
   assert.doesNotMatch(statusbar, /insrc-statussess|insrc-statusedits/, 'no read-only session/edits mirror segments');
   assert.doesNotMatch(statusbar, /✓ idle/, 'no ✓ idle marker (the progress bar conveys idle/busy)');
+});
+
+test('E202611031bd72813:S001 t4 UX: both chrome dropdowns paint the provider icon — history options drop the [provider] text for a data-URI icon, the active selection mirrors the current open chat', () => {
+  const html = fidelityHtml();
+  // helpers that turn an inline SVG into a data-URI background (img-src data: is CSP-allowed) exist
+  assert.match(html, /function picoUrl\(p\)/, 'picoUrl() builds the data-URI icon background');
+  assert.match(html, /function paintOpt\(o,p\)/, 'paintOpt() paints an <option> icon');
+  assert.match(html, /function paintSel\(sel,p\)/, 'paintSel() paints the closed <select> icon');
+  // history-list: option text is the title only (the '[provider] ' name prefix is REPLACED by the icon)
+  assert.doesNotMatch(html, /'\['\+c\.provider\+'\] '/, 'the old [provider] text prefix is gone from history options');
+  assert.match(html, /o\.textContent=\(c\.title\|\|c\.id\);paintOpt\(o,c\.provider\)/, 'history options: title + provider icon background');
+  assert.match(html, /hs\.value=cur;var cp=curProv;.*paintSel\(hs,cp\)/, 'the closed history select paints the current chat’s icon');
+  // active-list: options keep the status dot and gain the icon; the selection mirrors the open chat
+  assert.match(html, /paintOpt\(o,c\.provider\);if\(o\.dataset\)o\.dataset\.dot=d;/, 'active options: dot + provider icon');
+  assert.match(html, /if\(cur&&inList\(cur\)\)act\.value=cur;/, 'the active dropdown selection shows the CURRENT open chat when it is active');
+  assert.match(html, /paintSel\(act,ap\)/, 'the closed active select paints the selected chat’s provider icon');
+  // run-config tracks the current provider and repaints both closed selects
+  assert.match(html, /curProv=m\.provider\|\|'';.*paintSel\(hs,curProv\);paintSel\(act,curProv\)/, 'run-config repaints both dropdown icons');
 });
 
 test('UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads', () => {
@@ -4141,7 +4159,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /else if\(m\.type==='run-config'\)\{if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);paintSel\(hs,curProv\);paintSel\(act,curProv\);\}/, 'the run-config echo branch settles the buttons from the session and repaints both dropdown icons');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {
@@ -5785,7 +5803,8 @@ test('E202611031bd72813:S001 t3: active-list is posted on open and on every stat
   const id = store.list()[0]!.id;
   await waitFor(() => activeLists().some((p) => (p.payload as { chats: Record<string, unknown>[] }).chats.some((c) => c.id === id)), 5000, 'status change reposts active-list with the chat');
   const withChat = activeLists().find((p) => (p.payload as { chats: Record<string, unknown>[] }).chats.some((c) => c.id === id))!.payload as { chats: Record<string, unknown>[] };
-  assert.deepEqual(Object.keys(withChat.chats[0]!).sort(), ['id', 'lastActivityAt', 'status', 'title'], 'each ActiveChatEntry the host posts has exactly id/title/status/lastActivityAt');
+  assert.deepEqual(Object.keys(withChat.chats[0]!).sort(), ['id', 'lastActivityAt', 'provider', 'status', 'title'], 'each ActiveChatEntry the host posts has exactly id/title/provider/status/lastActivityAt');
+  assert.equal(withChat.chats[0]!.provider, 'claude', 'the active-list entry carries the chat’s provider for the dropdown icon');
   assert.ok(['waiting-input', 'working', 'done'].includes(withChat.chats[0]!.status as string));
   // age the done chat past the purge window (mutate the stored record directly) and let the timer fire
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'));

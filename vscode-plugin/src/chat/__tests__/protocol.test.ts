@@ -258,15 +258,15 @@ test('protocol allowlist includes open-link and open-code-ref', () => {
   assert.deepEqual(Object.keys(bare), ['type', 'path']);
 });
 
-test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/status/lastActivityAt; open-chat stays the only open message', () => {
+test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/provider/status/lastActivityAt; open-chat stays the only open message', () => {
   assert.ok(HOST_TO_WEBVIEW_TYPES.includes('active-list'), "'active-list' is listed as host->webview");
-  const entry: ActiveChatEntry = { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 123 };
+  const entry: ActiveChatEntry = { id: 'a', title: 'Chat A', provider: 'claude', status: 'waiting-input', lastActivityAt: 123 };
   const msg: HostToWebview = { type: 'active-list', chats: [entry] };
   assert.equal(msg.type, 'active-list');
-  assert.deepEqual(msg.chats[0], { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 123 });
+  assert.deepEqual(msg.chats[0], { id: 'a', title: 'Chat A', provider: 'claude', status: 'waiting-input', lastActivityAt: 123 });
   // exact wire shape: no extra field may ride along on the message or on an entry
   assert.deepEqual(Object.keys(msg), ['type', 'chats']);
-  assert.deepEqual(Object.keys(entry), ['id', 'title', 'status', 'lastActivityAt']);
+  assert.deepEqual(Object.keys(entry), ['id', 'title', 'provider', 'status', 'lastActivityAt']);
   assert.ok(['waiting-input', 'working', 'done'].includes(entry.status));
   // selection reuses the existing open-chat { chatId } — no new webview->host kind was added
   assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-chat'));
@@ -286,11 +286,11 @@ test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveC
     assert.ok(HOST_TO_WEBVIEW_TYPES.includes(kind as HostToWebviewType) || WEBVIEW_TO_HOST_TYPES.includes(kind as WebviewToHostType), `contract kind ${kind} is a real wire kind`);
   }
   assert.deepEqual(Object.keys(contractActiveList), ['type', 'chats'], 'contract active-list keys');
-  assert.deepEqual(Object.keys(contractActiveList.chats[0]!), ['id', 'title', 'status', 'lastActivityAt'], 'contract entry keys');
+  assert.deepEqual(Object.keys(contractActiveList.chats[0]!), ['id', 'title', 'provider', 'status', 'lastActivityAt'], 'contract entry keys');
   assert.deepEqual(Object.keys(contractOpenChat), ['type', 'chatId']);
   assert.deepEqual(Object.keys(contractDocsContent).sort(), ['artifactId', 'blocked', 'markdown', 'openQuestions', 'type'], 'contract docs-content keys');
   assert.deepEqual(Object.keys(contractDocsTab).sort(), ['relPath', 'title', 'type'], 'contract tab keys');
-  assert.ok('provider' in (contractEntryExtra as unknown as Record<string, unknown>), 'the contract’s negative case really carries the extra field the type forbids');
+  assert.ok('updatedAt' in (contractEntryExtra as unknown as Record<string, unknown>), 'the contract’s negative case really carries the extra field the type forbids');
   assert.deepEqual(Object.keys(contractOpenDoc).sort(), ['artifactId', 'type'], 'contract open-doc keys');
   assert.deepEqual(Object.keys(contractDocsDecision).sort(), ['artifactId', 'comments', 'decision', 'type'], 'contract docs-decision keys');
   assert.deepEqual(Object.keys(contractOpenCompanion).sort(), ['artifactId', 'relPath', 'type'], 'contract open-companion keys');

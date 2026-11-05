@@ -587,9 +587,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // E202611031bd72813:S001 t3: the active-chats dropdown feed — recomputed (purge included) on every
   // status change, on history refresh, and on a 60 s timer so done chats age out of the list.
   // E202611031bd72813:S001 t4 ac4: project to the exact protocol ActiveChatEntry wire shape
-  // (id/title/status/lastActivityAt) — the store's entry also carries provider/updatedAt, which
-  // are history-list fields, not active-list fields.
-  const postActive = (): void => post({ type: 'active-list', chats: deps.store.activeChats().map((c) => ({ id: c.id, title: c.title, status: c.status, lastActivityAt: c.lastActivityAt })) });
+  // (id/title/provider/status/lastActivityAt) — the store's entry also carries updatedAt, which
+  // is a history-list field, not an active-list field. `provider` rides along so the dropdown
+  // can paint the provider icon next to the chat title (UX feedback).
+  const postActive = (): void => post({ type: 'active-list', chats: deps.store.activeChats().map((c) => ({ id: c.id, title: c.title, provider: c.provider, status: c.status, lastActivityAt: c.lastActivityAt })) });
   let activeTimer: ReturnType<typeof setInterval> | undefined;
   const startActiveTimer = (): void => {
     if (activeTimer !== undefined) return;
@@ -2336,10 +2337,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       attachScript +
       outboxScript +
       // S005: history-dropdown wiring (same one nonce'd script).
-      `var cur='';` +
+      `var cur='';var curProv='';` +
       `const hs=document.getElementById('insrc-history');` +
       `const actChip=document.getElementById('insrc-actchip');const act=document.getElementById('insrc-active');` +
       `const DOT={ 'waiting-input':'red', working:'yellow', done:'green' };` +
+      // E202611031bd72813:S001 t4 UX: provider icons in the two chrome dropdowns. An <option> can
+      // only carry text, so the icon is painted as a data-URI SVG background (img-src data: is
+      // allowed by the CSP); the closed <select> gets the same treatment on its own box.
+      `function picoUrl(p){var s=(typeof ICONS!=='undefined'?ICONS[p]:undefined)||'';return s?"url('data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s)+"')":'';}` +
+      `function paintOpt(o,p){var u=picoUrl(p);if(!u)return;o.style.backgroundImage=u;o.style.backgroundRepeat='no-repeat';o.style.backgroundPosition='2px center';o.style.backgroundSize='12px 12px';o.style.paddingLeft='18px';}` +
+      `function paintSel(sel,p){if(!sel)return;var u=picoUrl(p);sel.style.backgroundImage=u||'';sel.style.backgroundRepeat='no-repeat';sel.style.backgroundPosition='2px center';sel.style.backgroundSize='12px 12px';sel.style.paddingLeft=u?'18px':'2px';}` +
       `act.addEventListener('change',function(){if(typeof act.value==='string'&&act.value!==''){vs.postMessage({v:1,payload:{type:'open-chat',chatId:act.value}});}});` +
       // Run-config controls (bottom-right): the provider·model popup + effort gauge.
       // State lives in the buttons' data-* attributes (server-rendered from the active
@@ -2444,7 +2451,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
       `started=_total>0;` +
       `pager.reset(cur,_first,_total);` +
-      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);setIdle();` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;paintSel(hs,curProv);setRunning(false);setIdle();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
       `}` +
@@ -2454,11 +2461,16 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
-      `else if(m.type==='run-config'){if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();}` +
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}` +
+      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();paintSel(hs,curProv);paintSel(act,curProv);}` +
+      // history-list options show the provider ICON (data-URI background; img-src data: is CSP-allowed)
+      // + title — the old '[provider] ' text prefix is replaced by the icon; the closed select paints
+      // the current chat's icon on its own box as well.
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=(c.title||c.id);paintOpt(o,c.provider);hs.appendChild(o);});hs.value=cur;var cp=curProv;(m.chats||[]).forEach(function(c){if(c.id===cur)cp=c.provider;});paintSel(hs,cp);}` +
       // E202611031bd72813:S001 t4: active-list (re)populates the left dropdown; each option carries a
-      // status dot (red/yellow/green) + title; the chip glyph shows the most urgent status.
-      `else if(m.type==='active-list'){while(act.options.length>1)act.remove(1);var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;var d=DOT[c.status]||'green';if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;o.textContent='\u25CF '+c.title;if(o.dataset)o.dataset.dot=d;act.appendChild(o);});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;if(act.value&&!(m.chats||[]).some(function(c){return c.id===act.value;}))act.value='';}` +
+      // status dot (red/yellow/green) + the provider icon + title; the chip glyph shows the most
+      // urgent status. UX feedback: the closed selection mirrors the CURRENT open chat (title + its
+      // provider icon on the select box) whenever that chat is in the active list.
+      `else if(m.type==='active-list'){while(act.options.length>1)act.remove(1);var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;var d=DOT[c.status]||'green';if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;o.textContent='\u25CF '+c.title;paintOpt(o,c.provider);if(o.dataset)o.dataset.dot=d;act.appendChild(o);});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;var inList=function(id){return (m.chats||[]).some(function(c){return c.id===id;});};if(cur&&inList(cur))act.value=cur;else if(act.value&&!inList(act.value))act.value='';var ap=curProv;(m.chats||[]).forEach(function(c){if(c.id===act.value)ap=c.provider;});paintSel(act,ap);}` +
       `});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it

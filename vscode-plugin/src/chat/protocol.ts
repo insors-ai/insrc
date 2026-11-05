@@ -83,6 +83,8 @@ export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 export interface ActiveChatEntry {
   readonly id: string;
   readonly title: string;
+  /** E202611031bd72813:S001 t4 UX: the entry's provider id, so the dropdown paints the provider icon next to the title. */
+  readonly provider: string;
   readonly status: ChatStatus;
   readonly lastActivityAt: number | undefined;
 }

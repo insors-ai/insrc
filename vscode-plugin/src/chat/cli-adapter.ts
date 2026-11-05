@@ -36,6 +36,8 @@
  */
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
+import { ollamaClaudeEnv } from '../../../src/shared/ollama-claude-env.js';
+import type { ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
@@ -305,6 +307,8 @@ export type BinaryProbe = (id: ProviderId) => boolean;
 export interface AdapterDeps {
   readonly spawn: SpawnFn;
   readonly isInstalled: BinaryProbe;
+  /** Resolve the selected model at launch, never from webview-supplied endpoint/auth data. */
+  readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
@@ -1140,6 +1144,17 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       const { resume: _drop, ...rest } = req;
       effectiveReq = rest;
     }
+    let ollama: ChatOllamaTarget | undefined;
+    try {
+      if (deps.resolveOllamaTarget !== undefined) ollama = await deps.resolveOllamaTarget(effectiveReq);
+      if (ollama !== undefined) {
+        if (mapper.id !== 'claude') throw new Error('Ollama chat routing is supported only for Claude.');
+        effectiveReq = { ...effectiveReq, model: ollama.model };
+      }
+    } catch (err) {
+      yield { kind: 'error', turnId, message: err instanceof Error ? err.message : String(err) };
+      return;
+    }
     // Keep the turn's output in its session's file when we can; otherwise the pipe, as before.
     const sessionOutput = deps.sessionOutput;
     const sessionId = opts?.sessionId;
@@ -1177,7 +1192,9 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         cwd: effectiveReq.cwd,
         ...(output !== undefined ? { output } : {}),
         ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
-        ...(mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
+        ...(ollama !== undefined
+          ? { env: ollamaClaudeEnv(process.env, ollama.host) }
+          : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
       });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
@@ -1563,7 +1580,8 @@ export async function deriveChatTitle(
     `Reply with ONLY a concise 3-6 word title (no quotes, no punctuation, no preamble) ` +
     `for a developer chat that begins with this message:\n\n${input.prompt}`;
   const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd, ...(input.model !== undefined ? { model: input.model } : {}), ...(input.effort !== undefined ? { effort: input.effort } : {}) };
-  const it = adapter.run(req)[Symbol.asyncIterator]();
+  let stopped = false;
+  const it = adapter.run(req, { shouldSpawn: () => !stopped })[Symbol.asyncIterator]();
   const deadline = Date.now() + (opts?.timeoutMs ?? 8000);
   let turnId: string | undefined;
   let text = '';
@@ -1572,6 +1590,7 @@ export async function deriveChatTitle(
   // .next() is pending — the S003 lesson). A zero-output turn has no turnId yet, so it cannot be
   // force-cancelled; real claude/codex emit an init event within ms, so slow titles are bounded.
   const stop = (val: string | undefined): string | undefined => {
+    stopped = true;
     if (turnId !== undefined) {
       try {
         void adapter.cancel(turnId);

@@ -70,6 +70,7 @@ import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './ch
 import { createSessionOutput } from './chat/session-output.js';
 import { createAttachmentStore } from './chat/attachment-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
+import { createChatOllamaResolver } from './chat/ollama-routing.js';
 import type { DiffView } from './chat/edit-governor.js';
 import { createLinkOpener } from './chat/link-opener.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
@@ -588,7 +589,13 @@ export function activate(context: vscode.ExtensionContext): void {
         void chatAttachments.removeSession(id).catch((e: unknown) => panelLog.warn(`chat attachments of ${id} not removed: ${String(e)}`));
       },
     });
-    const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput });
+    const chatProviders = createProviderRegistry({
+      spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,
+      resolveOllamaTarget: createChatOllamaResolver({
+        definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+        rawConfig: () => configGateway.rawConfig(),
+      }),
+    });
     // A session the migration left in globalState is not in the store yet: its files are kept too.
     const chatKeep = new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]);
     void chatOutput

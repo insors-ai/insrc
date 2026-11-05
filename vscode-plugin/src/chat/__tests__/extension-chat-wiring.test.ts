@@ -44,7 +44,8 @@ test('extension.ts constructs createChatPanelHost with the real injected vscode 
   assert.match(channel, /panel\.webview\.postMessage\(message\)\.then\(undefined/, 'injects the fire-and-forget postMessage');
   assert.match(channel, /panel\.onDidDispose\(/, 'injects onDidDispose');
   assert.match(b, /createFileChatSessionStore\(\{\s*root: chatSessionsRoot,\s*logger: panelLog,\s*maxSessions: \d+,/, 'the sc4 store is the file store, with a bounded history cap (S005)');
-  assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe(, sessionOutput: chatOutput)? \}\)/, 'the sc5 registry over the installed CLIs');
+  assert.match(b, /createProviderRegistry\(\{\s*spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,\s*resolveOllamaTarget: createChatOllamaResolver\(/, 'the registry resolves Ollama routing at the shared spawn boundary');
+  assert.match(b, /rawConfig: \(\) => configGateway.rawConfig\(\)/, 'Ollama routing reads daemon configuration through IPC');
 });
 
 test('the chat host + protocol + store modules are vscode-free', () => {
@@ -268,7 +269,7 @@ test('the extension builds a session output on ~/.insrc/chat-output, passes it t
   const b = block![1]!;
   assert.match(src, /import \{ createSessionOutput \} from '\.\/chat\/session-output\.js';/);
   assert.match(b, /const chatOutput = createSessionOutput\(\{ root: join\(PATHS\.insrc, 'chat-output'\), logger: panelLog \}\)/, 'one root under ~/.insrc');
-  assert.match(b, /createProviderRegistry\(\{ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput \}\)/, 'the registry keeps turn output in the session files');
+  assert.match(b, /createProviderRegistry\(\{\s*spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,/, 'the registry keeps turn output in the session files');
   assert.match(b, /onEvict: \(id\) => \{\s*void chatOutput\.remove\(id\)/, "an evicted session's files are removed");
   assert.match(b, /const chatKeep = new Set\(\[\.\.\.chatStore\.list\(\)\.map\(\(c\) => c\.id\), \.\.\.migratedChats\.kept\]\);/, 'the sweep keeps the sessions in the store and those the migration left behind');
   assert.match(b, /void chatOutput\s*\.sweep\(\{ olderThanMs: CHAT_OUTPUT_MAX_AGE_MS, keep: chatKeep \}\)/, 'stale files of sessions not in the store are swept at start');

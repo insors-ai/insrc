@@ -464,7 +464,13 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
         const dec = makeDecoderSink(s, cursor.progress);
-        const it = adapter.run(req, { onSpawn, onProgress: (c) => dec.onProgress(c), onDecoderState: dec.onDecoderState, sessionId: s.id, ...(sink.shouldSpawn !== undefined ? { shouldSpawn: sink.shouldSpawn } : {}) })[Symbol.asyncIterator]();
+        const spawnEpoch = chainEpoch;
+        const it = adapter.run(req, {
+          onSpawn, onProgress: (c) => dec.onProgress(c), onDecoderState: dec.onDecoderState, sessionId: s.id,
+          // Routing/configuration can await IPC before spawning. Stop, detach or supersession
+          // during that await must still prevent a child from launching afterwards.
+          shouldSpawn: () => isCurrent(myGen) && chainEpoch === spawnEpoch && (sink.shouldSpawn?.() ?? true),
+        })[Symbol.asyncIterator]();
         iterator = it;
         activeIterator = it;
         activeProvider = s.provider;

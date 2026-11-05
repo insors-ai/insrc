@@ -232,6 +232,17 @@ test('s10 t7: proposal validation, resolution and dedupe against extracted links
 	assert.deepEqual(r.admitted.map(p => p.target), ['src/lexer.ts', 'src/lexer.ts#lex']);
 	assert.equal(r.unresolved, 3);
 	assert.equal(r.repeated, 1);
+	// A document that links a code file: the file is a repeat, a symbol in it is a new link (path and path#symbol are distinct).
+	write('docs/c.md', '# C\nThe [lexer](../src/lexer.ts) module.\n');
+	await svc.processJob({ kind: 'file', filePath: join(repo, 'docs/c.md'), event: 'create' });
+	const c = (await findEntitiesByFile(db, join(repo, 'docs/c.md'))).find(e => e.kind === 'section')!;
+	const linked = await examineDocument({ provider: answer({ proposals: [
+		{ source: c.id, target: 'src/lexer.ts', rationale: 'already linked' },
+		{ source: c.id, target: 'src/lexer.ts#lex', rationale: 'the lex function in the linked file' },
+	] }), repoPath: repo, relFile: 'docs/c.md', text: '# C\nThe [lexer](../src/lexer.ts) module.\n', sources: await findEntitiesByFile(db, join(repo, 'docs/c.md')), files: storedFilesInTxn(s, (await lookupRepoId(repo))!) });
+	assert.deepEqual(linked.admitted.map(p => p.target), ['src/lexer.ts#lex'], 'a symbol in a file the document links is admitted');
+	assert.equal(linked.repeated, 1, 'only the written file link is a repeat');
+
 	await assert.rejects(examine({ items: [] }), DocRelationsOutputInvalid);
 	await assert.rejects(examine({ proposals: [{ source: b.id, target: 3 }] }), DocRelationsOutputInvalid);
 
@@ -245,6 +256,6 @@ test('s10 t7: proposal validation, resolution and dedupe against extracted links
 	assert.equal((await rows()).get('docs/a.md')!.proposals.length, 2);
 	const earlier = (await rows()).get('docs/a.md')!;
 	const wrong = await pass({ select: using(fakeProvider(() => ({ nope: true })).provider, 'm2') });
-	assert.equal(wrong.summariesFailed, 2, 'both documents failed their shape check');
+	assert.equal(wrong.summariesFailed, 3, 'every document (a, b and c) failed its shape check');
 	assert.deepEqual((await rows()).get('docs/a.md'), earlier, 'the earlier row stays');
 });

@@ -123,6 +123,13 @@ test('s10 t5: name references resolve across full-index order and stop on a seco
 	assert.deepEqual((await documentRelations(omega.id, 'out', sw)).rows.map(r => r.to), [fileId('docs/alpha.md')]);
 	assert.deepEqual((await documentRelations(fileId('src/queue.ts'), 'in', sw)).rows.map(r => r.from), [alpha.id]);
 
+	// A document that names itself is no link, from either side (as for a path reference to itself).
+	write('docs/self.md', '# Self\nEdit self.md to change this.\n');
+	await fileJob('docs/self.md');
+	const self = await section('docs/self.md', 'Self');
+	assert.deepEqual((await documentRelations(self.id, 'out', sw)).rows, [], 'a document naming itself links nothing');
+	assert.deepEqual((await documentRelations(fileId('docs/self.md'), 'in', sw)).rows, [], 'nor is it cited by itself');
+
 	// A second file of a name present in the same full index: no link stands.
 	write('lib/queue.ts', 'export function other(): void {}\n');
 	await svc.processJob({ kind: 'full', repoPath: repo });

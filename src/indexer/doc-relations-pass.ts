@@ -211,8 +211,9 @@ export async function examineDocument(args: {
 			to = named.length === 1 ? named[0]!.id : undefined;
 		}
 		if (to === undefined || s.entityIdByString.get(to) === undefined) { unresolved++; continue; }
-		const fileOfTarget = makeEntityId(repoPath, join(repoPath, rel), 'file', join(repoPath, rel));
-		if (written.has(to) || written.has(fileOfTarget)) { repeated++; continue; }
+		// Only a link the document already writes is a repeat: `path` and `path#symbol` are distinct links,
+		// so a symbol in a file the document links is a new proposal.
+		if (written.has(to)) { repeated++; continue; }
 		const target = symbol === undefined || symbol === '' ? rel : `${rel}#${symbol}`;
 		if (seen.has(`${p.source}\0${to}`)) continue;
 		seen.add(`${p.source}\0${to}`);

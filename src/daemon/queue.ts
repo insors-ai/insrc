@@ -278,8 +278,14 @@ export class IndexQueue {
     }
 
     // One queued document-relations pass, and one queued measurement, per repository (s10).
-    if (job.kind === 'doc-relations' || job.kind === 'doc-relations-measure') {
+    if (job.kind === 'doc-relations') {
       if (queue.some(j => j.kind === job.kind && j.repoPath === job.repoPath)) return;
+    }
+    // A later measurement request replaces the queued one in its place: it carries the set as validated
+    // now, and the queued one would find the set changed and record nothing.
+    if (job.kind === 'doc-relations-measure') {
+      const idx = queue.findIndex(j => j.kind === job.kind && j.repoPath === job.repoPath);
+      if (idx >= 0) { queue[idx] = job; return; }
     }
 
     // Deduplicate doc-summarise-entity jobs for the same entity.

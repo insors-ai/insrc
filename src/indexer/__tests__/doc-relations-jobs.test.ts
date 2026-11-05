@@ -214,3 +214,17 @@ test('s10 t6: carried rows restored after a full index before the pass; stop dis
 	failing.disposeSubsystemScheduler();
 	assert.deepEqual(failing._docRelationsTimersForTest(), { pacing: 0, retry: 0 }, 'stop clears every timer');
 });
+
+test('s10 t6: a second measurement request replaces the queued one with its set hash', async () => {
+	const queue = new IndexQueue();
+	queue.enqueue({ kind: 'doc-relations-measure', repoPath: repo, setHash: 'h1' });
+	queue.enqueue({ kind: 'doc-relations', repoPath: repo });
+	queue.enqueue({ kind: 'doc-relations-measure', repoPath: repo, setHash: 'h2' });
+	queue.enqueue({ kind: 'doc-relations', repoPath: repo });
+	const ran: IndexJob[] = [];
+	void queue.start(async (job: IndexJob) => { ran.push(job); });
+	await until('both queued jobs ran', () => ran.length >= 2);
+	queue.stop();
+	assert.deepEqual(ran, [{ kind: 'doc-relations-measure', repoPath: repo, setHash: 'h2' }, { kind: 'doc-relations', repoPath: repo }],
+		'one measurement, carrying the later set hash, in the first request\'s place; one pass');
+});

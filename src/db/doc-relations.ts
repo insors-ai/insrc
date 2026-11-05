@@ -304,6 +304,8 @@ export async function documentRelations(
 			if (r.fromEntity !== entityId || r.meta['docLink'] !== true || typeof r.meta['nameRef'] !== 'string') continue;
 			const files = filesNamed(r.meta['nameRef']);
 			if (files.length !== 1) continue;
+			// A document naming itself is no link (as for a path reference, which the reader drops).
+			if (join(repoPath, files[0]!) === entity.file) continue;
 			const to = fileIdOf(files[0]!);
 			if (stored(to)) add({ from: entityId, to, kind: 'REFERENCES', evidence: 'extracted' });
 		}
@@ -313,7 +315,7 @@ export async function documentRelations(
 		const files = filesNamed(name);
 		if (files.length === 1 && files[0] === rel) {
 			for (const r of await listUnresolvedRelations(null, repoPath)) {
-				if (r.meta['docLink'] === true && r.meta['nameRef'] === name && stored(r.fromEntity)) {
+				if (r.meta['docLink'] === true && r.meta['nameRef'] === name && r.fromFile !== entity.file && stored(r.fromEntity)) {
 					add({ from: r.fromEntity, to: entityId, kind: 'REFERENCES', evidence: 'extracted' });
 				}
 			}

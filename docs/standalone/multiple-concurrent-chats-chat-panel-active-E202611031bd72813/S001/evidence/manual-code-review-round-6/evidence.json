@@ -1,0 +1,335 @@
+{
+  "reviewType": "Manual code review, overall round 6 / cycle 2 round 3. No formal daemon CR or approval.",
+  "date": "2026-11-05",
+  "story": "E202611031bd72813:S001",
+  "reviewedHead": "e48d92501cbf0820c4bb34737657cffb185269c6",
+  "base": "529213b28",
+  "sourceSha256": {
+    "vscode-plugin/src/chat/__tests__/chat-panel.test.ts": "5bfaec45e53dc5cfaf22a55640c51816ed0d4b9405212369b2230fecaa19fcf6",
+    "vscode-plugin/src/chat/__tests__/protocol.test.ts": "573e27a62c44ed7acabb7d2e6c3035fe667bab5fa771f67910685bbaaf1f0250",
+    "vscode-plugin/src/chat/chat-panel.ts": "5fc670f7f9d472d952c320e9587d460a38c0f41cafee7cc0c69b7ce05a253e6e",
+    "vscode-plugin/src/chat/cli-adapter.ts": "b02f266624b91a49abfbf0351a0cef3e23f0257cee6db1349ceedebced3cc1f9",
+    "vscode-plugin/src/chat/protocol-contract.ts": "a8148836b02636939d34468e7e7d6d326c3956e2c134af44427cee00d97897a1",
+    "vscode-plugin/src/chat/protocol.ts": "002d580a37b7295d4e1abc4c77ded36d30f59738610b76cd0ae10424bde49cc0",
+    "vscode-plugin/src/chat/turn-lifecycle.ts": "29f20606b5ffa23d9650f71c11f335c4530035fd3d6937f7984345d4867346d3",
+    "vscode-plugin/src/chat/session-lock.ts": "123ba238a8281de6cc7db6271f68aacfa205e50c4cb1428b4fbce085d9196387",
+    "vscode-plugin/src/chat/session-store.ts": "e7ce50e7414cff9dbd30c9879cf4ee2da92c9dfae9acd911aa440084f4b336cf",
+    "vscode-plugin/src/chat/approval-queue.ts": "b01365829ec2c2c1899815c7871351e8491b00698682706af47e525c7944ae8a"
+  },
+  "runtime": "Node 22.23.2, macOS",
+  "tests": {
+    "cwd": "vscode-plugin",
+    "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-force-exit --test-concurrency=1 src/chat/__tests__/approval-queue.test.ts src/chat/__tests__/chat-panel.test.ts src/chat/__tests__/chat-queue-outbox-host.test.ts src/chat/__tests__/chat-queue-runner.test.ts src/chat/__tests__/chat-shell.test.ts src/chat/__tests__/chat-theme.test.ts src/chat/__tests__/cli-adapter.test.ts src/chat/__tests__/docs-review-panel.test.ts src/chat/__tests__/extension-chat-wiring.test.ts src/chat/__tests__/protocol.test.ts src/chat/__tests__/review-presenter.test.ts src/chat/__tests__/session-file-store.test.ts src/chat/__tests__/session-output.test.ts src/chat/__tests__/session-store.test.ts src/chat/__tests__/turn-lifecycle.test.ts src/chat/__tests__/stream-events.test.ts",
+    "testFiles": 16,
+    "pass": 764,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "exitCode": 0,
+    "durationMs": 43587.727041,
+    "testForceExit": true,
+    "testConcurrency": 1,
+    "tap": "affected-tests.tap"
+  },
+  "typecheck": {
+    "cwd": "vscode-plugin",
+    "command": "../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "exitCode": 0,
+    "output": "typecheck.txt"
+  },
+  "observations": {
+    "wrong-chat-stop": {
+      "exitCode": 0,
+      "observation": {
+        "failedOrigin": "mw34ojah-f6utll",
+        "selected": "mw34ojar-6v0fe4",
+        "originStillAlive": true,
+        "selectedStillAlive": true,
+        "originSignals": [],
+        "selectedSignals": [],
+        "cancelledTurns": [],
+        "originOutcome": "delivery-failed",
+        "runs": [
+          {
+            "sessionId": "mw34ojah-f6utll",
+            "prompt": "A prompt"
+          },
+          {
+            "sessionId": "mw34ojar-6v0fe4",
+            "prompt": "B prompt"
+          }
+        ]
+      }
+    },
+    "targeted-stop": {
+      "exitCode": 0,
+      "observation": {
+        "bPreservedBeforeNaturalExit": true,
+        "failedOrigin": "mw34ojil-ogh626",
+        "selected": "mw34ojiu-x222j0",
+        "originStillAlive": false,
+        "selectedStillAlive": false,
+        "originSignals": [
+          "SIGTERM"
+        ],
+        "selectedSignals": [],
+        "cancelledTurns": [],
+        "originOutcome": "approved",
+        "runs": [
+          {
+            "sessionId": "mw34ojil-ogh626",
+            "prompt": "A prompt",
+            "resume": null
+          },
+          {
+            "sessionId": "mw34ojiu-x222j0",
+            "prompt": "B prompt",
+            "resume": {
+              "provider": "claude",
+              "nativeSessionId": "native-B"
+            }
+          },
+          {
+            "sessionId": "mw34ojil-ogh626",
+            "prompt": "Approved \u2014 run exactly this now: A-command",
+            "resume": {
+              "provider": "claude",
+              "nativeSessionId": "native-A"
+            }
+          }
+        ]
+      }
+    },
+    "batch-handoff": {
+      "exitCode": 0,
+      "observation": {
+        "restoredApprovalEvents": 0,
+        "retryStartedRun": false,
+        "followUpEnteredButNotSpawned": true,
+        "persistedUnresolvedRequests": [],
+        "persistedWaiting": [],
+        "persistedBatches": [],
+        "transcriptRetainsCommand": true
+      }
+    },
+    "same-chat-request": {
+      "exitCode": 0,
+      "observation": {
+        "expectedRuns": 4,
+        "actualRuns": 4,
+        "decisions": [
+          {
+            "turnId": "t1",
+            "requestId": "shared",
+            "delivered": false
+          },
+          {
+            "turnId": "t3",
+            "requestId": "shared",
+            "delivered": false
+          }
+        ],
+        "runs": [
+          {
+            "sessionId": "mw34ojvj-aj4d8r",
+            "prompt": "first"
+          },
+          {
+            "sessionId": "mw34ojvj-aj4d8r",
+            "prompt": "Approved \u2014 run exactly this now: command-1"
+          },
+          {
+            "sessionId": "mw34ojvj-aj4d8r",
+            "prompt": "second"
+          },
+          {
+            "sessionId": "mw34ojvj-aj4d8r",
+            "prompt": "Approved \u2014 run exactly this now: command-3"
+          }
+        ],
+        "pending": [
+          {
+            "requestId": "shared",
+            "kind": "approval",
+            "turnId": "t1",
+            "title": "action 1",
+            "detail": "permission",
+            "command": "command-1",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "kind": "approval",
+            "turnId": "t3",
+            "title": "action 3",
+            "detail": "permission",
+            "command": "command-3",
+            "resolved": true,
+            "outcome": "approved"
+          }
+        ]
+      }
+    },
+    "legacy-present": {
+      "exitCode": 0,
+      "observation": {
+        "differentTurns": 2,
+        "sameCallId": "item_1",
+        "expectedPanels": 2,
+        "actualPanels": 2,
+        "persisted": [
+          "item_1",
+          "turn-2:item_1"
+        ]
+      }
+    },
+    "sync-live-unwritable": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "approved",
+        "knownNativeHandle": "native-original",
+        "signalsBeforeRelease": [
+          "SIGTERM"
+        ],
+        "originalStillAliveBeforeRelease": false,
+        "runsBeforeOriginalEnds": 2,
+        "runsAfterOriginalEnds": 2,
+        "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+        "nativeResume": {
+          "provider": "claude",
+          "nativeSessionId": "native-original"
+        }
+      }
+    },
+    "async-live-unwritable": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "approved",
+        "knownNativeHandle": "native-original",
+        "signalsBeforeRelease": [
+          "SIGTERM"
+        ],
+        "originalStillAliveBeforeRelease": false,
+        "runsBeforeOriginalEnds": 2,
+        "runsAfterOriginalEnds": 2,
+        "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+        "nativeResume": {
+          "provider": "claude",
+          "nativeSessionId": "native-original"
+        }
+      }
+    },
+    "unverified-stop": {
+      "exitCode": 0,
+      "observation": {
+        "stopVerifiedResult": false,
+        "processExitConfirmed": false,
+        "signals": [
+          "SIGTERM",
+          "SIGKILL"
+        ]
+      }
+    },
+    "restored-denial": {
+      "exitCode": 0,
+      "observation": {
+        "records": [
+          {
+            "requestId": "shared",
+            "turnId": "old-turn",
+            "kind": "approval",
+            "command": "old-command",
+            "title": "old",
+            "detail": "",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "turnId": "new-turn",
+            "kind": "approval",
+            "command": "new-command",
+            "title": "new",
+            "detail": "",
+            "resolved": true,
+            "blockKind": "tool-gate",
+            "outcome": "denied"
+          }
+        ],
+        "status": "done"
+      }
+    },
+    "restored-approval": {
+      "exitCode": 0,
+      "observation": {
+        "runs": [
+          "Approved \u2014 run exactly this now: new-command"
+        ],
+        "records": [
+          {
+            "requestId": "shared",
+            "turnId": "old-turn",
+            "kind": "approval",
+            "command": "old-command",
+            "title": "old",
+            "detail": "",
+            "resolved": true,
+            "outcome": "approved"
+          },
+          {
+            "requestId": "shared",
+            "turnId": "new-turn",
+            "kind": "approval",
+            "command": "new-command",
+            "title": "new",
+            "detail": "",
+            "resolved": true,
+            "blockKind": "tool-gate",
+            "outcome": "approved"
+          }
+        ],
+        "status": "done"
+      }
+    },
+    "routing-collision": {
+      "exitCode": 0,
+      "observation": {
+        "origin": "mw34olag-c73i0o",
+        "selected": "mw34olau-w4dcep",
+        "callbackTurn": "A-turn",
+        "requestId": "shared-request",
+        "followUpTarget": "mw34olag-c73i0o",
+        "followUpPrompt": "Approved \u2014 run exactly this now: A-command",
+        "originOutcome": "approved"
+      }
+    },
+    "panel-dispose": {
+      "exitCode": 0,
+      "observation": {
+        "survivingPanelContentBefore": 1,
+        "survivingPanelContentAfter": 3,
+        "decisionReachedDaemon": 1,
+        "decisionReplies": 1
+      }
+    },
+    "original-followup": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "delivery-failed",
+        "runsBeforeOriginalEnds": 1,
+        "runsAfterOriginalEnds": 1,
+        "lateFollowUpPrompt": null,
+        "nativeResume": null
+      }
+    }
+  },
+  "limits": [
+    "Real hosts/lifecycle and real adapter verified-stop boundary with injected adapters, clients, processes and in-memory stores. No live models, shell actions or workflow approvals.",
+    "Targeted-stop adds the new optional stopTurnVerified capability to the round-5 adapter seam; no-handle probe intentionally lacks it and verifies fail-closed behavior. B exits naturally only after observing its preservation.",
+    "Batch-handoff gates adapter setup before onSpawn, serializes the current saved session with JSON, loads it into an independent store/host and checks restored actionable events and retry handling. The original process is not really crashed and no disk crash is simulated.",
+    "Configured diagnostic 30 ms delivery timeout and 5 ms stop grace; force-exit tests do not prove natural teardown.",
+    "Provider icon/dropdown changes inspected at source and tested protocol level; native option rendering and visuals not verified. No full backend sweep, live provider suite or JetBrains validation.",
+    "Unrelated source/workflow changes were preserved; no production edits, model config changes or existing approval changes by this review."
+  ]
+}

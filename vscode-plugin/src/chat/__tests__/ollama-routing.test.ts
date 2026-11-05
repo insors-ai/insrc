@@ -1,11 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createChatOllamaResolver } from '../ollama-routing.js';
+import { createChatOllamaResolver, ollamaClaudeEnv } from '../ollama-routing.js';
 import { createProviderRegistry, deriveChatTitle, type TurnRequest } from '../cli-adapter.js';
 import { createTurnLifecycle, type TurnSink } from '../turn-lifecycle.js';
 import { createMemorySessionLocks } from '../session-lock.js';
 import { createInMemoryChatSessionStore } from '../session-store.js';
-import { ollamaClaudeEnv } from '../../../../src/shared/ollama-claude-env.js';
 import type { ModelDefinitions } from '../../models/definitions.js';
 import { makeFakeSpawner, CLAUDE_TEXT_TURN } from './fixtures.js';
 

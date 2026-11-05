@@ -71,7 +71,6 @@ import { completeInputChars } from '../../shared/structured-input.js';
 import { boundedClaudeArgs, boundedClaudeEnv, BOUNDED_SYSTEM_PROMPT, UnsupportedBoundedInputError, verifyBoundedCli } from './bounded-input.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
-import { ollamaClaudeEnv } from '../../shared/ollama-claude-env.js';
 
 const log = getLogger('cli-provider');
 
@@ -725,7 +724,10 @@ export class CliProvider implements LLMProvider {
 	 *  daemon's own environment is never changed. */
 	private withOllama(base: NodeJS.ProcessEnv): NodeJS.ProcessEnv | undefined {
 		if (this.ollama === undefined) return undefined;
-		return ollamaClaudeEnv(base, this.ollama.host);
+		const env: NodeJS.ProcessEnv = { ...base, ANTHROPIC_BASE_URL: this.ollama.host, ANTHROPIC_AUTH_TOKEN: 'ollama', ANTHROPIC_API_KEY: '' };
+		// No vendor login, and no Bedrock/Vertex mode that would send the run to another cloud.
+		for (const key of ['CLAUDE_CODE_OAUTH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK', 'CLAUDE_CODE_USE_VERTEX']) delete env[key];
+		return env;
 	}
 
 	/** Before a claude run of an Ollama-targeted provider: the server answers,

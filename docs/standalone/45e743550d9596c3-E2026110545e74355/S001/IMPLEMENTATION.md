@@ -23,8 +23,8 @@ or parent environment is changed.
 - The same registry serves initial turns, native-session continuation, approval
   follow-ups and one-shot title generation. Targets are resolved at launch, so no
   session-store migration or webview protocol change is required.
-- A pure shared environment helper is used by both the backend `CliProvider` and
-  the extension adapter, preserving the existing backend routing behavior.
+- A chat-local environment helper follows the existing backend `CliProvider`
+  convention. Backend code and its provider behavior remain unchanged.
 - Lifecycle and title cancellation predicates remain valid through asynchronous
   routing/configuration lookup. A stopped/detached turn or expired title cannot
   launch a child after that lookup eventually completes.

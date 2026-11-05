@@ -8,11 +8,73 @@
     "createdAt": "2026-11-05T12:45:25.581Z",
     "authoredBy": "controller",
     "triageRationale": "Small bugfix routed issue → build; localized existing Vibe mapper correction without new IPC or schema.",
-    "epicCreatedAt": "2026-11-05T12:45:25.581Z"
+    "epicCreatedAt": "2026-11-05T12:45:25.581Z",
+    "updatedAt": "2026-11-05T12:49:10.017Z"
   },
   "body": {
     "focus": "Implement approved ISSUE-910fce32967bc4ea: correct Vibe programmatic prompt delivery for initial/resumed chat and title generation, preserving streaming, permissions, attachments and model environment; cover multiline and option-like prompts, verify real installed CLI contract without live inference and check backend stdin compatibility.",
     "producesLld": false,
-    "commit": "baa567c77"
+    "commit": "8737feaec",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": true
+      }
+    ],
+    "summary": "Corrected Vibe programmatic prompt transport by binding the full text to --prompt= in the existing chat mapper, covering new/resumed turns and title generation. Streaming, attachment, permission and model environment behavior is retained; backend stdin transport remains unchanged. 152 affected tests and both typechecks passed locally. Installed Vibe 3.0.4 parser probe with a stub app server confirms old argv fails missing-prompt and corrected/multiline/backend stdin inputs pass that guard without inference. Authenticated live inference is a manual check.",
+    "testRecord": {
+      "md": "docs/standalone/1030f5889f8ec287-E202611051030f588/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-910fce32967bc4ea.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/1030f5889f8ec287-E202611051030f588/S001/IMPLEMENTATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/1030f5889f8ec287-E202611051030f588/S001/evidence/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/1030f5889f8ec287-E202611051030f588/S001/evidence/vibe-cli-probe.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T12:49:10.017Z"
+      }
+    ]
   }
 }

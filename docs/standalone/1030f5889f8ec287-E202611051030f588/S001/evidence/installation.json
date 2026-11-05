@@ -1,0 +1,9 @@
+{
+  "version": "0.5.24",
+  "vsix": "/tmp/insrc-vscode-vibe-prompt-8737feaec.vsix",
+  "commit": "8737feaec",
+  "installedBundle": "/Users/subhagho/.vscode/extensions/insors.insrc-vscode-0.5.24/out/extension.js",
+  "sha256": "0ecde26f9a19eea1f1c49856ee391d5842a2994560137e49750fb843fbf74766",
+  "matchesVsix": true,
+  "manualInference": "pending user test after reload"
+}

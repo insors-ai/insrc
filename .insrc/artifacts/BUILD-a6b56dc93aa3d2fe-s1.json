@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "6146eca6aff8322be5434b4b4730405d0b805df2aac0afeec4ebb1bd265ab41b",
+        "at": "2026-11-05T03:59:03.217Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-1e6e6413-f0df-4a1d-8e28-260257882c98",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T03:49:34.474Z",
+    "epicCreatedAt": "2026-11-05T03:33:56.649Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a6b56dc93aa3d2fe",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix, magnitude small: one root cause in the stored-review re-read (task-review/packet.ts, publication.ts, admission.ts)",
+    "epicSlug": "make-finished-code-review-story-plan",
+    "updatedAt": "2026-11-05T03:58:12.675Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-a6b56dc93aa3d2fe (docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/ISSUE.md): re-read a stored task code review of a Story with a Plan against the document set its route required at start, so publish/resume/second start succeed for {lld, plan} (legacy {story, lld, plan} still reads; start-side checks stay strict).",
+    "producesLld": false,
+    "commit": "0556f0dc0",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "pinnedTriple in task-review/packet.ts takes a historical flag: a stored re-read (publication and admission resume) accepts LLD and Plan alone and checks the story document only when it was pinned; a new packet without a route still needs all three. Tests: route-documents.test.ts (re-read parity with start, legacy triple still reads, new packet still refused, missing LLD/Plan and another story refused) and publication.test.ts (a stored {lld, plan} review publishes); both fail without the fix. Left out: the two other items in #100 (retrying a crashed reviewer unit; the design review 'Expected union value' result error). A pre-existing failure in history.test.ts ('all-reuse attempts…') fails without this change too.",
+    "testRecord": {
+      "md": "docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a6b56dc93aa3d2fe.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-a6b56dc93aa3d2fe.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/make-finished-code-review-story-plan-E20261105a6b56dc9/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/packet.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T03:58:12.675Z"
+      }
+    ]
+  },
+  "citations": []
+}

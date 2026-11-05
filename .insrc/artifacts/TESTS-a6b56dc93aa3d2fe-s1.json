@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "160bdeeb691c4fc46c081dfeda94ce9dfff4868623ef4b1e87c46915441f76fc",
+        "at": "2026-11-05T03:58:12.789Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "a6b56dc93aa3d2fe",
+    "storyId": "s1",
+    "createdAt": "2026-11-05T03:58:12.675Z",
+    "updatedAt": "2026-11-05T03:58:12.675Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-05T03:33:56.649Z",
+    "epicSlug": "make-finished-code-review-story-plan",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "0556f0dc0",
+        "ranAt": "2026-11-05T03:58:12.675Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/publication.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1995,
+            "titles": [
+              {
+                "title": "task-based CR: version-2 validation/rendering and no retired-format fallback",
+                "result": "pass"
+              },
+              {
+                "title": "CR publication: idempotent scoped summary and retained checkpoint on publication failure",
+                "result": "pass"
+              },
+              {
+                "title": "concurrent canonical publications preserve both summaries and the latest readable projection",
+                "result": "pass"
+              },
+              {
+                "title": "CR readers: partial task scope, incomplete/failed results and unknown versions cannot satisfy story review",
+                "result": "pass"
+              },
+              {
+                "title": "coordinator marks an attempt terminal only after canonical CR publication is durable",
+                "result": "pass"
+              },
+              {
+                "title": "publication refuses an unknown stored CR version without overwriting future data",
+                "result": "pass"
+              },
+              {
+                "title": "canonical story aliases retain original submitted scope while using one CR identity",
+                "result": "pass"
+              },
+              {
+                "title": "CR publication: a stored review of a Story with a Plan (LLD and Plan, no story document) publishes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1082,
+            "titles": [
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a Plan route is validated with the same documents, units and messages as without a route",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: an LLD-only, an ISSUE-only and a no-document route accept exactly their set",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: the story role is required only when a DEF exists",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a document set that differs from the route, or a document of the wrong workflow, epicHash, issueHash or story, is refused",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored review of a Story with a Plan is re-read with the LLD and Plan alone, and a new packet without a route still needs all three",
+                "result": "pass"
+              },
+              {
+                "title": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts: a stored re-read still refuses a missing LLD or Plan and documents of another epic or story",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

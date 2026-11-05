@@ -36,6 +36,23 @@ The installed daemon (`~/.insrc/daemon`) ran a21ea79d (s10 complete, pushed). Re
 
 - **Three earlier requests** (16:50, 22:05 and the one before a daemon update) were dropped by daemon restarts before they ran. The job queue is in memory, and nothing reports a lost measurement job. Noted as a follow-up, not filed.
 
+### Re-measurement after the code-review fix (2026-11-05)
+
+Code review round 1 found that the pass dropped a symbol proposal (`path#symbol`) whenever the document already linked the symbol's file (MED). Those links still counted as implied, so they could never be found and recall was pushed down by construction. Fixed in 5c5bc0cf1. The installed daemon was updated to 5c5bc0cf and the measurement ran again, with the same set (hash 9b19488b…a75) and the same model:
+
+| Figure | First run (18:12Z, before the fix) | Re-run (04:27Z, after the fix) |
+|---|---|---|
+| implied links (checked) | 961 | 961 |
+| admitted proposals | 185 | 165 |
+| admitted and real | 144 | 131 |
+| found (implied) | 144 | 131 |
+| precision | 0.778 | 0.794 |
+| recall | 0.150 | 0.136 |
+| extractedRecovery | 1.0 | 1.0 |
+
+- **Switch:** `off` after both runs (the bar is precision ≥ 0.95, recall ≥ 0.60).
+- **Why recall is lower on the re-run:** the model proposed fewer links this run (165 against 185). The fix can only admit proposals the old rule dropped; it never removes one. Either way the recorded figures (the re-run's) sit far below the bar. The capability stays off, which is the valid lc1 outcome.
+
 ## Installed-daemon smoke
 
 - **Written links:** `search.doc_relations { entityId, direction: 'out' }` on the sections of `docs/workflow.md` (entities from `search.by_file`) returned `REFERENCES` rows with `evidence: 'extracted'`, at generation 23,173 with 0 stale proposals.

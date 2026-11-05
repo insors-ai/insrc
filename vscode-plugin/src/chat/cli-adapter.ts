@@ -206,6 +206,12 @@ export interface StreamAdapter {
    */
   cancel(turnId: string): Promise<void>;
   /**
+   * MR3-R5: stop the process of EXACTLY this turn (identity-bound by turnId), resolving true only
+   * when its exit was confirmed; `undefined` when this adapter holds no live process for it (the
+   * caller must fail closed then — never stop another turn as a substitute).
+   */
+  stopTurnVerified?(turnId: string): Promise<boolean | undefined>;
+  /**
    * S004: relay a review-mode permission decision back to the live turn's CLI.
    * Looks up the pending request registered for (turnId, requestId); if live, writes
    * the provider control response via the process write() seam and clears it. A
@@ -1325,6 +1331,12 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     await stopTurnProcess(proc);
   }
 
+  async function stopTurnVerified(turnId: string): Promise<boolean | undefined> {
+    const proc = live.get(turnId);
+    if (proc === undefined) return undefined; // no handle for THIS turn — the caller fails closed
+    return stopTurnProcess(proc);
+  }
+
   function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { delivered: boolean } {
     const set = pendingByTurn.get(turnId);
     if (set === undefined || !set.has(requestId)) return { delivered: false }; // unknown / stale / already answered — no-op
@@ -1497,7 +1509,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(verifiedDead ? {} : { observationFailure: true }) };
   }
 
-  return { run, resume, cancel, decide, registerPending, onDeliveryFailed, capabilities: { resume: mapper.resume } };
+  return { run, resume, cancel, stopTurnVerified, decide, registerPending, onDeliveryFailed, capabilities: { resume: mapper.resume } };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {

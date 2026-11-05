@@ -6906,6 +6906,143 @@ test('E202611031bd72813:S001 t6/MR3-R4b: a process that ignores SIGTERM+SIGKILL 
   host.dispose();
 });
 
+test('E202611031bd72813:S001 t6/MR3-R5: an async delivery failure for chat A’s turn, fired while chat B is selected and running, stops ONLY A’s original process — never the selected chat’s turn — and the continuation resumes A’s native handle', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { resume: unknown; prompt: string }[] = [];
+  let failedCb: ((turnId: string, requestId: string, decision: 'approve' | 'deny') => void) | undefined;
+  let bDone = false; // ends chat B's turn (a real adapter parks at a yield, so detach's return() lands)
+  const procA = fakeLiveProc(4511); // chat A's original CLI process — alive after the detach
+  const procB = fakeLiveProc(4512); // chat B's turn process — must NOT be signaled
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: (turnId, requestId) => ({ delivered: turnId === 'origA' && requestId === 'reqA' }), // A's write accepted, then fails async
+    onDeliveryFailed: (fn) => { failedCb = fn as typeof failedCb; },
+    cancel: (turnId) => { // what the host-wide turns.stop() would land on — the BUG signaled turnB here
+      if (turnId === 'turnB') procB.kill('SIGTERM');
+      if (turnId === 'origA') procA.kill('SIGTERM');
+    },
+    stopTurnVerified: async (turnId) => { // the per-turn handle: only the named turn's process is stopped
+      if (turnId === 'origA') { procA.kill('SIGTERM'); return true; }
+      return undefined;
+    },
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push({ resume: (req as { resume?: unknown }).resume, prompt: req.prompt });
+      if (runs.length === 1) { // chat A's turn: raises the request, then streams until detached
+        opts?.onSpawn?.({ ...procA, cursor: { sessionId: 'x', turnId: 'origA', generation: 1, offset: 0 } });
+        yield { kind: 'approval-request', turnId: 'origA', requestId: 'reqA', title: 'act', detail: 'd', command: 'cmd-A', resolution: 'in-turn' };
+        for (;;) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+      } else if (runs.length === 2) { // chat B's turn: runs while the async failure for A arrives
+        opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
+        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        procB.exitNow();
+        yield { kind: 'done', turnId: 'turnB', ok: true };
+      } else { // the continuation for A's decision
+        const q = fakeLiveProc(4513);
+        opts?.onSpawn?.(q);
+        q.exitNow();
+        yield { kind: 'done', turnId: 'cont', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    isAlive: (pid) => pid === 4511, // A's original is ALIVE when the async failure arrives
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go A' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && e.requestId === 'reqA'), 5000);
+  const idA = store.list()[0]!.id;
+  store.get(idA)!.nativeSessionId = 'native-A';
+  store.get(idA)!.liveTurn = { cursor: { turnId: 'origA', generation: 1, offset: 0 }, ownerHostPid: process.pid, pid: 4511, startedAt: 1 };
+  store.save(store.get(idA)!);
+  fc.send(env('permission-decision', { requestId: 'reqA', decision: 'approve' }));
+  await waitFor(() => (store.get(idA)?.pendingRequests ?? []).length > 0, 5000, 'A’s decision was recorded');
+  // switch to chat B and run its own turn — A is detached, its process alive
+  fc.send(env('new-chat', { provider: 'claude' }));
+  fc.send(env('submit-turn', { text: 'go B' }));
+  await waitFor(() => runs.length === 2, 5000, 'chat B’s turn is running');
+  // NOW the async stdin failure fires for A’s turn/request, while B is the selected chat
+  failedCb?.('origA', 'reqA', 'approve');
+  await waitFor(() => procA.signals.length > 0, 5000, 'A’s ORIGINAL process was stopped via its own turn handle (stopTurnVerified)');
+  assert.equal(procB.signals.length, 0, 'B’s selected-turn process was NOT signaled — the host-wide turns.stop() was not used');
+  bDone = true; // let B’s turn settle so the chained continuation for A can start (procA is dead, its lease is free)
+  await waitFor(() => runs.length === 3, 5000, 'the async failure recovered with a continuation');
+  assert.equal(procB.signals.length, 0, 'B’s process was still not signaled after the recovery completed');
+  assert.deepEqual(runs[2]!.resume, { provider: 'claude', nativeSessionId: 'native-A' }, 'the continuation resumed A’s native handle, not B’s');
+  await waitFor(() => store.get(idA)?.pendingRequests?.find((r) => r.requestId === 'reqA')?.resolved === true, 5000);
+  assert.equal(store.get(idA)!.pendingRequests!.find((r) => r.requestId === 'reqA')!.outcome, 'approved', 'recovered, not delivery-failed');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exists for the originating turn of another chat, recovery records delivery-failed and never stops the selected chat as a substitute', async () => {
+  const store = createInMemoryChatSessionStore();
+  const runs: { resume: unknown; prompt: string }[] = [];
+  let failedCb: ((turnId: string, requestId: string, decision: 'approve' | 'deny') => void) | undefined;
+  let bDone = false;
+  const procA = fakeLiveProc(4521);
+  const procB = fakeLiveProc(4522);
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: (turnId, requestId) => ({ delivered: turnId === 'origA' && requestId === 'reqA2' }),
+    onDeliveryFailed: (fn) => { failedCb = fn as typeof failedCb; },
+    cancel: (turnId) => {
+      if (turnId === 'turnB') procB.kill('SIGTERM');
+      if (turnId === 'origA') procA.kill('SIGTERM');
+    },
+    stopTurnVerified: async () => undefined, // NO handle for the origin turn — fail closed
+    async *run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent> {
+      runs.push({ resume: (req as { resume?: unknown }).resume, prompt: req.prompt });
+      if (runs.length === 1) {
+        opts?.onSpawn?.({ ...procA, cursor: { sessionId: 'x', turnId: 'origA', generation: 1, offset: 0 } });
+        yield { kind: 'approval-request', turnId: 'origA', requestId: 'reqA2', title: 'act', detail: 'd', command: 'cmd-A2', resolution: 'in-turn' };
+        for (;;) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+      } else if (runs.length === 2) {
+        opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
+        while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
+        procB.exitNow();
+        yield { kind: 'done', turnId: 'turnB', ok: true };
+      } else {
+        const q = fakeLiveProc(4523);
+        opts?.onSpawn?.(q);
+        q.exitNow();
+        yield { kind: 'done', turnId: 'cont', ok: true };
+      }
+    },
+  };
+  const fc = fakeChannel();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: adapter }, ['claude']),
+    store,
+    cwd: () => '/repo',
+    isAlive: (pid) => pid === 4521,
+  });
+  host.open();
+  fc.send(env('submit-turn', { text: 'go A' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'approval-request' && e.requestId === 'reqA2'), 5000);
+  const idA = store.list()[0]!.id;
+  store.get(idA)!.nativeSessionId = 'native-A2';
+  store.get(idA)!.liveTurn = { cursor: { turnId: 'origA', generation: 1, offset: 0 }, ownerHostPid: process.pid, pid: 4521, startedAt: 1 };
+  store.save(store.get(idA)!);
+  fc.send(env('permission-decision', { requestId: 'reqA2', decision: 'approve' }));
+  await waitFor(() => (store.get(idA)?.pendingRequests ?? []).length > 0, 5000);
+  fc.send(env('new-chat', { provider: 'claude' }));
+  fc.send(env('submit-turn', { text: 'go B' }));
+  await waitFor(() => runs.length === 2, 5000, 'chat B’s turn is running');
+  failedCb?.('origA', 'reqA2', 'approve');
+  await waitFor(() => store.get(idA)?.pendingRequests?.find((r) => r.requestId === 'reqA2')?.outcome === 'delivery-failed', 5000, 'no per-turn handle -> fail closed as delivery-failed');
+  await new Promise((r) => setTimeout(r, 200));
+  assert.equal(runs.length, 2, 'no continuation launched without a verified stop of the original');
+  assert.equal(procB.signals.length, 0, 'B’s process was NOT stopped as a substitute');
+  assert.equal(procA.signals.length, 0, 'A’s process was not stopped either — no verified handle existed');
+  bDone = true;
+  host.dispose();
+});
+
 test('E202611031bd72813:S001 t6/MR1-R4: restored turn-ended records with a repeated id — approve/deny updates only its OWN record, across reload', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();

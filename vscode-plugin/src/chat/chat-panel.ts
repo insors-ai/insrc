@@ -1689,7 +1689,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * follow-up run. If the verified stop fails, record delivery-failed and launch nothing.
    */
   const recoverUndelivered = (s: ChatSession, requestId: string, decision: 'approve' | 'deny', originTurnId: string | undefined): void => {
-    const probePid = s.liveTurn?.pid;
+    // MR3-R5: liveness and the stop target are bound to the ORIGINATING turn — s.liveTurn must still
+    // BE that turn; the host-wide turns.stop() may only be used when the origin IS the current turn
+    const originTurn = originTurnId ?? s.liveTurn?.cursor.turnId;
+    const originLive = s.liveTurn !== undefined && s.liveTurn.cursor.turnId === originTurn ? s.liveTurn : undefined;
+    const probePid = originLive?.pid;
     const probeAlive = probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
     if (probeAlive && s.nativeSessionId === undefined) {
       markPersistedRequest(s, requestId, true, 'session-lost', originTurnId);
@@ -1699,11 +1703,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const fk = followUpKey(s.id, originTurnId, requestId);
     if (followUpsStarted.has(fk)) return;
     followUpsStarted.add(fk);
-    if (probeAlive && s.nativeSessionId !== undefined) {
+    if (probeAlive && s.nativeSessionId !== undefined && originTurn !== undefined) {
       void (async () => {
         try {
-          const verified = await turns.stop(); // MR3-R4b: true only when the exit was confirmed
-          if (!verified) throw new Error('the original process did not exit even after SIGKILL');
+          let verified: boolean | undefined;
+          if (session !== undefined && session.id === s.id && turns.live?.turnId === originTurn) {
+            // the origin is THIS host's current turn: the lifecycle owns exactly it
+            verified = await turns.stop(); // MR3-R4b: true only when the exit was confirmed
+          } else {
+            // MR3-R5: a detached/other chat's original — stop ONLY that turn's process via its
+            // adapter; no handle -> fail closed, never stop the selected chat as a substitute
+            verified = await deps.providers.get(s.provider).stopTurnVerified?.(originTurn);
+          }
+          if (verified !== true) throw new Error('the original process exit could not be verified');
           deliverDecisionAsFollowUp(requestId, decision, s, originTurnId);
         } catch (err) {
           log.warn(`[chat] live-unwritable recovery for ${requestId} could not stop the original: ${err instanceof Error ? err.message : String(err)}`);

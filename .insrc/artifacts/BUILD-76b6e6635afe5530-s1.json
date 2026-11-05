@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "84e17163b67cc02c4d9feae359751572d2995281808ef4afb9fb96e82b701667",
+        "at": "2026-11-05T04:33:19.340Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-b8ae46a6-451b-459e-9f01-bfd526fb76a0",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T04:31:47.694Z",
+    "epicCreatedAt": "2026-11-05T04:25:47.665Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "76b6e6635afe5530",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix, magnitude small: one cause in parseDesignRequest (design-review/contracts.ts)",
+    "epicSlug": "name-phase-field-when-design-review",
+    "updatedAt": "2026-11-05T04:32:35.161Z"
+  },
+  "body": {
+    "focus": "Fix ISSUE-76b6e6635afe5530 (docs/standalone/name-phase-field-when-design-review-E2026110576b6e663/ISSUE.md): a malformed design review request is refused with a message naming its phase and the first offending field; an unknown or missing phase lists the valid phases; code invalid_schema and class DesignReviewInputError unchanged; valid requests stay valid.",
+    "producesLld": false,
+    "commit": "13dce397d",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "parseDesignRequest keeps the union check; when it fails with invalid_schema, refuseUnmatchedRequest picks the schema by the request's phase and refuses with '<phase> request: <path>: <message>', or with 'phase: Expected one of …' for an unknown or missing phase. Code invalid_schema and class DesignReviewInputError unchanged; valid requests unchanged. One new test in recovery-contracts.test.ts (fails without the fix); the 82 design-review tests pass. Left out: parts 1 and 3 of #101.",
+    "testRecord": {
+      "md": "docs/standalone/name-phase-field-when-design-review-E2026110576b6e663/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-76b6e6635afe5530.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:35.161Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-76b6e6635afe5530.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:35.161Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/name-phase-field-when-design-review-E2026110576b6e663/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:35.161Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:35.161Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:35.161Z"
+      }
+    ]
+  },
+  "citations": []
+}

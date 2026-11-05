@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "9d54b75be8f7c30360a1daae7f0bc72d4ccb1dd04cbe1274713f71281ad0793c",
+        "at": "2026-11-05T04:32:35.227Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "76b6e6635afe5530",
+    "storyId": "s1",
+    "createdAt": "2026-11-05T04:32:35.161Z",
+    "updatedAt": "2026-11-05T04:32:35.161Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-05T04:25:47.665Z",
+    "epicSlug": "name-phase-field-when-design-review",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "13dce397d",
+        "ranAt": "2026-11-05T04:32:35.161Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/recovery-contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 678,
+            "titles": [
+              {
+                "title": "recovery and failure envelopes strictly separate transport phase, operation and user direction",
+                "result": "pass"
+              },
+              {
+                "title": "S1 checkpoints remain readable and bounded recovery metadata round-trips without content or transcripts",
+                "result": "pass"
+              },
+              {
+                "title": "design request validation names the phase and the first offending field, and lists the valid phases for an unknown one",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -20,7 +20,7 @@ function fake(f:ReturnType<typeof designFixture>,options:{before?:(stage:string)
   await opts.onActivity({sessionId:`session-${calls.length}`,sequence:2,kind:'model_output'});
   if(stage==='content'&&options.mode==='mutation')appendFileSync(f.md,'\nChanged during review');
   const limited=stage==='content'&&options.mode==='limits';
-  const value=assignment?{chunkId:stage,status:limited||stage==='content'&&options.mode==='invalid-status'?'changes_requested':'passed',summary:'Fake substantive result, not hosted review',findings:limited?[{id:'f1',severity:'MED',location:'/body/summary',message:'Contradictory design',evidenceReferences:[f.md]}]:[],inspectedReferences:limited?[]:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path],limitations:stage==='content'&&options.mode==='invalid-status'?['Required contract not verified']:[],advice:[]}:plan;
+  const value=assignment?{chunkId:stage,status:limited||stage==='content'&&options.mode==='invalid-status'?'changes_requested':'passed',summary:'Fake substantive result, not hosted review',findings:limited?[{id:'f1',severity:'MED',location:'/body/summary',message:'Contradictory design',evidenceReferences:[f.md]}]:[],inspectedReferences:limited?[f.md]:[...f.prepared.inventory.units.map(u=>u.id),f.md,f.path],limitations:stage==='content'&&options.mode==='invalid-status'?['Required contract not verified']:[],advice:[]}:plan;
   const accepted=await opts.onCandidate(value);if(!accepted.accepted)throw new Error('Candidate rejected');return value;
  }} as unknown as LLMProvider;
  return {provider,calls,sessions};

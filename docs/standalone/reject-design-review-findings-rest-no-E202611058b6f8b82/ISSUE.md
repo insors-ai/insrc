@@ -1,0 +1,23 @@
+<!-- insrc:artifact ISSUE-8b6f8b82ffa40e3f -->
+
+# Reject design review findings that rest on no inspected reference
+
+## Reproduction
+
+Submit a design review chunk result that carries findings but an empty inspectedReferences (a probe or test payload). Observed on 2026-11-04, design review round 1 of the artifact-theme LLD: the daemon reviewer's probe submissions were stored as the accepted results of three chunks (summaries 'Test minimal payload to isolate schema error.' and 'test'; findings finding1 HIGH 'assembleShell return type mismatch.', f1 MED 'y', probe1 LOW 'y'), each marked incomplete. The consolidated report counted them (HIGH 2, MED 5, LOW 3 for that round) and the HIGH one blocked approval. Expected: a result whose findings rest on no inspected reference is refused, so the reviewer must resubmit and the findings never reach the report. A result with no findings and nothing inspected (an honest incomplete) and a result that inspected some references and lists the rest as limitations stay accepted.
+
+## Root cause
+
+assessDesignResult checks a chunk result against the chunk's selectors and required references. For every selector or required reference the result neither inspected nor mentions in a limitation it appends a 'Required coverage not reported' limitation and sets the status to incomplete, then accepts the result as the chunk's outcome. Nothing checks that the findings rest on anything inspected, so a result with findings and an empty inspectedReferences is accepted with its findings. consolidateDesignReview then counts every finding of every accepted result into the report, so a placeholder finding becomes a counted, possibly blocking, finding. The same assessment is used when the coordinator validates a submitted result and when consolidation re-checks the accepted results, so one gap affects both.
+
+## Fix intent
+
+A chunk result that carries findings but inspected no reference is refused as an invalid result, so the reviewer is asked to resubmit and its findings never reach the consolidated report. A result with no findings and no inspected reference (an honest incomplete) still counts as incomplete, and a result that inspected some references and reports the rest as limitations stays valid. The refusal keeps the invalid_result code. No schema or stored-format change. Parts 1 and 2 of GitHub issue #101 are separate stories (part 2 is done).
+
+## Citations
+
+- **[[c1]]** `code` `src/workflow/review/design-review/results.ts:84-99`
+- **[[c2]]** `code` `src/workflow/review/design-review/results.ts:127`
+- **[[c3]]** `code` `src/workflow/review/design-review/results.ts:140`
+- **[[c4]]** `code` `src/workflow/review/design-review/coordinator.ts:285`
+- **[[c5]]** `code` `src/workflow/review/design-review/__tests__/policy-results.test.ts:29-34`

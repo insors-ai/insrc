@@ -41,3 +41,12 @@ test('required gaps cannot pass and consolidation preserves HIGH/MED, incomplete
  assert.throws(()=>assessDesignResult({...result('final'),status:'changes_requested',findings:[finding]},plan.chunks[1]!,[blocked]),/already used/);
  const low=assessDesignResult({...result(),findings:[{...finding,severity:'LOW'}]},chunk,[]);assert.equal(low.status,'passed');assert.equal(low.advice.length,1);
 });
+test('a chunk result with findings must rest on an inspected reference; an honest incomplete and a partial inspection stay valid',()=>{
+ const chunk=plan.chunks[0]!;
+ const probe={id:'finding1',severity:'HIGH' as const,location:'/body/a',message:'placeholder',evidenceReferences:['/project/source.ts:5']};
+ assert.throws(()=>assessDesignResult({...result(),status:'changes_requested',findings:[probe],inspectedReferences:[]},chunk,[]),(e:unknown)=>(e as {code?:string}).code==='invalid_result'&&/rest on at least one inspected reference/.test((e as Error).message));
+ const honest=assessDesignResult({...result(),status:'incomplete',findings:[],inspectedReferences:[],limitations:['Could not read the artifact']},chunk,[]);
+ assert.equal(honest.status,'incomplete');
+ const partial=assessDesignResult({...result(),status:'incomplete',findings:[{...probe,severity:'MED' as const}],inspectedReferences:['/body/a']},chunk,[]);
+ assert.equal(partial.status,'incomplete');assert.equal(partial.findings.length,1);
+});

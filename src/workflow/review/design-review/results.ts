@@ -88,6 +88,7 @@ export function assessDesignResult(input: unknown, chunk: DesignChunk, previous:
  for(const finding of result.findings) {
   requireDesign(!ids.has(finding.id),'invalid_result',`Finding id ${finding.id} is already used`);ids.add(finding.id);
  }
+ requireDesign(result.findings.length===0||result.inspectedReferences.length>0,'invalid_result','Findings must rest on at least one inspected reference; a result that inspected nothing cannot carry findings');
  const missing=[...new Set([...chunk.selectors,...requiredReferences])].filter(s=>!result.inspectedReferences.includes(s)&&!result.limitations.some(l=>l.includes(s)));
  for(const selector of missing)result.limitations.push(`Required coverage not reported: ${selector}`);
  const before=result.limitations.length;

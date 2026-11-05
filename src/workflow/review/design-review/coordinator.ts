@@ -120,7 +120,7 @@ export class DesignReviewCoordinator {
   const checkpoint=structuredClone(saved),source=currentDesignAttempt(checkpoint);
   requireDesign(source.number===request.attempt,'missing_attempt','Recovery must name the current attempt');
   source.reviewer??=saved.subject.reviewer;
-  let attempt=source;
+  let attempt=source,consolidationRetry=false;
   if(request.operation==='restart_full'){
    requireDesign(source.status==='invalidated','review_conflict','Full restart requires an invalidated attempt');
    const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,saved.subject.canonicalPath);
@@ -130,18 +130,24 @@ export class DesignReviewCoordinator {
    attempt={number:source.number+1,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer};
    checkpoint.attempts.push(attempt);
   }else{
-   requireDesign(['pending','running','interrupted','paused'].includes(source.status),'review_conflict','Attempt is not resumable');
+   consolidationRetry=source.status==='failed'&&source.failure?.code==='invalid_result'&&!!source.plan&&!source.report&&!nextDesignUnit(source);
+   requireDesign(['pending','running','interrupted','paused'].includes(source.status)||consolidationRetry,'review_conflict','Attempt is not resumable');
    try{assertDesignSubjectUnchanged(saved.subject,source.baseline);}catch(error){
     const summary=error instanceof Error?error.message:'Reviewed artifact changed';source.status='invalidated';source.failure={code:'artifact_changed',summary};source.finishedAt=new Date().toISOString();
     source.recovery={attempt:source.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:source.completedChunks.map(c=>c.chunkId),requiresUserInput:true};
     source.progress={...source.progress,status:'invalidated',phase:'complete',requiresUserInput:true};
     await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);throw error;
    }
+   if(consolidationRetry){
+    requireDesign(request.userDecision?.action==='retry_failed_unit','user_decision_required','Failed consolidation requires user direction');
+    // Validate saved evidence before admitting a no-model consolidation retry.
+    consolidateDesignReview(checkpoint.reviewId,source.number,checkpoint.subject,source.baseline.contentIdentity,source.plan!,source.completedChunks,source.impact?{impact:source.impact,attempts:checkpoint.attempts}:undefined);
+   }
    if(source.status==='paused')requireDesign(request.userDecision?.action==='retry_failed_unit','user_decision_required','Paused review requires user direction');
   }
   if(checkpoint.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const work=nextDesignUnit(attempt);
-  requireDesign(work||!request.userDecision||request.operation==='restart_full','invalid_decision','No unfinished unit to retry');
+  requireDesign(work||!request.userDecision||request.operation==='restart_full'||consolidationRetry,'invalid_decision','No unfinished unit to retry');
   finishDirectedExecution(attempt,'interrupted','Previous directed execution ended without accepted feedback');
   let reservedExecutionId:string|undefined;
   try{reservedExecutionId=work?reserveDesignUnit(attempt,work.chunk,request.userDecision?.action==='retry_failed_unit',true,work.preparationKind??'planning'):undefined;}
@@ -385,7 +391,7 @@ export class DesignReviewCoordinator {
    const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint);assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
    const report=consolidateDesignReview(checkpoint.reviewId,attempt.number,checkpoint.subject,attempt.baseline.contentIdentity,plan,attempt.completedChunks,attempt.impact?{impact:attempt.impact,attempts:checkpoint.attempts}:undefined);
    job.tracker.status(report.status);
-   await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();delete a.current;});
+   await this.commit(job,a=>{a.status=report.status;a.report=report;a.finishedAt=new Date().toISOString();const action=[...(a.actions??[])].reverse().find(x=>x.userDecision?.action==='retry_failed_unit'&&!x.outcome);if(action)action.outcome={code:'completed',summary:'Saved review results consolidated'};delete a.current;});
   }catch(error){
    if(job.invalidation){await job.invalidation;return;}
    job.abort.abort(error);job.controller?.fail(error);job.controller?.monitor.stop();this.stopProgress(job);const code=error instanceof DesignReviewError?error.code:'provider_failed';

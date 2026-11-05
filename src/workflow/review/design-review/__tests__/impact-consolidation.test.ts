@@ -74,3 +74,16 @@ test('stored impact reports enforce the same document and checkpoint references 
  const f=setup(t),limited=structuredClone(f.final);limited.inspectedReferences=limited.inspectedReferences.filter(r=>r!==f.path);limited.limitations=['Required checkpoint inspection unavailable: '+f.path];limited.status='incomplete';
  assert.equal(f.report([f.edited,f.assess(limited)]).status,'incomplete');
 });
+
+test('partial reconciliation with final self-inspection is idempotent and preserves omitted blockers',t=>{
+ const f=setup(t),value=f.result('final');
+ value.findingDecisions=[{...f.decisions[1]!,action:'resolved',reviewedInChunkIds:['final']}];
+ const accepted=f.assess(value);
+ assert.equal(accepted.status,'incomplete');assert.equal(accepted.limitations.length,1);
+ assert.deepEqual(f.assess(accepted),accepted);
+ const report=f.report([f.edited,accepted]);assert.equal(report.status,'incomplete');assert.equal(report.counts.HIGH,1);assert.equal(report.counts.MED,0);
+ const gap=structuredClone(accepted);gap.limitations.push('Required document was not inspected');
+ assert.throws(()=>f.assess(gap),/mandatory gaps/);
+ const forged=structuredClone(accepted);forged.limitations.push('Required finding reconciliation not reported: invented');
+ assert.throws(()=>f.assess(forged),/mandatory gaps/);
+});

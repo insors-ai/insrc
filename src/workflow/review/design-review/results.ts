@@ -105,11 +105,15 @@ function reconcileDesignFindings(result:DesignChunkResult,chunk:DesignChunk,prev
  if(!final||!context)return;
  const {attempt,history}=context,origins=effectiveDesignFindingOrigins(history,attempt.impact!.baselineAttempt),known=new Set(origins.map(designFindingKey));
  const seen=new Set<string>(),fresh=[...previous,result];
+ // Reconciliation omissions carry their findings and keep the report incomplete;
+ // they are not missing inspection of another finding assessed by this chunk.
+ const decided=new Set((result.findingDecisions??[]).map(d=>designFindingKey(d.source)));
+ const reconciliationGaps=new Set(origins.filter(o=>!decided.has(designFindingKey(o))).map(o=>`Required finding reconciliation not reported: ${designFindingKey(o)}`));
  for(const decision of result.findingDecisions??[]){
   const key=designFindingKey(decision.source);
   requireDesign(known.has(key)&&!seen.has(key),'invalid_result','Unknown or duplicate finding decision source');seen.add(key);
   if(decision.action==='carry')continue;
-  requireDesign(decision.reviewedInChunkIds.every(id=>fresh.some(r=>r.chunkId===id&&r.status!=='incomplete'&&r.limitations.length===0&&r.inspectedReferences.length>0)),'invalid_result','Resolution requires accepted fresh inspection without mandatory gaps');
+  requireDesign(decision.reviewedInChunkIds.every(id=>fresh.some(r=>r.chunkId===id&&r.inspectedReferences.length>0&&(r.status!=='incomplete'&&r.limitations.length===0||r===result&&r.limitations.length>0&&r.limitations.every(l=>reconciliationGaps.has(l))))),'invalid_result','Resolution requires accepted fresh inspection without mandatory gaps');
   for(const retained of attempt.impact!.retainedCoverage){
    const source=resolveDesignCoverage(history,retained.fromAttempt,retained.fromChunkId,attempt.number,attempt.reviewer,'invalid_checkpoint');
    requireDesign(source.attempt!==decision.source.attempt||source.chunk.id!==decision.source.chunkId,'invalid_result','A finding in retained-only coverage must carry until its owning chunk is freshly selected');

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793870605801-2iwv9r",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T09:24:33.752Z",
+    "epicCreatedAt": "2026-11-05T09:24:33.752Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 67950,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f5af0500294370bc",
+    "epicSlug": "recover-design-reviews-stranded-consolidation-failure",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f75e089f240b90513f38b1f2c3427f723d580e21c8704bece237a8eb690504ce",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T09:47:23.849Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "f5af0500294370bc",
+      "slug": "EPIC-f5af0500294370bc"
+    }
+  },
+  "body": {
+    "title": "Recover design reviews stranded by consolidation failure",
+    "reproduction": "Review design-final-pin-r1-1793853283849 attempt 2 accepted 11/11 chunks, then failed consolidation with invalid_result: Resolution requires accepted fresh inspection without mandatory gaps. Resume rejects failed status; attempt 3 rejects because no complete terminal report exists. Expected: explicit recovery preserves accepted evidence and reaches a valid report without rerunning unrelated chunks. [c4]",
+    "rootCause": "Live assessDesignResult reconciles finding decisions before normalizing missing mandatory coverage into incomplete status; later consolidation revalidates the normalized result and can reject a decision it previously accepted. Coordinator then stores failed, while admitRecovery excludes failed and admit requires a complete passed/changes_requested/incomplete report for a subsequent attempt. This leaves a durable checkpoint with no supported continuation. [c1][c2][c3]",
+    "fixIntent": "Make admission and consolidation validation consistent and idempotent while keeping mandatory inspection and finding-resolution checks strict. Add an explicitly user-directed recovery route for the stranded consolidation checkpoint, preserving accepted evidence/history and retrying only work actually requiring correction. Reject unrelated failure classes and changed-subject recovery. Cover live admission, consolidation, persistence/restart and existing failed-checkpoint regression paths. Do not manually edit the live checkpoint, relax coverage, or automatically replay completed reviews. [c1][c2][c3]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/results.ts:85"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:105"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:386"
+    },
+    {
+      "id": "c4",
+      "kind": "doc",
+      "ref": ".insrc/tmp/design-review/design-final-pin-r1-1793853283849.json"
+    }
+  ]
+}

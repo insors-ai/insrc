@@ -811,8 +811,8 @@ test('vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok
   assert.equal(done.ok, true, 'vibe streams no terminal line; the adapter synthesizes done on exit 0');
   assert.equal(done.sessionId, 'sess-vibe-1');
   assert.equal(spawner.calls[0]!.command, 'vibe');
-  assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
-  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe reads stdin as the prompt, so input is closed and the prompt is positional');
+  assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
+  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe receives an explicit programmatic prompt, so stdin closes immediately');
 });
 
 test('vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command', async () => {
@@ -836,27 +836,27 @@ test('vibe: argv — resume, --add-dir, and the permission-mode flags', async ()
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--auto-approve', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--auto-approve']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'manual' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'ask', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'ask']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'edit-auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'accept-edits', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'accept-edits']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', resume: { provider: 'vibe', nativeSessionId: 'sess-vibe-9' }, readDirs: ['/tmp/att'] })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att']);
   }
 });
 
@@ -1792,7 +1792,7 @@ test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effo
     // vibe: model via VIBE_ACTIVE_MODEL in the spawn env; effort not forwardable.
     const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', model: 'glm-5-3', effort: 'max' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi'], 'no --model/--effort flags for vibe');
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming'], 'no --model/--effort flags for vibe');
     const env = spawner.calls[0]!.env;
     assert.equal(env?.['VIBE_ACTIVE_MODEL'], 'glm-5-3', 'the model is pinned via env');
   }
@@ -1871,4 +1871,33 @@ test('E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (fa
   assert.equal(writeReachedStdin({ destroyed: false, writableEnded: false }, true), true, 'plain accepted write');
   assert.equal(writeReachedStdin({ destroyed: true, writableEnded: false }, false), false, 'destroyed stdin: undelivered');
   assert.equal(writeReachedStdin({ destroyed: false, writableEnded: true }, true), false, 'ended stdin: undelivered');
+});
+
+
+// ISSUE-910fce32967bc4ea: bare -p plus positional text fails on Vibe 3.0.4.
+test('vibe: explicit programmatic prompt preserves multiline option-like text in new and resumed turns', async () => {
+  const prompt = '--help\nsecond line with "quotes", $HOME and = signs';
+  for (const resumed of [false, true]) {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', prompt,
+      ...(resumed ? { resume: { provider: 'vibe' as const, nativeSessionId: 'saved-vibe' } } : {}),
+    })));
+    const call = spawner.calls[0]!;
+    const option = call.args.find((arg) => arg.startsWith('--prompt='));
+    assert.equal(option?.slice('--prompt='.length), prompt, 'the complete prompt is the value of the programmatic option');
+    assert.ok(!call.args.includes('-p'), 'no bare prompt flag can redirect to empty stdin');
+    assert.ok(!call.args.includes(prompt), 'prompt is never an unrelated positional argument');
+    assert.equal(call.closeInput, true);
+    assert.equal(call.args.includes('--resume'), resumed);
+  }
+});
+
+test('vibe: title generation uses the same explicit programmatic prompt transport', async () => {
+  const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+  const title = await deriveChatTitle(createProviderRegistry(deps), { provider: 'vibe', prompt: 'Explain this project', cwd: '/repo', model: 'mistral-large' });
+  assert.equal(title, 'Hello world');
+  const call = spawner.calls[0]!;
+  const option = call.args.find((arg) => arg.startsWith('--prompt='));
+  assert.ok(option?.includes('Explain this project'), 'title request reaches the programmatic prompt');
+  assert.equal(call.env?.VIBE_ACTIVE_MODEL, 'mistral-large');
 });

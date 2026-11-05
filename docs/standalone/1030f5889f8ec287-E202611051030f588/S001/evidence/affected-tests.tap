@@ -1,0 +1,951 @@
+TAP version 13
+# Subtest: vibeLastAssistantText: bare array, wrapped messages, string content, no assistant
+ok 1 - vibeLastAssistantText: bare array, wrapped messages, string content, no assistant
+  ---
+  duration_ms: 0.785
+  type: 'test'
+  ...
+# Subtest: complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL
+ok 2 - complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL
+  ---
+  duration_ms: 57.799292
+  type: 'test'
+  ...
+# Subtest: complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)
+ok 3 - complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)
+  ---
+  duration_ms: 50.026625
+  type: 'test'
+  ...
+# Subtest: completeStructured() parses the last assistant message of the json output and validates it against the schema
+ok 4 - completeStructured() parses the last assistant message of the json output and validates it against the schema
+  ---
+  duration_ms: 57.128958
+  type: 'test'
+  ...
+# [12:48:24] [33mWARN[39m: [36m[providers:structured-output] structured-output: call threw; treating as validation failure for retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 1
+#     [35mmaxAttempts[39m: 3
+#     error: "Unexpected token 's', \\"sure! here\\"... is not valid JSON"
+# Subtest: completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds
+ok 5 - completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds
+  ---
+  duration_ms: 174.683375
+  type: 'test'
+  ...
+# [12:48:24] [32mINFO[39m: [36m[providers:structured-output] structured-output: validation passed after retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 2
+#     [35mmaxAttempts[39m: 3
+# Subtest: completeStructured() surfaces a stable error after retries are exhausted
+ok 6 - completeStructured() surfaces a stable error after retries are exhausted
+  ---
+  duration_ms: 129.347208
+  type: 'test'
+  ...
+# [12:48:25] [33mWARN[39m: [36m[providers:structured-output] structured-output: call threw; treating as validation failure for retry[39m
+#     [35mmodule[39m: "providers:structured-output"
+#     [35mattempt[39m: 1
+#     [35mmaxAttempts[39m: 1
+#     error: "Unexpected token 's', \\"sure! here\\"... is not valid JSON"
+# Subtest: runEditSession() runs headless with --auto-approve inside the repo cwd
+ok 7 - runEditSession() runs headless with --auto-approve inside the repo cwd
+  ---
+  duration_ms: 105.949083
+  type: 'test'
+  ...
+# Subtest: runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer
+ok 8 - runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer
+  ---
+  duration_ms: 114.802834
+  type: 'test'
+  ...
+# [12:48:25] [33mWARN[39m: [36m[cli-provider] complete: transient CLI error; retrying after backoff[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "vibe"
+#     [35mattempt[39m: 1
+#     [35mmaxAttempts[39m: 3
+#     [35mbackoffMs[39m: 2000
+#     err: "vibe exited with 2. stderr=error: 429 rate limit exceeded\\n stdout="
+# [12:48:27] [33mWARN[39m: [36m[cli-provider] complete: transient CLI error; retrying after backoff[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mprovider[39m: "vibe"
+#     [35mattempt[39m: 2
+#     [35mmaxAttempts[39m: 3
+#     [35mbackoffMs[39m: 4000
+#     err: "vibe exited with 2. stderr=error: 429 rate limit exceeded\\n stdout="
+# Subtest: a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run
+ok 9 - a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run
+  ---
+  duration_ms: 6236.915791
+  type: 'test'
+  ...
+# Subtest: claude: text turn maps to status + assistant-delta(s) + done(ok)
+ok 10 - claude: text turn maps to status + assistant-delta(s) + done(ok)
+  ---
+  duration_ms: 2.222291
+  type: 'test'
+  ...
+# Subtest: claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff
+ok 11 - claude: tool_use maps to tool-call (with mcp parse) and file-edit with a hunk diff
+  ---
+  duration_ms: 0.294125
+  type: 'test'
+  ...
+# Subtest: claude: is_error result maps to done(ok:false)
+ok 12 - claude: is_error result maps to done(ok:false)
+  ---
+  duration_ms: 0.175416
+  type: 'test'
+  ...
+# Subtest: nothing is yielded after the terminal event, even if the stream continues
+ok 13 - nothing is yielded after the terminal event, even if the stream continues
+  ---
+  duration_ms: 0.277125
+  type: 'test'
+  ...
+# Subtest: codex: item.completed + turn.completed maps to assistant-delta + done(ok)
+ok 14 - codex: item.completed + turn.completed maps to assistant-delta + done(ok)
+  ---
+  duration_ms: 0.471958
+  type: 'test'
+  ...
+# Subtest: an in-stream error is terminal: nothing (incl. a second done) is yielded after it
+ok 15 - an in-stream error is terminal: nothing (incl. a second done) is yielded after it
+  ---
+  duration_ms: 0.140625
+  type: 'test'
+  ...
+# Subtest: a stdout stream error surfaces as a terminal error event (never throws/rejects)
+ok 16 - a stdout stream error surfaces as a terminal error event (never throws/rejects)
+  ---
+  duration_ms: 0.319834
+  type: 'test'
+  ...
+# Subtest: abandoning the stream early kills the subprocess (no orphan)
+ok 17 - abandoning the stream early kills the subprocess (no orphan)
+  ---
+  duration_ms: 0.101167
+  type: 'test'
+  ...
+# Subtest: the terminal done carries the captured native session id (resume handle for S005)
+ok 18 - the terminal done carries the captured native session id (resume handle for S005)
+  ---
+  duration_ms: 0.359125
+  type: 'test'
+  ...
+# Subtest: error path 1: spawn throws synchronously -> terminal error event (never rejects)
+ok 19 - error path 1: spawn throws synchronously -> terminal error event (never rejects)
+  ---
+  duration_ms: 0.302625
+  type: 'test'
+  ...
+# Subtest: error path 2: ENOENT spawn error -> terminal error naming the missing CLI
+ok 20 - error path 2: ENOENT spawn error -> terminal error naming the missing CLI
+  ---
+  duration_ms: 0.15025
+  type: 'test'
+  ...
+# Subtest: error path 3: non-zero exit with no terminal event -> error carrying the stderr tail
+ok 21 - error path 3: non-zero exit with no terminal event -> error carrying the stderr tail
+  ---
+  duration_ms: 0.187667
+  type: 'test'
+  ...
+# Subtest: error path 4: an auth-failure stderr -> a re-login error message
+ok 22 - error path 4: an auth-failure stderr -> a re-login error message
+  ---
+  duration_ms: 0.14925
+  type: 'test'
+  ...
+# Subtest: error path 5: an unparseable stream line is skipped+warned, not fatal
+ok 23 - error path 5: an unparseable stream line is skipped+warned, not fatal
+  ---
+  duration_ms: 0.125542
+  type: 'test'
+  ...
+# Subtest: cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)
+ok 24 - cancel(): kills the in-flight subprocess and yields a terminal done(ok:false)
+  ---
+  duration_ms: 0.390875
+  type: 'test'
+  ...
+# Subtest: run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop
+ok 25 - run() ends at the first done event without killing the process, and onSpawn hands over pid, exit and stop
+  ---
+  duration_ms: 5.892667
+  type: 'test'
+  ...
+# Subtest: cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group
+ok 26 - cancel() stops the process group and resolves only after the exit; the real spawner starts the CLI detached in its own group
+  ---
+  duration_ms: 31.449667
+  type: 'test'
+  ...
+# no procfs in this environment
+# Subtest: after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles
+ok 27 - after run() returns at done, decide() still reaches the live process, and the live entry is dropped only when the exit settles
+  ---
+  duration_ms: 1.970209
+  type: 'test'
+  ...
+# Subtest: cancel(): unknown/finished turnId is a no-op (idempotent, no throw)
+ok 28 - cancel(): unknown/finished turnId is a no-op (idempotent, no throw)
+  ---
+  duration_ms: 0.170875
+  type: 'test'
+  ...
+# Subtest: capabilities.resume is true for both providers; a resume request passes the native flag
+ok 29 - capabilities.resume is true for both providers; a resume request passes the native flag
+  ---
+  duration_ms: 0.102791
+  type: 'test'
+  ...
+# Subtest: ProviderRegistry.available lists only installed agentic CLIs (never Ollama)
+ok 30 - ProviderRegistry.available lists only installed agentic CLIs (never Ollama)
+  ---
+  duration_ms: 0.0395
+  type: 'test'
+  ...
+# Subtest: ProviderRegistry.get() on an absent provider throws unknown-provider
+ok 31 - ProviderRegistry.get() on an absent provider throws unknown-provider
+  ---
+  duration_ms: 0.168625
+  type: 'test'
+  ...
+# Subtest: claude: a Bash tool_use sets ToolCallEvent.command from input.command
+ok 32 - claude: a Bash tool_use sets ToolCallEvent.command from input.command
+  ---
+  duration_ms: 0.138042
+  type: 'test'
+  ...
+# Subtest: claude: a command-less tool_use omits command (renders as the tool name, k2)
+ok 33 - claude: a command-less tool_use omits command (renders as the tool name, k2)
+  ---
+  duration_ms: 0.071458
+  type: 'test'
+  ...
+# Subtest: the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call
+ok 34 - the Claude mapper sets present on an insrc_present tool call from its input and leaves it off every other tool call
+  ---
+  duration_ms: 0.263166
+  type: 'test'
+  ...
+# Subtest: an input that is not a list of at most twenty non-empty strings leaves present absent
+ok 35 - an input that is not a list of at most twenty non-empty strings leaves present absent
+  ---
+  duration_ms: 0.412416
+  type: 'test'
+  ...
+# Subtest: the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one
+ok 36 - the pinned real Codex capture maps to exactly one tool-call event with present set to the declared documents, from the completed mcp_tool_call item and not the started one
+  ---
+  duration_ms: 0.750916
+  type: 'test'
+  ...
+# Subtest: a Codex mcp_tool_call insrc_present item with status failed still sets present
+ok 37 - a Codex mcp_tool_call insrc_present item with status failed still sets present
+  ---
+  duration_ms: 0.141666
+  type: 'test'
+  ...
+# Subtest: a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before
+ok 38 - a Codex mcp_tool_call for another tool, a server-qualified tool name, or string arguments sets no present, and command_execution and tool_call items map as before
+  ---
+  duration_ms: 0.517292
+  type: 'test'
+  ...
+# Subtest: codex: a command_execution item sets command from item.command
+ok 39 - codex: a command_execution item sets command from item.command
+  ---
+  duration_ms: 0.083333
+  type: 'test'
+  ...
+# Subtest: codex: a tool_call item without a command omits command (k2)
+ok 40 - codex: a tool_call item without a command omits command (k2)
+  ---
+  duration_ms: 0.066583
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use
+ok 41 - claude: a tool_result user message emits a tool-result with the command correlated from the preceding tool_use
+  ---
+  duration_ms: 0.113583
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted
+ok 42 - claude: a tool_result with array content is coerced to a joined string; no correlation -> command omitted
+  ---
+  duration_ms: 0.0795
+  type: 'test'
+  ...
+# Subtest: claude: a tool_result with empty content still emits a tool-result (empty output)
+ok 43 - claude: a tool_result with empty content still emits a tool-result (empty output)
+  ---
+  duration_ms: 0.064333
+  type: 'test'
+  ...
+# Subtest: claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])
+ok 44 - claude: a user message with no tool_result blocks yields no tool-result (byte-identical -> [])
+  ---
+  duration_ms: 0.119708
+  type: 'test'
+  ...
+# Subtest: codex: a completed command_execution with output emits both a tool-call and a tool-result
+ok 45 - codex: a completed command_execution with output emits both a tool-call and a tool-result
+  ---
+  duration_ms: 0.075833
+  type: 'test'
+  ...
+# Subtest: codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)
+ok 46 - codex: a completed command_execution WITHOUT output emits only the tool-call (byte-identical, k2)
+  ---
+  duration_ms: 0.055542
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)
+ok 47 - deriveChatTitle: concatenates the assistant text of the one-shot (no resume passed)
+  ---
+  duration_ms: 0.221416
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)
+ok 48 - deriveChatTitle: a hung provider is cancel()led at the timeout -> undefined (does not stall)
+  ---
+  duration_ms: 40.177917
+  type: 'test'
+  ...
+# Subtest: deriveChatTitle: an error event -> undefined; an unknown provider -> undefined
+ok 49 - deriveChatTitle: an error event -> undefined; an unknown provider -> undefined
+  ---
+  duration_ms: 0.176542
+  type: 'test'
+  ...
+# Subtest: S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)
+ok 50 - S004 t3: the fake spawner records write() calls on the spawned proc (decision-relay seam)
+  ---
+  duration_ms: 0.066792
+  type: 'test'
+  ...
+# Subtest: S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)
+ok 51 - S004 t3: a SpawnedProcess that omits write() still runs a turn unchanged (optional, k2)
+  ---
+  duration_ms: 0.179208
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)
+ok 52 - S001 (bugfix): claude buildArgs — the merged mode maps to the right flags (manual/edit-auto/auto)
+  ---
+  duration_ms: 0.417917
+  type: 'test'
+  ...
+# Subtest: S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox
+ok 53 - S004 t4: codex buildArgs — undefined/review keep today argv; auto adds --dangerously-bypass-approvals-and-sandbox
+  ---
+  duration_ms: 0.169541
+  type: 'test'
+  ...
+# Subtest: vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok) carrying the sessionId
+ok 54 - vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok) carrying the sessionId
+  ---
+  duration_ms: 0.260375
+  type: 'test'
+  ...
+# Subtest: vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command
+ok 55 - vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command
+  ---
+  duration_ms: 0.1545
+  type: 'test'
+  ...
+# Subtest: vibe: argv — resume, --add-dir, and the permission-mode flags
+ok 56 - vibe: argv — resume, --add-dir, and the permission-mode flags
+  ---
+  duration_ms: 0.26925
+  type: 'test'
+  ...
+# Subtest: ProviderRegistry.available lists vibe alongside claude/codex when installed
+ok 57 - ProviderRegistry.available lists vibe alongside claude/codex when installed
+  ---
+  duration_ms: 0.031083
+  type: 'test'
+  ...
+# Subtest: S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)
+ok 58 - S004 t5: a claude permission line maps to exactly one ApprovalRequestEvent (normalized via aliases)
+  ---
+  duration_ms: 0.09525
+  type: 'test'
+  ...
+# Subtest: S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent
+ok 59 - S004 t5: a codex approval item maps to exactly one ApprovalRequestEvent
+  ---
+  duration_ms: 0.143416
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)
+ok 60 - S001 (bugfix): claude system/permission_denied surfaces as an approval card (the REAL CLI envelope)
+  ---
+  duration_ms: 0.113208
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)
+ok 61 - S001 (bugfix): claude buildArgs pre-allows the approved tool on the grant re-run (--allowedTools)
+  ---
+  duration_ms: 0.083708
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)
+ok 62 - S001 (bugfix): permission_denied with a top-level command sets event.command (title/detail/toolName unchanged)
+  ---
+  duration_ms: 0.088542
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied with a nested input.command sets event.command
+ok 63 - S001 (bugfix): permission_denied with a nested input.command sets event.command
+  ---
+  duration_ms: 0.065834
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): a top-level command takes precedence over input.command
+ok 64 - S001 (bugfix): a top-level command takes precedence over input.command
+  ---
+  duration_ms: 0.06075
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)
+ok 65 - S001 (bugfix): permission_denied WITHOUT a command omits it (byte-identical to today, k2)
+  ---
+  duration_ms: 0.071333
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)
+ok 66 - S001 (bugfix): an EMPTY-string command is treated as absent (top-level and nested)
+  ---
+  duration_ms: 0.093
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block
+ok 67 - S001 (bugfix): classifyPermissionDenial marks the sandbox working-directory phrasing as dir-block
+  ---
+  duration_ms: 0.081625
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)
+ok 68 - S001 (bugfix): classifyPermissionDenial defaults everything else to tool-gate (safe default)
+  ---
+  duration_ms: 0.027167
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block
+ok 69 - S001 (bugfix): realistic tool-gate messages are NOT false-positived as dir-block
+  ---
+  duration_ms: 0.036375
+  type: 'test'
+  ...
+# Subtest: S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)
+ok 70 - S001 (bugfix): claude buildArgs adds only --allowedTools, never --add-dir, on a grant with no readDirs (no sandbox widening on a click)
+  ---
+  duration_ms: 0.132792
+  type: 'test'
+  ...
+# Subtest: S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])
+ok 71 - S004 t5: an idless permission line yields no approval-request (normalizer -> null -> [])
+  ---
+  duration_ms: 0.064875
+  type: 'test'
+  ...
+# Subtest: S004 t5: an unparseable line is skipped+logged, never thrown (as today)
+ok 72 - S004 t5: an unparseable line is skipped+logged, never thrown (as today)
+  ---
+  duration_ms: 0.083708
+  type: 'test'
+  ...
+# Subtest: S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)
+ok 73 - S004 t5: decide() writes the correct control response for a live requestId; stale/unknown -> no-op (<=1 write per id)
+  ---
+  duration_ms: 0.212625
+  type: 'test'
+  ...
+# Subtest: S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)
+ok 74 - S004 t5: pending entries are auto-cleaned on cancel() -> a later decide() writes nothing (no dangling card)
+  ---
+  duration_ms: 0.086458
+  type: 'test'
+  ...
+# Subtest: S004 t5: decide() on an unknown turn is a safe no-op (never throws)
+ok 75 - S004 t5: decide() on an unknown turn is a safe no-op (never throws)
+  ---
+  duration_ms: 0.034792
+  type: 'test'
+  ...
+# Subtest: claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta
+ok 76 - claude: a valid insrc:select marker -> a selection-request event + the raw marker stripped from the delta
+  ---
+  duration_ms: 0.29675
+  type: 'test'
+  ...
+# Subtest: claude: a marker-only text block emits the selection-request with NO empty assistant-delta
+ok 77 - claude: a marker-only text block emits the selection-request with NO empty assistant-delta
+  ---
+  duration_ms: 0.077125
+  type: 'test'
+  ...
+# Subtest: claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw
+ok 78 - claude: a malformed insrc:select marker -> NO event, the raw text stays an assistant-delta, no throw
+  ---
+  duration_ms: 0.095708
+  type: 'test'
+  ...
+# Subtest: claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)
+ok 79 - claude: a marker SPLIT across two assistant lines emits ONLY on the closing fence (half-marker never emits/leaks)
+  ---
+  duration_ms: 0.750042
+  type: 'test'
+  ...
+# Subtest: claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)
+ok 80 - claude: a line with no marker behaves exactly as today (assistant-delta unchanged, no selection-request)
+  ---
+  duration_ms: 0.197625
+  type: 'test'
+  ...
+# Subtest: codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped
+ok 81 - codex: a valid insrc:select marker -> a selection-request event + the raw marker stripped
+  ---
+  duration_ms: 0.115667
+  type: 'test'
+  ...
+# Subtest: codex: a malformed marker -> NO event, the raw text stays a delta, no throw
+ok 82 - codex: a malformed marker -> NO event, the raw text stays a delta, no throw
+  ---
+  duration_ms: 0.100833
+  type: 'test'
+  ...
+# Subtest: codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence
+ok 83 - codex: a marker SPLIT across two delta chunks emits ONLY on the closing fence
+  ---
+  duration_ms: 0.092625
+  type: 'test'
+  ...
+# Subtest: codex: a no-marker delta behaves exactly as today
+ok 84 - codex: a no-marker delta behaves exactly as today
+  ---
+  duration_ms: 0.068458
+  type: 'test'
+  ...
+# Subtest: claude: tool-call and its tool-result carry the tool_use id as callId
+ok 85 - claude: tool-call and its tool-result carry the tool_use id as callId
+  ---
+  duration_ms: 0.078416
+  type: 'test'
+  ...
+# Subtest: codex: a command item with an id carries it as callId on both events; an id-less item omits it
+ok 86 - codex: a command item with an id carries it as callId on both events; an id-less item omits it
+  ---
+  duration_ms: 0.103959
+  type: 'test'
+  ...
+# Subtest: the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line
+ok 87 - the real spawner appends the CLI's stdout to the session file inside its turn segment and stderr to the err log, and lines() yields every line including those written after the result line
+  ---
+  duration_ms: 220.343375
+  type: 'test'
+  ...
+# Subtest: marker lines reaching a mapper produce no events
+ok 88 - marker lines reaching a mapper produce no events
+  ---
+  duration_ms: 0.482083
+  type: 'test'
+  ...
+# Subtest: run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits
+ok 89 - run() yields the same events from the output file as from a pipe, reports progress offsets, and writes the turn-end marker after the process exits
+  ---
+  duration_ms: 327.975542
+  type: 'test'
+  ...
+# Subtest: a beginTurn failure falls back to the pipe with one logged error
+ok 90 - a beginTurn failure falls back to the pipe with one logged error
+  ---
+  duration_ms: 0.877875
+  type: 'test'
+  ...
+# Subtest: resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one
+ok 91 - resume() from a saved offset yields only the later events, ends at the terminal event, and ends with an error when the process is gone without one
+  ---
+  duration_ms: 30.882208
+  type: 'test'
+  ...
+# Subtest: resume()'s handed-over process stops the recorded pid's group only while its start time matches
+ok 92 - resume()'s handed-over process stops the recorded pid's group only while its start time matches
+  ---
+  duration_ms: 8.399667
+  type: 'test'
+  ...
+# Subtest: 65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verbatim, after the end-of-options marker
+ok 93 - 65cb63f7: a prompt starting with "-" or "--" reaches claude and codex verbatim, after the end-of-options marker
+  ---
+  duration_ms: 1.388
+  type: 'test'
+  ...
+# Subtest: claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'
+ok 94 - claude permission_denied emits resolution 'turn-ended'; control-protocol and codex approval requests emit resolution 'in-turn'
+  ---
+  duration_ms: 0.334792
+  type: 'test'
+  ...
+# Subtest: claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today
+ok 95 - claude argv: readDirs adds --add-dir with each directory before the permission flags and the prompt stays last after --; without readDirs the argv is byte-identical to today
+  ---
+  duration_ms: 0.90175
+  type: 'test'
+  ...
+# Subtest: codex argv is unchanged by readDirs
+ok 96 - codex argv is unchanged by readDirs
+  ---
+  duration_ms: 1.165792
+  type: 'test'
+  ...
+# Subtest: codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere
+ok 97 - codex is started with no input stream and claude keeps its input open; a decision for codex is reported as undeliverable and written nowhere
+  ---
+  duration_ms: 0.679709
+  type: 'test'
+  ...
+# Subtest: the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits
+ok 98 - the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits
+  ---
+  duration_ms: 317.166875
+  type: 'test'
+  ...
+# Subtest: claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither
+ok 99 - claude adapter: the result of an Edit or Write call carries editPath, and isError when the block reports an error; a command's result carries neither
+  ---
+  duration_ms: 1.277875
+  type: 'test'
+  ...
+# Subtest: codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied
+ok 100 - codex adapter: a file_change item emits one applied file-edit event per changed file, one for a bare path, and '(unknown)' when it names none; a claude edit's event has no applied
+  ---
+  duration_ms: 2.578125
+  type: 'test'
+  ...
+# Subtest: a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message
+ok 101 - a claude result with is_error carries its text on done ok:false, a codex error result does too, and a successful result has no message
+  ---
+  duration_ms: 9.891708
+  type: 'test'
+  ...
+# Subtest: run config: claude gets --model/--effort; codex -m/-c model_reasoning_effort=; vibe pins via env (no effort flag)
+ok 102 - run config: claude gets --model/--effort; codex -m/-c model_reasoning_effort=; vibe pins via env (no effort flag)
+  ---
+  duration_ms: 0.565167
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t2: resume() marks an output-read failure as observationFailure, not a real terminal
+ok 103 - E202611031bd72813:S001 t2: resume() marks an output-read failure as observationFailure, not a real terminal
+  ---
+  duration_ms: 0.447292
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t5: resume() on a segment that rolled away (SegmentGone) reports an observationFailure, not a terminal, and the turn stays recoverable
+ok 104 - E202611031bd72813:S001 t5: resume() on a segment that rolled away (SegmentGone) reports an observationFailure, not a terminal, and the turn stays recoverable
+  ---
+  duration_ms: 3.016792
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t6: decide() reports delivery — {delivered:true} on a successful write (consumed once), {delivered:false} on a failed write WITHOUT consuming (a retry can still deliver); registerPending re-registers a restored request
+ok 105 - E202611031bd72813:S001 t6: decide() reports delivery — {delivered:true} on a successful write (consumed once), {delivered:false} on a failed write WITHOUT consuming (a retry can still deliver); registerPending re-registers a restored request
+  ---
+  duration_ms: 0.505959
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (false return) is still delivered; only a destroyed/ended stdin is not
+ok 106 - E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (false return) is still delivered; only a destroyed/ended stdin is not
+  ---
+  duration_ms: 0.084334
+  type: 'test'
+  ...
+# Subtest: vibe: explicit programmatic prompt preserves multiline option-like text in new and resumed turns
+ok 107 - vibe: explicit programmatic prompt preserves multiline option-like text in new and resumed turns
+  ---
+  duration_ms: 0.277166
+  type: 'test'
+  ...
+# Subtest: vibe: title generation uses the same explicit programmatic prompt transport
+ok 108 - vibe: title generation uses the same explicit programmatic prompt transport
+  ---
+  duration_ms: 0.32875
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: local/cloud targets and aliases use the daemon-configured host and canonical model
+ok 109 - ollama-routing.test.ts: local/cloud targets and aliases use the daemon-configured host and canonical model
+  ---
+  duration_ms: 1.189
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: vendor/default and non-Claude calls do not read Ollama configuration
+ok 110 - ollama-routing.test.ts: vendor/default and non-Claude calls do not read Ollama configuration
+  ---
+  duration_ms: 0.08375
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: unknown/rejected/ambiguous targets and invalid hosts fail closed
+ok 111 - ollama-routing.test.ts: unknown/rejected/ambiguous targets and invalid hosts fail closed
+  ---
+  duration_ms: 0.4375
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: shared Claude environment removes vendor routing without mutating its input
+ok 112 - ollama-routing.test.ts: shared Claude environment removes vendor routing without mutating its input
+  ---
+  duration_ms: 0.070292
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: initial/resumed/follow-up/title launches are Ollama-routed; vendor launches still inherit
+ok 113 - ollama-routing.test.ts: initial/resumed/follow-up/title launches are Ollama-routed; vendor launches still inherit
+  ---
+  duration_ms: 1.985708
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: failed definitions/configuration lookup produces an error and no child
+ok 114 - ollama-routing.test.ts: failed definitions/configuration lookup produces an error and no child
+  ---
+  duration_ms: 0.229292
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: cancelled continuation and expired title cannot spawn after routing resolves
+ok 115 - ollama-routing.test.ts: cancelled continuation and expired title cannot spawn after routing resolves
+  ---
+  duration_ms: 32.425625
+  type: 'test'
+  ...
+# Subtest: ollama-routing.test.ts: Stop during routing IPC prevents a normal lifecycle turn from spawning
+ok 116 - ollama-routing.test.ts: Stop during routing IPC prevents a normal lifecycle turn from spawning
+  ---
+  duration_ms: 1.748334
+  type: 'test'
+  ...
+# Subtest: start waits for the session lease, reports waiting, runs, and releases the lease when the process exits
+ok 117 - start waits for the session lease, reports waiting, runs, and releases the lease when the process exits
+  ---
+  duration_ms: 34.311
+  type: 'test'
+  ...
+# Subtest: a start made while another waits for its lease runs after it instead of dropping it
+ok 118 - a start made while another waits for its lease runs after it instead of dropping it
+  ---
+  duration_ms: 17.951291
+  type: 'test'
+  ...
+# Subtest: a turn being read when another start is made keeps reporting to its end and clears its cursor
+ok 119 - a turn being read when another start is made keeps reporting to its end and clears its cursor
+  ---
+  duration_ms: 17.728833
+  type: 'test'
+  ...
+# Subtest: a lease granted after the turn stopped being current is released
+ok 120 - a lease granted after the turn stopped being current is released
+  ---
+  duration_ms: 12.500875
+  type: 'test'
+  ...
+# Subtest: a lock failure and a missing adapter are reported through onError
+ok 121 - a lock failure and a missing adapter are reported through onError
+  ---
+  duration_ms: 0.396459
+  type: 'test'
+  ...
+# Subtest: a beforeRun failure is reported, the session saved and the lease released
+ok 122 - a beforeRun failure is reported, the session saved and the lease released
+  ---
+  duration_ms: 17.459917
+  type: 'test'
+  ...
+# Subtest: the cursor is saved on spawn, throttled on progress and cleared before onTerminal
+ok 123 - the cursor is saved on spawn, throttled on progress and cleared before onTerminal
+  ---
+  duration_ms: 538.837333
+  type: 'test'
+  ...
+# Subtest: invalidate and a closed panel suppress all sink calls; live names the turn being read
+ok 124 - invalidate and a closed panel suppress all sink calls; live names the turn being read
+  ---
+  duration_ms: 33.658625
+  type: 'test'
+  ...
+# Subtest: a panel closed while a turn is read is told nothing more
+ok 125 - a panel closed while a turn is read is told nothing more
+  ---
+  duration_ms: 6.439375
+  type: 'test'
+  ...
+# Subtest: stop cancels the provider turn and stops the live process; idempotent with nothing running
+ok 126 - stop cancels the provider turn and stops the live process; idempotent with nothing running
+  ---
+  duration_ms: 13.128583
+  type: 'test'
+  ...
+# Subtest: stop and detach drop a turn waiting for its lease
+ok 127 - stop and detach drop a turn waiting for its lease
+  ---
+  duration_ms: 138.57
+  type: 'test'
+  ...
+# Subtest: detach leaves a session-file turn running with its cursor saved and stops a pipe turn
+ok 128 - detach leaves a session-file turn running with its cursor saved and stops a pipe turn
+  ---
+  duration_ms: 27.757292
+  type: 'test'
+  ...
+# Subtest: stop continues past a failing cancel or process stop
+ok 129 - stop continues past a failing cancel or process stop
+  ---
+  duration_ms: 11.108125
+  type: 'test'
+  ...
+# Subtest: follow skips a running turn, a turn already followed and a turn owned by a live host
+ok 130 - follow skips a running turn, a turn already followed and a turn owned by a live host
+  ---
+  duration_ms: 39.716625
+  type: 'test'
+  ...
+# Subtest: follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd
+ok 131 - follow takes ownership from a dead host, reports every event, clears the cursor and calls onEnd
+  ---
+  duration_ms: 5.966709
+  type: 'test'
+  ...
+# Subtest: a failing resume keeps the cursor saved
+ok 132 - a failing resume keeps the cursor saved
+  ---
+  duration_ms: 11.632792
+  type: 'test'
+  ...
+# Subtest: stop ends a followed turn's process; detach leaves it running
+ok 133 - stop ends a followed turn's process; detach leaves it running
+  ---
+  duration_ms: 24.14075
+  type: 'test'
+  ...
+# Subtest: a detached session-file turn is resumed by follow
+ok 134 - a detached session-file turn is resumed by follow
+  ---
+  duration_ms: 18.369166
+  type: 'test'
+  ...
+# Subtest: trySaveSession logs a failing save and never throws
+ok 135 - trySaveSession logs a failing save and never throws
+  ---
+  duration_ms: 0.584792
+  type: 'test'
+  ...
+# Subtest: a generator whose cleanup throws when the turn finishes it is not an unhandled rejection
+ok 136 - a generator whose cleanup throws when the turn finishes it is not an unhandled rejection
+  ---
+  duration_ms: 21.573917
+  type: 'test'
+  ...
+# Subtest: a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI
+ok 137 - a start made while beforeRun runs waits for that turn; a turn stopped while beforeRun runs starts no CLI
+  ---
+  duration_ms: 51.622125
+  type: 'test'
+  ...
+# Subtest: a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start
+ok 138 - a turn's end with another start waiting saves its cleared cursor and keeps its native session; Stop drops the waiting start
+  ---
+  duration_ms: 11.7295
+  type: 'test'
+  ...
+# Subtest: a throwing onTerminal is logged, still finishes the generator and is not a turn error
+ok 139 - a throwing onTerminal is logged, still finishes the generator and is not a turn error
+  ---
+  duration_ms: 11.356333
+  type: 'test'
+  ...
+# Subtest: an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it
+ok 140 - an aborted follow unwinding late does not drop the next follow's process, so Stop still ends it
+  ---
+  duration_ms: 11.587667
+  type: 'test'
+  ...
+# Subtest: a throwing onEvent is reported and the turn's generator is finished
+ok 141 - a throwing onEvent is reported and the turn's generator is finished
+  ---
+  duration_ms: 11.686292
+  type: 'test'
+  ...
+# Subtest: a failing onError report is logged and start never rejects
+ok 142 - a failing onError report is logged and start never rejects
+  ---
+  duration_ms: 0.938042
+  type: 'test'
+  ...
+# Subtest: a failing follow onEvent is logged and the follow still ends the turn
+ok 143 - a failing follow onEvent is logged and the follow still ends the turn
+  ---
+  duration_ms: 5.797084
+  type: 'test'
+  ...
+# Subtest: a turn whose output ends without a done or error event ends as an error
+ok 144 - a turn whose output ends without a done or error event ends as an error
+  ---
+  duration_ms: 29.80275
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true
+ok 145 - turn lifecycle: busy is true while a started turn waits, sets up or is read and while a follow is read; false after the terminal event is handed over, after a follow ends, after stop and detach, and when follow returns without following; a chained turn keeps it true
+  ---
+  duration_ms: 157.769625
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called
+ok 146 - turn lifecycle: a follow whose resume fails calls its end callback exactly once, and busy is false when it is called
+  ---
+  duration_ms: 87.253917
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: busy is false when a turn's error is reported
+ok 147 - turn lifecycle: busy is false when a turn's error is reported
+  ---
+  duration_ms: 1.293417
+  type: 'test'
+  ...
+# Subtest: turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach
+ok 148 - turn lifecycle: a second start runs after the first ends instead of superseding it, and a start waiting in that chain is dropped by Stop and by detach and never spawns; onSpawn reports the CLI with an exit promise for a live and a followed turn, also after detach
+  ---
+  duration_ms: 133.909042
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t2: an output-read failure ends the follow as observation-failed and keeps the cursor
+ok 149 - E202611031bd72813:S001 t2: an output-read failure ends the follow as observation-failed and keeps the cursor
+  ---
+  duration_ms: 5.653875
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t5: starting a new turn clears the observer checkpoint (it is turn-scoped)
+ok 150 - E202611031bd72813:S001 t5: starting a new turn clears the observer checkpoint (it is turn-scoped)
+  ---
+  duration_ms: 6.504583
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t5: detach orphans the saved turn (ownerHostPid 0) so the background observer reconciles it
+ok 151 - E202611031bd72813:S001 t5: detach orphans the saved turn (ownerHostPid 0) so the background observer reconciles it
+  ---
+  duration_ms: 6.402375
+  type: 'test'
+  ...
+# Subtest: E202611031bd72813:S001 t5: follow() restores the follow cursor's OWN decoder state into the resume and saves it back as it advances (reattach between marker fragments loses nothing)
+ok 152 - E202611031bd72813:S001 t5: follow() restores the follow cursor's OWN decoder state into the resume and saves it back as it advances (reattach between marker fragments loses nothing)
+  ---
+  duration_ms: 11.431667
+  type: 'test'
+  ...
+1..152
+# tests 152
+# suites 0
+# pass 152
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10264.317375

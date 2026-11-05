@@ -1,0 +1,18 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "1030f5889f8ec287",
+    "storyId": "S001",
+    "createdAt": "2026-11-05T12:45:25.581Z",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue → build; localized existing Vibe mapper correction without new IPC or schema.",
+    "epicCreatedAt": "2026-11-05T12:45:25.581Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-910fce32967bc4ea: correct Vibe programmatic prompt delivery for initial/resumed chat and title generation, preserving streaming, permissions, attachments and model environment; cover multiline and option-like prompts, verify real installed CLI contract without live inference and check backend stdin compatibility.",
+    "producesLld": false,
+    "commit": "baa567c77"
+  }
+}

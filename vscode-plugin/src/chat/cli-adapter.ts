@@ -26,7 +26,7 @@
  *             {type:'rate_limit_event'|...}             — ignored noise
  *   codex:  `codex exec --json <prompt>` (+ `codex exec resume <id> --json`).
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
- *   vibe:   `vibe -p --output streaming -- <prompt>` (+ `--resume <session_id>`).
+ *   vibe:   `vibe --prompt=<prompt> --output streaming` (+ `--resume <session_id>`).
  *           Emits one JSON session-entry object per line (the same entries the
  *           `--output json` array holds at the end): {type:'message', role,
  *           sessionId, content:[{type:'text'|'tool_call', ...}]}, plus
@@ -976,13 +976,13 @@ const vibeMapper: ProviderMapper = {
   id: 'vibe',
   // `vibe -p --resume <session_id>` continues a saved session in headless mode.
   resume: true,
-  // Like codex, vibe reads stdin as prompt text until EOF, so the turn starts with
-  // its input closed and the prompt passed as the positional after `--` (which
-  // also keeps a prompt starting with '-' out of the option parser). Consequence:
+  // Vibe's bare -p reads stdin, not the positional initial prompt. Bind the
+  // programmatic prompt explicitly with '=' so multiline and leading '-' text
+  // remain one literal value. Stdin closes immediately. Consequence:
   // no stdin decision relay — headless vibe denies any approval nobody answers.
   inputIsPrompt: true,
   buildArgs(req: TurnRequest): string[] {
-    const args = ['-p', '--output', 'streaming'];
+    const args = [`--prompt=${req.prompt}`, '--output', 'streaming'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
     // Attachments: vibe takes extra readable dirs as repeatable `--add-dir`.
     if (req.readDirs && req.readDirs.length > 0) for (const d of req.readDirs) args.push('--add-dir', d);
@@ -997,7 +997,6 @@ const vibeMapper: ProviderMapper = {
     // Run config: vibe has no --model/--effort flags — the model is pinned via
     // VIBE_ACTIVE_MODEL in envFor(); effort is not forwardable (the model's own
     // `thinking` setting in the user's vibe config applies).
-    args.push('--', req.prompt);
     return args;
   },
   envFor(req: TurnRequest): NodeJS.ProcessEnv | undefined {

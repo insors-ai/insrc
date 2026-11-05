@@ -1,11 +1,11 @@
 {
   "meta": {
     "workflow": "code-review",
-    "runId": "cr-1793874333087-ue88aq",
+    "runId": "cr-1793877533182-qkjusu",
     "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-05T10:25:32.085Z",
+    "createdAt": "2026-11-05T11:18:52.232Z",
     "model": "codex:gpt-6.1-sol",
-    "elapsedMs": 56913,
+    "elapsedMs": 62132,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "45e743550d9596c3",
@@ -17,11 +17,11 @@
       "epicHash": "45e743550d9596c3",
       "storyId": "S001",
       "author": "controller",
-      "sourceDigest": "2a294927fd6e9d52b7d9f0a82f7381d019c3271a970eb6a6fab2d97f1d61353a",
+      "sourceDigest": "66a8178cd5d4480d4705a58377b5c8c833e62e16143d8a8d4a7cf7028a719a5b",
       "contractDigest": "94bca157d055c25f71f8fee743108fd0ad536a07424d7b2877d1e271f640153b",
-      "buildDigest": "3d42d86c2aeafb440cb60d2340f8b0dce5008de62b2a6beefc8b573a7737b5c4",
+      "buildDigest": "5216f97655a99332fab093de748df7d7b61262e10665929772390a25dcab1cf5",
       "testsDigest": "8df1546e011e09221a1d2226fc91ab1890e22a3c101feeb420c81bd2585cae16",
-      "digest": "3f22cb48a49155e6c8c145b34d830b6474191bb25b2f7401a75f2b1d0d460143"
+      "digest": "452ec25f18011bad0f075225d3504f245aa274c3636382133dc996f39be24eea"
     },
     "reviewInputSchemaVersion": 1,
     "epicCreatedAt": "2026-11-05T10:08:40.649Z",
@@ -63,9 +63,9 @@
         "findings": [
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching claudeReviewSessionArgs are present but failing/unverified: cli-review-session.test.ts is absent from the test record, so passing coverage cannot be confirmed.",
+            "message": "claudeReviewSessionArgs coverage is present but failing/unverified: cli-review-session.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "claudeReviewSessionArgs",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -73,9 +73,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching codexReviewSessionArgs are present but failing/unverified: cli-review-session.test.ts is absent from the test record, so passing coverage cannot be confirmed.",
+            "message": "codexReviewSessionArgs coverage is present but failing/unverified: cli-review-session.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "codexReviewSessionArgs",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -83,9 +83,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching complete are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "message": "complete coverage is present but failing/unverified: none of its reaching test files appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "CliProvider.complete",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -93,9 +93,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching completeStructured are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "message": "completeStructured coverage is present but failing/unverified: none of its reaching test files appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "CliProvider.completeStructured",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -103,9 +103,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching runEditSession are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "message": "runEditSession coverage is present but failing/unverified: none of its reaching test files appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "CliProvider.runEditSession",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -113,9 +113,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching runReviewSession are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "message": "runReviewSession coverage is present but failing/unverified: none of its reaching test files appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "CliProvider.runReviewSession",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -123,9 +123,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching embed are present but failing/unverified: cli-provider.live.test.ts is absent from the test record.",
+            "message": "embed coverage is present but failing/unverified: cli-provider.live.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "CliProvider.embed",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -133,9 +133,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching vibeLastAssistantText are present but failing/unverified: cli-vibe.test.ts is absent from the test record.",
+            "message": "vibeLastAssistantText coverage is present but failing/unverified: cli-vibe.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "vibeLastAssistantText",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -143,9 +143,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching isTransientCliError are present but failing/unverified: none of its reaching test files appears in the test record.",
+            "message": "isTransientCliError coverage is present but failing/unverified: none of its reaching test files appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "isTransientCliError",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -153,9 +153,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching classifyInputTooLarge are present but failing/unverified: input-too-large.test.ts is absent from the test record.",
+            "message": "classifyInputTooLarge coverage is present but failing/unverified: input-too-large.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "classifyInputTooLarge",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -163,9 +163,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching transienceText are present but failing/unverified: cli-failure-message.test.ts is absent from the test record.",
+            "message": "transienceText coverage is present but failing/unverified: cli-failure-message.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "transienceText",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -173,9 +173,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching cliExitError are present but failing/unverified: neither reaching test file appears in the test record.",
+            "message": "cliExitError coverage is present but failing/unverified: neither reaching test file appears in the test record. Passing coverage cannot be confirmed.",
             "expectationRef": "cliExitError",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -183,9 +183,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "src/agent/providers/cli-provider.ts:1",
-            "message": "Tests reaching cliFailureMessage are present but failing/unverified: cli-failure-message.test.ts is absent from the test record.",
+            "message": "cliFailureMessage coverage is present but failing/unverified: cli-failure-message.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "cliFailureMessage",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -193,9 +193,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
-            "message": "Tests reaching classifyPermissionDenial are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "message": "classifyPermissionDenial coverage is present but failing/unverified: cli-adapter.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "classifyPermissionDenial",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -203,9 +203,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
-            "message": "Tests reaching writeReachedStdin are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "message": "writeReachedStdin coverage is present but failing/unverified: cli-adapter.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "writeReachedStdin",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -213,9 +213,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
-            "message": "Tests reaching nodeSpawner are present but failing/unverified: cli-adapter.test.ts is absent from the test record.",
+            "message": "nodeSpawner coverage is present but failing/unverified: cli-adapter.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "nodeSpawner",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -223,9 +223,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
-            "message": "Tests reaching defaultBinaryProbe are present but failing/unverified: live-cli.test.ts is absent from the test record.",
+            "message": "defaultBinaryProbe coverage is present but failing/unverified: live-cli.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "defaultBinaryProbe",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -233,9 +233,9 @@
           },
           {
             "dimension": "coverage",
-            "severity": "LOW",
+            "severity": "MED",
             "location": "vscode-plugin/src/chat/turn-lifecycle.ts:1",
-            "message": "Tests reaching trySaveSession are present but failing/unverified: turn-lifecycle.test.ts is absent from the test record.",
+            "message": "trySaveSession coverage is present but failing/unverified: turn-lifecycle.test.ts is absent from the test record, so its pass-state is unverified.",
             "expectationRef": "trySaveSession",
             "confidence": "observation",
             "findingKind": "symbol-coverage",
@@ -248,11 +248,11 @@
         "findings": []
       }
     ],
-    "verdict": "pass",
+    "verdict": "warn",
     "counts": {
       "high": 0,
-      "med": 0,
-      "low": 18
+      "med": 18,
+      "low": 0
     }
   }
 }

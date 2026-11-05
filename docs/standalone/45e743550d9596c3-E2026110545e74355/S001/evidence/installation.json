@@ -6,5 +6,9 @@
   "sha256": "7b321ee74ad9414ce95cadaab8b898b8d63806050cc5338e28548583f41f8600",
   "installedBundleMatchesVsix": true,
   "windowReloadRequired": true,
-  "liveInferenceVerified": false
+  "liveInferenceVerified": false,
+  "userLiveValidation": {
+    "result": "pass",
+    "evidence": "User confirmed in chat: tested, it works now."
+  }
 }

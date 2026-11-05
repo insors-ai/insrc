@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-05T10:08:40.649Z  ·  **Updated:** 2026-11-05T10:23:23.356Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-05T10:08:40.649Z  ·  **Updated:** 2026-11-05T11:18:12.723Z
 
-**Commit:** 5cac99fe7
+**Commit:** 395d4230b
 
 ## Scope
 
@@ -33,7 +33,6 @@ Extension-only fix: resolve Claude chat models through served definitions and co
 - `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/backend-tests.tap` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/backend-typecheck.txt` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/chat-tests.tap` — **insrc-build** (2026-11-05T10:23:23.356Z)
-- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/checks.json` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/plugin-typecheck.txt` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `docs/standalone/route-vs-code-claude-chat-requests-E20261105ee9a582d/ISSUE.md` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `src/agent/providers/cli-provider.ts` — **insrc-build** (2026-11-05T10:23:23.356Z)
@@ -44,3 +43,9 @@ Extension-only fix: resolve Claude chat models through served definitions and co
 - `vscode-plugin/src/chat/ollama-routing.ts` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `vscode-plugin/src/chat/turn-lifecycle.ts` — **insrc-build** (2026-11-05T10:23:23.356Z)
 - `vscode-plugin/src/extension.ts` — **insrc-build** (2026-11-05T10:23:23.356Z)
+- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/checks.json` — **insrc-build** (2026-11-05T11:18:12.723Z)
+- `.insrc/artifacts/CR-45e743550d9596c3-S001.json` — **insrc-build** (2026-11-05T11:18:12.723Z)
+- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/CR.md` — **insrc-build** (2026-11-05T11:18:12.723Z)
+- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/REVIEW-NOTES.md` — **insrc-build** (2026-11-05T11:18:12.723Z)
+- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/installation.json` — **insrc-build** (2026-11-05T11:18:12.723Z)
+- `docs/standalone/45e743550d9596c3-E2026110545e74355/S001/evidence/narrowed-tests.tap` — **insrc-build** (2026-11-05T11:18:12.723Z)

@@ -24,7 +24,7 @@ import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, t
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
 import { classifyPermissionDenial, type ProviderRegistry, type ProviderId, type StreamAdapter } from './cli-adapter.js';
-import { type QueuedApproval,  createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
+import { type QueuedApproval,  createApprovalQueue, type ApprovalResolution, type ApprovalDecision } from './approval-queue.js';
 import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
@@ -1200,6 +1200,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
     const snap = s.queueSnapshot;
     let snapWaiting: readonly QueuedApproval[] = [];
+    let snapBatches: { readonly turnId: string; readonly decisions: ApprovalDecision[] }[] = [];
     if (snap !== undefined && Array.isArray(snap.waiting)) {
       // revive every waiting request EXCEPT those with a persisted RESOLVED record — decisions
       // update pendingRequests, so an unfiltered restore could revive already-decided requests;
@@ -1208,14 +1209,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // must not suppress a same-id request from a LATER turn in the snapshot
       const resolvedRecs = (s.pendingRequests ?? []).filter((r) => r.resolved);
       snapWaiting = snap.waiting.filter((w) => !resolvedRecs.some((r) => r.requestId === w.requestId && (w.turnId === undefined || r.turnId === w.turnId)));
-      approvals.restore({ ...snap, waiting: snapWaiting });
+      // t6 round-trip: same resolved-record filtering (turn-scoped) for the snapshot's BATCHES —
+      // a batch whose decisions all have resolved persisted records was already delivered; leaving
+      // it in would restore it and let a later runCompletedBatch() re-run the follow-up after reload
+      snapBatches = Array.isArray(snap.batches)
+        ? snap.batches
+            .map((b) => ({ turnId: b.turnId, decisions: b.decisions.filter((d: ApprovalDecision) => !resolvedRecs.some((r) => r.requestId === d.request.requestId && (d.request.turnId === undefined || r.turnId === d.request.turnId))) }))
+            .filter((b) => b.decisions.length > 0)
+        : [];
+      approvals.restore({ ...snap, waiting: snapWaiting, batches: snapBatches });
+      s.queueSnapshot = approvals.snapshot(); // keep the persisted snapshot in sync with the filtered restore
+      trySave(s);
     }
     for (const r of s.pendingRequests ?? []) {
       if (r.resolved) continue;
       restored += 1;
       if (r.kind === 'approval') {
-        const decidedInBatch = snap !== undefined && Array.isArray(snap.batches) && snap.batches.some((b) => b.decisions.some((d: { readonly request: { readonly requestId: string } }) => d.request.requestId === r.requestId));
-        if (snap !== undefined && Array.isArray(snap.waiting) && (snap.waiting.some((w) => w.requestId === r.requestId) || decidedInBatch)) {
+        // turn-scoped like the filters above (MR1-R3): a same-id record/decision from ANOTHER turn
+        // must not count as "already rebuilt" for this turn's record
+        const decidedInBatch = snapBatches.some((b) => b.decisions.some((d) => d.request.requestId === r.requestId && (r.turnId === undefined || d.request.turnId === undefined || d.request.turnId === r.turnId)));
+        if (snapWaiting.some((w) => w.requestId === r.requestId && (r.turnId === undefined || w.turnId === undefined || w.turnId === r.turnId)) || decidedInBatch) {
           // already rebuilt from the snapshot — only re-register a followed turn's request with the adapter,
           // and end the turn of a non-in-turn one so its restored batch can complete on decision
           const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
@@ -1410,6 +1423,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const runCompletedBatch = (): void => {
     const batch = approvals.takeCompletedBatch();
     if (batch === undefined) return;
+    // t6 round-trip: the removal must be persisted too — the decision handler persists the
+    // snapshot BEFORE this call, so without this the stored queueSnapshot.batches would still
+    // hold the delivered batch and a reload could restore and re-run it
+    persistQueueSnapshot();
     const action = (r: { toolName?: string | undefined; command?: string | undefined }): string =>
       r.command !== undefined && r.command !== '' ? `run exactly this: ${r.command}` : `the ${r.toolName ?? 'tool'} action you requested permission for`;
     const approved = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'tool-gate').map((d) => d.request);

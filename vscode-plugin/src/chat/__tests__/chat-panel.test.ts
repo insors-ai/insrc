@@ -3524,6 +3524,43 @@ test('a turn followed after reload routes its approval-requests through the queu
   assert.deepEqual([...(followUps[0]!.allowedTools ?? [])], ['Edit', 'Write']);
 });
 
+test('E202611031bd72813:S001 t6 round-trip: a delivered batch is not restored after a reload — the removal is persisted and resolved decisions are filtered from restored batches, so the follow-up never re-runs', async () => {
+  const store = createInMemoryChatSessionStore();
+  const { adapter, runs } = sequenceAdapter([[
+    refused('r1', 'Edit'), { kind: 'done', turnId: 't1', ok: true, sessionId: 'sess-1' },
+  ]]);
+  const followUps = (): TurnRequest[] => runs.filter((r) => r.prompt.includes('Approved'));
+  const fc = fakeChannel();
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
+  host.open();
+  fc.send(env('submit-turn', { text: 'edit a file' }));
+  await waitFor(() => turnEvents(fc).some((e) => e.kind === 'done'), 5000);
+  const id = store.list()[0]!.id;
+  // before the decision the snapshot holds the waiting request + the open batch
+  assert.equal(store.get(id)?.queueSnapshot?.batches.length, 1, 'the turn-ended request opened its batch in the snapshot');
+  fc.send(env('permission-decision', { requestId: 'r1', decision: 'approve' }));
+  await waitFor(() => followUps().length === 1, 5000, 'the batch follow-up ran once');
+  await waitFor(() => (store.get(id)?.queueSnapshot?.batches ?? [{ turnId: 'x' }]).length === 0, 5000, 'the batch REMOVAL is persisted (not just the pre-removal snapshot)');
+  assert.equal(store.get(id)?.pendingRequests?.find((r) => r.requestId === 'r1')?.resolved, true);
+  host.dispose();
+  // reload: a new host over the same store re-enters the session
+  const fc2 = fakeChannel();
+  const host2 = createChatPanelHost({ createPanel: () => fc2.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
+  host2.open();
+  fc2.send(env('open-chat', { chatId: id }));
+  await waitFor(() => fc2.posted.some((m) => m.payload.type === 'session-restored'), 5000);
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(followUps().length, 1, 'no follow-up re-ran after the reload');
+  assert.equal((store.get(id)?.queueSnapshot?.batches ?? []).length, 0, 'the restored queue holds no decided batch');
+  // a later turn ending must not resurrect the old batch either
+  fc2.send(env('submit-turn', { text: 'again' }));
+  await waitFor(() => runs.length === 3, 5000, 'the post-reload turn ran');
+  await waitFor(() => turnEvents(fc2).some((e) => e.kind === 'done'), 5000);
+  await new Promise((r) => setTimeout(r, 150));
+  assert.equal(followUps().length, 1, 'the delivered batch did not re-run when the next turn ended');
+  host2.dispose();
+});
+
 test('Stop with requests queued records each as rejected and clears the queue', async () => {
   const fc = fakeChannel();
   const decided: string[] = [];

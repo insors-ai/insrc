@@ -30,7 +30,7 @@ test('reuse decisions: source task/attempt/party validation, acyclic ancestry an
   const retained=await reuseAssessment(review,task,f.deps.sources,refs);assert.deepEqual(retained.result,f.original['review-response'].tasks[2]);assert.equal(retained.result.status,'incomplete');assert.equal(retained.result.testCoverage.assessment,'unverified');assert.equal(retained.origin.sourceAttempt,1);
   retained.result.advice.push('Local copy only');assert.deepEqual(review.checkpoint.attempts[0],f.original,'source history cannot be mutated via the copy');
   for(const sourceAttempt of [0,2,99]){const bad=f.scope();bad.tasks[0]!.sourceAttempt=sourceAttempt;assert.throws(()=>reviewAssignments(review,bad));}
-  const missing=f.scope();delete missing.tasks[0]!.sourceAttempt;assert.throws(()=>reviewAssignments(review,missing),/earlier source/);
+  const missing=f.scope();delete missing.tasks[0]!.sourceAttempt;assert.throws(()=>reviewAssignments(review,missing),'reuse without a source fails the action-specific schema');
   const duplicate=f.scope();duplicate.tasks[1]!.taskId='t1';assert.throws(()=>reviewAssignments(review,duplicate));
   const foreign=f.scope();foreign.tasks[0]!.taskId='foreign';assert.throws(()=>reviewAssignments(review,foreign));
   const rewritten={...f.scope(),tasks:f.scope().tasks.map(task=>({...task,result:f.fresh(task.taskId)}))};assert.throws(()=>reviewAssignments(review,rewritten),'model cannot supply its own reused feedback');

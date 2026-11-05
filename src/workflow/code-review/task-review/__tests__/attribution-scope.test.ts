@@ -4,6 +4,7 @@ import { fixture,hash } from './publication-fixture.js';
 import { prepareReviewPacket } from '../packet.js';
 import { attributionPrompt,attributionSchema,AttributionSchema,ReassessmentSchema,reviewAssignments } from '../assessment.js';
 import { decodeReview } from '../contracts.js';
+import { codexStrictSchema,validateCodexReply } from '../../../../agent/providers/structured-schema.js';
 import type { TaskReviewResult } from '../contracts.js';
 import type { AdmittedReview } from '../execution.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
@@ -70,4 +71,30 @@ test('single-task re-review uses the same constrained attribution on daemon and 
   const frame=await c.controllerScope(f.repo,'scoped-controller',2,{summary:'Fresh assessment',tasks:[reassessment('t4')]},owner,{taskId:next.taskId,executionId:next.executionId,sequence:next.nextSequence});
   const done=await c.controllerResult(f.repo,'scoped-controller',2,result,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});assert.equal(done.status,'passed');assert.deepEqual(f.read(first.path).attempts[0],original);
  }finally{life.abort();f.cleanup();}
+});
+
+
+test('Codex strict reassessment rows permit fresh review without a source and require a source only for reuse',async()=>{
+ const f=await fiveTaskFixture();try{
+  const prepared=await prepareReviewPacket(f.packet,f.deps.sources),checkpoint=f.checkpoint('codex-actions'),entry=checkpoint.attempts[0]!;
+  entry.header.attempt=2;
+  const review:AdmittedReview={prepared,checkpoint,attempt:entry,path:'codex-actions'};
+  const schema=attributionSchema(review),original=JSON.stringify(schema),wire=codexStrictSchema(schema);
+  const fresh={summary:'Fresh reassessment',tasks:[reassessment('t4')]};
+  assert.equal(validateCodexReply(wire,fresh).ok,true);assert.equal(validateCodexReply(schema,fresh).ok,true);
+  assert.equal(reviewAssignments(review,fresh)[0]!.reassessment!.action,'reassess');
+  const reused={summary:'Reuse earlier assessment',tasks:[{...row('t4'),action:'reuse',reason:'Unchanged scope',sourceAttempt:1}]};
+  assert.equal(validateCodexReply(wire,reused).ok,true);assert.equal(validateCodexReply(schema,reused).ok,true);
+  for(const tasks of [
+   [{...reassessment('t4'),sourceAttempt:1}],
+   [{...reassessment('t4'),sourceAttempt:null}],
+   [{...row('t4'),action:'reuse',reason:'Missing source'}],
+   [{...row('t4'),action:'reuse',reason:'Invalid source',sourceAttempt:0}],
+   [reassessment('t3')],
+  ]){
+   const value={summary:'Rejected contradictory attribution',tasks};
+   assert.equal(validateCodexReply(wire,value).ok,false);assert.equal(validateCodexReply(schema,value).ok,false);
+  }
+  assert.equal(JSON.stringify(schema),original,'strict conversion leaves the host schema unchanged');
+ }finally{f.cleanup();}
 });

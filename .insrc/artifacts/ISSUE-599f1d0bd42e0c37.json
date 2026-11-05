@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e37f370d184876f804104ce25fb7940dad81d5fbd8fb2b4d6aff218c0f0da2ae",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T04:19:45.370Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "599f1d0bd42e0c37",
+      "slug": "EPIC-599f1d0bd42e0c37"
+    }
   },
   "body": {
     "title": "Reconcile later submitted fixes before reporting stale task-version defects",

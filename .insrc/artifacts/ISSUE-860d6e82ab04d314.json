@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dcbd2a686025581697d91111c34c1f49299d98e909f3028223774c515e2db6b6",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T04:20:08.657Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "860d6e82ab04d314",
+      "slug": "EPIC-860d6e82ab04d314"
+    }
   },
   "body": {
     "title": "Distinguish a demonstrated test coverage defect from an unfinished coverage review",

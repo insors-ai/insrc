@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2745722c5284aa6eab68c2bb91001231e555fa37b9eafe06188b03e387df8e26",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T04:20:01.311Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "2a3c21b73b79ef9c",
+      "slug": "EPIC-2a3c21b73b79ef9c"
+    }
   },
   "body": {
     "title": "Prevent repeated malformed native review submissions and preserve actionable failure diagnostics",

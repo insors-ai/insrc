@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "sized",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "19db04813062493b64320239edc0bbe51bf75033bba69111323ecfea79f5b222",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-05T04:20:05.105Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "81e68ebf54745c75",
+      "slug": "EPIC-81e68ebf54745c75"
+    }
   },
   "body": {
     "title": "Recover a rejected finding location without discarding the whole task assessment",

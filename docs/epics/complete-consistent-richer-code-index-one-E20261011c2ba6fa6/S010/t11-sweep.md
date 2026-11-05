@@ -87,3 +87,35 @@ Backend: `npx tsx --test --test-force-exit --test-timeout=180000 'src/**/__tests
 | `jetbrains-plugin/__tests__/s7-gradle.test.ts` | pass 11, fail 0 |
 
 Their failures in both sweeps came from running at the same time: concurrent Gradle builds on one project directory. `s10-gradle` is new in this Story, so there is no pre-s10 run of it; it passes alone, and it passed the t10 gate.
+
+## Same-load comparison, HEAD vs pre-s10 (2026-11-05)
+
+The eight files marked "load only" above failed in the second sweep and pass alone. To test whether s10 causes them, one heavy subset (`'src/daemon/**/__tests__/*.test.ts' 'src/workflow/**/__tests__/*.test.ts'`, `--test-timeout=180000`) ran on HEAD (2a9a7901b) and on the pre-s10 worktree (e62b581d1) **at the same time**, so both ran under the same machine load.
+
+| Tree | tests | pass | fail | cancelled |
+|---|---|---|---|---|
+| HEAD | 3986 | 3922 | 34 | 5 |
+| pre-s10 | 3990 | 3902 | 54 | 8 |
+
+The eight files under the same load:
+
+| Test | HEAD | pre-s10 |
+|---|---|---|
+| CM-S3-FILES (`session-file-matrix` / `session-file-resources`) | 1 fail | 2 fail |
+| ISSUE-e940023a time bound (`code-review-material`) | 1 fail | 1 fail |
+| CM-S4-REPLAY (`saved-management`), CM-S1-E (`credential-generations`), CM-S3-RECURSION (`root-run-memory`), CM-S3-CACHE (`task-persistence`), `build-review-freshness` | 0 | 0 |
+
+- Two of them fail under load on both trees. The other six are intermittent and passed on both in this run.
+- **What these failures are:** timing or child-process faults. A crash child is killed and exits with `null` instead of its code. A 3000-atom material takes 11.4 s against its bound. A test times out at 180 s. None is a wrong assertion about behaviour.
+- **Import closure:** `credential-generations` imports no s10-changed file at all.
+- **Failing only at HEAD in this one run** (each re-run alone on both trees):
+
+| File | Alone at HEAD | Alone at pre-s10 |
+|---|---|---|
+| `src/daemon/threads/__tests__/maintenance.test.ts` | pass 15 | pass 15 |
+| `src/daemon/steps/build-step/__tests__/build-step.test.ts` | pass 65 | pass 65 |
+| `src/daemon/threads/__tests__/threads-boot.test.ts` | — | fails pre-s10 (first sweep table) |
+| `src/daemon/__tests__/doc-summary-restore-ipc.test.ts` | — | fails pre-s10 (seeded-daemon boot stall, first sweep notes) |
+| `src/workflow/delivery/__tests__/handlers.test.ts` | — | known flake: git background maintenance writes `.git/objects/maintenance.lock` into its fixture |
+
+**Conclusion:** no test fails deterministically at HEAD. Under equal load, the pre-s10 tree fails more tests (54 vs 34). Which tests fail under load varies from run to run on both trees.

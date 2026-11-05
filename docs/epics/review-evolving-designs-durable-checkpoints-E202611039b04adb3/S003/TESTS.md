@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -43,7 +43,7 @@ Run at 2026-11-04T19:41:50.260Z on commit `f36004a23`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-04T19:45:32.116Z on commit `f0d5da047`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-05T03:45:41.118Z on commit `175da675c`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Backward provenance eligibility matrix and incomplete-source bypass rejection**
 
@@ -51,12 +51,15 @@ Run at 2026-11-04T19:45:32.116Z on commit `f0d5da047`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | backward provenance resolves eligible chains and preserves findings without copying historical bodies | `src/workflow/review/design-review/__tests__/provenance.test.ts` |
 | pass | retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse | `src/workflow/review/design-review/__tests__/provenance.test.ts` |
+| pass | retained source comparison rejects an older valid result when newer mapped coverage is also valid | `src/workflow/review/design-review/__tests__/provenance.test.ts` |
+| pass | correction after an invalidated first attempt and full restart can retain the restarted coverage | `src/workflow/review/design-review/__tests__/impact-qualification.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/provenance.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/workflow/review/design-review/__tests__/impact-qualification.test.ts` | 0 | 2 | 0.7 s |  |
+| `src/workflow/review/design-review/__tests__/provenance.test.ts` | 0 | 3 | 0.7 s |  |
 
 ## t4
 
@@ -124,7 +127,7 @@ Run at 2026-11-04T19:57:26.797Z on commit `a4c3115ec`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-04T20:03:02.626Z on commit `685ce94a6`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-05T03:47:13.921Z on commit `175da675c`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Exact coverage partition and effective finding counts**
 
@@ -132,6 +135,7 @@ Run at 2026-11-04T20:03:02.626Z on commit `685ce94a6`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result | `src/workflow/review/design-review/__tests__/impact-consolidation.test.ts` |
 | pass | checkpoint report projection is derived and cannot be persisted with invented counts or origins | `src/workflow/review/design-review/__tests__/impact-consolidation.test.ts` |
+| pass | stored impact reports enforce the same document and checkpoint references as live acceptance | `src/workflow/review/design-review/__tests__/impact-consolidation.test.ts` |
 
 **unit: Final-result-only decisions, missing reconciliation carry, resolved/superseded evidence**
 
@@ -144,7 +148,7 @@ Run at 2026-11-04T20:03:02.626Z on commit `685ce94a6`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/impact-consolidation.test.ts` | 0 | 4 | 0.7 s |  |
+| `src/workflow/review/design-review/__tests__/impact-consolidation.test.ts` | 0 | 5 | 0.8 s |  |
 
 ## t8
 

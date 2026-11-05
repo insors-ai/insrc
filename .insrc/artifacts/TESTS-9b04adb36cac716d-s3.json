@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "b2944b9121453884f81aca442e42034d7349082c44c8d2be5c9077fa23b52df6",
-        "at": "2026-11-04T20:15:13.471Z",
+        "number": 11,
+        "contentHash": "6ee51e1ba7dcf00ed8849ed59da06c2945e44db7c3891816e066450ea034b71b",
+        "at": "2026-11-05T03:47:14.036Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s3",
     "createdAt": "2026-11-04T19:37:48.840Z",
-    "updatedAt": "2026-11-04T20:15:13.377Z",
+    "updatedAt": "2026-11-05T03:47:13.921Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 9
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -131,8 +131,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "f0d5da047",
-        "ranAt": "2026-11-04T19:45:32.116Z",
+        "commit": "175da675c",
+        "ranAt": "2026-11-05T03:45:41.118Z",
         "testsPassed": true,
         "tests": [
           {
@@ -149,6 +149,16 @@
                 "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
                 "title": "retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
+                "title": "retained source comparison rejects an older valid result when newer mapped coverage is also valid",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts",
+                "title": "correction after an invalidated first attempt and full restart can retain the restarted coverage",
+                "result": "pass"
               }
             ],
             "files": []
@@ -156,10 +166,27 @@
         ],
         "files": [
           {
+            "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 712,
+            "titles": [
+              {
+                "title": "correction after an invalidated first attempt and full restart can retain the restarted coverage",
+                "result": "pass"
+              },
+              {
+                "title": "stored initial reports cannot invent impact projections or nonimpact finding decisions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/review/design-review/__tests__/provenance.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 671,
+            "durationMs": 712,
             "titles": [
               {
                 "title": "backward provenance resolves eligible chains and preserves findings without copying historical bodies",
@@ -167,6 +194,10 @@
               },
               {
                 "title": "retained origin rejection matrix prevents foreign forward cyclic missing invalidated and incomplete reuse",
+                "result": "pass"
+              },
+              {
+                "title": "retained source comparison rejects an older valid result when newer mapped coverage is also valid",
                 "result": "pass"
               }
             ],
@@ -427,8 +458,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "685ce94a6",
-        "ranAt": "2026-11-04T20:03:02.626Z",
+        "commit": "175da675c",
+        "ranAt": "2026-11-05T03:47:13.921Z",
         "testsPassed": true,
         "tests": [
           {
@@ -444,6 +475,11 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
                 "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+                "title": "stored impact reports enforce the same document and checkpoint references as live acceptance",
                 "result": "pass"
               }
             ],
@@ -473,7 +509,7 @@
             "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 712,
+            "durationMs": 754,
             "titles": [
               {
                 "title": "exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result",
@@ -489,6 +525,10 @@
               },
               {
                 "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              },
+              {
+                "title": "stored impact reports enforce the same document and checkpoint references as live acceptance",
                 "result": "pass"
               }
             ],

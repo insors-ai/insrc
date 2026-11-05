@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "1d75c24168d543efeb86c2c7a7e88f778c1c00f02e81e7bdc03e0a43bf185a81",
-        "at": "2026-11-04T20:16:49.361Z",
+        "number": 11,
+        "contentHash": "f620118bb672b1a1e32848bfd13d2e63d18d55d6da04a21261f31d04b27bdca7",
+        "at": "2026-11-05T03:47:56.310Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "9b04adb36cac716d",
     "storyId": "s3",
-    "revision": 9,
-    "updatedAt": "2026-11-04T20:15:13.377Z",
+    "revision": 11,
+    "updatedAt": "2026-11-05T03:47:13.921Z",
     "authoredBy": "controller",
     "epicSlug": "review-evolving-designs-durable-checkpoints"
   },
@@ -73,7 +73,7 @@
         "passed": true
       }
     ],
-    "summary": "Implemented S3 impact-aware correction reviews: strict bounded contracts, immutable sequential attempts, eligible retained coverage, direct/indirect selection, shared native/controller execution, final-result-only finding reconciliation and truthful progress. Production build, 84 design-review/MCP tests and compiled S3 impact/S2 recovery smokes pass. Scope regression run: 127/128 pass; code-review history.test.ts 'all-reuse attempts and invalid attribution...' fails 3!==1 identically at pre-S3 commit 19be6f17a in /tmp snapshot, so it is a confirmed pre-existing limitation. S4 publication/approval/cleanup is excluded; no installed daemon restart or hosted smoke was performed.",
+    "summary": "S3 round-1 feedback corrected: live acceptance and stored report validation share document/checkpoint references; forged missing-reference reports are rejected; honest incomplete evidence remains accepted. Added the precise individually-valid provenance mismatch test. 86 design-review/MCP tests, production build and isolated compiled impact smoke pass. Original first-report lookup defect was already fixed by submitted task 9 with a regression. Four review-framework issues remain separately logged, unimplemented.",
     "testRecord": {
       "md": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S003/TESTS.md"
     },
@@ -83,192 +83,192 @@
           "file": "src/workflow/review/design-review/__tests__/contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/correction-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/coordinator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/provenance.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/provenance.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-fixtures.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-selection.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/results.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/selected-recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/recovery-state.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/progress.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/daemon/handler-runtime.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/daemon/repo-call-audit.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/daemon/threads/method-class.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/design-review.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/prompts/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/coverage-progress.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "scripts/smoke-design-review-impact.mjs"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/impact-qualification.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       },
       {
         "target": {
           "file": "src/workflow/review/design-review/__tests__/subject.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-04T20:15:13.377Z"
+        "timestamp": "2026-11-05T03:47:13.921Z"
       }
     ],
-    "commit": "76d3d899a"
+    "commit": "175da675c"
   },
   "citations": []
 }

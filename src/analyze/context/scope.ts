@@ -59,7 +59,7 @@ export const SYMBOL_SEPARATOR = '#';
 
 export interface ResolvedScope {
 	readonly kind:  AnalyzeScopeRef['kind'];
-	/** The value as the request gave it. */
+	/** The value, in its canonical spelling for a path (equivalent spellings give one value); as given for a connection. */
 	readonly value: string;
 	/** The registered repo that contains the scope (longest prefix),
 	 *  or the connection's repo; null when none is registered. */
@@ -122,7 +122,7 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 			const path = canonicalPath(ref.value);
 			return {
 				kind:       ref.kind,
-				value:      ref.value,
+				value:      path,
 				repoPath:   await containingRepoOrNull(path, deps),
 				lookupPath: path,
 			};
@@ -132,7 +132,7 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 			const repoPath = await containingRepoOrNull(path, deps);
 			return {
 				kind:       'file',
-				value:      ref.value,
+				value:      path,
 				repoPath,
 				lookupPath: repoPath ?? directoryOf(path),
 				filePath:   path,
@@ -281,7 +281,7 @@ async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedSc
 	const entity = matches[0]!;
 	return {
 		kind:       'symbol',
-		value,
+		value:      `${filePath}${SYMBOL_SEPARATOR}${name}`,
 		repoPath:   repo.path,
 		lookupPath: repo.path,
 		filePath,

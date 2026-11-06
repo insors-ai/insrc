@@ -74,8 +74,9 @@ test('validateRequestScope refuses a nonexistent path, a wrong path kind and a s
 	await validateRequestScope(sneaky, B, FS);
 	const spelled = await resolve('module', `${A}/src/`);
 	assert.equal(spelled.lookupPath, `${A}/src`);
-	assert.equal(spelled.value, `${A}/src/`);
-	assert.deepEqual(await resolve('module', `${A}/./src`), { ...spelled, value: `${A}/./src` });
+	assert.equal(spelled.value, `${A}/src`);
+	assert.deepEqual(await resolve('module', `${A}/./src`), spelled);
+	assert.deepEqual(await resolve('module', `${A}//src/../src`), spelled);
 	const sym = await resolve('symbol', `${A}/../b/src/y.ts#f`);
 	assert.equal(sym.filePath, `${B}/src/y.ts`);
 	assert.equal(sym.repoPath, B);

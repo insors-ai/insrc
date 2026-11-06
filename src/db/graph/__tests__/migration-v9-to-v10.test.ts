@@ -69,7 +69,7 @@ test('migration-v9-to-v10.test.ts: a v6 store built by the retired v2 index is r
 
 	const store = await getGraphStore();
 	assert.equal(store.meta.get('schema_version'), SCHEMA_VERSION);
-	assert.equal(SCHEMA_VERSION, 9);
+	assert.equal(SCHEMA_VERSION, 10);
 	assert.deepEqual((await findEntitiesByFile(null, FILE)).map(e => e.name).sort(), ['a', 'b']);
 	const rows = await fileRows();
 	assert.equal(rows.length, 2, 'one row per entity, none left from the v2 shape');

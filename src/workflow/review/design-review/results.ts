@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { DESIGN_LIMITS, DesignPlanSchema, DesignResultSchema, DesignReportSchema, DesignImpactOutputSchema, decodeDesign, requireDesign } from './contracts.js';
+import { DESIGN_LIMITS, DesignPlanSchema, designChunkResultSchema, allowsDesignFindingDecisions, DesignReportSchema, DesignImpactOutputSchema, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignChunkPlan, DesignChunk, DesignChunkResult, DesignReviewInventory, DesignReviewSubject, DesignReviewConsolidated, DesignAttempt, DesignImpactAssessment, DesignFindingOrigin, DesignReportImpact } from './contracts.js';
 import { designFindingKey, effectiveDesignFindingOrigins, validateDesignRetainedSource, resolveDesignCoverage } from './provenance.js';
 
@@ -82,7 +82,7 @@ export function validateDesignPlan(input: unknown, inventory: DesignReviewInvent
 
 /** Structural/coverage checks cannot certify semantic truth; that remains the independent reviewer's assessment. */
 export function assessDesignResult(input: unknown, chunk: DesignChunk, previous: readonly DesignChunkResult[], requiredReferences: readonly string[] = [], impactContext?:{attempt:DesignAttempt;history:readonly DesignAttempt[]}): DesignChunkResult {
- const result=decodeDesign(DesignResultSchema,input,DESIGN_LIMITS.resultBytes);
+ const result=decodeDesign(designChunkResultSchema(chunk,impactContext?.attempt),input,DESIGN_LIMITS.resultBytes);
  requireDesign(result.chunkId===chunk.id,'invalid_result','Result is not for the current chunk');
  const ids=new Set(impactContext?[]:previous.flatMap(r=>r.findings.map(f=>f.id)));
  for(const finding of result.findings) {
@@ -100,7 +100,7 @@ export function assessDesignResult(input: unknown, chunk: DesignChunk, previous:
  return result;
 }
 function reconcileDesignFindings(result:DesignChunkResult,chunk:DesignChunk,previous:readonly DesignChunkResult[],context?:{attempt:DesignAttempt;history:readonly DesignAttempt[]}):void{
- const final=!!context?.attempt.impact&&chunk.id===context.attempt.plan?.finalConsistencyChunkId;
+ const final=allowsDesignFindingDecisions(chunk,context?.attempt);
  requireDesign(result.findingDecisions===undefined||final,'invalid_result','Finding decisions are allowed only on an impact final consistency chunk');
  if(!final||!context)return;
  const {attempt,history}=context,origins=effectiveDesignFindingOrigins(history,attempt.impact!.baselineAttempt),known=new Set(origins.map(designFindingKey));

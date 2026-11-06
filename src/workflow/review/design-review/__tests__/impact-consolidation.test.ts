@@ -50,8 +50,8 @@ test('invalid dispositions cannot close retained-only concerns or cite unknown d
   [{...f.decisions[1]!,source:f.keep}],
   [{...f.decisions[1]!,action:'resolved' as const,reviewedInChunkIds:['keep']}]
  ])assert.throws(()=>f.assess({...f.final,findingDecisions:decisions}));
- assert.throws(()=>assessDesignResult({...f.edited,findingDecisions:[]},f.plan.chunks[1]!,[],[],{attempt:f.current,history:f.history}),/only on an impact final/);
- assert.throws(()=>assessDesignResult(f.final,f.plan.chunks[2]!,[f.edited]),/only on an impact final/);
+ assert.throws(()=>assessDesignResult({...f.edited,findingDecisions:[]},f.plan.chunks[1]!,[],[],{attempt:f.current,history:f.history}),{code:'invalid_schema'});
+ assert.throws(()=>assessDesignResult(f.final,f.plan.chunks[2]!,[f.edited]),{code:'invalid_schema'});
  f.edited.status='incomplete';f.edited.limitations=['Required inspection unavailable'];assert.throws(()=>f.assess(f.final),/fresh inspection/);
 });
 

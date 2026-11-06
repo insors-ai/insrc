@@ -133,6 +133,14 @@ export const DesignResultSchema = object({
  }), { maxItems: DESIGN_LIMITS.findings }),
  inspectedReferences: refs, limitations: texts, advice: texts, findingDecisions: Type.Optional(findingDecisions),
 });
+/** Live assignment permissions; persisted results retain the broad historical schema. */
+export function allowsDesignFindingDecisions(chunk: DesignChunk, attempt?: Pick<DesignAttempt, 'impact' | 'plan'>): boolean {
+ return !!attempt?.impact && chunk.purpose === 'consistency' && chunk.id === attempt.plan?.finalConsistencyChunkId;
+}
+const OrdinaryDesignResultSchema = Type.Omit(DesignResultSchema, ['findingDecisions']);
+export function designChunkResultSchema(chunk: DesignChunk, attempt?: Pick<DesignAttempt, 'impact' | 'plan'>) {
+ return allowsDesignFindingDecisions(chunk, attempt) ? DesignResultSchema : OrdinaryDesignResultSchema;
+}
 export type DesignChunkResult = Static<typeof DesignResultSchema>;
 export type DesignFinding = DesignChunkResult['findings'][number];
 export const DesignActivitySchema = object({ sessionId: id, sequence: positive,

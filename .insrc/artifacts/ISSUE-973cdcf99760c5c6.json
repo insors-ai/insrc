@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793987816992-8h0roo",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T17:57:52.558Z",
+    "epicCreatedAt": "2026-11-06T17:57:52.558Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 55566,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "973cdcf99760c5c6",
+    "epicSlug": "align-design-review-response-schemas-chunk",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "14a2b5d35af64d58d556bf9d417ab0db23cdd365b66b09e4eb2822e475059c7d",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T18:04:35.502Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "973cdcf99760c5c6",
+      "slug": "EPIC-973cdcf99760c5c6"
+    }
+  },
+  "body": {
+    "title": "Align design review response schemas with chunk permissions",
+    "reproduction": "Run a correction-attempt design review with a substantive chunk such as contracts. The assigned DesignResultSchema permits findingDecisions, and Codex's strict schema makes that optional property required with a null alternative. Native Codex responses for contracts included populated carry decisions. The response passed structural validation but the host rejected it with 'Finding decisions are allowed only on an impact final consistency chunk', spending technical retries instead of accepting the chunk. Expected: ordinary and initial-attempt consistency assignments do not expose or accept findingDecisions; only the impact attempt's designated final-consistency chunk exposes decisions. This mismatch applies to both providers, although Claude has often omitted the field. [[c1]] [[c2]] [[c3]] [[c4]]",
+    "rootCause": "The coordinator supplies the same broad DesignResultSchema for every chunk; designChunkPrompt independently embeds that same broad schema and does not explicitly prohibit decisions on ordinary chunks. assessDesignResult/reconcileDesignFindings applies a narrower semantic condition: decisions are allowed only when an impact context exists and the chunk ID equals the attempt plan's finalConsistencyChunkId. Assignment contracts therefore advertise outputs that the host rejects. The broad schema also serves persisted results and history, so globally deleting its property would break valid final-review data rather than fix per-assignment permissions. [[c1]] [[c2]] [[c3]] [[c4]]",
+    "fixIntent": "Make each live chunk's response contract agree with host permissions for finding decisions. Exclude and forbid the property on ordinary chunks and initial-attempt final consistency, exposing it only for the actual final-consistency chunk of an impact attempt. Keep native daemon and controller assignments, prompt structural references/guidance and result validation consistent; preserve historical checkpoint/result decoding and final reconciliation safeguards. Verify the observed failure with focused regressions, including Codex strict formatting and both assignment paths. Native CLI silence and concurrency diagnosis are outside this fix. [[c1]] [[c2]] [[c3]]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:275-315"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/policy.ts:24-30"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/results.ts:84-112"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/contracts.ts:129-136"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "insrc_analyze_step: qhIJYR4oBNvtL8ibUKJ7ZQ"
+    },
+    {
+      "id": "c6",
+      "kind": "stakeholder",
+      "ref": "User instruction in this session: 'ok, let's go ahead with this fix'."
+    }
+  ]
+}

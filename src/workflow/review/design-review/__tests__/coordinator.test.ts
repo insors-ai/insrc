@@ -15,6 +15,7 @@ function fake(f:ReturnType<typeof designFixture>,options:{before?:(stage:string)
  const plan:DesignChunkPlan={chunks:[{id:'content',title:'Coherent scope',selectors:f.prepared.inventory.units.map(u=>u.id),concerns:['Requirements and implementation responsibility'],dependsOn:[],purpose:'substantive'},{id:'final',title:'Consistency',selectors:[],concerns:['Whole-design consistency'],dependsOn:['content'],purpose:'consistency'}],coverageExplanation:'All units reviewed together, then consistency',finalConsistencyChunkId:'final',coverage:f.prepared.inventory.units.map(u=>({unitId:u.id,chunkIds:['content']}))};
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
   const chunk=prompt.match(/Chunk assignment: (.+)\n/)?.[1];const assignment=chunk?JSON.parse(chunk):undefined;
+  if(chunk){const schema=_schema as {properties:Record<string,unknown>};assert.equal(Object.hasOwn(schema.properties,'findingDecisions'),false);assert.deepEqual(JSON.parse(prompt.split('Output schema (structural reference):\n')[1]!),JSON.parse(JSON.stringify(schema)));}
   const stage=assignment?.id??'planning';calls.push(stage);sessions.push(opts);await options.before?.(stage);
   await opts.onActivity({sessionId:`session-${calls.length}`,sequence:1,kind:'session_started'});
   await opts.onActivity({sessionId:`session-${calls.length}`,sequence:2,kind:'model_output'});

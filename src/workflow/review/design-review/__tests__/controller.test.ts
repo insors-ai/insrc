@@ -55,7 +55,7 @@ test('controller disconnect preserves accepted chunks and never reassigns interr
 test('controller results use the common schema and produce deterministic complete counts',async t=>{
  const x=setup(t);await x.start();let a=await assignment(x.c,x.f,x.owner);
  await x.c.exchange({phase:'plan',...x.base,executionId:a.executionId,sequence:1,plan:x.plan},x.owner);
- for(const id of ['content','final']){a=await assignment(x.c,x.f,x.owner);assert.equal(a.chunkId,id);const result=x.result(id);
+ for(const id of ['content','final']){a=await assignment(x.c,x.f,x.owner);assert.equal(a.chunkId,id);assert.equal(Object.hasOwn((a.schema as {properties:object}).properties,'findingDecisions'),false);assert.deepEqual(JSON.parse(a.prompt.split('Output schema (structural reference):\n')[1]!),JSON.parse(JSON.stringify(a.schema)));const result=x.result(id);
   if(id==='content')Object.assign(result,{status:'changes_requested',findings:[{id:'med1',severity:'MED',location:'/body/summary',message:'Required contract is inconsistent',evidenceReferences:[x.f.md]}]});
   await x.c.exchange({phase:'result',...x.base,executionId:a.executionId,sequence:1,result},x.owner);
  }

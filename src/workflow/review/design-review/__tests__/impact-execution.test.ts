@@ -18,6 +18,7 @@ test('native impact persists one plan-selection pair and dispatches only selecte
  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
   const chunk=prompt.match(/Chunk assignment: (.+)\n/)?.[1],id=chunk?JSON.parse(chunk).id:'impact';calls.push(id);
   await opts.onActivity({sessionId:'session-'+calls.length,sequence:1,kind:'session_started'});await opts.onActivity({sessionId:'session-'+calls.length,sequence:2,kind:'model_output'});
+  if(chunk){const schema=_schema as {properties:object};assert.equal(Object.hasOwn(schema.properties,'findingDecisions'),id==='final');assert.deepEqual(JSON.parse(prompt.split('Output schema (structural reference):\n')[1]!),JSON.parse(JSON.stringify(schema)));}
   if(id==='final'){
    const saved=await loadDesignCheckpoint(f.repo,'review-1');assert.deepEqual(saved!.attempts[1]!.impact,f.impact);assert.equal(saved!.attempts[1]!.completedChunks.length,1);
    appendFileSync(f.md,'\nMutation during final inspection');
@@ -40,9 +41,9 @@ test('controller impact uses the same schema and validator with fenced exchange 
  await assert.rejects(c.exchange({...req,executionId:'stale'},owner),/generation/);
  await assert.rejects(c.exchange({...req,phase:'plan',impact:undefined},owner),/match assignment/);
  assert.deepEqual(await c.exchange(req,owner),{accepted:true});assert.deepEqual(await c.exchange(req,owner),{accepted:true});
- const chunk=await assignment();assert.equal(chunk.chunkId,'edit');
+ const chunk=await assignment();assert.equal(chunk.chunkId,'edit');assert.equal(Object.hasOwn((chunk.schema as {properties:object}).properties,'findingDecisions'),false);
  await c.exchange({phase:'result',repo:f.repo,reviewId:'review-1',attempt:2,executionId:chunk.executionId,sequence:1,result:feedback(f,'edit')},owner);
- assert.equal((await assignment()).chunkId,'final');abort.abort();assert.equal((await settled(c,f)).status,'interrupted');
+ const final=await assignment();assert.equal(final.chunkId,'final');assert.equal(Object.hasOwn((final.schema as {properties:object}).properties,'findingDecisions'),true);assert.deepEqual(JSON.parse(final.prompt.split('Output schema (structural reference):\n')[1]!),JSON.parse(JSON.stringify(final.schema)));abort.abort();assert.equal((await settled(c,f)).status,'interrupted');
  const cp=await loadDesignCheckpoint(f.repo,'review-1');assert.deepEqual(cp!.attempts[1]!.plan,f.plan);assert.deepEqual(cp!.attempts[1]!.impact,f.impact);assert.deepEqual(cp!.attempts[1]!.completedChunks.map(x=>x.chunkId),['edit']);
 });
 

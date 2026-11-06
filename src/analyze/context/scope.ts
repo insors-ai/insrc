@@ -29,7 +29,8 @@ import { analysisConnectionContext, assertAnalysisConnectionExecution } from '..
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { ConnectionExecutionError } from '../../shared/step-context.js';
 import { savedConnectionResolver } from '../../daemon/db/pool-cache.js';
-import { dirname } from 'node:path';
+import { stat } from 'node:fs/promises';
+import { dirname, isAbsolute, resolve as resolvePath } from 'node:path';
 
 import { loadConnections } from '../../daemon/db/config.js';
 import type { LoadedConnections } from '../../daemon/db/config.js';
@@ -45,8 +46,10 @@ import { TARGET_TO_KINDS } from '../classifier/validate.js';
 
 import {
 	ScopeKindTargetMismatchError,
+	ScopeNotFoundError,
 	ScopeNotIndexedError,
 	ScopeRefUnresolvedError,
+	ScopeRepoMismatchError,
 } from './invariants.js';
 
 const log = getLogger('analyze:context:scope');
@@ -115,21 +118,24 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 		case 'repo':
 		case 'module':
 		case 'manifest-dir':
-		case 'workspace':
+		case 'workspace': {
+			const path = canonicalPath(ref.value);
 			return {
 				kind:       ref.kind,
 				value:      ref.value,
-				repoPath:   await containingRepoOrNull(ref.value, deps),
-				lookupPath: ref.value,
+				repoPath:   await containingRepoOrNull(path, deps),
+				lookupPath: path,
 			};
+		}
 		case 'file': {
-			const repoPath = await containingRepoOrNull(ref.value, deps);
+			const path = canonicalPath(ref.value);
+			const repoPath = await containingRepoOrNull(path, deps);
 			return {
 				kind:       'file',
 				value:      ref.value,
 				repoPath,
-				lookupPath: repoPath ?? directoryOf(ref.value),
-				filePath:   ref.value,
+				lookupPath: repoPath ?? directoryOf(path),
+				filePath:   path,
 			};
 		}
 		case 'symbol':
@@ -137,6 +143,18 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 		case 'connection':
 			return resolveConnection(ref.value, deps, execution);
 	}
+}
+
+/**
+ * The one spelling of a path the analyzer uses for a scope: an absolute path
+ * with `.`, `..`, repeated and trailing separators folded away. The same
+ * spelling picks the containing repository, is statted by the validation, and
+ * filters the entities, so `/work/a/../b/f.ts` is `/work/b/f.ts` everywhere.
+ * A relative path is left as it was (it resolves against the caller's
+ * directory elsewhere). Lexical only: symbolic links are not followed.
+ */
+export function canonicalPath(path: string): string {
+	return isAbsolute(path) ? resolvePath(path) : path;
 }
 
 /** The kinds of scope each kind of source accepts: the shape of `TARGET_TO_KINDS`. */
@@ -214,7 +232,8 @@ function directoryOf(filePath: string): string {
 
 async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedScope> {
 	const at = value.lastIndexOf(SYMBOL_SEPARATOR);
-	const filePath = at === -1 ? '' : value.slice(0, at);
+	const rawFile  = at === -1 ? '' : value.slice(0, at);
+	const filePath = rawFile.length === 0 ? '' : canonicalPath(rawFile);
 	const name     = at === -1 ? '' : value.slice(at + 1);
 	if (filePath.length === 0 || name.length === 0) {
 		throw new ScopeRefUnresolvedError(
@@ -421,4 +440,57 @@ export function scopeAreaKey(scope: ResolvedScope): string {
 	const area = scopeArea(scope);
 	if (area === null) return 'repo';
 	return area.kind === 'symbol' ? `symbol:${area.entityId}` : `${area.kind}:${area.path}`;
+}
+
+// ---------------------------------------------------------------------------
+// The validation of a request's scope
+// ---------------------------------------------------------------------------
+
+/** The file-system reader of the validation; a test supplies a stand-in. */
+export interface ScopeCheckDeps {
+	kindOfPath(path: string): Promise<'file' | 'directory' | 'other' | 'missing'>;
+}
+
+const REAL_CHECK_DEPS: ScopeCheckDeps = {
+	async kindOfPath(path) {
+		try {
+			const info = await stat(path);
+			return info.isFile() ? 'file' : info.isDirectory() ? 'directory' : 'other';
+		} catch (err) {
+			if ((err as NodeJS.ErrnoException).code === 'ENOENT' || (err as NodeJS.ErrnoException).code === 'ENOTDIR') return 'missing';
+			throw err;
+		}
+	},
+};
+
+/**
+ * Check a resolved scope against the file system and the call's repository.
+ * A file scope must name a regular file; a module or manifest-dir scope a
+ * directory; a file, module, manifest-dir or symbol scope that lies in a
+ * registered repository must lie in `expectedRepo`. A path that exists and
+ * holds no stored entity is a valid empty area. Workspace, repo and
+ * connection scopes are left to the existing checks.
+ *
+ * @throws ScopeNotFoundError      the path is missing or the wrong kind of path.
+ * @throws ScopeRepoMismatchError  the scope lies in another registered repository.
+ */
+export async function validateRequestScope(
+	scope:        ResolvedScope,
+	expectedRepo: string | undefined,
+	deps:         ScopeCheckDeps = REAL_CHECK_DEPS,
+): Promise<void> {
+	if (scope.kind === 'workspace' || scope.kind === 'repo' || scope.kind === 'connection') return;
+	if (scope.kind === 'file' || scope.kind === 'module' || scope.kind === 'manifest-dir') {
+		const path  = scope.kind === 'file' ? (scope.filePath ?? scope.lookupPath) : scope.lookupPath;
+		const found = await deps.kindOfPath(path);
+		const want  = scope.kind === 'file' ? 'file' : 'directory';
+		if (found === 'missing') throw new ScopeNotFoundError(scope.kind, path, 'missing');
+		if (found !== want) throw new ScopeNotFoundError(scope.kind, path, want === 'file' ? 'not a file' : 'not a directory');
+	}
+	// A scope inside a registered repository nested in the call's repository is the call's own.
+	const at = scope.filePath ?? scope.lookupPath;
+	if (expectedRepo !== undefined && scope.repoPath !== null && scope.repoPath !== expectedRepo
+		&& at !== expectedRepo && !at.startsWith(`${expectedRepo}/`)) {
+		throw new ScopeRepoMismatchError(at, scope.repoPath, expectedRepo);
+	}
 }

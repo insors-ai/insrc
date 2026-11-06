@@ -56,6 +56,22 @@ export class ScopeRefUnresolvedError extends Error {
 	}
 }
 
+/** A file, module or manifest-dir scope names a path that is missing or is the wrong kind of path. */
+export class ScopeNotFoundError extends Error {
+	constructor(kind: string, path: string, found: 'missing' | 'not a file' | 'not a directory') {
+		super(`scopeRef.kind='${kind}' names '${path}', which is ${found === 'missing' ? 'not there' : found}.`);
+		this.name = 'ScopeNotFoundError';
+	}
+}
+
+/** The scope lies in a registered repository other than the one the call resolved. */
+export class ScopeRepoMismatchError extends Error {
+	constructor(scopePath: string, scopeRepo: string, callRepo: string) {
+		super(`the scope '${scopePath}' lies in the repository '${scopeRepo}', not in the call's repository '${callRepo}'.`);
+		this.name = 'ScopeRepoMismatchError';
+	}
+}
+
 /** A kind of scope that does not go with a kind of source. */
 export class ScopeKindTargetMismatchError extends Error {
 	constructor(kind: string, target: string, allowed: readonly string[]) {

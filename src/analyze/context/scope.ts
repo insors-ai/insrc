@@ -79,6 +79,13 @@ export interface ResolvedScope {
 
 /** The readers resolveScope needs. Defaulted to the real stores; tests supply them. */
 export interface ScopeDeps {
+	/**
+	 * The directory a relative path scope value is resolved against: the
+	 * repository the call resolved (stepScope and prepareScope pass it).
+	 * Absent, a relative path stays as given and `validateRequestScope`
+	 * refuses it.
+	 */
+	readonly baseDir?: string | undefined;
 	listRepos(): Promise<readonly RegisteredRepo[]>;
 	findEntitiesByFile(file: string): Promise<readonly Entity[]>;
 	listEntitiesForRepo(repoPath: string, opts?: { readonly limit: 1 } | undefined): Promise<readonly Entity[]>;
@@ -119,7 +126,7 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 		case 'module':
 		case 'manifest-dir':
 		case 'workspace': {
-			const path = canonicalPath(ref.value);
+			const path = canonicalPath(ref.value, deps.baseDir);
 			return {
 				kind:       ref.kind,
 				value:      path,
@@ -128,7 +135,7 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
 			};
 		}
 		case 'file': {
-			const path = canonicalPath(ref.value);
+			const path = canonicalPath(ref.value, deps.baseDir);
 			const repoPath = await containingRepoOrNull(path, deps);
 			return {
 				kind:       'file',
@@ -150,12 +157,14 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
  * with `.`, `..`, repeated and trailing separators folded away. The same
  * spelling picks the containing repository, is statted by the validation, and
  * filters the entities, so `/work/a/../b/f.ts` is `/work/b/f.ts` everywhere.
- * A relative path has no base to resolve against in the daemon, so it is
- * left as it was and refused by `validateRequestScope`. Lexical only:
+ * A relative path is resolved against `baseDir` (the call's repository)
+ * when one is given; with none it is left as it was and refused by
+ * `validateRequestScope`. Lexical only:
  * symbolic links are not followed.
  */
-export function canonicalPath(path: string): string {
-	return isAbsolute(path) ? resolvePath(path) : path;
+export function canonicalPath(path: string, baseDir?: string | undefined): string {
+	if (isAbsolute(path)) return resolvePath(path);
+	return baseDir !== undefined && isAbsolute(baseDir) ? resolvePath(baseDir, path) : path;
 }
 
 /** The kinds of scope each kind of source accepts: the shape of `TARGET_TO_KINDS`. */
@@ -234,7 +243,7 @@ function directoryOf(filePath: string): string {
 async function resolveSymbol(value: string, deps: ScopeDeps): Promise<ResolvedScope> {
 	const at = value.lastIndexOf(SYMBOL_SEPARATOR);
 	const rawFile  = at === -1 ? '' : value.slice(0, at);
-	const filePath = rawFile.length === 0 ? '' : canonicalPath(rawFile);
+	const filePath = rawFile.length === 0 ? '' : canonicalPath(rawFile, deps.baseDir);
 	const name     = at === -1 ? '' : value.slice(at + 1);
 	if (filePath.length === 0 || name.length === 0) {
 		throw new ScopeRefUnresolvedError(

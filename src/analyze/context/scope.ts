@@ -109,6 +109,11 @@ const REAL_DEPS: ScopeDeps = {
 	repoHasAnyEntity:    (repoPath) => repoHasAnyEntity(null, repoPath),
 };
 
+/** The scope readers with relative paths resolved against `baseDir` (the call's repository); `deps` unchanged when there is none. */
+export function scopeDepsWithBase(deps: ScopeDeps | undefined, baseDir: string | undefined): ScopeDeps | undefined {
+	return baseDir === undefined ? deps : { ...(deps ?? REAL_DEPS), baseDir };
+}
+
 export async function resolveScope(
 	ref: AnalyzeScopeRef,
 	deps: ScopeDeps = REAL_DEPS,

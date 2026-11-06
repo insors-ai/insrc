@@ -208,7 +208,7 @@ export async function handleNarrow(
 	}, 'insrc_analyze_step[narrow]: finalized; resuming stepPlan']);
 
 	// The token carries the intent, not a resolved scope: resolve it again.
-	const scope = await stepScope(state.intent, undefined, execution);
+	const scope = await stepScope(state.intent, undefined, execution, state.repoPath);
 	const step = await stepPlan({
 		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,

@@ -212,6 +212,8 @@ export interface RunShapeInput {
 	readonly intent:    UnsizedIntent & { readonly scope?: AnalyzeScope | undefined };
 	readonly sizeHint?: AnalyzeScope | undefined;
 	readonly measure?:  RequestMeasure | undefined;
+	/** The repository the call resolved: relative scope paths resolve against it and a scope in another registered repository is refused. Not part of the cache key. */
+	readonly expectedRepo?: string | undefined;
 }
 
 /**

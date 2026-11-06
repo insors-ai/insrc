@@ -50,7 +50,7 @@ export function oneShotRunParams(
 		scopeRef:  { kind: 'workspace', value: repoPath },
 		reasoning: `MCP invocation: ${args.focus}`,
 	};
-	return { runId, intent, ...(args.scope !== undefined ? { sizeHint: args.scope } : {}) };
+	return { runId, intent, expectedRepo: repoPath, ...(args.scope !== undefined ? { sizeHint: args.scope } : {}) };
 }
 
 export interface AnalyzeOneShotArgs {

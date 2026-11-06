@@ -85,7 +85,7 @@ import {
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
 import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { freshnessPathOf, resolveScope, resolveScopeForTarget } from './scope.js';
+import { freshnessPathOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
 	modelFacingBundleSchema,
@@ -1269,7 +1269,10 @@ export async function prepareScope(
 	const ref = scopeRefOf(inputs);
 	if ('intent' in inputs && (invocationMode === 'run' || (execution?.mode === 'session-memory' && inputs.intent.target === 'data'))) {
 		const target = (inputs as RunShapeInput).intent.target;
-		return resolveScopeForTarget(ref, target, deps, undefined, execution);
+		const expectedRepo = (inputs as RunShapeInput).expectedRepo;
+		const scope = await resolveScopeForTarget(ref, target, scopeDepsWithBase(deps, expectedRepo), undefined, execution);
+		await validateRequestScope(scope, expectedRepo);
+		return scope;
 	}
 	return resolveScope(ref, deps, execution);
 }

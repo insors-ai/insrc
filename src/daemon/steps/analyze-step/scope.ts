@@ -15,7 +15,7 @@
 
 import type { ConnectionExecutionContext } from '../../../shared/step-context.js';
 import { assertAnalysisConnectionExecution } from '../../../analyze/connection-access.js';
-import { resolveScopeForTarget } from '../../../analyze/context/scope.js';
+import { resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from '../../../analyze/context/scope.js';
 import type { ResolvedScope, ScopeDeps } from '../../../analyze/context/scope.js';
 import { ensureScopeQueryable } from '../../../analyze/runtimes/shared/task-scope.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -30,9 +30,17 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
  *         in one with no stored entities (the registry was read and holds repositories).
  * @throws RepoIndexingError     the scope's repository is under index.
  */
-export async function stepScope(intent: Pick<ClassifiedIntent, 'target' | 'scopeRef'>, deps?: ScopeDeps, execution?: ConnectionExecutionContext): Promise<ResolvedScope> {
+export async function stepScope(
+	intent:        Pick<ClassifiedIntent, 'target' | 'scopeRef'>,
+	deps?:         ScopeDeps,
+	execution?:    ConnectionExecutionContext,
+	/** The repository the call resolved: relative paths resolve against it and a scope in another registered repository is refused. */
+	expectedRepo?: string | undefined,
+): Promise<ResolvedScope> {
 	assertAnalysisConnectionExecution(execution);
-	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, deps, undefined, execution);
+	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, scopeDepsWithBase(deps, expectedRepo), undefined, execution);
+	// The path exists with the right type and lies in the call's repository, before anything is read.
+	await validateRequestScope(scope, expectedRepo);
 	// The run's own checks, through the one function the run uses
 	// (ensureScopeQueryable), made before anything is measured, read from the
 	// cache or looked up: every phase makes this call, so a repository that goes

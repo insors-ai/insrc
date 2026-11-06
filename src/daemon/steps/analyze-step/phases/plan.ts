@@ -119,7 +119,7 @@ export async function handlePlan(
 	// emit_narrow envelope so the outer client's LLM produces the
 	// narrow output.
 	// The token carries the intent, not a resolved scope: resolve it again.
-	const scope = await stepScope(state.intent, undefined, execution);
+	const scope = await stepScope(state.intent, undefined, execution, state.repoPath);
 	const step = await stepPlan({
 		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,

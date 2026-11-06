@@ -303,7 +303,11 @@ export async function buildRun(params: unknown, execution?: ConnectionExecutionC
 		return invalidParams(err);
 	}
 	const shaper = shaperFor('run', parsed.intent.target);
-	const input: RunShapeInput = { intent: parsed.intent, ...(parsed.sizeHint !== undefined ? { sizeHint: parsed.sizeHint } : {}) };
+	const input: RunShapeInput = {
+		intent: parsed.intent,
+		...(parsed.sizeHint !== undefined ? { sizeHint: parsed.sizeHint } : {}),
+		...(parsed.expectedRepo !== undefined ? { expectedRepo: parsed.expectedRepo } : {}),
+	};
 	const opts: ShapeOpts = { runId: parsed.runId };
 	return invoke(() => shaper.buildRunBundle(input, opts), 'run', parsed.runId);
 }
@@ -1111,6 +1115,8 @@ interface RunParams {
 	readonly intent: UnsizedIntent;
 	/** The size the caller stated: a hint for the measure. */
 	readonly sizeHint?: AnalyzeScope;
+	/** The repository the call resolved: relative scope paths resolve against it and a scope in another registered repository is refused. */
+	readonly expectedRepo?: string;
 }
 
 interface ClassifyParams {
@@ -1167,7 +1173,11 @@ function parseRunParams(params: unknown): RunParams {
 	// need not carry a size. One that does is checked as before and then left
 	// out: only a size given as `sizeHint` is carried, as a hint.
 	const { scope: _notRead, ...unsized } = parseIntent(obj['intent'], 'size-optional');
-	const result: { runId: string; intent: UnsizedIntent; sizeHint?: AnalyzeScope } = { runId: requireString(obj, 'runId'), intent: unsized };
+	const result: { runId: string; intent: UnsizedIntent; sizeHint?: AnalyzeScope; expectedRepo?: string } = { runId: requireString(obj, 'runId'), intent: unsized };
+	if (obj['expectedRepo'] !== undefined) {
+		if (typeof obj['expectedRepo'] !== 'string' || obj['expectedRepo'].length === 0) throw new TypeError('expectedRepo: must be a non-empty string');
+		result.expectedRepo = obj['expectedRepo'];
+	}
 	if (obj['sizeHint'] !== undefined) {
 		const validScopes = ['XS', 'S', 'M', 'L', 'XL'];
 		if (typeof obj['sizeHint'] !== 'string' || !validScopes.includes(obj['sizeHint'])) {

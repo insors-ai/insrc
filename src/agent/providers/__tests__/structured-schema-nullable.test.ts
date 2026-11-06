@@ -76,3 +76,38 @@ test('enclosing constraints select a unique decoded union result after common op
  const host={type:'object',required:['entry'],properties:{entry:{type:'object',required:['a'],properties:{common:{type:'string'}},anyOf:branches.map(b=>({...b,additionalProperties:true}))}},additionalProperties:false};
  const raw={entry:{a:null,b:null,common:null}},result=validateCodexReply(host,raw);assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{a:null}});assert.equal(raw.entry.common,null);
 });
+
+test('full original response constraints select unique decodings across allOf and parent schema locations',()=>{
+ const branches=[{type:'object',properties:{a:{type:'string'},b:{type:['string','null']}},additionalProperties:true},{type:'object',properties:{a:{type:['string','null']},b:{type:'string'}},additionalProperties:true}];
+ for(const entry of [
+  {type:'object',required:['a'],allOf:[{anyOf:branches}]},
+  {type:'object',allOf:[{required:['a']},{anyOf:branches}]},
+  {type:'object',allOf:[{anyOf:branches},{required:['a']}]},
+  {type:'object',required:['a'],allOf:[{anyOf:branches},{properties:{common:{type:'string'}}}]},
+ ]){
+  const host={type:'object',required:['entry'],properties:{entry},additionalProperties:false};
+  const raw={entry:{a:null,b:null,common:null}},result=validateCodexReply(host,raw);assert.equal(result.ok,true);if(result.ok){const value=result.value as {entry:Record<string,unknown>};assert.deepEqual(value.entry.a,null);assert.equal(Object.hasOwn(value.entry,'b'),false);}
+ }
+ const host={type:'object',required:['entry'],allOf:[{properties:{entry:{required:['a']}}}],properties:{entry:{anyOf:branches}}};
+ const result=validateCodexReply(host,{entry:{a:null,b:null}});assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{a:null}});
+});
+
+test('optional-null decoding handles schema-bounded large arrays without data-depth recursion',()=>{
+ const host={type:'object',required:['items'],properties:{items:{type:'array',maxItems:10000,items:{type:'string'}},error:{type:'string'}},additionalProperties:false};
+ const raw={items:Array.from({length:10000},()=> 'entry'),error:null};const result=validateCodexReply(host,raw);assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items});assert.equal(raw.error,null);
+});
+
+test('inapplicable discriminator branches cannot erase explicitly nullable data',()=>{
+ const host={type:'object',required:['entry'],properties:{entry:{anyOf:[
+  {type:'object',required:['kind'],properties:{kind:{const:'text'},note:{type:'string'},error:{type:'string'}},additionalProperties:false},
+  {type:'object',required:['kind'],properties:{kind:{const:'nullable'},note:{type:['string','null']},error:{type:'string'}},additionalProperties:false},
+ ]}}};
+ const raw={entry:{kind:'nullable',note:null,error:null}},result=validateCodexReply(host,raw);assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{kind:'nullable',note:null}});assert.equal(raw.entry.error,null);
+});
+
+test('invalid replies retain actual host diagnostics without blaming decoded optional nulls',()=>{
+ const host={type:'object',required:['name','status'],additionalProperties:false,properties:{name:{type:'string',minLength:2},status:{anyOf:[{const:'passed'},{const:'failed'}]},error:{type:'string'}}};
+ for(const raw of [{name:'a',status:'passed',error:null},{name:'okay',status:'invalid',error:null}]){
+  const result=validateCodexReply(host,raw);assert.equal(result.ok,false);if(!result.ok){assert.ok(result.issues?.length);assert.equal(result.issues?.some(i=>i.field==='/error'),false);}
+ }
+});

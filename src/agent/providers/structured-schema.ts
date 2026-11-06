@@ -273,8 +273,23 @@ function codexReplyContext(schema: StructuredSchema): CodexReplyContext {
  return context;
 }
 
-/** Decode only null sentinels introduced for optional non-nullable properties. */
-function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): unknown {
+/** Lazy products avoid recursion proportional to model-supplied array/object size. */
+function* replyChoices(factories: readonly (() => Iterable<unknown>)[]): Generator<unknown[]> {
+ if (!factories.length) { yield []; return; }
+ const iterators: Iterator<unknown>[] = [], values: unknown[] = [];
+ let index = 0;
+ while (index >= 0) {
+  const iterator = iterators[index] ??= factories[index]!()[Symbol.iterator]();
+  const item = iterator.next();
+  if (item.done) { iterators.pop(); index--; continue; }
+  values[index] = item.value;
+  if (index === factories.length - 1) yield values.slice();
+  else { index++; iterators[index] = factories[index]!()[Symbol.iterator](); }
+ }
+}
+
+/** Enumerate only transport-derived alternatives; the FULL host schema chooses. */
+function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): Generator<unknown> {
  const escape = (part: string) => encodeURIComponent(part.replace(/~/g, '~0').replace(/\//g, '~1'));
  const resolve = (pointer: string): unknown => {
   if (pointer === '') return root;
@@ -285,48 +300,65 @@ function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Cod
   }
   return node;
  };
- const decode = (value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): unknown => {
-  if (!isObject(node) || value === null || active.has(node)) return value;
-  const next = new Set(active).add(node);
-  if (typeof node['$ref'] === 'string' && (node['$ref'] === '#' || node['$ref'].startsWith('#/'))) {
-   const target = node['$ref'].slice(1);
-   value = decode(value, resolve(target), target, next);
-  }
-  if (Array.isArray(node['allOf'])) for (const [index, branch] of node['allOf'].entries()) value = decode(value, branch, `${pointer}/allOf/${index}`, next);
+ type Step = (value: unknown) => Iterable<unknown>;
+ function* unique(values: Iterable<unknown>): Generator<unknown> {
+  const seen = new Set<string | undefined>();
+  for (const value of values) { const key = JSON.stringify(value); if (!seen.has(key)) { seen.add(key); yield value; } }
+ }
+ function* sequence(value: unknown, steps: readonly Step[], index = 0): Generator<unknown> {
+  if (index === steps.length) { yield value; return; }
+  for (const next of steps[index]!(value)) yield* sequence(next, steps, index + 1);
+ }
+ function* structural(value: unknown, node: Record<string, unknown>, pointer: string): Generator<unknown> {
   if (Array.isArray(value)) {
    const prefix = Array.isArray(node['prefixItems']) ? node['prefixItems'] : [];
-   value = value.map((item, index) => index < prefix.length
+   yield* replyChoices(value.map((item, index) => () => index < prefix.length
     ? decode(item, prefix[index], `${pointer}/prefixItems/${index}`)
-    : decode(item, node['items'], `${pointer}/items`));
-  } else if (isObject(value)) {
-   const result = { ...value }, properties = node['properties'];
-   const required = new Set(Array.isArray(node['required']) ? node['required'] : []);
-   for (const [name, item] of Object.entries(value)) {
-    const patterns = isObject(node['patternProperties']) ? Object.entries(node['patternProperties']).filter(([pattern]) => new RegExp(pattern, 'u').test(name)) : [];
-    if (isObject(properties) && Object.hasOwn(properties, name)) {
-     const path = `${pointer}/properties/${escape(name)}`;
-     if (item === null && !required.has(name) && !context.at(path, null)) delete result[name];
-     else result[name] = decode(item, properties[name], path);
-    } else if (!patterns.length && isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
-    if (Object.hasOwn(result, name)) for (const [pattern, property] of patterns) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
-   }
-   value = result;
+    : decode(item, node['items'], `${pointer}/items`)));
+   return;
   }
-  // Resolve alternatives only after shared constraints have been normalized.
+  if (!isObject(value)) { yield value; return; }
+  const properties = node['properties'], required = new Set(Array.isArray(node['required']) ? node['required'] : []);
+  const names: string[] = [], fields: (() => Iterable<unknown>)[] = [];
+  for (const [name, item] of Object.entries(value)) {
+   const steps: Step[] = [];
+   const patterns = isObject(node['patternProperties']) ? Object.entries(node['patternProperties']).filter(([pattern]) => new RegExp(pattern, 'u').test(name)) : [];
+   if (isObject(properties) && Object.hasOwn(properties, name)) {
+    const path = `${pointer}/properties/${escape(name)}`;
+    if (item === null && !required.has(name) && !context.at(path, null)) continue;
+    steps.push(value => decode(value, properties[name], path));
+   } else if (!patterns.length && isObject(node['additionalProperties'])) steps.push(value => decode(value, node['additionalProperties'], `${pointer}/additionalProperties`));
+   for (const [pattern, property] of patterns) steps.push(value => decode(value, property, `${pointer}/patternProperties/${escape(pattern)}`));
+   names.push(name); fields.push(() => sequence(item, steps));
+  }
+  for (const values of replyChoices(fields)) yield Object.fromEntries(names.map((name, index) => [name, values[index]]));
+ }
+ function* decode(value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): Generator<unknown> {
+  if (!isObject(node) || value === null || active.has(node)) { yield value; return; }
+  const next = new Set(active).add(node), steps: Step[] = [];
+  if (typeof node['$ref'] === 'string' && (node['$ref'] === '#' || node['$ref'].startsWith('#/'))) {
+   const target = node['$ref'].slice(1);
+   steps.push(value => decode(value, resolve(target), target, next));
+  }
+  steps.push(value => structural(value, node, pointer));
+  if (Array.isArray(node['allOf'])) for (const [index, branch] of node['allOf'].entries()) steps.push(value => decode(value, branch, `${pointer}/allOf/${index}`, next));
   for (const keyword of ['anyOf', 'oneOf'] as const) {
    const branches = node[keyword];
-   if (!Array.isArray(branches) || context.at(pointer, value)) continue;
-   const candidates = branches.map((branch, index) => {
-    const path = `${pointer}/${keyword}/${index}`;
-    const candidate = decode(value, branch, path, next);
-    return { value: candidate, valid: context.at(path, candidate) && context.at(pointer, candidate) };
-   }).filter(candidate => candidate.valid);
-   // Ambiguous branches must not silently discard different caller data.
-   if (candidates.length && candidates.every(candidate => JSON.stringify(candidate.value) === JSON.stringify(candidates[0]!.value))) value = candidates[0]!.value;
+   if (!Array.isArray(branches)) continue;
+   steps.push(function* (value) {
+    // A valid original value needs no branch-specific data removal.
+    if (context.at(pointer, value)) { yield value; return; }
+    let yielded = false;
+    for (const [index, branch] of branches.entries()) {
+     const path = `${pointer}/${keyword}/${index}`;
+     for (const candidate of decode(value, branch, path, next)) if (context.at(path, candidate)) { yielded = true; yield candidate; }
+    }
+    if (!yielded) yield value; // Keep invalid data for original-schema diagnostics.
+   });
   }
-  return value;
- };
- return decode(structuredClone(raw), root, '');
+  yield* unique(sequence(value, steps));
+ }
+ yield* decode(structuredClone(raw), root, '');
 }
 
 /** Full native-schema validation without Codex transport normalization (e.g. Vibe). */
@@ -355,8 +387,16 @@ export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): V
  let context: CodexReplyContext;
  try { context = codexReplyContext(schema); }
  catch (err) { return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] }; }
- const value = context.validate(raw) ? raw : decodeCodexOptionals(raw, schema, context);
- return checkedNativeReply<T>(context, value);
+ if (context.validate(raw)) return { ok: true, value: raw as T };
+ let accepted: { value: T } | undefined, first: { value: unknown } | undefined;
+ let candidates = 0;
+ for (const candidate of decodeCodexOptionals(raw, schema, context)) {
+  candidates++; first ??= { value: candidate };
+  if (!context.validate(candidate)) continue;
+  if (accepted) return { ok: false, errors: ['Codex optional-null decoding is ambiguous under the original schema.'], issues: [{ code: 'AMBIGUOUS_OPTIONAL_NULLS', field: '/', correction: 'Return an unambiguous response under the original schema.' }] };
+  accepted = { value: candidate as T };
+ }
+ return accepted ? { ok: true, value: accepted.value } : checkedNativeReply<T>(context, candidates === 1 ? first!.value : raw);
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {

@@ -19,6 +19,7 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 
 import { CliProvider, vibeLastAssistantText } from '../cli-provider.js';
+import { ModelResponseShapeError } from '../model-call-error.js';
 
 /**
  * A fake `vibe`: records every invocation (args, VIBE_ACTIVE_MODEL, stdin) as
@@ -213,7 +214,7 @@ test('Vibe reviewer responses retain strict original nullable semantics without 
   try{
    const p=new CliProvider({kind:'vibe',binPath:f.bin});const call=()=>p.runReviewSession('strict review',input,{cwd,deadlineMs:30000,internalRetry:false});
    if(nullable)assert.deepEqual(await call(),{verdict:'holds',error:null});
-   else await assert.rejects(call(),/must be string/);
+   else await assert.rejects(call(),(error:unknown)=>error instanceof ModelResponseShapeError&&error.reasons.some(reason=>reason.includes('/error: must be string')));
   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
  }
 });

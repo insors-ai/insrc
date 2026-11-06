@@ -74,6 +74,13 @@
         "choice": "Existing area filters only",
         "rationale": "User accepted the recommendation; capability.reuse-check is still handled in this Story as a plan task (round-3 finding).",
         "resolvedAt": "2026-11-06T19:33:59.117Z"
+      },
+      "qa1190205": {
+        "question": "Checklist cd2 and alt2 were marked partial: some existing runners are shown with elided parameter lists because only the values they pass change, and the alternatives carry no constraint scores because the Story has no acceptance criteria, epic constraints or HLD contracts to score.",
+        "status": "resolved",
+        "choice": "Expand signatures, leave scores unassigned",
+        "rationale": "User accepted the recommendation (2026-11-06).",
+        "resolvedAt": "2026-11-06T19:34:17.158Z"
       }
     }
   },

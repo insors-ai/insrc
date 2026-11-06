@@ -578,6 +578,8 @@ Call the classifier that the daemon's own run pipeline uses (analyze/classifier/
   - **resolved**: Enforce by declared contract — User accepted the recommendation (2026-11-06). _(2026-11-06T19:33:20.976Z)_
 - `q16e5c479` — Which explorations beyond concept.resolve and the doc explorations should honour the resolved scope's area in a follow-up Story? Other code-family runners still ignore ctx.scope for their area filter, although they now read the right repository.
   - **resolved**: Existing area filters only — User accepted the recommendation; capability.reuse-check is still handled in this Story as a plan task (round-3 finding). _(2026-11-06T19:33:59.117Z)_
+- `qa1190205` — Checklist cd2 and alt2 were marked partial: some existing runners are shown with elided parameter lists because only the values they pass change, and the alternatives carry no constraint scores because the Story has no acceptance criteria, epic constraints or HLD contracts to score.
+  - **resolved**: Expand signatures, leave scores unassigned — User accepted the recommendation (2026-11-06). _(2026-11-06T19:34:17.158Z)_
 
 ## Citations
 

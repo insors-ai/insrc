@@ -137,3 +137,10 @@ test('arrays of discriminated nullable objects prune immutable incompatible bran
  const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
  assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items.map(()=>({kind:'nullable',note:null}))});assert.equal(raw.items[0]!.error,null);
 });
+
+test('equivalent union decodings merge branch provenance before array Cartesian products',()=>{
+ const item={anyOf:[{type:'object',properties:{note:{type:'string'}}},{type:'object',properties:{note:{type:'number'}}}]};
+ const raw={items:Array.from({length:1000},()=>({note:null}))};
+ const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
+ assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items.map(()=>({}))});assert.equal(raw.items[0]!.note,null);
+});

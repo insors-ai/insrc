@@ -288,9 +288,14 @@ function* replyChoices(factories: readonly (() => Iterable<unknown>)[]): Generat
  }
 }
 
+interface ReplyGuard {
+ instance: string[];
+ schema?: string;
+ alternatives?: ReplyGuard[][];
+}
 interface DecodedReply {
  value: unknown;
- guards: { instance: string[]; schema: string }[];
+ guards: ReplyGuard[];
 }
 
 /** Defer selected-branch checks until every enclosing conjunct has decoded. */
@@ -330,8 +335,13 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
  type Step = (value: unknown) => Iterable<DecodedReply>;
  const plain = (value: unknown): DecodedReply => ({ value, guards: [] });
  function* unique(values: Iterable<DecodedReply>): Generator<DecodedReply> {
-  const seen = new Set<string | undefined>();
-  for (const value of values) { const key = JSON.stringify(value); if (!seen.has(key)) { seen.add(key); yield value; } }
+  const merged = new Map<string | undefined, DecodedReply>();
+  for (const candidate of values) {
+   const key = JSON.stringify(candidate.value), previous = merged.get(key);
+   if (!previous) merged.set(key, candidate);
+   else merged.set(key, {value: candidate.value, guards: [{instance: [], alternatives: [previous.guards, candidate.guards]}]});
+  }
+  yield* merged.values();
  }
  function* sequence(candidate: DecodedReply, steps: readonly Step[], index = 0): Generator<DecodedReply> {
   if (index === steps.length) { yield candidate; return; }
@@ -427,14 +437,16 @@ export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): V
  for (const decoded of decodeCodexOptionals(raw, schema, context)) {
   const candidate = decoded.value;
   candidateValues.add(JSON.stringify(candidate)); first ??= { value: candidate };
-  if (!context.validate(candidate) || !decoded.guards.every(guard => {
-   let value = candidate;
+  const guardHolds = (guard: ReplyGuard, root: unknown): boolean => {
+   let value = root;
    for (const part of guard.instance) {
     if (!isObject(value) && !Array.isArray(value)) return false;
     value = (value as Record<string, unknown>)[part];
    }
-   return context.at(guard.schema, value);
-  })) continue;
+   return guard.schema !== undefined ? context.at(guard.schema, value)
+    : guard.alternatives?.some(group => group.every(child => guardHolds(child, value))) === true;
+  };
+  if (!context.validate(candidate) || !decoded.guards.every(guard => guardHolds(guard, candidate))) continue;
   const key = JSON.stringify(candidate);
   if (acceptedValues.has(key)) continue;
   acceptedValues.add(key);

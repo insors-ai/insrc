@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "d61bbc65977803d5d04652c06709c46aae6bdaa16bf661bb6d470a9a90b8e966",
-        "at": "2026-11-06T13:08:50.144Z",
+        "number": 10,
+        "contentHash": "70c18c0d38520f4e52587f4a47bc084ed0be7496c16ab8885497500f793f5553",
+        "at": "2026-11-06T13:56:59.096Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,25 +29,25 @@
     "schemaVersion": 1,
     "epicHash": "d4cf0037bc85680a",
     "storyId": "s1",
-    "revision": 4,
+    "revision": 10,
     "standalone": true,
     "sizeClass": "trivial",
     "authoredBy": "controller",
-    "triageRationale": "Small bugfix routed directly from approved ISSUE to build; existing provider boundaries only.",
+    "triageRationale": "Existing approved small issue; review findings corrected within the same acceptance contract.",
     "epicSlug": "decode-nullable-codex-replies-through-shared",
-    "updatedAt": "2026-11-06T13:07:24.815Z"
+    "updatedAt": "2026-11-06T13:55:37.866Z"
   },
   "body": {
     "focus": "Implement approved ISSUE-d4cf0037bc85680a: central Codex nullable transport decoding and route activity review candidate/final responses through that shared handler. Preserve original host constraints and explicitly nullable values, required null rejection, schema/reply immutability and Claude behavior.",
     "producesLld": false,
-    "commit": "84fc3b9c4",
+    "commit": "4c14d752e",
     "tasks": [
       {
         "id": "s1",
         "passed": true
       }
     ],
-    "summary": "Centralizes Codex transport null decoding and streamed response validation with original-schema enforcement and typed diagnostics. Validation-only Vibe path preserves prior semantics. Corrected patternProperties/additionalProperties precedence so explicitly permitted nested nulls survive; added joint-schema regression. All 38 affected provider/stream/decoder tests and typecheck pass; 79 broader initial provider regressions passed. Exact saved error:null assessment now validates locally without modifying its raw response or checkpoint.",
+    "summary": "Centralized Codex optional-null decoding and streamed validation with deferred branch guards, impossible-discriminator pruning, local equivalent-branch merging and lazy distinct collection products. All 48 focused tests pass, including 1,000-item discriminated, equivalent and genuinely ambiguous arrays; original schema constraints and provider isolation remain enforced.",
     "testRecord": {
       "md": "docs/standalone/decode-nullable-codex-replies-through-shared-E20261106d4cf0037/S001/TESTS.md"
     },
@@ -57,77 +57,77 @@
           "file": ".insrc/artifacts/ISSUE-d4cf0037bc85680a.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-d4cf0037bc85680a.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "docs/standalone/decode-nullable-codex-replies-through-shared-E20261106d4cf0037/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/review-activity-stream.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/structured-schema-nullable.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/review-activity-stream.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/structured-output.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/structured-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/__tests__/cli-vibe.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       },
       {
         "target": {
           "file": "src/agent/providers/cli-provider.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-06T13:07:24.815Z"
+        "timestamp": "2026-11-06T13:55:37.866Z"
       }
     ]
   },

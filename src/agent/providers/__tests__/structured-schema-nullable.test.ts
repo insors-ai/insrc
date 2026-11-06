@@ -111,3 +111,13 @@ test('invalid replies retain actual host diagnostics without blaming decoded opt
   const result=validateCodexReply(host,raw);assert.equal(result.ok,false);if(!result.ok){assert.ok(result.issues?.length);assert.equal(result.issues?.some(i=>i.field==='/error'),false);}
  }
 });
+
+test('selected union branches are checked after all conjuncts decode, independent of allOf order',()=>{
+ const union={anyOf:[{properties:{a:{type:'string'}},not:{required:['b']}}]};
+ const common={properties:{b:{type:'string'}}};
+ for(const allOf of [[union,common],[common,union]]){
+  const host={type:'object',required:['entry'],properties:{entry:{type:'object',allOf}}};
+  const raw={entry:{a:null,b:null}},result=validateCodexReply(host,raw);
+  assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{}});assert.deepEqual(raw,{entry:{a:null,b:null}});
+ }
+});

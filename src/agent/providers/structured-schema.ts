@@ -288,8 +288,13 @@ function* replyChoices(factories: readonly (() => Iterable<unknown>)[]): Generat
  }
 }
 
-/** Enumerate only transport-derived alternatives; the FULL host schema chooses. */
-function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): Generator<unknown> {
+interface DecodedReply {
+ value: unknown;
+ guards: { instance: string[]; schema: string }[];
+}
+
+/** Defer selected-branch checks until every enclosing conjunct has decoded. */
+function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): Generator<DecodedReply> {
  const escape = (part: string) => encodeURIComponent(part.replace(/~/g, '~0').replace(/\//g, '~1'));
  const resolve = (pointer: string): unknown => {
   if (pointer === '') return root;
@@ -300,24 +305,28 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
   }
   return node;
  };
- type Step = (value: unknown) => Iterable<unknown>;
- function* unique(values: Iterable<unknown>): Generator<unknown> {
+ type Step = (value: unknown) => Iterable<DecodedReply>;
+ const plain = (value: unknown): DecodedReply => ({ value, guards: [] });
+ function* unique(values: Iterable<DecodedReply>): Generator<DecodedReply> {
   const seen = new Set<string | undefined>();
   for (const value of values) { const key = JSON.stringify(value); if (!seen.has(key)) { seen.add(key); yield value; } }
  }
- function* sequence(value: unknown, steps: readonly Step[], index = 0): Generator<unknown> {
-  if (index === steps.length) { yield value; return; }
-  for (const next of steps[index]!(value)) yield* sequence(next, steps, index + 1);
+ function* sequence(candidate: DecodedReply, steps: readonly Step[], index = 0): Generator<DecodedReply> {
+  if (index === steps.length) { yield candidate; return; }
+  for (const next of steps[index]!(candidate.value)) yield* sequence({value: next.value, guards: [...candidate.guards, ...next.guards]}, steps, index + 1);
  }
- function* structural(value: unknown, node: Record<string, unknown>, pointer: string): Generator<unknown> {
+ function* structural(value: unknown, node: Record<string, unknown>, pointer: string): Generator<DecodedReply> {
   if (Array.isArray(value)) {
    const prefix = Array.isArray(node['prefixItems']) ? node['prefixItems'] : [];
-   yield* replyChoices(value.map((item, index) => () => index < prefix.length
+   for (const choices of replyChoices(value.map((item, index) => () => index < prefix.length
     ? decode(item, prefix[index], `${pointer}/prefixItems/${index}`)
-    : decode(item, node['items'], `${pointer}/items`)));
+    : decode(item, node['items'], `${pointer}/items`)))) {
+    const parts = choices as DecodedReply[];
+    yield {value: parts.map(p => p.value), guards: parts.flatMap((p, index) => p.guards.map(g => ({...g, instance: [String(index), ...g.instance]})))};
+   }
    return;
   }
-  if (!isObject(value)) { yield value; return; }
+  if (!isObject(value)) { yield plain(value); return; }
   const properties = node['properties'], required = new Set(Array.isArray(node['required']) ? node['required'] : []);
   const names: string[] = [], fields: (() => Iterable<unknown>)[] = [];
   for (const [name, item] of Object.entries(value)) {
@@ -329,12 +338,15 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
     steps.push(value => decode(value, properties[name], path));
    } else if (!patterns.length && isObject(node['additionalProperties'])) steps.push(value => decode(value, node['additionalProperties'], `${pointer}/additionalProperties`));
    for (const [pattern, property] of patterns) steps.push(value => decode(value, property, `${pointer}/patternProperties/${escape(pattern)}`));
-   names.push(name); fields.push(() => sequence(item, steps));
+   names.push(name); fields.push(() => sequence(plain(item), steps));
   }
-  for (const values of replyChoices(fields)) yield Object.fromEntries(names.map((name, index) => [name, values[index]]));
+  for (const values of replyChoices(fields)) {
+   const parts = values as DecodedReply[];
+   yield {value: Object.fromEntries(names.map((name, index) => [name, parts[index]!.value])), guards: parts.flatMap((p, index) => p.guards.map(g => ({...g, instance: [names[index]!, ...g.instance]})))};
+  }
  }
- function* decode(value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): Generator<unknown> {
-  if (!isObject(node) || value === null || active.has(node)) { yield value; return; }
+ function* decode(value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): Generator<DecodedReply> {
+  if (!isObject(node) || value === null || active.has(node)) { yield plain(value); return; }
   const next = new Set(active).add(node), steps: Step[] = [];
   if (typeof node['$ref'] === 'string' && (node['$ref'] === '#' || node['$ref'].startsWith('#/'))) {
    const target = node['$ref'].slice(1);
@@ -347,16 +359,16 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
    if (!Array.isArray(branches)) continue;
    steps.push(function* (value) {
     // A valid original value needs no branch-specific data removal.
-    if (context.at(pointer, value)) { yield value; return; }
+    if (context.at(pointer, value)) { yield plain(value); return; }
     let yielded = false;
     for (const [index, branch] of branches.entries()) {
      const path = `${pointer}/${keyword}/${index}`;
-     for (const candidate of decode(value, branch, path, next)) if (context.at(path, candidate)) { yielded = true; yield candidate; }
+     for (const candidate of decode(value, branch, path, next)) { yielded = true; yield {value: candidate.value, guards: [...candidate.guards, {instance: [], schema: path}]}; }
     }
-    if (!yielded) yield value; // Keep invalid data for original-schema diagnostics.
+    if (!yielded) yield plain(value); // Keep invalid data for original-schema diagnostics.
    });
   }
-  yield* unique(sequence(value, steps));
+  yield* unique(sequence(plain(value), steps));
  }
  yield* decode(structuredClone(raw), root, '');
 }
@@ -389,14 +401,26 @@ export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): V
  catch (err) { return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] }; }
  if (context.validate(raw)) return { ok: true, value: raw as T };
  let accepted: { value: T } | undefined, first: { value: unknown } | undefined;
- let candidates = 0;
- for (const candidate of decodeCodexOptionals(raw, schema, context)) {
-  candidates++; first ??= { value: candidate };
-  if (!context.validate(candidate)) continue;
+ const candidateValues = new Set<string | undefined>();
+ const acceptedValues = new Set<string | undefined>();
+ for (const decoded of decodeCodexOptionals(raw, schema, context)) {
+  const candidate = decoded.value;
+  candidateValues.add(JSON.stringify(candidate)); first ??= { value: candidate };
+  if (!context.validate(candidate) || !decoded.guards.every(guard => {
+   let value = candidate;
+   for (const part of guard.instance) {
+    if (!isObject(value) && !Array.isArray(value)) return false;
+    value = (value as Record<string, unknown>)[part];
+   }
+   return context.at(guard.schema, value);
+  })) continue;
+  const key = JSON.stringify(candidate);
+  if (acceptedValues.has(key)) continue;
+  acceptedValues.add(key);
   if (accepted) return { ok: false, errors: ['Codex optional-null decoding is ambiguous under the original schema.'], issues: [{ code: 'AMBIGUOUS_OPTIONAL_NULLS', field: '/', correction: 'Return an unambiguous response under the original schema.' }] };
   accepted = { value: candidate as T };
  }
- return accepted ? { ok: true, value: accepted.value } : checkedNativeReply<T>(context, candidates === 1 ? first!.value : raw);
+ return accepted ? { ok: true, value: accepted.value } : checkedNativeReply<T>(context, candidateValues.size === 1 ? first!.value : raw);
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {

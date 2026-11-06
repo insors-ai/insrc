@@ -1,0 +1,11 @@
+# Stale task-version finding: available evidence
+
+This evidence inventory supports the proposed correction in ISSUE-599f1d0bd42e0c37.
+
+The durable record is .insrc/artifacts/CR-9b04adb36cac716d-s3.json, rendered at docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S003/CR.md. Its first review attempt lists both origin commit f0d5da04756e1e96a5043c0063a8891dd2455c7e and included fix commit 76d3d899a5f144721e2a3328a9933e346be3b600 in the submitted scope. Its t3 assessment leaves the first-report lookup finding blocking and explicitly refers to the later fix. Its t9 assessment passes the root-report lookup correction and the associated regression. The committed source and tests at both OIDs are available for independent inspection. The separate requiredReferences coverage finding remains a separate concern in that record.
+
+The temporary checkpoint .insrc/tmp/code-review/code-review-9b04adb36cac716d-s3-r1.json is absent. Searches of this project's temporary review files, /tmp, ~/.insrc/backups and ~/work/temp did not locate it. No substitute raw checkpoint has been manufactured. The original full submitted packet, model-selected change/test attribution, exact elapsed timing and rejected t6 payload cannot be reconstructed faithfully from the permanent CR alone. This design does not claim to verify those unavailable details. The sibling diagnostic-reliability issues own their separate diagnostic claims.
+
+The regression for this LLD uses the durable CR's t3/t9 finding and selected source versions as the historical evidence, then creates a clearly labelled synthetic explicit packet exercising an early defect and later submitted fix. Its expected behavior follows the originating ISSUE's approved fix intent: final selected code governs current findings without adding unrelated scope or erasing genuine unresolved coverage defects. It is a behavior reproduction, not replay of the missing raw packet.
+
+Review evidence for this scope is the permanent CR, the approved ISSUE, immutable Git objects and the synthetic regression contract. Missing raw-checkpoint timing/attribution is a disclosed historical limit rather than a requirement to reproduce unavailable transient diagnostics before evaluating the proposed scope correction.

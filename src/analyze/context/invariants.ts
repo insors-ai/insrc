@@ -58,7 +58,7 @@ export class ScopeRefUnresolvedError extends Error {
 
 /** A file, module or manifest-dir scope names a path that is missing or is the wrong kind of path. */
 export class ScopeNotFoundError extends Error {
-	constructor(kind: string, path: string, found: 'missing' | 'not a file' | 'not a directory') {
+	constructor(kind: string, path: string, found: 'missing' | 'not a file' | 'not a directory' | 'not an absolute path') {
 		super(`scopeRef.kind='${kind}' names '${path}', which is ${found === 'missing' ? 'not there' : found}.`);
 		this.name = 'ScopeNotFoundError';
 	}

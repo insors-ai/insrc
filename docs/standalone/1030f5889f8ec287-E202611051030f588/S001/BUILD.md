@@ -2,9 +2,9 @@
 
 # Build (standalone trivial) — Story S001
 
-**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-05T12:45:25.581Z  ·  **Updated:** 2026-11-05T12:49:10.017Z
+**Size class:** trivial  ·  **Standalone:** yes  ·  **Created:** 2026-11-05T12:45:25.581Z  ·  **Updated:** 2026-11-06T06:16:57.471Z
 
-**Commit:** 8737feaec
+**Commit:** 1861fd41e
 
 ## Scope
 
@@ -33,3 +33,4 @@ Corrected Vibe programmatic prompt transport by binding the full text to --promp
 - `docs/standalone/pass-vibe-chat-prompts-correctly-programmatic-E20261105910fce32/ISSUE.md` — **insrc-build** (2026-11-05T12:49:10.017Z)
 - `vscode-plugin/src/chat/__tests__/cli-adapter.test.ts` — **insrc-build** (2026-11-05T12:49:10.017Z)
 - `vscode-plugin/src/chat/cli-adapter.ts` — **insrc-build** (2026-11-05T12:49:10.017Z)
+- `docs/standalone/1030f5889f8ec287-E202611051030f588/S001/evidence/installation.json` — **insrc-build** (2026-11-06T06:16:57.471Z)

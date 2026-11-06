@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "cr-1793945828188-48opso",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-06T06:17:07.329Z",
+    "model": "codex:gpt-6.1-sol",
+    "elapsedMs": 36944,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1030f5889f8ec287",
+    "storyId": "S001",
+    "reviewedBy": "daemon",
+    "reviewInputFingerprint": {
+      "schemaVersion": 1,
+      "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+      "epicHash": "1030f5889f8ec287",
+      "storyId": "S001",
+      "author": "controller",
+      "sourceDigest": "cf4abd1bd0906c4bee342de4e3bbbe8d23e3e8a977f60a87acc81372d78e6271",
+      "contractDigest": "94bca157d055c25f71f8fee743108fd0ad536a07424d7b2877d1e271f640153b",
+      "buildDigest": "7309a269b39f7cb26f35a0f574a8cb1b52be2560f773934eafce1e8289607544",
+      "testsDigest": "e8560cc6f43da001b89a771c5c0b615e2872b5fbdcfc037367759769055b74b6",
+      "digest": "974703b0f5f82edb548fe17f17794ffb3c887927c3375ec6c646e825e827fe99"
+    },
+    "reviewInputSchemaVersion": 1,
+    "epicCreatedAt": "2026-11-05T12:45:25.581Z",
+    "standalone": true
+  },
+  "body": {
+    "kind": "code-review",
+    "epicHash": "1030f5889f8ec287",
+    "storyId": "S001",
+    "groundingMode": "full",
+    "subject": {
+      "changedFiles": [
+        "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts",
+        "vscode-plugin/src/chat/cli-adapter.ts"
+      ],
+      "changeSetAttribution": "story-trailer",
+      "sharedWithExcluded": [],
+      "excludedFromScope": [
+        "docs/vscode-plugin-screen-recording-script.html"
+      ]
+    },
+    "dimensions": [
+      {
+        "dimension": "adherence",
+        "findings": []
+      },
+      {
+        "dimension": "conventions",
+        "findings": []
+      },
+      {
+        "dimension": "coverage",
+        "findings": [
+          {
+            "dimension": "coverage",
+            "severity": "LOW",
+            "location": "vscode-plugin/src/chat/cli-adapter.ts:1",
+            "message": "defaultBinaryProbe has a reaching test in live-cli.test.ts, but that file is absent from the test record. Coverage is present but failing/unverified; a passing execution cannot be confirmed.",
+            "expectationRef": "defaultBinaryProbe",
+            "confidence": "observation",
+            "findingKind": "symbol-coverage",
+            "symbolId": "1106232"
+          }
+        ]
+      },
+      {
+        "dimension": "quality",
+        "findings": []
+      }
+    ],
+    "verdict": "pass",
+    "counts": {
+      "high": 0,
+      "med": 0,
+      "low": 1
+    }
+  }
+}

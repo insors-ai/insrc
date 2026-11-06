@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "3d3645ff62e6ba08f7f91f50626ca2eb92207a5c6f679e89bbbe2bcf7eb68138",
+        "at": "2026-11-06T06:56:37.816Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-26cf7d2c-8782-4e18-a4ed-b0d47fb89914",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T06:52:31.958Z",
+    "epicCreatedAt": "2026-11-06T06:43:56.135Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "7386983710e0c464",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue directly to build without LLD/Plan.",
+    "epicSlug": "omit-string-length-bounds-from-codex",
+    "updatedAt": "2026-11-06T06:55:58.859Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-7386983710e0c464: remove minLength/maxLength from Codex wire schemas only; retain original host validation and preserve other provider behavior. Earlier nullable experiment is separate.",
+    "producesLld": false,
+    "commit": "c5a6e965b",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Removes minLength and maxLength from the recursive Codex wire-keyword filter while preserving original-schema host validation. Added fake-CLI regression covering nested refs/unions, original-schema immutability, both completion/reviewer paths and short/long response rejection. 72 local provider regressions, typecheck, production build and compiled equality to the successful live wire schema pass. Earlier nullable experiment is excluded from this commit.",
+    "testRecord": {
+      "md": "docs/standalone/omit-string-length-bounds-from-codex-E2026110673869837/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-7386983710e0c464.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T06:55:58.859Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-7386983710e0c464.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T06:55:58.859Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/omit-string-length-bounds-from-codex-E2026110673869837/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T06:55:58.859Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T06:55:58.859Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T06:55:58.859Z"
+      }
+    ]
+  },
+  "citations": []
+}

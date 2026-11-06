@@ -150,8 +150,9 @@ async function resolveScopeUnchecked(ref: AnalyzeScopeRef, deps: ScopeDeps, exec
  * with `.`, `..`, repeated and trailing separators folded away. The same
  * spelling picks the containing repository, is statted by the validation, and
  * filters the entities, so `/work/a/../b/f.ts` is `/work/b/f.ts` everywhere.
- * A relative path is left as it was (it resolves against the caller's
- * directory elsewhere). Lexical only: symbolic links are not followed.
+ * A relative path has no base to resolve against in the daemon, so it is
+ * left as it was and refused by `validateRequestScope`. Lexical only:
+ * symbolic links are not followed.
  */
 export function canonicalPath(path: string): string {
 	return isAbsolute(path) ? resolvePath(path) : path;
@@ -482,15 +483,16 @@ export async function validateRequestScope(
 	if (scope.kind === 'workspace' || scope.kind === 'repo' || scope.kind === 'connection') return;
 	if (scope.kind === 'file' || scope.kind === 'module' || scope.kind === 'manifest-dir') {
 		const path  = scope.kind === 'file' ? (scope.filePath ?? scope.lookupPath) : scope.lookupPath;
+		// A relative path has one spelling per caller directory, never one canonical value: it is refused, not guessed.
+		if (!isAbsolute(path)) throw new ScopeNotFoundError(scope.kind, path, 'not an absolute path');
 		const found = await deps.kindOfPath(path);
 		const want  = scope.kind === 'file' ? 'file' : 'directory';
 		if (found === 'missing') throw new ScopeNotFoundError(scope.kind, path, 'missing');
 		if (found !== want) throw new ScopeNotFoundError(scope.kind, path, want === 'file' ? 'not a file' : 'not a directory');
 	}
-	// A scope inside a registered repository nested in the call's repository is the call's own.
+	// The scope's registered repository must be the call's: a nested registered repository is another repository.
 	const at = scope.filePath ?? scope.lookupPath;
-	if (expectedRepo !== undefined && scope.repoPath !== null && scope.repoPath !== expectedRepo
-		&& at !== expectedRepo && !at.startsWith(`${expectedRepo}/`)) {
+	if (expectedRepo !== undefined && scope.repoPath !== null && scope.repoPath !== expectedRepo) {
 		throw new ScopeRepoMismatchError(at, scope.repoPath, expectedRepo);
 	}
 }

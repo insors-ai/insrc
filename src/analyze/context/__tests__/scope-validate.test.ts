@@ -82,7 +82,11 @@ test('validateRequestScope refuses a nonexistent path, a wrong path kind and a s
 	assert.equal(sym.repoPath, B);
 	await assert.rejects(validateRequestScope(sym, A, FS), ScopeRepoMismatchError);
 
-	// a registered repository nested in the call's repository is the call's own
+	// a registered repository nested in the call's repository is another repository
 	const nested = { kind: 'module', value: `${A}/pkg`, repoPath: `${A}/pkg`, lookupPath: `${A}/pkg` } as ResolvedScope;
-	await validateRequestScope(nested, A, fsOf([], [`${A}/pkg`]));
+	await assert.rejects(validateRequestScope(nested, A, fsOf([], [`${A}/pkg`])), ScopeRepoMismatchError);
+
+	// a relative path has no canonical absolute spelling, so it is refused
+	const relative = { kind: 'module', value: 'src/./x', repoPath: null, lookupPath: 'src/./x' } as ResolvedScope;
+	await assert.rejects(validateRequestScope(relative, A, never), ScopeNotFoundError);
 });

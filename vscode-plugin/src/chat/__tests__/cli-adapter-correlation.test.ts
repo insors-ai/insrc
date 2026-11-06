@@ -225,3 +225,74 @@ test('a prompt-argument CLI turn never has an input to end', async () => {
   await collect(adapter.run({ provider: 'codex', cwd: '/tmp', prompt: 'hi' }));
   assert.equal(spawner.procs[0]!.inputEnds(), 0);
 });
+
+// ISSUE-48ffbec56130edb6 / LLD s1: a reader abandoned before the result must end the CLI's input,
+// and only then. The lifecycle abandons an iterator with return(); `break` does the same.
+test('an abandoned session-file Claude turn ends its input once and is not killed', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [text('working')] });
+  const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'abandon-file-')), 'output'), pollMs: 5 });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true, sessionOutput }).get('claude');
+  try {
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' }, { sessionId: 'abandon-file' })) {
+      if (event.kind === 'assistant-delta') break;
+    }
+    assert.equal(spawner.procs[0]!.inputEnds(), 1);
+    assert.deepEqual(spawner.procs[0]!.signals(), [], 'a turn that writes to its session file is detached from, never killed');
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test('an abandoned pipe turn ends its input and is stopped with SIGTERM', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [text('working')] });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('claude');
+  try {
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'assistant-delta') break;
+    }
+    assert.equal(spawner.procs[0]!.inputEnds(), 1);
+    assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM']);
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test("a throwing endInput does not stop the finally's cleanup", async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [text('working')] });
+  const adapter = createProviderRegistry({
+    isInstalled: () => true,
+    spawn: (command, args, opts) => ({ ...spawner.spawn(command, args, opts), endInput: () => { throw new Error('seam failed'); } }),
+  }).get('claude');
+  try {
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'assistant-delta') break;
+    }
+    assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'the pipe-turn kill still ran after the seam threw');
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test('an abandonment after the result adds no second call', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [
+    text('reply'),
+    JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_UUID__', result: 'reply' }),
+  ] });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('claude');
+  try {
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'done') break;
+    }
+    assert.equal(spawner.procs[0]!.inputEnds(), 1, 'ended at the result, and not again by the finally');
+    assert.deepEqual(spawner.procs[0]!.signals(), []);
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test('an abandoned Codex turn never calls endInput', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [JSON.stringify({ type: 'thread.started', thread_id: 't' })] });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('codex');
+  const it = adapter.run({ provider: 'codex', cwd: '/tmp', prompt: 'hi' })[Symbol.asyncIterator]();
+  try {
+    const first = it.next(); // thread.started yields no event, so this read is pending when the reader is abandoned
+    await new Promise(r => setTimeout(r, 30));
+    const closing = it.return?.(undefined); // like the lifecycle: not awaited before the process ends
+    spawner.procs[0]!.exitNow();
+    await first;
+    await closing;
+    assert.equal(spawner.procs[0]!.inputEnds(), 0);
+  } finally { spawner.procs[0]?.exitNow(); }
+});

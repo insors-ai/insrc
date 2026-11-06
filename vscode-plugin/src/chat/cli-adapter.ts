@@ -1373,6 +1373,13 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         yield { kind: 'error', turnId, message: failureMessage(mapper.id, err) };
       }
     } finally {
+      // A correlated Claude turn waits for more input after its answer, so a reader that is
+      // abandoned before the result must end the input: the CLI then finishes its in-flight work
+      // (background tasks included) and exits, releasing the session's chat lock. Never earlier
+      // than that; a failing seam must not skip the cleanup below.
+      if (!terminal && state.requestUuid !== undefined) {
+        try { proc.endInput?.(); } catch { /* the seam failed; the cleanup below still runs */ }
+      }
       // A consumer that abandons a PIPE turn before any terminal event must never orphan the
       // child: stop it (kill is idempotent + safe on an already-exited process). A turn writing to
       // its session file is only detached from: the CLI goes on writing there and the turn can be

@@ -1336,14 +1336,14 @@ function parseIntent(value: unknown, size: 'size-required' | 'size-optional'): U
 	if (obj['focus'] !== undefined && obj['focus'] !== null) {
 		result['focus'] = requireString(obj, 'focus');
 	}
-	if (obj['context'] !== undefined && obj['context'] !== null) {
+	if (obj['context'] !== undefined) {
 		const context = requireString(obj, 'context');
 		if (context.length > MAX_REQUEST_CONTEXT_CHARS) {
 			throw new TypeError(`intent.context: must be at most ${MAX_REQUEST_CONTEXT_CHARS} characters; got ${context.length}`);
 		}
 		result['context'] = context;
 	}
-	if (obj['scopeSource'] !== undefined && obj['scopeSource'] !== null) {
+	if (obj['scopeSource'] !== undefined) {
 		const source = requireString(obj, 'scopeSource');
 		if (source !== 'request' && source !== 'prompt') {
 			throw new TypeError(`intent.scopeSource: must be 'request' or 'prompt'; got '${source}'`);

@@ -27,6 +27,8 @@ test('parseIntent keeps context and scopeSource, refuses a bad value of either, 
 
 	assert.throws(() => _parseIntentForTest({ ...BASE, scopeSource: 'caller' }, 'size-optional'), /scopeSource/);
 	assert.throws(() => _parseIntentForTest({ ...BASE, scopeSource: 7 }, 'size-optional'), /scopeSource/);
+	assert.throws(() => _parseIntentForTest({ ...BASE, scopeSource: null }, 'size-optional'), /scopeSource/);
+	assert.throws(() => _parseIntentForTest({ ...BASE, context: null }, 'size-optional'), /context/);
 	assert.throws(() => _parseIntentForTest({ ...BASE, context: 7 }, 'size-optional'), /context/);
 	assert.throws(() => _parseIntentForTest({ ...BASE, context: 'x'.repeat(MAX_REQUEST_CONTEXT_CHARS + 1) }, 'size-optional'), /at most/);
 	assert.equal(_parseIntentForTest({ ...BASE, context: 'x'.repeat(MAX_REQUEST_CONTEXT_CHARS) }, 'size-optional').context?.length, MAX_REQUEST_CONTEXT_CHARS);

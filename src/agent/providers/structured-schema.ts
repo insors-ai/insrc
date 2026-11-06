@@ -110,13 +110,16 @@ function processInPlace(node: unknown): void {
  * out: the refused ones (uniqueItems, contains, not, allOf, if/then/else,
  * propertyNames, minProperties, maxProperties) and any never probed. A codex
  * reply is then held to the caller's full schema by `validateCodexReply`.
+ * String length bounds are also omitted: the task-result schema reproduced
+ * immediate Sol max_output_tokens failures until both bounds were removed
+ * (ISSUE-7386983710e0c464). Original-schema validation retains those bounds.
  * `oneOf` is kept because the strict form rewrites it to the accepted `anyOf`.
  */
 const CODEX_KEPT_KEYWORDS: ReadonlySet<string> = new Set([
 	'type', 'properties', 'required', 'additionalProperties', 'items', 'anyOf', 'oneOf',
 	'$ref', '$defs', 'definitions', 'patternProperties',
 	'enum', 'const', 'default', 'description', 'title', 'examples',
-	'minItems', 'maxItems', 'minLength', 'maxLength', 'pattern',
+	'minItems', 'maxItems', 'pattern',
 	'minimum', 'maximum', 'exclusiveMinimum', 'exclusiveMaximum', 'multipleOf',
 	'format',
 ]);

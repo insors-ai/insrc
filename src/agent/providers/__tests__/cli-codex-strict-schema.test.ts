@@ -154,7 +154,7 @@ test('the codex copy of a schema keeps only the keywords codex was probed to acc
 	const seen = keywordsIn(copy);
 	for (const kw of REFUSED) assert.ok(!seen.has(kw), `${kw} left out`);
 	const p = copy['properties'];
-	assert.deepEqual(p.tags, { type: 'array', items: { type: 'string', minLength: 1 }, minItems: 1, maxItems: 5 });
+	assert.deepEqual(p.tags, { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 5 });
 	assert.deepEqual(p.mode, { type: 'string', enum: ['a', 'b'] });
 	assert.deepEqual(p.nested, { type: 'object', properties: { n: { type: 'integer', minimum: 0, maximum: 9 } }, required: ['n'], additionalProperties: false });
 	assert.deepEqual(p.cond, { type: 'string' });
@@ -326,4 +326,32 @@ test('a schema whose $ref points into a part the codex copy leaves out or rename
 		$defs: { w: { type: 'string', minLength: 1 } },
 	};
 	assert.deepEqual((codexStrictSchema(intoKept) as Record<string, any>)['properties'], { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } });
+});
+
+test('Codex wire schemas omit string lengths recursively but preserve original host validation and other constraints', async () => {
+ const schema: StructuredSchema = {type:'object',required:['value','rows'],additionalProperties:false,properties:{
+  value:{type:'string',minLength:2,maxLength:4,pattern:'^[a-z]+$'},
+  rows:{type:'array',minItems:1,maxItems:3,items:{$ref:'#/$defs/row'}},
+  minLength:{type:'string',enum:['minLength'],default:'minLength'},
+ },$defs:{row:{type:'object',required:['name'],additionalProperties:false,properties:{name:{anyOf:[{type:'string',minLength:2,maxLength:4},{type:'null'}]}}}}};
+ const original=structuredClone(schema),wire=codexStrictSchema(schema) as Record<string,any>;
+ assert.deepEqual(schema,original);
+ assert.deepEqual(wire.properties.value,{type:'string',pattern:'^[a-z]+$'});
+ assert.deepEqual(wire.$defs.row.properties.name,{anyOf:[{type:'string'},{type:'null'}]});
+ assert.equal(wire.properties.rows.minItems,1);assert.equal(wire.properties.rows.maxItems,3);
+ assert.deepEqual(wire.properties.minLength,{type:'string',enum:['minLength'],default:'minLength'},'property names and literal data are not schema keywords');
+ const good={value:'okay',rows:[{name:'fine'}],minLength:'minLength'};
+ for(const mode of ['structured','review'] as const){
+  for(const value of [good,{...good,value:'a'},{...good,value:'abcde'},{...good,rows:[{name:'a'}]}]){
+   const f=fakeCodex(value),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-length-check-')));
+   try{
+    const p=new CliProvider({kind:'codex',binPath:f.bin});
+    const result=()=>mode==='structured'?p.completeStructured([{role:'user',content:'length check'}],schema,{internalRetry:false}):p.runReviewSession('length check',schema,{cwd,deadlineMs:30000,internalRetry:false});
+    if(value===good)assert.deepEqual(await result(),good);
+    else await assert.rejects(result(),/must NOT have (?:fewer|more) than/);
+    const sent=f.seen() as Record<string,any>;assert.equal('minLength' in sent.properties.value,false);assert.equal('maxLength' in sent.properties.value,false);
+   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
+  }
+ }
+ assert.deepEqual(schema,original);
 });

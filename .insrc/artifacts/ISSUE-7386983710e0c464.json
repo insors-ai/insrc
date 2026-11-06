@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793947387102-qvmecn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T06:43:56.135Z",
+    "epicCreatedAt": "2026-11-06T06:43:56.135Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 49031,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "7386983710e0c464",
+    "epicSlug": "omit-string-length-bounds-from-codex",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "918ecadf4d4b3ea20d55e3d9010a98e6b58a9ad3cc8c3b9f8e4e63701b2f93b0",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T06:51:57.744Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "7386983710e0c464",
+      "slug": "EPIC-7386983710e0c464"
+    }
+  },
+  "body": {
+    "title": "Omit string-length bounds from Codex wire schemas",
+    "reproduction": "The actual task-result schema with a tiny synthetic prompt terminates in Codex CLI with max_output_tokens and no assistant output. Removing only maxLength still fails; removing both minLength and maxLength succeeds. The returned JSON passes the original schema including its original length bounds. Same Sol model, medium effort, CLI, working directory and prompt. [c2]",
+    "rootCause": "The Codex-specific recursive keyword filter retains minLength and maxLength in the outgoing strict schema. Controlled replay demonstrates that removing those string-bound keywords from this schema avoids the observed failure; it does not establish the internal Codex/backend defect. Original-schema validation is a separate existing boundary. [c1][c2]",
+    "fixIntent": "Omit minLength and maxLength recursively from the Codex-only schema copy. Preserve the original host schema and enforce its string bounds when validating responses. Preserve other keywords, property names, enum/default data, regexes, array/numeric constraints, and non-Codex behavior. Cover wire omission and rejection of out-of-bounds host responses with deterministic tests. Keep the earlier nullable experiment separate. [c1][c2]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-schema.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "/tmp/codex-review-schema-probe/no-string-lengths-stdout.jsonl"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "/tmp/codex-review-schema-probe/removed-string-lengths.json"
+    }
+  ]
+}

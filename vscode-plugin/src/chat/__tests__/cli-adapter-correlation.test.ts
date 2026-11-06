@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { createSessionOutput } from '../session-output.js';
 import { createProviderRegistry, nodeSpawner } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
-import { makeFakeSpawner, waitFor } from './fixtures.js';
+import { CLAUDE_PERMISSION_TURN, VIBE_TEXT_TURN, makeFakeSpawner, waitFor } from './fixtures.js';
 
 const text = (value: string): string => JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: value }] } });
 async function collect(stream: AsyncIterable<TurnEvent>): Promise<TurnEvent[]> {
@@ -254,16 +254,21 @@ test('an abandoned pipe turn ends its input and is stopped with SIGTERM', async 
 });
 
 test("a throwing endInput does not stop the finally's cleanup", async () => {
-  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [text('working')] });
+  // ignoreSigterm keeps the exit unresolved, so the pending request can only be cleared by the finally itself
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, ignoreSigterm: true, lines: CLAUDE_PERMISSION_TURN.slice(0, 2) });
   const adapter = createProviderRegistry({
     isInstalled: () => true,
     spawn: (command, args, opts) => ({ ...spawner.spawn(command, args, opts), endInput: () => { throw new Error('seam failed'); } }),
   }).get('claude');
   try {
-    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi' })) {
-      if (event.kind === 'assistant-delta') break;
+    let approval: Extract<TurnEvent, { kind: 'approval-request' }> | undefined;
+    for await (const event of adapter.run({ provider: 'claude', cwd: '/tmp', prompt: 'hi', permissionMode: 'manual' })) {
+      if (event.kind === 'approval-request') { approval = event; break; }
     }
+    assert.ok(approval, 'the turn raised an in-turn approval before it was abandoned');
     assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'the pipe-turn kill still ran after the seam threw');
+    assert.deepEqual(adapter.decide(approval.turnId, approval.requestId, 'approve'), { delivered: false }, 'the pending request was cleared by the finally');
+    assert.deepEqual(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user'), [], 'no decision was written');
   } finally { spawner.procs[0]?.exitNow(); }
 });
 
@@ -294,5 +299,17 @@ test('an abandoned Codex turn never calls endInput', async () => {
     }
     assert.equal(spawner.procs[0]!.inputEnds(), 0, 'a Codex turn has no input to end');
     assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'the pipe-turn kill is the only cleanup, as before');
+  } finally { spawner.procs[0]?.exitNow(); }
+});
+
+test('an abandoned Vibe turn never calls endInput', async () => {
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: VIBE_TEXT_TURN });
+  const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('vibe');
+  try {
+    for await (const event of adapter.run({ provider: 'vibe', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'assistant-delta') break; // abandoned before any terminal event
+    }
+    assert.equal(spawner.procs[0]!.inputEnds(), 0, 'a Vibe turn has no input to end');
+    assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM']);
   } finally { spawner.procs[0]?.exitNow(); }
 });

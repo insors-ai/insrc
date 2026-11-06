@@ -283,16 +283,16 @@ test('an abandonment after the result adds no second call', async () => {
 });
 
 test('an abandoned Codex turn never calls endInput', async () => {
-  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [JSON.stringify({ type: 'thread.started', thread_id: 't' })] });
+  const spawner = makeFakeSpawner({ hangUntilKilled: true, lines: [
+    JSON.stringify({ type: 'thread.started', thread_id: 'thread-codex-1' }),
+    JSON.stringify({ type: 'item.completed', item: { type: 'agent_message', text: 'working' } }),
+  ] });
   const adapter = createProviderRegistry({ spawn: spawner.spawn, isInstalled: () => true }).get('codex');
-  const it = adapter.run({ provider: 'codex', cwd: '/tmp', prompt: 'hi' })[Symbol.asyncIterator]();
   try {
-    const first = it.next(); // thread.started yields no event, so this read is pending when the reader is abandoned
-    await new Promise(r => setTimeout(r, 30));
-    const closing = it.return?.(undefined); // like the lifecycle: not awaited before the process ends
-    spawner.procs[0]!.exitNow();
-    await first;
-    await closing;
-    assert.equal(spawner.procs[0]!.inputEnds(), 0);
+    for await (const event of adapter.run({ provider: 'codex', cwd: '/tmp', prompt: 'hi' })) {
+      if (event.kind === 'assistant-delta') break; // abandoned before any terminal event
+    }
+    assert.equal(spawner.procs[0]!.inputEnds(), 0, 'a Codex turn has no input to end');
+    assert.deepEqual(spawner.procs[0]!.signals(), ['SIGTERM'], 'the pipe-turn kill is the only cleanup, as before');
   } finally { spawner.procs[0]?.exitNow(); }
 });

@@ -305,6 +305,28 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
   }
   return node;
  };
+ // Only reject branches for constraints that deleting optional nulls cannot fix.
+ function possible(value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): boolean {
+  if (!isObject(node) || value === null || active.has(node)) return true;
+  if (typeof value !== 'object') return context.at(pointer, value);
+  const next = new Set(active).add(node);
+  if (typeof node['$ref'] === 'string' && (node['$ref'] === '#' || node['$ref'].startsWith('#/'))) {
+   const target = node['$ref'].slice(1);
+   if (!possible(value, resolve(target), target, next)) return false;
+  }
+  if (isObject(value)) {
+   if (Array.isArray(node['required']) && node['required'].some(name => typeof name === 'string' && !Object.hasOwn(value, name))) return false;
+   if (isObject(node['properties'])) for (const [name, property] of Object.entries(node['properties'])) {
+    if (Object.hasOwn(value, name) && value[name] !== null && !possible(value[name], property, `${pointer}/properties/${escape(name)}`, next)) return false;
+   }
+  }
+  if (Array.isArray(node['allOf']) && !node['allOf'].every((branch, index) => possible(value, branch, `${pointer}/allOf/${index}`, next))) return false;
+  for (const keyword of ['anyOf', 'oneOf'] as const) {
+   const branches = node[keyword];
+   if (Array.isArray(branches) && !branches.some((branch, index) => possible(value, branch, `${pointer}/${keyword}/${index}`, next))) return false;
+  }
+  return true;
+ }
  type Step = (value: unknown) => Iterable<DecodedReply>;
  const plain = (value: unknown): DecodedReply => ({ value, guards: [] });
  function* unique(values: Iterable<DecodedReply>): Generator<DecodedReply> {
@@ -358,11 +380,10 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
    const branches = node[keyword];
    if (!Array.isArray(branches)) continue;
    steps.push(function* (value) {
-    // A valid original value needs no branch-specific data removal.
-    if (context.at(pointer, value)) { yield plain(value); return; }
     let yielded = false;
     for (const [index, branch] of branches.entries()) {
      const path = `${pointer}/${keyword}/${index}`;
+     if (!possible(value, branch, path)) continue;
      for (const candidate of decode(value, branch, path, next)) { yielded = true; yield {value: candidate.value, guards: [...candidate.guards, {instance: [], schema: path}]}; }
     }
     if (!yielded) yield plain(value); // Keep invalid data for original-schema diagnostics.

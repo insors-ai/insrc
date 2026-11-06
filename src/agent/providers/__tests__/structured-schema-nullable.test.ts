@@ -121,3 +121,19 @@ test('selected union branches are checked after all conjuncts decode, independen
   assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{}});assert.deepEqual(raw,{entry:{a:null,b:null}});
  }
 });
+
+test('initially valid union alternatives remain available after later conjuncts remove sentinels',()=>{
+ const union={anyOf:[{required:['b'],properties:{a:{type:['string','null']},b:{type:['string','null']}}},{not:{required:['b']},properties:{a:{type:'string'}}}]};
+ const common={properties:{b:{type:'string'}}};
+ for(const allOf of [[union,common],[common,union]]){
+  const result=validateCodexReply({type:'object',required:['entry'],properties:{entry:{type:'object',allOf}}},{entry:{a:null,b:null}});
+  assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{}});
+ }
+});
+
+test('arrays of discriminated nullable objects prune immutable incompatible branches before products',()=>{
+ const item={anyOf:[{type:'object',required:['kind'],properties:{kind:{const:'text'},note:{type:'string'},error:{type:'string'}},additionalProperties:false},{type:'object',required:['kind'],properties:{kind:{const:'nullable'},note:{type:['string','null']},error:{type:'string'}},additionalProperties:false}]};
+ const raw={items:Array.from({length:1000},()=>({kind:'nullable',note:null,error:null}))};
+ const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
+ assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items.map(()=>({kind:'nullable',note:null}))});assert.equal(raw.items[0]!.error,null);
+});

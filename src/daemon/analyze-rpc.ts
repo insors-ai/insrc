@@ -100,6 +100,7 @@ import type {
 	PlanTask,
 } from '../analyze/planner/types.js';
 import type { AnalyzeScope } from '../shared/analyze-types.js';
+import { MAX_REQUEST_CONTEXT_CHARS } from '../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
 	ClassificationShapeInput,
@@ -1061,6 +1062,7 @@ export const CAUSE_CODES_IN_BOTH_LISTS = [
 ] as const satisfies ReadonlyArray<AnalyzeRpcErrorCode & RunErrorCode>;
 
 /** Test hook: the daemon's shaper-error mapping. */
+export const _parseIntentForTest = parseIntent;
 export const _classifyShaperErrorForTest = classifyShaperError;
 
 /** Test hook: the daemon's planner-error mapping, used by the plan-tree entry. */
@@ -1333,6 +1335,20 @@ function parseIntent(value: unknown, size: 'size-required' | 'size-optional'): U
 	};
 	if (obj['focus'] !== undefined && obj['focus'] !== null) {
 		result['focus'] = requireString(obj, 'focus');
+	}
+	if (obj['context'] !== undefined && obj['context'] !== null) {
+		const context = requireString(obj, 'context');
+		if (context.length > MAX_REQUEST_CONTEXT_CHARS) {
+			throw new TypeError(`intent.context: must be at most ${MAX_REQUEST_CONTEXT_CHARS} characters; got ${context.length}`);
+		}
+		result['context'] = context;
+	}
+	if (obj['scopeSource'] !== undefined && obj['scopeSource'] !== null) {
+		const source = requireString(obj, 'scopeSource');
+		if (source !== 'request' && source !== 'prompt') {
+			throw new TypeError(`intent.scopeSource: must be 'request' or 'prompt'; got '${source}'`);
+		}
+		result['scopeSource'] = source;
 	}
 	return result as unknown as UnsizedIntent & { scope?: AnalyzeScope };
 }

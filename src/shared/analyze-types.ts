@@ -55,6 +55,27 @@ export interface ClassifiedIntent {
 	readonly focus?:    string;
 	readonly scopeRef:  AnalyzeScopeRef;
 	readonly reasoning: string;
+	/** Background the caller considers relevant. Shown to planning and synthesis; never decides the scope. */
+	readonly context?:  string | undefined;
+	/** Whether the caller named the scope (`request`) or it defaulted to the workspace from a prompt (`prompt`). Absent on an older payload. */
+	readonly scopeSource?: 'request' | 'prompt' | undefined;
+}
+
+/** The longest `context` an intent or request may carry. */
+export const MAX_REQUEST_CONTEXT_CHARS = 4000;
+
+/**
+ * The structured request an agent builds from the user's prompt. `question`
+ * is what to answer, `scopeRef` names what to analyse, `target` defaults to
+ * code, `sizeHint` is a hint and never the measured size, and `context` is
+ * background that never decides the scope.
+ */
+export interface AnalyzeRequest {
+	readonly question:  string;
+	readonly scopeRef:  AnalyzeScopeRef;
+	readonly target?:   AnalyzeTarget | undefined;
+	readonly sizeHint?: AnalyzeScope | undefined;
+	readonly context?:  string | undefined;
 }
 
 /**

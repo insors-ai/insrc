@@ -91,6 +91,27 @@ interface OpenDocument {
   readonly title: string | undefined;
 }
 
+/**
+ * E202611031bd72813:S001 (manual review MR2): ALL per-panel state — the open document and its
+ * load sequencing, the shell nonce, the file watch, the quiet timer, the decision counters and
+ * the open queue — lives in the panel's own context, so one panel's interactions can never be
+ * routed into or supersede another's. Only list/cache data (the pending map, refreshSeq, the
+ * presented strip, the poll) is shared, and list-level messages go to every panel.
+ */
+interface PanelCtx {
+  readonly channel: ChatPanelChannel;
+  /** undefined for the legacy presentKey-less single panel. */
+  readonly presentKey: string | undefined;
+  opened: OpenDocument | undefined;
+  openSeq: number;
+  shellNonce: string;
+  watch: { readonly key: string; dispose(): void } | undefined;
+  quiet: { cancel(): void } | undefined;
+  deciding: number;
+  changedWhileDeciding: boolean;
+  openQueue: Promise<void>;
+}
+
 export interface DocsReviewHost {
   open(): void;
   dispose(): void;
@@ -101,7 +122,7 @@ export interface DocsReviewHost {
    * Story E20261013e62a9269:S001: with quiet (a document the chat presents) the pane is
    * created or brought to the front without taking keyboard focus.
    */
-  openArtifact(target: { readonly artifactId: string; readonly mdPath: string; readonly quiet?: boolean | undefined }): void;
+  openArtifact(target: { readonly artifactId: string; readonly mdPath: string; readonly quiet?: boolean | undefined; readonly presentKey?: string | undefined }): void;
 }
 
 const VIEW_TYPE = 'insrc.docsReviewPanel';
@@ -1277,51 +1298,74 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   const genNonce =
     deps.genNonce ?? (() => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`);
 
-  let channel: ChatPanelChannel | undefined;
   let disposed = false;
   // In-memory only (k3): the currently-pending artifacts by id (id -> summary), so
   // open-doc/docs-decision intents are validated against the live list and openDoc can
   // read the artifact kind (to gate request-changes). The client owns id->mdPath.
-  // Discarded on dispose.
+  // Discarded on dispose. SHARED by all panels: list/cache data only (MR2).
   const pending = new Map<string, DocsArtifactSummary>();
   // Monotonic guard so a slow refreshPending response can never overwrite a newer one
   // (open() + the webview boot-ping + each decision all trigger a refresh; real IPC
   // latency means "last-to-complete" would otherwise win, not "last-requested").
   let refreshSeq = 0;
-  // The same guard for the opened DOCUMENT: two quick opens must show the one requested
-  // LAST, not whichever content IPC completes last. A separate counter from refreshSeq,
-  // because a list refresh (every decision triggers one) must not discard an open.
-  let openSeq = 0;
-  // Story E202610138d4b90c9:S001: the document the pane shows. A decision is acted on for
-  // this document only and is sent, like its re-read, by its path, never by its id, so
-  // neither depends on the document still being pending.
-  let opened: OpenDocument | undefined;
   // ISSUE-7fa297efd4bd1c59: the artifact ids presented by chat turns (quiet opens) since the
-  // pane opened, in order. The openSeq guard below still shows the LAST presented document;
-  // this list is what keeps the earlier ones reachable (the webview renders them as a strip).
+  // pane opened, in order. This list is what keeps the earlier ones reachable (the webview
+  // renders them as a strip). SHARED: it is list-level data, not per-document state.
   let presentedIds: string[] = [];
   // ISSUE-6dbf14435972af7a: the pending-list poll (see startPoll below) and the pending ids
   // it saw on the previous tick, so a change in the OPEN document's membership re-renders it.
   let pollTimer: { cancel(): void } | undefined;
   let prevPendingIds: ReadonlySet<string> | undefined;
-  // The nonce of the shell last rendered: an HTML companion's scripts run in its frame only
-  // when they carry it.
-  let shellNonce = '';
-  // Story E202610131f74c81f:S001: the watch on the open document's files, named by the
-  // document it is for; the quiet period running after a change; how many decisions are in
-  // flight; and whether a change arrived while one was.
-  let watch: { readonly key: string; dispose(): void } | undefined;
-  let quiet: { cancel(): void } | undefined;
-  let deciding = 0;
-  let changedWhileDeciding = false;
   const setTimer = deps.setTimer ?? ((fn: () => void, ms: number) => {
     const t = setTimeout(fn, ms);
     return { cancel: () => clearTimeout(t) };
   });
 
-  const post = (msg: HostToWebview): void => {
-    if (disposed || channel === undefined) return;
-    channel.postMessage(envelope(msg));
+  // E202611031bd72813:S001 t8 + manual review MR2: one editor panel per presentKey (each
+  // insrc_present opens its own panel instead of replacing the open one), and EVERY
+  // per-panel state lives in its PanelCtx. The legacy single panel (presentKey undefined)
+  // is the `legacy` ctx. `post(ctx, …)` always targets that panel's own channel, so no
+  // openPostTarget window exists in which messages can leak to another panel.
+  const panels = new Map<string, PanelCtx>();
+  let legacy: PanelCtx | undefined;
+  const makeCtx = (ch: ChatPanelChannel, presentKey: string | undefined): PanelCtx => ({
+    channel: ch,
+    presentKey,
+    opened: undefined,
+    openSeq: 0,
+    shellNonce: '',
+    watch: undefined,
+    quiet: undefined,
+    deciding: 0,
+    changedWhileDeciding: false,
+    openQueue: Promise.resolve(),
+  });
+  const allCtxs = (): PanelCtx[] => [...(legacy !== undefined ? [legacy] : []), ...panels.values()];
+  /** Drop a panel's watch/quiet and clear its open document (it is gone or disposed). */
+  const clearCtx = (ctx: PanelCtx): void => {
+    ctx.quiet?.cancel();
+    ctx.quiet = undefined;
+    ctx.changedWhileDeciding = false;
+    const w = ctx.watch;
+    ctx.watch = undefined;
+    ctx.opened = undefined;
+    if (w !== undefined) {
+      try {
+        w.dispose();
+      } catch (err) {
+        log.warn(`[docs-review] the watch on the open document could not be ended: ${String(err)}`);
+      }
+    }
+  };
+
+  const post = (ctx: PanelCtx, msg: HostToWebview): void => {
+    if (disposed) return;
+    ctx.channel.postMessage(envelope(msg));
+  };
+  /** Post a list-level message (the pending docs) to every live panel, legacy included. */
+  const postToAll = (msg: HostToWebview): void => {
+    if (disposed) return;
+    for (const ctx of allCtxs()) post(ctx, msg);
   };
 
   /** (Re)load the pending set from the daemon and post it; a throw -> empty list + notice. */
@@ -1332,7 +1376,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq !== refreshSeq) return; // superseded by a newer refresh — drop this response
       pending.clear();
       for (const a of artifacts) pending.set(a.id, a);
-      post({ type: 'docs-list', artifacts });
+      postToAll({ type: 'docs-list', artifacts });
     } catch (err) {
       if (mySeq !== refreshSeq) return;
       postUnavailable(err);
@@ -1365,8 +1409,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
           if (disposed) return;
           const now = new Set(pending.keys());
           prevPendingIds = now;
-          const o = opened;
-          if (o !== undefined && now.has(o.artifactId) !== before.has(o.artifactId)) void reopen();
+          // MR2: each panel's open document is checked against the refreshed list on its own
+          for (const ctx of allCtxs()) {
+            const o = ctx.opened;
+            if (o !== undefined && now.has(o.artifactId) !== before.has(o.artifactId)) void reopen(ctx);
+          }
           tickPoll();
         });
       }, ms);
@@ -1374,11 +1421,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     tickPoll();
   }
 
-  /** A failed pending read: an empty list plus the inline unavailable notice. */
+  /** A failed pending read: an empty list plus the inline unavailable notice, to every panel. */
   function postUnavailable(err: unknown): void {
     log.warn(`[docs-review] pending failed: ${String(err)}`);
-    post({ type: 'docs-list', artifacts: [] });
-    post({
+    postToAll({ type: 'docs-list', artifacts: [] });
+    postToAll({
       type: 'docs-content',
       artifactId: '',
       markdown: `docs-review unavailable: ${errText(err)}`,
@@ -1394,7 +1441,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * read-only is decided from this answer either way, so a later refresh that
    * supersedes it cannot turn a pending artifact read-only.
    */
-  async function openArtifactFrom(target: { readonly artifactId: string; readonly mdPath: string }): Promise<void> {
+  async function openArtifactFrom(ctx: PanelCtx, target: { readonly artifactId: string; readonly mdPath: string; readonly presentKey?: string | undefined }): Promise<void> {
     const mySeq = ++refreshSeq;
     let summary: DocsArtifactSummary | undefined;
     try {
@@ -1402,15 +1449,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       if (mySeq === refreshSeq) {
         pending.clear();
         for (const a of artifacts) pending.set(a.id, a);
-        post({ type: 'docs-list', artifacts });
+        postToAll({ type: 'docs-list', artifacts });
       }
       summary = artifacts.find((a) => a.id === target.artifactId);
     } catch (err) {
       if (mySeq === refreshSeq) postUnavailable(err);
     }
     if (disposed) return;
-    if (summary !== undefined) void openDoc(target.artifactId, { kind: summary.kind, reveal: true });
-    else void openDoc(target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
+    // MR2: the open is serialized on THIS panel's own queue, and openDoc posts to this panel's
+    // channel directly, so a queued open on another panel can never race or supersede it.
+    const run = (): Promise<void> =>
+      summary !== undefined
+        ? openDoc(ctx, target.artifactId, { kind: summary.kind, reveal: true })
+        : openDoc(ctx, target.artifactId, { path: target.mdPath, readOnly: true, reveal: true });
+    ctx.openQueue = ctx.openQueue.then(run);
+    await ctx.openQueue;
   }
 
   /**
@@ -1438,13 +1491,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  /** End the watch and anything waiting on it. A disposer that throws is logged. */
-  function dropWatch(): void {
-    quiet?.cancel();
-    quiet = undefined;
-    changedWhileDeciding = false;
-    const w = watch;
-    watch = undefined;
+  /** End the panel's watch and anything waiting on it. A disposer that throws is logged. */
+  function dropWatch(ctx: PanelCtx): void {
+    ctx.quiet?.cancel();
+    ctx.quiet = undefined;
+    ctx.changedWhileDeciding = false;
+    const w = ctx.watch;
+    ctx.watch = undefined;
     if (w === undefined) return;
     try {
       w.dispose();
@@ -1453,35 +1506,35 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     }
   }
 
-  /** After a change: one re-read of the list and the document, once the files have been quiet. */
-  function startQuiet(): void {
-    quiet?.cancel();
-    quiet = setTimer(() => {
-      quiet = undefined;
-      void refreshPending().then(() => reopen({ changed: true }));
+  /** After a change on this panel's document: one re-read of the list and the document, once quiet. */
+  function startQuiet(ctx: PanelCtx): void {
+    ctx.quiet?.cancel();
+    ctx.quiet = setTimer(() => {
+      ctx.quiet = undefined;
+      void refreshPending().then(() => reopen(ctx, { changed: true }));
     }, RELOAD_QUIET_MS);
   }
 
   /**
-   * The ONE place the open document's record is assigned, so the watch always follows it:
+   * The ONE place a panel's open-document record is assigned, so its watch always follows it:
    * kept when the same document is read again (ending and restarting it could miss a change
    * in between), replaced for another document, and ended when the record is cleared.
    */
-  function setOpened(next: OpenDocument | undefined): void {
-    opened = next;
+  function setOpened(ctx: PanelCtx, next: OpenDocument | undefined): void {
+    ctx.opened = next;
     const key = next !== undefined && next.docPath !== undefined ? `${next.artifactId}\n${next.docPath}` : undefined;
-    if (key === watch?.key) return;
-    dropWatch();
+    if (key === ctx.watch?.key) return;
+    dropWatch(ctx);
     if (key === undefined || next === undefined || next.docPath === undefined || deps.watchDocument === undefined) return;
     try {
       // The markdown, and the artifact's record: a comment saved by another tool changes only the record.
       const w = deps.watchDocument([next.docPath, `.insrc/artifacts/${next.artifactId}.json`], () => {
-        if (disposed || watch?.key !== key) return; // a watch the host no longer holds
+        if (disposed || ctx.watch?.key !== key) return; // a watch this panel no longer holds
         // During a decision the change is remembered; it is acted on when the decision settles.
-        if (deciding > 0) changedWhileDeciding = true;
-        else startQuiet();
+        if (ctx.deciding > 0) ctx.changedWhileDeciding = true;
+        else startQuiet(ctx);
       });
-      watch = { key, dispose: () => w.dispose() };
+      ctx.watch = { key, dispose: () => w.dispose() };
     } catch (err) {
       log.warn(`[docs-review] ${next.docPath} is not watched for changes: ${String(err)}`);
     }
@@ -1493,6 +1546,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * docs/ path to read and readOnly, which the webview shows with no decision control.
    */
   async function openDoc(
+    ctx: PanelCtx,
     artifactId: string,
     opts: { readonly kind?: string; readonly path?: string; readonly readOnly?: boolean; readonly reveal?: boolean; readonly changed?: boolean } = {},
   ): Promise<void> {
@@ -1502,18 +1556,18 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     const marks = { ...(opts.reveal === true ? { reveal: true } : {}), ...(opts.changed === true ? { changed: true } : {}) };
     const commentable = COMMENTABLE_KINDS.has(opts.kind ?? pending.get(artifactId)?.kind ?? '');
     const readOnly = opts.readOnly === true ? { readOnly: true } : {};
-    const mySeq = ++openSeq;
+    const mySeq = ++ctx.openSeq;
     try {
       const content = await deps.client.content(opts.path ?? artifactId);
-      if (mySeq !== openSeq) return; // superseded by a newer open — drop this response
+      if (mySeq !== ctx.openSeq) return; // superseded by a newer open ON THIS PANEL — drop this response
       const docPath = content.docPath !== undefined && content.docPath !== '' ? content.docPath : opts.path;
       const htmlCompanions = htmlCompanionsOf(content.companions);
-      setOpened({
+      setOpened(ctx, {
         artifactId,
         docPath,
         companions: htmlCompanions.map((c) => c.relPath),
-        kind: opts.kind ?? pending.get(artifactId)?.kind ?? (opened?.artifactId === artifactId ? opened.kind : undefined),
-        title: pending.get(artifactId)?.title ?? (opened?.artifactId === artifactId ? opened.title : undefined),
+        kind: opts.kind ?? pending.get(artifactId)?.kind ?? (ctx.opened?.artifactId === artifactId ? ctx.opened.kind : undefined),
+        title: pending.get(artifactId)?.title ?? (ctx.opened?.artifactId === artifactId ? ctx.opened.title : undefined),
       });
       const documents: DocsDocumentTab[] = [
         { title: docPath !== undefined ? baseName(docPath) : 'Document', type: 'markdown', ...(docPath !== undefined ? { relPath: docPath } : {}) },
@@ -1539,7 +1593,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       const resolveAnchor = createSectionResolver(sections);
       const diagramAnchorSlug = resolveAnchor(diagramRef?.ofSectionId);
       const experienceAnchorSlug = resolveAnchor(uxRef?.ofSectionId);
-      post({
+      post(ctx, {
         type: 'docs-content',
         artifactId,
         ...(presentedIds.length > 0 ? { presented: [...presentedIds] } : {}),
@@ -1615,13 +1669,13 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       log.warn(`[docs-review] content ${artifactId} failed: ${String(err)}`);
       // A superseded open's failure is not the CURRENT document's failure: posting it
       // would replace the document the reviewer is on with another one's error.
-      if (mySeq !== openSeq) return;
+      if (mySeq !== ctx.openSeq) return;
       // The pane now shows this failure. A failed re-read of the open document keeps what
       // the host knows of it; a failed open of another one leaves nothing open.
-      if (opened?.artifactId !== artifactId) setOpened(undefined);
+      if (ctx.opened?.artifactId !== artifactId) setOpened(ctx, undefined);
       // A content-load failure means the reviewer never saw the body — suppress approve
       // (blocked:true) so the review gate is not defeated; request-changes stays available.
-      post({
+      post(ctx, {
         type: 'docs-content',
         artifactId,
         markdown: `unavailable: ${errText(err)}`,
@@ -1640,21 +1694,21 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * when it is no longer awaiting review. Used after a decision and when a rebuilt shell
    * sends its boot ping.
    */
-  async function reopen(how: { readonly changed?: boolean } = {}): Promise<void> {
-    const o = opened;
+  async function reopen(ctx: PanelCtx, how: { readonly changed?: boolean } = {}): Promise<void> {
+    const o = ctx.opened;
     if (o === undefined) return;
     const awaiting = pending.get(o.artifactId);
     const kind = awaiting?.kind ?? o.kind;
     if (o.docPath !== undefined) {
-      await openDoc(o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined, ...how });
+      await openDoc(ctx, o.artifactId, { path: o.docPath, ...(kind !== undefined ? { kind } : {}), readOnly: awaiting === undefined, ...how });
     } else if (awaiting !== undefined) {
-      await openDoc(o.artifactId, how);
+      await openDoc(ctx, o.artifactId, how);
     }
   }
 
   /** A decision that was not recorded: one line for the pane. Nothing was written. */
-  function refuse(artifactId: string, message: string): void {
-    post({ type: 'docs-decision-result', artifactId, ok: false, message });
+  function refuse(ctx: PanelCtx, artifactId: string, message: string): void {
+    post(ctx, { type: 'docs-decision-result', artifactId, ok: false, message });
   }
 
   /** Hand the chat a decision message; whatever happens, the decision stays recorded. */
@@ -1674,38 +1728,38 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * on for the open document only; approve and reject also need it to be awaiting review,
    * and send feedback does not.
    */
-  async function decide(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
-    // A change to the document's files while this runs is remembered and acted on when it
+  async function decide(ctx: PanelCtx, artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
+    // A change to THIS panel's document while this runs is remembered and acted on when it
     // settles, on every path: some of them do not read the document again themselves.
-    deciding += 1;
+    ctx.deciding += 1;
     try {
-      await decideNow(artifactId, decision, comments);
+      await decideNow(ctx, artifactId, decision, comments);
     } finally {
-      deciding -= 1;
-      if (deciding === 0 && changedWhileDeciding) {
-        changedWhileDeciding = false;
-        if (watch !== undefined) startQuiet();
+      ctx.deciding -= 1;
+      if (ctx.deciding === 0 && ctx.changedWhileDeciding) {
+        ctx.changedWhileDeciding = false;
+        if (ctx.watch !== undefined) startQuiet(ctx);
       }
     }
   }
 
-  async function decideNow(artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
-    const o = opened;
+  async function decideNow(ctx: PanelCtx, artifactId: string, decision: ReviewDecision, comments: readonly ReviewDecisionComment[]): Promise<void> {
+    const o = ctx.opened;
     if (o === undefined || o.artifactId !== artifactId) {
-      log.warn(`[docs-review] docs-decision: ${artifactId} is not the open document`);
-      refuse(artifactId, 'Nothing was recorded: open the document before deciding on it.');
+      log.warn(`[docs-review] docs-decision: ${artifactId} is not this panel's open document`);
+      refuse(ctx, artifactId, 'Nothing was recorded: open the document before deciding on it.');
       void refreshPending();
       return;
     }
     if (decision !== 'feedback' && !pending.has(artifactId)) {
       log.warn(`[docs-review] docs-decision: ${artifactId} is not awaiting review`);
-      refuse(artifactId, `Nothing was recorded: this document is not awaiting review, so it cannot be ${decision === 'approve' ? 'approved' : 'rejected'}. Feedback can still be sent.`);
+      refuse(ctx, artifactId, `Nothing was recorded: this document is not awaiting review, so it cannot be ${decision === 'approve' ? 'approved' : 'rejected'}. Feedback can still be sent.`);
       await refreshPending();
-      await reopen();
+      await reopen(ctx);
       return;
     }
     if (o.docPath === undefined) {
-      refuse(artifactId, "Nothing was recorded: the daemon did not name this document's path. Update the daemon and try again.");
+      refuse(ctx, artifactId, "Nothing was recorded: the daemon did not name this document's path. Update the daemon and try again.");
       return;
     }
     let res: ReviewDecisionResult;
@@ -1713,17 +1767,17 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       res = await deps.client.decide(o.docPath, decision, comments);
     } catch (err) {
       log.warn(`[docs-review] decision ${artifactId} failed: ${String(err)}`);
-      refuse(artifactId, `Nothing was recorded: ${errText(err)}`);
+      refuse(ctx, artifactId, `Nothing was recorded: ${errText(err)}`);
       // Re-fetch so the list reflects real approval state (k5 — never a client-side guess).
       // The document is re-read only when its place in the list changed, so a daemon that
       // is down does not replace the document the reviewer is on with an error.
       const was = pending.has(artifactId);
       await refreshPending();
-      if (pending.has(artifactId) !== was) await reopen();
+      if (pending.has(artifactId) !== was) await reopen(ctx);
       return;
     }
     const chat = handOver(decisionChatMessage(o, res, comments));
-    post({
+    post(ctx, {
       type: 'docs-decision-result',
       artifactId,
       ok: true,
@@ -1732,7 +1786,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       message: decisionResultLine(res, comments.length, chat),
     });
     await refreshPending();
-    await reopen();
+    await reopen(ctx);
   }
 
   /**
@@ -1741,25 +1795,29 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
    * the shell's CSP, so the page's scripts are given the shell's nonce. Any other path, an
    * absent reader or a failed read is answered with no html, and the pane shows the path.
    */
-  async function openCompanion(artifactId: string, relPath: string): Promise<void> {
-    const o = opened;
+  async function openCompanion(ctx: PanelCtx, artifactId: string, relPath: string): Promise<void> {
+    const o = ctx.opened;
     let html: string | undefined;
     if (o === undefined || o.artifactId !== artifactId || !o.companions.includes(relPath)) {
-      log.warn(`[docs-review] open-companion: ${relPath} is not a document of the open artifact`);
+      log.warn(`[docs-review] open-companion: ${relPath} is not a document of this panel's open artifact`);
     } else if (deps.readCompanion !== undefined) {
       try {
         const text = await deps.readCompanion(relPath);
-        if (typeof text === 'string') html = stampScriptNonce(text, shellNonce);
+        if (typeof text === 'string') html = stampScriptNonce(text, ctx.shellNonce);
       } catch (err) {
         log.warn(`[docs-review] companion ${relPath} could not be read: ${String(err)}`);
       }
     }
-    post({ type: 'docs-companion', artifactId, relPath, ...(html !== undefined ? { html } : {}) });
+    post(ctx, { type: 'docs-companion', artifactId, relPath, ...(html !== undefined ? { html } : {}) });
   }
 
-  const renderShell = (): string => {
+  const renderShell = (ctx: PanelCtx): string => {
     const nonce = genNonce();
-    shellNonce = nonce;
+    ctx.shellNonce = nonce; // this panel's shell nonce: companions shown in THIS panel only
+    // E202611031bd72813:S001 t9: the panel's own presentKey, embedded once in its shell — the
+    // persisted draft state is keyed by `presentKey:artifactId` (composite), so two panels showing
+    // the same artifact keep isolated drafts. The legacy panel has no key (drafts key by artifactId).
+    const panelKey = ctx.presentKey !== undefined ? `var insrcPanelKey=${JSON.stringify(ctx.presentKey)};` : '';
     // Story E202610138d4b90c9:S001 — the pane's own style. Every colour, font and border is
     // a VS Code theme variable, so the pane follows whichever theme is active and has no
     // switch of its own. The `--it-*` tokens the body, functional-requirement, diagram and
@@ -2073,6 +2131,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       // busy: a decision was posted and its result has not arrived. sent: how many
       // comments that decision carried.
       `var items=[];var shown=null;var busy=false;var sent=0;` +
+      panelKey +
       // docs: the documents of the artifact shown. tab: the repo-relative path of the HTML
       // document on show, or '' for the markdown.
       `var docs=[];var tab='';` +
@@ -2405,7 +2464,7 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
     );
   };
 
-  function handleMessage(message: unknown): void {
+  function handleMessage(ctx: PanelCtx, message: unknown): void {
     const env = message as { v?: unknown; payload?: unknown } | null;
     if (env === null || env.v !== 1 || typeof env.payload !== 'object' || env.payload === null) {
       log.warn('[docs-review] dropped malformed message');
@@ -2417,11 +2476,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         if (typeof msg.artifactId !== 'string') return;
         // The webview's boot ping (empty id) means "load the list"; a real id opens a doc.
         // A rebuilt shell (the pane hidden and shown again) sends the ping too and has lost
-        // its document: the open one is posted again, by its path, pending or not.
+        // its document: THIS panel's open one is posted again, by its path, pending or not.
         if (msg.artifactId === '') {
-          void refreshPending().then(() => reopen());
+          void refreshPending().then(() => reopen(ctx));
         } else if (pending.has(msg.artifactId)) {
-          void openDoc(msg.artifactId, { reveal: true });
+          void openDoc(ctx, msg.artifactId, { reveal: true });
         } else {
           // A stale row (approved/evicted since the list was posted) -> refresh, drop the open.
           log.warn(`[docs-review] open-doc: unknown/stale artifact ${msg.artifactId}`);
@@ -2430,11 +2489,11 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
         return;
       case 'docs-decision':
         if (typeof msg.artifactId !== 'string' || !isReviewDecision(msg.decision) || !Array.isArray(msg.comments)) return;
-        void decide(msg.artifactId, msg.decision, msg.comments);
+        void decide(ctx, msg.artifactId, msg.decision, msg.comments);
         return;
       case 'open-companion':
         if (typeof msg.artifactId !== 'string' || typeof msg.relPath !== 'string') return;
-        void openCompanion(msg.artifactId, msg.relPath);
+        void openCompanion(ctx, msg.artifactId, msg.relPath);
         return;
       case 'open-link':
         if (deps.links !== undefined) void deps.links.openLink(msg.url);
@@ -2451,27 +2510,61 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
   /** Show the pane, creating it when there is none. quiet: without taking keyboard focus. */
   function show(quiet: boolean): void {
     disposed = false;
-    if (channel !== undefined) {
-      if (quiet) channel.reveal({ preserveFocus: true });
-      else channel.reveal();
+    if (legacy !== undefined) {
+      if (quiet) legacy.channel.reveal({ preserveFocus: true });
+      else legacy.channel.reveal();
       void refreshPending();
       return;
     }
-    channel = deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc docs review', ...(quiet ? { quiet: true } : {}) });
-    channel.onDidDispose(() => {
-      disposed = true;
-      channel = undefined;
-      pollTimer?.cancel();
-      pollTimer = undefined;
-      pending.clear();
-      setOpened(undefined);
+    const ch = deps.createPanel({ viewType: VIEW_TYPE, title: 'insrc docs review', ...(quiet ? { quiet: true } : {}) });
+    const ctx = makeCtx(ch, undefined);
+    legacy = ctx;
+    ch.onDidDispose(() => {
+      // MR2-R2: legacy disposal is LOCAL to its context — closing the legacy panel must not set
+      // the host-wide disposed flag or tear down shared services while keyed panels survive.
+      // Host-wide shutdown is reserved for host.dispose(). Shared services (poll, pending) are
+      // retained while any panel remains, and released when the last one goes.
+      legacy = undefined;
+      clearCtx(ctx);
+      if (allCtxs().length === 0) {
+        pollTimer?.cancel();
+        pollTimer = undefined;
+        pending.clear();
+      }
     });
-    channel.onMessage(handleMessage);
-    channel.setHtml(renderShell());
+    ch.onMessage((m) => handleMessage(ctx, m));
+    ch.setHtml(renderShell(ctx));
     // The webview boot ping also triggers refreshPending; post one now so a fast
     // consumer (test double) sees the list without waiting for the ping.
     void refreshPending();
     startPoll();
+  }
+
+  /**
+   * E202611031bd72813:S001 t8: the panel for one presentKey — created on first present (titled with
+   * the key), revealed on a repeat, removed from the map when disposed. The legacy single-panel
+   * path (show) is unchanged for presentKey-less opens.
+   */
+  function showPanel(presentKey: string, quiet: boolean): PanelCtx {
+    const existing = panels.get(presentKey);
+    if (existing !== undefined) {
+      if (quiet) existing.channel.reveal({ preserveFocus: true });
+      else existing.channel.reveal();
+      void refreshPending();
+      return existing;
+    }
+    const ch = deps.createPanel({ viewType: VIEW_TYPE, title: `insrc docs review — ${presentKey}`, ...(quiet ? { quiet: true } : {}) });
+    const ctx = makeCtx(ch, presentKey);
+    panels.set(presentKey, ctx);
+    ch.onDidDispose(() => {
+      panels.delete(presentKey);
+      clearCtx(ctx); // a disposed panel's watch/quiet/open state goes with it, never rerouted
+    });
+    ch.onMessage((m) => handleMessage(ctx, m));
+    ch.setHtml(renderShell(ctx));
+    void refreshPending();
+    startPoll();
+    return ctx;
   }
 
   const host: DocsReviewHost = {
@@ -2479,21 +2572,37 @@ export function createDocsReviewHost(deps: DocsReviewHostDeps): DocsReviewHost {
       show(false);
     },
     openArtifact(target): void {
+      if (target.presentKey !== undefined) {
+        // Each insrc_present opens its OWN panel (keyed by presentKey), never replacing another.
+        // The panel is created synchronously; the content load is serialized on that panel's
+        // own queue and posts only to its own channel (MR2).
+        const ctx = showPanel(target.presentKey, target.quiet === true);
+        if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
+        void openArtifactFrom(ctx, target);
+        return;
+      }
       show(target.quiet === true);
       // A quiet open is a chat-presented document: remember it so the pane can offer every
       // presented document, not just the last one (ISSUE-7fa297efd4bd1c59).
       if (target.quiet === true && !presentedIds.includes(target.artifactId)) presentedIds.push(target.artifactId);
-      void openArtifactFrom(target);
+      if (legacy !== undefined) void openArtifactFrom(legacy, target);
     },
     dispose(): void {
       disposed = true;
       pollTimer?.cancel();
       pollTimer = undefined;
-      channel?.dispose();
-      channel = undefined;
+      if (legacy !== undefined) {
+        clearCtx(legacy);
+        legacy.channel.dispose();
+        legacy = undefined;
+      }
+      for (const ctx of panels.values()) {
+        clearCtx(ctx);
+        ctx.channel.dispose();
+      }
+      panels.clear();
       pending.clear();
       presentedIds = [];
-      setOpened(undefined);
     },
   };
   return host;

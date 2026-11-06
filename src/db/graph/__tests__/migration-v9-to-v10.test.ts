@@ -1,10 +1,10 @@
 /**
- * Merge of origin/main into v2, decision D1 -- schema 9: a store built by the
+ * Merge of origin/main into v2, decision D1 and D12 -- schema 10: a store built by the
  * retired v2 entity-membership index (version 6, `entity_by_file` keyed by a hash
  * of the absolute path, plus an `entity_by_repo` table) is repaired to main's
  * shape (repoId, filePath), and a store already in main's shape is unchanged.
  *
- * Run: npx tsx --test src/db/graph/__tests__/migration-v8-to-v9.test.ts
+ * Run: npx tsx --test src/db/graph/__tests__/migration-v9-to-v10.test.ts
  */
 
 import { test } from 'node:test';
@@ -23,7 +23,7 @@ import { useTemporaryLance } from '../../lance/__tests__/helpers/temp-lance.js';
 
 useTemporaryLance();
 
-const REPO = '/repo/v8-to-v9';
+const REPO = '/repo/v9-to-v10';
 const FILE = `${REPO}/src/a.ts`;
 
 let dir: string;
@@ -48,7 +48,7 @@ async function fileRows(): Promise<Array<{ key: Buffer; value: Buffer }>> {
 	return [...store.entityByFile.getRange()].map(r => ({ key: r.key as Buffer, value: r.value as Buffer }));
 }
 
-test('migration-v8-to-v9.test.ts: a v6 store built by the retired v2 index is repaired to the (repoId, filePath) shape and its legacy table is dropped', async () => {
+test('migration-v9-to-v10.test.ts: a v6 store built by the retired v2 index is repaired to the (repoId, filePath) shape and its legacy table is dropped', async () => {
 	await addRepo(null, { path: REPO, name: 'v2-built', addedAt: '2026-11-03T00:00:00.000Z', status: 'ready' });
 	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h', entities: [fn('a'), fn('b')], relations: [] });
 	const entityKeys = await withWriteTxn(s => [...s.entity.getRange()].map(r => r.key as Buffer));
@@ -83,11 +83,11 @@ test('migration-v8-to-v9.test.ts: a v6 store built by the retired v2 index is re
 	void encodeEntityKey;
 });
 
-test('migration-v8-to-v9.test.ts: a store already in main\'s shape ends with the same index rows', async () => {
+test('migration-v9-to-v10.test.ts: a store already in main\'s shape ends with the same index rows', async () => {
 	await addRepo(null, { path: REPO, name: 'main-built', addedAt: '2026-11-03T00:00:00.000Z', status: 'ready' });
 	await commitFile({ repoPath: REPO, filePath: FILE, contentHash: 'h', entities: [fn('a')], relations: [] });
 	const before = (await fileRows()).map(r => r.key.toString('hex') + ':' + r.value.toString('hex')).sort();
-	await withWriteTxn(s => { s.meta.put('schema_version', 8); });
+	await withWriteTxn(s => { s.meta.put('schema_version', 9); });
 	await closeGraphStore();
 	await getGraphStore();
 	const after = (await fileRows()).map(r => r.key.toString('hex') + ':' + r.value.toString('hex')).sort();

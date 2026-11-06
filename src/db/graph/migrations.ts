@@ -439,6 +439,15 @@ export const MIGRATION_V7_TO_V8: Migration = {
 	},
 };
 
+export const MIGRATION_V8_TO_V9: Migration = {
+	from: 8,
+	to:   9,
+	description: 'doc_relation_proposals, doc_relation_proposals_carry and doc_relation_quality databases (s10); opened with the store, empty until a repository is examined or measured',
+	run: () => {
+		log.info('v8->v9: document-relationship tables available; documents are examined after the next complete generation');
+	},
+};
+
 /**
  * Helper that mirrors `indexer/parser/base.ts:makeEntityId` without
  * importing it (the parser layer doesn't depend on db internals
@@ -458,7 +467,7 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
 }
 
 /**
- * v8 -> v9: repair of a store built by the retired v2 entity-membership index
+ * v9 -> v10: repair of a store built by the retired v2 entity-membership index
  * (merge of origin/main into v2, decision D1). That design shared schema number 6
  * with main's `entity_by_file` but keyed the table by a hash of the absolute path
  * and kept a second table `entity_by_repo`, so a v2-built store at 6 carries index
@@ -467,9 +476,9 @@ function readStringByU64(store: GraphStore, u64: bigint): string | undefined {
  * On a store already in main's shape it rebuilds the same rows, so it is safe to run
  * on every store.
  */
-export const MIGRATION_V8_TO_V9: Migration = {
-	from: 8,
-	to:   9,
+export const MIGRATION_V9_TO_V10: Migration = {
+	from: 9,
+	to:   10,
 	description: 'entity_by_file: rebuild in the (repoId, filePath) shape and drop the legacy entity_by_repo table of the retired v2 index',
 	run: async (store) => {
 		const cleared = store.entityByFile.getKeysCount();
@@ -489,9 +498,9 @@ export const MIGRATION_V8_TO_V9: Migration = {
 			await legacy.drop();
 			dropped = true;
 		} catch (err) {
-			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'v8->v9: legacy entity_by_repo table could not be dropped; it is unused and harmless');
+			log.warn({ err: err instanceof Error ? err.message : String(err) }, 'v9->v10: legacy entity_by_repo table could not be dropped; it is unused and harmless');
 		}
-		log.info({ cleared, seeded, dropped }, 'v8->v9: entity_by_file rebuilt');
+		log.info({ cleared, seeded, dropped }, 'v9->v10: entity_by_file rebuilt');
 	},
 };
 
@@ -513,6 +522,7 @@ export const MIGRATIONS: readonly Migration[] = [
 	MIGRATION_V6_TO_V7,
 	MIGRATION_V7_TO_V8,
 	MIGRATION_V8_TO_V9,
+	MIGRATION_V9_TO_V10,
 ];
 
 /**

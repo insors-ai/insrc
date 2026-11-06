@@ -80,7 +80,16 @@ export type TurnEvent =
        */
       readonly message?: string;
     }
-  | { readonly kind: 'error'; readonly turnId: string; readonly message: string }
+  | {
+      readonly kind: 'error';
+      readonly turnId: string;
+      readonly message: string;
+      /**
+       * E202611031bd72813:S001 (additive): true when this error only means the turn's OUTPUT could
+       * not be read (the process may still be alive) — an observation failure, not a real terminal.
+       */
+      readonly observationFailure?: boolean | undefined;
+    }
   | {
       /**
        * S001 (dev-chat ux polish) sc2 (additive): the OUTPUT a tool produced, surfaced so the

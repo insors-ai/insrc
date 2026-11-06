@@ -12,7 +12,8 @@
 
 import { completenessOf, readIndexState, readUnattributedUnwritable } from '../db/index-state.js';
 import { getLogger } from '../shared/logger.js';
-import type { RepoCompleteness, UnattributedUnwritableCount } from '../shared/types.js';
+import type { DocRelationsStatus, RepoCompleteness, UnattributedUnwritableCount } from '../shared/types.js';
+import { docRelationsStatusFor } from '../indexer/doc-relations-read.js';
 
 const log = getLogger('repo-completeness');
 
@@ -26,12 +27,26 @@ export async function completenessFor(repoPath: string): Promise<RepoCompletenes
 	}
 }
 
-/** Each row with its completeness beside it; serial, one state read per row. */
-export async function withCompleteness<T extends object>(rows: readonly T[], pathOf: (row: T) => string): Promise<(T & { completeness?: RepoCompleteness })[]> {
-	const out: (T & { completeness?: RepoCompleteness })[] = [];
+/** A repository's document-relations status (Epic c2ba6fa6 s10), or undefined when it cannot be read. */
+export async function docRelationsFor(repoPath: string): Promise<DocRelationsStatus | undefined> {
+	try {
+		return await docRelationsStatusFor(repoPath);
+	} catch (err) {
+		log.debug({ repo: repoPath, err: (err as Error).message }, 'document-relations status read failed; field left out');
+		return undefined;
+	}
+}
+
+/**
+ * Each row with its completeness and its document-relations status beside it
+ * (the latter never part of completeness); serial, one read of each per row.
+ */
+export async function withCompleteness<T extends object>(rows: readonly T[], pathOf: (row: T) => string): Promise<(T & { completeness?: RepoCompleteness; docRelations?: DocRelationsStatus })[]> {
+	const out: (T & { completeness?: RepoCompleteness; docRelations?: DocRelationsStatus })[] = [];
 	for (const row of rows) {
 		const completeness = await completenessFor(pathOf(row));
-		out.push(completeness === undefined ? { ...row } : { ...row, completeness });
+		const docRelations = await docRelationsFor(pathOf(row));
+		out.push({ ...row, ...(completeness !== undefined ? { completeness } : {}), ...(docRelations !== undefined ? { docRelations } : {}) });
 	}
 	return out;
 }

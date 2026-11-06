@@ -1,0 +1,5734 @@
+{
+	"description": "Hand-checked document relationships for Epic c2ba6fa6 s10 (LLD-c2ba6fa62a148ed1-s10). Exhaustive for each listed document. Drafted 2026-11-04 and approved by the user.",
+	"documents": [
+		"docs/daemon.md",
+		"CLAUDE.md",
+		"README.md",
+		"docs/workflow.md",
+		"docs/installation.md",
+		"design/analyze-framework.md",
+		"design/analyze-framework-code.md",
+		"design/analyze-framework-data.md",
+		"design/analyze-framework-infrastructure.md",
+		"design/analyze-context-builder.md",
+		"design/analyze-plan-builder.md",
+		"docs/plans/analyze-context-builder.md",
+		"docs/plans/exploration-based-context-build.md",
+		"docs/plans/mcp-multi-turn-analyze.md",
+		"docs/plans/graph-storage-lmdb.md",
+		"docs/plans/storage-migration-lmdb-lance.md",
+		"docs/plans/repo-registry-strict-contract.md",
+		"docs/plans/tools.md",
+		"docs/plans/meta-workflow-framework.md",
+		"docs/plans/feature-triage-router.md",
+		"docs/plans/review-cycle-and-streaming-completion.md",
+		"docs/plans/workflow-implementation.md",
+		"docs/plans/docs-module.md",
+		"docs/insrc-agent-integration-review.md",
+		"docs/plans/handover-2026-10-10.md",
+		"docs/cross-session-agent-memory-spec.md",
+		"design/chat-panel-provider-model-effort.md"
+	],
+	"links": [
+		{
+			"from": "docs/daemon.md",
+			"to": ".claude/settings.local.json",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "AGENTS.md",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "docs/workflow.md",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "scripts/daemon-ctl.sh",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/bin/insrc-mcp.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/cli/index.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/indexer/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/mcp/steering-template.md",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/agent/providers/onnx-embedder.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/context/role-router.ts#RoleRouter",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/context/schema.ts#SCHEMA_VERSION",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/context/tool-surface.ts#ReadOnlyToolRegistryMismatch",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/executor/walker.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/explore/freeform-probe.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/explore/search-text.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/explore/symbol-locate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/orchestrator/types.ts#RunErrorCode",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/code/adherence-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/code/discovery-modules.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/code/structure-module-tree.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/code/surface-functional.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/data/adherence-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/infra/adherence-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/analyze/runtimes/infra/inventory-ci.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/config/core-floor-guard.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/config/reconcile.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/config/role-taxonomy.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/daemon/analyze-rpc.ts#AnalyzeRpcErrorCode",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/daemon/steps/analyze-step/state-store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/daemon/steps/build-step/phases/validate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/db/repos.ts#UnregisteredRepoError",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/indexer/embedder.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/shared/types.ts#Entity",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/workflow/gates.ts",
+			"real": true
+		},
+		{
+			"from": "docs/daemon.md",
+			"to": "src/workflow/runners/build/test-record.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": ".npmrc",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "copy-assets.mjs",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "design/indexer.html",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/plans/graph-storage-lmdb.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/plans/meta-workflow-framework.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/plans/repo-registry-strict-contract.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/plans/storage-migration-lmdb-lance.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/plans/tools.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "docs/workflow.md",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/agent/providers/cli-provider.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/agent/providers/ollama.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/agent/providers/structured-output.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/bin/insrc-mcp.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/queue.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/server.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/logger.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/paths.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/types.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "package.json",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/agent/providers/ollama.ts#OllamaProvider",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/analyze/context/decomposer.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/analyze/context/synthesizer.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/cli/panes/DaemonPane.tsx",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/cli/panes/ReposPane.tsx",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/cli/panes/SetupPane.tsx",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/cli/panes/WorkflowsPane.tsx",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/config/feedback.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/config/store.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/config/templates.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/db/duckdb-pool.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/lifecycle.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/tools/builtins/db/index.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/tools/executor.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/daemon/tools/registry.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/codec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/edges.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/edges.ts#inNeighbors",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/edges.ts#outNeighbors",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/keys.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/store.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/traversal.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/traversal.ts#transitiveClosure",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/graph/traversal.ts#unreachable",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/lance/artifact-vec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/lance/config-vec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/lance/entity-vec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/lance/session-vec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/lance/turn-vec.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/repos.ts#UnregisteredRepoError",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/search.ts#findCallees",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/db/search.ts#findCallers",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/indexer/embedder.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/indexer/manifest.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/indexer/watcher.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/logger.ts#getLogger",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/types.ts#Entity",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/types.ts#LLMProvider",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/types.ts#Relation",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/shared/types.ts#ToolDefinition",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "src/workflow/gates.ts",
+			"real": true
+		},
+		{
+			"from": "CLAUDE.md",
+			"to": "tsconfig.json",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "LICENSE",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "copy-assets.mjs",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "design/indexer.html",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/installation.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/workflow.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "scripts/insrc",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/agent/providers/cli-provider.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/agent/providers/ollama.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/agent/providers/structured-output.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/bin/insrc-mcp.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "vscode-plugin/icon.png",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/plans/graph-storage-lmdb.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/plans/repo-registry-strict-contract.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/plans/storage-migration-lmdb-lance.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "docs/plans/tools.md",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "package.json",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/analyze/context/decomposer.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/analyze/context/synthesizer.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/DaemonPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/DebugPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/ModelTiersPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/ReposPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/SetupPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/cli/panes/WorkflowsPane.tsx",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/config/feedback.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/config/store.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/config/templates.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/db/duckdb-pool.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/lifecycle.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/queue.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/server.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/tools/builtins/db/index.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/daemon/tools/registry.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/db/graph/traversal.ts#transitiveClosure",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/db/graph/traversal.ts#unreachable",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/db/search.ts#findCallees",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/db/search.ts#findCallers",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/indexer/embedder.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/indexer/manifest.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/indexer/watcher.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/shared/logger.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/shared/paths.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/shared/types.ts",
+			"real": true
+		},
+		{
+			"from": "README.md",
+			"to": "src/workflow/gates.ts",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "docs/plans/meta-workflow-framework.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "docs/plans/workflow-design.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "docs/plans/workflow-implementation.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/mcp/steering-template.md",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/workflow/amendments/applier.ts",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/workflow/amendments/effective.ts",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/workflow/config/github.ts#resolveGithubConfig",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/workflow/tracker/github-adapter.ts",
+			"real": true
+		},
+		{
+			"from": "docs/workflow.md",
+			"to": "src/workflow/types.ts#OutputModelStamp",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "docs/workflow.md",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/bin/insrc-mcp.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/cli/index.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/config/analyze.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/config/local.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/prompts/steering-block.md",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/workflow/config/github.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "copy-assets.mjs",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "package.json",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/analyze/explore/capability-reuse-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/analyze/explore/concept-resolve.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/analyze/explore/doc-mention.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/analyze/explore/freeform-probe.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/cli/panes/DaemonPane.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/cli/panes/ReposPane.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/cli/panes/SetupPane.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/cli/panes/WorkflowsPane.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/installation.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "design/analyze-framework-code.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "design/analyze-framework-data.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "design/analyze-framework-infrastructure.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/agent/providers/ollama.ts#OllamaProvider",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/analyze/classifier/driver.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/daemon/server.ts#RpcHandler",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/daemon/server.ts#StreamHandler",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/daemon/tools/registry.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeTaskTemplate",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework.md",
+			"to": "src/shared/analyze-types.ts#PlannedTask",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "design/indexer.html",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "docs/plans/tools.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "src/indexer/manifest.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-code.md",
+			"to": "src/daemon/queue.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "docs/plans/tools.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/db-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/db/converter-cache.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/db/drivers/duckdb-file.ts#DuckDBFileDriver",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/db/duckdb-pool.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/db/registry.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/tools/builtins/data/lineage.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/tools/builtins/data/schema-drift.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-data.md",
+			"to": "src/daemon/tools/builtins/db/index.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-infrastructure.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-infrastructure.md",
+			"to": "design/analyze-framework-code.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-infrastructure.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-framework-infrastructure.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "design/analyze-framework-code.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "design/analyze-framework-data.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "design/analyze-framework-infrastructure.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "design/analyze-plan-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/index.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/tool-surface.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/contract.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/prompts/analyze/classification.system.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/prompts/analyze/code.system.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/prompts/analyze/data.system.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/prompts/analyze/generic.system.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/prompts/analyze/infra.system.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/agent/providers/ollama.ts#OllamaProvider",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperLlmUnavailableError",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperSchemaUnrecoverable",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperToolLoopExhausted",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/index.ts#shaperFor",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/invariants.ts#ScopeNotIndexedError",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#ClassificationShapeInput",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#RunShapeInput",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#ShapeOpts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#Shaper",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#TaskShapeInput",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/daemon/tools/builtins/db/index.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeTaskTemplate",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#ClassifiedIntent",
+			"real": true
+		},
+		{
+			"from": "design/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#PlannedTask",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "design/analyze-framework-code.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "design/analyze-framework-data.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "design/analyze-framework-infrastructure.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "src/analyze/classifier/validate.ts#TARGET_TO_KINDS",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "src/analyze/planner/validate.ts",
+			"real": true
+		},
+		{
+			"from": "design/analyze-plan-builder.md",
+			"to": "src/shared/analyze-types.ts#PlannedTask",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/agent/providers/__tests__/cli-provider.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/bundle.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/cache-invalidation.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/cache.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/classification-shaper.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/code-shaper.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/data-shaper.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/driver.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/failure-modes.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/fixtures/setup.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/generic-shaper.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/infra-shaper.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/schema.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/__tests__/tool-surface.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/bundle.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/cache.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/invariants.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/schema.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/tool-surface.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/contract.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/config/local.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/daemon/__tests__/analyze-rpc.live.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/daemon/analyze-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/db/search.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/prompts/analyze/classification.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/prompts/analyze/code.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/prompts/analyze/data.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/prompts/analyze/generic.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/prompts/analyze/infra.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/agent/providers/ollama.ts#OllamaProvider",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/bundle.ts#assembleMarkdown",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/bundle.ts#omitEmpty",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperLlmUnavailableError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperPromptMissingError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperSchemaUnrecoverable",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#ShaperToolLoopExhausted",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/driver.ts#runShaper",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/index.ts#shaperFor",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/invariants.ts#ScopeNotIndexedError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/tool-surface.ts#getReadOnlyTools",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#ClassificationShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#RunShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#ShapeOpts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#Shaper",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/analyze/context/types.ts#TaskShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/indexer/watcher.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeTaskTemplate",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#ClassifiedIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/shared/analyze-types.ts#PlannedTask",
+			"real": true
+		},
+		{
+			"from": "docs/plans/analyze-context-builder.md",
+			"to": "src/shared/types.ts#ToolDefinition",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/boot-validator.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/cache.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/decomposer.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/driver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/synthesizer.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/docs-retrieval.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/concept-resolve.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/doc-decision-trace.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/executor.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/import-graph.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/module-profile.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/symbol-locate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/runtimes/docs/constraint-enumerate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/runtimes/docs/decision-trace.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/db/exploration-cache.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/db/graph/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/code.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/data.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/decompose.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/docs.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/generic.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/infra.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/prompts/analyze/synthesize.code.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "docs/plans/docs-module.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/decomposer.ts#decompose",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/driver.ts#runShaper",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/synthesizer.ts#synthesize",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts#ClassificationShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts#RunShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts#ShapeOpts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/context/types.ts#TaskShapeInput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/capability-reuse-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/class-hierarchy.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/config-trace.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/convention-detect.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/data-model-trace.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/doc-constraint-enumerate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/doc-mention.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/freeform-probe.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/import-graph.ts#runImportGraph",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/module-profile.ts#runModuleProfile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/symbol-locate.ts#runSymbolLocate",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/test-locate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts#AnswerType",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts#Exploration",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts#ExplorationOutput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts#ExplorationPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/types.ts#ExplorationType",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/analyze/explore/usage-example.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/exploration-based-context-build.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/cache.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/capability-reuse-check.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/doc-constraint-enumerate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/doc-decision-trace.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/daemon/steps/analyze-step/state-store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/mcp/steering-template.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/agent/providers/structured-output.ts#withStructuredRetry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/decomposer.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/synthesizer.ts#SynthesizerPromptKey",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/types.ts#BundleMeta",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/context/types.ts#RunTarget",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/executor.ts#ExecutePlanArgs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/executor.ts#executePlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/executor.ts#stepPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/types.ts#ExecutedPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/types.ts#Exploration",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/types.ts#ExplorationOutput",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/analyze/explore/types.ts#ExplorationPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/db/graph/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeScope",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/shared/analyze-types.ts#ClassifiedIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/mcp-multi-turn-analyze.md",
+			"to": "src/shared/types.ts#StructuredSchema",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "docs/plans/storage-migration-lmdb-lance.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/config/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/daemon/db/duckdb-pool.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/compaction.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/entities.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/edges.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/keys.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/relations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/indexer/cross-file-resolver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/indexer/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/client.ts#DbClients",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#addCompactedTurns",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#deleteSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#getAllTurnsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#getTurnsForSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#pruneConversations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/conversations.ts#searchTurnsByRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/entities.ts#deleteEntitiesForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/entities.ts#deleteEntitiesForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/entities.ts#getEntity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/entities.ts#reindexFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/codec.ts#EdgeProps",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/codec.ts#PlanStepRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/codec.ts#SessionRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/codec.ts#TurnRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/ids.ts#allocateEntityId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/ids.ts#allocateRepoId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/keys.ts#decodeOutEdgeKey",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/keys.ts#encodeOutEdgeKey",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/store.ts#GraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/store.ts#closeGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/store.ts#setGraphStorePath",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#TraversalOpts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#bfs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#dfs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#scc",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#transitiveClosure",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/graph/traversal.ts#unreachable",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/relations.ts#UnresolvedRelation",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/relations.ts#deleteUnresolvedForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/relations.ts#deleteUnresolvedForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/repos.ts#addRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/repos.ts#listRepos",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/repos.ts#removeRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/repos.ts#updateRepoStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#findCallees",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#findCallers",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#findDefinedIn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#findImports",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#resolveClosure",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/search.ts#searchEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#deleteItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#deleteList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#getList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#insertComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#insertItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/db/todos.ts#insertList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/todos.ts#TodoComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/todos.ts#TodoItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/todos.ts#TodoList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/types.ts#ConfigEntry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/types.ts#Entity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/types.ts#Language",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/types.ts#Plan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/graph-storage-lmdb.md",
+			"to": "src/shared/types.ts#PlanStep",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "design/indexer.html",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "docs/plans/graph-storage-lmdb.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "package.json",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/agent/providers/ollama.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/__tests__/store-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/search.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/__tests__/backup.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/backup.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/db/drivers/duckdb-file.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/db/duckdb-pool.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/__tests__/graph-query.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/compaction-lmdb-lance.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/conversations-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/entities-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/lancedb-smoke.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/lmdb-smoke.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/reindex-file-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/relations-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/repos-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/search-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/__tests__/todos-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/client.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/compaction.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/codec.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/compact.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/derived-indices.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/ids.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/migrations.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/operational.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/store.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/__tests__/traversal.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/edges.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/ids.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/keys.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/migrations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/__tests__/conn.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/config-vec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/session-vec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/turn-vec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/__tests__/cross-file-resolver-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/cross-file-resolver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/embedder.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/shared/paths.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/shared/todos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/shared/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/search.ts#buildWhereClause",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#ConfigStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#deleteByScope",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#deleteEntry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#getEntry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#listEntries",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#upsertEntry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/config/store.ts#vectorSearch",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/chat-handler.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/chat-sessions.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/db-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/todos-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts#graphCalleesTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts#graphCallersTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts#graphEntityTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts#graphQueryTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts#graphSearchTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/client.ts#DbClient",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/client.ts#closeDb",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/client.ts#getDb",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/client.ts#initDb",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#addCompactedTurns",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#bumpSessionActivity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#closeSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteSessionRecord",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteSessionsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteTurnsByIds",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteTurnsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#deleteTurnsForSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getAllTurns",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getAllTurnsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getAllTurnsWithVectorsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getConversationStats",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getSessionById",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#getTurnsForSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#listSessionRecords",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#listSessions",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#pruneConversations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#resetTableCaches",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#saveSession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#saveTurn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#searchTurnsByRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#seedFromPrior",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#setSessionAgent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/conversations.ts#setSessionStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#deleteEntitiesForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#deleteEntitiesForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#detachDeleteEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#detachDeleteEntitiesInTxn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#entityIdByU64",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#entityIdsByU64s",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#entityU64ForId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#findEntitiesByFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#findEntitiesByName",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#getEntitiesByIds",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#getEntity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#listEntitiesByKind",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#listEntitiesForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#listUnembeddedEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#lookupStringIdByU64",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#reindexFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#rowToEntity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#unwrapEmbedding",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#updateEmbedding",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/entities.ts#upsertEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#ConfigEntryRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#EdgeProps",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#EntityRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#PlanRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#PlanStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#PlanStepComplexity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#PlanStepRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#PlanStepStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#RepoRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#SessionRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#TodoCommentRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#TodoItemRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#TodoListRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#TurnRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/codec.ts#UnresolvedRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/edges.ts#compileKindFilter",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/edges.ts#inNeighbors",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/edges.ts#neighborsSync",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/edges.ts#outNeighbors",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/ids.ts#allocateEntityIdBlock",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/ids.ts#allocateEntityIdInTxn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/ids.ts#allocateRepoIdInTxn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/ids.ts#peekIdCounters",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/migrations.ts#MIGRATIONS",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/migrations.ts#Migration",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/migrations.ts#MigrationPathError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/migrations.ts#runMigrations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#LmdbStoreCorrupted",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#LmdbStoreError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#LmdbStoreLockConflict",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#LmdbStoreMapsizeTooSmall",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#LmdbStoreSchemaVersionMismatch",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#SCHEMA_VERSION",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#backupGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#classifyOpenError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#closeGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#compactGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#getGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#runReaderCheck",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#setGraphStorePath",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#withWriteTxn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/store.ts#withWriteTxnSync",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#TraversalOpts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#bfs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#dfs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#scc",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#transitiveClosure",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/graph/traversal.ts#unreachable",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts#closeLanceConn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts#getLanceConn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts#getLanceConnPath",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts#openOrCreateTable",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/conn.ts#setLanceConnPath",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#deleteEntityVec",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#deleteEntityVecsByIds",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#deleteEntityVecsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#optimizeEntityVecIndex",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#searchEntityVecs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#writeEntityEmbedding",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/entity-vec.ts#writeEntityEmbeddings",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/lance/turn-vec.ts#getTurnVecsByIds",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#UnresolvedRelation",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#deleteRelationsForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#deleteRelationsForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#deleteResolvedRelations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#deleteUnresolvedForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#deleteUnresolvedForRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#listUnresolvedRelations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#makeUnresolvedRelationId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#promoteResolvedBatch",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#promoteToResolved",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#updateUnresolvedMeta",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#updateUnresolvedMetaBatch",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#upsertRelation",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/relations.ts#upsertRelations",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/repos.ts#addRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/repos.ts#listRepos",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/repos.ts#removeRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/repos.ts#updateRepoStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#closureEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#findCallees",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#findCallers",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#findDefinedIn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#findImports",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#neighborEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#resolveClosure",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#sccEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#searchEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/search.ts#unreachableEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#assertParentAllowed",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#deleteComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#deleteItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#deleteList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#deleteListsBySession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#getComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#getItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#getList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#initTodosTables",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#insertComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#insertItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#insertList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#listAllLists",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#listCommentsForItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#listItems",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#listListsBySession",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#reparentList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#transferList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#updateComment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#updateItem",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/db/todos.ts#updateList",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/cross-file-resolver.ts#prefetchImportsByFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/cross-file-resolver.ts#resolveCall",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/cross-file-resolver.ts#resolveInheritance",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/cross-file-resolver.ts#runCrossFileResolver",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/index.ts#IndexerService",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/indexer/parser/base.ts#makeEntityId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/shared/paths.ts#PATHS",
+			"real": true
+		},
+		{
+			"from": "docs/plans/storage-migration-lmdb-lance.md",
+			"to": "src/shared/types.ts#DaemonStatus",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/__tests__/entities-lmdb.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/entities.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/__tests__/migrations.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/ids.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/migrations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/repo-namespaces.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/daemon/handler-runtime.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/entities.ts#reindexFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/entities.ts#upsertEntities",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/codec.ts#EntityRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/codec.ts#RepoKind",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/codec.ts#RepoRow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/ids.ts#allocateRepoIdInTxn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/store.ts#LmdbStoreSchemaVersionMismatch",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/store.ts#SCHEMA_VERSION",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/graph/store.ts#getGraphStore",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#BANNED_REPO_ROOTS",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#UnregisteredRepoError",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#addRepo",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#lookupRepoId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#validateRepoPath",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/db/repos.ts#validateRepoPathShape",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/cross-file-resolver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/index.ts#IndexerService",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/index.ts#indexFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/index.ts#indexManifest",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/index.ts#repoForFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/base.ts#makeEntityId",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/go.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/java.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/python.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/scala.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/indexer/parser/typescript.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/repo-namespaces.ts#SHARED_MODULES_NAMESPACE_BY_LANG",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/repo-namespaces.ts#SHARED_MODULES_REPO_ID",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/types.ts#Entity",
+			"real": true
+		},
+		{
+			"from": "docs/plans/repo-registry-strict-contract.md",
+			"to": "src/shared/types.ts#Language",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/executor.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/registry.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/copy.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/delete.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/edit.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/mkdir.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/move.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/multi-edit.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/read.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/stat.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/file/write.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/actions.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/issue.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/pr.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/project.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/release.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/gh/repo.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/amend.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/blame.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/branch.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/checkout.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/cherry-pick.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/commit.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/diff.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/fetch.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/log.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/merge.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/pull.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/push.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/rebase.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/remote.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/reset.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/revert.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/show.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/stage.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/stash.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/status.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/tag.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/git/worktree.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/http/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/k8s/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/llm-aliases.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/pkg/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/search/glob.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/search/grep.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/search/list-dir.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/search/recent.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/shell/cwd.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/shell/exec-detached.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/shell/exec-pipeline.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/shell/exec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/ssh/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/test/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/builtins/web/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/executor.ts#executeTool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/types.ts#Tool",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/daemon/tools/types.ts#ToolDeps",
+			"real": true
+		},
+		{
+			"from": "docs/plans/tools.md",
+			"to": "src/shared/types.ts#IpcStreamMessage",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "docs/plans/workflow-define.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "docs/plans/workflow-design.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "docs/plans/workflow-implementation.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/context/repo-ignore-filter.ts#RepoIgnoreFilter",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/context/types.ts#AnalyzeContextBundle",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/explore/executor.ts#RUNNERS",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/explore/executor.ts#executePlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/explore/executor.ts#stepPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/explore/types.ts#ExplorationPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/analyze/explore/types.ts#ExplorationRunner",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/daemon/tools/builtins/index.ts#registerBuiltinTools",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/shared/analyze-types.ts#ClassifiedIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/amendments/effective.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/types.ts#StepRunner",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/types.ts#StepRunnerContext",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/types.ts#WorkflowIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/types.ts#WorkflowPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/meta-workflow-framework.md",
+			"to": "src/workflow/types.ts#WorkflowStep",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/steps/build-step/phases/implement.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/steps/triage-step",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/steps/workflow-step/phases/start.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/gates.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/orchestrator.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/build/admission.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/build/standalone-record.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/design-story/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/classify.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/analyze-rpc.ts#buildRun",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/steps/workflow-step/phases/start.ts#augmentStandaloneParams",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/daemon/steps/workflow-step/phases/start.ts#epicKeyFor",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/gates.ts#requireApprovedEpic",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/gates.ts#requireApprovedHld",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/gates.ts#requireApprovedLld",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/hash.ts#computeEpicHash",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/orchestrator.ts#finalizeStandaloneLld",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/build/admission.ts#admitStandaloneBuild",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/build/standalone-record.ts#StandaloneBuildRecord",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/runners/design-story/index.ts#readUpstream",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/classify.ts#CLASSIFY_SCHEMA",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/classify.ts#buildClassifyPrompt",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/classify.ts#routeForSizeClass",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/types.ts#SizeClass",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/types.ts#TriageResult",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/triage/types.ts#TriageRoute",
+			"real": true
+		},
+		{
+			"from": "docs/plans/feature-triage-router.md",
+			"to": "src/workflow/types.ts#ArtifactMetaBase",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": ".insrc/artifacts/HLD-6d6cfaf9a9b14bd4.json",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "docs/reviews/2026-07-20-plan-audit-streaming.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/client.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/command.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/services/workflow.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/__tests__/workflow-rpc.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/steps/workflow-step/phases/step.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/workflow-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/review/verify.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/tracker-auto.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/analyze/context/shaper-provider.ts#buildShaperProvider",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/panes/WorkflowsPane.tsx",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/services/workflow.ts#approve",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/cli/services/workflow.ts#reviewArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/steps/build-step/handler.ts#handleBuildStep",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/steps/workflow-step/phases/resolve-question.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/daemon/workflow-rpc.ts#runWorkflowServerSide",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/mcp/progress-forward.ts#mcpProgressSink",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/shared/types.ts#ProgressEvent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/shared/types.ts#TokenProgressEvent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/executor.ts#resumeRun",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/orchestrator.ts#finalizeArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/questions.ts#questionsWithOptions",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/questions.ts#recordResolution",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/review/apply.ts#pendingUserFindings",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/review/report.ts#renderReviewReport",
+			"real": true
+		},
+		{
+			"from": "docs/plans/review-cycle-and-streaming-completion.md",
+			"to": "src/workflow/review/run-artifact.ts#reviewArtifactFile",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "AGENTS.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "docs/plans/meta-workflow-framework.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "docs/plans/workflow-define.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "docs/plans/workflow-design.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "docs/workflow.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/agent/providers/structured-output.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/analyze",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/analyze/context/repo-ignore-filter.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/analyze/explore/executor.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/config/analyze.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/analyze-step/state-store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/handler.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/phases/plan.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/phases/start.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/phases/step.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/phases/synthesize.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/state-store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/daemon/steps/workflow-step/state.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/mcp/steering-template.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/applier.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/effective.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/staleness.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/define.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/hld.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/lld.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/tracker.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/executor.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/gates.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners/define",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners/design-epic",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners/design-story",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners/stub",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/runners/tracker",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/slug.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/storage.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/synthesizer.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/tracker-auto.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/agent/providers/structured-output.ts#validateAgainstSchema",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/agent/providers/structured-output.ts#withStructuredRetry",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/analyze/explore/executor.ts#stepPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/shared/logger.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/effective.ts#getEffectiveHld",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/types.ts#Amendment",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/amendments/types.ts#AmendmentRecord",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/define.ts#DefineArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/hld.ts#HldArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/lld.ts#LldArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/artifacts/stub.ts#StubArtifact",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/index.ts#registerWorkflowRunners",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#Citation",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#StepRunner",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#StepRunnerContext",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#WorkflowIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#WorkflowPlan",
+			"real": true
+		},
+		{
+			"from": "docs/plans/workflow-implementation.md",
+			"to": "src/workflow/types.ts#WorkflowStep",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "design/analyze-context-builder.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/context/live-project-context.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/contract.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/docs-retrieval.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/runtimes/code",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/doc-summaries.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/entities.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/lance/entity-vec.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/indexer/parser/artifact.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/code.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/data.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/doc-summariser.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/docs.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/generic.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/prompts/analyze/infra.system.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/context/boot-validator.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/context/live-project-context.ts#LiveProjectContext",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/context/live-project-context.ts#assembleLiveProjectContext",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/context/types.ts#Shaper",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/docs-retrieval.ts#DocSectionResult",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/docs-retrieval.ts#DocsRetrievalArgs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/analyze/docs-retrieval.ts#retrieveDocSections",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/daemon/tools/builtins/file/read.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/daemon/tools/builtins/graph/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/daemon/tools/builtins/search/grep.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/doc-summaries.ts#deleteDocSummary",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/doc-summaries.ts#getDocSummary",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/doc-summaries.ts#writeDocSummary",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/entities.ts#listEntitiesByKind",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/entities.ts#listEntitiesByKinds",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/db/lance/entity-vec.ts#EntityVecFilter",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeScopeRef",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts#AnalyzeTarget",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts#ClassifiedIntent",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts#DocFamily",
+			"real": true
+		},
+		{
+			"from": "docs/plans/docs-module.md",
+			"to": "src/shared/analyze-types.ts#DocSummary",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": ".claude/settings.local.json",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": ".vibe/config.toml",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "AGENTS.md",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "camon/src/camon/addon_runtime.py",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "camon/src/camon/attribution.py",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "camon/src/camon/extract.py",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "camon/src/camon/setup.py",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "copy-assets.mjs",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "package.json",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "scripts/daemon-ctl.sh",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "scripts/insrc",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "scripts/insrc-daemon-install.sh",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/agent/providers/cli-provider.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/analyze/context/role-router.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/analyze/context/shaper-provider.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/bin/insrc-mcp.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/cli/services/repo.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/config/analyze.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/code-review-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/mcp-register.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/steering-inject.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/steps/build-step/phases/validate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/workflow-rpc.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/mcp/resolve-repo.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/mcp/server.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/mcp/steering-template.md",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/prompts/steering-block.md",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/shared/paths.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "README.md",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/agent/providers/cli-provider.ts#CliProvider",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/agent/providers/ollama.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/analyze/context/role-router.ts#RoleRouter",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/daemon/steps/build-step/handler.ts",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/shared/types.ts#LLMProvider",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/shared/types.ts#SteeringSelection",
+			"real": true
+		},
+		{
+			"from": "docs/insrc-agent-integration-review.md",
+			"to": "src/workflow/attribution.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/daemon.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/baseline-comparison-t9.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/live-run-t9.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/measurements/live/run.mjs",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/plans/handover-2026-10-09.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/completeness.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/executor/cache.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/explore/types.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/measure.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/orchestrator/__tests__/run-measure.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/planner/driver.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/cli/services/maintenance.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/__tests__/model-catalog.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/tools/builtins/code/__tests__/migration-walk.test.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/shared/classify.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "vscode-plugin/package-lock.json",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "vscode-plugin/src/extension.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "design/analyze-framework.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/BUILD.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/CR.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/LLD.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/PLAN.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S002/TESTS.md",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/completeness.ts#renderMeasureLine",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/executor/cache.ts#taskOutputPathFor",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/explore/types.ts#filesNamedBy",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/explore/types.ts#underRoot",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/measure.ts#_setMeasureDepsForTest",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/measure.ts#measureNamedArea",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/measure.ts#measureReposUnder",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/orchestrator/driver.ts#_setClassifyForTest",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/orchestrator/driver.ts#completeRun",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/orchestrator/driver.ts#concludeRun",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/planner/templates/bootstrap.ts#registerBuiltinTemplates",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/runtimes/bootstrap.ts#registerBuiltinRuntimes",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/analyze/runtimes/data/_shared.ts#dataScopeOf",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/cli/services/maintenance.ts#restart",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/cli/services/maintenance.ts#update",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/config/config-catalog.ts#RETIRED_ROLE_IDS",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/analyze-rpc.ts#_setClassifierForTest",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/analyze-rpc.ts#planDepthScope",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/db/drivers/sqlite.ts#SqliteDriver",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/steps/analyze-oneshot.ts#oneShotRunParams",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/steps/analyze-step/answer-turn.ts#prepareAnswerTurn",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/steps/build-step/phases/validate.ts",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "src/daemon/workflow-rpc.ts#_groundingIntentForTest",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "vscode-plugin/src/activation.ts#activateExtension",
+			"real": true
+		},
+		{
+			"from": "docs/plans/handover-2026-10-10.md",
+			"to": "vscode-plugin/src/activation.ts#runReachabilityProbe",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/config/feedback.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/daemon/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/daemon/session.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/compaction.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/conversations.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/directives.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/lance/working-memory-bullets.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/indexer/index.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/workflow/storage.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "vscode-plugin/src/chat/chat-panel.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "vscode-plugin/src/chat/cli-adapter.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "vscode-plugin/src/chat/session-store.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "vscode-plugin/src/chat/turn-lifecycle.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "CLAUDE.md",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/agent/providers/cli-provider.ts",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/conversations.ts#pruneConversations",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/conversations.ts#searchTurnsByRepo",
+			"real": true
+		},
+		{
+			"from": "docs/cross-session-agent-memory-spec.md",
+			"to": "src/db/conversations.ts#seedFromPrior",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "mocks/chat-provider-model-effort.html",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/media/providers/claude.svg",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/media/providers/codex.svg",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/media/providers/vibe.svg",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/chat-panel.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/cli-adapter.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/protocol.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/provider-icons.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/session-file-store.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/session-store.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/turn-lifecycle.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/extension.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/models/definitions.ts",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "src/daemon/model-registry.ts#familyForClient",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/chat-panel.ts#ChatPanelHostDeps",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/cli-adapter.ts#ProviderId",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/cli-adapter.ts#SpawnFn",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/cli-adapter.ts#TurnRequest",
+			"real": true
+		},
+		{
+			"from": "design/chat-panel-provider-model-effort.md",
+			"to": "vscode-plugin/src/chat/session-store.ts#ChatSession",
+			"real": true
+		}
+	]
+}

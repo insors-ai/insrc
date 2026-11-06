@@ -134,14 +134,117 @@ export interface ChatSession {
    * back-compat.
    */
   liveTurn?: LiveTurn;
+  /**
+   * E202611031bd72813:S001: active-chat lifecycle status shown in the chat panel's active
+   * dropdown (red/yellow/green). Optional for back-compat: old rows without it are not-active
+   * until a turn sets a status.
+   */
+  status?: ChatStatus | undefined;
+  /** E202611031bd72813:S001: ms epoch of the last status-affecting event; drives the 30-min purge. */
+  lastActivityAt?: number | undefined;
+  /** E202611031bd72813:S001: persisted approval/selection requests (full payload + resolution). */
+  pendingRequests?: PersistedRequest[] | undefined;
+  /** E202611031bd72813:S001 t6: the approval queue's full snapshot (waiting, batches, ended,
+   * grants) persisted before the queue is cleared on a chat switch, restored on attach. */
+  queueSnapshot?: ApprovalQueueSnapshot | undefined;
+  /** E202611031bd72813:S001: durable checkpoint of the detached-session observer cursor/decoder. */
+  observerCheckpoint?: ObserverCheckpoint | undefined;
+  /**
+   * E202611031bd72813:S001 (manual review MR4): durable per-conversation set of insrc_present
+   * declaration ids already dispatched to the presenter — shared by the live-turn, follow-reader
+   * and detached-observer paths, so a replayed declaration (reattach/reload) never opens a second
+   * panel for a declaration that was already presented. Distinct call ids still open distinct panels.
+   */
+  presentedDeclarations?: string[] | undefined;
+}
+
+/** E202611031bd72813:S001 — active-chat lifecycle status: working | waiting-input | done. */
+export type ChatStatus = 'working' | 'waiting-input' | 'done';
+
+/** E202611031bd72813:S001 t3: a done chat leaves the active list after this much inactivity. */
+export const ACTIVE_PURGE_MS = 30 * 60 * 1000;
+
+/** E202611031bd72813:S001 t3: one entry of the active-chats list (drives the chat panel dropdown). */
+export interface ActiveChatEntry extends ChatSummary {
+  readonly status: ChatStatus;
+  readonly lastActivityAt: number | undefined;
+}
+
+/**
+ * E202611031bd72813:S001 — one persisted approval/selection request. Carries the full
+ * actionable payload (QueuedApproval fields + batch/grant context for approvals; the complete
+ * normalized SelectionRequestEvent for selections) plus resolution state, so a restored chat
+ * can show its resolvable card again even when its LiveTurn is gone.
+ */
+export interface PersistedRequest {
+  readonly requestId: string;
+  readonly kind: 'approval' | 'selection';
+  readonly turnId?: string | undefined;
+  readonly title?: string | undefined;
+  readonly detail?: string | undefined;
+  readonly blockKind?: string | undefined;
+  readonly toolName?: string | undefined;
+  readonly command?: string | undefined;
+  readonly prompt?: string | undefined;
+  readonly options?: readonly string[] | undefined;
+  readonly multi?: boolean | undefined;
+  readonly resolved: boolean;
+  readonly outcome?: string | undefined;
+}
+
+/**
+ * E202611031bd72813:S001 — durable checkpoint for one session's background observer: the
+ * output segment generation + cursor offset + stateful decoder state (selectionSeq counter and
+ * any split selectionBuffer fragment), plus already-dispatched presentation declaration ids.
+ */
+import type { ApprovalQueueSnapshot } from './approval-queue.js';
+
+export interface ObserverCheckpoint {
+  /** The turn this checkpoint belongs to — a checkpoint of another turn is never reused. */
+  readonly turnId: string;
+  readonly generation: number;
+  readonly offset: number;
+  readonly selectionSeq: number;
+  readonly selectionBuffer?: string | undefined;
+  /** The decoder's captured native session id (codex thread.started / claude init), so a budget-limited pass that consumed it before completing still persists it on the next pass. */
+  readonly sessionId?: string | undefined;
+  /** tool_use id -> command / edit path, so a pass boundary between tool_use and tool_result keeps the correlation. */
+  readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+  readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  readonly declaredIds?: readonly string[] | undefined;
+  /** Set when the checkpoint was rewound to just before a terminal — rewound only once per terminal. */
+  readonly rewound?: boolean | undefined;
+  /** A real terminal (done, or a non-observation error) was ingested at/before this checkpoint. */
+  readonly sawTerminal?: boolean | undefined;
+  /** Transcript rows the observer had persisted when this checkpoint was saved — a replaying pass
+   * truncates back to this length before re-appending, so re-ingested events never duplicate rows. */
+  readonly transcriptLen?: number | undefined;
 }
 
 /** A turn still being read from the session output file. */
 export interface LiveTurn {
   readonly cursor: { readonly turnId: string; readonly generation: number; readonly offset: number };
+  /**
+   * E202611031bd72813:S001 t5: the transcript-follow cursor's own decoder state (selectionSeq +
+   * split-marker buffer), saved with the cursor so a reattach between marker fragments resumes with
+   * it — the observer checkpoint is the OTHER cursor's state and stays independent.
+   */
+  readonly decoder?: {
+    readonly selectionSeq: number;
+    readonly selectionBuffer?: string | undefined;
+    readonly sessionId?: string | undefined;
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  } | undefined;
   readonly ownerHostPid: number;
   readonly pid?: number | undefined;
   readonly startedAt?: number | null | undefined;
+  /** Transcript rows persisted when this cursor was last saved — the observer truncates back to
+   * this before replaying from an earlier point, so live-reader rows are never duplicated. */
+  readonly transcriptLen?: number | undefined;
+  /** Transcript rows present when this turn STARTED — an observer replaying from the turn's start
+   * truncates to this, so rows the live reader persisted for this turn are replaced, not duplicated. */
+  readonly turnStartLen?: number | undefined;
 }
 
 export interface ChatSummary {
@@ -170,6 +273,16 @@ export interface ChatSessionStore {
   list(): ReadonlyArray<ChatSummary>;
   append(id: string, entry: TranscriptEntry): void;
   save(session: ChatSession): void;
+  /**
+   * E202611031bd72813:S001: set the active-chat lifecycle status, stamping `lastActivityAt`
+   * with the current time (monotonic per session — callers must not move it backwards).
+   */
+  setStatus(id: string, status: ChatStatus): void;
+  /**
+   * E202611031bd72813:S001 t3: the active-chats list — working/waiting-input always; done only
+   * while inactivity < ACTIVE_PURGE_MS. Pure read: the purge is computed here, never destructive.
+   */
+  activeChats(nowMs?: number): ReadonlyArray<ActiveChatEntry>;
 }
 
 /** The slice of vscode.Memento this store needs (kept structural so the store is vscode-free). */
@@ -209,6 +322,37 @@ export function isSession(v: unknown): v is ChatSession {
     (s['editMode'] === 'auto' || s['editMode'] === 'review') &&
     Array.isArray(s['transcript'])
   );
+}
+
+/**
+ * E202611031bd72813:S001 — merge the active-chat fields of an incoming session with the
+ * persisted record, so a stale object saved by another writer can neither regress nor drop
+ * them: the record with the newer `lastActivityAt` owns `status`; `lastActivityAt` is the max;
+ * `pendingRequests`/`observerCheckpoint` fall back to the persisted values when absent.
+ * Returns the incoming object itself when nothing needs preserving (callers key bookkeeping
+ * off object identity).
+ */
+export function mergeActiveChatFields(incoming: ChatSession, existing: ChatSession | undefined): ChatSession {
+  if (existing === undefined) return incoming;
+  const incAt = incoming.lastActivityAt ?? 0;
+  const exAt = existing.lastActivityAt ?? 0;
+  const staleWrite = exAt > incAt;
+  // A stale write (older lastActivityAt) loses entirely: the persisted record owns all four
+  // active-chat fields. Otherwise the incoming values win, falling back to persisted when absent.
+  const status = staleWrite ? existing.status : (incoming.status ?? existing.status);
+  const lastActivityAt = Math.max(incAt, exAt);
+  const pendingRequests = staleWrite ? existing.pendingRequests : (incoming.pendingRequests ?? existing.pendingRequests);
+  const observerCheckpoint = staleWrite ? existing.observerCheckpoint : (incoming.observerCheckpoint ?? existing.observerCheckpoint);
+  if (status === incoming.status && lastActivityAt === incAt && pendingRequests === incoming.pendingRequests && observerCheckpoint === incoming.observerCheckpoint) {
+    return incoming;
+  }
+  // Mutate in place and return the same object: the file store keys its rows bookkeeping off
+  // object identity, so cloning here would make the next save rewrite the transcript whole.
+  incoming.status = status;
+  incoming.lastActivityAt = lastActivityAt > 0 ? lastActivityAt : undefined;
+  incoming.pendingRequests = pendingRequests;
+  incoming.observerCheckpoint = observerCheckpoint;
+  return incoming;
 }
 
 /** When a session last changed: its last row's time, or its creation time when it has no row. */
@@ -253,7 +397,9 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
   };
 
   const save = (session: ChatSession): void => {
-    void memento.update(SESSION_PREFIX + session.id, session);
+    // E202611031bd72813:S001: never regress or drop the active-chat fields on a stale write.
+    const toWrite = mergeActiveChatFields(session, get(session.id));
+    void memento.update(SESSION_PREFIX + toWrite.id, toWrite);
     const ids = readIndex();
     if (maxSessions === undefined) {
       // S003 unbounded behaviour, preserved byte-for-byte when no cap is set.
@@ -267,7 +413,17 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
     reordered.push(session.id);
     if (reordered.length > maxSessions) {
       const cut = reordered.length - maxSessions;
-      for (const id of reordered.slice(0, cut)) {
+      // E202611031bd72813:S001 t3: never evict an active/waiting session or one with unresolved
+      // requests — evict only done chats, oldest first, up to the cut (the list may stay over the
+      // cap rather than drop an active chat).
+      const isEvictable = (id: string): boolean => {
+        if (id === session.id) return false;
+        const s = get(id);
+        return s !== undefined && (s.status === undefined || s.status === 'done') && !(s.pendingRequests ?? []).some((r) => !r.resolved);
+      };
+      const evicted = reordered.filter(isEvictable).slice(0, cut);
+      const evictedSet = new Set(evicted);
+      for (const id of evicted) {
         void memento.update(SESSION_PREFIX + id, undefined);
         try {
           deps.onEvict?.(id);
@@ -275,7 +431,7 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
           /* cleanup is best-effort; eviction itself has happened */
         }
       }
-      writeIndex(reordered.slice(cut));
+      writeIndex(reordered.filter((id) => !evictedSet.has(id)));
     } else {
       writeIndex(reordered);
     }
@@ -316,6 +472,26 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
       save(s);
     },
     save,
+    activeChats(nowMs?: number): ReadonlyArray<ActiveChatEntry> {
+      const now = nowMs ?? Date.now();
+      const out: ActiveChatEntry[] = [];
+      for (const id of readIndex()) {
+        const s = get(id);
+        if (s?.status === undefined) continue; // old rows are not-active
+        if (s.status === 'done' && (s.lastActivityAt === undefined || now - s.lastActivityAt >= ACTIVE_PURGE_MS)) continue;
+        out.push({ id: s.id, provider: s.provider, title: s.title, updatedAt: updatedAtOf(s), status: s.status, lastActivityAt: s.lastActivityAt });
+      }
+      return out;
+    },
+    setStatus(id: string, status: ChatStatus): void {
+      const s = get(id);
+      if (s === undefined) return; // corrupt/missing -> no-op, never throw
+      // mutate in place (the file store keys row bookkeeping off object identity), monotonic
+      // lastActivityAt: never moves backwards, while the status itself always applies
+      s.status = status;
+      s.lastActivityAt = Math.max(s.lastActivityAt ?? 0, Date.now());
+      save(s);
+    },
   };
 }
 

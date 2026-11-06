@@ -8,10 +8,10 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
+import { appendFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createSessionOutput, parseMarker, SegmentGone, type SegmentCursor } from '../session-output.js';
+import { createSessionOutput, nodeSessionOutputFs, parseMarker, SegmentGone, type SegmentCursor, type SessionOutputFs } from '../session-output.js';
 import { tick, waitFor } from './fixtures.js';
 
 const root = (): string => join(mkdtempSync(join(tmpdir(), 'chat-output-')), 'chat-output');
@@ -163,17 +163,18 @@ test('the file rolls over at a turn start once past maxBytes, keeping one previo
   await r.done;
   assert.equal(r.lines.length, 2);
 
-  // Rolling over again drops generation 1: its cursor reports the segment gone.
+  // Rolling over again ARCHIVES generation 1 (E202611031bd72813:S001 t5: lossless by construction —
+  // rollover never discards): its cursor replays from the on-disk archive.
   appendFileSync(b.outPath, big);
   appendFileSync(b.outPath, big);
   await out.endTurn('s1', 'b', { code: 0, signal: null });
   const c = await out.beginTurn('s1', 'c');
   assert.equal(c.cursor.generation, 3);
   const files = readdirSync(dir).filter((f) => f.startsWith('s1')).sort();
-  assert.deepEqual(files, ['s1.1.ndjson', 's1.err.log', 's1.ndjson'], 'exactly one previous generation is kept');
-  await assert.rejects(async () => {
-    for await (const _ of out.tail(a.cursor, { finished: () => true })) void _;
-  }, SegmentGone);
+  assert.deepEqual(files, ['s1.1.ndjson', 's1.err.log', 's1.ndjson', 's1.pinned.1.ndjson'], 'one previous generation is kept; the outgoing one is archived, not discarded');
+  const r2 = follow(out.tail(a.cursor, { finished: () => true }));
+  await r2.done;
+  assert.equal(r2.lines.length, 2, 'generation 1 replays losslessly from the archive');
 
   // A cursor past the end of its (truncated) file re-reads its turn from the start, with a warning.
   const d = await out.beginTurn('s2', 'd');
@@ -260,6 +261,269 @@ test('bounded prefix terminates while writer lives; abort, rotated generation an
   await aborted.done;
   assert.deepEqual(aborted.lines, []);
   await assert.rejects(follow(out.tail({ ...saved, turnId: 'missing' }, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false })).done, SegmentGone);
-  await out.beginTurn('prefix', 'third'); // wanted generation is gone
-  await assert.rejects(follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false })).done, SegmentGone);
+  await out.beginTurn('prefix', 'third'); // main's rollover archives the outgoing generation instead of discarding it
+  const archived = follow(out.tail(saved, { fromTurnStart: true, beforeOffset: saved.offset, finished: () => false }));
+  await archived.done;
+  assert.deepEqual(archived.lines, ['reply'], 'the prefix of an archived generation is still readable');
+});
+
+test('E202611031bd72813:S001 t5: a registered cursor pins its generation across rollover (archived, not discarded); unregister drops it; oldestRetainedGeneration reflects it', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'out-t5-')), 'out');
+  const so = createSessionOutput({ root, maxBytes: 1, pollMs: 5 }); // tiny cap: every beginTurn rolls over
+  const seg1 = await so.beginTurn('s1', 't1');
+  const p = { current: `${root}/s1.ndjson`, previous: `${root}/s1.1.ndjson` };
+  // pin generation 1 (the current file's generation)
+  so.registerCursor(seg1.cursor);
+  assert.equal(await so.oldestRetainedGeneration('s1'), 1);
+  // write a line into gen 1, then start a second turn: rollover must archive gen 1, not discard it
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  const seg2 = await so.beginTurn('s1', 't2');
+  assert.notEqual(seg2.cursor.generation, seg1.cursor.generation, 'rolled over to a new generation');
+  // the pinned generation is still readable from the tail (no SegmentGone), even after a SECOND
+  // rollover that would normally discard it
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  const seg3 = await so.beginTurn('s1', 't3');
+  let threw = false;
+  for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    threw = e instanceof SegmentGone;
+  }
+  assert.equal(threw, false, 'the pinned generation survived a second rollover (archived, readable)');
+  assert.equal(await so.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldest retained is the pinned one');
+  // unregister: only the pin MARKER is dropped — the archive itself is never deleted by unregister
+  // (a racing register must not end up pinned against a deleted archive); sweep prunes it by age.
+  so.unregisterCursor(seg1.cursor);
+  await waitFor(() => !existsSync(`${root}/s1.pin.1.default`), 3000); // the marker is removed once the last unregister lands
+  assert.ok(existsSync(`${root}/s1.pinned.1.ndjson`), 'the archive survives unregister');
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(root)) utimesSync(join(root, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(!existsSync(`${root}/s1.pinned.1.ndjson`), 'the unpinned archive is pruned by the sweep');
+  let gone = false;
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    gone = e instanceof SegmentGone;
+  }
+  assert.ok(gone, 'after the sweep pruned it, the generation is gone (SegmentGone)');
+  await so.remove('s1');
+  rmSync(root, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: a pinned generation replays its payload losslessly after rollover, and recoverTurn re-anchors a lost turn into it', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5r-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 }); // tiny cap: every beginTurn rolls over
+  const seg1 = await so.beginTurn('s1', 't1');
+  // payload written by the CLI into generation 1 (two NDJSON lines)
+  appendFileSync(seg1.outPath, json({ type: 'assistant', message: { content: [{ type: 'text', text: 'hello' }] } }) + '\n');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor); // the observer's pin
+  // roll over twice: without the pin, generation 1 would be discarded at the second rollover
+  const seg2 = await so.beginTurn('s1', 't2');
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  const seg3 = await so.beginTurn('s1', 't3');
+  assert.ok(seg3.cursor.generation > seg1.cursor.generation + 1 || seg3.cursor.generation !== seg1.cursor.generation);
+  // lossless replay: tail from the pinned cursor returns BOTH payload lines, not SegmentGone
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['assistant', 'result'], 'the archived generation replays its full payload');
+  // recoverTurn re-anchors the lost turn into the oldest retained generation that holds it
+  const rc = await so.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined, 'recoverTurn finds the turn in a retained generation');
+  assert.equal(rc!.generation, seg1.cursor.generation, 're-anchored into the archived generation');
+  const replay: string[] = [];
+  for await (const { line } of so.tail(rc!, { finished: () => true })) replay.push(line);
+  assert.deepEqual(replay.map((l) => JSON.parse(l).type), ['assistant', 'result'], 'tail from the recovered cursor replays the turn from its start');
+  assert.equal(await so.recoverTurn('s1', 'no-such-turn'), undefined, 'a turn no retained file holds is unrecoverable');
+  so.unregisterCursor(seg1.cursor);
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: pinned archives are discovered from disk by a RECREATED store (lossless recovery across reloads)', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5d-')), 'out');
+  const so1 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so1.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so1.endTurn('s1', 't1', { code: 0, signal: null });
+  so1.registerCursor(seg1.cursor);
+  await so1.beginTurn('s1', 't2'); // rolls gen 1 into previous
+  await so1.endTurn('s1', 't2', { code: 0, signal: null });
+  await so1.beginTurn('s1', 't3'); // rolls gen 1 out of previous -> archived on disk (pinned)
+  assert.ok(readdirSync(dir).some((f) => f === 's1.pinned.1.ndjson'), 'the pinned generation is archived on disk');
+  // a NEW store over the same root (window reload): its in-memory map starts empty
+  const so2 = createSessionOutput({ root: dir, pollMs: 5 });
+  const lines: string[] = [];
+  for await (const { line } of so2.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the recreated store discovers the on-disk archive and replays losslessly');
+  const rc = await so2.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined && rc.generation === seg1.cursor.generation, 'recoverTurn works on the recreated store too');
+  assert.equal(await so2.oldestRetainedGeneration('s1'), seg1.cursor.generation, 'oldestRetainedGeneration sees the on-disk archive');
+  await so2.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: an in-progress pinned reader follows a rollover rename (re-resolves its generation every read) and never switches generations mid-read', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5n-')), 'out');
+  // a slow readRange keeps the reader genuinely MID-FILE when the rename happens (a fast reader
+  // would drain the whole file between two polls)
+  const slowFs: SessionOutputFs = { ...nodeSessionOutputFs, readRange: async (p, st, len) => { await new Promise((r) => setTimeout(r, 40)); return nodeSessionOutputFs.readRange(p, st, len); } };
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5, fs: slowFs });
+  const seg1 = await so.beginTurn('s1', 't1');
+  // >64 KiB (READ_CHUNK) of payload: chunk 1 read, chunk 2 still unread when the rename happens
+  appendFileSync(seg1.outPath, Array.from({ length: 6000 }, (_, i) => json({ g: 1, i }) + '\n').join(''));
+  so.registerCursor(seg1.cursor); // pin gen 1
+  const lines: string[] = [];
+  const read = (async () => {
+    for await (const { line } of so.tail(seg1.cursor, { finished: () => false })) lines.push(line);
+  })();
+  await waitFor(() => lines.length > 0, 5000, 'the reader consumed the first chunk of gen 1');
+  assert.ok(lines.length < 6000, 'the reader is mid-file, not done, when the rollover happens');
+  // rollover: gen 1 (current) closes t1 and is renamed to previous; a second rollover archives
+  // it to .pinned.1.ndjson — the new generations' files are larger than the reader's offset, so
+  // a stale path resolution would silently read THEIR bytes instead of erroring
+  const seg2 = await so.beginTurn('s1', 't2');
+  appendFileSync(seg2.outPath, Array.from({ length: 6000 }, (_, i) => json({ g: 2, i }) + '\n').join(''));
+  const seg3 = await so.beginTurn('s1', 't3');
+  assert.ok(seg3.cursor.generation > seg2.cursor.generation);
+  await read; // returns at t1's turn-end marker inside the archived generation
+  assert.equal(lines.length, 6000, 'the reader got every payload line of gen 1');
+  assert.ok(lines.every((l) => JSON.parse(l).g === 1), 'no line came from another generation — the renames were followed, not crossed');
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: a registered cursor writes a durable pin marker, so a RECREATED WRITER also archives the pinned generation instead of discarding it', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5p-')), 'out');
+  const so1 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so1.beginTurn('s1', 't1');
+  await so1.endTurn('s1', 't1', { code: 0, signal: null });
+  so1.registerCursor(seg1.cursor);
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.default')), 3000, 'the pin marker is on disk');
+  await so1.beginTurn('s1', 't2'); // gen 1 -> previous (so1)
+  await so1.endTurn('s1', 't2', { code: 0, signal: null });
+  // a NEW writer process over the same root: its in-memory pin set is empty, only the marker exists
+  const so2 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  await so2.beginTurn('s1', 't3'); // must archive gen 1 (marker on disk), not discard it
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the recreated writer honored the durable pin marker and archived gen 1');
+  // and unregister drops the marker
+  so1.unregisterCursor(seg1.cursor);
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.default')), 3000, 'unregister removes the marker');
+  await so2.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: pins are refcounted PER READER — one unregister keeps another reader\'s archive alive', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5c-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor, 'reader-a');
+  so.registerCursor(seg1.cursor, 'reader-b');
+  await so.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  await so.beginTurn('s1', 't3'); // gen 1 archived (both readers pin it)
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'archived while pinned');
+  so.unregisterCursor(seg1.cursor, 'reader-a');
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.reader-b')) && !existsSync(join(dir, 's1.pin.1.reader-a')), 3000, 'only reader-a\'s marker is removed');
+  // reader-b is still pinned: the archive survives and stays readable
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the archive survived reader-a\'s unregister');
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'archive still on disk for reader-b');
+  so.unregisterCursor(seg1.cursor, 'reader-b');
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.reader-b')), 3000, 'the last unregister drops the marker');
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'unregister never deletes the archive itself');
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(dir)) utimesSync(join(dir, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(!existsSync(join(dir, 's1.pinned.1.ndjson')), 'the now-unpinned archive is pruned by the sweep');
+  let gone = false;
+  try {
+    for await (const _ of so.tail(seg1.cursor, { finished: () => true })) { /* drain */ }
+  } catch (e) {
+    gone = e instanceof SegmentGone;
+  }
+  assert.ok(gone, 'then SegmentGone');
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: register -> unregister -> register keeps the durable pin — the queued deletion cannot erase the new marker, and a recreated writer still archives the generation', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5q-')), 'out');
+  const so1 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so1.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so1.endTurn('s1', 't1', { code: 0, signal: null });
+  so1.registerCursor(seg1.cursor);
+  so1.unregisterCursor(seg1.cursor);
+  so1.registerCursor(seg1.cursor); // re-register BEFORE the queued unregister deletion runs
+  await new Promise((r) => setTimeout(r, 200)); // let the queued pin-IO task run
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'the re-registered pin marker survives the queued unregister deletion');
+  await so1.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so1.endTurn('s1', 't2', { code: 0, signal: null });
+  // a NEW writer process over the same root: empty in-memory pin set, only the on-disk marker
+  const so2 = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  await so2.beginTurn('s1', 't3'); // must archive gen 1, not discard it
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the recreated writer honored the surviving marker and archived gen 1');
+  const lines: string[] = [];
+  for await (const { line } of so2.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'the archived generation is still readable');
+  await so2.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: rollover NEVER discards — an UNPINNED outgoing generation is archived too (lossless by construction, no registration race); sweep later prunes old unpinned archives of kept sessions but keeps pinned ones', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5s-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so.beginTurn('s1', 't1');
+  appendFileSync(seg1.outPath, json({ type: 'result', subtype: 'success', is_error: false }) + '\n');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  // NO registerCursor — nobody pins generation 1
+  await so.beginTurn('s1', 't2'); // gen 1 -> previous
+  await so.endTurn('s1', 't2', { code: 0, signal: null });
+  await so.beginTurn('s1', 't3'); // gen 1 rolls out of previous: archived, NOT discarded
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'even an unpinned outgoing generation is archived at rollover');
+  const lines: string[] = [];
+  for await (const { line } of so.tail(seg1.cursor, { finished: () => true })) lines.push(line);
+  assert.deepEqual(lines.map((l) => JSON.parse(l).type), ['result'], 'readable losslessly with no pin at all');
+  // sweep with the session kept: a FRESH old archive is pruned, a PINNED one survives
+  so.registerCursor(seg1.cursor); // pin gen 1 (marker on disk)
+  const seg4 = await so.beginTurn('s1', 't4'); // gen 2 rolls out -> archived (unpinned)
+  await so.endTurn('s1', 't4', { code: 0, signal: null });
+  assert.ok(existsSync(join(dir, 's1.pinned.2.ndjson')), 'gen 2 archived');
+  // age everything, then sweep: kept session, old files — pinned gen 1 survives, unpinned gen 2 goes
+  const old = new Date(Date.now() - 40 * 24 * 3600 * 1000);
+  for (const f of readdirSync(dir)) utimesSync(join(dir, f), old, old);
+  await so.sweep({ olderThanMs: 30 * 24 * 3600 * 1000, keep: new Set(['s1']) });
+  assert.ok(existsSync(join(dir, 's1.pinned.1.ndjson')), 'the pinned archive survives the sweep');
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'its pin marker survives the sweep');
+  assert.ok(!existsSync(join(dir, 's1.pinned.2.ndjson')), 'the unpinned archive is pruned by age');
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
+});
+
+test('E202611031bd72813:S001 t5: registerCursor takes the session lock around its marker write (bounded spin) and the marker is durable before it returns even when the lock is held by a live holder', async () => {
+  const dir = join(mkdtempSync(join(tmpdir(), 'out-t5u-')), 'out');
+  const so = createSessionOutput({ root: dir, maxBytes: 1, pollMs: 5 });
+  const seg1 = await so.beginTurn('s1', 't1');
+  await so.endTurn('s1', 't1', { code: 0, signal: null });
+  so.registerCursor(seg1.cursor);
+  assert.ok(existsSync(join(dir, 's1.pin.1.default')), 'uncontended: the marker is durable before registerCursor returns');
+  so.unregisterCursor(seg1.cursor);
+  await waitFor(() => !existsSync(join(dir, 's1.pin.1.default')), 3000, 'marker removed');
+  writeFileSync(join(dir, 's1.lock'), String(process.pid)); // lock held by a LIVE pid (not stale)
+  const t0 = Date.now();
+  so.registerCursor(seg1.cursor);
+  const elapsed = Date.now() - t0;
+  assert.ok(elapsed < 2000, `the lock spin is bounded (took ${elapsed}ms)`);
+  assert.ok(!existsSync(join(dir, 's1.pin.1.default')), 'while the lock is held, the marker is NOT written unlocked — only the queued locked write remains');
+  rmSync(join(dir, 's1.lock'), { force: true });
+  await waitFor(() => existsSync(join(dir, 's1.pin.1.default')), 3000, 'the queued locked write lands once the lock is free (tail awaits it before reading)');
+  await so.remove('s1');
+  rmSync(dir, { recursive: true, force: true });
 });

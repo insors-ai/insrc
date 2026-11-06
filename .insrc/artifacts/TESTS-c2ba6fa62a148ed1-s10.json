@@ -1,0 +1,1042 @@
+{
+  "meta": {
+    "workflow": "tests",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s10",
+    "createdAt": "2026-11-04T05:25:24.967Z",
+    "updatedAt": "2026-11-05T04:32:36.489Z",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "533bb49f3",
+        "ranAt": "2026-11-04T05:30:21.258Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t1: migration 9 creates empty doc-relation sub-dbs and changes no other row",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-store.test.ts",
+                "title": "s10 t1: migration 9 creates empty doc-relation sub-dbs and changes no other row",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t1: a full index clears and carries proposal rows; restore keeps only unchanged documents",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-store.test.ts",
+                "title": "s10 t1: a full index clears and carries proposal rows; restore keeps only unchanged documents",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t1: removeRepo deletes proposal, carry and quality rows",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-store.test.ts",
+                "title": "s10 t1: removeRepo deletes proposal, carry and quality rows",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t1: session-memory reads the new handles and is refused writes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-store.test.ts",
+                "title": "s10 t1: session-memory reads the new handles and is refused writes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-relations-store.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2170,
+            "titles": [
+              {
+                "title": "s10 t1: migration 9 creates empty doc-relation sub-dbs and changes no other row",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t1: a full index clears and carries proposal rows; restore keeps only unchanged documents",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t1: removeRepo deletes proposal, carry and quality rows",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t1: session-memory reads the new handles and is refused writes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "3c6b94c7d",
+        "ranAt": "2026-11-04T05:39:58.496Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t2: link destinations resolve against the document's directory and mentions against the repository root",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/markdown-links.test.ts",
+                "title": "s10 t2: link destinations resolve against the document's directory and mentions against the repository root",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t2: preamble and skipped-section links attribute to the file entity; fenced code, URLs and mailto are not read",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/markdown-links.test.ts",
+                "title": "s10 t2: preamble and skipped-section links attribute to the file entity; fenced code, URLs and mailto are not read",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t2: one REFERENCES per (source, target) with evidence 'extracted'; no self links",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/markdown-links.test.ts",
+                "title": "s10 t2: one REFERENCES per (source, target) with evidence 'extracted'; no self links",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t2: a bare file name yields a pending name reference",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/parser/__tests__/markdown-links.test.ts",
+                "title": "s10 t2: a bare file name yields a pending name reference",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/parser/__tests__/markdown-links.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 638,
+            "titles": [
+              {
+                "title": "s10 t2: link destinations resolve against the document's directory and mentions against the repository root",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t2: preamble and skipped-section links attribute to the file entity; fenced code, URLs and mailto are not read",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t2: one REFERENCES per (source, target) with evidence 'extracted'; no self links",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t2: a bare file name yields a pending name reference",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "9e5eabe67",
+        "ranAt": "2026-11-04T05:47:42.323Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t3: two linked documents store an extracted REFERENCES with zero provider calls",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+                "title": "s10 t3: two linked documents store an extracted REFERENCES with zero provider calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t3: links to missing, ignored and unselected targets are no-candidate pending rows; repository complete",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+                "title": "s10 t3: links to missing, ignored and unselected targets are no-candidate pending rows; repository complete",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t3: a target created later is promoted by Pass 0 on settle",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+                "title": "s10 t3: a target created later is promoted by Pass 0 on settle",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t3: removing a target re-reads the citing document",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+                "title": "s10 t3: removing a target re-reads the citing document",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t3: Pass 2, the SQL re-check and the SQL by-name return leave doc-link rows alone",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+                "title": "s10 t3: Pass 2, the SQL re-check and the SQL by-name return leave doc-link rows alone",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-links-commit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2962,
+            "titles": [
+              {
+                "title": "s10 t3: two linked documents store an extracted REFERENCES with zero provider calls",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t3: links to missing, ignored and unselected targets are no-candidate pending rows; repository complete",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t3: a target created later is promoted by Pass 0 on settle",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t3: removing a target re-reads the citing document",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t3: Pass 2, the SQL re-check and the SQL by-name return leave doc-link rows alone",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "69a80cd08",
+        "ranAt": "2026-11-04T05:51:43.950Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t4: role taxonomy has indexer.docRelations as peripheral mid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-provider.test.ts",
+                "title": "s10 t4: role taxonomy has indexer.docRelations as peripheral mid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t4: a cheap-tier override is refused with and without a routing context",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-provider.test.ts",
+                "title": "s10 t4: a cheap-tier override is refused with and without a routing context",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t4: a CLI family with no listed model is refused before any call",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-provider.test.ts",
+                "title": "s10 t4: a CLI family with no listed model is refused before any call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t4: provider-failure classification across CLI error shapes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-provider.test.ts",
+                "title": "s10 t4: provider-failure classification across CLI error shapes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-relations-provider.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 667,
+            "titles": [
+              {
+                "title": "s10 t4: role taxonomy has indexer.docRelations as peripheral mid",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t4: a cheap-tier override is refused with and without a routing context",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t4: a CLI family with no listed model is refused before any call",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t4: provider-failure classification across CLI error shapes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b1ef68c14",
+        "ranAt": "2026-11-04T06:04:38.709Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t5: switchOf on only at the bar with matching model and set hash",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-read.test.ts",
+                "title": "s10 t5: switchOf on only at the bar with matching model and set hash",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t5: name references resolve across full-index order and stop on a second same-named file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-read.test.ts",
+                "title": "s10 t5: name references resolve across full-index order and stop on a second same-named file",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t5: proposals read as 'model' only while on and eligible; older generations counted as stale",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-read.test.ts",
+                "title": "s10 t5: proposals read as 'model' only while on and eligible; older generations counted as stale",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t5: search.doc_relations registered, session-class, refused while indexing",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-read.test.ts",
+                "title": "s10 t5: search.doc_relations registered, session-class, refused while indexing",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t5: callers, callees and closure are unchanged by proposals",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/db/__tests__/doc-relations-read.test.ts",
+                "title": "s10 t5: callers, callees and closure are unchanged by proposals",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/db/__tests__/doc-relations-read.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3040,
+            "titles": [
+              {
+                "title": "s10 t5: switchOf on only at the bar with matching model and set hash",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t5: name references resolve across full-index order and stop on a second same-named file",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t5: proposals read as 'model' only while on and eligible; older generations counted as stale",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t5: search.doc_relations registered, session-class, refused while indexing",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t5: callers, callees and closure are unchanged by proposals",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "cc1395eab",
+        "ranAt": "2026-11-04T06:14:36.255Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t6: doc-relations jobs route to the summary lane and the summary worker",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-jobs.test.ts",
+                "title": "s10 t6: doc-relations jobs route to the summary lane and the summary worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t6: runQueuedJob lifecycle: second pass, failed-pass retry, abandoned reply",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-jobs.test.ts",
+                "title": "s10 t6: runQueuedJob lifecycle: second pass, failed-pass retry, abandoned reply",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t6: carried rows restored after a full index before the pass; stop disposes timers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-jobs.test.ts",
+                "title": "s10 t6: carried rows restored after a full index before the pass; stop disposes timers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-relations-jobs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4380,
+            "titles": [
+              {
+                "title": "s10 t6: doc-relations jobs route to the summary lane and the summary worker",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t6: runQueuedJob lifecycle: second pass, failed-pass retry, abandoned reply",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t6: carried rows restored after a full index before the pass; stop disposes timers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "4c9df7c7d",
+        "ranAt": "2026-11-04T06:24:35.534Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t7: serial calls; only changed documents; reindex of an unchanged repository sends none",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-pass.test.ts",
+                "title": "s10 t7: serial calls; only changed documents; reindex of an unchanged repository sends none",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t7: stale-hash guard and superseded by a full index",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-pass.test.ts",
+                "title": "s10 t7: stale-hash guard and superseded by a full index",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t7: unavailable provider (resolution, not signed in) writes status and the retry recovers",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-pass.test.ts",
+                "title": "s10 t7: unavailable provider (resolution, not signed in) writes status and the retry recovers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t7: proposal validation, resolution and dedupe against extracted links",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-pass.test.ts",
+                "title": "s10 t7: proposal validation, resolution and dedupe against extracted links",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-relations-pass.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4695,
+            "titles": [
+              {
+                "title": "s10 t7: serial calls; only changed documents; reindex of an unchanged repository sends none",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t7: stale-hash guard and superseded by a full index",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t7: unavailable provider (resolution, not signed in) writes status and the retry recovers",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t7: proposal validation, resolution and dedupe against extracted links",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "61575c569",
+        "ranAt": "2026-11-04T06:38:28.081Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t8: set validation and proposal normalisation",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-measure.test.ts",
+                "title": "s10 t8: set validation and proposal normalisation",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t8: quality computation over admitted and implied links",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-measure.test.ts",
+                "title": "s10 t8: quality computation over admitted and implied links",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t8: docRelations.measure records figures over a 100+ link fixture; below the bar reads exclude proposals",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-measure.test.ts",
+                "title": "s10 t8: docRelations.measure records figures over a 100+ link fixture; below the bar reads exclude proposals",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t8: measurement provider failure creates or keeps the row with extraction unavailable",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/indexer/__tests__/doc-relations-measure.test.ts",
+                "title": "s10 t8: measurement provider failure creates or keeps the row with extraction unavailable",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/indexer/__tests__/doc-relations-measure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6086,
+            "titles": [
+              {
+                "title": "s10 t8: set validation and proposal normalisation",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t8: quality computation over admitted and implied links",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t8: docRelations.measure records figures over a 100+ link fixture; below the bar reads exclude proposals",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t8: measurement provider failure creates or keeps the row with extraction unavailable",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "4ee436fe9",
+        "ranAt": "2026-11-04T06:57:19.448Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t9: evidenceOrigin document noun and unchanged default wording",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts",
+                "title": "s10 t9: evidenceOrigin document noun and unchanged default wording",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWithContext hits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts",
+                "title": "s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWithContext hits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t9: resume of a paused step recomputes related links",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts",
+                "title": "s10 t9: resume of a paused step recomputes related links",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t9: bundle cache stale by docRelationsRevision",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "s10 t9: bundle cache stale by docRelationsRevision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5023,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t9: bundle cache stale by docRelationsRevision",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1821,
+            "titles": [
+              {
+                "title": "s10 t9: evidenceOrigin document noun and unchanged default wording",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWithContext hits",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t9: resume of a paused step recomputes related links",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "c7140757c",
+        "ranAt": "2026-11-04T07:13:02.393Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t10: repo.stats and the status board read the persisted docRelations status",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/doc-relations-status.test.ts",
+                "title": "s10 t10: repo.stats and the status board read the persisted docRelations status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t10: CLI ReposPane renders docRelations states",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/cli/panes/__tests__/ReposPane-doc-relations.test.ts",
+                "title": "s10 t10: CLI ReposPane renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t10: VS Code repositoryList renders docRelations states",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "vscode-plugin/src/panels/__tests__/doc-relations-status.test.ts",
+                "title": "s10 t10: VS Code repositoryList renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "s10 t10: JetBrains RepoStatusDialog renders docRelations states",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "jetbrains-plugin/__tests__/s10-gradle.test.ts",
+                "title": "s10 t10: JetBrains RepoStatusDialog renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "jetbrains-plugin/__tests__/s10-gradle.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 30728,
+            "titles": [
+              {
+                "title": "s10 t10: JetBrains RepoStatusDialog renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/cli/panes/__tests__/ReposPane-doc-relations.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3867,
+            "titles": [
+              {
+                "title": "s10 t10: CLI ReposPane renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/doc-relations-status.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7750,
+            "titles": [
+              {
+                "title": "s10 t10: repo.stats and the status board read the persisted docRelations status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "vscode-plugin/src/panels/__tests__/doc-relations-status.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1249,
+            "titles": [
+              {
+                "title": "s10 t10: VS Code repositoryList renders docRelations states",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "992618f97",
+        "ranAt": "2026-11-05T04:32:36.489Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "s10 t11: measurement on this repository against the hand-checked set",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#re-measurement-after-the-code-review-fix-2026-11-05"
+            }
+          },
+          {
+            "name": "s10 t11: installed daemon returns extracted document links and docRelations status",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md#installed-daemon-smoke"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  }
+}

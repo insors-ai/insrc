@@ -151,7 +151,9 @@ test('SCHEMA_VERSION constant is exported and stable', () => {
 	// existing entity table for fast by-file/by-repo reads.
 	// v7 (Epic c2ba6fa6, Story s9) appends the table/view entity kinds and
 	// provisions the cargo, nuget and native shared-modules rows.
-	assert.equal(SCHEMA_VERSION, 9);
+	// v8 (s8) adds the subsystem tables; v9 (s10) the document-relationship tables;
+	// v10 repairs a store built by the retired v2 entity index.
+	assert.equal(SCHEMA_VERSION, 10);
 });
 
 // ---------------------------------------------------------------------------

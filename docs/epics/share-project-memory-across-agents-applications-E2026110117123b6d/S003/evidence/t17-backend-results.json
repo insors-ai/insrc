@@ -1,0 +1,196 @@
+{
+  "capturedAt": "2026-11-03T19:05:21.359514+00:00",
+  "result": "fail",
+  "full": {
+    "path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-backend-full.log",
+    "sha256": "de0ac7aefadf0cadf25aa51582b9edb0f26accaeaea2235e2243ad441c35ae7f",
+    "bytes": 8172076,
+    "exitCode": 1,
+    "summary": {
+      "tests": 7397,
+      "suites": 113,
+      "pass": 7238,
+      "fail": 21,
+      "cancelled": 0,
+      "skipped": 135,
+      "todo": 3,
+      "duration_ms": 1195074.253666
+    },
+    "failedTapEntries": [
+      {
+        "tapEntry": "not ok 2126 - repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/repo-completeness.test.ts:1:849'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-ErRpQU was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/repo-completeness.test.ts:62:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)"
+      },
+      {
+        "tapEntry": "not ok 2143 - search.callers across repositories leaves out the entities of a repository under index",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:572'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-IMbprK was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:51:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)"
+      },
+      {
+        "tapEntry": "not ok 2144 - search.query while one repository is being indexed returns rows from the other repositories only",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:1678'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-EtrSAB was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:64:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)"
+      },
+      {
+        "tapEntry": "not ok 2145 - entity.closure, entity.unreachable, search.closure, repo.depends_on and repo.search_cross_repo from a ready repository whose closure reaches a repository under index leave that repository's entities out",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:1:2521'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-5jq6NE was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-filter.test.ts:89:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)"
+      },
+      {
+        "tapEntry": "not ok 2149 - search requests: search.callers / search.callees / search.by_file / search.closure / entity.summary / repo.depends_on / locate.inferParents about a repository being indexed answer 'repo-indexing: ...' with the figures and no result; about another, ready repository they answer as before",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-guard.test.ts:1:820'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-mkHN8I was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-guard.test.ts:50:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3)"
+      },
+      {
+        "tapEntry": "not ok 2150 - entity.closure / entity.unreachable with a root in a repository under index are refused",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-guard.test.ts:1:2634'",
+        "errorExcerpt": "  error: 'the full index of /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-big-xvpyWY was never seen running (last answer: answered)'\n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    whileIndexing (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:237:36)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-guard.test.ts:80:2)\n    async Test.run (node:internal/test_runner/test:1054:7)\n    async Test.processPendingSubtests (node:internal/test_runner/test:744:7)"
+      },
+      {
+        "tapEntry": "not ok 2152 - search request contract: each guarded search request accepts its existing params and answers",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-request-contract.test.ts:1:545'",
+        "errorExcerpt": "  error: |-\n    locate.inferParents: semantic tier {\"graph\":[{\"parentRef\":{\"epicHash\":\"aaaaaaaa\",\"storyId\":\"s1\",\"slug\":\"demo\"},\"score\":1,\"evidence\":[\"code-ownership: touched /private/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-seeded-a-ijP52K/a.ts\"]}],\"semantic\":[]}\n    \n    undefined !== 's1'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 's1'\n  operator: 'strictEqual'\n  stack: |-\n    <anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-request-contract.test.ts:107:10)\n    pin (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-request-contract.test.ts:59:3)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/search-request-contract.test.ts:104:2)"
+      },
+      {
+        "tapEntry": "not ok 1 - rejects file paths that escape the repo root",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/duckdb-file-driver.test.ts:1:11990'",
+        "errorExcerpt": "      error: |-\n        The input did not match the regular expression /resolves outside the repo root/. Input:\n        \n        'ManagementInputError: Invalid connection request.'\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected:\n      actual:\n      error: 'Invalid connection request.'\n      stack: |-\n        resolvePath (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/runtime-config.ts:36:70)\n        prepareRuntimeConfig (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/runtime-config.ts:27:33)\n        DriverPool.build (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/pool.ts:295:24)"
+      },
+      {
+        "tapEntry": "not ok 2362 - DuckDBFileDriver -- pool path-escape guard",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/duckdb-file-driver.test.ts:1:11931'",
+        "errorExcerpt": "  error: '1 subtest failed'\n  code: 'ERR_TEST_FAILURE'"
+      },
+      {
+        "tapEntry": "not ok 2553 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:1:608'",
+        "errorExcerpt": "  error: |-\n    New/removed file needs explicit classification, never automatic exclusion\n    + actual - expected\n    ... Skipped lines\n    \n      [\n        'src/agent/providers/bounded-input.ts',\n        'src/agent/providers/cli-provider.ts',\n    +   'src/agent/providers/ollama-target.ts',\n        'src/agent/providers/ollama.ts',\n        'src/agent/providers/onnx-embedder.ts',\n        'src/agent/providers/structured-output.ts',\n        'src/agent/providers/structured-schema.ts',\n        'src/agent/read-only-tool-loop.ts',"
+      },
+      {
+        "tapEntry": "not ok 2555 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:41:1367'",
+        "errorExcerpt": "  error: |-\n    src/daemon/threads/method-class.ts requires fresh boundary review\n    + actual - expected\n    \n    + '496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65'\n    - 'f6b5f664f9697e4de4da9aabbf5b80a46e15ef29f3ed12a89fc679a2c70d1a9a'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'f6b5f664f9697e4de4da9aabbf5b80a46e15ef29f3ed12a89fc679a2c70d1a9a'\n  actual: '496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:128:70)"
+      },
+      {
+        "tapEntry": "not ok 3187 - SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/threads-boot.test.ts:1:2547'",
+        "errorExcerpt": "  error: |-\n    the daemon exited cleanly after SIGTERM\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/threads-boot.test.ts:96:17)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async Test.run (node:internal/test_runner/test:1054:7)"
+      },
+      {
+        "tapEntry": "not ok 469 - src/daemon/threads/__tests__/worker-stores.test.ts",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/worker-stores.test.ts:1:1'",
+        "errorExcerpt": "  error: 'test failed'\n  code: 'ERR_TEST_FAILURE'"
+      },
+      {
+        "tapEntry": "not ok 3317 - file tools: each tool's own execute refuses the store file and its lock file, by direct path and through a symbolic link",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/tools/builtins/file/__tests__/live-store-file-refusal.test.ts:1:3476'",
+        "errorExcerpt": "  error: |-\n    The input was expected to not match the regular expression /graph\\.lmdb/. Input:\n    \n    '# 2 matches for `NEEDLE` in `/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/insrc-tool-refusal-qQcyzr/.insrc` _(rg)_\\n' +\n      '\\n' +\n      '```\\n' +\n      'graph.lmdb:1: DATA-NEEDLE\\n' +\n      'graph.lmdb-lock:1: LOCK-NEEDLE\\n' +\n      '```'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected:\n  actual: |-"
+      },
+      {
+        "tapEntry": "not ok 4568 - import graph (ac4): the MCP server reaches nothing under src/db, src/analyze or src/daemon/steps; a fixture import makes it fail",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/import-graph.test.ts:1:2405'",
+        "errorExcerpt": "  error: |-\n    Expected values to be strictly deep-equal:\n    + actual - expected\n    \n    + [\n    +   'src/agent/providers/ollama.ts -> src/analyze/context/tool-surface.ts',\n    +   'src/agent/read-only-tool-loop.ts -> src/analyze/connection-access.ts',\n    +   'src/daemon/tools/executor.ts -> src/analyze/context/tool-surface.ts',\n    +   'src/daemon/tools/executor.ts -> src/analyze/connection-access.ts'\n    + ]\n    - []\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'"
+      },
+      {
+        "tapEntry": "not ok 4579 - the steering block, the steering template and the guide tell the controller to call insrc_present before it asks for approval",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/present-steering.test.ts:1:534'",
+        "errorExcerpt": "  error: |-\n    The input did not match the regular expression /steering-only for now/. Input:\n    \n    '### Approval discipline (applies to every workflow artifact) Never auto-approve and never send the user to the TUI. When a `done` response carries a `pendingApproval` block \u2014 or any step you drove leaves a record pending (check `insrc_workflow_step`\\'s done response and the pending list) \u2014 the gate is the same every time: first DECLARE what you are about to show by calling `insrc_present({ documents: [...] })` with each document\\'s artifact id (for example `LLD-<hash>-S001`) or repo-relative path, and require every name to come back `presented`; then PRESENT a concise summary (give the document\\'s path in your message too) and ASK the user. Only then, on the user\\'s explicit in-chat yes **for that artifact** (the message names its id/path, or answers \"yes\" to the summary you just presented), call `insrc_workflow_approve({ artifactPath })`. A blanket \"approve all\" authorizes only the artifacts you presented in that same turn. Never batch via `{ epicHash }` without listing each artifact and getting a yes for the batch. Never call `insrc_workflow_approve` through raw daemon IPC or a socket \u2014 only through the MCP tool. Review a DEF, HLD or LLD before you approve it \u2014 see `insrc_guide({ workflow: \\'review\\' })`. ### Review discipline (applies to every review) **Only two reviews are mandatory:** a DEF, HLD or LLD before its approval (`insrc_review_step`), and the code review that completes a Story\\'s BUILD (`insrc_code_review_step`). Do not review anything else \u2014 an ISSUE, SPEC or PLAN, or any other stage \u2014 unless the user asks for it; present it and ask for approval instead. **At most three review rounds per cycle.** A round is one review call (`insrc_review_step` or `ins"
+      },
+      {
+        "tapEntry": "not ok 4683 - CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-compatibility.test.ts:1:173'",
+        "errorExcerpt": "  error: |-\n    Focused JUnit validation failed: To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\n    Daemon will be stopped at the end of the build \n    Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.\n    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n    > Task :initializeIntellijPlatformPlugin\n    > Task :bundleBackendAssets UP-TO-DATE\n    > Task :generateManifest UP-TO-DATE\n    > Task :patchPluginXml UP-TO-DATE\n    > Task :verifyPluginProjectConfiguration UP-TO-DATE\n    > Task :processTestResources UP-TO-DATE\n    > Task :processResources UP-TO-DATE\n    > Task :compileKotlin UP-TO-DATE\n    > Task :compileJava NO-SOURCE"
+      },
+      {
+        "tapEntry": "not ok 4697 - CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-render.test.ts:1:92'",
+        "errorExcerpt": "  error: |-\n    Focused JUnit validation failed: To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\n    Daemon will be stopped at the end of the build \n    Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.\n    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n    > Task :initializeIntellijPlatformPlugin\n    > Task :patchPluginXml UP-TO-DATE\n    > Task :bundleBackendAssets UP-TO-DATE\n    > Task :generateManifest UP-TO-DATE\n    > Task :verifyPluginProjectConfiguration UP-TO-DATE\n    > Task :processTestResources UP-TO-DATE\n    > Task :processResources UP-TO-DATE\n    > Task :compileKotlin UP-TO-DATE\n    > Task :compileJava NO-SOURCE"
+      },
+      {
+        "tapEntry": "not ok 4698 - CM-S5-TEST-KT: Kotlin test identity/cancel parity, disposed-view and EDT delivery guards",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-test.test.ts:1:92'",
+        "errorExcerpt": "  error: |-\n    Focused JUnit validation failed: To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\n    Daemon will be stopped at the end of the build \n    Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.\n    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n    > Task :initializeIntellijPlatformPlugin\n    > Task :generateManifest UP-TO-DATE\n    > Task :patchPluginXml UP-TO-DATE\n    > Task :bundleBackendAssets UP-TO-DATE\n    > Task :verifyPluginProjectConfiguration UP-TO-DATE\n    > Task :processTestResources UP-TO-DATE\n    > Task :processResources UP-TO-DATE\n    > Task :compileKotlin UP-TO-DATE\n    > Task :compileJava NO-SOURCE"
+      },
+      {
+        "tapEntry": "not ok 4699 - CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-kotlin-transport.test.ts:1:92'",
+        "errorExcerpt": "  error: |-\n    Focused JUnit validation failed: To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\n    Daemon will be stopped at the end of the build \n    Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.\n    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n    > Task :initializeIntellijPlatformPlugin\n    > Task :generateManifest UP-TO-DATE\n    > Task :bundleBackendAssets UP-TO-DATE\n    > Task :patchPluginXml UP-TO-DATE\n    > Task :processTestResources UP-TO-DATE\n    > Task :processResources UP-TO-DATE\n    > Task :verifyPluginProjectConfiguration UP-TO-DATE\n    > Task :compileKotlin UP-TO-DATE\n    > Task :compileJava NO-SOURCE"
+      },
+      {
+        "tapEntry": "not ok 4707 - CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-privacy.test.ts:1:173'",
+        "errorExcerpt": "  error: |-\n    Focused JUnit validation failed: To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.10.2/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.\n    Daemon will be stopped at the end of the build \n    Calculating task graph as configuration cache cannot be reused because the set of Gradle properties has changed: the value of 'insrcFixtureReports' was changed.\n    > Task :checkKotlinGradlePluginConfigurationErrors SKIPPED\n    > Task :initializeIntellijPlatformPlugin\n    > Task :bundleBackendAssets UP-TO-DATE\n    > Task :patchPluginXml UP-TO-DATE\n    > Task :generateManifest UP-TO-DATE\n    > Task :verifyPluginProjectConfiguration UP-TO-DATE\n    > Task :processTestResources UP-TO-DATE\n    > Task :processResources UP-TO-DATE\n    > Task :compileKotlin UP-TO-DATE\n    > Task :compileJava NO-SOURCE"
+      },
+      {
+        "tapEntry": "not ok 4708 - CM-S5-GATE: default runtime policy preserves authorization and independent release-audit evidence",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:1:685'",
+        "errorExcerpt": "  error: |-\n    src/daemon/index.ts\n    + actual - expected\n    \n    + '6b0be9b5075536ec6af24cf8c29ec063522f8d2e36dec706a908c344d5b60f71'\n    - '093080bb71e13b22b873dab141e44e646d7fc0f4636df6e628a05b28e7cd44f4'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: '093080bb71e13b22b873dab141e44e646d7fc0f4636df6e628a05b28e7cd44f4'\n  actual: '6b0be9b5075536ec6af24cf8c29ec063522f8d2e36dec706a908c344d5b60f71'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/shared/__tests__/connection-manager-release.test.ts:19:53)"
+      }
+    ]
+  },
+  "focusedRetry": {
+    "path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-backend-retry.log",
+    "sha256": "9b2619360f3b623bf3677ef16b7b16f4d27828347b303dce84539d0ce7a882df",
+    "bytes": 68489,
+    "exitCode": 1,
+    "summary": {
+      "tests": 31,
+      "suites": 10,
+      "pass": 26,
+      "fail": 5,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "duration_ms": 111853.713458
+    },
+    "failedTapEntries": [
+      {
+        "tapEntry": "not ok 1 - repo.list, repo.stats and daemon.status carry completeness beside the unchanged status: a complete repository reads complete, one whose full index is running reads not complete while its status is indexing; daemon.status carries unattributedUnwritable",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/repo-completeness.test.ts:1:849'",
+        "errorExcerpt": "  error: |-\n    the daemon did not start: (node:43719) ExperimentalWarning: SQLite is an experimental feature and might change at any time\n    (Use `node --trace-warnings ...` to show where the warning was created)\n    \n  code: 'ERR_TEST_FAILURE'\n  stack: |-\n    startDaemon (/Users/subhagho/work/projects/insors/insrc/src/mcp/__tests__/helpers/mcp-e2e.ts:87:61)\n    async startSeededDaemon (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/helpers/seeded-daemon.ts:195:12)\n    async TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/__tests__/repo-completeness.test.ts:31:11)\n    async TestHook.run (node:internal/test_runner/test:1054:7)"
+      },
+      {
+        "tapEntry": "not ok 1 - rejects file paths that escape the repo root",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/duckdb-file-driver.test.ts:1:11990'",
+        "errorExcerpt": "      error: |-\n        The input did not match the regular expression /resolves outside the repo root/. Input:\n        \n        'ManagementInputError: Invalid connection request.'\n        \n      code: 'ERR_ASSERTION'\n      name: 'AssertionError'\n      expected:\n      actual:\n      error: 'Invalid connection request.'\n      stack: |-\n        resolvePath (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/runtime-config.ts:36:70)\n        prepareRuntimeConfig (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/runtime-config.ts:27:33)\n        DriverPool.build (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/pool.ts:295:24)"
+      },
+      {
+        "tapEntry": "not ok 10 - DuckDBFileDriver -- pool path-escape guard",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/duckdb-file-driver.test.ts:1:11931'",
+        "errorExcerpt": "  error: '1 subtest failed'\n  code: 'ERR_TEST_FAILURE'"
+      },
+      {
+        "tapEntry": "not ok 12 - CM-S3-INVENTORY: production boundaries have explicit reviewed classifications and unchanged baseline",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:1:608'",
+        "errorExcerpt": "  error: |-\n    New/removed file needs explicit classification, never automatic exclusion\n    + actual - expected\n    ... Skipped lines\n    \n      [\n        'src/agent/providers/bounded-input.ts',\n        'src/agent/providers/cli-provider.ts',\n    +   'src/agent/providers/ollama-target.ts',\n        'src/agent/providers/ollama.ts',\n        'src/agent/providers/onnx-embedder.ts',\n        'src/agent/providers/structured-output.ts',\n        'src/agent/providers/structured-schema.ts',\n        'src/agent/read-only-tool-loop.ts',"
+      },
+      {
+        "tapEntry": "not ok 14 - CM-S4-GATE: reviewed removal sources include pure helpers owner boundaries and pending global affinity",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:41:1367'",
+        "errorExcerpt": "  error: |-\n    src/daemon/threads/method-class.ts requires fresh boundary review\n    + actual - expected\n    \n    + '496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65'\n    - 'f6b5f664f9697e4de4da9aabbf5b80a46e15ef29f3ed12a89fc679a2c70d1a9a'\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 'f6b5f664f9697e4de4da9aabbf5b80a46e15ef29f3ed12a89fc679a2c70d1a9a'\n  actual: '496fc43a45cc0be52939068b8d7f4eedc4ab38e3673d366fdca6202a214afa65'\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/db/__tests__/session-source-inventory.test.ts:128:70)"
+      },
+      {
+        "tapEntry": "not ok 16 - SIGTERM during an indexing pass: workers stop, the queue drains, the main thread closes the stores after the workers exit, 'bye' is logged",
+        "location": "'/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/threads-boot.test.ts:1:2547'",
+        "errorExcerpt": "  error: |-\n    the daemon exited cleanly after SIGTERM\n    \n    1 !== 0\n    \n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n  expected: 0\n  actual: 1\n  operator: 'strictEqual'\n  stack: |-\n    TestContext.<anonymous> (/Users/subhagho/work/projects/insors/insrc/src/daemon/threads/__tests__/threads-boot.test.ts:96:17)\n    process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    async Test.run (node:internal/test_runner/test:1054:7)"
+      }
+    ]
+  },
+  "sourceBefore": "t17-source-before.json",
+  "sourceAfter": "t17-source-after.json",
+  "sourceUnchanged": true,
+  "intervention": {
+    "testFile": "src/daemon/threads/__tests__/worker-stores.test.ts",
+    "pid": 52099,
+    "signal": "SIGTERM",
+    "reason": "Only remaining full-sweep child; over ten minutes elapsed, CPU time unchanged at 6.66 seconds between checks. No test timeout. Controller stopped this isolated child; result is interrupted, never pass."
+  },
+  "limits": [
+    "Failed TAP entry count includes a parent suite as well as its failed child; summary.fail is the runner count.",
+    "Five focused retry failures remain; indexing retry failed at startup, so it does not establish the original running-index refusal cause.",
+    "No source inventory hashes, model/runtime configuration or unrelated source files changed to make results green.",
+    "Raw TAP files remain local at the recorded paths; committed bounded excerpts and SHA256 identify them without inflating the code-review diff.",
+    "Failures outside standalone memory are not asserted to be pre-existing solely from their path; attribution remains incomplete."
+  ]
+}

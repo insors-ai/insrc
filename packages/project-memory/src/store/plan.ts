@@ -69,6 +69,7 @@ export function snapshotPlan(input: unknown, profile: EmbeddingProfile, maxEvent
   if (rows.rows.length + namespaces.size + 2 > STORE_LIMITS.maxRows) invalidPlan();
   for (const row of rows.rows) if (row.rowKind === 'control' || row.rowKind === 'receipt') invalidPlan();
   if (failed && rows.rows.length) invalidPlan();
+  if (!failed && frame.command.kind === 'forget' && !rows.rows.some(r => r.rowKind === 'tombstone')) invalidPlan();
   if (disposition.state === 'cleanup-pending' && (frame.command.kind !== 'forget' && frame.command.kind !== 'maintenance' || !rows.rows.some(r => r.rowKind === 'tombstone'))) invalidPlan();
   const bytes = copied.bytes + rows.bytes + snapshotJson(frame, maxEventBytes + QUEUE_LIMITS.frameOverhead, undefined, 2, 64).bytes;
   if (bytes > limit) invalidPlan();

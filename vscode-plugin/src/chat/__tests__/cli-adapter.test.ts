@@ -10,7 +10,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { createSessionOutput, parseMarker } from '../session-output.js';
@@ -18,7 +18,7 @@ import { tick, waitFor } from './fixtures.js';
 import { defaultProcessStartTime } from '../session-lock.js';
 import { appendFileSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner } from '../cli-adapter.js';
+import { createProviderRegistry, classifyPermissionDenial, deriveChatTitle, nodeSpawner, writeReachedStdin } from '../cli-adapter.js';
 import type { AdapterDeps, ProviderId, ProviderRegistry, StreamAdapter, TurnProcess, TurnRequest, SessionHandle, SpawnedProcess, SpawnFn } from '../cli-adapter.js';
 import type { TurnEvent } from '../stream-events.js';
 import {
@@ -302,11 +302,21 @@ test('cancel() stops the process group and resolves only after the exit; the rea
 
   // Real spawner: the CLI leads its own process group, and kill() reaches the whole group.
   if (process.platform === 'win32') return t.diagnostic('process groups are POSIX-only');
+  if (!existsSync('/proc/self/stat')) return t.diagnostic('no procfs in this environment');
   const proc = nodeSpawner('sh', ['-c', 'sleep 30 & wait'], { cwd: process.cwd() });
   assert.equal(await proc.spawnError, undefined);
   const pid = proc.pid!;
   assert.ok(typeof pid === 'number', 'exposes the pid');
-  const stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+  // the child may not have a /proc stat yet (or be reaped already): retry briefly instead of racing it
+  let stat = '';
+  for (let i = 0; i < 50 && stat === ''; i++) {
+    try {
+      stat = readFileSync(`/proc/${pid}/stat`, 'utf8');
+    } catch {
+      await tick(10);
+    }
+  }
+  assert.ok(stat !== '', 'the spawned CLI has a /proc stat');
   const pgrp = Number(stat.slice(stat.lastIndexOf(')') + 2).split(' ')[2]);
   assert.equal(pgrp, pid, 'detached: the CLI is its own process group leader');
   proc.kill('SIGTERM');
@@ -802,8 +812,8 @@ test('vibe: streaming text turn maps to assistant-deltas + a synthesized done(ok
   assert.equal(done.ok, true, 'vibe streams no terminal line; the adapter synthesizes done on exit 0');
   assert.equal(done.sessionId, 'sess-vibe-1');
   assert.equal(spawner.calls[0]!.command, 'vibe');
-  assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
-  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe reads stdin as the prompt, so input is closed and the prompt is positional');
+  assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
+  assert.equal(spawner.calls[0]!.closeInput, true, 'vibe receives an explicit programmatic prompt, so stdin closes immediately');
 });
 
 test('vibe: tool_call (arguments_json string) maps to tool-call with command + mcp present; tool_result correlates the command', async () => {
@@ -827,27 +837,27 @@ test('vibe: argv — resume, --add-dir, and the permission-mode flags', async ()
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--auto-approve', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--auto-approve']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'manual' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'ask', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'ask']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', permissionMode: 'edit-auto' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--agent', 'accept-edits', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--agent', 'accept-edits']);
   }
   {
     const { deps, spawner } = depsFor(VIBE_TEXT_TURN, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', resume: { provider: 'vibe', nativeSessionId: 'sess-vibe-9' }, readDirs: ['/tmp/att'] })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming', '--resume', 'sess-vibe-9', '--add-dir', '/tmp/att']);
   }
 });
 
@@ -1413,7 +1423,7 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.deepEqual(events.map((e) => e.kind), ['assistant-delta', 'done'], 'only the events after the saved cursor, ending at the terminal one');
   assert.equal((events[0] as { text: string }).text, 'world');
   assert.equal(events.every((e) => e.turnId === 'turn-1'), true);
-  assert.equal(progress.length, 3, 'legacy replay checkpoints every line through segment end');
+  assert.equal(progress.length, 2, 'a legacy turn ends at its first result: the line before it and the terminal itself are checkpointed');
 
   // A turn whose process is gone without a terminal event.
   const seg2 = await sessionOutput.beginTurn('s1', 'turn-2');
@@ -1423,10 +1433,14 @@ test('resume() from a saved offset yields only the later events, ends at the ter
   assert.deepEqual(gone.map((e) => e.kind), ['status', 'error']);
   assert.match((gone[1] as { message: string }).message, /the turn ended without a result/);
 
-  // A cursor whose generation is gone (rolled over past it) ends at once with nothing to resume.
+  // A cursor whose generation is gone (rolled over past it) ends at once, reporting the loss as
+  // an OBSERVATION failure (so an observer can re-anchor and replay), never as a terminal.
   const lost: TurnEvent[] = [];
   for await (const ev of adapter.resume({ cursor: { ...seg2.cursor, generation: 99 }, pid: process.pid, startedAt: null })) lost.push(ev);
-  assert.deepEqual(lost, [], 'nothing to resume, no hang');
+  assert.equal(lost.length, 1, 'one event, no hang');
+  assert.equal(lost[0]!.kind, 'error');
+  assert.equal((lost[0] as { observationFailure?: boolean }).observationFailure, true, 'SegmentGone is an observation failure, not a terminal');
+  assert.match((lost[0] as { message: string }).message, /no longer kept/);
 });
 
 test("resume()'s handed-over process stops the recorded pid's group only while its start time matches", async () => {
@@ -1622,7 +1636,8 @@ test('codex is started with no input stream and claude keeps its input open; a d
   }
   assert.ok(asked, 'the fixture raised an approval request');
   assert.deepEqual(spawner.procs[0]!.writes().filter(w => JSON.parse(w).type !== 'user'), [], 'nothing is written to a process started without an input');
-  assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 1);
+  // E202611031bd72813:S001 t6: a failed decision is NOT consumed, so BOTH clicks report undeliverable
+  assert.equal(warns.filter((w) => /\[chat:codex\] permission decision for .* undeliverable/.test(w)).length, 2);
 });
 
 test('the real spawner with closeInput starts a process that reads its input to the end at once; without it the process waits', async (t) => {
@@ -1636,7 +1651,7 @@ test('the real spawner with closeInput starts a process that reads its input to 
   assert.deepEqual(lines, ['{"answered":true}']);
   assert.equal((await closed.exit).code, 0);
   // A write to a process with no input does nothing and does not throw.
-  await assert.rejects(Promise.resolve().then(() => closed.write?.('late\n')), /stdin is closed/);
+  assert.equal(closed.write?.('late\n'), false, 'a write to a process with no input is undelivered, and never throws');
 
   // With the input left open the same process is still waiting, which is the defect.
   const open = nodeSpawner('sh', ['-c', script], { cwd: process.cwd() });
@@ -1774,7 +1789,7 @@ test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effo
   {
     const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN });
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude', model: 'opus', effort: 'high' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output-format=stream-json', '--verbose', '--model', 'opus', '--effort', 'high', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--input-format=stream-json', '--output-format=stream-json', '--replay-user-messages', '--verbose', '--model', 'opus', '--effort', 'high', '--']);
   }
   {
     const { deps, spawner } = depsFor({ lines: CODEX_TEXT_TURN });
@@ -1785,14 +1800,113 @@ test('run config: claude gets --model/--effort; codex -m/-c model_reasoning_effo
     // vibe: model via VIBE_ACTIVE_MODEL in the spawn env; effort not forwardable.
     const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
     await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', model: 'glm-5-3', effort: 'max' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output', 'streaming', '--', 'hi'], 'no --model/--effort flags for vibe');
+    assert.deepEqual(spawner.calls[0]!.args, ['--prompt=hi', '--output', 'streaming'], 'no --model/--effort flags for vibe');
     const env = spawner.calls[0]!.env;
     assert.equal(env?.['VIBE_ACTIVE_MODEL'], 'glm-5-3', 'the model is pinned via env');
   }
   {
-    // absent run config → byte-identical argv to before (k2)
+    // absent run config → no model/effort flags; the prompt travels on stdin (request correlation)
     const { deps, spawner } = depsFor({ lines: CLAUDE_TEXT_TURN });
     await collect(createProviderRegistry(deps).get('claude').run(REQ({ provider: 'claude' })));
-    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--output-format=stream-json', '--verbose', '--', 'hi']);
+    assert.deepEqual(spawner.calls[0]!.args, ['-p', '--input-format=stream-json', '--output-format=stream-json', '--replay-user-messages', '--verbose', '--']);
   }
+});
+
+test('E202611031bd72813:S001 t2: resume() marks an output-read failure as observationFailure, not a real terminal', async () => {
+  const brokenTail = {
+    beginTurn: async () => { throw new Error('x'); },
+    endTurn: async () => {},
+    tail: async function* (): AsyncIterable<never> { throw new Error('disk full'); },
+    errTail: () => '',
+    remove: async () => {},
+    sweep: async () => {},
+  };
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput: brokenTail as never, livenessPollMs: 5 }).get('claude');
+  const evs = await collect(adapter.resume({ cursor: { sessionId: 's1', turnId: 't1', generation: 1, offset: 0 }, pid: undefined, startedAt: null }));
+  const err = evs.find((e) => e.kind === 'error');
+  assert.ok(err !== undefined && err.kind === 'error', 'an error event is yielded');
+  assert.equal(err.observationFailure, true, 'the read failure is marked observationFailure');
+  assert.match(err.message, /could not be read/);
+});
+
+test('E202611031bd72813:S001 t5: resume() on a segment that rolled away (SegmentGone) reports an observationFailure, not a terminal, and the turn stays recoverable', async () => {
+  const root = join(mkdtempSync(join(tmpdir(), 'chat-out-')), 'chat-output');
+  const out = createSessionOutput({ root, pollMs: 5 });
+  const seg = await out.beginTurn('s1', 't1');
+  await out.endTurn('s1', 't1', { code: 0, signal: null });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => false }).get('claude');
+  const gone = { sessionId: 's1', turnId: 't1', generation: seg.cursor.generation + 100, offset: 0 };
+  const evs = await collect(adapter.resume({ cursor: gone, pid: undefined, startedAt: null }));
+  const err = evs.find((e) => e.kind === 'error');
+  assert.ok(err !== undefined && err.kind === 'error', 'an error event is yielded for the gone segment');
+  assert.equal(err.observationFailure, true, 'SegmentGone is an observation failure, not a real terminal');
+  assert.match(err.message, /no longer kept/);
+  assert.ok(evs.every((e) => e.kind !== 'done'), 'no done is fabricated for a lost segment');
+  const rc = await out.recoverTurn('s1', 't1');
+  assert.ok(rc !== undefined && rc.generation === seg.cursor.generation, 'the turn is recoverable from the retained generation');
+});
+
+test('E202611031bd72813:S001 t6: decide() reports delivery — {delivered:true} on a successful write (consumed once), {delivered:false} on a failed write WITHOUT consuming (a retry can still deliver); registerPending re-registers a restored request', async () => {
+  const { deps, spawner } = depsFor({ lines: CLAUDE_PERMISSION_TURN, hangUntilKilled: true });
+  const adapter = createProviderRegistry(deps).get('claude');
+  const events = await collectWithin(adapter.run(REQ({ provider: 'claude', permissionMode: 'manual' })), 1000);
+  const appr = events.find((e) => e.kind === 'approval-request') as Extract<TurnEvent, { kind: 'approval-request' }>;
+  assert.ok(appr);
+
+  // a failed write reports undelivered and does NOT consume the request
+  spawner.procs[0]!.failWrites(true);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'approve'), { delivered: false });
+  const decisionWrites = (): string[] => spawner.procs[0]!.writes().filter((w) => JSON.parse(w).type !== 'user');
+  assert.equal(decisionWrites().length, 0, 'nothing recorded on a failed write');
+  // a retry with a healthy stdin delivers, exactly once
+  spawner.procs[0]!.failWrites(false);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'approve'), { delivered: true });
+  assert.equal(decisionWrites().length, 1);
+  assert.deepEqual(adapter.decide(appr.turnId, appr.requestId, 'deny'), { delivered: false }, 'consumed on success: a duplicate decide is a no-op');
+  assert.equal(decisionWrites().length, 1);
+
+  // a restored request (reattach/reload) is re-registered and then decidable
+  adapter.registerPending?.(appr.turnId, 'restored-req-1');
+  spawner.procs[0]!.failWrites(true);
+  assert.deepEqual(adapter.decide(appr.turnId, 'restored-req-1', 'deny'), { delivered: false }, 'undeliverable: not consumed');
+  spawner.procs[0]!.failWrites(false);
+  assert.deepEqual(adapter.decide(appr.turnId, 'restored-req-1', 'deny'), { delivered: true }, 'deliverable after re-registering');
+  assert.equal(decisionWrites().length, 2);
+  await adapter.cancel(appr.turnId);
+});
+
+test('E202611031bd72813:S001 t6: writeReachedStdin — a backpressured write (false return) is still delivered; only a destroyed/ended stdin is not', () => {
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: false }, false), true, 'backpressure: the chunk is buffered and will flush, so it IS delivered');
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: false }, true), true, 'plain accepted write');
+  assert.equal(writeReachedStdin({ destroyed: true, writableEnded: false }, false), false, 'destroyed stdin: undelivered');
+  assert.equal(writeReachedStdin({ destroyed: false, writableEnded: true }, true), false, 'ended stdin: undelivered');
+});
+
+
+// ISSUE-910fce32967bc4ea: bare -p plus positional text fails on Vibe 3.0.4.
+test('vibe: explicit programmatic prompt preserves multiline option-like text in new and resumed turns', async () => {
+  const prompt = '--help\nsecond line with "quotes", $HOME and = signs';
+  for (const resumed of [false, true]) {
+    const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+    await collect(createProviderRegistry(deps).get('vibe').run(REQ({ provider: 'vibe', prompt,
+      ...(resumed ? { resume: { provider: 'vibe' as const, nativeSessionId: 'saved-vibe' } } : {}),
+    })));
+    const call = spawner.calls[0]!;
+    const option = call.args.find((arg) => arg.startsWith('--prompt='));
+    assert.equal(option?.slice('--prompt='.length), prompt, 'the complete prompt is the value of the programmatic option');
+    assert.ok(!call.args.includes('-p'), 'no bare prompt flag can redirect to empty stdin');
+    assert.ok(!call.args.includes(prompt), 'prompt is never an unrelated positional argument');
+    assert.equal(call.closeInput, true);
+    assert.equal(call.args.includes('--resume'), resumed);
+  }
+});
+
+test('vibe: title generation uses the same explicit programmatic prompt transport', async () => {
+  const { deps, spawner } = depsFor({ lines: VIBE_TEXT_TURN }, ['vibe']);
+  const title = await deriveChatTitle(createProviderRegistry(deps), { provider: 'vibe', prompt: 'Explain this project', cwd: '/repo', model: 'mistral-large' });
+  assert.equal(title, 'Hello world');
+  const call = spawner.calls[0]!;
+  const option = call.args.find((arg) => arg.startsWith('--prompt='));
+  assert.ok(option?.includes('Explain this project'), 'title request reaches the programmatic prompt');
+  assert.equal(call.env?.VIBE_ACTIVE_MODEL, 'mistral-large');
 });

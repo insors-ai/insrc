@@ -26,7 +26,7 @@
  *             {type:'rate_limit_event'|...}             — ignored noise
  *   codex:  `codex exec --json <prompt>` (+ `codex exec resume <id> --json`).
  *           Emits JSONL events; mapped best-effort (validated by the opt-in live test).
- *   vibe:   `vibe -p --output streaming -- <prompt>` (+ `--resume <session_id>`).
+ *   vibe:   `vibe --prompt=<prompt> --output streaming` (+ `--resume <session_id>`).
  *           Emits one JSON session-entry object per line (the same entries the
  *           `--output json` array holds at the end): {type:'message', role,
  *           sessionId, content:[{type:'text'|'tool_call', ...}]}, plus
@@ -38,6 +38,7 @@ import { onUtf8Data } from '../../../src/shared/utf8-stream.js';
 import { spawn as nodeChildSpawn, execFileSync } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
 import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
@@ -95,6 +96,11 @@ export interface TurnProcess {
   kill(signal: 'SIGTERM' | 'SIGKILL'): void;
   /** SIGTERM, then SIGKILL after a grace; resolves once the exit is confirmed (or the grace runs out). */
   stop(): Promise<void>;
+  /**
+   * MR3-R4b: like stop(), but resolves true ONLY when the exit was confirmed (false when the
+   * process ignored even SIGKILL within the grace) — the verified-stop contract recovery needs.
+   */
+  stopVerified?(): Promise<boolean>;
   /** With a session output: where the turn's segment starts (session, turn, generation, offset). */
   readonly cursor?: SegmentCursor | undefined;
   /** With a session output: the session file the process writes to. */
@@ -109,14 +115,49 @@ export interface ResumeRequest {
   readonly pid: number | undefined;
   /** That process's start time (processStartTime), so a reused pid is never mistaken for it. */
   readonly startedAt: number | null;
+  /**
+   * E202611031bd72813:S001 t5: the persisted decoder state for this cursor (selectionSeq counter +
+   * a split selection marker's buffer), so a resumed read never reuses a selection id or loses a
+   * marker that spans chunks. Absent -> an empty state (today's behaviour).
+   */
+  readonly decoderState?: {
+    readonly selectionSeq?: number | undefined;
+    readonly selectionBuffer?: string | undefined;
+    readonly sessionId?: string | undefined;
+    /** tool_use id -> command, and -> edit file path: without them a budget boundary between tool_use and tool_result loses the correlation. */
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  } | undefined;
+  /**
+   * E202611031bd72813:S001 t5: a terminal was already ingested at/before this cursor (checkpoint
+   * flag) — the resume must not report a synthetic EOF failure for it.
+   */
+  readonly sawTerminal?: boolean | undefined;
 }
 
 export interface ResumeOptions {
   readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /**
+   * E202611031bd72813:S001 t5: the adapter's live decoder state after each ingested line, so the
+   * observer can persist it (checkpoint) and a later resume continues with the same ids/buffers.
+   */
+  readonly onDecoderState?: ((state: {
+    readonly selectionSeq: number;
+    readonly selectionBuffer: string;
+    readonly sessionId?: string | undefined;
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  }) => void) | undefined;
   /** Aborting it stops following; the process is left running. */
   readonly signal?: AbortSignal | undefined;
   /** Hands over the followed turn's process, so Stop can end it. */
   readonly onAttach?: ((proc: TurnProcess) => void) | undefined;
+  /**
+   * E202611031bd72813:S001 t5: keep reading the WHOLE segment past the terminal event (the observer
+   * uses this: 'caught up' means drained, and a request can arrive after the result line). Default
+   * false: resume ends at the first terminal event, as before.
+   */
+  readonly drain?: boolean | undefined;
 }
 
 export interface RunOptions {
@@ -124,6 +165,24 @@ export interface RunOptions {
   readonly onSpawn?: ((proc: TurnProcess) => void) | undefined;
   /** Called after the events of each output line have been yielded, with the position after that line. */
   readonly onProgress?: ((cursor: TurnCursor) => void) | undefined;
+  /**
+   * E202611031bd72813:S001 t5: the stateful decoder progress (selectionSeq + split-marker buffer)
+   * after each output line, so a detach/reattach of the LIVE run resumes with it (the live cursor's
+   * own checkpoint, independent of the observer's).
+   */
+  readonly onDecoderState?: ((state: {
+    readonly selectionSeq: number;
+    readonly selectionBuffer: string;
+    readonly sessionId?: string | undefined;
+    readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+    readonly editPaths?: Readonly<Record<string, string>> | undefined;
+  }) => void) | undefined;
+  /**
+   * MR3-R2 (manual review): cancellation predicate rechecked immediately BEFORE the child spawn —
+   * the session-output beginTurn() await above can outlast the delivery timeout, so the lifecycle's
+   * pre-run check alone cannot stop a timed-out continuation from launching.
+   */
+  readonly shouldSpawn?: (() => boolean) | undefined;
   /**
    * The chat session the turn belongs to. With AdapterDeps.sessionOutput, the turn's output is
    * kept in that session's file. Pass it only while holding the session's lease.
@@ -150,13 +209,26 @@ export interface StreamAdapter {
    */
   cancel(turnId: string): Promise<void>;
   /**
+   * MR3-R5: stop the process of EXACTLY this turn (identity-bound by turnId), resolving true only
+   * when its exit was confirmed; `undefined` when this adapter holds no live process for it (the
+   * caller must fail closed then — never stop another turn as a substitute).
+   */
+  stopTurnVerified?(turnId: string): Promise<boolean | undefined>;
+  /**
    * S004: relay a review-mode permission decision back to the live turn's CLI.
    * Looks up the pending request registered for (turnId, requestId); if live, writes
    * the provider control response via the process write() seam and clears it. A
    * decision for an unknown/stale/dead requestId is a no-op (nothing written), and at
    * most one control response is ever written per requestId. Idempotent + safe.
+   * E202611031bd72813:S001 t6: returns whether the decision was DELIVERED — a failed
+   * write does not consume the request, so the caller can fall back to a follow-up run.
    */
-  decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void;
+  decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { readonly delivered: boolean };
+  /** E202611031bd72813:S001 t6: re-register a restored request (reattach/reload) so decide() can answer it. */
+  registerPending?(turnId: string, requestId: string): void;
+  /** E202611031bd72813:S001 t6: subscribe to ASYNC write failures of a delivered decision — the
+   * caller corrects the recorded outcome (delivery-failed) and can fall back to a follow-up run. */
+  onDeliveryFailed?(cb: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void): void;
   /** Static capabilities of this provider (e.g. whether native session resume is supported). */
   readonly capabilities: { readonly resume: boolean };
 }
@@ -190,7 +262,8 @@ export interface SpawnedProcess {
    * presence before calling. Claude also requires it for initial structured user input.
    * A returned promise acknowledges writing; rejections are surfaced by the adapter.
    */
-  write?(data: string): void | Promise<void>;
+  /** E202611031bd72813:S001 t6: returns whether the write reached the process (false = dead/absent stdin). */
+  write?(data: string, onError?: (err: unknown) => void): boolean;
   /**
    * Optional: end the process stdin (EOF). A CLI that reads structured input keeps waiting for
    * more after its result, so the adapter ends the input once a correlated turn is terminal and
@@ -242,6 +315,8 @@ export type BinaryProbe = (id: ProviderId) => boolean;
 export interface AdapterDeps {
   readonly spawn: SpawnFn;
   readonly isInstalled: BinaryProbe;
+  /** Resolve the selected model at launch, never from webview-supplied endpoint/auth data. */
+  readonly resolveOllamaTarget?: ((request: TurnRequest) => Promise<ChatOllamaTarget | undefined>) | undefined;
   readonly logger?: AdapterLogger;
   /** cancel()'s wait after SIGTERM, and again after SIGKILL. Default 5000 ms. */
   readonly stopGraceMs?: number;
@@ -709,7 +784,7 @@ const claudeMapper: ProviderMapper = {
       const failed = obj['is_error'] === true;
       const text = failed && typeof obj['result'] === 'string' && (obj['result'] as string).trim() !== '' ? (obj['result'] as string).trim() : undefined;
       state.result = { kind: 'done', turnId, ok: !failed, ...(text !== undefined ? { message: text } : {}) };
-      return state.requestUuid === undefined ? [] : [state.result];
+      return [state.result];
     }
     // S004: a host-answered permission prompt (--permission-prompts host). claude raises
     // it as a control_request / permission_request envelope (or a nested can_use_tool
@@ -925,13 +1000,13 @@ const vibeMapper: ProviderMapper = {
   id: 'vibe',
   // `vibe -p --resume <session_id>` continues a saved session in headless mode.
   resume: true,
-  // Like codex, vibe reads stdin as prompt text until EOF, so the turn starts with
-  // its input closed and the prompt passed as the positional after `--` (which
-  // also keeps a prompt starting with '-' out of the option parser). Consequence:
+  // Vibe's bare -p reads stdin, not the positional initial prompt. Bind the
+  // programmatic prompt explicitly with '=' so multiline and leading '-' text
+  // remain one literal value. Stdin closes immediately. Consequence:
   // no stdin decision relay — headless vibe denies any approval nobody answers.
   inputIsPrompt: true,
   buildArgs(req: TurnRequest): string[] {
-    const args = ['-p', '--output', 'streaming'];
+    const args = [`--prompt=${req.prompt}`, '--output', 'streaming'];
     if (req.resume) args.push('--resume', req.resume.nativeSessionId);
     // Attachments: vibe takes extra readable dirs as repeatable `--add-dir`.
     if (req.readDirs && req.readDirs.length > 0) for (const d of req.readDirs) args.push('--add-dir', d);
@@ -946,7 +1021,6 @@ const vibeMapper: ProviderMapper = {
     // Run config: vibe has no --model/--effort flags — the model is pinned via
     // VIBE_ACTIVE_MODEL in envFor(); effort is not forwardable (the model's own
     // `thinking` setting in the user's vibe config applies).
-    args.push('--', req.prompt);
     return args;
   },
   envFor(req: TurnRequest): NodeJS.ProcessEnv | undefined {
@@ -1075,6 +1149,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
   let outputFallbackLogged = false;
   const live = new Map<string, SpawnedProcess>();
   // S004: outstanding permission requests per live turn (the a2 pending-request registry).
+  // t6: listeners notified when a decision's stdin write fails ASYNChronously (after decide()
+  // already returned delivered:true) so the host can correct the outcome and fall back
+  const deliveryFailedCbs = new Set<(turnId: string, requestId: string, decision: 'approve' | 'deny') => void>();
+
   // register on an emitted approval-request; decide() consumes; auto-cleaned on cancel()/exit.
   const pendingByTurn = new Map<string, Set<string>>();
   let turnSeq = 0;
@@ -1088,6 +1166,17 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     if (!mapper.resume && req.resume !== undefined) {
       const { resume: _drop, ...rest } = req;
       effectiveReq = rest;
+    }
+    let ollama: ChatOllamaTarget | undefined;
+    try {
+      if (deps.resolveOllamaTarget !== undefined) ollama = await deps.resolveOllamaTarget(effectiveReq);
+      if (ollama !== undefined) {
+        if (mapper.id !== 'claude') throw new Error('Ollama chat routing is supported only for Claude.');
+        effectiveReq = { ...effectiveReq, model: ollama.model };
+      }
+    } catch (err) {
+      yield { kind: 'error', turnId, message: err instanceof Error ? err.message : String(err) };
+      return;
     }
     // Keep the turn's output in its session's file when we can; otherwise the pipe, as before.
     const sessionOutput = deps.sessionOutput;
@@ -1111,13 +1200,24 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             errTail: () => sessionOutput.errTail(sessionId),
           }
         : undefined;
+    // MR3-R2: recheck cancellation immediately before the actual spawn; a timed-out continuation
+    // whose delivery-failed was already recorded must not launch a child. The begun output segment
+    // is closed again so no orphaned turn file remains.
+    if (opts?.shouldSpawn !== undefined && !opts.shouldSpawn()) {
+      if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
+        void sessionOutput.endTurn(sessionId, turnId, { code: null, signal: null }).catch(() => {});
+      }
+      return;
+    }
     let proc: SpawnedProcess;
     try {
       proc = deps.spawn(BINARY[mapper.id], mapper.buildArgs(effectiveReq), {
         cwd: effectiveReq.cwd,
         ...(output !== undefined ? { output } : {}),
         ...(mapper.inputIsPrompt === true ? { closeInput: true } : {}),
-        ...(mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
+        ...(ollama !== undefined
+          ? { env: ollamaClaudeEnv(process.env, ollama.host) }
+          : mapper.envFor !== undefined ? (() => { const env = mapper.envFor!(effectiveReq); return env !== undefined ? { env } : {}; })() : {}),
       });
     } catch (err) {
       if (segment !== undefined && sessionOutput !== undefined && sessionId !== undefined) {
@@ -1145,6 +1245,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     const state: TurnState = requestUuid === undefined ? {} : { requestUuid };
     let sawError = false;
     let sawDone = false;
+    let inputFailure: Error | undefined;
     // Set BEFORE a terminal event is yielded, so a consumer that returns at it (the panel)
     // does not stop the process in the finally below.
     let terminal = false;
@@ -1168,17 +1269,28 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       }
       if (mapper.formatInput !== undefined && requestUuid !== undefined) {
         if (proc.write === undefined) throw new Error('CLI stdin unavailable for correlated input');
-        await proc.write(mapper.formatInput(effectiveReq, requestUuid));
+        // The turn's one user message goes through the same seam as the approval decisions: false is a
+        // dead or absent stdin, and an asynchronous failure arrives on onError. Either one fails the turn.
+        let accepted = false;
+        try {
+          accepted = proc.write(mapper.formatInput(effectiveReq, requestUuid), (err) => {
+            if (inputFailure === undefined) inputFailure = new Error(`CLI stdin write failed: ${err instanceof Error ? err.message : String(err)}`);
+            proc.kill('SIGTERM');
+          });
+        } catch { /* a seam that throws is a seam that did not deliver */ }
+        if (!accepted) throw new Error('CLI stdin is closed');
       }
       opts?.onSpawn?.({
         pid: proc.pid,
         exit: proc.exit,
         kill: (signal) => proc.kill(signal),
-        stop: () => stopTurnProcess(proc),
+        stop: () => stopTurnProcess(proc).then(() => {}),
+        stopVerified: () => stopTurnProcess(proc),
         ...(segment !== undefined ? { cursor: segment.cursor, outPath: segment.outPath } : {}),
       });
       for (;;) {
         const next = await stdout.next();
+        if (inputFailure !== undefined) throw inputFailure;
         if (next.done === true) break;
         let events: TurnEvent[];
         try {
@@ -1210,15 +1322,28 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
             if (state.requestUuid !== undefined) proc.endInput?.();
           }
           // Checkpoint before terminal yield: consumers commonly return immediately at done.
-          if (terminal && proc.cursor !== undefined) opts?.onProgress?.(proc.cursor);
+          if (terminal && proc.cursor !== undefined) {
+            opts?.onDecoderState?.(decoderSnapshot(state));
+            opts?.onProgress?.(proc.cursor);
+          }
           // Enrich a mapper-produced done with the session id captured so far.
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
           if (sawDone || sawError) return;
         }
-        // Every event of this line has been handed over: report the position after it.
+        // Every event of this line has been handed over: report the position after it, and the
+        // decoder progress (selectionSeq / split-marker buffer) with it.
         const at = proc.cursor;
+        // decoder state FIRST, then the offset (same consistent-save ordering as resume)
+        opts?.onDecoderState?.({
+          selectionSeq: state.selectionSeq ?? 0,
+          selectionBuffer: state.selectionBuffer ?? '',
+          ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+          ...(state.toolCommands !== undefined ? { toolCommands: { ...state.toolCommands } } : {}),
+          ...(state.editPaths !== undefined ? { editPaths: { ...state.editPaths } } : {}),
+        });
         if (at !== undefined) opts?.onProgress?.(at);
       }
+      if (inputFailure !== undefined) throw inputFailure;
       // stdout closed without a terminal event: the process is ending; report how.
       const { code, signal } = await proc.exit;
       terminal = true;
@@ -1259,8 +1384,8 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     }
   }
 
-  function stopTurnProcess(proc: SpawnedProcess): Promise<void> {
-    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs).then(() => {});
+  function stopTurnProcess(proc: SpawnedProcess): Promise<boolean> {
+    return stopProcess({ pid: proc.pid, exit: proc.exit, kill: (signal) => proc.kill(signal) }, stopGraceMs);
   }
 
   async function cancel(turnId: string): Promise<void> {
@@ -1272,26 +1397,69 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     await stopTurnProcess(proc);
   }
 
-  function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): void {
+  async function stopTurnVerified(turnId: string): Promise<boolean | undefined> {
+    const proc = live.get(turnId);
+    if (proc === undefined) return undefined; // no handle for THIS turn — the caller fails closed
+    return stopTurnProcess(proc);
+  }
+
+  function decide(turnId: string, requestId: string, decision: 'approve' | 'deny'): { delivered: boolean } {
     const set = pendingByTurn.get(turnId);
-    if (set === undefined || !set.has(requestId)) return; // unknown / stale / already answered — no-op
-    // Consume the entry first so a duplicate/late decide is a guaranteed no-op (at most
-    // one control response per requestId), even if the write below fails.
-    set.delete(requestId);
-    if (set.size === 0) pendingByTurn.delete(turnId);
+    if (set === undefined || !set.has(requestId)) return { delivered: false }; // unknown / stale / already answered — no-op
     const proc = live.get(turnId);
     if (proc === undefined || typeof proc.write !== 'function' || mapper.inputIsPrompt === true) {
-      // Process gone or no write seam: the decision is undeliverable; the entry is already
-      // cleared so the card is not left live. Never throw into the caller.
+      // Process gone or no write seam: the decision is undeliverable — and NOT consumed, so a
+      // later retry or a follow-up run can still answer this requestId. Never throw into the caller.
       log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (no live stdin)`);
-      return;
+      return { delivered: false };
     }
+    let written = false;
     try {
-      void Promise.resolve(proc.write(mapper.formatDecision(requestId, decision))).catch(() =>
-        log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (stdin write failed)`));
+      written = proc.write(mapper.formatDecision(requestId, decision), (err) => {
+        if (err !== null && err !== undefined) {
+          // ASYNC write failure: the CLI never got the decision. Re-register the request (the
+          // entry was consumed synchronously below) so a later decide stays possible, and notify
+          // the host so the recorded outcome is corrected to delivery-failed and the follow-up
+          // fallback answers the request instead of leaving it approved.
+          log.warn(`[chat:${mapper.id}] permission decision for ${requestId} failed asynchronously: ${err instanceof Error ? err.message : String(err)}`);
+          let set2 = pendingByTurn.get(turnId);
+          if (set2 === undefined) {
+            set2 = new Set();
+            pendingByTurn.set(turnId, set2);
+          }
+          set2.add(requestId);
+          for (const cb of deliveryFailedCbs) {
+            try {
+              cb(turnId, requestId, decision);
+            } catch { /* a failing listener must not break the stream loop */ }
+          }
+        }
+      });
     } catch {
-      log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (stdin write failed)`);
+      written = false;
     }
+    if (!written) {
+      log.warn(`[chat:${mapper.id}] permission decision for ${requestId} undeliverable (write failed)`);
+      return { delivered: false };
+    }
+    // Consume on write acceptance, so a duplicate/late decide is a guaranteed no-op (at most one
+    // control response per requestId); an async failure re-registers + notifies (see callback).
+    set.delete(requestId);
+    if (set.size === 0) pendingByTurn.delete(turnId);
+    return { delivered: true };
+  }
+
+  function onDeliveryFailed(cb: (turnId: string, requestId: string, decision: 'approve' | 'deny') => void): void {
+    deliveryFailedCbs.add(cb);
+  }
+
+  function registerPending(turnId: string, requestId: string): void {
+    let set = pendingByTurn.get(turnId);
+    if (set === undefined) {
+      set = new Set();
+      pendingByTurn.set(turnId, set);
+    }
+    set.add(requestId);
   }
 
   async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
@@ -1326,11 +1494,22 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         if (pid !== undefined && isTheProcess()) killGroup(pid, signal);
       },
       stop: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs).then(() => {}),
+      stopVerified: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs),
     };
     opts?.onAttach?.(handle);
 
     const requestUuid = mapper.id === 'claude' ? /^claude-request-([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/.exec(turnId)?.[1] : undefined;
+    // E202611031bd72813:S001 t5: restore the persisted decoder state instead of starting empty, so a
+    // resumed read never reuses a selection id (sel-<turn>-<seq>) or loses a split marker.
     const state: TurnState = requestUuid === undefined ? {} : { requestUuid };
+    if (req.decoderState?.selectionSeq !== undefined) state.selectionSeq = req.decoderState.selectionSeq;
+    if (req.decoderState?.selectionBuffer !== undefined) state.selectionBuffer = req.decoderState.selectionBuffer;
+    // the native session id captured by an earlier pass (codex thread.started / claude init) survives the resume
+    if (req.decoderState?.sessionId !== undefined) state.sessionId = req.decoderState.sessionId;
+    // and so do the tool_use -> command/edit-path correlations, so a pass boundary between
+    // tool_use and tool_result cannot drop them
+    if (req.decoderState?.toolCommands !== undefined) state.toolCommands = { ...req.decoderState.toolCommands };
+    if (req.decoderState?.editPaths !== undefined) state.editPaths = { ...req.decoderState.editPaths };
     const doneEvent = (ok: boolean, message?: string): TurnEvent => ({
       kind: 'done',
       turnId,
@@ -1338,25 +1517,34 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
       ...(!ok && message !== undefined ? { message } : {}),
     });
+    let sawTerminalInDrain = req.sawTerminal === true;
     try {
-      if (mapper.id === 'claude') {
-        // A saved cursor contains identity, but not result/session state. Reconstruct
-        // it without replaying visible events, including after a second reload.
+      // A caller that carries no saved decoder state (a reloaded live reader) has a saved cursor
+      // that holds identity but not the result: rebuild it from the turn's prefix without replaying
+      // visible events. The background observer passes its decoder state and checkpoint, so it never
+      // re-reads the turn from its start on every pass (sync decision D8).
+      if (requestUuid !== undefined && req.decoderState === undefined && req.sawTerminal !== true) {
         for await (const { line } of sessionOutput.tail(req.cursor, {
           finished: () => true, fromTurnStart: true, beforeOffset: req.cursor.offset, signal: opts?.signal,
         })) {
           try { mapper.mapLine(line, turnId, state); }
           catch { log.warn(`[chat:${mapper.id}] skipped unparseable prefix line`); }
-          if (requestUuid !== undefined && state.result !== undefined) break;
+          if (state.result !== undefined) break;
         }
         if (opts?.signal?.aborted === true) return;
         // The terminal line may have been checkpointed immediately before a reload.
-        if (requestUuid !== undefined && state.result !== undefined) {
+        if (state.result !== undefined) {
           yield doneEvent(state.result.ok, state.result.message);
           return;
         }
       }
-      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: () => !isTheProcess(), signal: opts?.signal })) {
+      // E202611031bd72813:S001 t5: the read ends at the segment's turn-end marker or when the writer
+      // is dead — never at a soft EOF while it lives (an unterminated trailing line may still be
+      // completed by the writer and must not be abandoned).
+      // E202611031bd72813:S001 t5: an ABSENT pid is not 'finished' (unverifiable) — the read ends at
+      // the turn-end marker or a verified-dead recorded pid only.
+      const finished = (): boolean => pid !== undefined && !isTheProcess();
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
           events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);
@@ -1365,30 +1553,72 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           continue;
         }
         for (const ev of events) {
-          if (ev.kind === 'done' || ev.kind === 'error') opts?.onProgress?.(cursor);
+          // A draining reader (the observer) keeps its cursor before the terminal until it has caught up, so
+          // its rewind has a pre-terminal point (sync decision D8); any other follower checkpoints first.
+          if ((ev.kind === 'done' || ev.kind === 'error') && opts?.drain !== true) {
+            opts?.onDecoderState?.(decoderSnapshot(state));
+            opts?.onProgress?.(cursor);
+          }
           yield ev.kind === 'done' ? doneEvent(ev.ok, ev.message) : ev;
-          if (ev.kind === 'done' || ev.kind === 'error') return;
+          // Default: end at the first terminal event. With drain (the observer), keep reading to the
+          // segment's end so nothing after the terminal is abandoned.
+          if (ev.kind === 'done' || ev.kind === 'error') {
+            sawTerminalInDrain = true;
+            if (opts?.drain !== true) return;
+          }
         }
+        // decoder state FIRST, then the offset: the lifecycle saves liveTurn on both, and the
+        // later (offset) save must already carry this line's decoder state — no stale-buffer window.
+        opts?.onDecoderState?.({
+          selectionSeq: state.selectionSeq ?? 0,
+          selectionBuffer: state.selectionBuffer ?? '',
+          ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+          ...(state.toolCommands !== undefined ? { toolCommands: { ...state.toolCommands } } : {}),
+          ...(state.editPaths !== undefined ? { editPaths: { ...state.editPaths } } : {}),
+        });
         opts?.onProgress?.(cursor);
       }
     } catch (err) {
       if (err instanceof SegmentGone) {
-        // The file rolled over past this turn: there is nothing left to resume.
+        // The file rolled over past this turn's segment: report an OBSERVATION failure (not a
+        // terminal) so the caller can re-anchor into an older retained generation and replay.
         log.warn(`[chat:${mapper.id}] ${err.message}`);
+        yield { kind: 'error', turnId, message: err.message, observationFailure: true };
         return;
       }
-      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}` };
+      yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}`, observationFailure: true };
       return;
     }
     if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
-    if (mapper.id === 'claude' && requestUuid === undefined && state.result !== undefined) {
-      yield doneEvent(state.result.ok, state.result.message);
-    } else {
-      yield { kind: 'error', turnId, message: 'the turn ended without a result for this request' };
-    }
+    // E202611031bd72813:S001 t5: EOF without a terminal event is an OBSERVATION failure (no real
+    // terminal was ingested and the pid may still be alive) — never a synthetic completion. A drain
+    // that DID see a terminal ends cleanly instead (the segment's turn-end marker closed it).
+    if (sawTerminalInDrain && opts?.drain === true) return;
+    // E202611031bd72813:S001 t5: EOF without a terminal event — a plain terminal error ONLY when a
+    // recorded pid is verified dead; alive OR ABSENT pid is an observation failure (an absent pid
+    // is unverifiable, never a synthetic completion).
+    const verifiedDead = pid !== undefined && !isTheProcess();
+    yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(verifiedDead ? {} : { observationFailure: true }) };
   }
 
-  return { run, resume, cancel, decide, capabilities: { resume: mapper.resume } };
+  return { run, resume, cancel, stopTurnVerified, decide, registerPending, onDeliveryFailed, capabilities: { resume: mapper.resume } };
+}
+
+/** The decoder progress a reader reports with every checkpoint (selection ids, split marker, correlations). */
+function decoderSnapshot(state: TurnState): {
+  readonly selectionSeq: number;
+  readonly selectionBuffer: string;
+  readonly sessionId?: string | undefined;
+  readonly toolCommands?: Readonly<Record<string, string>> | undefined;
+  readonly editPaths?: Readonly<Record<string, string>> | undefined;
+} {
+  return {
+    selectionSeq: state.selectionSeq ?? 0,
+    selectionBuffer: state.selectionBuffer ?? '',
+    ...(state.sessionId !== undefined ? { sessionId: state.sessionId } : {}),
+    ...(state.toolCommands !== undefined ? { toolCommands: { ...state.toolCommands } } : {}),
+    ...(state.editPaths !== undefined ? { editPaths: { ...state.editPaths } } : {}),
+  };
 }
 
 function failureMessage(provider: ProviderId, reason: unknown): string {
@@ -1442,7 +1672,8 @@ export async function deriveChatTitle(
     `Reply with ONLY a concise 3-6 word title (no quotes, no punctuation, no preamble) ` +
     `for a developer chat that begins with this message:\n\n${input.prompt}`;
   const req: TurnRequest = { provider: input.provider, prompt: instruction, cwd: input.cwd, ...(input.model !== undefined ? { model: input.model } : {}), ...(input.effort !== undefined ? { effort: input.effort } : {}) };
-  const it = adapter.run(req)[Symbol.asyncIterator]();
+  let stopped = false;
+  const it = adapter.run(req, { shouldSpawn: () => !stopped })[Symbol.asyncIterator]();
   const deadline = Date.now() + (opts?.timeoutMs ?? 8000);
   let turnId: string | undefined;
   let text = '';
@@ -1451,6 +1682,7 @@ export async function deriveChatTitle(
   // .next() is pending — the S003 lesson). A zero-output turn has no turnId yet, so it cannot be
   // force-cancelled; real claude/codex emit an init event within ms, so slow titles are bounded.
   const stop = (val: string | undefined): string | undefined => {
+    stopped = true;
     if (turnId !== undefined) {
       try {
         void adapter.cancel(turnId);
@@ -1485,6 +1717,16 @@ export async function deriveChatTitle(
   } catch {
     return stop(undefined);
   }
+}
+
+/**
+ * E202611031bd72813:S001 t6: whether a stdin write reached the process. `stream.write()` returns
+ * false on BACKPRESSURE — the chunk is already buffered and will be flushed — so that boolean is
+ * NOT a delivery failure; only a destroyed or ended stream is undelivered.
+ */
+export function writeReachedStdin(stream: { readonly destroyed: boolean; readonly writableEnded: boolean }, writeOk: boolean): boolean {
+  void writeOk; // false = backpressure: the chunk is buffered and will flush, so still delivered
+  return !stream.destroyed && !stream.writableEnded;
 }
 
 // ---- production spawner (the only child_process user) ------------------------
@@ -1600,14 +1842,27 @@ export const nodeSpawner: SpawnFn = (command, args, opts) => {
       const input = child.stdin;
       if (input !== null && !input.destroyed && !input.writableEnded) input.end();
     },
-    write: (data: string) => new Promise<void>((resolve, reject) => {
-      const input = child.stdin;
-      if (input === null || input.destroyed || input.writableEnded) {
-        reject(new Error('CLI stdin is closed'));
-        return;
+    write: (data: string, onError?: (err: unknown) => void) => {
+      // E202611031bd72813:S001 t6: report whether the write reached the process. A closed/absent
+      // stdin (destroyed/ended/writableEnded) returns false synchronously — never delivered —
+      // and an ASYNC write failure is reported through onError (decide re-registers the request,
+      // so it stays actionable). Never throws into the stream loop.
+      const stdin = child.stdin;
+      if (stdin === null || stdin === undefined) return false;
+      if (stdin.destroyed || stdin.writableEnded || stdin.writableFinished) return false;
+      try {
+        // write() returns false on BACKPRESSURE: the chunk is already buffered and will be
+        // flushed, so it counts as delivered — only a destroyed/closed stream is not.
+        const ok = stdin.write(data, (err) => {
+          if (err !== null && err !== undefined) {
+            onError?.(err); // the caller (decide) re-registers the request; no logger in this seam
+          }
+        });
+        return writeReachedStdin(stdin, ok);
+      } catch {
+        return false;
       }
-      input.write(data, (err) => err ? reject(err) : resolve());
-    }),
+    },
   };
 };
 

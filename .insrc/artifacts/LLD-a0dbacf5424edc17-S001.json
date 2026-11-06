@@ -1,0 +1,859 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793706745400-40owbe",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T11:54:59.142Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 153710,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "a0dbacf5424edc17",
+    "epicSlug": "enforce-approval-hard-gates-daemon-present",
+    "storyId": "S001",
+    "hldBaseRunId": "wf-1793706745400-40owbe",
+    "hldEffectiveHash": "a0dbacf5424edc17eca3eea4140c066a3a1362f5b3d230fb362b308b79672aa0",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "triageRationale": "feature tier (standalone LLD -> plan -> build): one cohesive cross-module story; no new subsystem.",
+    "authoredBy": "controller"
+  },
+  "body": {
+    "summary": {
+      "prose": "Approval is bound to the exact version the human saw. workflow.present verifies the client displayed contentVersion and stores a fresh single-use presentationToken plus presentedContentVersion on the artifact; every approval request (workflow.approve, workflow.reviewDecision, TUI, AMD approveAmendment) carries that token, and under a per-artifact cross-worker lock the daemon requires stored token === request token, unconsumed, within a coarse TTL, and the freshly reread artifact still rendering to presentedContentVersion — then consumes the token. Re-presentation invalidates older tokens, so a stale view can never be approved and no wall-clock ordering is needed. All approval-relevant writers — including questions.ts and resolve-comment.ts — serialize under the same lock with fresh rereads. epicHash batches require explicit artifactIds; overrides are token-gated; bookkeeping fields stay out of the BUILD fingerprint; stale-review remains non-overridable; AMD keeps approvedBy and its terminal reject; document-less records get a contentVersion via deliveryEvidence; MCP keeps its { presented, notPending } contract.",
+      "audience": "technical"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "S001",
+        "owns": [],
+        "depends": [],
+        "internal": "Enforce approval hard gates in the daemon: present-before-approve binding, per-artifact attestation, batch limits"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "recordPresentations (version-bound, returns tokens)",
+          "signature": "recordPresentations(repoPath: string, docs: { name: string; contentVersion: string }[], session: { id: string }, now?: Date): { recorded: { name: string; artifactId: string; token: string }[]; notPending: string[]; failed: { name: string; error: string }[] }",
+          "parameters": [
+            {
+              "name": "repoPath",
+              "type": "string",
+              "purpose": "Registered repo.",
+              "optional": false
+            },
+            {
+              "name": "docs",
+              "type": "{ name, contentVersion }[]",
+              "purpose": "Displayed contentVersion per document.",
+              "optional": false
+            },
+            {
+              "name": "session",
+              "type": "{ id: string }",
+              "purpose": "presentedBy.",
+              "optional": false
+            },
+            {
+              "name": "now",
+              "type": "Date",
+              "purpose": "Test seam.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "{ recorded: { name, artifactId, token }[], notPending, failed }",
+            "meaning": "Token returned to the presenting client for its approval request; failed (incl. version-mismatch) never recorded."
+          },
+          "errors": [
+            {
+              "type": "VersionMismatchError",
+              "condition": "contentVersionOf(fresh render) !== displayed version under the lock."
+            }
+          ],
+          "preconditions": [
+            "repo registered"
+          ],
+          "postconditions": [
+            "Under withArtifactWriter: verify version, stamp presentedAt/presentedBy/presentationToken/presentedContentVersion; old token invalidated; non-AMD rejected re-presentable; AMD rejected terminal (excluded)"
+          ]
+        },
+        {
+          "name": "requireMatchingPresentation",
+          "signature": "requireMatchingPresentation(jsonPath: string, meta: ApprovableArtifactMeta, req: { presentToken: string; now?: Date; requirePresent: boolean }): void",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Artifact being approved; fresh reread by the caller inside the lock.",
+              "optional": false
+            },
+            {
+              "name": "meta",
+              "type": "ApprovableArtifactMeta",
+              "purpose": "Stored presentation fields.",
+              "optional": false
+            },
+            {
+              "name": "req",
+              "type": "{ presentToken, now?, requirePresent }",
+              "purpose": "Token from the approval request; requirePresent from config (default true).",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "void",
+            "meaning": "Passes only if stored presentationToken === req.presentToken AND unconsumed AND within TTL AND contentVersionOf(current render) === meta.presentedContentVersion."
+          },
+          "errors": [
+            {
+              "type": "NotPresentedError",
+              "condition": "Absent / wrong / superseded / consumed / TTL-expired token or version drift — all fail closed."
+            }
+          ],
+          "preconditions": [
+            "called inside withArtifactWriter on a fresh reread"
+          ],
+          "postconditions": [
+            "read-only; consumption at approval write"
+          ]
+        },
+        {
+          "name": "withArtifactWriter",
+          "signature": "withArtifactWriter<T>(jsonPath: string, fn: (current: unknown) => T): T",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Per-artifact cross-worker lock.",
+              "optional": false
+            },
+            {
+              "name": "fn",
+              "type": "(current) => T",
+              "purpose": "FRESH reread inside the lock.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "T",
+            "meaning": "Adopted by approve, reject, findings.ts, verdicts.ts, run-artifact.ts, resolve.ts, questions.ts recordResolution, resolve-comment.ts, code-review/runner.ts, provenance/writer.ts, recordPresentations, AMD transitions."
+          },
+          "errors": [
+            {
+              "type": "ApprovalWriterBusyError",
+              "condition": "Contention surfaced."
+            }
+          ],
+          "preconditions": [
+            "store path"
+          ],
+          "postconditions": [
+            "atomic lock-protected write from fresh snapshot"
+          ]
+        },
+        {
+          "name": "approveWorkflowTarget (token-bound + AMD dispatch)",
+          "signature": "approveWorkflowTarget(req: { repoPath: string; artifactPath?: string; epicHash?: string; artifactIds?: string[]; presentToken?: string; overrideReview?: string; requirePresent?: boolean; approvedBy?: string }): Promise<ApprovalOutcome>",
+          "parameters": [
+            {
+              "name": "presentToken",
+              "type": "string",
+              "purpose": "REQUIRED when requirePresent: token from workflow.present for THIS artifact (per artifact in batches).",
+              "optional": true
+            },
+            {
+              "name": "artifactIds",
+              "type": "string[]",
+              "purpose": "epicHash: explicit list covering every pending artifact.",
+              "optional": true
+            },
+            {
+              "name": "approvedBy",
+              "type": "string",
+              "purpose": "AMD dispatch attribution.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "ApprovalOutcome",
+            "meaning": "{ approved[], skipped[] } — reasons: not-presented, presentation-superseded, presentation-consumed, presentation-expired, version-mismatch, batch-not-listed + review reasons."
+          },
+          "errors": [
+            {
+              "type": "ReviewBlockedError",
+              "condition": "Existing review gates (non-AMD)."
+            },
+            {
+              "type": "NotPresentedError",
+              "condition": "Token/version gate fails; AMD included."
+            },
+            {
+              "type": "BatchNotListedError",
+              "condition": "epicHash without full coverage."
+            }
+          ],
+          "preconditions": [
+            "test records refused",
+            "AMD rejected terminal"
+          ],
+          "postconditions": [
+            "Inside the lock on a fresh reread: validate token+version, stamp approvedAt + presentationConsumedAt; AMD: status approved + approvedBy + consumed token"
+          ]
+        },
+        {
+          "name": "approveAmendment",
+          "signature": "approveAmendment(repoPath: string, amendmentId: string, approvedBy: string, opts?: { presentToken?: string; requirePresent?: boolean; now?: Date }): AmendmentRecord",
+          "parameters": [
+            {
+              "name": "approvedBy",
+              "type": "string",
+              "purpose": "UNCHANGED attribution.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "object",
+              "purpose": "presentToken + gate knobs.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "AmendmentRecord",
+            "meaning": "pending→approved only with matching unconsumed token + version; rejected terminal."
+          },
+          "errors": [
+            {
+              "type": "NotPresentedError",
+              "condition": "Token gate fails."
+            },
+            {
+              "type": "AmendmentResolvedError",
+              "condition": "Already resolved — terminal."
+            }
+          ],
+          "preconditions": [
+            "record pending"
+          ],
+          "postconditions": [
+            "status approved + approvedBy + presentationConsumedAt under lock"
+          ]
+        },
+        {
+          "name": "reviewDecision + TUI + transport carry presentToken",
+          "signature": "workflow.reviewDecision gains presentToken; daemon-stream approveWorkflow gains artifactIds/approvedBy/presentToken; MCP insrc_workflow_approve schema gains presentToken; TUI forwards the token from its open-and-read present.",
+          "parameters": [
+            {
+              "name": "presentToken",
+              "type": "string",
+              "purpose": "Per approval request.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ApprovalOutcome",
+            "meaning": "Forwarded verbatim; MCP holds no logic."
+          },
+          "errors": [
+            {
+              "type": "errorResult",
+              "condition": "missing token when requirePresent → validation error."
+            }
+          ],
+          "preconditions": [
+            "present succeeded"
+          ],
+          "postconditions": [
+            "daemon validates under lock"
+          ]
+        },
+        {
+          "name": "deliveryEvidence contentVersion (document-less)",
+          "signature": "handleDeliveryEvidence returns { ..., renderedMarkdown, contentVersion: contentVersionOf(renderedMarkdown) }; AMD renders its actual proposed delta",
+          "parameters": [],
+          "returns": {
+            "type": "record + contentVersion",
+            "meaning": "Document-less records become version-bound presentable; VS Code document-less branch uses the real rendering + version."
+          },
+          "errors": [],
+          "preconditions": [
+            "record exists"
+          ],
+          "postconditions": [
+            "delivery types/handlers/load updated; AMD tests assert delta + contentVersion"
+          ]
+        },
+        {
+          "name": "BUILD_APPROVAL_IDENTITY_EXCLUSIONS",
+          "signature": "exclusions += presentedAt, presentedBy, presentationToken, presentationConsumedAt, presentedContentVersion, gateOverrides, lastReviewWriteAt",
+          "parameters": [],
+          "returns": {
+            "type": "updated list",
+            "meaning": "Bookkeeping never alters the reviewed BUILD fingerprint."
+          },
+          "errors": [],
+          "preconditions": [
+            "list in input-fingerprint.ts"
+          ],
+          "postconditions": [
+            "review→present→approve regression passes; source change → stale-review"
+          ]
+        },
+        {
+          "name": "MCP present mapping",
+          "signature": "handleInsrcPresent: daemon { recorded, notPending, failed } → MCP { presented: recorded names, notPending: notPending ∪ failed } with errors + tokens in the text",
+          "parameters": [
+            {
+              "name": "documents",
+              "type": "string[] + contentVersion",
+              "purpose": "As today plus version.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "{ presented, notPending } — UNCHANGED",
+            "meaning": "Failed/version-mismatched names never presented; transport regression pins it."
+          },
+          "errors": [
+            {
+              "type": "errorResult",
+              "condition": "as today."
+            }
+          ],
+          "preconditions": [
+            "repo resolvable"
+          ],
+          "postconditions": [
+            "steering contract intact"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ApprovableArtifactMeta",
+        "change": "field-add",
+        "details": "presentedAt?, presentedBy?, presentationToken?, presentationConsumedAt?, presentedContentVersion?, gateOverrides?, lastReviewWriteAt? (audit only) — all fingerprint-excluded.",
+        "schemaDiff": "meta += { presentedAt?, presentedBy?, presentationToken?, presentationConsumedAt?, presentedContentVersion?, gateOverrides?, lastReviewWriteAt? }",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/workflow/presentations.ts",
+          "src/workflow/code-review/input-fingerprint.ts",
+          "src/daemon/steps/review-step/phases/findings.ts",
+          "src/daemon/steps/review-step/phases/verdicts.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/workflow/questions.ts",
+          "src/workflow/resolve-comment.ts",
+          "src/workflow/pending.ts"
+        ]
+      },
+      {
+        "entity": "AmendmentRecord",
+        "change": "field-add",
+        "details": "Same presentation fields incl. presentedContentVersion; status + approvedBy unchanged; rejected terminal.",
+        "schemaDiff": "record += { presentedAt?, presentedBy?, presentationToken?, presentationConsumedAt?, presentedContentVersion? }",
+        "callSites": [
+          "src/workflow/amendments/types.ts",
+          "src/workflow/amendments/store.ts"
+        ]
+      },
+      {
+        "entity": "ApprovalOutcome.skipped reason",
+        "change": "field-add",
+        "details": "not-presented, presentation-superseded, presentation-consumed, presentation-expired, version-mismatch, batch-not-listed + review reasons.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/daemon/handler-runtime.ts",
+          "src/mcp/daemon-stream.ts",
+          "src/mcp/server.ts"
+        ]
+      },
+      {
+        "entity": "delivery evidence record",
+        "change": "field-add",
+        "details": "contentVersion on deliveryEvidence; AMD renderedMarkdown contains the actual proposed delta.",
+        "callSites": [
+          "src/workflow/delivery/types.ts",
+          "src/workflow/delivery/handlers.ts",
+          "src/workflow/delivery/load.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts"
+        ]
+      },
+      {
+        "entity": "daemon config catalog",
+        "change": "field-add",
+        "details": "workflow.approval.requirePresent (default true); workflow.presentationTtlMinutes (default 30, coarse expiry).",
+        "callSites": [
+          "src/config",
+          "src/daemon/handler-runtime.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "writer migration inventory (complete)",
+        "change": "invariant-change",
+        "details": "approve, reject, findings.ts, verdicts.ts, run-artifact.ts, resolve.ts, questions.ts, resolve-comment.ts, code-review/runner.ts, provenance/writer.ts, recordPresentations, AMD transitions — all under withArtifactWriter with fresh reread.",
+        "callSites": [
+          "src/workflow/gates.ts",
+          "src/daemon/steps/review-step/phases/findings.ts",
+          "src/daemon/steps/review-step/phases/verdicts.ts",
+          "src/workflow/review/run-artifact.ts",
+          "src/workflow/review/resolve.ts",
+          "src/workflow/questions.ts",
+          "src/workflow/resolve-comment.ts",
+          "src/workflow/code-review/runner.ts",
+          "src/workflow/artifacts/provenance/writer.ts",
+          "src/workflow/presentations.ts",
+          "src/workflow/amendments/store.ts"
+        ]
+      },
+      {
+        "entity": "registry + MCP schemas + clients",
+        "change": "field-add",
+        "details": "method-class.ts workflow.present; daemon-stream types; MCP schemas (presentToken, artifactIds, approvedBy, contentVersion); insrc_present hints; TUI \"o\"/\"a\"; clients present-with-version then approve-with-token.",
+        "callSites": [
+          "src/daemon/threads/method-class.ts",
+          "src/mcp/daemon-stream.ts",
+          "src/mcp/server.ts",
+          "src/cli/panes/WorkflowsPane.tsx",
+          "src/cli/services/workflow.ts",
+          "vscode-plugin/src/chat/docs-review-client.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Raw-socket approve with no/wrong token",
+          "detection": "stored token !== req token or absent",
+          "response": "NotPresentedError; batch → skipped[]; approvedAt never stamped",
+          "userImpact": "Approval does not happen",
+          "recoverable": true
+        },
+        {
+          "scenario": "A presents v1; review publishes v2; B presents v2; A approves stale v1",
+          "detection": "A token superseded by B re-presentation AND/OR current render v2 !== A presentedContentVersion v1, both checked under the lock",
+          "response": "presentation-superseded / version-mismatch; A re-opens and re-presents",
+          "userImpact": "Approver bound to its displayed version",
+          "recoverable": true
+        },
+        {
+          "scenario": "Review published in the same millisecond as presentation",
+          "detection": "no timestamp ordering — version equality decides, fail-closed",
+          "response": "If render changed → version-mismatch; equal clocks irrelevant",
+          "userImpact": "ms-equality flaw eliminated",
+          "recoverable": true
+        },
+        {
+          "scenario": "Blanket epicHash without artifactIds",
+          "detection": "coverage check",
+          "response": "BatchNotListedError listing pending ids incl. AMDs",
+          "userImpact": "Blanket approve-all impossible",
+          "recoverable": true
+        },
+        {
+          "scenario": "overrideReview without matching token",
+          "detection": "token gate before override handling",
+          "response": "NotPresentedError; reviewOverride not stamped",
+          "userImpact": "Overrides cannot skip the human gate",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale-review fingerprint on BUILD after source change",
+          "detection": "fingerprint mismatch before overrides",
+          "response": "Withheld even with override/enforcement off — non-overridable",
+          "userImpact": "Hard gate preserved",
+          "recoverable": true
+        },
+        {
+          "scenario": "Token replay",
+          "detection": "presentationConsumedAt set at first approval",
+          "response": "presentation-consumed on second",
+          "userImpact": "Single-use",
+          "recoverable": true
+        },
+        {
+          "scenario": "TTL expiry",
+          "detection": "now - presentedAt > TTL (coarse expiry only)",
+          "response": "presentation-expired; re-present",
+          "userImpact": "Bounded presentation lifetime",
+          "recoverable": true
+        },
+        {
+          "scenario": "Non-AMD rejected re-approval",
+          "detection": "recordPresentations accepts pending or rejected non-AMD",
+          "response": "Re-present (version-checked) re-opens; approve clears rejectedAt; rangeBase write-once",
+          "userImpact": "Reachable recovery",
+          "recoverable": true
+        },
+        {
+          "scenario": "AMD rejected",
+          "detection": "store.ts: rejected terminal",
+          "response": "Refused always",
+          "userImpact": "Terminal rule preserved",
+          "recoverable": false
+        },
+        {
+          "scenario": "AMD approval without token/approvedBy",
+          "detection": "AMD branch gate + attribution",
+          "response": "NotPresentedError / attribution error; status pending",
+          "userImpact": "AMDs gated with attribution",
+          "recoverable": true
+        },
+        {
+          "scenario": "Present write fails mid-list",
+          "detection": "per-name try/catch under lock",
+          "response": "failed[] { name, error }; MCP maps failed into notPending with error text — never presented",
+          "userImpact": "Fail-closed; contract preserved",
+          "recoverable": true
+        },
+        {
+          "scenario": "Competing writers across workers (all publication paths incl. questions/resolve-comment/feedback)",
+          "detection": "withArtifactWriter + fresh reread everywhere",
+          "response": "Serialized; no stale-snapshot writes; contention → ApprovalWriterBusyError",
+          "userImpact": "No lost updates",
+          "recoverable": true
+        },
+        {
+          "scenario": "requirePresent=false emergency",
+          "detection": "config false",
+          "response": "Proceeds without token; gateOverrides records bypass; gateOverride: true",
+          "userImpact": "Auditable escape; default true",
+          "recoverable": true
+        },
+        {
+          "scenario": "TUI approve with stale token/version",
+          "detection": "\"a\" forwards \"o\"-present token; daemon validates",
+          "response": "presentation-superseded/version-mismatch → disabled; re-open re-presents",
+          "userImpact": "TUI gated, fail-closed",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "AMD with empty mdPath",
+          "expected": "Opens via deliveryEvidence (contentVersion + real delta); present with version; AMD branch → approveAmendment(approvedBy)"
+        },
+        {
+          "input": "Test-record paths",
+          "expected": "NotApprovableError before token check — unchanged"
+        },
+        {
+          "input": "Case-differing ids",
+          "expected": "Case-insensitive match; declared names echoed; recorded→presented mapping preserves them"
+        },
+        {
+          "input": "Re-present same version",
+          "expected": "New token issued; old superseded"
+        },
+        {
+          "input": "Re-present different version",
+          "expected": "presentedContentVersion updated; old presenters fail closed"
+        },
+        {
+          "input": "artifactIds naming approved or terminal-rejected AMD",
+          "expected": "BatchNotListedError unless list matches pending exactly"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Review gates unchanged: block verdict + other-party withhold and honor overrideReview as meta.reviewOverride.",
+          "source": "c1"
+        },
+        {
+          "text": "Stale-review fingerprint freshness withholds even with overrides or enforcement off — non-overridable.",
+          "source": "c8"
+        },
+        {
+          "text": "All bookkeeping fields (incl. presentedContentVersion, lastReviewWriteAt) excluded from the BUILD review fingerprint.",
+          "source": "c9"
+        },
+        {
+          "text": "Non-lossy batch; test records never approvable; WRITE-ONCE rangeBase; non-AMD reject→approve clears rejection; AMD rejected terminal; AMD approvedBy preserved.",
+          "source": "c13"
+        },
+        {
+          "text": "workflow.pending stays a pure read of approvedAt/rejectedAt (AMD via status).",
+          "source": "c6"
+        },
+        {
+          "text": "MCP keeps public { presented, notPending } and holds no approval logic.",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Token+version gate matrix; recordPresentations token issuance + presentedContentVersion; per-name partial success; batch coverage; AMD gate + approvedBy + terminal reject; exclusions; delivery contentVersion.",
+          "subjects": [
+            "src/workflow/presentations.ts",
+            "src/workflow/gates.ts",
+            "src/workflow/amendments/store.ts",
+            "src/workflow/code-review/input-fingerprint.ts",
+            "src/workflow/artifact-content.ts",
+            "src/workflow/delivery/load.ts"
+          ],
+          "fixturesNeeded": [
+            "tmp stores with crafted meta incl. AMD; renders with known contentVersions"
+          ]
+        },
+        {
+          "level": "contract",
+          "purpose": "method-class; daemon-stream types carry presentToken/artifactIds/approvedBy/contentVersion; MCP schemas + public present shape; skipped reasons; delivery handlers tests; approveAmendment signature.",
+          "subjects": [
+            "src/mcp/daemon-stream.ts",
+            "src/mcp/server.ts",
+            "src/daemon/threads/method-class.ts",
+            "src/workflow/delivery/handlers.ts"
+          ],
+          "fixturesNeeded": [
+            "extend present-dispatch, review-rule-text, store.test, delivery handlers.test, method-class.test"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Real socket: A/B stale-view scenario fails closed then recovers; equal-ms race fails closed via version; no-token refused; batch; override; non-AMD reject recovery; AMD terminal reject; concurrent clients over ALL publication paths.",
+          "subjects": [
+            "daemon IPC + gates + presentations + all writers + store"
+          ],
+          "fixturesNeeded": [
+            "scratch repo with DEF/LLD/PLAN/BUILD/CR + AMD",
+            "two concurrent clients",
+            "fake in-flight review"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Client wiring: fetch version → present-with-version (token) → approve-with-token order in VS Code/JetBrains/TUI; mismatch re-open.",
+          "subjects": [
+            "vscode-plugin docs-review-client.ts",
+            "jetbrains DaemonGateway.kt",
+            "src/cli/panes/WorkflowsPane.tsx",
+            "src/cli/services/workflow.ts"
+          ],
+          "fixturesNeeded": [
+            "existing harnesses with fake daemon"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "REQUIREMENT: approval only with the matching unconsumed presentToken for the current version. Tests: unit token matrix; integration present→approve."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "REQUIREMENT: no/wrong token → machine-readable refusal, approvedAt never stamped. Tests: unit reject matrix; integration no-token."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "REQUIREMENT: epicHash requires explicit artifactIds covering all pending. Tests: BatchNotListedError; full-list only-presented."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "REQUIREMENT: overrides token-gated; stale-review non-overridable. Tests: override-without-token refused; stale-review with override withheld."
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "REQUIREMENT: bookkeeping fields never invalidate a BUILD fingerprint; material changes still do. Tests: exclusions; review→present→approve regression; source change → stale-review."
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "REQUIREMENT: approver bound to displayed version (A/B scenario, equal-ms race fail closed); AMD gated with approvedBy + terminal reject; non-AMD rejection recovers. Tests: A/B integration; AMD unit; reject→re-present→approve."
+          ]
+        },
+        {
+          "criterionId": "ac7",
+          "provingTests": [
+            "REQUIREMENT: all production writers (incl. questions.ts, resolve-comment.ts) serialize under the lock with fresh reread; no lost updates. Tests: concurrent-clients over all publication paths."
+          ]
+        },
+        {
+          "criterionId": "ac8",
+          "provingTests": [
+            "REQUIREMENT: public contracts stable — MCP shape, transport, method-class, delivery contentVersion, client call order. Tests: contract suites; client/TUI wiring; migrated suites."
+          ]
+        }
+      ],
+      "testFramework": "node:test via tsx; socket integration per steering-refresh-through-daemon.test.ts; client/TUI harnesses with fake daemon. Criterion source: triage scope statement (params.storySpec / meta.triageRationale); ac1-ac8 requirement statements inline above are authoritative for this standalone story."
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Timestamp-ordered freshness",
+        "oneLineSummary": "presentedAt < lastReviewWriteAt + TTL.",
+        "approach": "ISO timestamp comparison.",
+        "pros": [
+          "Simple"
+        ],
+        "cons": [
+          "ms-equality accepts pre-review presentations; no caller binding"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Unsound (round-4 finding)."
+      },
+      {
+        "id": "a2",
+        "name": "Token-bound approval only",
+        "oneLineSummary": "Approval carries presentToken; stored-token equality + TTL under lock.",
+        "approach": "Re-presentation refreshes token; approve consumes.",
+        "pros": [
+          "Superseded presentations fail closed",
+          "No clock dependence"
+        ],
+        "cons": [
+          "Alone does not prove presented content == current content"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Necessary but not sufficient."
+      },
+      {
+        "id": "a3",
+        "name": "Token + contentVersion bound approval",
+        "oneLineSummary": "Token equality AND current render === presentedContentVersion under the lock; TTL coarse expiry only.",
+        "approach": "As in s4; all surfaces forward the token.",
+        "pros": [
+          "Approver bound to exact displayed version",
+          "Fail-closed on any drift",
+          "No wall-clock ordering"
+        ],
+        "cons": [
+          "All approval surfaces must forward the token"
+        ],
+        "costEstimate": "M"
+      }
+    ],
+    "chosenAlternative": "a3",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/gates.ts:629-720",
+      "quotedText": "approveArtifactByJsonPath/approveArtifactOwned: review block, otherPartyReviewGap, BUILD freshness, overrideReview recorded; reject cleared on approve; rangeBase write-once."
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/mcp/server.ts:1126-1165",
+      "quotedText": "handleWorkflowApprove forwards; MCP present returns { presented, notPending } — public shape preserved."
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/pending.ts",
+      "quotedText": "Pure scan: approvedAt absent AND rejectedAt absent; AMDs via art.status."
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/gate.ts",
+      "quotedText": "enforceCodeReviewGate returns stale-review before enforcement or override settings — non-overridable."
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/input-fingerprint.ts:25",
+      "quotedText": "BUILD_APPROVAL_IDENTITY_EXCLUSIONS = [approvedAt, rejectedAt, rejectReason, reviewOverride]; deleted before hashing."
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/workflow/amendments/store.ts:16",
+      "quotedText": "AMD status transitions pending → approved | rejected exactly once; no un-reject — a rejected id is dead; approveAmendment writes approvedBy."
+    },
+    {
+      "id": "c16",
+      "kind": "code",
+      "ref": "src/workflow/artifact-content.ts:98",
+      "quotedText": "contentVersionOf(markdown) hashes the rendered markdown; handleArtifactContent returns { renderedMarkdown, contentVersion }."
+    },
+    {
+      "id": "c17",
+      "kind": "code",
+      "ref": "src/daemon/steps/review-step/phases/findings.ts:91",
+      "quotedText": "Review publication writeAtomic of full artifact — migrated under withArtifactWriter."
+    },
+    {
+      "id": "c18",
+      "kind": "code",
+      "ref": "src/daemon/steps/review-step/phases/verdicts.ts:96",
+      "quotedText": "Verdicts publication — same migration."
+    },
+    {
+      "id": "c19",
+      "kind": "code",
+      "ref": "src/workflow/code-review/runner.ts:172",
+      "quotedText": "Code-review publication via deps.write/writeAtomic — migrated."
+    },
+    {
+      "id": "c20",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/provenance/writer.ts",
+      "quotedText": "writeArtifactJson writeFileSync whole envelope — migrated under the lock."
+    },
+    {
+      "id": "c21",
+      "kind": "code",
+      "ref": "src/workflow/questions.ts",
+      "quotedText": "recordResolution reads whole artifact and writeAtomic the full JSON + rerenders md — migrated under the lock with fresh reread."
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/workflow/resolve-comment.ts",
+      "quotedText": "resolveTargetQuestion reads and rewrites the whole envelope — migrated under the lock."
+    },
+    {
+      "id": "c23",
+      "kind": "code",
+      "ref": "src/workflow/delivery/handlers.ts",
+      "quotedText": "handleDeliveryEvidence returns artifactId/kind/meta/body/renderedMarkdown with no contentVersion — gained, with AMD real-delta rendering."
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/cli/services/workflow.ts:161",
+      "quotedText": "TUI approval calls approveArtifactByJsonPath directly — now forwards presentToken."
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/cli/panes/WorkflowsPane.tsx",
+      "quotedText": "\"a\" directly doApprove — \"o\" open-and-read presents on open; \"a\" forwards the token."
+    }
+  ]
+}

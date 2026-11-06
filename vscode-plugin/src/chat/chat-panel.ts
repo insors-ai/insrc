@@ -23,13 +23,13 @@ import { envelope, type WebviewToHost, type HostToWebview, type PermissionMode }
 import { AttachmentRefused, MAX_ATTACHMENT_BYTES, MAX_ATTACHMENTS_PER_MESSAGE, type AttachmentRef, type AttachmentStore } from './attachment-store.js';
 // S001 (bugfix): classifyPermissionDenial is the pure classifier that tells a tool-permission gate
 // apart from a working-directory / sandbox-allowlist block (the two must not share an Approve path).
-import { classifyPermissionDenial, type ProviderRegistry, type ProviderId } from './cli-adapter.js';
-import { createApprovalQueue, type ApprovalResolution } from './approval-queue.js';
+import { classifyPermissionDenial, type ProviderRegistry, type ProviderId, type StreamAdapter } from './cli-adapter.js';
+import { type QueuedApproval,  createApprovalQueue, type ApprovalResolution, type ApprovalDecision } from './approval-queue.js';
 import { latestWindow, pageBefore } from './transcript-window.js';
 import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
-import type { ChatSessionStore, ChatSession, TranscriptEntry, RunConfig } from './session-store.js';
+import type { ActiveChatEntry, ChatSessionStore, ChatSession, ChatStatus, PersistedRequest, TranscriptEntry, RunConfig } from './session-store.js';
 import type { ModelDefinitions } from '../models/definitions.js';
 import { providerIcon, PROVIDER_ICON_SVGS } from './provider-icons.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
@@ -183,6 +183,25 @@ export interface ChatPanelHostDeps {
    */
   readonly continuationWaitMs?: number | undefined;
   /**
+   * E202611031bd72813:S001 t3: how often the active-chats list is recomputed and reposted so done
+   * chats age out (the 60 s purge timer). Default 60_000; tests set it low.
+   */
+  readonly activeListTimerMs?: number | undefined;
+  /**
+   * E202611031bd72813:S001 t5: the session-output store (for cursor registration/retention) behind
+   * the detached-session observer. Absent -> the observer does not run.
+   */
+  readonly sessionOutput?: import('./session-output.js').SessionOutput | undefined;
+  /**
+   * E202611031bd72813:S001 t5: how often the background observer reconciles detached chats.
+   * Default 60_000; tests set it low. Per-tick ingestion is budgeted.
+   */
+  readonly observerTimerMs?: number | undefined;
+  /** E202611031bd72813:S001 t5: per-tick ingestion budget for the observer (ms). Default 2000. */
+  readonly observerTickBudgetMs?: number | undefined;
+  /** t6: how long a follow-up run may wait to spawn before the decision is recorded delivery-failed. */
+  readonly followUpDeliveryTimeoutMs?: number | undefined;
+  /**
    * Epic E20261014613abdb3 Story S001: builds this window's worker over the repository's chat queue,
    * given the host's runner. Present: typed messages go through the queue and run in order. Absent
    * (node:sqlite unavailable, or tests): messages start their turns directly, as before.
@@ -290,6 +309,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     isAlive: deps.isAlive ?? defaultIsAlive,
     isOpen: () => !disposed,
     logger: log,
+    sessionOutput: deps.sessionOutput, // t5: register live/follow cursors for retention
   });
   // S001 (bugfix): the SINGLE chat mode (Manual / Edit Automatically / Auto). It is now a PERSISTED
   // per-session preference: it tracks the ACTIVE session's stored mode (synced on open/switch/
@@ -301,7 +321,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     s !== undefined && (s.mode === 'edit-auto' || s.mode === 'auto' || s.mode === 'manual') ? s.mode : 'manual';
   // Run-config controls (bottom-right popup + gauge): the daemon's model definitions,
   // loaded once at host start; when they land, a wired panel re-renders with them.
-  let runCatalog: readonly RunProviderView[] = [];
+  let runCatalog: readonly RunProviderView[] = deps.providers.available.map((id) => ({ id, label: id, models: [] }));
   const refreshRunCatalog = (): void => {
     if (deps.definitions === undefined) return;
     void deps.definitions().then((d) => {
@@ -325,7 +345,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // S004 (dev-chat ux polish): pending selection requests, requestId -> the widget's options.
   // Populated when a turn surfaces a selection-request (parsed from an `insrc:select` marker),
   // consumed by a selection-decision to map the chosen ids back to labels. Cleared on decision.
-  const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }> }>();
+  const pendingSelections = new Map<string, { options: ReadonlyArray<{ id: string; label: string }>; prompt?: string | undefined; multi?: boolean | undefined }>();
   // Epic E20261014613abdb3 Story S001: the queued message this window is running, and what its
   // turns (the message's own and its continuations) have reported so far.
   interface QueuedRun {
@@ -564,6 +584,356 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
   const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
+  // E202611031bd72813:S001 t3: the active-chats dropdown feed — recomputed (purge included) on every
+  // status change, on history refresh, and on a 60 s timer so done chats age out of the list.
+  // E202611031bd72813:S001 t4 ac4: project to the exact protocol ActiveChatEntry wire shape
+  // (id/title/provider/status/lastActivityAt) — the store's entry also carries updatedAt, which
+  // is a history-list field, not an active-list field. `provider` rides along so the dropdown
+  // can paint the provider icon next to the chat title (UX feedback).
+  const postActive = (): void => post({ type: 'active-list', chats: deps.store.activeChats().map((c) => ({ id: c.id, title: c.title, provider: c.provider, status: c.status, lastActivityAt: c.lastActivityAt })) });
+  let activeTimer: ReturnType<typeof setInterval> | undefined;
+  const startActiveTimer = (): void => {
+    if (activeTimer !== undefined) return;
+    activeTimer = setInterval(() => { if (!disposed) postActive(); }, deps.activeListTimerMs ?? 60_000);
+  };
+
+  // E202611031bd72813:S001 t5 — the 60 s lossless observer for detached chats. For each active
+  // session whose saved turn this host does not run and whose owner host is dead, it ingests the
+  // remaining output through the provider adapter from the persisted observer checkpoint (own
+  // cursor, registered for retention), persisting requests before any completion/death transition.
+  let observerTimer: ReturnType<typeof setInterval> | undefined;
+  let observerRunning = false; // passes never overlap: a tick is skipped while one is in flight
+  // Generations this host's observer currently pins (key `${sessionId}:${generation}`), held
+  // ACROSS ticks while there may be unread output; registered once per generation (refcounted),
+  // released only when a pass caught up or the turn reached a real terminal.
+  const heldPins = new Map<string, { sessionId: string; turnId: string; generation: number; offset: number }>();
+  const runObserverPass = async (): Promise<void> => {
+    if (observerRunning || disposed) return;
+    observerRunning = true;
+    try {
+      await observeDetached();
+    } finally {
+      observerRunning = false;
+    }
+  };
+  const startObserverTimer = (): void => {
+    if (observerTimer !== undefined || deps.sessionOutput === undefined) return;
+    observerTimer = setInterval(() => { void runObserverPass(); }, deps.observerTimerMs ?? 60_000);
+  };
+  /** Persists a request onto the fresh record (union by requestId); returns whether it is UNRESOLVED. */
+  const persistRequest = (s: ChatSession, r: PersistedRequest): boolean => {
+    try {
+      const fresh = deps.store.get(s.id) ?? s;
+      const existing = fresh.pendingRequests ?? [];
+      // MR1-R3: replay detection is scoped to the originating turn — a LATER turn reusing the same
+      // request id is a new request, not a replay of the earlier (possibly resolved) one
+      const prior = existing.find((x) => x.requestId === r.requestId && x.turnId === r.turnId);
+      if (prior !== undefined) return !prior.resolved; // a replayed, already-resolved request stays resolved
+      fresh.pendingRequests = [...existing, r];
+      deps.store.save(fresh);
+      return true;
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: pendingRequest not saved: ${err instanceof Error ? err.message : String(err)}`);
+      return true;
+    }
+  };
+  const observeDetached = async (): Promise<void> => {
+    const out = deps.sessionOutput;
+    if (out === undefined) return;
+    let chats: readonly ActiveChatEntry[];
+    try {
+      chats = deps.store.activeChats();
+    } catch {
+      return;
+    }
+    const hostPid = deps.hostPid ?? process.pid;
+    for (const c of chats) {
+      const s = deps.store.get(c.id);
+      const live = s?.liveTurn;
+      if (s === undefined || live === undefined) continue;
+      if (live.ownerHostPid === hostPid) continue; // this host's own live/followed turn: the lifecycle owns it
+      if (deps.isAlive !== undefined && live.ownerHostPid !== 0 && deps.isAlive(live.ownerHostPid)) continue; // another live window owns it
+      const turnId = live.cursor.turnId;
+      // The checkpoint is turn-scoped: a checkpoint of ANOTHER turn is never reused. With no valid
+      // checkpoint the observer re-anchors to the TURN'S START (recoverTurn), never to the advanced
+      // transcript cursor with an empty decoder — a fresh full-turn replay is lossless (request ids
+      // dedupe), a mid-stream start could lose a split marker or reuse a selection id.
+      const cpRaw = s.observerCheckpoint;
+      let cp = cpRaw !== undefined && cpRaw.turnId === turnId ? cpRaw : undefined;
+      // Whether the pass anchors at the TURN'S START (no valid checkpoint -> recoverTurn): such a
+      // replay must truncate to the turn-start transcript length, so rows the live reader already
+      // persisted for THIS turn are replaced, not duplicated.
+      let anchorIsTurnStart = false;
+      // A replaying pass (rewind / SegmentGone re-anchor / first pass after detach) re-reads
+      // already-ingested events: truncate the transcript back to the last persisted length at the
+      // anchor point — the checkpoint's transcriptLen, or the liveTurn's turnStartLen for a
+      // turn-start anchor, or the liveTurn's current stamp — so re-appended rows replace, never
+      // duplicate, already-persisted rows.
+      // anchorIsTurnStart means the pass replays from the TURN'S START; only a successful recoverTurn
+      // sets it — the fallback below replays from the ADVANCED live cursor, where truncating to the
+      // turn-start length would delete consumed rows without replaying them.
+      const anchorLen = (): number | undefined =>
+        anchorIsTurnStart
+          ? (live.turnStartLen ?? live.transcriptLen ?? cp?.transcriptLen) // never 0: a missing stamp must not delete earlier history
+          : (cp?.transcriptLen ?? live.transcriptLen);
+      if (cp === undefined) {
+        try {
+          const rc = await out.recoverTurn(s.id, turnId);
+          if (rc !== undefined) {
+            cp = { turnId, generation: rc.generation, offset: rc.offset, selectionSeq: 0 };
+            anchorIsTurnStart = true;
+          }
+        } catch { /* fall back below */ }
+        // Fallback: the liveTurn cursor PAIRED WITH the lifecycle's own decoder state for this turn —
+        // never the advanced offset with an empty decoder (that would lose a split-marker prefix).
+        cp ??= { turnId, generation: live.cursor.generation, offset: live.cursor.offset, selectionSeq: live.decoder?.selectionSeq ?? 0, ...(live.decoder?.selectionBuffer !== undefined && live.decoder.selectionBuffer !== '' ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder?.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}), ...(live.decoder?.toolCommands !== undefined ? { toolCommands: { ...live.decoder.toolCommands } } : {}), ...(live.decoder?.editPaths !== undefined ? { editPaths: { ...live.decoder.editPaths } } : {}) };
+      }
+      // AFTER the anchor is known: the persisted rows below this cut are kept; everything the pass
+      // re-reads past the anchor is collected as pending rows and REPLACES the persisted rows above
+      // the cut at save time — so replays never duplicate already-persisted rows, and the cached
+      // record's transcript is never mutated mid-pass.
+      const baseLen = s.transcript.length;
+      let replayCut = anchorLen() ?? baseLen;
+      let pendingRows: TranscriptEntry[] = [];
+      let ad;
+      try {
+        ad = deps.providers.get(s.provider);
+      } catch {
+        continue;
+      }
+      if (typeof ad.resume !== 'function') continue;
+      const resume = ad.resume.bind(ad);
+      // One ingest pass from `from` with the given decoder state. Its generation is pinned via
+      // heldPins (once per generation, across passes/ticks) — dropped only when the pass caught
+      // up or reached a real terminal; between ticks an unread generation stays pinned.
+      const readerId = `host-${hostPid}`; // one pin per reader: another window's observer may pin the same generation
+      const ingest = async (from: { generation: number; offset: number }, decSeq: number, decBuf: string) => {
+        const cursor = { sessionId: s.id, turnId, generation: from.generation, offset: from.offset };
+        const pinKey = `${s.id}:${cursor.generation}`;
+        if (!heldPins.has(pinKey)) {
+          out.registerCursor(cursor, readerId);
+          heldPins.set(pinKey, cursor);
+        }
+        const ctl = new AbortController();
+        const deadline = Date.now() + (deps.observerTickBudgetMs ?? 2000);
+        // Budget watchdog: bounds the pass even while the followed process is idle and no events
+        // arrive (tail otherwise waits indefinitely), so a tick always ends and passes never overlap.
+        const watchdog = setTimeout(() => {
+          st.abortedByBudget = true;
+          ctl.abort();
+        }, deps.observerTickBudgetMs ?? 2000);
+        watchdog.unref?.();
+        // seed the decoder-carried fields from the checkpoint: an idle, budget-aborted pass gets no
+        // onDecoderState callback, and the checkpoint write below must not drop what the previous pass captured
+        const st = { sawTerminal: cp.sawTerminal === true, sawObservationFailure: false, syntheticEofOnly: true, abortedByBudget: false, threw: false, ingestedAny: false, last: cursor, seq: decSeq, buf: decBuf, nativeSessionId: cp.sessionId, toolCommands: cp.toolCommands !== undefined ? { ...cp.toolCommands } : undefined as Record<string, string> | undefined, editPaths: cp.editPaths !== undefined ? { ...cp.editPaths } : undefined as Record<string, string> | undefined, preTerminal: undefined as { generation: number; offset: number; seq: number; buf: string; rows: number } | undefined };
+        try {
+          const events = resume(
+            { cursor, pid: live.pid, startedAt: live.startedAt ?? null, decoderState: { selectionSeq: decSeq, ...(decBuf !== '' ? { selectionBuffer: decBuf } : {}), ...(cp.sessionId !== undefined ? { sessionId: cp.sessionId } : {}), ...(cp.toolCommands !== undefined ? { toolCommands: { ...cp.toolCommands } } : {}), ...(cp.editPaths !== undefined ? { editPaths: { ...cp.editPaths } } : {}) }, ...(cp.sawTerminal === true ? { sawTerminal: true } : {}) },
+            {
+              drain: true, // read the WHOLE segment, past the terminal event — caught-up means drained
+              signal: ctl.signal,
+              onProgress: (cur) => {
+                st.last = { ...cursor, offset: cur.offset };
+                if (Date.now() > deadline && !ctl.signal.aborted) {
+                  st.abortedByBudget = true;
+                  ctl.abort(); // per-tick budget: pause, never discard
+                }
+              },
+              onDecoderState: (ds) => {
+                st.seq = ds.selectionSeq;
+                st.buf = ds.selectionBuffer;
+                // capture the native session id as soon as the decoder sees it (codex thread.started /
+                // claude init) — a budget-limited pass that consumed it before completing still persists it
+                if (ds.sessionId !== undefined) st.nativeSessionId = ds.sessionId;
+                // and the tool_use -> command/edit-path correlations, so a budget boundary between
+                // tool_use and tool_result cannot drop them
+                if (ds.toolCommands !== undefined) st.toolCommands = { ...ds.toolCommands };
+                if (ds.editPaths !== undefined) st.editPaths = { ...ds.editPaths };
+              },
+            },
+          );
+          for await (const ev of events) {
+            st.ingestedAny = true;
+            // capture the pre-terminal cursor+decoder+transcript length BEFORE the terminal event's
+            // row is appended, so a budget rewind replays from a point whose transcriptLen excludes it
+            if ((ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) && st.preTerminal === undefined) {
+              st.preTerminal = { generation: st.last.generation, offset: st.last.offset, seq: st.seq, buf: st.buf, rows: pendingRows.length };
+            }
+            // collect the event's transcript row exactly like the live path maps it (rowForEvent), so
+            // an observer-completed detached chat reopens with its output, not an empty transcript.
+            // Observation failures are transient read errors, not durable output — never persisted.
+            if (!(ev.kind === 'error' && ev.observationFailure === true)) {
+              const row = rowForEvent(ev);
+              if (row !== undefined) pendingRows.push(row);
+            }
+            if (ev.kind === 'approval-request') {
+              // waiting-input only if the request is actually unresolved — a replayed, already
+              // resolved request must not flip the chat back to waiting-input
+              if (persistRequest(s, { requestId: ev.requestId, kind: 'approval', turnId: ev.turnId, title: ev.title, detail: ev.detail, ...(ev.toolName !== undefined ? { toolName: ev.toolName } : {}), ...(ev.command !== undefined ? { command: ev.command } : {}), resolved: false })) setChatStatus(s, 'waiting-input');
+            } else if (ev.kind === 'selection-request') {
+              if (persistRequest(s, { requestId: ev.requestId, kind: 'selection', turnId: ev.turnId, prompt: ev.prompt, options: ev.options.map((o) => o.label), ...(ev.multi === true ? { multi: true } : {}), resolved: false })) setChatStatus(s, 'waiting-input');
+            } else if (ev.kind === 'tool-call' && ev.present !== undefined) {
+              // E202611031bd72813:S001 t8: a DETACHED chat's insrc_present is still dispatched to the
+              // presenter (each declaration opens its own presentKey panel), deduped by declarationId.
+              const decl = declarationIdOf(ev);
+              // MR4: the shared durable identity covers the follow reader's replays too
+              if (!declarationDispatched(s, decl)) {
+                markDeclarationDispatched(s, decl);
+                const declared = new Set(s.observerCheckpoint?.declaredIds ?? []);
+                declared.add(decl.id);
+                const base = s.observerCheckpoint ?? { turnId, generation: cp.generation, offset: cp.offset, selectionSeq: cp.selectionSeq };
+                s.observerCheckpoint = { ...base, declaredIds: [...declared] };
+                try {
+                  deps.store.save(s);
+                } catch { /* best-effort */ }
+                const presenter = deps.presenter;
+                if (presenter !== undefined) {
+                  try {
+                    const shown = presenter.begin();
+                    void shown
+                      .declared(ev.present)
+                      .then((outcome) => {
+                        shown.end();
+                        if (outcome.unreadable) log.warn(`[chat] session ${s.id}: a detached insrc_present could not be read`);
+                      })
+                      .catch((err: unknown) => log.error(`chat: the review presenter failed on a detached declaration: ${err instanceof Error ? err.message : String(err)}`));
+                  } catch (err) {
+                    log.error(`chat: the review presenter failed on a detached declaration: ${err instanceof Error ? err.message : String(err)}`);
+                  }
+                }
+              }
+            } else if (ev.kind === 'error') {
+              if (ev.observationFailure === true) {
+                st.sawObservationFailure = true;
+                // only the synthetic EOF error ('the turn ended without a result') is excusable by
+                // verified death; a real read failure / SegmentGone must block caught-up
+                if (ev.message !== 'the turn ended without a result') st.syntheticEofOnly = false;
+              }
+              else {
+                st.sawTerminal = true;
+              }
+            } else if (ev.kind === 'done') {
+              st.sawTerminal = true;
+              // keep the provider's native session id (same rule as the live path's keepNativeSession),
+              // so the next turn can resume the detached session's CLI thread
+              if (ev.sessionId !== undefined) st.nativeSessionId = ev.sessionId;
+            }
+            if (Date.now() > deadline && !ctl.signal.aborted) {
+              st.abortedByBudget = true;
+              ctl.abort();
+            }
+          }
+        } catch {
+          if (!ctl.signal.aborted) st.threw = true; // the cursor stays; recovery below re-anchors
+        } finally {
+          clearTimeout(watchdog);
+        }
+        return { ...st, cursor };
+      };
+      let pass = await ingest({ generation: cp.generation, offset: cp.offset }, cp.selectionSeq, cp.selectionBuffer ?? '');
+      // SegmentGone / output-read failure recovery: re-anchor into the oldest retained generation
+      // that still holds this turn and replay from its start with a FRESH decoder. Replay is
+      // lossless, not duplicating: persisted requests dedupe by requestId on re-ingest.
+      if (pass.sawObservationFailure && !pass.abortedByBudget && !pass.threw) { // a prior terminal in the checkpoint does not block re-anchoring
+        try {
+          const oldest = await out.oldestRetainedGeneration(s.id);
+          const rc = oldest !== undefined ? await out.recoverTurn(s.id, turnId) : undefined;
+          if (rc !== undefined && (rc.generation !== pass.cursor.generation || rc.offset !== pass.cursor.offset)) {
+            // the re-anchor replays from the TURN'S START: collect rows afresh and cut at the
+            // turn-start length (never below the pass-start cut when the stamp is missing)
+            pendingRows = [];
+            replayCut = live.turnStartLen ?? replayCut;
+            pass = await ingest(rc, 0, '');
+          }
+        } catch { /* keep the failed pass */ }
+      }
+      // caught up = the iterator drained to the end of the available output without a budget abort,
+      // an observation failure, or a thrown pass
+      // caught up = drained to the end of the available output without an abort/failure — reading
+      // nothing new also counts when the checkpoint already holds an ingested terminal.
+      const pidDead0 = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
+      // caught up = drained without abort/throw; an observation failure does not block it when the
+      // process is VERIFIED dead (the synthetic EOF error is expected then).
+      const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.threw && (!pass.sawObservationFailure || (pidDead0 && pass.syntheticEofOnly));
+      // persist the checkpoint (turn-scoped: own cursor + decoder progress). A terminal seen in a
+      // NOT-caught-up pass is not checkpointed past: the next pass re-reads from just before the
+      // terminal event, so the completion gate (caught up AND (terminal or verified death)) applies.
+      // Rewind a not-caught-up terminal to just before it — ONCE (a sustained budget exhaustion
+      // must not replay the same prefix forever; after one rewind the checkpoint advances normally).
+      const rewind = pass.sawTerminal && !caughtUp && cp.sawTerminal !== true;
+      const persistAt = rewind ? (pass.preTerminal ?? pass.last) : pass.last;
+      const persistSeq = rewind ? (pass.preTerminal?.seq ?? pass.seq) : pass.seq;
+      const persistBuf = rewind ? (pass.preTerminal?.buf ?? pass.buf) : pass.buf;
+      // A rewind keeps only the rows collected up to the pre-terminal point.
+      const keptRows = rewind ? (pass.preTerminal?.rows ?? 0) : pendingRows.length;
+      let checkpointSaved = false;
+      // Re-fetch and check the liveTurn identity BEFORE persisting anything: if another window
+      // reattached or a newer turn started mid-pass, this pass must not write the checkpoint or the
+      // transcript at all — the new owner owns the record.
+      const fresh0 = deps.store.get(s.id);
+      const stillSameTurn = fresh0?.liveTurn !== undefined && fresh0.liveTurn.cursor.turnId === live.cursor.turnId && fresh0.liveTurn.cursor.generation === live.cursor.generation && fresh0.liveTurn.cursor.offset === live.cursor.offset && fresh0.liveTurn.ownerHostPid === live.ownerHostPid;
+      try {
+        if (!stillSameTurn) throw new Error('turn taken over mid-pass');
+        const fresh = fresh0 ?? s;
+        // Merge without ever mutating the cached record mid-pass: keep the fresh record's rows below
+        // the replay cut, then this pass's collected rows, then any rows another window appended
+        // during ingestion (beyond what this pass fetched at its start). Nothing is discarded.
+        const cut = Math.min(replayCut, fresh.transcript.length);
+        const concurrentSuffix = fresh.transcript.length > baseLen ? fresh.transcript.slice(baseLen) : [];
+        const merged = [...fresh.transcript.slice(0, cut), ...pendingRows.slice(0, keptRows), ...concurrentSuffix];
+        const toSave: ChatSession = { ...fresh, transcript: merged };
+        if (pass.nativeSessionId !== undefined) toSave.nativeSessionId = pass.nativeSessionId;
+        toSave.observerCheckpoint = { turnId, generation: persistAt.generation, offset: persistAt.offset, selectionSeq: persistSeq, ...(persistBuf !== '' ? { selectionBuffer: persistBuf } : {}), ...(pass.nativeSessionId !== undefined ? { sessionId: pass.nativeSessionId } : {}), ...(pass.toolCommands !== undefined ? { toolCommands: { ...pass.toolCommands } } : {}), ...(pass.editPaths !== undefined ? { editPaths: { ...pass.editPaths } } : {}), ...(pass.sawTerminal ? { sawTerminal: true } : {}), ...(rewind ? { rewound: true } : {}), ...(fresh.observerCheckpoint?.declaredIds !== undefined ? { declaredIds: fresh.observerCheckpoint.declaredIds } : {}), transcriptLen: cut + keptRows };
+        deps.store.save(toSave);
+        checkpointSaved = true;
+      } catch { /* best-effort — pins are NOT released below if this failed; a takeover retries next pass */ }
+      // transitions: requests were ingested BEFORE any completion/death transition; done requires a
+      // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
+      // caught-up observer; budget exhaustion and observation failures keep the last known status
+      const pidDead = pidDead0;
+      // the completion gate: caught up AND (a real terminal OR verified process death)
+      if (caughtUp && checkpointSaved && (pass.sawTerminal || pidDead)) {
+        // A newer turn may have started while this pass was ingesting: re-check the liveTurn identity
+        // before clearing — never erase a new turn's cursor or mark it done from an old pass.
+        const now = deps.store.get(s.id);
+        const same = now?.liveTurn !== undefined && now.liveTurn.cursor.turnId === live.cursor.turnId && now.liveTurn.cursor.generation === live.cursor.generation && now.liveTurn.cursor.offset === live.cursor.offset && now.liveTurn.ownerHostPid === live.ownerHostPid;
+        if (same) {
+          let transitionSaved = false;
+          try {
+            // release the lifecycle's retention pin for this cursor too (the observer's own pin is
+            // released via heldPins above); the refcount makes a double-release a no-op
+            out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
+            // ONE atomic write clears liveTurn AND sets the final status, on a COPY: the store's
+            // get() returns its cached (mutable) record, so mutating it before save would leave the
+            // cache showing no liveTurn even when the write fails — and every later pass skips such
+            // a session, permanently unreconciled. Mutating only the copy means a failed save leaves
+            // both the cache and the disk untouched, so the next pass retries the whole transition.
+            const { liveTurn: _cleared, ...rest } = now!;
+            const next: ChatSession = {
+              ...rest,
+              status: (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done',
+              lastActivityAt: Math.max(now!.lastActivityAt ?? 0, Date.now()),
+            };
+            deps.store.save(next);
+            transitionSaved = true;
+          } catch { /* best-effort: the next pass retries the whole transition */ }
+          if (transitionSaved) postActive();
+        }
+      }
+      // retention ends only when there is nothing left to protect: a caught-up pass or a real
+      // terminal drops every pin this tick made; otherwise the unread generation stays archived
+      // Pins are released only when the pass caught up AND the checkpoint was durably saved —
+      // a failed save must not let the archive be deleted under a checkpoint that needs it.
+      if (caughtUp && checkpointSaved) {
+        for (const [key, cur] of [...heldPins]) {
+          if (key.startsWith(`${s.id}:`)) {
+            heldPins.delete(key);
+            out.unregisterCursor(cur, readerId);
+          }
+        }
+      }
+    }
+  };
 
   // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
   // it wrote (none for an event that writes no row), so the webview knows which row each node is.
@@ -677,6 +1047,34 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     }
   };
 
+  // E202611031bd72813:S001 t2 — active-chat status precedence (LLD s5): waiting-input while ANY
+  // approval/selection request is unresolved; working while a turn runs; done at terminal with none.
+  const unresolvedRequests = (): boolean => approvals.head() !== undefined || pendingSelections.size > 0;
+  const setChatStatus = (s: ChatSession, status: ChatStatus): void => {
+    // a failing status write is logged and never breaks a turn (same rule as trySaveSession)
+    try {
+      deps.store.setStatus(s.id, status);
+      postActive(); // keep the active-chats dropdown in sync on every transition
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: status not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  const reevaluateChatStatus = (s: ChatSession): void => {
+    if (unresolvedRequests()) setChatStatus(s, 'waiting-input');
+    else if (turns.busy()) setChatStatus(s, 'working');
+    // E202611031bd72813:S001 t2: done is reserved for observed completion — a session whose turn
+    // is still unfinished (liveTurn cursor kept, e.g. after an observation failure) keeps its last
+    // known active status instead of being marked done.
+    else if (s.liveTurn === undefined) setChatStatus(s, 'done');
+  };
+
+  /** t6: persist the queue's full snapshot onto the active session (when it is in the store). */
+  const persistQueueSnapshot = (): void => {
+    if (session === undefined || deps.store.get(session.id) === undefined) return;
+    session.queueSnapshot = approvals.snapshot();
+    trySave(session);
+  };
+
   const enqueueApproval = (ev: Extract<TurnEvent, { kind: 'approval-request' }>): void => {
     approvals.enqueue({
       requestId: ev.requestId,
@@ -688,13 +1086,220 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       blockKind: classifyPermissionDenial(ev.detail),
       resolution: resolutionOf(ev),
     });
+    // t6: keep the persisted queue snapshot fresh on every enqueue — otherwise a request arriving
+    // after the last snapshot would be lost on reload (restore replaces the queue with the snapshot)
+    persistQueueSnapshot();
     reportCards(); // Story S002
     showApprovalHead();
+  };
+
+  // E202611031bd72813:S001 t6: mark one persisted request resolved with its outcome (never deleted mid-flight).
+  /** t6: make sure an unresolved persisted record exists for requestId, so a host reload while
+   * its follow-up is pending still has a restorable request (card re-posted, re-decidable). */
+  const ensurePersistedUnresolved = (s: ChatSession, requestId: string, turnId?: string): void => {
+    if ((s.pendingRequests ?? []).some((r) => r.requestId === requestId && (turnId === undefined || r.turnId === turnId))) return;
+    s.pendingRequests = [...(s.pendingRequests ?? []), { requestId, kind: 'approval', turnId: turnId ?? s.liveTurn?.cursor.turnId ?? 'unknown', resolved: false }];
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: request ${requestId} not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  const markPersistedRequest = (s: ChatSession | undefined, requestId: string, resolved: boolean, outcome?: string, turnId?: string): void => {
+    if (s === undefined) return;
+    const list = s.pendingRequests ?? [];
+    // MR1-R3: outcome correlation is turn-scoped — a later turn reusing the request id must not
+    // overwrite the earlier turn's record
+    const i = list.findIndex((r) => r.requestId === requestId && (turnId === undefined || r.turnId === turnId || r.turnId === 'unknown'));
+    const matchTurn = turnId ?? s.liveTurn?.cursor.turnId ?? 'unknown';
+    if (i < 0) {
+      // never persisted (fresh live request): upsert a minimal record so the outcome (e.g.
+      // delivery-failed) is not silently dropped
+      if (outcome === undefined) return;
+      list.push({ requestId, kind: 'approval', turnId: matchTurn, resolved, outcome });
+      s.pendingRequests = list;
+      try {
+        deps.store.save(s);
+      } catch (err) {
+        log.warn(`[chat] session ${s.id}: request ${requestId} outcome not saved: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      return;
+    }
+    const cur = list[i]!;
+    if (cur.resolved === resolved && cur.outcome === outcome) return;
+    const next = [...list];
+    next[i] = { ...cur, resolved, ...(outcome !== undefined ? { outcome } : {}) };
+    s.pendingRequests = next;
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: request ${requestId} outcome not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  // E202611031bd72813:S001 t6: write the queue's waiting requests + pending selections onto the
+  // session's persisted pendingRequests BEFORE they are dropped (outcome set when they are being
+  // resolved as rejected/superseded/timed-out; unresolved when they stay actionable across a switch).
+  const persistPendingBeforeClear = (s: ChatSession | undefined, outcome?: string): void => {
+    if (s === undefined) return;
+    // A DRAFT session is not in history yet (it persists on its first turn) — nothing to save onto.
+    if (deps.store.get(s.id) === undefined) return;
+    const existing = [...(s.pendingRequests ?? [])];
+    let changed = false;
+    const upsert = (rec: import('./session-store.js').PersistedRequest): void => {
+      const i = existing.findIndex((r) => r.requestId === rec.requestId);
+      if (i >= 0) existing[i] = rec;
+      else existing.push(rec);
+      changed = true;
+    };
+    for (const r of approvals.snapshot().waiting) {
+      upsert({
+        requestId: r.requestId,
+        kind: 'approval',
+        turnId: r.turnId,
+        title: r.title,
+        detail: r.detail,
+        blockKind: r.blockKind,
+        ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+        ...(r.command !== undefined ? { command: r.command } : {}),
+        resolved: outcome !== undefined,
+        ...(outcome !== undefined ? { outcome } : {}),
+      });
+    }
+    for (const [requestId, sel] of pendingSelections) {
+      upsert({
+        requestId,
+        kind: 'selection',
+        ...(sel.prompt !== undefined ? { prompt: sel.prompt } : {}),
+        options: sel.options.map((o) => o.label),
+        ...(sel.multi === true ? { multi: true } : {}),
+        resolved: outcome !== undefined,
+        ...(outcome !== undefined ? { outcome } : {}),
+      });
+    }
+    const snap0 = approvals.snapshot();
+    if (!changed && snap0.waiting.length === 0 && snap0.batches.length === 0 && snap0.ended.length === 0 && snap0.grants.length === 0 && pendingSelections.size === 0) return; // completely empty: leave the stored record byte-identical
+    s.pendingRequests = existing;
+    // the FULL queue state (waiting, batches, ended turns, grant chain) — not just waiting — so a
+    // restore can rebuild the queue exactly, batch decisions and grants included
+    s.queueSnapshot = snap0;
+    try {
+      deps.store.save(s);
+    } catch (err) {
+      log.warn(`[chat] session ${s.id}: pendingRequests not saved: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
+  // E202611031bd72813:S001 t6: re-enter a session's unresolved persisted requests into the live
+  // queue/selection map on attach or webview reload, keyed by their ORIGINAL requestId, and
+  // re-register them with the adapter when their turn is (being) followed — so a decision answers
+  // the same request, and a dead stdin falls back to a follow-up run (relayDecision).
+  const restorePendingRequests = (s: ChatSession): void => {
+    let restored = 0;
+    // the full queue snapshot (waiting, batches, ended, grants) rebuilds the queue exactly
+    const snap = s.queueSnapshot;
+    let snapWaiting: readonly QueuedApproval[] = [];
+    let snapBatches: { readonly turnId: string; readonly decisions: ApprovalDecision[] }[] = [];
+    if (snap !== undefined && Array.isArray(snap.waiting)) {
+      // revive every waiting request EXCEPT those with a persisted RESOLVED record — decisions
+      // update pendingRequests, so an unfiltered restore could revive already-decided requests;
+      // requests with no persisted record at all are kept (they were never persisted)
+      // MR1-R3: resolved-record filtering is turn-scoped — a resolved record from an earlier turn
+      // must not suppress a same-id request from a LATER turn in the snapshot
+      const resolvedRecs = (s.pendingRequests ?? []).filter((r) => r.resolved);
+      snapWaiting = snap.waiting.filter((w) => !resolvedRecs.some((r) => r.requestId === w.requestId && (w.turnId === undefined || r.turnId === w.turnId)));
+      // t6 round-trip: same resolved-record filtering (turn-scoped) for the snapshot's BATCHES —
+      // a batch whose decisions all have resolved persisted records was already delivered; leaving
+      // it in would restore it and let a later runCompletedBatch() re-run the follow-up after reload
+      snapBatches = Array.isArray(snap.batches)
+        ? snap.batches
+            .map((b) => ({ turnId: b.turnId, decisions: b.decisions.filter((d: ApprovalDecision) => !resolvedRecs.some((r) => r.requestId === d.request.requestId && (d.request.turnId === undefined || r.turnId === d.request.turnId))) }))
+            .filter((b) => b.decisions.length > 0)
+        : [];
+      approvals.restore({ ...snap, waiting: snapWaiting, batches: snapBatches });
+      s.queueSnapshot = approvals.snapshot(); // keep the persisted snapshot in sync with the filtered restore
+      trySave(s);
+    }
+    for (const r of s.pendingRequests ?? []) {
+      if (r.resolved) continue;
+      restored += 1;
+      if (r.kind === 'approval') {
+        // turn-scoped like the filters above (MR1-R3): a same-id record/decision from ANOTHER turn
+        // must not count as "already rebuilt" for this turn's record
+        const decidedInBatch = snapBatches.some((b) => b.decisions.some((d) => d.request.requestId === r.requestId && (r.turnId === undefined || d.request.turnId === undefined || d.request.turnId === r.turnId)));
+        if (snapWaiting.some((w) => w.requestId === r.requestId && (r.turnId === undefined || w.turnId === undefined || w.turnId === r.turnId)) || decidedInBatch) {
+          // already rebuilt from the snapshot — only re-register a followed turn's request with the adapter,
+          // and end the turn of a non-in-turn one so its restored batch can complete on decision
+          const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
+          if (!inTurn && r.turnId !== undefined) approvals.endTurn(r.turnId);
+          if (inTurn && r.turnId !== undefined) {
+            try {
+              deps.providers.get(s.provider).registerPending?.(r.turnId, r.requestId);
+            } catch (err) {
+              log.warn(`[chat] session ${s.id}: restored request ${r.requestId} not re-registered: ${err instanceof Error ? err.message : String(err)}`);
+            }
+          }
+          continue;
+        }
+        const inTurn = s.liveTurn !== undefined && r.turnId !== undefined && s.liveTurn.cursor.turnId === r.turnId;
+        approvals.enqueue({
+          requestId: r.requestId,
+          turnId: r.turnId ?? 'restored',
+          title: r.title ?? r.requestId,
+          detail: r.detail ?? '',
+          blockKind: r.blockKind === 'dir-block' ? 'dir-block' : 'tool-gate',
+          ...(r.toolName !== undefined ? { toolName: r.toolName } : {}),
+          ...(r.command !== undefined ? { command: r.command } : {}),
+          resolution: inTurn ? 'in-turn' : 'turn-ended',
+        });
+        if (!inTurn && r.turnId !== undefined) approvals.endTurn(r.turnId); // its turn is gone: the restored batch can complete on decision
+        if (inTurn && r.turnId !== undefined) {
+          try {
+            deps.providers.get(s.provider).registerPending?.(r.turnId, r.requestId);
+          } catch (err) {
+            log.warn(`[chat] session ${s.id}: restored request ${r.requestId} not re-registered: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      } else {
+        pendingSelections.set(r.requestId, {
+          options: (r.options ?? []).map((label) => ({ id: label, label })),
+          ...(r.prompt !== undefined ? { prompt: r.prompt } : {}),
+          ...(r.multi === true ? { multi: true } : {}),
+        });
+      }
+    }
+    for (const r of s.pendingRequests ?? []) if (!r.resolved) restoredRequestIds.add(r.requestId);
+    if (snap !== undefined && Array.isArray(snap.waiting)) {
+      for (const w of snapWaiting) restoredRequestIds.add(w.requestId);
+      restored += snapWaiting.length; // snapshot-only requests (no pendingRequests record) count too
+    }
+    if (restored === 0) return; // nothing to restore: no card posts, no status rewrite, no save
+    showApprovalHead();
+    // LLD s7: restored SELECTIONS re-post their actionable card too (prompt + multi preserved), so
+    // a chat whose LiveTurn cleared still shows its resolvable selection after reattach
+    for (const [requestId, sel] of pendingSelections) {
+      const rec = (s.pendingRequests ?? []).find((r) => r.requestId === requestId);
+      post({
+        type: 'turn-event',
+        event: {
+          kind: 'selection-request',
+          turnId: rec?.turnId ?? 'restored',
+          requestId,
+          prompt: sel.prompt ?? '',
+          options: sel.options,
+          ...(sel.multi === true ? { multi: true } : {}),
+        },
+      });
+    }
+    reportCards();
+    if (session === s) reevaluateChatStatus(s);
   };
 
   // ISSUE-6a811b8a: Stop. Each request still waiting is recorded as rejected, and the queue cleared.
   const rejectQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session, 'rejected'); // t6: persisted (resolved) before the clear
     for (const r of approvals.clear()) recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
     reportCards(); // Story S002
   };
@@ -705,8 +1310,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // follow-up never carries grants from before the typed message.
   const supersedeQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session, 'superseded'); // t6: persisted (resolved) before the clear
     for (const r of approvals.clear()) {
-      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny');
+      if (r.resolution === 'in-turn') relayDecision(r.requestId, 'deny', r.turnId);
       recordPermissionOutcome(r.toolName ?? r.title, false, r.requestId);
     }
     reportCards(); // Story S002
@@ -716,6 +1322,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   // queue is dropped without outcome rows.
   const dropQueuedApprovals = (): void => {
     shownApproval = undefined;
+    persistPendingBeforeClear(session); // t6: unresolved but actionable — saved BEFORE the clear
     approvals.clear();
     reportCards(); // Story S002
   };
@@ -760,13 +1367,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         q.waitTimer = setTimeout(() => {
           if (queued !== q) return;
           rejectQueuedApprovals();
+          persistPendingBeforeClear(session, 'timeout');
           pendingSelections.clear();
           endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+          // E202611031bd72813:S001 t2: the timeout cleared every request — re-evaluate so a
+          // completed turn no longer sits at waiting-input.
+          if (session !== undefined) reevaluateChatStatus(session);
         }, deps.continuationWaitMs ?? CONTINUATION_WAIT_MS);
       }
       return;
     }
-    if (q.viewLost && cardsWaiting) return endQueued({ kind: 'stopped', reason: 'no answer to the approval' });
+    if (q.viewLost && cardsWaiting) { endQueued({ kind: 'stopped', reason: 'no answer to the approval' }); if (session !== undefined) reevaluateChatStatus(session); return; } // E202611031bd72813:S001 t2
     if (q.error !== undefined || q.terminal === 'error') {
       // Story S004: the cause is read from the error text and reported with whether the agent acted; every failed turn is
       // logged with both, so a pattern the classifier missed is visible. The queue decides whether to retry.
@@ -798,6 +1409,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const persistInfo = (s: ChatSession, turnId: string, text: string): void => {
     const ev: TurnEvent = { kind: 'assistant-delta', turnId, text };
     const rowIndex = appendEvent(s, ev);
+    stampLiveTranscriptLen(s);
     postLive(ev, rowIndex);
     post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }); // closes the line, not a turn (ISSUE-160fa1bb)
     trySave(s);
@@ -811,6 +1423,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const runCompletedBatch = (): void => {
     const batch = approvals.takeCompletedBatch();
     if (batch === undefined) return;
+    // t6 round-trip: the removal must be persisted too — the decision handler persists the
+    // snapshot BEFORE this call, so without this the stored queueSnapshot.batches would still
+    // hold the delivered batch and a reload could restore and re-run it
+    persistQueueSnapshot();
     const action = (r: { toolName?: string | undefined; command?: string | undefined }): string =>
       r.command !== undefined && r.command !== '' ? `run exactly this: ${r.command}` : `the ${r.toolName ?? 'tool'} action you requested permission for`;
     const approved = batch.decisions.filter((d) => d.decision === 'approve' && d.request.blockKind === 'tool-gate').map((d) => d.request);
@@ -820,6 +1436,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Nothing to run. A single request keeps today's behaviour (its chip says it all); a batch
       // of several says so once.
       if (batch.decisions.length > 1) postInfo(`info-batch-${batch.turnId}`, 'No action was approved, so nothing was run.');
+      // nothing was delivered (no run happens) — the decisions are still recorded with their outcomes
+      for (const d of batch.decisions) markPersistedRequest(session, d.request.requestId, true, d.decision === 'approve' ? 'approved' : 'denied', d.request.turnId);
       return;
     }
     let prompt: string;
@@ -835,22 +1453,297 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       if (blocked.length > 0) lines.push('Still blocked (outside the allowed working directories) — do not attempt these:', ...blocked.map((r) => `- ${action(r)}`));
       prompt = lines.join('\n');
     }
-    void runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+    // NOT fire-and-forget: mark each decided request with its outcome only once the follow-up has
+    // actually started; if it never starts (dropped chain, no session), the outcome is delivery-failed
+    // — a silent no-op is never recorded as approved. runTurn reports adapter/lock failures as error
+    // events rather than rejecting, so the start is confirmed via busy state in a microtask, with the
+    // promise rejection as a backstop for real throws.
+    const decisions = batch.decisions;
+    // marked with their outcomes only when the follow-up's CLI actually spawns; delivery-failed if
+    // the turn settles without spawning (see the run sink's onSpawn / pendingFollowUp)
+    for (const d of decisions) pendingFollowUps.set(followUpKey(session?.id, d.request.turnId, d.request.requestId), { requestId: d.request.requestId, outcome: d.decision === 'approve' ? 'approved' : 'denied', excludeTurnId: turns.live?.turnId, originTurnId: d.request.turnId, groupId: batch.turnId, sessionId: session?.id });
+    const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true });
+    void p.then(
+      () => {
+        for (const d of decisions) {
+          if (pendingFollowUps.delete(followUpKey(session?.id, d.request.turnId, d.request.requestId))) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed', d.request.turnId);
+        }
+      },
+      (err: unknown) => {
+        log.warn(`[chat] batch follow-up for turn ${batch.turnId} failed: ${err instanceof Error ? err.message : String(err)}`);
+        for (const d of decisions) {
+          if (pendingFollowUps.delete(followUpKey(session?.id, d.request.turnId, d.request.requestId))) markPersistedRequest(session, d.request.requestId, true, 'delivery-failed', d.request.turnId);
+        }
+      },
+    );
   };
 
   // A provider that answers in-turn (control-protocol / codex): relay the decision to the LIVE
   // turn's captured adapter (its own provider, never the current session's — it may have
   // switched). decide() no-ops on an unknown/stale/dead requestId, so a late click is safe.
-  const relayDecision = (requestId: string, decision: 'approve' | 'deny'): void => {
-    const live = turns.live;
-    if (live === undefined) return;
-    try {
-      deps.providers.get(live.provider).decide(live.turnId, requestId, decision);
-    } catch (err: unknown) {
-      // Adapter gone / provider unavailable: the decision is undeliverable. Never throw; the
-      // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
-      log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
+  // E202611031bd72813:S001 t6: a decision whose original process stdin is gone (no live turn, or
+  // decide() reports undelivered — process exited / live-unwritable) is delivered as a follow-up
+  // runTurn carrying the decision (resuming the native session when one is known); if even that
+  // cannot start, the persisted request is marked resolved with outcome delivery-failed — a silent
+  // no-op is never recorded as a success.
+  /**
+   * MR3 (manual code review): follow-ups whose stall timer already recorded delivery-failed.
+   * The lifecycle checks `shouldSpawn` immediately before spawning the CLI, so a timed-out
+   * continuation can never execute later, after the UI already reported failure.
+   */
+  const cancelledFollowUps = new Set<string>(); // followUpKey entries whose continuation must not spawn
+  const deliverDecisionAsFollowUp = (requestId: string, decision: 'approve' | 'deny', target?: ChatSession, originTurnId?: string): void => {
+    const s = target ?? session;
+    if (s !== undefined && deps.store.get(s.id) !== undefined) ensurePersistedUnresolved(s, requestId, originTurnId); // survive a reload while the follow-up waits
+    // MR1-R3: the record lookup is turn-scoped — a later turn reusing the request id carries ITS OWN command
+    const rec = s?.pendingRequests?.find((r) => r.requestId === requestId && (originTurnId === undefined || r.turnId === originTurnId));
+    const what = rec?.command ?? rec?.toolName ?? rec?.title ?? 'the requested action';
+    const prompt = decision === 'approve' ? `Approved — run exactly this now: ${what}` : `Denied — do not attempt: ${what}`;
+    let started = false;
+    if (s !== undefined) {
+      const pfKey = followUpKey(s.id, originTurnId ?? turns.live?.turnId, requestId);
+      try {
+        // The outcome is marked only when the follow-up's CLI actually SPAINS (the run sink's
+        // onSpawn consumes pendingFollowUp); if the turn settles without spawning — dropped chain,
+        // no session, adapter/lock failure reported as an error event — the request is marked
+        // delivery-failed. A silent no-op is never recorded as approved.
+        // MR1-R3: the exclusion/origin turn is the decision's originating turn (fall back to the live one)
+        const pfKey = followUpKey(s.id, originTurnId ?? turns.live?.turnId, requestId);
+        pendingFollowUps.set(pfKey, { requestId, outcome: decision === 'approve' ? 'approved' : 'denied', excludeTurnId: originTurnId ?? turns.live?.turnId, originTurnId, groupId: requestId, sessionId: s.id });
+        // MR3: the continuation carries a cancellation identity — if the stall timer below fires
+        // first, shouldSpawn returns false and the turn ends WITHOUT spawning the CLI.
+        const p = runTurn(prompt, approvals.grantChain(), { suppressEcho: true, session: s, shouldSpawn: () => !cancelledFollowUps.has(pfKey) }); // resumes s.nativeSessionId when known
+        started = true;
+        // If the follow-up never spawns (the original CLI still holds the turn lock and stays
+        // blocked), the settled-promise path above may never run — bound the wait with a timer so
+        // the outcome is always recorded (delivery-failed), never left approved indefinitely.
+        // MR3: the timer also CANCELS the scheduled continuation (cancelledFollowUps), so when the
+        // original turn later ends, the queued follow-up does not execute after the recorded failure.
+        const stallTimer = setTimeout(() => {
+          cancelledFollowUps.add(pfKey);
+          if (pendingFollowUps.delete(pfKey)) {
+            markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
+            reevaluateChatStatus(s);
+          }
+        }, deps.followUpDeliveryTimeoutMs ?? 30_000);
+        stallTimer.unref?.();
+        const settle = (): void => {
+          clearTimeout(stallTimer);
+          cancelledFollowUps.delete(pfKey);
+          if (pendingFollowUps.delete(pfKey)) {
+            markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
+            reevaluateChatStatus(s);
+          }
+        };
+        void p.then(settle, (err: unknown) => {
+          log.warn(`[chat] follow-up for decision ${requestId} failed: ${err instanceof Error ? err.message : String(err)}`);
+          settle();
+        });
+      } catch (err) {
+        pendingFollowUps.delete(pfKey);
+        cancelledFollowUps.delete(pfKey);
+        log.warn(`[chat] follow-up for decision ${requestId} could not start: ${err instanceof Error ? err.message : String(err)}`);
+      }
     }
+    if (!started) markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
+    if (s !== undefined) reevaluateChatStatus(s);
+  };
+
+  /**
+   * Decisions already sent to a follow-up run — at most one per CONVERSATION+request, because
+   * request ids may repeat across chats/turns (MR1-R2): keyed `${sessionId}::${requestId}`.
+   */
+  const followUpsStarted = new Set<string>();
+  const followUpKey = (sessionId: string | undefined, turnId: string | undefined, requestId: string): string => `${sessionId ?? '?'}::${turnId ?? '?'}::${requestId}`;
+  /** Request ids restored from a persisted queue snapshot (they may have no pendingRequests record). */
+  const restoredRequestIds = new Set<string>();
+  /** Request ids decided through the queue in this host — a valid queued decision must never
+   * silently disappear, even if its turn already ended and nothing was persisted yet. */
+  const decidedRequestIds = new Set<string>();
+  /** The follow-up run currently pending spawn: its request(s) are marked with the outcome only
+   * when the CLI actually spawns (onSpawn); if the turn is dropped before spawning, delivery-failed. */
+  // MR1-R3: keyed by the FULL follow-up identity (session::originTurn::request) so repeated request
+  // ids across conversations/turns keep separate markers
+  let pendingFollowUps = new Map<string, { readonly requestId: string; readonly outcome: string; readonly excludeTurnId: string | undefined; readonly originTurnId: string | undefined; readonly groupId: string; readonly sessionId: string | undefined }>();
+  /** turnId -> requestId: each follow-up is bound to the turn it actually started, so a spawn/event
+   * of one follow-up's turn never marks another pending follow-up delivered. */
+  const followUpTurns = new Map<string, string>();
+  /** Bind the oldest pending follow-up to a newly started turn and mark it delivered. */
+  const confirmFollowUp = (turnId: string, s: ChatSession): void => {
+    let rid = followUpTurns.get(turnId);
+    if (rid === undefined) {
+      // bind the oldest pending follow-up that was NOT queued behind this very turn — the
+      // original turn's own events must never confirm its successor's delivery
+      for (const [candidate, pf] of pendingFollowUps) {
+        // MR1-R3: a spawn/event of a turn confirms only a follow-up owned by THAT turn's session —
+        // an unrelated turn starting in another chat must not consume this session's marker
+        if (pf.excludeTurnId !== turnId && pf.sessionId === s.id) {
+          rid = candidate;
+          break;
+        }
+      }
+      if (rid === undefined) return;
+      followUpTurns.set(turnId, rid);
+    }
+    if (rid === undefined) return;
+    const pf = pendingFollowUps.get(rid);
+    if (pf === undefined) return;
+    // one follow-up turn confirms its WHOLE group (a batch follow-up carries several decisions)
+    for (const [other, opf] of [...pendingFollowUps]) {
+      if (opf.groupId === pf.groupId && opf.sessionId === s.id) {
+        pendingFollowUps.delete(other);
+        // MR1-R4: outcome correlation uses the request's ORIGINATING turn — never the live
+        // exclusion turn the follow-up happened to be queued behind
+        markPersistedRequest(s, opf.requestId, true, opf.outcome, opf.originTurnId ?? opf.excludeTurnId);
+      }
+    }
+    // keep the binding until the turn ENDS: later events of the same follow-up turn must map to
+    // it (already confirmed -> no-op), never re-bind to another pending follow-up
+  };
+
+  /** Adapters already wired for async delivery failures (one subscription per adapter per host). */
+  const deliveryWired = new WeakSet<object>();
+  /**
+   * MR1 + MR1-R2 (manual code review): explicit ownership of a delivery attempt, keyed by the FULL
+   * identity — provider adapter, turn, request, and originating conversation. Request ids are NOT
+   * globally unique (they may repeat across turns, conversations and providers), so a requestId-only
+   * key would let a later decision overwrite an earlier attempt's owner. The async stdin-failure
+   * callback resolves through THIS binding only: a terminal event may have cleared the original
+   * chat's liveTurn and the user may have switched chats, so falling back to the selected session
+   * would reroute the failure (and its follow-up) into the wrong conversation. An unknown/stale
+   * binding fails closed: nothing is mutated, no follow-up starts.
+   */
+  const deliveryKey = (provider: ProviderId, turnId: string, requestId: string): string => `${provider}::${turnId}::${requestId}`;
+  const deliveryOwners = new Map<string, string>(); // deliveryKey -> originating session id
+  const wireDeliveryFailure = (provider: ProviderId, ad: StreamAdapter): void => {
+    if (deliveryWired.has(ad) || ad.onDeliveryFailed === undefined) return;
+    deliveryWired.add(ad);
+    ad.onDeliveryFailed((turnId, failedRequestId, failedDecision) => {
+      // the stdin write failed AFTER decide() reported delivered — correct the persisted outcome
+      // and answer the request with the follow-up run instead of leaving it approved. Resolve the
+      // session through the recorded full-identity binding, never the currently selected chat.
+      const ownerId = deliveryOwners.get(deliveryKey(provider, turnId, failedRequestId));
+      deliveryOwners.delete(deliveryKey(provider, turnId, failedRequestId));
+      const s = ownerId !== undefined ? deps.store.get(ownerId) : undefined;
+      if (s === undefined || deps.store.get(s.id) === undefined) {
+        log.warn(`[chat] async delivery failure for ${failedRequestId} (turn ${turnId}) has no known originating conversation — failing closed, no follow-up started`);
+        return;
+      }
+      ensurePersistedUnresolved(s, failedRequestId, turnId);
+      markPersistedRequest(s, failedRequestId, true, 'delivery-failed', turnId);
+      reevaluateChatStatus(s);
+      // MR3-R4a: the async failure takes the SAME owner/turn-bound recovery as the sync path —
+      // including live-unwritable stop+verified-exit and the session-lost triage
+      recoverUndelivered(s, failedRequestId, failedDecision, turnId);
+    });
+  };
+
+  const relayDecision = (requestId: string, decision: 'approve' | 'deny', originTurnId?: string): void => {
+    const live = turns.live;
+    const probeProvider0 = live?.provider ?? session?.provider;
+    if (probeProvider0 !== undefined) wireDeliveryFailure(probeProvider0, deps.providers.get(probeProvider0));
+    let undelivered = false; // a live turn whose decide() reported dead stdin (or a dead adapter)
+    // t6: probe delivery through the live turn — or, for a RESTORED request with no live turn in
+    // this host, the session's persisted liveTurn (its stdin died with its owner): decide()
+    // reports undelivered for it, and the follow-up fallback below answers the decision.
+    // MR1-R3: the probe turn is the live turn, else the decision's originating turn (the queue's
+    // record), else the persisted liveTurn — so a later turn reusing a request id is correlated to
+    // its OWN turn, never to an earlier turn's resolved record.
+    const probeTurnId = live?.turnId ?? originTurnId ?? session?.liveTurn?.cursor.turnId;
+    const probeProvider = live?.provider ?? session?.provider;
+    if (probeTurnId !== undefined && probeProvider !== undefined) {
+      // MR1/MR1-R2: record the full delivery identity -> originating conversation, so a later
+      // async stdin failure resolves to THIS attempt even after a terminal or a chat switch —
+      // repeated request ids in other turns/conversations keep their own bindings.
+      if (session !== undefined) deliveryOwners.set(deliveryKey(probeProvider, probeTurnId, requestId), session.id);
+      try {
+        // Process triage: a live turn with a live pid gets the in-turn decide (live-writable);
+        // decide() itself reports undelivered for a dead/absent stdin, and the request is NOT
+        // consumed on failure, so the fallback below can still answer it.
+        const res = deps.providers.get(probeProvider).decide(probeTurnId, requestId, decision);
+        if (res.delivered) {
+          markPersistedRequest(session, requestId, true, decision === 'approve' ? 'approved' : 'denied', probeTurnId);
+          return;
+        }
+        undelivered = true;
+      } catch (err: unknown) {
+        // Adapter gone / provider unavailable: fall through to the fallback. Never throw; the
+        // decision is still recorded and the queue moves on (ISSUE-6a811b8a).
+        undelivered = true;
+        log.warn(`[chat] approval decision for ${requestId} could not be delivered: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+    // MR1-R3/MR3-R3: the original process's liveness for this probe turn
+    const probePid = session?.liveTurn?.pid;
+    const probeAlive = undelivered && session !== undefined && probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
+    void probeAlive; // liveness triage happens in recoverUndelivered (shared with the async path)
+    // The follow-up run answers a decision that could not reach the CLI: either a live turn whose
+    // decide() reported undelivered (the decision came from the queue, so it is real even when no
+    // persisted record exists yet), or a RESTORED request persisted unresolved after a
+    // reattach/reload with no live turn. A stale id with no live turn and no unresolved persisted
+    // record stays the old silent no-op. followUpsStarted keeps the follow-up one-shot.
+    // MR1-R3: the persisted lookup is turn-scoped — a later turn reusing the request id does NOT
+    // inherit the earlier turn's resolved record.
+    const persisted = session?.pendingRequests?.find((r) => r.requestId === requestId && (probeTurnId === undefined || r.turnId === probeTurnId));
+    // a persisted RESOLVED record FOR THIS TURN means this decision was already delivered — a
+    // duplicate (the adapter no-ops on the consumed id, also reporting delivered:false) must not
+    // re-follow-up
+    if (persisted !== undefined && persisted.resolved) undelivered = false;
+    // a snapshot-restored request (in restoredRequestIds) is unresolved by construction — the
+    // follow-up must answer it even when no pendingRequests record exists
+    // a request this host's queue just decided (decidedRequestIds) is a valid decision even if its
+    // turn already ended and nothing was persisted yet — the follow-up must answer it (delivered or
+    // delivery-failed), never a silent no-op recorded as approved
+    if (!undelivered && (persisted === undefined ? !(restoredRequestIds.has(requestId) || decidedRequestIds.has(requestId)) : persisted.resolved)) return;
+    if (session !== undefined) recoverUndelivered(session, requestId, decision, probeTurnId);
+  };
+
+  /**
+   * MR3-R4a: ONE recovery path for synchronous (decide() reports undelivered) and asynchronous
+   * (stdin write fails after acceptance) delivery failure alike, always bound to the ORIGINATING
+   * session/turn — never the selected chat. Applies the LLD s7 triage: live-unwritable with no
+   * native handle -> session-lost; live-unwritable with a handle -> stop the original and VERIFY
+   * exit (MR3-R4b) before the continuation resumes that native session; otherwise the plain
+   * follow-up run. If the verified stop fails, record delivery-failed and launch nothing.
+   */
+  const recoverUndelivered = (s: ChatSession, requestId: string, decision: 'approve' | 'deny', originTurnId: string | undefined): void => {
+    // MR3-R5: liveness and the stop target are bound to the ORIGINATING turn — s.liveTurn must still
+    // BE that turn; the host-wide turns.stop() may only be used when the origin IS the current turn
+    const originTurn = originTurnId ?? s.liveTurn?.cursor.turnId;
+    const originLive = s.liveTurn !== undefined && s.liveTurn.cursor.turnId === originTurn ? s.liveTurn : undefined;
+    const probePid = originLive?.pid;
+    const probeAlive = probePid !== undefined && (deps.isAlive?.(probePid) ?? false);
+    if (probeAlive && s.nativeSessionId === undefined) {
+      markPersistedRequest(s, requestId, true, 'session-lost', originTurnId);
+      reevaluateChatStatus(s);
+      return;
+    }
+    const fk = followUpKey(s.id, originTurnId, requestId);
+    if (followUpsStarted.has(fk)) return;
+    followUpsStarted.add(fk);
+    if (probeAlive && s.nativeSessionId !== undefined && originTurn !== undefined) {
+      void (async () => {
+        try {
+          let verified: boolean | undefined;
+          if (session !== undefined && session.id === s.id && turns.live?.turnId === originTurn) {
+            // the origin is THIS host's current turn: the lifecycle owns exactly it
+            verified = await turns.stop(); // MR3-R4b: true only when the exit was confirmed
+          } else {
+            // MR3-R5: a detached/other chat's original — stop ONLY that turn's process via its
+            // adapter; no handle -> fail closed, never stop the selected chat as a substitute
+            verified = await deps.providers.get(s.provider).stopTurnVerified?.(originTurn);
+          }
+          if (verified !== true) throw new Error('the original process exit could not be verified');
+          deliverDecisionAsFollowUp(requestId, decision, s, originTurnId);
+        } catch (err) {
+          log.warn(`[chat] live-unwritable recovery for ${requestId} could not stop the original: ${err instanceof Error ? err.message : String(err)}`);
+          markPersistedRequest(s, requestId, true, 'delivery-failed', originTurnId);
+          reevaluateChatStatus(s);
+        }
+      })();
+      return;
+    }
+    deliverDecisionAsFollowUp(requestId, decision, s, originTurnId);
   };
 
   // S004 (dev-chat ux polish): record a resolved selection. Mirrors recordPermissionOutcome — emit
@@ -902,8 +1795,48 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       postInfo(`present-note-${++presentNotes}`, `Not shown for review (not pending approval, or the name matches more than one document): ${outcome.notPending.join(', ')}.`);
     }
   };
-  const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, canShow: () => boolean): void => {
+  /**
+   * MR4 (manual code review): one durable declaration identity per conversation, shared by the
+   * live, follow and observer paths. `declarationDispatched` checks the persisted union (the
+   * observer checkpoint's declaredIds plus presentedDeclarations); `markDeclarationDispatched`
+   * records a NEW dispatch durably so a later replay — reattach, reload, the observer after the
+   * follow reader — never opens a second panel for the same declaration.
+   */
+  /**
+   * MR4-R2: the declaration identity is conversation+turn+call scoped — `${turnId}:${callId}` —
+   * because provider item ids may repeat across turns/CLI invocations: a replay of one declaration
+   * (reattach/reload/observer) must open once, while a NEW turn reusing the same call id must still
+   * present. Legacy persisted ledgers hold the bare call id; those still match their own turn's
+   * declaration (compat), without suppressing a different turn's.
+   */
+  const declarationIdOf = (ev: { readonly turnId: string; readonly callId?: string | undefined; readonly present?: readonly string[] | undefined }): { readonly id: string; readonly legacy: string | undefined; readonly turnId: string } => {
+    const call = ev.callId ?? (ev.present ?? []).join(',');
+    return { id: `${ev.turnId}:${call}`, legacy: ev.callId, turnId: ev.turnId };
+  };
+  const declarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined; readonly turnId: string }): boolean => {
+    if ((s.presentedDeclarations ?? []).includes(decl.id)) return true;
+    // MR4-R3: a LEGACY bare call id (pre-upgrade persisted format) is only a wildcard within the
+    // turn that owns the checkpoint it sits in — the checkpoint's turnId is that provenance. A
+    // bare id never suppresses a different (e.g. later) turn's genuine declaration.
+    const cp = s.observerCheckpoint;
+    if (cp !== undefined && cp.turnId === decl.turnId && decl.legacy !== undefined && (cp.declaredIds ?? []).includes(decl.legacy)) return true;
+    return false;
+  };
+  const markDeclarationDispatched = (s: ChatSession, decl: { readonly id: string; readonly legacy: string | undefined; readonly turnId: string }): void => {
+    if (declarationDispatched(s, decl)) return;
+    s.presentedDeclarations = [...(s.presentedDeclarations ?? []), decl.id];
+    try {
+      deps.store.save(s);
+    } catch { /* best-effort, as the observer's checkpoint save */ }
+  };
+
+  const presentDeclared = (shown: PresentedTurn | undefined, ev: TurnEvent, s: ChatSession, canShow: () => boolean): void => {
     if (shown === undefined || ev.kind !== 'tool-call' || ev.present === undefined) return;
+    // MR4: a declaration already dispatched (e.g. by the detached observer) is never re-presented
+    // when the follow reader replays the same tool call on reattach.
+    const decl = declarationIdOf(ev);
+    if (declarationDispatched(s, decl)) return;
+    markDeclarationDispatched(s, decl);
     try {
       shown
         .declared(ev.present)
@@ -933,26 +1866,39 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     turns.follow(s, {
       onEvent: (ev) => {
         if (shown === undefined) shown = beginPresented();
-        presentDeclared(shown, ev, () => session === s);
+        presentDeclared(shown, ev, s, () => session === s);
         // A followed turn's approval requests go through the queue like a live one's.
         // Story E20261012ddc4ede1:S001: write the row first, then post the event with the row's
         // index. The write does not depend on whether the session is shown.
         const rowIndex = appendEvent(s, ev);
+        stampLiveTranscriptLen(s);
         if (!disposed && session === s) {
           if (ev.kind === 'approval-request') {
             followedTurns.add(ev.turnId);
             enqueueApproval(ev);
+            setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2
+          } else if (ev.kind === 'selection-request') {
+            pendingSelections.set(ev.requestId, { options: ev.options, prompt: ev.prompt, ...(ev.multi === true ? { multi: true } : {}) });
+            setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2: followed selection request
+            if (session === s) reportCards();
+            else postLive(ev, rowIndex);
           } else postLive(ev, rowIndex);
-          if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+          if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+          approvals.endTurn(ev.turnId); // t2: observation failure is not terminal
+          persistQueueSnapshot(); // t6: the ended set must be fresh for reload restoration
+        }
         }
       },
       onEnd: (outcome) => {
         // A failed resume leaves the turn's cursor saved for a later follow; nothing has ended.
+        // E202611031bd72813:S001 t2: 'observation-failed' likewise keeps the last known status —
+        // only a real end moves the chat to done (or waiting-input when requests remain).
         if (outcome === 'ended') endPresented(shown);
         if (outcome === 'ended' && session === s) {
           for (const turnId of followedTurns) approvals.endTurn(turnId);
           runCompletedBatch();
           postHistory();
+          reevaluateChatStatus(s); // E202611031bd72813:S001 t2: same precedence on follow end
         }
       },
     });
@@ -979,6 +1925,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // ISSUE-6a811b8a: session-restored cleared the webview, including the shown approval card;
     // post the queue head again (once) with its position so the queue can still be answered.
     shownApproval = undefined;
+    restorePendingRequests(session); // t6: a reloaded webview re-enters the session's unresolved persisted requests
     showApprovalHead();
     postHistory();
     followLiveTurn(session);
@@ -1186,9 +2133,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `@keyframes insrc-rise{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}` +
       `.popup,.slider-pop{position:absolute;bottom:calc(100% + 8px);right:0;display:none;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:10px;box-shadow:0 12px 32px var(--pop-shadow);z-index:20;animation:insrc-rise .12s ease-out;color:var(--dropdown-fg);}` +
       `.popup.open,.slider-pop.open{display:flex;}` +
-      `.popup{flex-direction:column;padding:6px;min-width:400px;}` +
+      `.popup{flex-direction:column;padding:6px;box-sizing:border-box;min-width:0;width:min(560px,calc(100vw - 28px));max-width:calc(100vw - 28px);}` +
       `.popup .panes{display:flex;gap:2px;}` +
-      `.popup .pane{display:flex;flex-direction:column;min-width:180px;max-height:264px;overflow-y:auto;}` +
+      `.popup .pane{display:flex;flex-direction:column;min-width:0;flex:1;max-height:min(264px,45vh);overflow:auto;}` +
       `.popup .pane + .pane{border-left:1px solid var(--border-lit);padding-left:2px;}` +
       `.popup .pane-h{padding:6px 10px 4px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
       `.popup .item{display:flex;align-items:center;gap:8px;margin:1px;padding:5px 8px;border-radius:6px;cursor:pointer;white-space:nowrap;}` +
@@ -1200,7 +2147,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.popup .item.sel .lbl{color:var(--fg-strong);}` +
       `.popup .item .sub{margin-left:auto;color:var(--muted);font-size:11px;font-family:var(--font);}` +
       `.popup .foot{margin-top:6px;padding:6px 10px 2px;border-top:1px solid var(--border-lit);color:var(--muted);font-size:11px;}` +
-      `.slider-pop{flex-direction:column;width:330px;padding:10px 14px 12px;}` +
+      `.slider-pop{flex-direction:column;width:330px;max-width:calc(100vw - 28px);box-sizing:border-box;padding:10px 14px 12px;}` +
       `.slider-pop .pane-h{padding:2px 2px 8px;font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);}` +
       `.slider-pop input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer;margin:0;}` +
       `.ticks{display:flex;justify-content:space-between;padding:0 7px;}` +
@@ -1229,6 +2176,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.histchip::before{content:"";position:absolute;left:6px;top:50%;width:12px;height:12px;margin-top:-6px;background-color:currentColor;pointer-events:none;` +
       `-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none' stroke='currentColor' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 8a5.5 5.5 0 1 0 1.6-3.9'/%3E%3Cpath d='M2.4 3.1v2.2h2.2'/%3E%3Cpath d='M8 5.2V8l2 1.2'/%3E%3C/svg%3E") center/12px 12px no-repeat;}` +
       `.chrome #insrc-history{max-width:100%;}` +
+      // E202611031bd72813:S001 t4: the active-chats chip, LEFT-aligned at the start of .chrome
+      // (.histchip look, but the glyph is a status dot whose colour follows the most urgent entry:
+      // red > yellow > green via data-urgent on the chip).
+      `.actchip{position:relative;display:inline-flex;align-items:center;max-width:36ch;padding:3px 2px 3px 22px;background:var(--dropdown-bg);border:1px solid var(--dropdown-border);border-radius:6px;color:var(--fg);}` +
+      `.actchip::before{content:"";position:absolute;left:7px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--muted);pointer-events:none;}` +
+      `.actchip[data-urgent="waiting-input"]::before{background:var(--red);}` +
+      `.actchip[data-urgent="working"]::before{background:var(--warn);}` +
+      `.actchip[data-urgent="done"]::before{background:var(--pass);}` +
+      `.chrome #insrc-active{max-width:100%;}` +
+      `.status-dot{font-style:normal;}` +
+      `.status-dot.red{color:var(--red);}.status-dot.yellow{color:var(--warn);}.status-dot.green{color:var(--pass);}` +
+      // E202611031bd72813:S001 t4 ac1: each active-list option carries data-dot red/yellow/green; these
+      // rules are what consume it, so every dropdown entry shows its OWN status colour in the popup.
+      `#insrc-active option[data-dot="red"]{color:var(--red);}` +
+      `#insrc-active option[data-dot="yellow"]{color:var(--warn);}` +
+      `#insrc-active option[data-dot="green"]{color:var(--pass);}` +
       // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).
@@ -1276,8 +2239,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const runProvider = session?.provider ?? available[0];
     const runModelId = session?.model;
     const runEffort = session?.effort;
-    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => m.id === runModelId);
-    const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : 'default';
+    const runModel = runCatalog.find((p) => p.id === runProvider)?.models.find((m) => runModelId !== undefined && (m.id === runModelId || m.alias === runModelId));
+    const runModelLabel = runModel !== undefined ? (runModel.alias ?? runModel.name) : (runModelId || 'default');
     const runEffortLabel = runEffort !== undefined && runEffort !== '' ? runEffort : 'default';
     const catalogJson = attr(JSON.stringify(runCatalog));
     // Story E2026101259da3204:S001: the attachment controls, present only with the host's seams.
@@ -1391,8 +2354,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       attachScript +
       outboxScript +
       // S005: history-dropdown wiring (same one nonce'd script).
-      `var cur='';` +
+      `var cur='';var curProv='';` +
       `const hs=document.getElementById('insrc-history');` +
+      `const actChip=document.getElementById('insrc-actchip');const act=document.getElementById('insrc-active');` +
+      `const DOT={ 'waiting-input':'red', working:'yellow', done:'green' };` +
+      // E202611031bd72813:S001 t4 UX: provider icons in the two chrome dropdowns. An <option> can
+      // only carry text, so the icon is painted as a data-URI SVG background (img-src data: is
+      // allowed by the CSP); the closed <select> gets the same treatment on its own box.
+      `function picoUrl(p){var s=(typeof ICONS!=='undefined'?ICONS[p]:undefined)||'';return s?"url('data:image/svg+xml;charset=utf-8,"+encodeURIComponent(s)+"')":'';}` +
+      `function paintOpt(o,p){var u=picoUrl(p);if(!u)return;o.style.backgroundImage=u;o.style.backgroundRepeat='no-repeat';o.style.backgroundPosition='2px center';o.style.backgroundSize='12px 12px';o.style.paddingLeft='18px';}` +
+      `function paintSel(sel,p){if(!sel)return;var u=picoUrl(p);sel.style.backgroundImage=u||'';sel.style.backgroundRepeat='no-repeat';sel.style.backgroundPosition='2px center';sel.style.backgroundSize='12px 12px';sel.style.paddingLeft=u?'18px':'2px';}` +
+      `act.addEventListener('change',function(){if(typeof act.value==='string'&&act.value!==''){vs.postMessage({v:1,payload:{type:'open-chat',chatId:act.value}});}});` +
       // Run-config controls (bottom-right): the provider·model popup + effort gauge.
       // State lives in the buttons' data-* attributes (server-rendered from the active
       // session); the model catalog is embedded once in #insrc-catalog.
@@ -1402,20 +2374,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function rstate(){return{provider:rb?rb.getAttribute('data-provider')||'':'',model:rb?rb.getAttribute('data-model')||'':'',effort:rb?rb.getAttribute('data-effort')||'':''};}` +
       `var ICONS=${JSON.stringify(PROVIDER_ICON_SVGS)};function pico(p){return ICONS[p]||'';}` +
       `function rprov(p){return catalog.filter(function(f){return f.id===p;})[0];}` +
-      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m;})[0]:undefined;}` +
-      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+(s.provider||'…')+' · '+(m?(m.alias||m.name):'default')+' <span class="chev">▾</span>';}` +
+      `function rmodel(p,m){var f=rprov(p);return f?f.models.filter(function(x){return x.id===m||x.alias===m;})[0]:undefined;}` +
+      `function rtext(v){return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}` +
+      `function rlabel(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);rb.innerHTML='<span class="pico">'+pico(s.provider)+'</span> '+rtext(s.provider||'…')+' · '+rtext(m?(m.alias||m.name):(s.model||'default'))+' <span class="chev">▾</span>';}` +
       `function elabel(){var s=rstate();document.getElementById('insrc-effortlabel').textContent=s.effort||'default';}` +
       `function rlevels(){var s=rstate(),f=rprov(s.provider),m=rmodel(s.provider,s.model);if(!f)return[];if(m)return m.efforts.slice();var u=[];f.models.forEach(function(x){x.efforts.forEach(function(e){if(u.indexOf(e)<0)u.push(e);});});return u;}` +
       `function closePops(){if(rp)rp.classList.remove('open');if(ep)ep.classList.remove('open');if(rb)rb.setAttribute('aria-expanded','false');if(gb)gb.setAttribute('aria-expanded','false');}` +
       `function mitem(sel,label,sub,onclick,onhover,dis,icon){var d=document.createElement('div');d.className='item'+(sel?' sel':'')+(dis?' dis':'');d.setAttribute('role','menuitem');if(dis)d.setAttribute('aria-disabled','true');d.innerHTML='<span class="pico">'+(icon||'')+'</span><span class="chk">✓</span><span class="lbl"></span>'+(sub?'<span class="sub"></span>':'');d.querySelector('.lbl').textContent=label;if(sub)d.querySelector('.sub').textContent=sub;if(!dis){if(onhover)d.onmouseenter=onhover;d.onclick=onclick;}return d;}` +
       `function renderProvPane(hover){var pp=document.getElementById('insrc-provpane');pp.innerHTML='<div class="pane-h">Provider</div>';var s=rstate();document.getElementById('insrc-popfoot').textContent=started?'Provider is fixed once a chat has started · model and effort apply to the next turns.':'Provider change starts a new chat · model change applies to the next turns.';catalog.forEach(function(f){pp.appendChild(mitem(f.id===s.provider,f.label,String(f.models.length),function(){if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:'',effort:rstate().effort}});}},function(){renderModelPane(f);},started&&f.id!==s.provider,pico(f.id)));});renderModelPane(rprov(hover||s.provider));}` +
-      `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&s.model===m.id,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
+      `function renderModelPane(f){if(!f)return;var mp=document.getElementById('insrc-modelpane');mp.innerHTML='<div class="pane-h"></div>';mp.querySelector('.pane-h').textContent=f.label;var s=rstate();mp.appendChild(mitem(s.model==='', 'default','CLI default',function(){pickModel(f,'');}));f.models.forEach(function(m){mp.appendChild(mitem(f.id===s.provider&&rmodel(s.provider,s.model)===m,m.name,m.alias||m.id,function(){pickModel(f,m.id);}));});}` +
       `function pickModel(f,id){var s=rstate();if(f.id!==s.provider){vs.postMessage({v:1,payload:{type:'new-chat',provider:f.id,model:id,effort:s.effort}});}else{vs.postMessage({v:1,payload:{type:'set-run-config',model:id}});rb.setAttribute('data-model',id);rlabel();closePops();}}` +
       `function renderEffortPop(){var s=rstate(),levels=['default'].concat(rlevels()),cur=s.effort?levels.indexOf(s.effort):0;if(cur<0)cur=0;var sl=document.getElementById('insrc-effortslider');sl.max=levels.length-1;sl.value=cur;sl.setAttribute('aria-valuetext',levels[cur]);var tk=document.getElementById('insrc-ticks'),nt=document.getElementById('insrc-notches');tk.innerHTML='';nt.innerHTML='';levels.forEach(function(l,i){var t=document.createElement('i');if(i===cur)t.className='on';tk.appendChild(t);var sp=document.createElement('span');sp.textContent=l;if(i===cur)sp.className='on';sp.onclick=function(){sl.value=i;applyEffort();};nt.appendChild(sp);});document.getElementById('insrc-effortnote').textContent=s.provider==='vibe'?'vibe has no per-call thinking flag — the level is informational; the model’s \`thinking\` in ~/.vibe/config.toml applies.':'Applies to the next turns of this chat.';}` +
       `function applyEffort(){var s=rstate(),levels=['default'].concat(rlevels()),i=Number(document.getElementById('insrc-effortslider').value);var e=levels[i]==='default'?'':levels[i];vs.postMessage({v:1,payload:{type:'set-run-config',effort:e}});rb.setAttribute('data-effort',e);elabel();renderEffortPop();}` +
       `if(rb)rb.onclick=function(e){e.stopPropagation();var was=rp.classList.contains('open');closePops();if(!was){renderProvPane();rp.classList.add('open');rb.setAttribute('aria-expanded','true');}};` +
       `if(gb)gb.onclick=function(e){e.stopPropagation();if(gb.classList.contains('dim'))return;var was=ep.classList.contains('open');closePops();if(!was){renderEffortPop();ep.classList.add('open');gb.setAttribute('aria-expanded','true');}};` +
       `var esl=document.getElementById('insrc-effortslider');if(esl){esl.addEventListener('change',applyEffort);}` +
+      `if(rp)rp.addEventListener('click',function(e){e.stopPropagation();});` +
+      `if(ep)ep.addEventListener('click',function(e){e.stopPropagation();});` +
       `document.addEventListener('click',closePops);` +
       `document.addEventListener('keydown',function(e){if(e.key==='Escape')closePops();});` +
       `rlabel();elabel();` +
@@ -1496,7 +2471,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
       `started=_total>0;` +
       `pager.reset(cur,_first,_total);` +
-      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;setRunning(false);setIdle();` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});hs.value=cur;paintSel(hs,curProv);setRunning(false);setIdle();` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
       `}` +
@@ -1506,8 +2481,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // chat has a message — so re-settle the lock here alongside the existing provider re-sync.
       // Run-config echo: the host confirms a session's provider/model/effort (open/switch/
       // restore / set-run-config) — the buttons' labels and data-* follow it.
-      `else if(m.type==='run-config'){if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();}` +
-      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent='['+c.provider+'] '+(c.title||c.id);hs.appendChild(o);});hs.value=cur;}});` +
+      `else if(m.type==='run-config'){curProv=m.provider||'';if(rb){rb.setAttribute('data-provider',m.provider||'');rb.setAttribute('data-model',m.model||'');rb.setAttribute('data-effort',m.effort||'');}rlabel();elabel();paintSel(hs,curProv);paintSel(act,curProv);}` +
+      // history-list options show the provider ICON (data-URI background; img-src data: is CSP-allowed)
+      // + title — the old '[provider] ' text prefix is replaced by the icon; the closed select paints
+      // the current chat's icon on its own box as well.
+      `else if(m.type==='history-list'){while(hs.options.length>1)hs.remove(1);(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;o.textContent=(c.title||c.id);paintOpt(o,c.provider);hs.appendChild(o);});hs.value=cur;var cp=curProv;(m.chats||[]).forEach(function(c){if(c.id===cur)cp=c.provider;});paintSel(hs,cp);}` +
+      // E202611031bd72813:S001 t4: active-list (re)populates the left dropdown; each option carries a
+      // status dot (red/yellow/green) + the provider icon + title; the chip glyph shows the most
+      // urgent status. UX feedback: the closed selection mirrors the CURRENT open chat (title + its
+      // provider icon on the select box) whenever that chat is in the active list.
+      `else if(m.type==='active-list'){while(act.options.length>1)act.remove(1);var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){var o=document.createElement('option');o.value=c.id;var d=DOT[c.status]||'green';if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;o.textContent='\u25CF '+c.title;paintOpt(o,c.provider);if(o.dataset)o.dataset.dot=d;act.appendChild(o);});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;var inList=function(id){return (m.chats||[]).some(function(c){return c.id===id;});};if(cur&&inList(cur))act.value=cur;else if(act.value&&!inList(act.value))act.value='';var ap=curProv;(m.chats||[]).forEach(function(c){if(c.id===act.value)ap=c.provider;});paintSel(act,ap);}` +
+      `});` +
       `const box=document.getElementById('insrc-input');` +
       // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
@@ -1548,6 +2532,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // (its selected option already shows the session — the old 'session' label + active-name text were
       // duplication). The provider + mode selects live in the footer status bar now.
       `<div class="chrome">` +
+            // E202611031bd72813:S001 t4: #insrc-active LEFT-aligned at the chrome start; the history
+            // chip stays the sole control of .right (right-aligned).
+            `<span class="actchip" id="insrc-actchip" data-urgent=""><select id="insrc-active" class="segsel" aria-label="active chats"><option value="">active…</option></select></span>` +
             `<span class="right"><span class="histchip"><select id="insrc-history" class="segsel ${histCls}" aria-label="session"><option value="">new…</option></select></span></span>` +
       `</div>` +
       // Full-width bars (mock): the scrolling transcript, then the live progress bar, then the input
@@ -1615,7 +2602,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function runTurn(
     text: unknown,
     allowedTools?: readonly string[],
-    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined },
+    opts?: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined; readonly shouldSpawn?: (() => boolean) | undefined },
   ): Promise<void> {
     // Story E202610138d4b90c9:S001: counted as starting until turns.start has been called (from
     // then on the lifecycle says a turn is in progress), so no waiting pane message is run between.
@@ -1636,15 +2623,14 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   async function startTurn(
     text: unknown,
     allowedTools: readonly string[] | undefined,
-    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined } | undefined,
+    opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined; readonly shouldSpawn?: (() => boolean) | undefined } | undefined,
     started: () => void,
   ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const typed = text.trim();
     const files = opts?.attachments ?? [];
-    if ((typed === '' && files.length === 0) || session === undefined) return; // empty submit is a no-op
-
-    const s = session;
+    const s = opts?.session ?? session; // t6: a follow-up fallback may target a non-selected chat
+    if ((typed === '' && files.length === 0) || s === undefined) return; // empty submit is a no-op
     // The stored row keeps the user's own words; the paths are named only in what the CLI is sent.
     const prompt = files.length === 0 ? typed : [...(typed === '' ? [] : [typed, '']), ATTACHED_HEADING, ...files.map((f) => f.path)].join('\n');
 
@@ -1680,6 +2666,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       }
       trySave(s); // runTurn is fired and forgotten: a failing save must not become an unhandled rejection
     }
+    // E202611031bd72813:S001 t2: turn starts -> working (after the first save, so the draft exists in the store);
+    // a continuation started while other requests remain unresolved stays waiting-input
+    setChatStatus(s, unresolvedRequests() ? 'waiting-input' : 'working');
 
     const grant = allowedTools && allowedTools.length > 0 ? { allowedTools } : {};
     // The session's attachments directory is readable on this turn and on every later one (a grant
@@ -1711,6 +2700,24 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // Story E20261013b2e8109f:S001: this turn's diff state, opened in beforeRun.
     let dt: DiffTurn | undefined;
     const sink: TurnSink = {
+      // MR3: checked by the lifecycle immediately before the CLI spawns; false ends the turn without spawning
+      ...(opts?.shouldSpawn !== undefined ? { shouldSpawn: opts.shouldSpawn } : {}),
+      onSpawn: (cli) => {
+        // a pending follow-up run actually spawned: its decisions were delivered. Only a spawn of a
+        // DIFFERENT turn than the one the follow-up was queued behind consumes the marker — events of
+        // the original turn must not mark the follow-up delivered before it starts.
+        // a spawn of a NEW turn binds + confirms the oldest pending follow-up (per-turn correlation)
+        if (pendingFollowUps.size > 0 && turns.live?.turnId !== undefined) confirmFollowUp(turns.live.turnId, s);
+        if (q !== undefined) {
+          q.spawned = true;
+          q.lastCli = cli;
+          try {
+            q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
+          } catch (err) {
+            log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
+          }
+        }
+      },
       onWaiting: () => post({ type: 'turn-event', event: { kind: 'status', turnId: 'waiting', phase: 'waiting' } }),
       // S006: capture the pre-turn baseline BEFORE the CLI can write (governor.beginTurn), so the
       // diff + revert are computed against the true pre-turn content (k8 observer).
@@ -1733,8 +2740,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         dt = active ? openDiffTurn(s) : undefined;
       },
       onEvent: (ev) => {
+        // a pending follow-up run produced a non-error event: it started, so its decisions were
+        // delivered (adapters that never call onSpawn are covered here; onSpawn covers spawn-only).
+        // An ERROR as the first event means the spawn/setup failed BEFORE onSpawn — leave
+        // pendingFollowUp set so the settled run is marked delivery-failed, not approved.
+        // a non-error event of a NEW turn binds + confirms the oldest pending follow-up to THAT
+        // turn only — never marks other pending follow-ups delivered
+        if (ev.kind !== 'error' && pendingFollowUps.size > 0) confirmFollowUp(ev.turnId, s);
         // Story E20261013e62a9269:S001: before anything else, and whatever is done with the event below.
-        presentDeclared(shown, ev, () => true);
+        presentDeclared(shown, ev, s, () => true);
         // Story S004: the agent acted (a tool call, an edit or a tool result): this message is never retried.
         if (q !== undefined && (ev.kind === 'tool-call' || ev.kind === 'file-edit' || ev.kind === 'tool-result')) q.acted = true;
         // ISSUE-6a811b8a: an approval-request is queued, not posted; only the queue head is shown.
@@ -1754,15 +2768,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             pushMarker(open, pathLine(edited));
           }
           const rowIndex = appendEvent(s, ev);
-          if (ev.kind === 'approval-request') enqueueApproval(ev);
-          else postLive(ev, rowIndex);
+          stampLiveTranscriptLen(s);
+          if (ev.kind === 'approval-request') {
+            enqueueApproval(ev);
+            setChatStatus(s, 'waiting-input'); // mid-turn: the agent is blocked on this request
+          } else postLive(ev, rowIndex);
         }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
-        if (ev.kind === 'done' || ev.kind === 'error') approvals.endTurn(ev.turnId);
+        if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
+          approvals.endTurn(ev.turnId); // E202611031bd72813:S001 t2: an observation failure is not terminal
+          persistQueueSnapshot(); // t6: the ended set must be fresh for reload restoration
+        }
         // S004 (dev-chat ux polish): remember a surfaced selection request's options (keyed by
         // requestId) so a later selection-decision can map the chosen ids back to labels.
         if (ev.kind === 'selection-request') {
-          pendingSelections.set(ev.requestId, { options: ev.options });
+          pendingSelections.set(ev.requestId, { options: ev.options, prompt: ev.prompt, ...(ev.multi === true ? { multi: true } : {}) });
+          setChatStatus(s, 'waiting-input'); // mid-turn selection request
           reportCards(); // Story S002
         }
         // S006: an observed file-edit -> the governor computes + renders its own diff
@@ -1785,20 +2806,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             .catch((err: unknown) => warnGovernor('settle', err));
         }
       },
-      ...(q !== undefined
-        ? {
-            onSpawn: (cli: SpawnedCli): void => {
-              q.spawned = true;
-              q.lastCli = cli;
-              try {
-                q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
-              } catch (err) {
-                log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
-              }
-            },
-          }
-        : {}),
       onTerminal: (ev) => {
+        followUpTurns.delete(ev.turnId);
         if (q !== undefined) {
           q.terminal = ev.kind;
           if (ev.kind === 'error') q.error = ev.message;
@@ -1807,6 +2816,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           else if (ev.kind === 'done' && !ev.ok) q.error = ev.message ?? 'the turn ended with an error';
         }
         runCompletedBatch(); // ISSUE-6a811b8a: requests decided before the turn ended are now complete
+        // E202611031bd72813:S001 t2: re-evaluate AFTER runCompletedBatch — a continuation it starts
+        // keeps 'working'; pending cards keep waiting-input; otherwise done.
+        reevaluateChatStatus(s);
         trySave(s); // persist the turn's transcript rows (an errored turn's too); a failing save never breaks the turn
         // Story E20261013b2e8109f:S001: the last check runs here; its rows are saved as they arrive,
         // and the turn's diff state ends when it is done.
@@ -1826,6 +2838,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postHistory(); // S005: title/updatedAt changed -> refresh the history dropdown
       },
       onError: (message, turnId) => {
+        setChatStatus(s, 'done'); // E202611031bd72813:S001 t2: adapter/setup/lock failure -> done
         if (q !== undefined) q.error = message;
         endDiffTurn();
         post({ type: 'turn-event', event: { kind: 'error', turnId, message } });
@@ -1883,11 +2896,17 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   }
 
   // Returns the absolute transcript index of the row the event wrote, or undefined when it wrote none.
-  function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
-    if (ev.kind === 'assistant-delta') {
-      s.transcript.push({ role: 'assistant', text: ev.text, at: now() });
-      return s.transcript.length - 1;
+  /** After a live-path appendEvent, record the persisted transcript length on the liveTurn, so a
+   * later observer replay from an earlier cursor truncates instead of duplicating these rows. */
+  function stampLiveTranscriptLen(s: ChatSession): void {
+    if (s.liveTurn !== undefined && s.liveTurn.transcriptLen !== s.transcript.length) {
+      s.liveTurn = { ...s.liveTurn, transcriptLen: s.transcript.length };
     }
+  }
+
+  /** The durable transcript row for an event, or undefined when the event persists no row. */
+  function rowForEvent(ev: TurnEvent): TranscriptEntry | undefined {
+    if (ev.kind === 'assistant-delta') return { role: 'assistant', text: ev.text, at: now() };
     // 'status' is a transient progress tick (thinking/streaming/tool/editing): it is
     // rendered LIVE in the webview (from the posted turn-event) but NOT persisted —
     // persisting every tick would bloat the durable transcript and replay as noise on
@@ -1897,13 +2916,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     // (command + output), not as a flat marker — so a restored transcript re-renders the command
     // + collapsed output legibly. markerFor returns null for it, so this branch owns its persistence.
     if (ev.kind === 'tool-result') {
-      s.transcript.push({
+      return {
         role: 'tool-result',
         ...(ev.command !== undefined && ev.command !== '' ? { command: ev.command } : {}),
         output: ev.output,
         at: now(),
-      });
-      return s.transcript.length - 1;
+      };
     }
     // Durable markers are single-sourced through markerFor — the SAME mapper the webview
     // uses — so a host row and its live marker never drift. done now persists a marker row
@@ -1911,11 +2929,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const marker = markerFor(ev);
     // S008: persist the sc1 cssClass alongside the label so a RESTORED chat reproduces
     // each marker's glyph + phosphor tone (identical to live) instead of plain text.
-    if (marker !== null) {
-      s.transcript.push({ role: 'marker', text: marker.label, cssClass: marker.cssClass, at: now() });
-      return s.transcript.length - 1;
-    }
+    if (marker !== null) return { role: 'marker', text: marker.label, cssClass: marker.cssClass, at: now() };
     return undefined;
+  }
+
+  function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
+    const row = rowForEvent(ev);
+    if (row === undefined) return undefined;
+    s.transcript.push(row);
+    return s.transcript.length - 1;
   }
 
   function handleMessage(message: unknown): void {
@@ -1966,6 +2988,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         settleQueued(); // a queued message waiting only on a card ends now
         endDiffTurn();
         void turns.stop();
+        if (session !== undefined) setChatStatus(session, 'done'); // E202611031bd72813:S001 t2: Stop -> done
         return;
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
@@ -2035,6 +3058,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         session = s;
         permissionMode = modeOf(s); // S001 (bugfix): the mode follows the opened session
         postRestored(s);
+        restorePendingRequests(s); // t6: re-enter the session's unresolved persisted requests AFTER postRestored — session-restored clears the webview, so cards posted before it would not survive
         postPending(s.id); // each chat shows its own pending attachments
         postHistory(); // S005: keep the dropdown selection/order in sync
         followLiveTurn(s);
@@ -2080,20 +3104,56 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (approvals.has(msg.requestId)) {
           const res = approvals.decide(msg.requestId, msg.decision);
           if (!res.ok) return;
+          decidedRequestIds.add(msg.requestId);
+          // t6: keep the persisted queue snapshot fresh on every decision — batch decisions and
+          // grants otherwise live only in memory until the next clear(), and a reload would restore
+          // the stale snapshot, losing them and reviving already-decided requests
+          persistQueueSnapshot();
+          if (session !== undefined) reevaluateChatStatus(session); // E202611031bd72813:S001 t2: resolution re-evaluates precedence
           // Epic E20261014613abdb3 Story S001: a decision that starts no continuation may end the queued message.
           queueMicrotask(settleQueued);
           queueMicrotask(reportCards); // Story S002
           shownApproval = undefined;
           const decided = res.decided;
+          // persist the full decided record (action payload included) unresolved, so a follow-up
+          // fallback can carry the real action text and a reload can restore it whole. MR6: this
+          // must also cover TURN-ENDED decisions — runCompletedBatch() persists the batch REMOVAL
+          // below, so without a durable unresolved record here a reload in the removal->spawn
+          // window would find no actionable delivery state at all.
+          if (session !== undefined && deps.store.get(session.id) !== undefined) {
+            const list = [...(session.pendingRequests ?? [])];
+            // MR1-R3: the unresolved-record upsert is turn-scoped — a later turn reusing the request
+            // id gets its own full record (command included), not a bare shell
+            if (!list.some((r) => r.requestId === msg.requestId && r.turnId === decided.turnId)) {
+              list.push({
+                requestId: msg.requestId,
+                kind: 'approval',
+                turnId: decided.turnId,
+                title: decided.title,
+                detail: decided.detail,
+                ...(decided.toolName !== undefined ? { toolName: decided.toolName } : {}),
+                ...(decided.command !== undefined ? { command: decided.command } : {}),
+                resolved: false,
+              });
+              session.pendingRequests = list;
+              trySave(session);
+            }
+          }
           // S003 (dev-chat ux polish): record the resolved outcome (approve AND deny) as a persisted,
           // live-rendered chip — including the dir-block approve branch, which posts no grant re-run.
           recordPermissionOutcome(decided.toolName ?? decided.title, msg.decision === 'approve', msg.requestId);
           if (decided.resolution === 'in-turn') {
-            relayDecision(msg.requestId, msg.decision);
+            // t6: relayDecision marks the persisted record once delivery is CONFIRMED (delivered in-turn,
+            // follow-up started, or delivery-failed) — an undelivered decision must stay unresolved
+            relayDecision(msg.requestId, msg.decision, decided.turnId);
             showApprovalHead();
             return;
           }
+          // turn-ended decisions are delivered by the batch follow-up (runCompletedBatch), which marks
+          // each record once the run starts (or immediately when nothing runs) — never marked approved
+          // before delivery. A dir-block approve never runs at all, so it is marked here.
           if (msg.decision === 'approve' && decided.blockKind === 'dir-block') {
+            markPersistedRequest(session, msg.requestId, true, 'approved', decided.turnId);
             // A working-dir / sandbox-allowlist block: --allowedTools cannot grant a directory, so it
             // is never re-run (that produced the confused no-op) and never a grant. Post a
             // self-contained informational message explaining what actually needs to change — no
@@ -2284,6 +3344,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     session = s;
     permissionMode = modeOf(s);
     postRestored(s);
+    restorePendingRequests(s); // t6: after postRestored — session-restored clears the webview
     postPending(s.id);
     postHistory();
     followLiveTurn(s);
@@ -2399,10 +3460,22 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       markViewGone();
       disposed = true;
       channel = undefined;
+      if (activeTimer !== undefined) {
+        clearInterval(activeTimer);
+        activeTimer = undefined;
+      }
+      if (observerTimer !== undefined) {
+        clearInterval(observerTimer);
+        observerTimer = undefined;
+      }
     });
     channel.onMessage(handleMessage);
     channel.setHtml(renderShell());
     postInitialState();
+    postActive();
+    startActiveTimer();
+    startObserverTimer();
+    void runObserverPass(); // one immediate pass on attach
   };
 
   return {

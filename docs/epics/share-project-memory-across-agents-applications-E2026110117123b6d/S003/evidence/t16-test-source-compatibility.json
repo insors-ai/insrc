@@ -1,0 +1,17 @@
+{
+  "scope": "Only two regression test files not executed by the resource harness changed. All production source, executed fixture source, profile, limits and dependencies match the original measured hashes exactly.",
+  "changes": [
+    {
+      "path": "src/__tests__/contracts.test.ts",
+      "studiedSha256": "7351ba496f01ea66d9750dcbe6b935caac277bfcc7c33098f6f6e906eb9118f1",
+      "qualifiedSha256": "177ac2e66a8170fcd98ca31bdb56a73d53623153baefb43b36db0df63bc9ac13",
+      "reason": "S1 import allowlist updated for approved S3 private Lance/Arrow adapters while keeping public/backend boundaries strict."
+    },
+    {
+      "path": "src/__tests__/queue-fault-matrix.test.ts",
+      "studiedSha256": "1240d669fa904ce28b031b8edd38a57b1528bdb1d854eefb9a5d10efd10dec85",
+      "qualifiedSha256": "54f8cb78da1587950490f732c6c92bdcd188b0a51883bce99ff3865a4907cbb7",
+      "reason": "The public S3 factory identity-limit fixture now uses the required raw source envelope and explicit trusted attestation; direct S2 queue fixtures stay unchanged."
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+TAP version 13
+# Subtest: CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections
+ok 1 - CM-S5-COMPAT: both clients old/missing/malformed capability refusal, no legacy mutation fallback and unchanged legacy projections
+  ---
+  duration_ms: 44975.495792
+  type: 'test'
+  ...
+# Subtest: CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation
+ok 2 - CM-S5-RENDER-KT: native Swing manager event wiring, EDT/disposal guards, labels/password controls and immediate-action separation
+  ---
+  duration_ms: 21563.556416
+  type: 'test'
+  ...
+# Subtest: CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility
+ok 3 - CM-S5-TRANSPORT-KT: actual Kotlin socket UTF8 framing, partial writes, multiplexing, bounded limits, disposal and one-shot compatibility
+  ---
+  duration_ms: 23530.330958
+  type: 'test'
+  ...
+# Subtest: CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage
+ok 4 - CM-S5-PRIVACY: actual client adapters poison/count persistence/log/telemetry/artifact sinks and verify zero temporary leakage
+  ---
+  duration_ms: 21445.350416
+  type: 'test'
+  ...
+1..4
+# tests 4
+# suites 0
+# pass 4
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 112159.063792

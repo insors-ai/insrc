@@ -1,0 +1,15 @@
+{
+  "artifactPath": ".insrc/artifacts/BUILD-17123b6d304af2a2-s3.json",
+  "approvedAt": "2026-11-04T08:54:58.102Z",
+  "authorization": "User explicitly said approved after the post-fix self-review report.",
+  "method": "insrc_workflow_approve with recorded review override",
+  "codeReviewStatus": "no-review; no independent daemon CR claimed",
+  "reviewEvidence": "../SELF-REVIEW-ROUND-2.md",
+  "fixCommit": "ae9146c01",
+  "reviewCommit": "0b5c7f403",
+  "limits": [
+    "Backend failures remain user-deferred to GitHub #98.",
+    "Fixes have 75 passing macOS store tests and package build/typecheck; full platform/resource sweep was not repeated.",
+    "User requested controller self-review while the daemon review framework is repaired in another branch."
+  ]
+}

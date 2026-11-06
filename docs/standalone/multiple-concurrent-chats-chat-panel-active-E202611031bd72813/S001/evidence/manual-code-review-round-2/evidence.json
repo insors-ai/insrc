@@ -1,0 +1,145 @@
+{
+  "reviewType": "Manual in-session code review round 2; no formal daemon CR or approval",
+  "story": "E202611031bd72813:S001",
+  "reviewedFixHead": "50fd8cc9b9ad217aab1ca33617856f7226df6992",
+  "currentHeadAtVerification": "a21ea79de446803d8b8815e9a537e3674971c768",
+  "currentVscodeTreeMatchesReviewedFixHead": true,
+  "scope": "Fixes since eda6c2215 and their related lifecycle, adapter and panel paths. Isolated snapshot used during concurrent history reconciliation; archived probes rerun against identical current sources.",
+  "sourceSha256": {
+    "vscode-plugin/src/chat/__tests__/chat-panel.test.ts": "6d3d0a55088e46273d476ea72a10539d754a5fd6f88a833f5eb2f65275441b55",
+    "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts": "cd9ded609c1eb22fcad969d06612c6dd8d728586d4a8f11f55765d9695d4e339",
+    "vscode-plugin/src/chat/chat-panel.ts": "f053363a557edaec22a5dce9c4467a0d4e0434b6c356a9749f43b44c8d33b3cf",
+    "vscode-plugin/src/chat/cli-adapter.ts": "c78e2ba9854e1af195c1a80090b62c40e460db3e798c295f94ccd32ef56e77dc",
+    "vscode-plugin/src/chat/docs-review-panel.ts": "f47eba40153d82931283da64d8381082968997257d6a7312ae17dc179b3dd758",
+    "vscode-plugin/src/chat/session-store.ts": "981752cd0e1fdd97d5721e789d8171deb728f32e37f733dbacf8ff4afd920d60",
+    "vscode-plugin/src/chat/turn-lifecycle.ts": "f3912ba424b519e93e58efdbc8d5e79a4459b4702faa064c69cf994d946b9df7"
+  },
+  "runtime": "Node 22.23.2, macOS",
+  "tests": {
+    "testFiles": 15,
+    "pass": 741,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "durationMs": 45601.322208,
+    "exitCode": 0,
+    "testConcurrency": 1,
+    "testForceExit": true,
+    "tap": "affected-tests.tap",
+    "cwd": "vscode-plugin",
+    "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-force-exit --test-concurrency=1 src/chat/__tests__/approval-queue.test.ts src/chat/__tests__/chat-panel.test.ts src/chat/__tests__/chat-queue-outbox-host.test.ts src/chat/__tests__/chat-queue-runner.test.ts src/chat/__tests__/chat-shell.test.ts src/chat/__tests__/chat-theme.test.ts src/chat/__tests__/cli-adapter.test.ts src/chat/__tests__/docs-review-panel.test.ts src/chat/__tests__/extension-chat-wiring.test.ts src/chat/__tests__/protocol.test.ts src/chat/__tests__/review-presenter.test.ts src/chat/__tests__/session-file-store.test.ts src/chat/__tests__/session-output.test.ts src/chat/__tests__/session-store.test.ts src/chat/__tests__/turn-lifecycle.test.ts"
+  },
+  "typecheck": {
+    "cwd": "vscode-plugin",
+    "command": "../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "exitCode": 0,
+    "output": "typecheck.txt"
+  },
+  "observations": {
+    "routing-collision": {
+      "exitCode": 0,
+      "observation": {
+        "origin": "mw2fapoi-8p87nj",
+        "selected": "mw2fapp0-cvkrn6",
+        "callbackTurn": "A-turn",
+        "requestId": "shared-request",
+        "followUpTarget": "mw2fapp0-cvkrn6",
+        "followUpResume": {
+          "provider": "claude",
+          "nativeSessionId": "native-B"
+        },
+        "followUpPrompt": "Approved \u2014 run exactly this now: B-command",
+        "originOutcome": "approved"
+      }
+    },
+    "panel-dispose": {
+      "exitCode": 0,
+      "observation": {
+        "survivingPanelContentBefore": 1,
+        "survivingPanelContentAfter": 1,
+        "decisionReachedDaemon": 1,
+        "decisionReplies": 0
+      }
+    },
+    "spawn-gap": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeSpawnRelease": "delivery-failed",
+        "spawnsBeforeFailedContinuationReleased": 1,
+        "spawnsAfterFailedContinuationReleased": 2,
+        "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+        "nativeResume": null,
+        "lateSpawnAfterFailure": true
+      }
+    },
+    "present-turns": {
+      "exitCode": 0,
+      "observation": {
+        "differentTurns": 2,
+        "sameCallId": "item_1",
+        "expectedPanels": 2,
+        "actualPanels": 1,
+        "persisted": [
+          "item_1"
+        ]
+      }
+    },
+    "original-async-routing": {
+      "exitCode": 0,
+      "observation": {
+        "origin": "mw2faqhn-lqym54",
+        "selected": "mw2faqic-pcxfsa",
+        "followUpTarget": "mw2faqhn-lqym54",
+        "originOutcome": "approved"
+      }
+    },
+    "original-panels": {
+      "exitCode": 0,
+      "observation": {
+        "initial": [
+          [
+            "LLD-a-S001"
+          ],
+          [
+            "LLD-b-S001"
+          ]
+        ],
+        "firstPanelDecisionReachedDaemon": 1,
+        "firstPanelDecisionReplies": 1,
+        "contentCountsAfterSecondPanelBoot": [
+          2,
+          2
+        ]
+      }
+    },
+    "original-followup": {
+      "exitCode": 0,
+      "observation": {
+        "outcomeBeforeOriginalEnds": "delivery-failed",
+        "runsBeforeOriginalEnds": 1,
+        "runsAfterOriginalEnds": 1,
+        "lateFollowUpPrompt": null,
+        "nativeResume": null
+      }
+    },
+    "original-present-replay": {
+      "exitCode": 0,
+      "observation": {
+        "persistedDeclaration": "declaration-1",
+        "panelsBeforeReattach": 1,
+        "panelsAfterReattach": 1,
+        "keys": [
+          "LLD-a-S001#1"
+        ]
+      }
+    }
+  },
+  "limits": [
+    "Diagnostic scripts exit zero when executed; inspect observations, not exit status, for safety outcomes.",
+    "Injected clients/adapters/processes, real host/lifecycle/presenter; no live CLI/model calls, shell actions or workflow approvals.",
+    "spawn-gap injects an adapter pre-spawn await corresponding to production cli-adapter.ts beginTurn await; no real filesystem delay or child spawn was required.",
+    "Tests use force-exit; natural teardown is not proven.",
+    "No rendered VS Code UI, live provider suite or full backend sweep.",
+    "No production changes or existing workflow artifact/approval changes."
+  ]
+}

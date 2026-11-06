@@ -83,7 +83,7 @@
     "src/daemon/threads/method-class.ts": {
       "classification": "removal-admission-routing",
       "rationale": "S004: additive exact endpoint classifications and main-daemon method-set membership keep removal/state/retry with existing owners. No process-local driver/authority crosses worker envelopes; all-consumer Saved affinity remains release-blocking.",
-      "sourceDigest": "4fd7fc71b90a6918a7b07e73ce7fda82d216c5af5ce739d86a4659c19d53dc11"
+      "sourceDigest": "4ec94492e01bb91fa884fb891dbbfde1d405113aed39bc5dc1f746f2bbd8be71"
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -2379,7 +2379,7 @@
       ],
       "siteCount": 31,
       "sitesDigest": "7c5a13549a1f03f521b01d4eb0254f5c47ee242d8d3edee8dfe80dbfc22d7de7",
-      "sourceDigest": "ab56afa44d5e7de36881740e0f578f18a14c0937bee909b0e241da1ed70ce578"
+      "sourceDigest": "c62b7455bb5741f19a10f84120956c626659d54f84ed1f9e84d9a4fe1529313f"
     },
     "src/agent/read-only-tool-loop.ts": {
       "classification": "provider-admission",
@@ -2924,7 +2924,7 @@
       ],
       "siteCount": 45,
       "sitesDigest": "806014a2a2beb938ab3ff4811911001bc75886d3ea6bc54c8c06bb864c85ae5e",
-      "sourceDigest": "c9176c46f885e33832cfe003205bde246644ad4725a87b438708020f6281724d"
+      "sourceDigest": "2d4b853391e74a092632650cf5f4e42652c95847d25ba489d8bf8e7a48d1316d"
     },
     "src/analyze/context/invariants.ts": {
       "classification": "session-invocation",
@@ -3066,7 +3066,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "925c095ce24d910faa9ec54b91061efdbd39a5f213f01fd311326f1c224f454f",
-      "sourceDigest": "1c1f3513f2b0dd39daa19c8fe685cbf6ee276eb8bc012c0c6e9e63b911b76ca5"
+      "sourceDigest": "9a91764d672b22ad9dc0cffd6a1d15843dda36c5192a02193d2004c8a46f69e0"
     },
     "src/analyze/context/scope.ts": {
       "classification": "session-invocation",
@@ -4104,6 +4104,27 @@
       "sitesDigest": "d254655c20dbef508817e8c72797a7dbf00852c635f1c40817952469299bd6bc",
       "sourceDigest": "5c5051f7e24aec18b13b701c261ff90df86dc539dc223c51cb3d503504dd7a2f"
     },
+    "src/analyze/explore/doc-relations-attach.ts": {
+      "classification": "session-invocation",
+      "rationale": "Attaches a doc.mention hit's document relationships at read (Epic c2ba6fa6 s10): reads stored relationships and the repository's switch, never caches what it attaches, and routes its one diagnostic through captureAnalysisDiagnostics so a session-memory run stays quiet.",
+      "sites": [
+        [
+          "serialization",
+          "captureAnalysisDiagnostics(log).emit"
+        ],
+        [
+          "storage-call",
+          "getEntity"
+        ],
+        [
+          "diagnostic",
+          "getLogger"
+        ]
+      ],
+      "siteCount": 3,
+      "sitesDigest": "33254798429f564cd56ca541784b4e2be1f4e065c948751d5c75e941eab2416f",
+      "sourceDigest": "526d57925336a9ed6f7590ea18ed328786c9c5f6b7b12980d3daedc3b51a05e2"
+    },
     "src/analyze/explore/executor.ts": {
       "classification": "session-invocation",
       "rationale": "Analysis may consume temporary sources. Carry the explicit owner tuple, deny persistent cache reads/writes and quiet diagnostics before payload formatting; migration is planned, not proved by this inventory.",
@@ -4187,7 +4208,7 @@
       ],
       "siteCount": 19,
       "sitesDigest": "8014bad785d66de44d6627284510d0020932afab50e374b28ed4890e4a8f264d",
-      "sourceDigest": "22ed072a22177c7c994a37c527531a72c7c830d4bc80f05f51c11140044a8da5"
+      "sourceDigest": "2d8499c7a00dcdc966cb62661412abfb642dec9d2051d5faf165b605a252902e"
     },
     "src/analyze/explore/freeform-probe.ts": {
       "classification": "session-invocation",
@@ -4460,7 +4481,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "29ae33b7f43474955bb25645025ba594512597a8b897259ed8cb49ed3223385a",
-      "sourceDigest": "074c2d4ea73abac514ea056d54c97c776f99a9ab1c06fd1b0c96e5cd2b890be1"
+      "sourceDigest": "ee73cc7fd7ea3a009656e7ca2aed9b983b7551e763ebe5b73afeea0e8133de44"
     },
     "src/analyze/item-length.ts": {
       "classification": "session-invocation",
@@ -6467,7 +6488,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "b09d5d232af0c4b08b866c9e72d18c5dbd0bd6bfd2db254bf37270a5588aa55d",
-      "sourceDigest": "70724b73a9aab5b9b99da91cb0169acc1e7914d3041346652e38bbc4a3a3a21c"
+      "sourceDigest": "71d74d478c7b74a95cb2b71bd7569ae727f21c4acfde20fbfea18c03e9f69315"
     },
     "src/bin/insrc-connection-maintenance.ts": {
       "classification": "client-process-boundary",
@@ -13043,6 +13064,23 @@
       "sitesDigest": "12cf8ee8960cf845da54486482a41ac7c65520c1e06cf728a9a7080381e16552",
       "sourceDigest": "8594fa49c97253030950cba8144dc1868f85ce4bff1463fc29de926865921f30"
     },
+    "src/daemon/doc-relations-rpc.ts": {
+      "classification": "daemon-admission-boundary",
+      "rationale": "Non-session RPC for document relationships (Epic c2ba6fa6 s10): search.doc_relations reads stored relationships behind the search guard, and docRelations.measure validates a registered repository's own hand-checked set and queues a summary-lane job; no session admission and no session-derived material.",
+      "sites": [
+        [
+          "storage-call",
+          "lookupRepoId"
+        ],
+        [
+          "storage-call",
+          "UnregisteredRepoError"
+        ]
+      ],
+      "siteCount": 2,
+      "sitesDigest": "bbcc5f3bf79364cc2add8e2dd9cd2328192a35a8f9939c4067dce7ceffda5e75",
+      "sourceDigest": "1334997094b1ba6ec74b194898aed9db3703481d093e49deb10fe6a71518e83a"
+    },
     "src/daemon/fatal.ts": {
       "classification": "daemon-admission-boundary",
       "rationale": "Process/service infrastructure or non-session RPC. No implicit session admission: unsupported stateful methods refuse at dispatch; coarse lifecycle/background diagnostics must not receive temporary payloads.",
@@ -13318,6 +13356,10 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "unresolved-call",
+          "import"
         ],
         [
           "unresolved-call",
@@ -14052,9 +14094,9 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 225,
-      "sitesDigest": "38ef2d7f5ab40e1fd4502a1375f52fdc0ab143af7f56e51d73c08dd8d014b72c",
-      "sourceDigest": "5d7926c4fa971363f02870692d65de70d4c7d8c8403a54421256bf04c3799705"
+      "siteCount": 226,
+      "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
+      "sourceDigest": "70743d779c331f2e977dc77a79f2437cab0b7165354dd15a637aa9b5c7f13208"
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
@@ -14796,7 +14838,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "222c57c4402fcd795fddbf35b7000985cf96368fc1e68305c66b52e4092f4fa8",
-      "sourceDigest": "11a4beb3ae0453b27c12617d359e11eab49121e8c26be0b7c79b151910720100"
+      "sourceDigest": "7d06c1b3b29195139c54fa5d70883bf6ec3fbb1d930033ebddb3448059f01c81"
     },
     "src/daemon/repo-call-gate.ts": {
       "classification": "daemon-admission-boundary",
@@ -14840,6 +14882,10 @@
           "log.debug"
         ],
         [
+          "diagnostic",
+          "log.debug"
+        ],
+        [
           "storage-call",
           "readIndexState"
         ],
@@ -14848,9 +14894,9 @@
           "readUnattributedUnwritable"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "bb882b285db1e3b0dd828381be18aab745e20b75f839f8c5c69cbf03b92897c8",
-      "sourceDigest": "c55dfc0c77b0b1d401daad88e422ddec4403dfbdab24d982100f36a0c2583939"
+      "siteCount": 7,
+      "sitesDigest": "3e67cbffc16efcccfe55a3fd3c2e7e9eb4540bc3c6a89f478cd6be2fdd88df12",
+      "sourceDigest": "d2674c569c2d938dd9ff95ba5419debce0a8f51ade319a677aca782e1fba469e"
     },
     "src/daemon/repo-convert.ts": {
       "classification": "daemon-admission-boundary",
@@ -16887,7 +16933,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "a09a02d223680bed3842352163e65f5c1ddc24f6e3c65428d6b85b80c3aa6a5c",
-      "sourceDigest": "a683e20669542eeb5a6a6de34a234a7ad42125627eabd408df1fbbe02c125b9b"
+      "sourceDigest": "b59b925e87f002657bc4688140b7057248f2827b431df9a2080c323899554523"
     },
     "src/daemon/threads/summary-worker.ts": {
       "classification": "routing-background-boundary",
@@ -21355,6 +21401,507 @@
       "sitesDigest": "2f8ea027c0ca9c7ac076a50b944ade4c63f008a9ed4ec9c518300bb57a80055c",
       "sourceDigest": "0439b3958c8b62f1fe7e14c5be11b7f6d189d2b5b7739913e968582d10e23f8b"
     },
+    "src/db/doc-relations.ts": {
+      "classification": "persistent-storage-boundary",
+      "rationale": "Storage helpers for model-proposed document relationships (Epic c2ba6fa6 s10): the proposal, carry and quality rows of registered repositories, written inside the graph store's own write transactions and refused under session memory by assertNoSessionPersistence; no session-derived material is read or written.",
+      "sites": [
+        [
+          "storage-call",
+          "(() => {\n\t\t\t\tconst rel = relative(repoPath, entity.file);\n\t\t\t\tconst row = readDocRelationRowInTxn(s, repoId, rel);\n\t\t\t\treturn row === undefined ? new Map<string, DocRelationRow>() : new Map([[rel, row]]);\n\t\t\t})"
+        ],
+        [
+          "serialization",
+          "(key as Buffer).subarray(4).toString"
+        ],
+        [
+          "serialization",
+          "(key as Buffer).subarray(4).toString"
+        ],
+        [
+          "serialization",
+          "(key as Buffer).subarray(4).toString"
+        ],
+        [
+          "serialization",
+          "(key as Buffer).subarray(prefix.length).toString"
+        ],
+        [
+          "storage-call",
+          "add"
+        ],
+        [
+          "storage-call",
+          "add"
+        ],
+        [
+          "storage-call",
+          "add"
+        ],
+        [
+          "storage-call",
+          "add"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "assertNoSessionPersistence"
+        ],
+        [
+          "serialization",
+          "Buffer.concat"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "storage-call",
+          "clearDocRelationsInTxn"
+        ],
+        [
+          "serialization",
+          "decodeDocRelationQualityRow"
+        ],
+        [
+          "storage-call",
+          "decodeDocRelationQualityRow"
+        ],
+        [
+          "serialization",
+          "decodeDocRelationRow"
+        ],
+        [
+          "serialization",
+          "decodeDocRelationRow"
+        ],
+        [
+          "serialization",
+          "decodeDocRelationRow"
+        ],
+        [
+          "storage-call",
+          "decodeDocRelationRow"
+        ],
+        [
+          "storage-call",
+          "decodeDocRelationRow"
+        ],
+        [
+          "storage-call",
+          "decodeDocRelationRow"
+        ],
+        [
+          "serialization",
+          "decodeEntityRow"
+        ],
+        [
+          "serialization",
+          "decodeEntityRow"
+        ],
+        [
+          "storage-call",
+          "decodeEntityRow"
+        ],
+        [
+          "storage-call",
+          "decodeEntityRow"
+        ],
+        [
+          "storage-call",
+          "documentKey"
+        ],
+        [
+          "storage-call",
+          "documentKey"
+        ],
+        [
+          "storage-call",
+          "documentKey"
+        ],
+        [
+          "storage-call",
+          "eligible"
+        ],
+        [
+          "serialization",
+          "encodeDocRelationQualityRow"
+        ],
+        [
+          "storage-call",
+          "encodeDocRelationQualityRow"
+        ],
+        [
+          "serialization",
+          "encodeDocRelationRow"
+        ],
+        [
+          "storage-call",
+          "encodeDocRelationRow"
+        ],
+        [
+          "serialization",
+          "encodeEntityKey"
+        ],
+        [
+          "serialization",
+          "encodeEntityKey"
+        ],
+        [
+          "serialization",
+          "encodeEntityKey"
+        ],
+        [
+          "storage-call",
+          "encodeEntityKey"
+        ],
+        [
+          "storage-call",
+          "encodeEntityKey"
+        ],
+        [
+          "storage-call",
+          "encodeEntityKey"
+        ],
+        [
+          "serialization",
+          "encodeNameIndexPrefix"
+        ],
+        [
+          "storage-call",
+          "encodeNameIndexPrefix"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "serialization",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "encodeRepoKey"
+        ],
+        [
+          "storage-call",
+          "fileEntityHashInTxn"
+        ],
+        [
+          "storage-call",
+          "fileEntityHashInTxn"
+        ],
+        [
+          "storage-call",
+          "fileEntityId"
+        ],
+        [
+          "storage-call",
+          "fileEntityId"
+        ],
+        [
+          "storage-call",
+          "fileIdOf"
+        ],
+        [
+          "storage-call",
+          "filesNamed"
+        ],
+        [
+          "storage-call",
+          "filesNamed"
+        ],
+        [
+          "storage-call",
+          "getEntity"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "serialization",
+          "k.subarray(4).toString"
+        ],
+        [
+          "storage-call",
+          "listUnresolvedRelations"
+        ],
+        [
+          "storage-call",
+          "listUnresolvedRelations"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "storage-call",
+          "prefixSuccessor"
+        ],
+        [
+          "storage-call",
+          "prefixSuccessor"
+        ],
+        [
+          "storage-call",
+          "prefixSuccessor"
+        ],
+        [
+          "storage-call",
+          "read"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQualityInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQualityInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationRowInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationRowsInTxn"
+        ],
+        [
+          "storage-call",
+          "readIndexState"
+        ],
+        [
+          "storage-call",
+          "repoRange"
+        ],
+        [
+          "storage-call",
+          "repoRange"
+        ],
+        [
+          "storage-call",
+          "repoRange"
+        ],
+        [
+          "storage-call",
+          "repoRange"
+        ],
+        [
+          "storage-call",
+          "s.docRelationCarry.getKeys"
+        ],
+        [
+          "storage-call",
+          "s.docRelationCarry.getRange"
+        ],
+        [
+          "storage-call",
+          "s.docRelationCarry.put"
+        ],
+        [
+          "storage-call",
+          "s.docRelationCarry.remove"
+        ],
+        [
+          "storage-call",
+          "s.docRelationCarry.remove"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.get"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.getRange"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.getRange"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.put"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.put"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.remove"
+        ],
+        [
+          "storage-call",
+          "s.docRelationProposals.remove"
+        ],
+        [
+          "storage-call",
+          "s.docRelationQuality.get"
+        ],
+        [
+          "storage-call",
+          "s.docRelationQuality.put"
+        ],
+        [
+          "storage-call",
+          "s.docRelationQuality.remove"
+        ],
+        [
+          "storage-call",
+          "s.entity.get"
+        ],
+        [
+          "storage-call",
+          "s.entity.get"
+        ],
+        [
+          "storage-call",
+          "s.entityByFile.getKeys"
+        ],
+        [
+          "storage-call",
+          "s.entityByFile.getKeys"
+        ],
+        [
+          "storage-call",
+          "s.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "s.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "s.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "s.entityStringByU64.get"
+        ],
+        [
+          "storage-call",
+          "s.nameIndex.getRange"
+        ],
+        [
+          "storage-call",
+          "stored"
+        ],
+        [
+          "storage-call",
+          "stored"
+        ],
+        [
+          "storage-call",
+          "stored"
+        ],
+        [
+          "storage-call",
+          "stored"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationQualityInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationQualityInTxn"
+        ]
+      ],
+      "siteCount": 123,
+      "sitesDigest": "40458e5e7b1c68e352ad77043d3a550985f67db8286b88a383d172e8d936a70f",
+      "sourceDigest": "fedaadf2c16f0e33fc97aed37702e48f892cf23ebddc8c4c56886f7e79509396"
+    },
     "src/db/doc-summaries.ts": {
       "classification": "persistent-storage-boundary",
       "rationale": "Shared storage API: independent structural graph reads retain existing semantics, but session-derived cache/record/vector reads and all temporary-derived writes are denied at the invocation boundary before access.",
@@ -22167,6 +22714,14 @@
         [
           "storage-call",
           "carryDocSummariesInTxn"
+        ],
+        [
+          "storage-call",
+          "clearDocRelationsInTxn"
+        ],
+        [
+          "storage-call",
+          "clearDocRelationsInTxn"
         ],
         [
           "storage-call",
@@ -23833,9 +24388,9 @@
           "writeVectorsThenMarkersLocked"
         ]
       ],
-      "siteCount": 443,
-      "sitesDigest": "ba89b3c56106ef08bc2767b1f63e7c9ed3c29316e8b4b4a502c1f300850676f5",
-      "sourceDigest": "59e72f4537ccf04d99c8ce6d30e68e205c5052089749bffe9623eb00dd8375d9"
+      "siteCount": 445,
+      "sitesDigest": "c4a90d9f64d31c1f0147df876fe8d7d5d8f0bf63c54ffb2155d0c36c5536f3bf",
+      "sourceDigest": "d52fe9553dc812eb957affa16fea64f47d6720ef335c75235cd271d9d0c6a023"
     },
     "src/db/exploration-cache.ts": {
       "classification": "persistent-storage-boundary",
@@ -24112,6 +24667,22 @@
           "decode"
         ],
         [
+          "serialization",
+          "decode"
+        ],
+        [
+          "serialization",
+          "decode"
+        ],
+        [
+          "storage-call",
+          "decode"
+        ],
+        [
+          "storage-call",
+          "decode"
+        ],
+        [
           "storage-call",
           "decode"
         ],
@@ -24261,6 +24832,22 @@
         ],
         [
           "serialization",
+          "encode"
+        ],
+        [
+          "serialization",
+          "encode"
+        ],
+        [
+          "serialization",
+          "encode"
+        ],
+        [
+          "storage-call",
+          "encode"
+        ],
+        [
+          "storage-call",
           "encode"
         ],
         [
@@ -24340,9 +24927,9 @@
           "Unpackr"
         ]
       ],
-      "siteCount": 75,
-      "sitesDigest": "7954a1f989d20d11eb78fbd30540905f5eaf56377122245f869610cb467b2e48",
-      "sourceDigest": "fdf19ff7e212d63a43ffae50e683d531e56e0f0a334cecf22c204b719ee14bff"
+      "siteCount": 83,
+      "sitesDigest": "ed189f190f085c1fb93a63724cf63584c0cf5296267022fc57793f6436373b31",
+      "sourceDigest": "f4c586389372da7a9f511720d705f75b8679de6a8837ef3ddff6da23440ef518"
     },
     "src/db/graph/edges.ts": {
       "classification": "persistent-storage-boundary",
@@ -25390,6 +25977,10 @@
         ],
         [
           "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
           "log.warn"
         ],
         [
@@ -25553,9 +26144,9 @@
           "store.root.openDB"
         ]
       ],
-      "siteCount": 108,
-      "sitesDigest": "ba40cce16f6802d323109c6c04dfed8a08429b3a187190d8e5b83e20bf81e781",
-      "sourceDigest": "0f5dffe7f0c6cfd4f59f479e0ac023fde4934c74a5703da701ad0723153609da"
+      "siteCount": 109,
+      "sitesDigest": "31e05cb65b3e79d068d925217ae7635365869b7af7a31ccf93d14c4a38841a05",
+      "sourceDigest": "83c70ff3a4d7e5db4bfaf2132744ec12971e54618c9a5f849164d44921bff0c6"
     },
     "src/db/graph/pending-class.ts": {
       "classification": "persistent-storage-boundary",
@@ -25608,7 +26199,7 @@
         ],
         [
           "storage-call",
-          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\tentityByFile:       open_('entity_by_file', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\t\t\tsubsystem:          open_('subsystem'),\n\t\t\tsubsystemByFile:    open_('subsystem_by_file'),\n\t\t\tsubsystemDirty:     open_('subsystem_dirty'),\n\t\t\tsubsystemFile:      open_('subsystem_file'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
+          "(async (): Promise<GraphStore> => {\n\t\tconst t0 = Date.now();\n\t\tconst mapsizeBytes = readMapsizeBytes();\n\t\t// What an interrupted compaction left (a crash, kill -9): finished or\n\t\t// rolled back here; a swapped-in copy is checked against its manifest below.\n\t\tconst unverified = recoverCompactionLeftovers(_path);\n\n\t\t// lmdb-js creates a single file at `_path`; ensure the parent\n\t\t// directory exists. Do NOT mkdir _path itself -- it's a file, not\n\t\t// a directory.\n\t\tconst parent = dirname(_path);\n\t\tif (!existsSync(parent)) {\n\t\t\tmkdirSync(parent, { recursive: true });\n\t\t}\n\n\t\t// Wrap the lmdb-js open() with classified error mapping per the\n\t\t// design doc \"Env-open failures\" matrix. Full durability default\n\t\t// (no MDB_NOSYNC / MDB_NOMETASYNC / MDB_MAPASYNC) -- the spike\n\t\t// validated this is plenty fast at our write rate.\n\t\tlet root: RootDatabase;\n\t\ttry {\n\t\t\troot = open({\n\t\t\t\tpath:    _path,\n\t\t\t\tmapSize: mapsizeBytes,\n\t\t\t\tmaxDbs:  MAX_DBS,\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tthrow classifyOpenError(e, _path, mapsizeBytes / 1024 ** 3);\n\t\t}\n\n\t\tconst open_ = (name: string, opts: { dupSort?: boolean } = {}): AnyDb => root.openDB({\n\t\t\tname,\n\t\t\tkeyEncoding:  'binary',\n\t\t\tencoding:     'binary',\n\t\t\tdupSort:      opts.dupSort ?? false,\n\t\t});\n\n\t\tconst store: GraphStore = {\n\t\t\troot,\n\t\t\tunderstandingCurrent: root.openDB({ name: 'understanding_current', keyEncoding: 'binary' }),\n\t\t\tunderstandingAttempt: root.openDB({ name: 'understanding_attempt', keyEncoding: 'binary' }),\n\t\t\tunderstandingAudit: root.openDB({ name: 'understanding_audit', keyEncoding: 'binary' }),\n\t\t\tunderstandingRequest: root.openDB({ name: 'understanding_request', keyEncoding: 'binary' }),\n\t\t\tunderstandingOwnerIndex: root.openDB({ name: 'understanding_owner_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingScopeIndex: root.openDB({ name: 'understanding_scope_index', keyEncoding: 'binary' }),\n\t\t\tunderstandingReceipt: root.openDB({ name: 'understanding_receipt', keyEncoding: 'binary' }),\n\t\t\tunderstandingMeta: root.openDB({ name: 'understanding_meta', keyEncoding: 'binary' }),\n\n\n\t\t\t// Graph -- meta uses ordered-binary keys so callers can write\n\t\t\t// short utf8 strings directly (lmdb-js encodes string→buffer\n\t\t\t// transparently for ordered-binary). Values are msgpack-default.\n\t\t\tmeta:               root.openDB({ name: 'meta', keyEncoding: 'ordered-binary' }),\n\t\t\trepo:               open_('repo'),\n\t\t\tentity:             open_('entity'),\n\t\t\tentityIdByString:   root.openDB({ name: 'entity_id_by_string', keyEncoding: 'ordered-binary' }),\n\t\t\tentityStringByU64:  root.openDB({\n\t\t\t\tname:        'entity_string_by_u64',\n\t\t\t\tkeyEncoding: 'binary',\n\t\t\t\tencoding:    'ordered-binary',  // string values\n\t\t\t}),\n\t\t\tnameIndex:          open_('name_index', { dupSort: true }),\n\t\t\tentityByFile:       open_('entity_by_file', { dupSort: true }),\n\t\t\toutEdge:            open_('out_edge'),\n\t\t\tinEdge:             open_('in_edge'),\n\t\t\tunresolved:         root.openDB({ name: 'unresolved', keyEncoding: 'ordered-binary' }),\n\t\t\tunresolvedByFile:   open_('unresolved_by_file', { dupSort: true }),\n\t\t\tunresolvedByTarget: open_('unresolved_by_target', { dupSort: true }),\n\t\t\texportNames:        open_('export_names', { dupSort: true }),\n\t\t\tindexState:         open_('index_state'),\n\t\t\tsubsystem:          open_('subsystem'),\n\t\t\tsubsystemByFile:    open_('subsystem_by_file'),\n\t\t\tsubsystemDirty:     open_('subsystem_dirty'),\n\t\t\tsubsystemFile:      open_('subsystem_file'),\n\t\t\tdocRelationProposals: open_('doc_relation_proposals'),\n\t\t\tdocRelationCarry:     open_('doc_relation_proposals_carry'),\n\t\t\tdocRelationQuality:   open_('doc_relation_quality'),\n\n\t\t\t// Plans -- `plan` is utf8 id keyed; planStep keys are pre-\n\t\t\t// encoded composite Buffers so binary is fine\n\t\t\tplan:               root.openDB({ name: 'plan', keyEncoding: 'ordered-binary' }),\n\t\t\tplanStep:           open_('plan_step'),\n\n\t\t\t// Conversations -- session is utf8 id keyed; turn keys are\n\t\t\t// pre-encoded composite Buffers\n\t\t\tconversationSession:    root.openDB({ name: 'conversation_session', keyEncoding: 'ordered-binary' }),\n\t\t\tconversationTurn:       open_('conversation_turn'),\n\t\t\tconversationTurnByRepo: open_('conversation_turn_by_repo', { dupSort: true }),\n\n\t\t\t// Todos -- todoList + todoItem are utf8 id keyed; todoComment\n\t\t\t// uses a composite (item_id, comment_id) key for per-item\n\t\t\t// range scans.\n\t\t\ttodoList:           root.openDB({ name: 'todo_list', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoListBySession:  open_('todo_list_by_session', { dupSort: true }),\n\t\t\ttodoItem:           root.openDB({ name: 'todo_item', keyEncoding: 'ordered-binary' }),\n\t\t\ttodoComment:        open_('todo_comment'),\n\n\t\t\t// Config -- configEntry is utf8 id keyed\n\t\t\tconfigEntry:        root.openDB({ name: 'config_entry', keyEncoding: 'ordered-binary' }),\n\t\t\tconfigByScope:      open_('config_by_scope', { dupSort: true }),\n\n\t\t\t// Doc summaries -- keyed by entity u64 (matches the entity\n\t\t\t// sub-DB); values are msgpack-encoded DocSummary. The\n\t\t\t// repo-secondary index enables per-repo sweeps for\n\t\t\t// live-project-context assembly.\n\t\t\tdocSummary:         open_('doc_summary'),\n\t\t\tdocSummaryByRepo:   open_('doc_summary_by_repo', { dupSort: true }),\n\t\t\tdocSummaryCarry:    open_('doc_summary_carry'),\n\n\t\t\t// Exploration cache -- 20-byte composite key\n\t\t\t// (repoId u32 || lastIndexedAt u64 || paramHash u64). See\n\t\t\t// db/exploration-cache.ts for the layout.\n\t\t\texplorationCache:   open_('exploration_cache'),\n\t\t};\n\n\t\t// A compacted copy swapped in but not yet checked: before any write of\n\t\t// this open, every named database must hold the entries it held when\n\t\t// the copy was taken. If not, the original comes back and is opened.\n\t\tif (unverified !== undefined) {\n\t\t\tconst found = entryCounts(store);\n\t\t\tconst differs = Object.keys({ ...unverified.counts, ...found }).filter(name => unverified.counts[name] !== found[name]);\n\t\t\tif (differs.length > 0) {\n\t\t\t\tlog.error({ path: _path, differs, expected: unverified.counts, found }, 'compaction: the compacted copy does not match the store it was taken from; restoring the original');\n\t\t\t\tawait root.close();\n\t\t\t\trestoreFromBak(_path);\n\t\t\t\t_lastCompactionCheck = 'restored';\n\t\t\t\t_initPromise = null;\n\t\t\t\treturn getGraphStore();\n\t\t\t}\n\t\t\tfinishVerifiedCompaction(_path);\n\t\t\t_lastCompactionCheck = 'verified';\n\t\t}\n\n\t\t// Schema-version pre-flight check. Wrapped in a write txn so the\n\t\t// first-boot write commits before any caller can read.\n\t\tconst stored = readSchemaVersion(store);\n\t\tif (stored === undefined) {\n\t\t\t// First boot at the current schema -- write the version AND\n\t\t\t// provision the reserved shared-modules registry rows. The\n\t\t\t// v2->v3 migration also provisions them, but it only fires\n\t\t\t// when migrating an existing v2 env; a fresh-boot env never\n\t\t\t// hits the migration path, so without this call the four\n\t\t\t// `kind: 'shared-modules'` rows would be missing.\n\t\t\tconst { provisionSharedModulesRows } = await import('./migrations.js');\n\t\t\t// A child transaction, so a throw leaves no partial first boot (ISSUE-5437d6e5).\n\t\t\tawait root.childTransaction(() => {\n\t\t\t\twriteSchemaVersion(store, SCHEMA_VERSION);\n\t\t\t\tprovisionSharedModulesRows(store);\n\t\t\t});\n\t\t} else if (stored > SCHEMA_VERSION) {\n\t\t\tawait root.close();\n\t\t\tthrow new LmdbStoreSchemaVersionMismatch(stored, SCHEMA_VERSION);\n\t\t} else if (stored < SCHEMA_VERSION) {\n\t\t\t// Forward-migration path. Phase 7.2 ships the runner with\n\t\t\t// an empty registry (v1 is the first version); the moment\n\t\t\t// a v2 migration is added, this path activates without any\n\t\t\t// further env-open changes.\n\t\t\tconst { runMigrations } = await import('./migrations.js');\n\t\t\ttry {\n\t\t\t\tconst applied = await runMigrations(store, stored, SCHEMA_VERSION);\n\t\t\t\tlog.info(\n\t\t\t\t\t{ stored, target: SCHEMA_VERSION, applied },\n\t\t\t\t\t'forward migrations complete',\n\t\t\t\t);\n\t\t\t} catch (e) {\n\t\t\t\tawait root.close();\n\t\t\t\tthrow e;\n\t\t\t}\n\t\t}\n\n\t\t// The IndexState check on open (Epic c2ba6fa6 s1): pending counts are\n\t\t// recounted from the stored classes; a row that differs is corrected and\n\t\t// a row of an unregistered repository deleted. A failure is logged and\n\t\t// does not stop the store opening: completeness is reported, not relied on.\n\t\ttry {\n\t\t\tconst { reconcileIndexStateInTxn } = await import('./index-state-rows.js');\n\t\t\tconst corrections = await root.childTransaction(() => reconcileIndexStateInTxn(store));\n\t\t\tfor (const c of corrections) log.warn(c, c.kind === 'row-deleted' ? 'index state: row of an unregistered repository deleted' : 'index state: stored pending counts differed from a recount; corrected');\n\t\t} catch (e) {\n\t\t\tlog.error({ err: e }, 'index state: the recount on open failed; counts are left as stored');\n\t\t}\n\n\t\tlog.info(\n\t\t\t{\n\t\t\t\tinitMs:        Date.now() - t0,\n\t\t\t\tmapsizeGiB:    mapsizeBytes / 1024 ** 3,\n\t\t\t\tschemaVersion: SCHEMA_VERSION,\n\t\t\t\tpath:          _path,\n\t\t\t},\n\t\t\t'lmdb graph store initialised',\n\t\t);\n\t\t_instance = guardGraphHandles(store);\n\t\treturn _instance;\n\t})"
         ],
         [
           "storage-call",
@@ -26228,6 +26819,18 @@
         ],
         [
           "storage-call",
+          "open_"
+        ],
+        [
+          "storage-call",
+          "open_"
+        ],
+        [
+          "storage-call",
+          "open_"
+        ],
+        [
+          "storage-call",
           "open"
         ],
         [
@@ -26615,9 +27218,9 @@
           "writeSchemaVersion"
         ]
       ],
-      "siteCount": 254,
-      "sitesDigest": "a8e5dea81731e6c896eab8641aedfe64ebe04a385ef8d866b52d6504a3ea3308",
-      "sourceDigest": "58d359f5827fa4f5a6be1a103fe2a939cdf80121f228bd91eb2c97941057e045"
+      "siteCount": 257,
+      "sitesDigest": "a8c94dfa068aad5a39f6760d127cfd24be774208e44bb7e9e66222bba8f7b1d5",
+      "sourceDigest": "669cf39589a68ff02af21e800adc179d6266d1dc80c6fdee5f67a39531f313a7"
     },
     "src/db/graph/traversal.ts": {
       "classification": "persistent-storage-boundary",
@@ -29397,6 +30000,10 @@
         ],
         [
           "storage-call",
+          "deleteDocRelationsForRepoInTxn"
+        ],
+        [
+          "storage-call",
           "deleteEntitiesForRepo"
         ],
         [
@@ -29636,9 +30243,9 @@
           "withWriteTxn"
         ]
       ],
-      "siteCount": 70,
-      "sitesDigest": "d7973ac1a527af3d2e3b4d9808d3ad8a023a456453946a174c3114f28d998c01",
-      "sourceDigest": "051d898dd8b0298e1693114aac9e4fde0ca25649572f5e13134e643bec0f9892"
+      "siteCount": 71,
+      "sitesDigest": "20c4297e29994f8d8f8e6a8704bc429920bf5c040ba04e91963eaeb95a913aa1",
+      "sourceDigest": "9548ca62d660ba68bbf53db4249688a59d733c02cdb1c1573cb4e3c55d81dd25"
     },
     "src/db/search.ts": {
       "classification": "persistent-storage-boundary",
@@ -31958,7 +32565,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "578bdbc8aee99cd140dd68b63f0f4850d5bcfcce328abe2f9686720aa17bb2f0",
-      "sourceDigest": "ba5e5e2d2b7bd98e3e995f7071441d9f6e6abcd368f2d5d31663bb529b8e56ee"
+      "sourceDigest": "a8ce2856cc166e8015921a07c9f0c7233395a74cf95170810d9c0a61fda0b5c5"
     },
     "src/docgen/render/shell.ts": {
       "classification": "forbidden-session-service",
@@ -31983,7 +32590,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "f1aae6a5f531cae3674bd3d8b7853d37b034ac13b5eecf24364c52edce7ae322",
-      "sourceDigest": "4f69723eac7cb543f09e2001591bec8f7f096da886f7e2726c1b4c0dcfd77be3"
+      "sourceDigest": "2b39d33bc7198e32b943db98c174a72c912ce39634bab33d02668c94e9b63632"
     },
     "src/docgen/tool.ts": {
       "classification": "forbidden-session-service",
@@ -32237,7 +32844,351 @@
       ],
       "siteCount": 57,
       "sitesDigest": "005815c2a2e8885db5a3f3870f9b2db18c6ecb41a728f88110132fcb1aa6d840",
-      "sourceDigest": "13e4e5c179c864adaec6fecc74c63d281bd8af8ac00b011acfbc4c98c9fb8f9f"
+      "sourceDigest": "0bec9a7f01d594a80f2631970ccbde5de773f44c9ec071b3b9891fd16ee040d9"
+    },
+    "src/indexer/doc-relations-measure.ts": {
+      "classification": "background-indexing",
+      "rationale": "The background measurement of the mid-tier model's proposals against a registered repository's own hand-checked set (Epic c2ba6fa6 s10), writing the repository's quality row; never temporary session configurations or results.",
+      "sites": [
+        [
+          "storage-call",
+          "documentRelations"
+        ],
+        [
+          "storage-call",
+          "findEntitiesByFile"
+        ],
+        [
+          "storage-call",
+          "findEntitiesByFile"
+        ],
+        [
+          "storage-call",
+          "getEntity"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQualityInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQualityInTxn"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "storage-call",
+          "storedFilesInTxn"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationQualityInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationQualityInTxn"
+        ]
+      ],
+      "siteCount": 23,
+      "sitesDigest": "543d1a49aa33cb33a016ba763c673ff92bfb664c8ac2c3946d868a2fafab449a",
+      "sourceDigest": "7ca1b2955a2f0182f6f3c4349ff7643d8718f01082a67ee87e05b6b139ac9996"
+    },
+    "src/indexer/doc-relations-pass.ts": {
+      "classification": "background-indexing",
+      "rationale": "The background document-relations pass over a registered repository's new or changed documents (Epic c2ba6fa6 s10): reads stored entities and its own proposal rows and asks the mid-tier CLI model one document at a time; never temporary session configurations or results.",
+      "sites": [
+        [
+          "storage-call",
+          "deleteDocRelationRowInTxn"
+        ],
+        [
+          "storage-call",
+          "documentRelations"
+        ],
+        [
+          "storage-call",
+          "fileEntityHashInTxn"
+        ],
+        [
+          "storage-call",
+          "fileEntityHashInTxn"
+        ],
+        [
+          "storage-call",
+          "findEntitiesByFile"
+        ],
+        [
+          "storage-call",
+          "findEntitiesByFile"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "storage-call",
+          "getIndexStateRowInTxn"
+        ],
+        [
+          "storage-call",
+          "getIndexStateRowInTxn"
+        ],
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "diagnostic",
+          "log.debug"
+        ],
+        [
+          "diagnostic",
+          "log.debug"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "provider-use",
+          "provider.completeStructured"
+        ],
+        [
+          "storage-call",
+          "readDocRelationRowsInTxn"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "storage-call",
+          "readResetCounterInTxn"
+        ],
+        [
+          "storage-call",
+          "readResetCounterInTxn"
+        ],
+        [
+          "storage-call",
+          "s.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "storedFilesInTxn"
+        ],
+        [
+          "storage-call",
+          "storedMarkdownFilesInTxn"
+        ],
+        [
+          "storage-call",
+          "t.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "t.entityIdByString.get"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "storage-call",
+          "withWriteTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationExtractionInTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationRowInTxn"
+        ],
+        [
+          "serialization",
+          "writeDocRelationRowInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationRowInTxn"
+        ],
+        [
+          "storage-call",
+          "writeDocRelationRowInTxn"
+        ]
+      ],
+      "siteCount": 41,
+      "sitesDigest": "dd2715247c422fc76c7613cd05a855896fdcf6fca442a087fa1567f4bef4da91",
+      "sourceDigest": "88d10241b01adec31a81a6f6f738014439deb2fc795fc2407723bfca0b5c8573"
+    },
+    "src/indexer/doc-relations-provider.ts": {
+      "classification": "background-indexing",
+      "rationale": "Builds the mid-tier CLI provider the background document-relations pass (Epic c2ba6fa6 s10) asks for, from the role router's resolution of indexer.docRelations, refusing any tier but mid before a provider is built; it never reads session-derived material and classifies failures by origin.",
+      "sites": [
+        [
+          "provider-factory",
+          "familyProvider"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "eae7c8fd62eb88b9d7505f64e8afd1f8a034fdc2fb3b5c5fd4b32caeaf0ea4dd",
+      "sourceDigest": "bac47dd69577832f8fada6d134b352ceee0971461aff2482457ad51e3dabe139"
+    },
+    "src/indexer/doc-relations-read.ts": {
+      "classification": "persistent-storage-boundary",
+      "rationale": "Composes the document-relationship read (Epic c2ba6fa6 s10): the repository's recorded quality row from the graph store, the hash of the repository's own hand-checked set file and the validated mid-tier model id, then the store's documentRelations; no session-derived material is read or written.",
+      "sites": [
+        [
+          "storage-call",
+          "documentRelations"
+        ],
+        [
+          "storage-call",
+          "getEntity"
+        ],
+        [
+          "storage-call",
+          "getGraphStore"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "storage-call",
+          "lookupRepoIdInTxn"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQuality"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQuality"
+        ],
+        [
+          "storage-call",
+          "readDocRelationQuality"
+        ],
+        [
+          "storage-call",
+          "readDocRelationRowsInTxn"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
+        ],
+        [
+          "storage-call",
+          "readIndexState"
+        ],
+        [
+          "storage-call",
+          "switchOf"
+        ]
+      ],
+      "siteCount": 12,
+      "sitesDigest": "5338b9d4e47366c3cb196c2acf4a28c56d0277d2f04c16a4325eb3735c6cfe04",
+      "sourceDigest": "d4afe3e3a55775ce84438dd1447c367aa23c0ca3a54ed9169787abf76b6f21ad"
     },
     "src/indexer/doc-summary-sweep.ts": {
       "classification": "background-indexing",
@@ -32683,6 +33634,10 @@
         ],
         [
           "storage-call",
+          "entityU64ForId"
+        ],
+        [
+          "storage-call",
           "findEntitiesByFile"
         ],
         [
@@ -32738,6 +33693,14 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "storage-call",
           "listEntitiesForRepo"
         ],
@@ -32750,6 +33713,14 @@
           "listUnembeddedEntities"
         ],
         [
+          "storage-call",
+          "listUnresolvedRelations"
+        ],
+        [
+          "diagnostic",
+          "log.debug"
+        ],
+        [
           "diagnostic",
           "log.debug"
         ],
@@ -32816,6 +33787,10 @@
         [
           "diagnostic",
           "log.error"
+        ],
+        [
+          "diagnostic",
+          "log.info"
         ],
         [
           "diagnostic",
@@ -33067,7 +34042,15 @@
         ],
         [
           "storage-call",
+          "readIndexState"
+        ],
+        [
+          "storage-call",
           "reconcileEntityVectors"
+        ],
+        [
+          "storage-call",
+          "restoreCarriedDocRelations"
         ],
         [
           "storage-call",
@@ -33154,9 +34137,9 @@
           "writeBackfillVectors"
         ]
       ],
-      "siteCount": 132,
-      "sitesDigest": "ab4bbdbb2d9d83450210586c55c68197f16d86e5b89e52b916ee29f8b2ee213b",
-      "sourceDigest": "c56c7b80ad172c95a839149f9d30750ae3c55ab63355f5f75f5fe1b3a7050d28"
+      "siteCount": 140,
+      "sitesDigest": "b8f13503790e8dc289febe746059c92eb1220d79af435117739cbb694ef152d7",
+      "sourceDigest": "207b9d9f7fc3014ac789e6a450f8bf3edd3e53f1b4bae817f3c64c9992a16d0f"
     },
     "src/indexer/manifest.ts": {
       "classification": "background-indexing",
@@ -33259,7 +34242,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "db02f250b0be6e4f7b191e88886d273702b770ae680fea5fee9740307f6e980a",
-      "sourceDigest": "b891dacda80b26ff7ea237930a4f1df4438078243b78ef607feb6108f5687385"
+      "sourceDigest": "643700c1f0927742fe6461854e2f0a0927252944c8d58ce64bb2dd15ec76211b"
     },
     "src/indexer/parser/c.ts": {
       "classification": "background-indexing",
@@ -33342,6 +34325,19 @@
       "siteCount": 2,
       "sitesDigest": "4f7f0a102659f4de6abe854e4ea4f5997e7ac820e0b5da37b25d09c50bed0321",
       "sourceDigest": "60bce018bd0cb2a141585c650eccf668d214cfb9d9d6df494b17ba25ba0330ce"
+    },
+    "src/indexer/parser/markdown-links.ts": {
+      "classification": "background-indexing",
+      "rationale": "Pure reader of the links and file references a registered repository's markdown document writes (Epic c2ba6fa6 s10), for the indexer; text and path operations only, never temporary session configurations or results.",
+      "sites": [
+        [
+          "serialization",
+          "decodeURIComponent"
+        ]
+      ],
+      "siteCount": 1,
+      "sitesDigest": "329ef939545c1d6ca09826a470a6b6a6f99230618a1d63bce01f3e25c1f93412",
+      "sourceDigest": "daba031c6f7dd2678849c2089bfa980dd7974a190d0f6674d8a659178ef0cc9e"
     },
     "src/indexer/parser/python.ts": {
       "classification": "background-indexing",
@@ -35345,7 +36341,7 @@
       ],
       "siteCount": 6,
       "sitesDigest": "c1f08f107dd1feeeeeb69758a0f1934a5e438e78adaf84e77ca8c27b6b087d41",
-      "sourceDigest": "cca62b9062097b503e831fd35692b7198e9d27fdc627fc1398ec8653a3bc4dc6"
+      "sourceDigest": "c50909ea82062dbf9e7c68b87727bff378cfe3a4f3e24d182b6c6a976a8400ac"
     },
     "src/workflow/approval-owner.ts": {
       "classification": "forbidden-session-service",
@@ -35558,7 +36554,7 @@
       ],
       "siteCount": 3,
       "sitesDigest": "54fb12537cc5b0edcccb50160aa4e680d8e262116687d5ae29772d3ada8a30f9",
-      "sourceDigest": "9217dcceebd03b5de9e064903aeb7c57b954797a0800a7450eb4ea4724507017"
+      "sourceDigest": "5e7ac8beb9ddc95ac3201566c64a8c6e44575d5ab0440889fbbc10720b374adb"
     },
     "src/workflow/artifact-core/repo-schema.ts": {
       "classification": "forbidden-session-service",
@@ -36030,7 +37026,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "41bd0311fa8ad23e7e9d405bbf91f8846f89a01b5301bbf6cac307b52d4701f9",
-      "sourceDigest": "a705fd531f826917b8785311e8186f467ac1d93b7cc84b07e5ed17e3e9db69ad"
+      "sourceDigest": "6eef3ae1d199f84a6bffd604fc95ed56470f86adf5b0062e2636146312cca67b"
     },
     "src/workflow/artifacts/companion/ux.ts": {
       "classification": "forbidden-session-service",
@@ -36367,11 +37363,15 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ]
       ],
-      "siteCount": 8,
-      "sitesDigest": "bd65f8a02ba02c0067e944f694c5bf8f15b444e163d253f889c7c7864620572c",
-      "sourceDigest": "88f116206903c60d41aa68538be5d886d3e7b4e2e8edbd747564d9900422b5d2"
+      "siteCount": 9,
+      "sitesDigest": "d2a193bd710651e262072c472952a7100984ef4121c22682d839b1debf8bb30f",
+      "sourceDigest": "2d9a3e567459794e2a8f7e5f14f957777cb383413b8387725b9dd12463ed5d08"
     },
     "src/workflow/code-review/task-review/checkpoint.ts": {
       "classification": "forbidden-session-service",
@@ -36510,7 +37510,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "a7ab2e4e795499c5e97584f0bc1c81f3dc903bcfa404062688bf3460c5157b25",
-      "sourceDigest": "b6141ab032516912ea9d9c3581f0935d49be08de27c69209ca403ee1c7dee47e"
+      "sourceDigest": "7fda9f862abd4d96e2bbefdb04ca6a81843940d445119b8408bf2ba53e51b200"
     },
     "src/workflow/code-review/task-review/controller.ts": {
       "classification": "forbidden-session-service",
@@ -36607,11 +37607,15 @@
         [
           "serialization",
           "this.persist"
+        ],
+        [
+          "serialization",
+          "this.persist"
         ]
       ],
-      "siteCount": 23,
-      "sitesDigest": "ecbb2914cc28b7f3b5bd4347a2c8586929edc46abf5cec0492f2941d196eeb50",
-      "sourceDigest": "6fcad551139c4f2e26d922697dc589f211061c26acf9125738b3766942291482"
+      "siteCount": 24,
+      "sitesDigest": "241259208a2f3db3501e013311172248564c5035d18bdb7a1fb97d01c7da703c",
+      "sourceDigest": "9569e5de9e0ebe7dcd0ca55e37270d3474c33893a431d85496828154dda6911a"
     },
     "src/workflow/code-review/task-review/coordinator.ts": {
       "classification": "forbidden-session-service",
@@ -36619,7 +37623,7 @@
       "sites": [
         [
           "serialization",
-          "(async()=>{\n    const provider=resolveProvider();requireReviewActivity(provider);\n    if(!assignments){\n     if(attributionFailure)throw attributionFailure.error;\n     assignments=directReviewAssignments(review);\n     if(!assignments){\n      const acceptScope=(raw:unknown)=>serial(async()=>{\n       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;\n       assignments=reviewAssignments(review,raw);\n       if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){\n        if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;\n        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;\n        assignments=undefined;persistenceError=error;throw error;\n       }\n       return{accepted:true};\n      });\n      const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));\n      check();if(!assignments)assignments=reviewAssignments(review,raw);\n     }\n    }\n    tracker.phase('task_review');progress.request(true);\n    const assignment=assignments.find(a=>a.taskId===task.id)!;\n    const references=await taskReferences(this.deps.sources,prepared,assignment);check();\n    if(assignment.reassessment?.action==='reuse'){\n     const reused=await reuseAssessment(review,assignment,this.deps.sources,references);\n     await serial(async()=>{check();await commitResult(reused.result,reused.origin);});return;\n    }\n    nativePhase='assessment';\n    const acceptTask=(raw:unknown)=>serial(async()=>{\n     check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);\n     await commitResult(assessed);return{accepted:true};\n    });\n    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));\n    if(!durable)await acceptTask(raw);\n   })"
+          "(async()=>{\n    const provider=resolveProvider();requireReviewActivity(provider);\n    if(!assignments){\n     if(attributionFailure)throw attributionFailure.error;\n     assignments=directReviewAssignments(review);\n     if(!assignments){\n      const acceptScope=(raw:unknown)=>serial(async()=>{\n       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;\n       try { assignments=reviewAssignments(review,raw); }\n       catch (error) {\n        if (!(error instanceof TaskReviewInputError)) throw error;\n        try { await recordAttributionRejection(review,error,()=>save(path,checkpoint)); }\n        catch (failure) { persistenceError=failure; throw failure; }\n        throw error;\n       }\n       if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){\n        if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;\n        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;\n        assignments=undefined;persistenceError=error;throw error;\n       }\n       return{accepted:true};\n      });\n      for (;;) {\n       requireReview((entry.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');\n       const priorRejections=entry.header.attributionRepair?.rejections ?? 0;\n       try {\n        const raw=await provider.runReviewSession!(attributionPrompt(prepared,checkpoint.project,review),attributionSchema(review),options('attribution',acceptScope));\n        check();if(!assignments)await acceptScope(raw);\n        break;\n       } catch (error) {\n        check();if(persistenceError)throw persistenceError;\n        const cause=error instanceof ReviewOutputFailureError ? error.cause : error;\n        if (!(cause instanceof TaskReviewInputError) || !entry.header.attributionRepair || entry.header.attributionRepair.rejections <= priorRejections || entry.header.attributionRepair.rejections >= MAX_ATTRIBUTION_SUBMISSIONS) throw error;\n        if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,'attribution',undefined,error.diagnostic,()=>save(path,checkpoint)));\n       }\n      }\n     }\n    }\n    tracker.phase('task_review');progress.request(true);\n    requireReview(assignments,'attribution','No accepted task mapping');\n    const assignment=assignments.find(a=>a.taskId===task.id)!;\n    const references=await taskReferences(this.deps.sources,prepared,assignment);check();\n    if(assignment.reassessment?.action==='reuse'){\n     const reused=await reuseAssessment(review,assignment,this.deps.sources,references);\n     await serial(async()=>{check();await commitResult(reused.result,reused.origin);});return;\n    }\n    nativePhase='assessment';\n    const acceptTask=(raw:unknown)=>serial(async()=>{\n     check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);\n     await commitResult(assessed);return{accepted:true};\n    });\n    const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));\n    if(!durable)await acceptTask(raw);\n   })"
         ],
         [
           "provider-factory",
@@ -36690,6 +37694,10 @@
           "persistFailureDiagnostic"
         ],
         [
+          "serialization",
+          "persistFailureDiagnostic"
+        ],
+        [
           "provider-use",
           "provider.runReviewSession!"
         ],
@@ -36732,11 +37740,19 @@
         [
           "serialization",
           "save"
+        ],
+        [
+          "serialization",
+          "save"
+        ],
+        [
+          "serialization",
+          "save"
         ]
       ],
-      "siteCount": 29,
-      "sitesDigest": "55e2d78c29f8ef9e884c3cadeb3590da7de79184f2e17b1e62a727f2b35f19d2",
-      "sourceDigest": "209348063bc2af989d79bd77dffe1e81e705a50745b18af9a8a8ce64e79142f7"
+      "siteCount": 32,
+      "sitesDigest": "4e88e8faaa86d1c663e382ea1d25cf7a910b6378641c16179f75b1ebbb4b96e9",
+      "sourceDigest": "2803a350a4186260184265162d1fd641fecfe674ad7ea2f6f9f72879f8047bde"
     },
     "src/workflow/code-review/task-review/diagnostics.ts": {
       "classification": "forbidden-session-service",
@@ -36810,6 +37826,14 @@
         ],
         [
           "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
           "new TextDecoder('utf-8', { fatal: true }).decode"
         ],
         [
@@ -36817,9 +37841,9 @@
           "validateAgainstSchema"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "dcd468b45c0cdf360d9f34e17cf754626590344d0395735d5b1506f36eae3418",
-      "sourceDigest": "2a2ed27df885db552238227cc164bad541f8afca7e053acdc6aab43c223ebccd"
+      "siteCount": 5,
+      "sitesDigest": "d6bbd4d09bc2df825f99530f049bba737f68005e203ad78e7a8567788aefaea1",
+      "sourceDigest": "7fd33f591c088916879db219dc47997ea6c0bb67d359af31b4c1edcd700102b0"
     },
     "src/workflow/code-review/task-review/policy.ts": {
       "classification": "forbidden-session-service",
@@ -37143,7 +38167,7 @@
       ],
       "siteCount": 2,
       "sitesDigest": "95d70a3aa9674e4e344a654cb0c4a931b7201d3d02d7d3440e04f0941160e6f2",
-      "sourceDigest": "1d68f2f96810e441ebf5d9ec1a99948c75730bd91897169af00acbf3f668e762"
+      "sourceDigest": "5e70c00537f71bb779ea90da841eee2170866649cc71344b233ba44d1afb3ed8"
     },
     "src/workflow/convert/apply.ts": {
       "classification": "forbidden-session-service",
@@ -37184,7 +38208,7 @@
       ],
       "siteCount": 8,
       "sitesDigest": "dcc7428afc3a2ca6ef5082d2d597ef4b88ea0a877f328919725bd366bd105fd7",
-      "sourceDigest": "98e91dec3a2d68b219eca3f67707f167b2dbf27ecf118edb71b61d8fab14ee83"
+      "sourceDigest": "6d268d8b29e0326dd6c7c531ed8e6d747b2a45591fe82d4f92ef257b8de076c9"
     },
     "src/workflow/convert/backfill.ts": {
       "classification": "forbidden-session-service",
@@ -37197,7 +38221,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "67daaf7d1fb832596d5d49748f46cc32ec6a0c1792597c38cca24970e68212b8",
-      "sourceDigest": "be0870da090751b512d0bd33711a5121b2e6ab8077ea5d4f7d88d0595c9920e0"
+      "sourceDigest": "b2dded46feb017aa9173b1b30b678bd8225cdd1c3e1792714aa4e2bd9416ce8d"
     },
     "src/workflow/convert/feedback-rule.ts": {
       "classification": "forbidden-session-service",
@@ -38471,7 +39495,7 @@
       ],
       "siteCount": 29,
       "sitesDigest": "07b3c53a82b47fc7ed753af0503efe6b4d05f332f6c6873eb0d04d0790b6c1a1",
-      "sourceDigest": "24788c4aeb820db976d46416ee249b6aee8fc1dcac40e995b78ab4e705be689c"
+      "sourceDigest": "b1588ae04900a66dcf8e9e6d1dc67b59e1b2b3e00481f45c615c37d342b6ed75"
     },
     "src/workflow/review/design-review/contracts.ts": {
       "classification": "forbidden-session-service",
@@ -38496,7 +39520,7 @@
       ],
       "siteCount": 4,
       "sitesDigest": "3c60367312131d6d2fd891a0177998defb376ef3a6e66f1bd9a4b6eb2422ce7c",
-      "sourceDigest": "b12e8410ebe688468e2a1fd56aefb2fa3b8d772a09f1ebaa959d088c71003b80"
+      "sourceDigest": "d1f5ee9f4ec6ba6a1c80357ec1fa328ae0827acf017ddbbbed8ca90fc01fdce4"
     },
     "src/workflow/review/design-review/coordinator.ts": {
       "classification": "forbidden-session-service",
@@ -38536,6 +39560,14 @@
         ],
         [
           "serialization",
+          "(this.deps.save??saveDesignCheckpoint)"
+        ],
+        [
+          "serialization",
+          "designCheckpointPath"
+        ],
+        [
+          "serialization",
           "designCheckpointPath"
         ],
         [
@@ -38561,6 +39593,14 @@
         [
           "diagnostic",
           "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ],
         [
           "serialization",
@@ -38603,9 +39643,9 @@
           "realpath"
         ]
       ],
-      "siteCount": 25,
-      "sitesDigest": "ef309246ca78956e53ccfdc91fab2d8a7dbc22aefb988d04fd17e60550f368a7",
-      "sourceDigest": "82fa833a67bac6114098d251d5ed88fcf51081e9280ce5ac74084b7a74ef4bcf"
+      "siteCount": 29,
+      "sitesDigest": "ad8239170ca5383abdea000c1261dd7deb0ff0e873c9ca57ba6f1993b3a35d10",
+      "sourceDigest": "1f49e7f202f2bc9634291465a25585ecf7d512d28336517496c73a185f0bbfa6"
     },
     "src/workflow/review/design-review/policy.ts": {
       "classification": "forbidden-session-service",
@@ -38634,11 +39674,15 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ]
       ],
-      "siteCount": 6,
-      "sitesDigest": "d2f2f6e645e002f04ae9edd80368dca3effb337a3e4224f42356b47d5ceb1729",
-      "sourceDigest": "7952542a40a8d48a2565d7949b4709227b82e48a5e886c1bb974cc6abd7d52d7"
+      "siteCount": 7,
+      "sitesDigest": "855f61bfbd4ffc66f9894bc93a7c480079fe368cb501da6cfaebec119d8765b9",
+      "sourceDigest": "2e36b24dd0d5195eb6f80be225cc4f86462c4b74cb71f4d10faa1ad4bd2f7220"
     },
     "src/workflow/review/design-review/progress.ts": {
       "classification": "forbidden-session-service",
@@ -38651,7 +39695,7 @@
       ],
       "siteCount": 1,
       "sitesDigest": "47c29482a457cd120afd2bce89b5a64ad917585cd70e17fe308fa325a3a50622",
-      "sourceDigest": "eb3130ad6bc405ab5a8b67a8c8d50a5c09aecde76d0d14feb4a07dd44df8c946"
+      "sourceDigest": "faff7f49b6c1f690cb829c1609222a059053a2951eac76fcff9413cea2c16fd1"
     },
     "src/workflow/review/design-review/results.ts": {
       "classification": "forbidden-session-service",
@@ -38668,11 +39712,51 @@
         [
           "serialization",
           "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "decodeDesign"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
         ]
       ],
-      "siteCount": 3,
-      "sitesDigest": "7822f5ee45f112a00885d2062adafd593da231e23fe1ea55f76eb7f8e528afb4",
-      "sourceDigest": "a690432a1f46c4d72a1b9b4bc6feadb4cb611a355389a1cb57b9c95a9d16c296"
+      "siteCount": 13,
+      "sitesDigest": "6630fb7f3abba6fef9799f5e4b4a50983a16993629b12213aa9e15f51bc729f2",
+      "sourceDigest": "0e72b1f6f3ecf515b1faaad165c2578c88f75a18f639d71dd0add9fc23a6a91c"
     },
     "src/workflow/review/design-review/subject-monitor.ts": {
       "classification": "forbidden-session-service",

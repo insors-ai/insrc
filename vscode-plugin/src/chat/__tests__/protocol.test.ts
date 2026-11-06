@@ -10,7 +10,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { TranscriptEntry } from '../session-store.js';
-import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode } from '../protocol.js';
+import { HOST_TO_WEBVIEW_TYPES, WEBVIEW_TO_HOST_TYPES, type PendingAttachmentView, type HostToWebview, type HostToWebviewType, type WebviewToHost, type WebviewToHostType, type PermissionMode, type ActiveChatEntry, type DocsDocumentTab } from '../protocol.js';
+import { PROTOCOL_CONTRACT_KINDS, contractActiveList, contractDocsContent, contractDocsTab, contractEntryExtra, contractOpenChat, contractOpenCompanion, contractOpenDoc, contractDocsDecision, contractSelectionDecision } from '../protocol-contract.js';
 
 test("WEBVIEW_TO_HOST_TYPES reserves 'cancel-turn' alongside every prior kind (additive, k2)", () => {
   for (const k of ['submit-turn', 'new-chat', 'open-chat', 'set-edit-mode', 'edit-decision', 'docs-decision', 'open-doc']) {
@@ -36,6 +37,17 @@ test('every existing WebviewToHost message still constructs with its original sh
     { type: 'open-doc', artifactId: 'x' },
   ];
   assert.equal(samples.length, 7);
+  // objective shape proof: each message's exact key set, in order (runtime deep check that
+  // complements the compile-time construction above)
+  assert.deepEqual(samples.map((m) => Object.keys(m)), [
+    ['type', 'text'],
+    ['type', 'provider'],
+    ['type', 'chatId'],
+    ['type', 'mode'],
+    ['type', 'path', 'accept'],
+    ['type', 'artifactId', 'decision', 'comments'],
+    ['type', 'artifactId'],
+  ], 'every pre-existing WebviewToHost message carries exactly its original fields');
 });
 
 test("S004: WEBVIEW_TO_HOST_TYPES reserves 'permission-decision' + 'set-permission-mode' (additive, k2)", () => {
@@ -56,9 +68,13 @@ test("S004 (ux polish): WEBVIEW_TO_HOST_TYPES reserves 'selection-decision' (add
 });
 
 test('S004 (ux polish): a selection-decision message typechecks with requestId + selected ids', () => {
+  // the compile-time half of the proof lives in protocol-contract.ts (typechecked with the plugin
+  // sources): contractSelectionDecision is exactly { type, requestId, selected }
   const msg: WebviewToHost = { type: 'selection-decision', requestId: 'sel-1', selected: ['a', 'b'] };
   assert.equal(msg.type, 'selection-decision');
   assert.deepEqual(msg.type === 'selection-decision' ? msg.selected : undefined, ['a', 'b']);
+  assert.deepEqual(Object.keys(contractSelectionDecision).sort(), ['requestId', 'selected', 'type'], 'contract selection-decision keys');
+  assert.deepEqual(contractSelectionDecision, { type: 'selection-decision', requestId: 'sel-1', selected: ['a', 'b'] });
   // A single-select confirm carries exactly one id.
   const single: WebviewToHost = { type: 'selection-decision', requestId: 'sel-2', selected: ['only'] };
   assert.deepEqual(single.type === 'selection-decision' ? single.selected : undefined, ['only']);
@@ -240,4 +256,42 @@ test('protocol allowlist includes open-link and open-code-ref', () => {
   const bare: WebviewToHost = { type: 'open-code-ref', path: 'src/foo.ts' };
   assert.deepEqual([link.type, ref.type, bare.type], ['open-link', 'open-code-ref', 'open-code-ref']);
   assert.deepEqual(Object.keys(bare), ['type', 'path']);
+});
+
+test('E202611031bd72813:S001 t4: active-list is a host->webview kind and ActiveChatEntry carries id/title/provider/status/lastActivityAt; open-chat stays the only open message', () => {
+  assert.ok(HOST_TO_WEBVIEW_TYPES.includes('active-list'), "'active-list' is listed as host->webview");
+  const entry: ActiveChatEntry = { id: 'a', title: 'Chat A', provider: 'claude', status: 'waiting-input', lastActivityAt: 123 };
+  const msg: HostToWebview = { type: 'active-list', chats: [entry] };
+  assert.equal(msg.type, 'active-list');
+  assert.deepEqual(msg.chats[0], { id: 'a', title: 'Chat A', provider: 'claude', status: 'waiting-input', lastActivityAt: 123 });
+  // exact wire shape: no extra field may ride along on the message or on an entry
+  assert.deepEqual(Object.keys(msg), ['type', 'chats']);
+  assert.deepEqual(Object.keys(entry), ['id', 'title', 'provider', 'status', 'lastActivityAt']);
+  assert.ok(['waiting-input', 'working', 'done'].includes(entry.status));
+  // selection reuses the existing open-chat { chatId } — no new webview->host kind was added
+  assert.ok(WEBVIEW_TO_HOST_TYPES.includes('open-chat'));
+  assert.ok(!WEBVIEW_TO_HOST_TYPES.includes('open-active' as WebviewToHostType));
+  // in-panel document protocol is UNCHANGED: DocsDocumentTab keeps title/type/relPath, no presentKey;
+  // docs-content/open-doc shapes unchanged (presentKey is panel-level, not a message field)
+  const tab: DocsDocumentTab = { title: 'LLD.md', type: 'markdown' };
+  assert.deepEqual(Object.keys(tab).sort(), ['title', 'type']);
+  assert.ok(!('presentKey' in tab), 'DocsDocumentTab has no presentKey field');
+  const content: HostToWebview = { type: 'docs-content', artifactId: 'a1', markdown: '# LLD', openQuestions: [], blocked: false };
+  assert.equal(content.type, 'docs-content');
+  if (content.type === 'docs-content') assert.equal(content.artifactId, 'a1');
+  // the compile-time contract (protocol-contract.ts, typechecked with the plugin sources, since
+  // tests are excluded from tsconfig) pins these kinds: assert the runtime arrays cover them and
+  // that the contract objects carry exactly their declared runtime keys
+  for (const kind of PROTOCOL_CONTRACT_KINDS) {
+    assert.ok(HOST_TO_WEBVIEW_TYPES.includes(kind as HostToWebviewType) || WEBVIEW_TO_HOST_TYPES.includes(kind as WebviewToHostType), `contract kind ${kind} is a real wire kind`);
+  }
+  assert.deepEqual(Object.keys(contractActiveList), ['type', 'chats'], 'contract active-list keys');
+  assert.deepEqual(Object.keys(contractActiveList.chats[0]!), ['id', 'title', 'provider', 'status', 'lastActivityAt'], 'contract entry keys');
+  assert.deepEqual(Object.keys(contractOpenChat), ['type', 'chatId']);
+  assert.deepEqual(Object.keys(contractDocsContent).sort(), ['artifactId', 'blocked', 'markdown', 'openQuestions', 'type'], 'contract docs-content keys');
+  assert.deepEqual(Object.keys(contractDocsTab).sort(), ['relPath', 'title', 'type'], 'contract tab keys');
+  assert.ok('updatedAt' in (contractEntryExtra as unknown as Record<string, unknown>), 'the contract’s negative case really carries the extra field the type forbids');
+  assert.deepEqual(Object.keys(contractOpenDoc).sort(), ['artifactId', 'type'], 'contract open-doc keys');
+  assert.deepEqual(Object.keys(contractDocsDecision).sort(), ['artifactId', 'comments', 'decision', 'type'], 'contract docs-decision keys');
+  assert.deepEqual(Object.keys(contractOpenCompanion).sort(), ['artifactId', 'relPath', 'type'], 'contract open-companion keys');
 });

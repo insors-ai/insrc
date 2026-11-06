@@ -51,6 +51,8 @@ interface Resume {
   readonly req: ResumeRequest;
   readonly proc: Proc;
   readonly feed: Feed;
+  /** E202611031bd72813:S001 t5: report decoder progress to the follow's onDecoderState. */
+  readonly decoderState?: ((ds: { selectionSeq: number; selectionBuffer: string }) => void) | undefined;
 }
 interface Run {
   readonly turnId: string;
@@ -102,7 +104,7 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
       const f = feed();
       void proc.exit.then(() => f.end());
       o?.signal?.addEventListener('abort', () => f.end());
-      resumes.push({ req, proc, feed: f });
+      resumes.push({ req, proc, feed: f, decoderState: (ds) => o?.onDecoderState?.(ds) });
       o?.onAttach?.(proc);
       let offset = req.cursor.offset;
       for (;;) {
@@ -117,7 +119,7 @@ function scriptedAdapter(opts: { pipe?: boolean; noSpawn?: boolean; cancelThrows
       cancels.push(turnId);
       if (opts.cancelThrows === true) throw new Error('provider gone');
     },
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs, cancels, resumes };
@@ -357,7 +359,7 @@ test('the cursor is saved on spawn, throttled on progress and cleared before onT
   });
   const p = h.lc.start(h.session, REQ, a.sink);
   await waitFor(() => runs.length === 1);
-  assert.deepEqual(h.saves, [{ cursor: { turnId: 't1', generation: 1, offset: 0 }, ownerHostPid: 7, pid: 1001, startedAt: 1002 }], 'saved at spawn, owned by this host');
+  assert.deepEqual(h.saves, [{ cursor: { turnId: 't1', generation: 1, offset: 0 }, ownerHostPid: 7, pid: 1001, startedAt: 1002, transcriptLen: 0, turnStartLen: 0 }], 'saved at spawn, owned by this host, stamped with the transcript lengths');
 
   for (let i = 0; i < 5; i++) runs[0]!.feed.push(delta('t1'));
   await waitFor(() => h.session.liveTurn?.cursor.offset === 50);
@@ -650,6 +652,7 @@ test("stop ends a followed turn's process; detach leaves it running", async () =
   await tick(10);
   assert.deepEqual(d.resumes[0]!.proc.signals, [], 'detach leaves the followed process running');
   assert.deepEqual(g.calls, [], 'and does not end the turn');
+  assert.equal(h2.session.liveTurn?.ownerHostPid, 0, 'E202611031bd72813:S001 t5: detach orphans the FOLLOWED turn too, so the background observer reconciles it');
   assert.equal(h2.session.liveTurn?.cursor.turnId, 'old', 'its cursor stays saved');
   h2.lc.follow(h2.session, g.sink);
   await waitFor(() => d.resumes.length === 2);
@@ -720,7 +723,7 @@ test("a generator whose cleanup throws when the turn finishes it is not an unhan
       },
       async *resume(): AsyncIterable<TurnEvent> {},
       cancel: async () => {},
-      decide: () => {},
+      decide: () => ({ delivered: true }),
       capabilities: { resume: true },
     };
     const h = harness({ providers: registry(adapter) });
@@ -823,7 +826,7 @@ test('a throwing onTerminal is logged, still finishes the generator and is not a
     },
     async *resume(): AsyncIterable<TurnEvent> {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter), warnings });
@@ -861,7 +864,7 @@ test("an aborted follow unwinding late does not drop the next follow's process, 
       await proc.exit;
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter), isAlive: () => false });
@@ -899,7 +902,7 @@ test("a throwing onEvent is reported and the turn's generator is finished", asyn
     },
     async *resume(): AsyncIterable<TurnEvent> {},
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   const h = harness({ providers: registry(adapter) });
@@ -1396,4 +1399,72 @@ test('turn lifecycle: a second start runs after the first ends instead of supers
     resumes[0]!.proc.exitNow();
     await spawned[0]!.exited;
   }
+});
+
+test('E202611031bd72813:S001 t2: an output-read failure ends the follow as observation-failed and keeps the cursor', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = savedTurn(99);
+  const calls: string[] = [];
+  h.lc.follow(h.session, {
+    onEvent: (ev) => calls.push(`event:${ev.kind}`),
+    onEnd: (outcome) => calls.push(`end:${outcome}`),
+  });
+  await waitFor(() => resumes.length === 1);
+  resumes[0]!.feed.push(delta('old'));
+  resumes[0]!.feed.push({ kind: 'error', turnId: 'old', message: 'the output of this turn could not be read: x', observationFailure: true });
+  await waitFor(() => calls.some((c) => c.startsWith('end:')));
+  assert.deepEqual(calls, ['event:assistant-delta', 'event:error', 'end:observation-failed']);
+  assert.notEqual(h.session.liveTurn, undefined, 'the cursor stays saved for a later follow');
+  // a later follow retries: a new resume is started
+  h.lc.follow(h.session, { onEvent: () => {}, onEnd: () => {} });
+  await waitFor(() => resumes.length === 2);
+});
+
+test('E202611031bd72813:S001 t5: starting a new turn clears the observer checkpoint (it is turn-scoped)', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  h.session.observerCheckpoint = { turnId: 'old-turn', generation: 2, offset: 100, selectionSeq: 3 };
+  const a = recSink();
+  const p = h.lc.start(h.session, REQ, a.sink);
+  await waitFor(() => runs.length === 1);
+  assert.equal(h.session.liveTurn?.cursor.turnId, 't1', 'the new turn owns the cursor');
+  assert.equal(h.session.observerCheckpoint, undefined, 'the old turn\'s observer checkpoint is invalidated on the new turn');
+  runs[0]!.feed.push(done('t1'));
+  await p;
+  runs[0]!.proc.exitNow();
+});
+
+test('E202611031bd72813:S001 t5: detach orphans the saved turn (ownerHostPid 0) so the background observer reconciles it', async () => {
+  const { adapter, runs } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter) });
+  const p = h.lc.start(h.session, REQ, recSink().sink);
+  await waitFor(() => runs.length === 1);
+  assert.equal(h.session.liveTurn?.ownerHostPid, 7, 'owned by this host while running');
+  await h.lc.detach();
+  runs[0]!.feed.push(delta('t1')); // the read in flight at detach ends with the next line
+  await p;
+  const live = h.session.liveTurn;
+  assert.ok(live !== undefined, 'the cursor stays saved after detach');
+  assert.equal(live!.ownerHostPid, 0, 'orphaned: owner 0 = no live window, any observer may follow');
+  runs[0]!.proc.exitNow();
+});
+
+test('E202611031bd72813:S001 t5: follow() restores the follow cursor\'s OWN decoder state into the resume and saves it back as it advances (reattach between marker fragments loses nothing)', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const h = harness({ providers: registry(adapter), isAlive: () => false });
+  h.session.liveTurn = { cursor: { turnId: 'old', generation: 2, offset: 100 }, ownerHostPid: 99, pid: 900, startedAt: 5, decoder: { selectionSeq: 4, selectionBuffer: '```insrc:selec' } };
+  const f = followSink(h);
+  h.lc.follow(h.session, f.sink);
+  await waitFor(() => resumes.length === 1);
+  assert.deepEqual(resumes[0]!.req.decoderState, { selectionSeq: 4, selectionBuffer: '```insrc:selec' }, 'the saved decoder state is restored into the resume (not started empty)');
+  // decoder progress is stamped onto the liveTurn ATOMICALLY with the next cursor offset (one save)
+  resumes[0]!.decoderState?.({ selectionSeq: 5, selectionBuffer: 'more' });
+  assert.equal(h.session.liveTurn?.decoder?.selectionSeq, 4, 'held, not saved ahead of the offset (still the seeded seq 4)');
+  resumes[0]!.feed.push(delta('old'));
+  await waitFor(() => h.session.liveTurn?.decoder?.selectionSeq === 5);
+  assert.deepEqual(h.session.liveTurn!.decoder, { selectionSeq: 5, selectionBuffer: 'more' }, 'advanced decoder state saved together with the cursor offset');
+  assert.ok(h.session.liveTurn!.cursor.offset > 100, 'and the offset advanced in the same save');
+  resumes[0]!.feed.push(done('old', 'n1'));
+  await waitFor(() => f.calls.includes('end'));
 });

@@ -14,7 +14,7 @@ import type { OutboxAction, OutboxView } from './chat-outbox.js';
 import type { TurnEvent } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
-import type { TranscriptEntry, ChatSummary } from './session-store.js';
+import type { TranscriptEntry, ChatSummary, ChatStatus } from './session-store.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { SectionIndex } from './docs-sections.js';
 // S002 sc1: the docs-content variant types its functional record by INDEXING off
@@ -79,6 +79,16 @@ export interface DocsArtifactSummary {
 export type PermissionMode = 'manual' | 'edit-auto' | 'auto';
 
 /** Host -> webview: render + stream events. */
+/** E202611031bd72813:S001: one active-chat dropdown entry (red/yellow/green by status). */
+export interface ActiveChatEntry {
+  readonly id: string;
+  readonly title: string;
+  /** E202611031bd72813:S001 t4 UX: the entry's provider id, so the dropdown paints the provider icon next to the title. */
+  readonly provider: string;
+  readonly status: ChatStatus;
+  readonly lastActivityAt: number | undefined;
+}
+
 export type HostToWebview =
   // Run-config echo: the active session's provider/model/effort ('' = CLI default), posted
   // on open/switch/restore and after a set-run-config, so the bottom-right buttons follow.
@@ -110,6 +120,8 @@ export type HostToWebview =
       readonly total: number;
     }
   | { readonly type: 'history-list'; readonly chats: ChatSummary[] }
+  /** E202611031bd72813:S001 t3/t4: the active-chats dropdown — computed by store.activeChats() (purge included), posted on change and on a 60 s timer. */
+  | { readonly type: 'active-list'; readonly chats: readonly ActiveChatEntry[] }
   /**
    * Story E20261013b2e8109f:S001: a transcript row the host pushed outside the event path (a diff
    * section, or one of the host's own marker lines), with its absolute index. A diff row with
@@ -331,6 +343,7 @@ export const HOST_TO_WEBVIEW_TYPES = [
   'turn-event',
   'session-restored',
   'history-list',
+  'active-list',
   'transcript-row',
   'docs-list',
   'docs-content',

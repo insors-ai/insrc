@@ -315,6 +315,60 @@ export const encodeFileContributionRow = (r: FileContributionRow): Buffer => enc
 export const decodeFileContributionRow = (b: Buffer): FileContributionRow => decode(b);
 
 // ---------------------------------------------------------------------------
+// Document relationships (Epic c2ba6fa6 s10)
+// ---------------------------------------------------------------------------
+
+/** One relationship a model proposed for a document: entity ids, both stored when proposed. */
+export interface DocRelationProposal {
+	readonly from:      string;
+	readonly to:        string;
+	readonly rationale: string;
+}
+
+/** A row of doc_relation (and doc_relation_carry): one examined document's proposals. */
+export interface DocRelationRow {
+	readonly contentHash:          string;   // the document's file-entity hash when examined
+	readonly modelId:              string;
+	readonly computedAtGeneration: number;
+	readonly proposals:            readonly DocRelationProposal[];
+}
+
+/** The measured figures for a repository, against its hand-checked set. */
+export interface DocRelationFigures {
+	readonly checked:           number;   // distinct implied real links in the set
+	readonly proposed:          number;   // admitted proposals over the set's documents
+	readonly right:             number;
+	readonly found:             number;
+	readonly precision:         number;
+	readonly recall:            number;
+	readonly extractedRecovery: number;
+	readonly modelId:           string;
+	readonly setHash:           string;
+	readonly measuredAt:        string;
+}
+
+/** The last pass's operational status. */
+export interface DocRelationExtraction {
+	readonly state:                 'ok' | 'unavailable';
+	readonly reason?:               string | undefined;
+	readonly examined:              number;
+	readonly failed:                number;
+	readonly computedAtGeneration?: number | undefined;
+	readonly updatedAt:             string;
+}
+
+/** A row of doc_relation_quality: one per repository. */
+export interface DocRelationQualityRow {
+	readonly figures?:   DocRelationFigures | undefined;
+	readonly extraction: DocRelationExtraction;
+}
+
+export const encodeDocRelationRow = (r: DocRelationRow): Buffer => encode(r);
+export const decodeDocRelationRow = (b: Buffer): DocRelationRow => decode(b);
+export const encodeDocRelationQualityRow = (r: DocRelationQualityRow): Buffer => encode(r);
+export const decodeDocRelationQualityRow = (b: Buffer): DocRelationQualityRow => decode(b);
+
+// ---------------------------------------------------------------------------
 // Plan + plan_step rows
 // ---------------------------------------------------------------------------
 

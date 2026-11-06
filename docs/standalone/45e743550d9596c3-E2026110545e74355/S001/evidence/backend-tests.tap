@@ -1,0 +1,539 @@
+TAP version 13
+# [10:14:57] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:57] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:57] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged
+ok 1 - cli-ollama.test.ts: every claude entry point on an Ollama-targeted provider starts claude with --model <id> and the three Ollama variables, without CLAUDE_CODE_OAUTH_TOKEN, and leaves process.env unchanged
+  ---
+  duration_ms: 1227.539625
+  type: 'test'
+  ...
+# [10:14:57] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables
+ok 2 - cli-ollama.test.ts: the bounded path on an Ollama-targeted provider gets the allow-list plus the three Ollama variables
+  ---
+  duration_ms: 179.77975
+  type: 'test'
+  ...
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables
+ok 3 - cli-ollama.test.ts: providers without an Ollama target (claude, codex) start with today's arguments and no Ollama variables
+  ---
+  duration_ms: 601.41225
+  type: 'test'
+  ...
+# Subtest: cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction
+ok 4 - cli-ollama.test.ts: an Ollama target with kind codex or without a model is refused at construction
+  ---
+  duration_ms: 0.527833
+  type: 'test'
+  ...
+# Subtest: cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process
+ok 5 - cli-ollama.test.ts: a failing pre-run check on each entry point throws OllamaTargetError, logs the cause and starts no claude process
+  ---
+  duration_ms: 1.13075
+  type: 'test'
+  ...
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap
+ok 6 - cli-ollama.test.ts: two awaited calls on one Ollama-targeted provider never overlap
+  ---
+  duration_ms: 223.5935
+  type: 'test'
+  ...
+# [10:14:58] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check
+ok 7 - cli-ollama.test.ts: a provider without an Ollama target never runs the pre-run check
+  ---
+  duration_ms: 1033.302667
+  type: 'test'
+  ...
+# [10:14:59] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# [10:15:00] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: cli-ollama.test.ts: an Ollama-targeted run drops Bedrock/Vertex mode from its environment; a vendor run keeps it
+ok 8 - cli-ollama.test.ts: an Ollama-targeted run drops Bedrock/Vertex mode from its environment; a vendor run keeps it
+  ---
+  duration_ms: 220.593084
+  type: 'test'
+  ...
+# [10:15:00] [34mDEBUG[39m: [36m[cli-provider] claude completed[39m
+#     [35mmodule[39m: "cli-provider"
+#     [35mmodel[39m: null
+# Subtest: provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel
+ok 9 - provider-from-registry.test.ts: CLI kind, effort acceptance (CliProvider gets no unaccepted effort), Codex chars budget, no haiku budget and Ollama num_ctx come from the registry; summariser uses the family's summariserModel
+  ---
+  duration_ms: 4.3085
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit
+ok 10 - provider-from-registry.test.ts: tool loop follows ollama cheap tier, then listed coreModel, then toolLoopModel with a warning; num_ctx is the chosen model's limit
+  ---
+  duration_ms: 1.002292
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution
+ok 11 - provider-from-registry.test.ts: resolveValidateProvider reuses the router's CLI provider and builds the default family's tier default for an ollama resolution
+  ---
+  duration_ms: 1.350375
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds
+ok 12 - provider-from-registry.test.ts: an Ollama shaper never runs a CLI family's model, and the run label names what buildShaperProvider builds
+  ---
+  duration_ms: 0.953584
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs
+ok 13 - provider-from-registry.test.ts: the router's summariser resolution names the model its provider runs
+  ---
+  duration_ms: 0.859167
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute
+ok 14 - provider-from-registry.test.ts: a refused ollama-claude cheap tier makes the summariser refuse with model-not-supported, never substitute
+  ---
+  duration_ms: 0.68175
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there
+ok 15 - provider-from-registry.test.ts: the run label of an ollama-claude shaper names the host family, and attribution maps it there
+  ---
+  duration_ms: 1.465959
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none
+ok 16 - provider-from-registry.test.ts: familyProvider for ollama-claude builds a claude CliProvider with the model and an Ollama target from models.local.host; vendor families get none
+  ---
+  duration_ms: 0.815083
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: an effort a host model does not list is not forwarded
+ok 17 - provider-from-registry.test.ts: an effort a host model does not list is not forwarded
+  ---
+  duration_ms: 0.924083
+  type: 'test'
+  ...
+# Subtest: provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError
+ok 18 - provider-from-registry.test.ts: a refused ollama-claude tier makes buildShaperProvider, the router and resolveValidateProvider throw ModelNotSupportedError
+  ---
+  duration_ms: 1.435875
+  type: 'test'
+  ...
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-z"
+#     [35meffort[39m: "low"
+#     [35msource[39m: "config"
+# [10:14:57] [33mWARN[39m: [36m[config:analyze] models.tiers.core: model claude-y does not accept effort 'low'; running at the CLI's default effort[39m
+#     [35mmodule[39m: "config:analyze"
+#     [35mtier[39m: "core"
+#     [35mmodel[39m: "claude-y"
+#     [35meffort[39m: "low"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-y"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-y"
+#     [35meffort[39m: "turbo"
+#     [35msource[39m: "role"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] provider: the model does not accept this effort; running at the CLI default effort[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-y"
+#     [35meffort[39m: "turbo"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-h"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-x"
+#     [35meffort[39m: "turbo"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mmodel[39m: "llama:big"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[ollama] ollama provider configured[39m
+#     [35mmodule[39m: "ollama"
+#     [35mmodel[39m: "llama:big"
+#     [35mfamily[39m: "codellama"
+#     [35mnoThinkOnTools[39m: false
+#     [35mformatWithTools[39m: true
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-x"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-s"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mmodel[39m: "llama:small"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [32mINFO[39m: [36m[ollama] ollama provider configured[39m
+#     [35mmodule[39m: "ollama"
+#     [35mmodel[39m: "llama:small"
+#     [35mfamily[39m: "codellama"
+#     [35mnoThinkOnTools[39m: false
+#     [35mformatWithTools[39m: true
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-claude"
+#     [35mmodel[39m: "claude-z"
+#     [35meffort[39m: "low"
+#     [35msource[39m: "role"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mmodel[39m: "llama:big"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "role"
+# [10:14:57] [32mINFO[39m: [36m[ollama] ollama provider configured[39m
+#     [35mmodule[39m: "ollama"
+#     [35mmodel[39m: "llama:big"
+#     [35mfamily[39m: "codellama"
+#     [35mnoThinkOnTools[39m: false
+#     [35mformatWithTools[39m: true
+# [10:14:57] [33mWARN[39m: [36m[mcp:build-step:validate] build-step[validate]: the 'build' tier resolved to a non-CLI runner; edit sessions require a CLI — running the default family's tier default[39m
+#     [35mmodule[39m: "mcp:build-step:validate"
+#     [35mrunner[39m: "ollama"
+#     [35mmodel[39m: "llama:big"
+#     [35mtier[39m: "core"
+#     [35mfamily[39m: "cli-codex"
+#     [35msubstitute[39m: "gpt-x"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] shaper provider: the model is not a listed local model; running the tool-loop model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mrequested[39m: "gpt-x"
+#     [35mmodel[39m: "llama:loop"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mmodel[39m: "llama:loop"
+#     [35meffort[39m: "turbo"
+#     [35msource[39m: "client"
+# [10:14:57] [32mINFO[39m: [36m[ollama] ollama provider configured[39m
+#     [35mmodule[39m: "ollama"
+#     [35mmodel[39m: "llama:loop"
+#     [35mfamily[39m: "codellama"
+#     [35mnoThinkOnTools[39m: false
+#     [35mformatWithTools[39m: true
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] shaper provider: the model is not a listed local model; running the tool-loop model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mrequested[39m: "gpt-x"
+#     [35mmodel[39m: "llama:loop"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-x"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "(cli default)"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "client"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-s"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-s"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mmodel[39m: "gpt-s"
+#     [35meffort[39m: "low"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a model of its family; using the family's summariser model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "cli-codex"
+#     [35mconfigured[39m: "claude-z"
+#     [35mmodel[39m: "gpt-s"
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a listed local model; running the tool-loop model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mconfigured[39m: "gpt-x"
+#     [35mmodel[39m: "llama:loop"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] summariser provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mmodel[39m: "llama:loop"
+#     [35meffort[39m: "(cli default)"
+# [10:14:57] [32mINFO[39m: [36m[ollama] ollama provider configured[39m
+#     [35mmodule[39m: "ollama"
+#     [35mmodel[39m: "llama:loop"
+#     [35mfamily[39m: "codellama"
+#     [35mnoThinkOnTools[39m: false
+#     [35mformatWithTools[39m: true
+# [10:14:57] [33mWARN[39m: [36m[analyze:context:shaper-provider] summariser provider: the cheap tier model is not a listed local model; running the tool-loop model[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama"
+#     [35mconfigured[39m: "gpt-x"
+#     [35mmodel[39m: "llama:loop"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [33mWARN[39m: [36m[config:analyze] models.tiers.cheap: model 'kimi-k9:cloud' is not supported by ollama-claude (model-not-supported); the tier will not run[39m
+#     [35mmodule[39m: "config:analyze"
+#     [35mtier[39m: "cheap"
+#     [35mrunner[39m: "ollama-claude"
+#     [35mrequested[39m: "kimi-k9:cloud"
+#     [35mreason[39m: "model-not-supported"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [33mWARN[39m: [36m[config:analyze] models.tiers.core: model 'kimi-k9:cloud' is not supported by ollama-claude (model-not-supported); the tier will not run[39m
+#     [35mmodule[39m: "config:analyze"
+#     [35mtier[39m: "core"
+#     [35mrunner[39m: "ollama-claude"
+#     [35mrequested[39m: "kimi-k9:cloud"
+#     [35mreason[39m: "model-not-supported"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] provider: the CLI runs against Ollama[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama-claude"
+#     [35mmodel[39m: "glm:cloud"
+#     [35mhosting[39m: "cloud"
+#     [35mhost[39m: "http://ollama.example:12345"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] shaper provider: built from the model definitions[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama-claude"
+#     [35mmodel[39m: "glm:cloud"
+#     [35meffort[39m: "(cli default)"
+#     [35msource[39m: "config"
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] provider: the CLI runs against Ollama[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama-claude"
+#     [35mmodel[39m: "glm:cloud"
+#     [35mhosting[39m: "cloud"
+#     [35mhost[39m: "http://ollama.example:12345"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [32mINFO[39m: [36m[analyze:context:shaper-provider] provider: the CLI runs against Ollama[39m
+#     [35mmodule[39m: "analyze:context:shaper-provider"
+#     [35mfamily[39m: "ollama-claude"
+#     [35mmodel[39m: "glm:cloud"
+#     [35mhosting[39m: "cloud"
+#     [35mhost[39m: "http://localhost:11434"
+# [10:14:57] [32mINFO[39m: [36m[daemon:model-catalog] model definitions validated[39m
+#     [35mmodule[39m: "daemon:model-catalog"
+#     [35mdir[39m: "/var/folders/78/fscmgmls2k72q89nnypxxfqm0000gn/T/provider-registry-yxBYKS/assets"
+#     [35mversion[39m: 1
+#     [35mmodels[39m: {
+#       "cli-claude": 3,
+#       "cli-codex": 2,
+#       "ollama": 3,
+#       "ollama-claude": 1,
+#       "cli-vibe": 1
+#     }
+# [10:14:57] [33mWARN[39m: [36m[config:analyze] models.tiers.core: model 'kimi-k9:cloud' is not supported by ollama-claude (model-not-supported); the tier will not run[39m
+#     [35mmodule[39m: "config:analyze"
+#     [35mtier[39m: "core"
+#     [35mrunner[39m: "ollama-claude"
+#     [35mrequested[39m: "kimi-k9:cloud"
+#     [35mreason[39m: "model-not-supported"
+# [10:14:57] [33mWARN[39m: [36m[config:analyze] models.tiers.core: model 'kimi-k9:cloud' is not supported by ollama-claude (model-not-supported); the tier will not run[39m
+#     [35mmodule[39m: "config:analyze"
+#     [35mtier[39m: "core"
+#     [35mrunner[39m: "ollama-claude"
+#     [35mrequested[39m: "kimi-k9:cloud"
+#     [35mreason[39m: "model-not-supported"
+1..18
+# tests 18
+# suites 0
+# pass 18
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 4021.248083

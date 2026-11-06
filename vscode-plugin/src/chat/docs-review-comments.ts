@@ -251,13 +251,18 @@ var next={};if(cur&&typeof cur==='object'){for(var k in cur){if(Object.prototype
 next[key]=value;try{if(vs.setState)vs.setState(next);}catch(err){}}
 /* The saved state: per artifact, the whole-document field and the drafts. */
 function rvStored(){try{var s=vs.getState?vs.getState():null;return (s&&s.rv&&typeof s.rv==='object')?s.rv:{};}catch(err){return {};}}
+/* E202611031bd72813:S001 t9: drafts are keyed by the COMPOSITE presentKey:artifactId, so two
+   panels showing the same artifact (or one panel navigating A->B->A) keep isolated drafts.
+   insrcPanelKey is embedded in each panel's shell by the host; the legacy panel has none. */
+function rvDraftKey(){var pk=(typeof insrcPanelKey==='string')?insrcPanelKey:'';var id=(shown&&shown.artifactId)?shown.artifactId:'';return pk?pk+':'+id:id;}
 function rvSave(){if(!shown||!shown.artifactId)return;var all=rvStored(),drafts=[];
 rvThreads.forEach(function(th){th.drafts.forEach(function(d){drafts.push({anchor:th.anchor,text:d.text});});});
 var field=String(fieldEl.value||'');
-if(drafts.length||field)all[shown.artifactId]={field:field,drafts:drafts};else delete all[shown.artifactId];
+var key=rvDraftKey();
+if(drafts.length||field)all[key]={field:field,drafts:drafts};else delete all[key];
 rvPutState('rv',all);}
 /* Another artifact is shown: its own field and drafts are taken from the saved state. */
-function rvLoad(){rvThreads=[];rvPending=null;var saved=shown&&shown.artifactId?rvStored()[shown.artifactId]:null;
+function rvLoad(){rvThreads=[];rvPending=null;var saved=shown&&shown.artifactId?rvStored()[rvDraftKey()]:null;
 fieldEl.value=(saved&&typeof saved.field==='string')?saved.field:'';
 ((saved&&Array.isArray(saved.drafts))?saved.drafts:[]).forEach(function(d){
 if(!d||!d.anchor||typeof d.anchor.quote!=='string'||typeof d.text!=='string'||!d.text)return;

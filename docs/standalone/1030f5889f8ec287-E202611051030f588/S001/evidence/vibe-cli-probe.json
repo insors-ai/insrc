@@ -1,0 +1,34 @@
+{
+  "version": "3.0.4",
+  "method": "Installed Rust CLI parser with app server replaced by a stub that exits; no model access possible.",
+  "results": [
+    {
+      "case": "old",
+      "exitCode": 1,
+      "missingPrompt": true,
+      "appServerStarted": false,
+      "stderr": "Error: No prompt provided for programmatic mode\n"
+    },
+    {
+      "case": "fixed",
+      "exitCode": 2,
+      "missingPrompt": false,
+      "appServerStarted": true,
+      "stderr": "Reading API keys from the macOS Keychain (set them as environment variables to skip this)\nError: initialize: initialize: initialize failed: app-server closed\n"
+    },
+    {
+      "case": "fixed-option-multiline",
+      "exitCode": 2,
+      "missingPrompt": false,
+      "appServerStarted": true,
+      "stderr": "Reading API keys from the macOS Keychain (set them as environment variables to skip this)\nError: initialize: initialize: initialize failed: app-server closed\n"
+    },
+    {
+      "case": "backend-stdin",
+      "exitCode": 2,
+      "missingPrompt": false,
+      "appServerStarted": true,
+      "stderr": "Reading API keys from the macOS Keychain (set them as environment variables to skip this)\nError: initialize: initialize: initialize failed: app-server closed\n"
+    }
+  ]
+}

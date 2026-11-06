@@ -47,7 +47,7 @@ function spawningAdapter(opts: { pipe?: boolean } = {}): { adapter: StreamAdapte
       }
     },
     cancel: async () => {},
-    decide: () => {},
+    decide: () => ({ delivered: true }),
     capabilities: { resume: true },
   };
   return { adapter, runs };
@@ -505,4 +505,19 @@ test('a chat page rebuilt while a turn runs is told the turn is running, and one
   await settle(out, 20);
   h.fc.send('ready');
   assert.equal(runningPosts(h), 2, 'nothing is running, so nothing is told');
+});
+
+test('E202611031bd72813:S001 t2: an unanswered card timing out re-evaluates the chat status (completed turn goes done, no stale waiting-input)', async () => {
+  const h = harness();
+  h.host.open();
+  h.fc.send('ready');
+  const s = h.store.create('claude');
+  h.store.save(s);
+  const out = h.host.queueRunner.run(message(s.id, 'do it'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-t2', title: 'T', detail: 'd', resolution: 'turn-ended' } as TurnEvent);
+  h.runs[0]!.feed(done('t1'));
+  h.runs[0]!.proc.exitNow();
+  assert.deepEqual(await out, { kind: 'stopped', reason: 'no answer to the approval' }, 'the unanswered card times out');
+  await waitFor(() => h.store.get(s.id)?.status === 'done', 5000, 'timeout cleanup re-evaluates: waiting-input -> done');
 });

@@ -1,0 +1,16 @@
+TAP version 13
+# Subtest: project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds
+ok 1 - project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds
+  ---
+  duration_ms: 240.549875
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 394.388333

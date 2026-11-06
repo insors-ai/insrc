@@ -1,0 +1,613 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "c2ba6fa62a148ed1",
+    "storyId": "s10",
+    "createdAt": "2026-11-04T05:25:24.967Z",
+    "updatedAt": "2026-11-05T04:32:36.489Z",
+    "authoredBy": "controller",
+    "epicCreatedAt": "2026-10-11T05:19:32.803Z",
+    "epicSlug": "complete-consistent-richer-code-index-one"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": false
+      }
+    ],
+    "summary": "Document relationships built (t1-t11). Live measurement on this repository with gpt-6.1-sol after the code-review fix: 961 implied links, precision 0.794, recall 0.136, extractedRecovery 1.0 (first run before the fix: 0.778 / 0.150), so the switch stays off, the valid lc1 outcome. Installed daemon: written links as REFERENCES/extracted; repo.stats docRelations shows the figures and, live, unavailable with its reason. Manual code review (2 rounds, CR.md): one MED and two LOW fixed in 5c5bc0cf1, five LOW left open. t11's sweep check is accepted with an override by the user: no test fails deterministically at HEAD, and under equal load the pre-s10 tree fails more (54 vs 34; t11-sweep.md).",
+    "testRecord": {
+      "md": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/daemon/db/__tests__/fixtures/session-source-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-relations-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/search-evidence.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/subsystem-tables.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/doc-relations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/entities.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/migration-v4-to-v5.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/__tests__/operational.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/codec.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/migrations.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/graph/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/repos.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/understanding/__tests__/storage.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/__tests__/markdown-links.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/artifact.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/parser/markdown-links.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-links-commit.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/cross-file-resolver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/config/role-taxonomy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-relations-provider.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/doc-relations-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/package.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/doc-relations-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/handler-runtime.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/method-class.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/db/__tests__/doc-relations-read.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/doc-relations-read.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/summary-link.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-relations-jobs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/doc-relations-measure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/doc-relations-pass.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-relations-pass.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/prompts/analyze/doc-relations.system.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/method-class.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/indexer/__tests__/doc-relations-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/failed-lookups.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/doc-relations-attach.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/usage-example.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/fixtures/module-state-inventory.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/__tests__/helpers/mid-tier-home.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/__tests__/s10-gradle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/actions/RepoStatusDialog.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/actions/DocRelationsRowsTest.kt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/ReposPane.tsx"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/cli/panes/__tests__/ReposPane-doc-relations.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/doc-relations-status.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/repo-completeness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/shared/doc-relations-status.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/detail-renderers.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/daemon-gateway.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/detail-renderers.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/doc-relations-status.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/handler-runtime.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-order.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/threads/__tests__/indexing-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-sweep.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/PLAN-c2ba6fa62a148ed1-s10.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/PLAN.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/turn-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/complete-consistent-richer-code-index-one-E20261011c2ba6fa6/S010/t11-evidence.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T04:32:36.489Z"
+      }
+    ],
+    "commit": "992618f97"
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793879785515-40fgjy",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-05T11:57:03.976Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 38459,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "910fce32967bc4ea",
+    "epicSlug": "pass-vibe-chat-prompts-correctly-programmatic",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-05T12:45:01.476Z",
+    "parentRef": {
+      "slug": "pass-vibe-chat-prompts-correctly-programmatic"
+    }
+  },
+  "body": {
+    "title": "Pass Vibe chat prompts correctly in programmatic mode",
+    "reproduction": "In VS Code chat, select Vibe with a Mistral model and send a nonempty message. Observed: vibe exits code 1 with 'Error: No prompt provided for programmatic mode'. Local reproduction against installed vibe 3.0.4: invoke vibe -p --output streaming -- 'insrc prompt transport diagnostic' with empty stdin. It exits 1 with the identical error and no stdout. Expected: Vibe receives the complete user prompt and starts a turn.",
+    "rootCause": "The Vibe mapper in vscode-plugin/src/chat/cli-adapter.ts builds a bare -p plus --output streaming and appends the prompt as a positional argument after --. The shared run path sets closeInput:true for this mapper, so stdin is empty. Installed Vibe 3.0.4 does not use that positional text as the programmatic prompt when bare -p is set; the exact invocation reproduces its missing-prompt guard. By comparison, the backend Vibe path in src/agent/providers/cli-provider.ts supplies the prompt through stdin. The failure occurs before a model response, so model access is not established as its cause.",
+    "fixIntent": "Make Vibe chat receive the complete prompt through its supported programmatic input contract. Cover new and resumed turns, title generation, multiline prompts, and prompts beginning with option-like text; retain streaming output, resume handles, attachments, permission modes, and model selection. Add regression coverage that checks the real CLI prompt contract rather than merely pinning the existing incorrect argv. Verify backend Vibe prompt transport remains compatible without unrelated changes."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "stakeholder",
+      "ref": "User report in this chat: Vibe with Mistral exits with no prompt provided for programmatic mode."
+    },
+    {
+      "id": "c4",
+      "kind": "step-output",
+      "ref": "Local Vibe 3.0.4 reproduction in this session: bare -p, positional prompt and empty stdin exits 1 with the reported message."
+    }
+  ]
+}

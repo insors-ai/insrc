@@ -74,6 +74,7 @@ import {
 } from '../shared/repo-namespaces.js';
 import { trackUnembeddedInTxn, updateIndexStateRowInTxn } from './graph/index-state-rows.js';
 import { loadLocalProviderConfig } from '../config/local.js';
+import { clearDocRelationsInTxn } from './doc-relations.js';
 import { carryDocSummariesInTxn, deleteCarriedDocSummariesInTxn, deleteDocSummaryInTxn } from './doc-summaries.js';
 import { isGroupingKindByte, recordChangedEntityFileInTxn, recordChangedFileInTxn, resetSubsystemInputsInTxn } from './subsystem-changes.js';
 
@@ -799,6 +800,8 @@ export async function deleteEntitiesById(_db: DbClient, ids: readonly string[]):
  * With `carryDocSummaries`, every summary of these entities is copied into
  * doc_summary_carry in that same transaction, for the full index to write
  * back (ISSUE-dced4385); without it the repository's carry rows are deleted.
+ * The repository's model-proposed document relationships (s10) are cleared the
+ * same way: carried with `carryDocSummaries`, deleted with their carry without it.
  */
 export async function deleteEntitiesForRepo(
 	_db: DbClient,
@@ -827,9 +830,12 @@ export async function deleteEntitiesForRepo(
 				}
 			}
 		}
-	}, s => resetSubsystemInputsInTxn(s, repoId));   // after the removals, which record their files
+	}, s => {
+		resetSubsystemInputsInTxn(s, repoId);   // after the removals, which record their files
+		clearDocRelationsInTxn(s, repoId, opts?.carryDocSummaries === true);   // s10: carried with the summaries
+	});
 	// Its own transaction: detachDeleteEntities skips its hooks when the repository has no entities left.
-	if (ids.length === 0) await withWriteTxn(s => { resetSubsystemInputsInTxn(s, repoId); });
+	if (ids.length === 0) await withWriteTxn(s => { resetSubsystemInputsInTxn(s, repoId); clearDocRelationsInTxn(s, repoId, opts?.carryDocSummaries === true); });
 	if (opts?.carryDocSummaries !== true) await withWriteTxn(s => { deleteCarriedDocSummariesInTxn(s, repoId); });
 	// Repo-scoped Lance cleanup: belt-and-suspenders alongside the
 	// per-id cleanup detachDeleteEntities does. Catches any rows whose

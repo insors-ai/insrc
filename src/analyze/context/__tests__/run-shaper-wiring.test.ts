@@ -1,3 +1,4 @@
+import { docRelationsRevision } from '../../../indexer/doc-relations-read.js';
 import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 /**
  * runShaper's own body for a run-mode request, driven directly: the
@@ -17,9 +18,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { registerBuiltinTools } from '../../../daemon/tools/builtins/index.js';
-import { upsertEntities } from '../../../db/entities.js';
-import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
-import { addRepo, removeRepo, updateRepoStatus } from '../../../db/repos.js';
+import { commitFile, upsertEntities } from '../../../db/entities.js';
+import { writeDocRelationQualityInTxn, writeDocRelationRowInTxn } from '../../../db/doc-relations.js';
+import { makeEntityId } from '../../../indexer/parser/base.js';
+import { closeGraphStore, setGraphStorePath, withWriteTxn } from '../../../db/graph/store.js';
+import { addRepo, lookupRepoId, removeRepo, updateRepoStatus } from '../../../db/repos.js';
 import { resolveTaskScope } from '../../runtimes/shared/task-scope.js';
 import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lance.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -457,9 +460,11 @@ function callWith(intent: ClassifiedIntent, id: string, steps: PipelineSteps, ex
 }
 
 /** A cached bundle for `intent` in `id`'s run slot, written the way runShaper writes one. */
-function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code'): void {
+async function seedBundle(id: string, intent: ClassifiedIntent, meta: Record<string, unknown>, shaper: 'code' | 'docs' | 'data' | 'infra' | 'generic' = 'code'): Promise<void> {
 	const prompt = readFileSync(join(REPO_ROOT, `src/prompts/analyze/${shaper}.system.md`), 'utf8');
-	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...meta } };
+	// A bundle over a repository carries the document-relations revision it was built at (Epic c2ba6fa6 s10).
+	const revision = typeof meta['repoPath'] === 'string' ? { docRelationsRevision: await docRelationsRevision(meta['repoPath']) } : {};
+	const bundle = { ...RAW, summary: 'CACHED', meta: { mode: 'run', shaper, toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, ...revision, ...meta } };
 	writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle as unknown as AnalyzeContextBundle);
 }
 
@@ -480,7 +485,7 @@ test("runShaper cache order: a cache hit does not call scope resolution (a scope
 	// file, and one of them is broken. The cached bundle is still returned.
 	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
 	const cid = runId('cache-conn');
-	seedBundle(cid, conn, { repoPath: null }, 'data');
+	await seedBundle(cid, conn, { repoPath: null }, 'data');
 	const broken = forbiddenScopeDeps();
 	const connHit = await callWith(conn, cid, standIns().steps, { scopeDeps: broken.deps }, 'data');
 	assert.equal(connHit.summary, 'CACHED');
@@ -501,7 +506,7 @@ test('runShaper: a cache hit for a bundle whose repository is now being indexed 
 	// A bundle written before repoPath was recorded is a miss: built again.
 	await updateRepoStatus(null, repo, 'ready');
 	const oid = runId('cache-no-repopath');
-	seedBundle(oid, intent, {});
+	await seedBundle(oid, intent, {});
 	const rebuilt = standIns();
 	const fresh = await callWith(intent, oid, rebuilt.steps);
 	assert.equal(rebuilt.seen.synthesize, 1, 'built, not served');
@@ -547,7 +552,7 @@ test('bundle schema: a freshly built bundle with repoPath (a string and null) pa
 test('runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks', async () => {
 	const conn: ClassifiedIntent = { target: 'data', scope: 'M', focused: false, scopeRef: { kind: 'connection', value: 'ledger-db' }, reasoning: 'r' };
 	const id = runId('cache-null');
-	seedBundle(id, conn, { repoPath: null }, 'data');
+	await seedBundle(id, conn, { repoPath: null }, 'data');
 	// Every repository is under index, and the freshness reader throws: neither is consulted.
 	await updateRepoStatus(null, repo, 'indexing');
 	let freshnessReads = 0;
@@ -562,14 +567,14 @@ test('runShaper: a cache hit decides the index state by the same rule as a miss:
 	// A generic run is not checked on a miss (step 4.5), so a hit is not refused either.
 	const generic = unfocused({ kind: 'repo', value: repo }, 'generic');
 	const gid = runId('cache-generic-indexing');
-	seedBundle(gid, generic, { repoPath: repo }, 'generic');
+	await seedBundle(gid, generic, { repoPath: repo }, 'generic');
 	const servedGeneric = await callWith(generic, gid, standIns().steps, {}, 'generic');
 	assert.equal(servedGeneric.summary, 'CACHED', 'generic: served, not refused');
 
 	// A run whose caller checked the scope already (runAnalyze) is not checked again.
 	const code = unfocused({ kind: 'repo', value: repo });
 	const cid = runId('cache-checked-indexing');
-	seedBundle(cid, code, { repoPath: repo });
+	await seedBundle(cid, code, { repoPath: repo });
 	const servedChecked = await callWith(code, cid, standIns().steps, { opts: { runId: cid, scopeChecked: true } });
 	assert.equal(servedChecked.summary, 'CACHED', 'scopeChecked: served, not refused');
 
@@ -618,11 +623,48 @@ test("runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold 
 	// Warm: a docs bundle cached for a repository the index no longer holds is refused too.
 	const intent = unfocused({ kind: 'repo', value: empty }, 'docs');
 	const wid = runId('docs-warm');
-	seedBundle(wid, intent, { repoPath: empty }, 'docs');
+	await seedBundle(wid, intent, { repoPath: empty }, 'docs');
 	const warm = await callWith(intent, wid, standIns().steps, {}, 'docs').then(() => undefined, (e: unknown) => e);
 	assert.ok(warm instanceof ScopeNotIndexedError, `warm: ${String(warm)}`);
 
 	// A caller that checked the scope already (runAnalyze) is served from the cache, not checked again.
 	const served = await callWith(intent, wid, standIns().steps, { opts: { runId: wid, scopeChecked: true } }, 'docs');
 	assert.equal(served.summary, 'CACHED');
+});
+
+test('s10 t9: bundle cache stale by docRelationsRevision', async () => {
+	const intent = unfocused({ kind: 'repo', value: repo });
+	const id = runId('doc-relations');
+	const repoId = (await lookupRepoId(repo))!;
+	const fileEntity = (file: string): Entity =>
+		({ id: makeEntityId(repo, file, 'file', file), repo, repoId, file, kind: 'file', name: file, language: 'typescript', startLine: 1, endLine: 1, body: '', embedding: [], indexedAt: '2026-11-04T00:00:00.000Z' }) as unknown as Entity;
+	await commitFile({ repoPath: repo, filePath: `${repo}/src/b.ts`, contentHash: 'hb', relations: [], entities: [fileEntity(`${repo}/src/b.ts`)] });
+	const cold = standIns();
+	const built = await callWith(intent, id, cold.steps);
+	assert.equal(cold.seen.synthesize, 1, 'built cold');
+	assert.ok(built.meta?.docRelationsRevision, 'the bundle carries the revision it was built at');
+	const servedWarm = async (label: string): Promise<void> => {
+		const warm = standIns();
+		await callWith(intent, id, warm.steps);
+		assert.equal(warm.seen.synthesize, 0, `${label}: served from the warm cache`);
+	};
+	const rebuiltAfter = async (label: string, change: () => Promise<void>): Promise<void> => {
+		await change();
+		const again = standIns();
+		await callWith(intent, id, again.steps);
+		assert.equal(again.seen.synthesize, 1, `${label}: the warm bundle is rebuilt`);
+		await servedWarm(`after ${label}`);
+	};
+	await servedWarm('nothing changed');
+	const proposal = (to: string) => ({ contentHash: 'h', modelId: 'm1', computedAtGeneration: 1, proposals: [{ from: 'e-fixture', to, rationale: 'r' }] });
+	await rebuiltAfter('a measurement', async () => withWriteTxn(t => writeDocRelationQualityInTxn(t, repoId, {
+		figures: { checked: 100, proposed: 1, right: 1, found: 1, precision: 1, recall: 1, extractedRecovery: 1, modelId: 'm1', setHash: 'h', measuredAt: 'x' },
+		extraction: { state: 'ok', examined: 1, failed: 0, updatedAt: 'x' },
+	})));
+	await rebuiltAfter('a publication', async () => withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/a.md', proposal('one'))));
+	await rebuiltAfter('a proposal replaced by one with another endpoint', async () => withWriteTxn(t => writeDocRelationRowInTxn(t, repoId, 'docs/a.md', proposal('two'))));
+	await rebuiltAfter('an endpoint deletion', async () => { await commitFile({ repoPath: repo, filePath: `${repo}/src/b.ts`, contentHash: null, entities: [], relations: [] }); });
+	await rebuiltAfter('a second same-named file', async () => {
+		await commitFile({ repoPath: repo, filePath: `${repo}/lib/a.ts`, contentHash: 'h2', relations: [], entities: [fileEntity(`${repo}/lib/a.ts`)] });
+	});
 });

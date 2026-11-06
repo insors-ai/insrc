@@ -1,0 +1,445 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793735454409-kct19c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-03T19:54:24.220Z",
+    "epicCreatedAt": "2026-11-03T16:24:43.002Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 209791,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1bd72813bfa795f4",
+    "epicSlug": "multiple-concurrent-chats-chat-panel-active",
+    "storyId": "S001",
+    "lldRunId": "wf-1793722967234-8apdy1",
+    "lldEffectiveHash": "1bd72813bfa795f41806ba85139a67ff256fab2c2ba3094fb1c9db34f8569078",
+    "authoredBy": "controller",
+    "approvedAt": "2026-11-03T19:55:13.850Z",
+    "rangeBase": "d4daf1d1134d66bcece672d219cedb7904a5ce2b"
+  },
+  "body": {
+    "summary": {
+      "prose": "Build adds an active-chats dropdown (left-aligned in the chat chrome, reusing open-chat) with red/yellow/green status driven by turn lifecycle + persisted request state and a lossless 60s observer for detached chats, and makes every insrc_present open a new docs-review editor panel (presentKey-keyed) instead of replacing the open one, with per-panel draft isolation.",
+      "audience": "technical"
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Session record fields",
+        "summary": "status/lastActivityAt/pendingRequests/observerCheckpoint additive fields",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "old rows load; persisted with monotonic guard"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "session-store status/pendingRequests persistence + old-row compat (vscode-plugin/src/chat/session-store.ts, session-file-store.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Status precedence + transitions + observation-failure",
+        "summary": "setStatus wiring + cli-adapter observation-failure outcome",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "precedence; failure exits; observation-failure not terminal"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "status precedence + failure/observation-failure transitions (turn-lifecycle.ts, stream-events.ts, cli-adapter.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "activeChats + purge + eviction protection",
+        "summary": "list filter + 60s timer + eviction exclusions",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "purge list-level; cap eviction excludes active"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "activeChats filter + purge fake clock + capped-store eviction regression (session-store.ts, session-file-store.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Active-chats dropdown",
+        "summary": "active-list protocol + #insrc-active chip left + open-chat reuse",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "dropdowns render; selection opens like history"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "active-list/ActiveChatEntry + open-doc/docs-content protocol shapes (protocol.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "webview dropdown render + open (chat-panel.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "60s lossless observer core",
+        "summary": "own-cursor ingestion, retention, checkpoints, SegmentGone recovery, pid liveness",
+        "size": "L",
+        "order": 5,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "reconciliation correct; rollovers lossless; caught-up rule"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "observer own-cursor + retention + SegmentGone + decoder checkpoints (session-output.ts, cli-adapter.ts, turn-lifecycle.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "fake session-output detached reconciliation"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Approval queue snapshot/restore + decision transport",
+        "summary": "snapshot/restore + pendingRequests + process triage + delivery results",
+        "size": "L",
+        "order": 6,
+        "dependsOn": [
+          "t1",
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "round-trip; restore by requestId; delivery-failed on silent no-op"
+        ],
+        "derivedFrom": [
+          "c7",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "approval-queue snapshot/restore round-trip + delivery result correlation (approval-queue.ts, cli-adapter.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "detach/reattach + reload request restoration (chat-panel.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "presentKey + dedup + forwarding",
+        "summary": "hostPresentSeq counter, per-declaration dedup, openArtifact forwarding",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "host-wide uniqueness; per-declaration dedup"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "presentKey uniqueness + per-declaration dedup, old test updated (review-presenter.ts, extension.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Panels map + detached presentation dispatch",
+        "summary": "panel per presentKey + observer declaration dispatch with declarationId",
+        "size": "L",
+        "order": 8,
+        "dependsOn": [
+          "t5",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "two panels on double present; detached present exactly once"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "panels map create/reveal/dispose + title (docs-review-panel.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "double-present two panels; detached present one panel (docs-review-panel.ts, extension.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Composite draft key",
+        "summary": "presentKey:artifactId draft keying",
+        "size": "S",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "A->B->A isolation; sibling panels isolated"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "docs-review-comments composite key A->B->A (docs-review-comments.ts)"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Full test suite",
+        "summary": "unit + contract + integration per LLD s7",
+        "size": "L",
+        "order": 10,
+        "dependsOn": [
+          "t1",
+          "t2",
+          "t3",
+          "t4",
+          "t5",
+          "t6",
+          "t7",
+          "t8",
+          "t9"
+        ],
+        "acceptanceChecks": [
+          "ac1-ac4 proven"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c5",
+          "c6",
+          "c7",
+          "c8",
+          "c9",
+          "c10"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "all unit subjects incl. protocol shapes unchanged (protocol.ts)"
+          },
+          {
+            "level": "integration",
+            "name": "webview-level end-to-end (chat-panel.ts)"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/session-store.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t3",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/session-file-store.ts",
+        "coveredByTaskIds": [
+          "t1",
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/stream-events.ts",
+        "coveredByTaskIds": [
+          "t2",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/turn-lifecycle.ts",
+        "coveredByTaskIds": [
+          "t2",
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/session-output.ts",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/cli-adapter.ts",
+        "coveredByTaskIds": [
+          "t2",
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/review-presenter.ts",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/docs-review-panel.ts",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/docs-review-comments.ts",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/protocol.ts",
+        "coveredByTaskIds": [
+          "t4",
+          "t10"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/extension.ts",
+        "coveredByTaskIds": [
+          "t7",
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/approval-queue.ts",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/chat-panel.ts",
+        "coveredByTaskIds": [
+          "t2",
+          "t4",
+          "t6",
+          "t10"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — chat-panel history/open-chat pattern (chat-panel.ts:565-566, :1510)"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — session-store as history backing; gains status/lastActivityAt (session-store.ts)"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — review-presenter declared()/open() dedup + deps.open (review-presenter.ts:83-130)"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — docs-review host singleton channel + show() (docs-review-panel.ts:1275, :2450); panel-per-presentKey"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — protocol.ts open-chat { chatId } reuse; active-list addition"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — LiveTurn + session-output observer grounding (turn-lifecycle.ts, session-output.ts)"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — detach/follow, failure exits, failed-resume (turn-lifecycle.ts)"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — approval/selection events mid-turn waiting-input (stream-events.ts)"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — docs-review-comments draft keying (docs-review-comments.ts:254-260)"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD S001 handoff — protocol message shapes unchanged (protocol.ts:211-272)"
+    }
+  ]
+}

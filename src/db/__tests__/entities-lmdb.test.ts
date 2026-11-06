@@ -565,7 +565,7 @@ test('t4 guard: every entity.put/entity.remove/nameIndex.put/nameIndex.remove/en
 		cleaned = cleaned.slice(0, at) + cleaned.slice(i);
 		exemptionsFound++;
 	}
-	assert.equal(exemptionsFound, 3, 'migrations.ts must carry exactly the three documented exemptions (v1->v2 nameIndex backfill, v5->v6 entityByFile backfill, v8->v9 entityByFile repair of the retired v2 index)');
+	assert.equal(exemptionsFound, 3, 'migrations.ts must carry exactly the three documented exemptions (v1->v2 nameIndex backfill, v5->v6 entityByFile backfill, v9->v10 entityByFile repair of the retired v2 index)');
 	const migrationsViolations = [...cleaned.matchAll(RAW_CALL)];
 	assert.deepEqual(migrationsViolations.map(m => m[0]), [], 'no raw entity/nameIndex/entityByFile write outside the wrapper or the documented exemptions in migrations.ts');
 });

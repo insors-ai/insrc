@@ -71,6 +71,7 @@ import { createFileChatSessionStore, migrateChatSessionsFromMemento } from './ch
 import { createSessionOutput } from './chat/session-output.js';
 import { createAttachmentStore } from './chat/attachment-store.js';
 import { createProviderRegistry, nodeSpawner, defaultBinaryProbe, deriveChatTitle } from './chat/cli-adapter.js';
+import { createChatOllamaResolver } from './chat/ollama-routing.js';
 import type { DiffView } from './chat/edit-governor.js';
 import { createLinkOpener } from './chat/link-opener.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
@@ -598,7 +599,13 @@ export function activate(context: vscode.ExtensionContext): void {
         void chatAttachments.removeSession(id).catch((e: unknown) => panelLog.warn(`chat attachments of ${id} not removed: ${String(e)}`));
       },
     });
-    const chatProviders = createProviderRegistry({ spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput });
+    const chatProviders = createProviderRegistry({
+      spawn: nodeSpawner, isInstalled: defaultBinaryProbe, sessionOutput: chatOutput,
+      resolveOllamaTarget: createChatOllamaResolver({
+        definitions: () => client.rpc<ModelDefinitions>('models.definitions'),
+        rawConfig: () => configGateway.rawConfig(),
+      }),
+    });
     // A session the migration left in globalState is not in the store yet: its files are kept too.
     const chatKeep = new Set([...chatStore.list().map((c) => c.id), ...migratedChats.kept]);
     void chatOutput
@@ -758,6 +765,7 @@ export function activate(context: vscode.ExtensionContext): void {
     });
     const chatHost = createChatPanelHost({
       links: linkOpener,
+      sessionOutput: chatOutput, // E202611031bd72813:S001 t5: the detached-session observer's store
       attachments: {
         store: chatAttachments,
         // The file dialog is VS Code's own; a dismissed dialog attaches nothing.
@@ -819,6 +827,10 @@ export function activate(context: vscode.ExtensionContext): void {
       providers: chatProviders,
       store: chatStore,
       cwd: () => vscode.workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd(),
+      // E202611031bd72813:S001 t5: the detached-session observer needs this host's pid (to skip
+      // its own turns) and a real liveness check (verified death is a transition condition).
+      hostPid: process.pid,
+      isAlive: processAliveCheck(defaultIsAlive, defaultProcessStartTime),
       // Run-config popup: the daemon's model definitions (per-family models + efforts),
       // read once at host start; the panel re-renders when they land.
       definitions: () => client.rpc<ModelDefinitions>('models.definitions'),

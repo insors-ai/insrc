@@ -1,0 +1,95 @@
+{
+  "reviewType": "Manual in-session code review requested by the user because daemon review exceeds its budget. No formal daemon CR or BUILD approval.",
+  "packet": "/tmp/review-packet-E202611031bd72813-S001.md",
+  "packetSha256": "6bf0b24d3dec3761fb922c956d61115d80b41e6f0a9f89de264b266a02bf3944",
+  "packetBase": "afdedb5b3e5378af06f953fc64ad8ab72ce96a44",
+  "packetHead": "0092d8d4b325606b4916ebbed2d5e77fced70c83",
+  "workingHead": "b6551fab6755527158afd5b7af722cfba6af1f88",
+  "workingVscodeMatchesPacketHead": true,
+  "sourceHashes": {
+    "vscode-plugin/src/chat/approval-queue.ts": "b01365829ec2c2c1899815c7871351e8491b00698682706af47e525c7944ae8a",
+    "vscode-plugin/src/chat/chat-panel.ts": "dbc7e827321f0986f0075991a2e9c899fe311724e2e99b9921fa0ded173fa44e",
+    "vscode-plugin/src/chat/cli-adapter.ts": "71252c49705da82fcd83e14e641344e84d122f47217fa325a5b71d0302c87fab",
+    "vscode-plugin/src/chat/docs-review-comments.ts": "1c91ffa423fbb8cadf6e7d0f6e878fd85ec0325fcb96b73546c8cb0ac4152e5d",
+    "vscode-plugin/src/chat/docs-review-panel.ts": "f9713f7167665349498eb61880fbaffcabfad80677d0c98ffb7de8bac47e830e",
+    "vscode-plugin/src/chat/protocol.ts": "7d17ae30154e27b4eb44b32cd94d1c8e5c91fd30c1b7ca0d7d8e1a340e0b4b03",
+    "vscode-plugin/src/chat/review-presenter.ts": "5e8df772d90840968bb76e19d798b47a99f89e91b0a5ad45689f568a60357f2b",
+    "vscode-plugin/src/chat/session-file-store.ts": "c24888894ff9c2bd9f6a404a73d0703bbd2a62ba10fc115c4c8f05f28ae3e616",
+    "vscode-plugin/src/chat/session-output.ts": "a3b8aab7feb173dfebb1464dbfc2ae04677f892e2a660b6b2a502837b70376d8",
+    "vscode-plugin/src/chat/session-store.ts": "bd85a0bae0394486740cc7999a7218a21e0e95e9cbac683510de56d56a3e8caa",
+    "vscode-plugin/src/chat/stream-events.ts": "9d9a3dc62beb60591d4544fc0d8cef6dd40663e0ea5e8db28d5dfd04a5e63221",
+    "vscode-plugin/src/chat/turn-lifecycle.ts": "292e418466c49cda26bf5db0d2384791f97dd1b19dff9f2df9b069b275922570",
+    "vscode-plugin/src/extension.ts": "600853257d3d06de9878804279a00797b9ba9c64c63472b9be5132be08d17c0a"
+  },
+  "runtime": "Node 22.23.2, macOS",
+  "tests": {
+    "pass": 735,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "testFiles": 15,
+    "testConcurrency": 1,
+    "testForceExit": true,
+    "durationMs": 36438.4485,
+    "tap": "affected-tests.tap",
+    "limits": "The unforced first attempt finished the chat-panel file and stayed alive; stopped only this review runner. Forced run matches the packet approach and does not verify natural teardown."
+  },
+  "typecheck": {
+    "command": "../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "cwd": "vscode-plugin",
+    "exitCode": 0
+  },
+  "observations": {
+    "MR1": {
+      "probe": "async-routing.mts",
+      "originAndTargetDiffer": true,
+      "followUpResume": {
+        "provider": "claude",
+        "nativeSessionId": "native-B"
+      },
+      "requestInsertedIntoB": true,
+      "originOutcome": "approved"
+    },
+    "MR2": {
+      "probe": "panels.mts",
+      "initial": [
+        [
+          "LLD-a-S001"
+        ],
+        [
+          "LLD-b-S001"
+        ]
+      ],
+      "firstPanelDecisionReachedDaemon": 0,
+      "firstPanelDecisionReplies": 0,
+      "contentCountsAfterSecondPanelBoot": [
+        1,
+        1
+      ]
+    },
+    "MR3": {
+      "probe": "followup.mts",
+      "outcomeBeforeOriginalEnds": "delivery-failed",
+      "runsBeforeOriginalEnds": 1,
+      "runsAfterOriginalEnds": 2,
+      "lateFollowUpPrompt": "Approved \u2014 run exactly this now: echo fixture",
+      "nativeResume": null
+    },
+    "MR4": {
+      "probe": "present-replay.mts",
+      "persistedDeclaration": "declaration-1",
+      "panelsBeforeReattach": 1,
+      "panelsAfterReattach": 2,
+      "keys": [
+        "LLD-a-S001#1",
+        "LLD-a-S001#2"
+      ]
+    }
+  },
+  "limits": [
+    "Probes use actual hosts/lifecycle/presenter with injected process/client/IPC seams and temporary in-memory conversation stores; no live cloud CLI calls or real approvals/actions.",
+    "No rendered VS Code or native dropdown visual verification; UI host and generated source checks only.",
+    "No production code or other stream artifacts edited; code not approved.",
+    "Existing test success does not cover the adversarial flows reproduced here."
+  ]
+}

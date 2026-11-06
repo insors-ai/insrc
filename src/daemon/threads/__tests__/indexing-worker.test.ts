@@ -160,6 +160,7 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			['repo.add', { path: SECOND }],
 			['repo.remove', { path: SECOND }],
 			['mcp.register', { path: 42 }],
+			['docRelations.measure', { repoPath: 42 }],
 		];
 		// What each call must answer: its handler really ran (not just "not an unknown method").
 		const ok = (r: ReplyEnvelope): void => { assert.equal(r.error, undefined); assert.deepEqual(r.result, { ok: true }); };
@@ -172,6 +173,7 @@ test("each indexing-class method runs on the code-indexing worker's thread id", 
 			'repo.reindex': ok, 'index.file': ok, 'config.enqueue': ok, 'config.reindex': ok, 'repo.add': ok, 'repo.remove': ok,
 			'mcp.register': r => { assert.equal(r.error, undefined); assert.equal((r.result as { code?: string }).code, 'repo-missing', 'the repo gate answers first, as data'); },
 			'daemon.backup': r => { assert.equal(r.error, undefined); assert.equal((r.result as { targetDir?: string }).targetDir, join(backupDir, 'b')); },
+			'docRelations.measure': r => assert.equal(r.error, 'docRelations.measure: repoPath must be a non-empty string', 'its own validation ran'),
 			'docSummary.restoreFromBackup': r => assert.equal(r.error, 'docSummary.restoreFromBackup: backupPath must be a string', 'its own validation ran'),
 			// A job held running: today's busy refusal, from the worker's real queue.
 			'daemon.compact': r => assert.match(r.error ?? '', /^daemon\.compact: indexer is busy \(queue=\d+, processing=(true|false)\)\./),

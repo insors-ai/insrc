@@ -1,0 +1,11 @@
+{
+  "vsix": "/tmp/insrc-vscode-chat-controls-fc97aa815.vsix",
+  "version": "0.5.24",
+  "commit": "fc97aa815",
+  "installedBundle": "/Users/subhagho/.vscode/extensions/insors.insrc-vscode-0.5.24/out/extension.js",
+  "sha256": "e972fcc4419ecd53196dde75b9ca65b72c67ba4fe8b17b4b022eb7e60f9dd9a0",
+  "matchesVsix": true,
+  "manualValidation": "pending VS Code reload and user validation",
+  "buildValidation": "tests and typechecks pass; completion withheld because runtime reproduction/resolution is incomplete",
+  "codeReview": "not started"
+}

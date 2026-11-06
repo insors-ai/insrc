@@ -16,7 +16,7 @@
  */
 
 import type { DisposableLike } from '../surfaces/types.js';
-import type { RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
+import type { DocRelationsStatus, RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
 import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
 
 // ---------------------------------------------------------------------------
@@ -109,6 +109,8 @@ export interface RepoRef {
   readonly status?: RegisteredRepo['status'] | undefined;
   /** Whether the index is complete (Epic c2ba6fa6 s1); absent = unknown (a daemon before the change). */
   readonly completeness?: RepoCompleteness | undefined;
+  /** Model-proposed document relationships (Epic c2ba6fa6 s10); absent = a daemon before the change. */
+  readonly docRelations?: DocRelationsStatus | undefined;
 }
 
 /** Thrown/rejected by a gateway method when its underlying read fails. */

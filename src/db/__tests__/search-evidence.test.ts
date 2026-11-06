@@ -81,7 +81,7 @@ test('s7 t5: edges written with an empty value, as before s7, read unknown after
 	setGraphStorePath(join(dir, 'graph.lmdb'));
 	await getGraphStore();
 
-	assert.equal(SCHEMA_VERSION, 9, 'no schema step was added for evidence; 7 is the s9 step for kinds and namespaces, 8 the s8 subsystem tables, 9 the repair of the retired v2 entity index');
+	assert.equal(SCHEMA_VERSION, 10, 'no schema step was added for evidence; 7 is the s9 step for kinds and namespaces, 8 the s8 subsystem tables, 9 the s10 document-relationship tables, 10 the repair of the retired v2 entity index');
 	assert.deepEqual(byName(await findCallers(null, target.id)), ['a: unknown']);
 	assert.deepEqual(byName(await findCallees(null, a.id)), ['target: unknown']);
 });

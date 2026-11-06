@@ -26,7 +26,10 @@ test('public-v1-types-and-emitted-boundary', () => {
       if (specifier.startsWith('.')) {
         const target = relative(output, resolve(dirname(name), specifier));
         assert.ok(target && !target.startsWith('..') && !target.startsWith('/'), name + ' escapes the package');
-      } else assert.ok(specifier.startsWith('node:') || specifier === 'fs-ext', specifier);
+      } else {
+        assert.ok(specifier.startsWith('node:') || ['fs-ext', '@lancedb/lancedb', 'apache-arrow'].includes(specifier), specifier);
+        if (['@lancedb/lancedb', 'apache-arrow'].includes(specifier)) assert.ok(relative(output, name).startsWith('store/'), 'SDK imports stay in private store adapters: ' + name);
+      }
     }
   }
   const source = readFileSync(output + '/types.d.ts', 'utf8');

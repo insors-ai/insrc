@@ -4,7 +4,7 @@
     "epicHash": "17123b6d304af2a2",
     "storyId": "s2",
     "createdAt": "2026-11-02T07:02:24.067Z",
-    "updatedAt": "2026-11-03T08:28:52.463Z",
+    "updatedAt": "2026-11-03T08:38:25.016Z",
     "authoredBy": "controller",
     "epicCreatedAt": "2026-11-01T12:02:01.501Z",
     "epicSlug": "share-project-memory-across-agents-applications"
@@ -194,13 +194,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/design-verification.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
           "file": "packages/project-memory/src/__tests__/queue-retirement.test.ts"
         },
         "author": "insrc-build",
@@ -264,13 +257,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.tap"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
           "file": "packages/project-memory/src/__tests__/fixtures/queue-crash-peer.ts"
         },
         "author": "insrc-build",
@@ -293,13 +279,6 @@
       {
         "target": {
           "file": "scripts/__tests__/project-memory-s2-qualification.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T08:28:52.463Z"
@@ -369,21 +348,7 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/local-validation.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/search-filter-isolated.tap"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/run.json"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T08:28:52.463Z"
@@ -418,20 +383,6 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/native-lifecycle.tap"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/packed-consumer.tap"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-crash.json"
         },
         "author": "insrc-build",
@@ -439,28 +390,7 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-suite.tap"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/run.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
           "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/review-response.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
-      },
-      {
-        "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/platform.log"
         },
         "author": "insrc-build",
         "timestamp": "2026-11-03T08:28:52.463Z"
@@ -488,12 +418,133 @@
       },
       {
         "target": {
-          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/root-build.log"
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/design-verification.md",
+          "version": "0eedfb340"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-03T08:28:52.463Z"
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/queue-crash.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/performance/queue-cost.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/local-validation.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/macos/run.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/native-lifecycle.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/packed-consumer.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/queue-suite.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/run.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/linux/platform.log",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/backend/root-build.log",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/SELF-REVIEW.md",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/receipt-after.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/receipt-before.tap",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/review.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
+      },
+      {
+        "target": {
+          "file": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S002/evidence/manual-review/task14-verdict.json",
+          "version": "0eedfb340"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-03T08:38:25.016Z"
       }
     ],
-    "commit": "0f4ee7724"
+    "commit": "0eedfb340"
   }
 }

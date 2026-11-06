@@ -82,6 +82,9 @@ const REMAINING: Record<string, readonly { after: string; cls: ClauseClass }[]> 
 		{ after: 'if (depth === 0) throw err;', cls: 'expected: a directory below the repository root cannot be read; it is named under skipped (the root itself rethrows)' },
 		{ after: 'a broken link, or an entry removed while the walk runs', cls: 'expected: an entry cannot be stat-ed; it is named under skipped' },
 	],
+	'doc-relations-attach.ts': [
+		{ after: 'Not swallowed: the output says the related links of this hit could not be read', cls: "expected: a hit's related links cannot be read from the store; the output names the hit and the cause (relatedUnreadable)" },
+	],
 	'doc-constraint-enumerate.ts': [
 		{ after: 'the model call that reads the retrieved sections failed', cls: 'rethrow' },
 	],
@@ -139,12 +142,13 @@ test('the count of catch clauses in the lookup files equals the number of classi
 	}
 
 	// The design counted twenty-five. Eleven of them remain; the twelfth row is
-	// the new clause that detects unparsable manifest content for the record.
+	// the new clause that detects unparsable manifest content for the record; the
+	// thirteenth reports unreadable related document links on the output (s10).
 	const remaining = Object.values(classified).reduce((a, b) => a + b, 0);
 	const removed = Object.values(REMOVED).reduce((a, b) => a + b, 0);
-	assert.equal(remaining, 12);
+	assert.equal(remaining, 13);
 	assert.equal(removed, 14);
-	assert.equal(remaining - 1 + removed, 25);
+	assert.equal(remaining - 2 + removed, 25, 'the two clauses added after the design (manifests-locate, doc-relations-attach) aside');
 	// A removed clause is really gone: those files hold exactly what the table says.
 	for (const f of Object.keys(REMOVED)) assert.equal(counted[f] ?? 0, REMAINING[f]?.length ?? 0, f);
 	// Every row is one of the two classes, and an expected one names its condition.

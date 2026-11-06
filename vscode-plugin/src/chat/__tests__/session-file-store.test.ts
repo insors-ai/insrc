@@ -857,3 +857,63 @@ test('run config persists in the session head file and reads back (old heads wit
   assert.equal(old?.model, undefined);
   assert.equal(old?.effort, undefined);
 });
+
+test('E202611031bd72813:S001 t1: file store setStatus persists status+lastActivityAt into the head; pendingRequests survive a fresh-store reload; stale save does not regress them', () => {
+  const { store, fake } = makeStore();
+  const s = store.create('claude' as never);
+  assert.equal(store.get(s.id)?.status, undefined); // old-row compat: head without the fields loads
+  store.setStatus(s.id, 'working');
+  store.save({ ...store.get(s.id)!, pendingRequests: [{ requestId: 'r9', kind: 'selection', resolved: false, prompt: 'pick', options: ['a', 'b'], multi: true }] });
+  // persisted head contents carry the new fields
+  const head = JSON.parse(fake.fs.readText(headPath(s.id))!);
+  assert.equal(head.status, 'working');
+  assert.equal(typeof head.lastActivityAt, 'number');
+  assert.equal(head.pendingRequests[0].requestId, 'r9');
+  // reload through a FRESH store over the same fs: fields survive
+  const reloaded = createFileChatSessionStore({ root: ROOT, fs: fake.fs, genId: () => 'other', now: () => '2026-01-02T00:00:00.000Z' });
+  assert.equal(reloaded.get(s.id)?.status, 'working');
+  assert.equal(reloaded.get(s.id)?.pendingRequests?.[0]?.multi, true);
+  // backwards timestamp: a stale object saved later must not regress status/lastActivityAt or drop pendingRequests
+  store.save({ ...s, title: 'stale write' });
+  assert.equal(store.get(s.id)?.status, 'working');
+  assert.equal(store.get(s.id)?.pendingRequests?.[0]?.requestId, 'r9', 'pendingRequests survive the stale write');
+  store.setStatus('nope', 'working'); // unknown id: no-op, never throws
+});
+
+test('E202611031bd72813:S001 t3: file store activeChats applies the 30-min purge and skips old heads; evictBeyondCap never evicts active/unresolved sessions', () => {
+  const { store, fake } = makeStore();
+  const active = store.create('claude' as never);
+  const doneRecent = store.create('claude' as never);
+  const doneOld = store.create('claude' as never);
+  const noStatus = store.create('claude' as never); // old head: no status field at all
+  store.setStatus(active.id, 'working');
+  store.setStatus(doneRecent.id, 'done');
+  // fake clock: doneOld's lastActivityAt is t0; purge window checked at t0 + 31 min
+  // fake clock: query at t0. doneRecent is done at t0 (within the window); doneOld is done at
+  // t0 - 31 min (past it). Both heads are written directly (save()'s monotonic guard would
+  // reject the older timestamp).
+  const t0 = 1_800_000_000_000;
+  const headPathOf = (id: string) => `${ROOT}/${sessionFileName(id)}${HEAD_SUFFIX}`;
+  const writeHead = (id: string, status: string, at: number) => {
+    const h = JSON.parse(fake.fs.readText(headPathOf(id))!);
+    fake.fs.writeText(headPathOf(id), JSON.stringify({ ...h, status, lastActivityAt: at }));
+  };
+  writeHead(doneRecent.id, 'done', t0);
+  writeHead(doneOld.id, 'done', t0 - 31 * 60 * 1000);
+  const ids = store.activeChats(t0).map((x) => x.id).sort();
+  assert.deepEqual(ids, [active.id, doneRecent.id].sort(), 'done older than 30 min is purged from the list, row kept');
+  assert.ok(!ids.includes(noStatus.id), 'status-less old head is not active');
+  assert.equal(store.get(doneOld.id)?.status, 'done', 'history row untouched');
+  // eviction: with cap 2, an active session at the cap is not evicted
+  const { store: capped, fake: cappedFake } = (() => { const f = fakeSessionFs(); return { store: createFileChatSessionStore({ root: '/sessions', fs: f.fs, maxSessions: 2, genId: (() => { let n = 0; return () => `c${++n}`; })(), now: () => '2026-01-01T00:00:00.000Z' }), fake: f }; })();
+  const a1 = capped.create('claude' as never);
+  capped.setStatus(a1.id, 'waiting-input');
+  const a2 = capped.create('claude' as never);
+  // a done session WITH an unresolved request must also survive eviction
+  const head2 = JSON.parse(cappedFake.fs.readText(`${ROOT}/${sessionFileName(a2.id)}${HEAD_SUFFIX}`)!);
+  cappedFake.fs.writeText(`${ROOT}/${sessionFileName(a2.id)}${HEAD_SUFFIX}`, JSON.stringify({ ...head2, status: 'done', lastActivityAt: 1, pendingRequests: [{ requestId: 'r', kind: 'approval', resolved: false }] }));
+  const a3 = capped.create('claude' as never); // over cap: must not evict a1 (active) or a2 (unresolved)
+  assert.ok(capped.get(a1.id) !== undefined, 'active session survives cap eviction');
+  assert.ok(capped.get(a2.id) !== undefined, 'session with unresolved requests survives cap eviction');
+  assert.ok(capped.get(a3.id) !== undefined, 'the session being saved is never evicted');
+});

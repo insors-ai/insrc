@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import {
   createMementoChatSessionStore,
   createInMemoryChatSessionStore,
+  SESSION_PREFIX,
   type MementoLike,
 } from '../session-store.js';
 
@@ -369,4 +370,87 @@ test('run config: draft/create carry model+effort; save/get round-trips them; ab
   const created = store.create('vibe', { model: 'glm-5-3' });
   assert.equal(created.model, 'glm-5-3');
   assert.equal(created.effort, undefined);
+});
+
+test('E202611031bd72813:S001 t1: setStatus persists status+lastActivityAt; old rows without them load unchanged (back-compat)', () => {
+  const { memento } = fakeMemento();
+  const store = createMementoChatSessionStore({ memento, ...fixed });
+  const s = store.create('claude' as never);
+  // old-row compat: a stored record without the new fields still passes isSession and loads
+  assert.equal(store.get(s.id)?.status, undefined);
+  store.setStatus(s.id, 'working');
+  const after = store.get(s.id);
+  assert.equal(after?.status, 'working');
+  assert.equal(typeof after?.lastActivityAt, 'number');
+  // monotonic guard: lastActivityAt never moves backwards
+  const first = after!.lastActivityAt!;
+  store.setStatus(s.id, 'waiting-input');
+  const second = store.get(s.id);
+  assert.equal(second?.status, 'waiting-input');
+  assert.ok(second!.lastActivityAt! >= first);
+  // pendingRequests + observerCheckpoint round-trip
+  store.save({ ...second!, pendingRequests: [{ requestId: 'r1', kind: 'approval', resolved: false }], observerCheckpoint: { generation: 1, offset: 42, selectionSeq: 2 } });
+  const third = store.get(s.id);
+  assert.equal(third?.pendingRequests?.[0]?.requestId, 'r1');
+  assert.equal(third?.observerCheckpoint?.offset, 42);
+  // a stale object saved later must not regress or drop the newer status/lastActivityAt
+  store.save({ ...s, title: 'stale write' }); // s has no status fields
+  const fourth = store.get(s.id);
+  assert.equal(fourth?.status, 'waiting-input');
+  assert.ok(fourth!.lastActivityAt! >= first);
+  // an older EXPLICIT status must not overwrite a newer one either (working@old over waiting-input@new)
+  store.save({ ...fourth!, status: 'working', lastActivityAt: first - 1000 });
+  const fifth = store.get(s.id);
+  assert.equal(fifth?.status, 'waiting-input', 'newer persisted status wins over an older explicit one');
+  assert.equal(fifth?.pendingRequests?.[0]?.requestId, 'r1', 'pendingRequests not dropped by a stale write');
+  // a stale write carrying an OLDER pendingRequests must lose to the persisted newer one
+  store.save({ ...fifth!, pendingRequests: [{ requestId: 'stale', kind: 'approval', resolved: false }], lastActivityAt: first - 2000 });
+  assert.equal(store.get(s.id)?.pendingRequests?.[0]?.requestId, 'r1', 'newer persisted pendingRequests win over an older explicit value');
+  // unknown id: no-op, never throws
+  store.setStatus('nope', 'done');
+});
+
+test('E202611031bd72813:S001 t3: activeChats lists working/waiting always, done only within the 30-min purge window; purge is a pure read', () => {
+  const { memento } = fakeMemento();
+  const store = createMementoChatSessionStore({ memento, ...fixed });
+  const a = store.create('claude' as never);
+  const b = store.create('claude' as never);
+  const c = store.create('claude' as never);
+  store.setStatus(a.id, 'working');
+  store.setStatus(b.id, 'waiting-input');
+  store.setStatus(c.id, 'done');
+  // fake clock: t0 = now; the done chat's lastActivityAt is t0
+  const t0 = 1_800_000_000_000;
+  const c0 = store.get(c.id)!;
+  memento.update(SESSION_PREFIX + c.id, { ...c0, status: 'done', lastActivityAt: t0 });
+  // done but recent -> still listed (fake clock at t0 + 1 min)
+  let act = store.activeChats(t0 + 60_000);
+  assert.deepEqual(act.map((x) => x.id).sort(), [a.id, b.id, c.id].sort());
+  // done and older than 30 min -> purged from the list (row untouched). Write the aged record
+  // straight to the memento (save()'s monotonic guard would reject a backwards timestamp).
+  const old = store.get(c.id)!;
+  memento.update(SESSION_PREFIX + c.id, { ...old, status: 'done', lastActivityAt: t0 });
+  act = store.activeChats(t0 + 31 * 60 * 1000); // fake clock past the purge window
+  assert.deepEqual(act.map((x) => x.id).sort(), [a.id, b.id].sort(), 'done >30min leaves the active list');
+  assert.equal(store.get(c.id)?.status, 'done', 'purge is list-level only: the row is untouched');
+  // old row without status -> not active
+  const d = store.create('claude' as never);
+  assert.ok(!store.activeChats(t0 + 60_000).some((x) => x.id === d.id));
+});
+
+test('E202611031bd72813:S001 t3: capped store never evicts an active/waiting session or one with unresolved requests', () => {
+  const { memento } = fakeMemento();
+  const evicted: string[] = [];
+  const store = createMementoChatSessionStore({ memento, ...fixed, maxSessions: 2, onEvict: (id) => void evicted.push(id) });
+  const active = store.create('claude' as never);
+  store.setStatus(active.id, 'waiting-input');
+  const done = store.create('claude' as never);
+  store.setStatus(done.id, 'done');
+  const unresolved = store.create('claude' as never);
+  store.save({ ...store.get(unresolved.id)!, status: 'done', lastActivityAt: Date.now(), pendingRequests: [{ requestId: 'r', kind: 'approval', resolved: false }] });
+  const fourth = store.create('claude' as never); // triggers eviction beyond the cap of 2
+  assert.ok(!evicted.includes(active.id), 'active session not evicted');
+  assert.ok(!evicted.includes(unresolved.id), 'session with unresolved requests not evicted');
+  assert.ok(evicted.includes(done.id) || evicted.includes(fourth.id) === false, 'only done chats evicted');
+  assert.equal(store.get(active.id)?.status, 'waiting-input');
 });

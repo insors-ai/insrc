@@ -1,0 +1,20 @@
+{
+  "epicHash": "17123b6d304af2a2",
+  "storyId": "s3",
+  "round": 1,
+  "reviewedBy": "daemon",
+  "reviewHandle": "8dcd50ad-f553-4e78-8131-849d55eb0a1d.8963f3fd-4d4d-4dac-a676-1285e45dbc80",
+  "daemonEpoch": "8dcd50ad-f553-4e78-8131-849d55eb0a1d",
+  "sourceHead": "d4daf1d11",
+  "initialPrimaryChunks": 31,
+  "lastReportedProgress": "adherence: relation #487",
+  "result": "error",
+  "error": {
+    "code": "review-failed",
+    "message": "review session passed its time limit of 12600s",
+    "retryable": false
+  },
+  "completedCodeReview": false,
+  "approval": "not performed",
+  "note": "All continuation calls rejoined the same owned review; no relaunch, deadline reset, source edit or runtime/model configuration change. This is failure evidence, not a CR artifact or review verdict."
+}

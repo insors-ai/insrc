@@ -32,6 +32,11 @@ export interface TurnLifecycleDeps {
   /** Whether the panel is open; a closed panel is told nothing. */
   readonly isOpen: () => boolean;
   readonly logger: ChatPanelLogger;
+  /**
+   * E202611031bd72813:S001 t5: the session-output store, so a live/followed turn's saved cursor is
+   * REGISTERED for retention — a rollover never discards the generation under an unread cursor.
+   */
+  readonly sessionOutput?: import('./session-output.js').SessionOutput | undefined;
 }
 
 /**
@@ -47,6 +52,12 @@ export interface SpawnedCli {
 
 /** The panel's side of a live turn. Called only while the turn is current. */
 export interface TurnSink {
+  /**
+   * MR3 (manual code review of E202611031bd72813:S001): checked immediately BEFORE the CLI
+   * spawns; when it returns false the turn ends without spawning (the lease is released), so a
+   * continuation whose delivery was already recorded as failed can never execute later.
+   */
+  shouldSpawn?(): boolean;
   /** Every CLI process the turn starts, as it starts (Story S001: the queue's lease records it). */
   onSpawn?(cli: SpawnedCli): void;
   /** The turn is queued behind the session's previous process. */
@@ -77,7 +88,11 @@ export interface FollowSink {
   onEnd(outcome: FollowOutcome): void;
 }
 
-export type FollowOutcome = 'ended' | 'failed';
+/**
+ * E202611031bd72813:S001: 'observation-failed' — the follow could not READ the turn's output
+ * (the CLI may still be running); the cursor stays saved, the status is not terminal.
+ */
+export type FollowOutcome = 'ended' | 'failed' | 'observation-failed';
 
 export interface TurnLifecycle {
   /**
@@ -96,7 +111,12 @@ export interface TurnLifecycle {
    * The Stop control: ends the live turn, and a turn followed after a reload, with their
    * processes. Resolves once they have exited. Idempotent.
    */
-  stop(): Promise<void>;
+  /**
+   * MR3-R4b: stops the live/followed turn; resolves true only when the process exit was CONFIRMED
+   * (false when it ignored even SIGKILL within the grace) — recovery uses this as its verified-exit
+   * prerequisite. Best-effort callers may ignore the value.
+   */
+  stop(): Promise<boolean>;
   /**
    * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
    * the session file keeps running (with its lease) and its cursor stays saved, so following the
@@ -144,6 +164,7 @@ function clearCursor(s: ChatSession, turnId: string): void {
   if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
 }
 
+
 /** A done event carries the provider's native session id: the next turn resumes it. */
 function keepNativeSession(s: ChatSession, ev: TurnEvent): void {
   if (ev.kind === 'done' && ev.sessionId !== undefined) s.nativeSessionId = ev.sessionId;
@@ -153,6 +174,20 @@ const isTerminal = (ev: TurnEvent): ev is TurnEvent & { kind: 'done' | 'error' }
 
 export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
   const log = deps.logger;
+  const out = deps.sessionOutput;
+  const readerId = `host-${deps.hostPid}`;
+  const pinLive = (s: ChatSession): void => {
+    if (out !== undefined && s.liveTurn !== undefined) out.registerCursor({ sessionId: s.id, ...s.liveTurn.cursor }, readerId);
+  };
+  const unpinLive = (s: ChatSession, turnId: string): void => {
+    const cur = s.liveTurn?.cursor;
+    if (out !== undefined && cur !== undefined && cur.turnId === turnId) out.unregisterCursor({ sessionId: s.id, ...cur }, readerId);
+  };
+  /** clearCursor + release the retention pin. */
+  const clearCursorPinned = (s: ChatSession, turnId: string): void => {
+    unpinLive(s, turnId);
+    clearCursor(s, turnId);
+  };
   let activeTurnId: string | undefined;
   let activeProvider: ProviderId | undefined;
   let activeIterator: AsyncIterator<TurnEvent> | undefined;
@@ -225,6 +260,38 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         if (live === undefined || live.cursor.turnId !== c.turnId) return;
         s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset } };
         if (Date.now() - last >= CURSOR_SAVE_MS) saveNow();
+      },
+    };
+  };
+
+  /**
+   * E202611031bd72813:S001 t5: decoder progress (selectionSeq + split-marker buffer) is held and
+   * stamped onto liveTurn ATOMICALLY with the cursor offset in the same save — the adapter reports
+   * decoder state before the offset for each line, and this holder makes every persisted snapshot
+   * pair offset N with decoder N (never an advanced decoder behind an old offset, whose replay
+   * would re-issue different request ids).
+   */
+  const makeDecoderSink = (s: ChatSession, progress: (c: TurnCursor) => void) => {
+    let pending: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined; toolCommands?: Record<string, string> | undefined; editPaths?: Record<string, string> | undefined } | undefined;
+    return {
+      onDecoderState: (ds: { selectionSeq: number; selectionBuffer: string; sessionId?: string | undefined; toolCommands?: Readonly<Record<string, string>> | undefined; editPaths?: Readonly<Record<string, string>> | undefined }): void => {
+        pending = ds; // held, not saved alone — the next progress save carries it with the offset
+        // LLD s7 (E202611031bd72813:S001): the provider's native session id is captured from the
+        // output AS SOON AS the CLI emits it — before any terminal event, so a first turn awaiting
+        // an in-turn request already has the resume handle durably persisted.
+        if (ds.sessionId !== undefined && s.nativeSessionId === undefined) {
+          s.nativeSessionId = ds.sessionId;
+          trySave(s);
+        }
+      },
+      onProgress: (c: TurnCursor): void => {
+        const live = s.liveTurn;
+        if (live !== undefined && live.cursor.turnId === c.turnId && pending !== undefined) {
+          // stamp offset AND decoder together, then let the throttled save persist the whole liveTurn
+          s.liveTurn = { ...live, cursor: { turnId: c.turnId, generation: c.generation, offset: c.offset }, decoder: { selectionSeq: pending.selectionSeq, ...(pending.selectionBuffer !== '' ? { selectionBuffer: pending.selectionBuffer } : {}), ...(pending.sessionId !== undefined ? { sessionId: pending.sessionId } : {}), ...(pending.toolCommands !== undefined ? { toolCommands: { ...pending.toolCommands } } : {}), ...(pending.editPaths !== undefined ? { editPaths: { ...pending.editPaths } } : {}) } };
+          pending = undefined;
+        }
+        progress(c);
       },
     };
   };
@@ -357,8 +424,14 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           s.liveTurn = {
             cursor: { turnId, generation: gen, offset },
             ownerHostPid: deps.hostPid,
+            transcriptLen: s.transcript.length,
+            turnStartLen: s.transcript.length,
             ...(proc.pid !== undefined ? { pid: proc.pid, startedAt: deps.processStartTime(proc.pid) ?? null } : {}),
           };
+          // E202611031bd72813:S001 t5: a new turn invalidates the observer's checkpoint (it is
+          // turn-scoped); the observer re-anchors from the fresh liveTurn cursor instead.
+          delete s.observerCheckpoint;
+          pinLive(s); // retention: the saved cursor's generation is not discarded under it
           cursor.saveNow();
         }
       };
@@ -369,7 +442,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       let cursorTurnId: string | undefined;
       /** At the turn's terminal event its output has been fully handled: forget its cursor, keep its native session, finish the generator. */
       const endTurn = (ev: TurnEvent, it: AsyncIterator<TurnEvent>): void => {
-        clearCursor(s, ev.turnId);
+        clearCursorPinned(s, ev.turnId);
         keepNativeSession(s, ev);
         finishIterator(it); // the process is left to exit
       };
@@ -385,16 +458,30 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         }
         // Superseded, closed or stopped while beforeRun ran: start nothing (the lease is released).
         if (setup.signal.aborted || !isCurrent(myGen)) return;
+        // MR3: a cancelled continuation (delivery already recorded failed) never reaches the CLI.
+        if (sink.shouldSpawn !== undefined && !sink.shouldSpawn()) return;
         // Hold the iterator explicitly so a stop or detach can .return() it. A return() made while
         // a next() is pending only takes effect once that next() settles (the next line, or the
         // end of the output when the process exits).
-        const it = adapter.run(req, { onSpawn, onProgress: cursor.progress, sessionId: s.id })[Symbol.asyncIterator]();
+        const dec = makeDecoderSink(s, cursor.progress);
+        const spawnEpoch = chainEpoch;
+        const it = adapter.run(req, {
+          onSpawn, onProgress: (c) => dec.onProgress(c), onDecoderState: dec.onDecoderState, sessionId: s.id,
+          // Routing/configuration can await IPC before spawning. Stop, detach or supersession
+          // during that await must still prevent a child from launching afterwards.
+          shouldSpawn: () => isCurrent(myGen) && chainEpoch === spawnEpoch && (sink.shouldSpawn?.() ?? true),
+        })[Symbol.asyncIterator]();
         iterator = it;
         activeIterator = it;
         activeProvider = s.provider;
         detachThis = (): void => {
           detached = true;
-          if (s.liveTurn !== undefined) runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
+          if (s.liveTurn !== undefined) {
+            runningTurns.delete(s.liveTurn.cursor.turnId); // resumable now
+            // E202611031bd72813:S001 t5: the turn is ORPHANED (owner 0 = no live window), so the
+            // background observer — in this or any other window — reconciles it.
+            s.liveTurn = { ...s.liveTurn, ownerHostPid: 0 };
+          }
           trySave(s); // the cursor and the rows handled so far
           finishIterator(it); // stop reading; the CLI keeps writing to the session file
         };
@@ -407,7 +494,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             // with one): end the turn as an error, so its cursor is not left for a reload to
             // follow and the panel does not stay running.
             const turnId = activeTurnId ?? cursorTurnId ?? 'none';
-            if (cursorTurnId !== undefined) clearCursor(s, cursorTurnId);
+            if (cursorTurnId !== undefined) clearCursorPinned(s, cursorTurnId);
             if (isCurrent(myGen)) {
               const ev: TurnEvent = { kind: 'error', turnId, message: 'the CLI ended without finishing the turn' };
               activeTurnId = turnId;
@@ -464,10 +551,14 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     });
   }
 
+  // The session whose turn this host is currently FOLLOWING (resumed read), for detach's orphaning.
+  let followingSession: ChatSession | undefined;
+
   function follow(s: ChatSession, sink: FollowSink): void {
     const live = s.liveTurn;
     if (live === undefined || following?.sessionId === s.id || runningTurns.has(live.cursor.turnId)) return;
-    if (live.ownerHostPid !== deps.hostPid && deps.isAlive(live.ownerHostPid)) return; // another window follows it
+    // ownerHostPid 0 = orphaned by a detach: no window owns it, so any (re)loaded window may follow.
+    if (live.ownerHostPid !== 0 && live.ownerHostPid !== deps.hostPid && deps.isAlive(live.ownerHostPid)) return; // another window follows it
     let adapter;
     try {
       adapter = deps.providers.get(s.provider);
@@ -477,16 +568,20 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     if (typeof adapter.resume !== 'function') return;
     s.liveTurn = { ...live, ownerHostPid: deps.hostPid };
     trySave(s);
+    pinLive(s); // the follow cursor is registered too (refcounted with any observer pin)
     const ctl = new AbortController();
     following = { sessionId: s.id, ctl };
+    followingSession = s;
     const cursor = cursorTracker(s, Date.now());
     const turnId = live.cursor.turnId;
+    const dec = makeDecoderSink(s, cursor.progress);
     let attached: TurnProcess | undefined;
     void (async () => {
       let outcome: FollowOutcome | undefined;
+      let observationFailure = false;
       try {
         const events = adapter.resume(
-          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null },
+          { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}), ...(live.decoder.toolCommands !== undefined ? { toolCommands: { ...live.decoder.toolCommands } } : {}), ...(live.decoder.editPaths !== undefined ? { editPaths: { ...live.decoder.editPaths } } : {}) } } : {}), },
           {
             signal: ctl.signal,
             onAttach: (p) => {
@@ -494,7 +589,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
               resumedProc = p;
               reportSpawn(sink, p);
             },
-            onProgress: cursor.progress,
+            onProgress: (c) => dec.onProgress(c),
+            onDecoderState: dec.onDecoderState,
           },
         );
         for await (const ev of events) {
@@ -507,12 +603,22 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
             log.warn(`[chat] session ${s.id}: turn ${turnId}: an event was not handled: ${err instanceof Error ? err.message : String(err)}`);
           }
           keepNativeSession(s, ev);
-          if (isTerminal(ev)) break;
+          if (isTerminal(ev)) {
+            // E202611031bd72813:S001: an output-read failure is not a real terminal — keep the
+            // cursor so a later follow retries, and report 'observation-failed', never 'ended'.
+            if (ev.kind === 'error' && ev.observationFailure === true) observationFailure = true;
+            break;
+          }
         }
         if (!ctl.signal.aborted) {
-          clearCursor(s, turnId);
-          trySave(s);
-          outcome = 'ended';
+          if (observationFailure) {
+            trySave(s); // cursor stays saved for a later follow
+            outcome = 'observation-failed';
+          } else {
+            clearCursorPinned(s, turnId);
+            trySave(s);
+            outcome = 'ended';
+          }
         }
       } catch (err) {
         log.warn(`[chat] session ${s.id}: could not resume turn ${turnId}: ${err instanceof Error ? err.message : String(err)}`);
@@ -537,7 +643,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
    * returns the iterator, cancels the provider's turn and stops the newest CLI process. Resolves
    * once the process has exited (or there was none). Idempotent.
    */
-  const stopLive = async (): Promise<void> => {
+  const stopLive = async (): Promise<boolean> => {
     busyGen = undefined;
     chainEpoch += 1; // a start waiting in the chain is dropped
     waitCtl?.abort();
@@ -559,21 +665,32 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         /* provider gone / already finished — nothing to cancel */
       }
     }
+    let verified = true;
     if (proc !== undefined) {
       try {
-        await proc.stop();
+        // MR3-R4b: prefer the verified-stop contract; a best-effort stop() alone cannot confirm exit
+        verified = proc.stopVerified !== undefined ? await proc.stopVerified() : await proc.stop().then(() => true);
       } catch {
-        /* already gone / not signalable — callers fire this and forget it */
+        verified = false; /* not signalable — the exit cannot be confirmed */
       }
     }
+    return verified;
   };
 
-  const stop = async (): Promise<void> => {
+  const stop = async (): Promise<boolean> => {
     following?.ctl.abort();
     const resumed = resumedProc;
     resumedProc = undefined;
-    await stopLive();
-    if (resumed !== undefined) await resumed.stop().catch(() => {});
+    const liveVerified = await stopLive();
+    let resumedVerified = true;
+    if (resumed !== undefined) {
+      try {
+        resumedVerified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
+      } catch {
+        resumedVerified = false;
+      }
+    }
+    return liveVerified && resumedVerified;
   };
 
   const detach = async (): Promise<void> => {
@@ -582,6 +699,18 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     waitCtl?.abort();
     waitCtl = undefined;
     following?.ctl.abort(); // a resumed turn: its process is not ours to stop here
+    // E202611031bd72813:S001 t5: orphan the FOLLOWED turn's saved cursor too (owner 0), so the
+    // background observer reconciles it after the detach instead of stranding it locally owned.
+    const fs2 = followingSession;
+    followingSession = undefined;
+    following = undefined;
+    if (fs2?.liveTurn !== undefined) {
+      // NOTE: the pin is NOT released here — the turn's output may be unread, and the observer's
+      // takeover registers the same generation under the same readerId (refcounted), so releasing
+      // here could delete an archive the saved cursor still needs.
+      fs2.liveTurn = { ...fs2.liveTurn, ownerHostPid: 0 };
+      trySave(fs2);
+    }
     resumedProc = undefined;
     const detachThis = detachLive;
     if (detachThis !== undefined && liveProc?.cursor !== undefined) {

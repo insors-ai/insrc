@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 144 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 153 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -598,3 +598,78 @@ Run at 2026-11-03T17:03:55.755Z on commit `3df2b56be`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `packages/project-memory/src/__tests__/packed.test.ts` | 0 | 7 | 23.7 s |  |
+
+## t15
+
+Run at 2026-11-03T17:12:17.056Z on commit `cd32e73ed`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: store-directory-separation-and-no-empty-replacement**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+| pass | store-initialization-refuses-queue-only-and-unknown-roots-without-replacement | `packages/project-memory/src/__tests__/store-initialization.test.ts` |
+
+**integration: store-index-reset-rebuild-preserves-memory**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+
+**integration: store-cleanup-target-overlap-refusal**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+
+**integration: store-memory-cleanup-preserves-index-and-queue**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | project-memory-survives-real-index-rebuild-and-isolated-reset-with-pending-queue | `src/indexer/__tests__/project-memory-isolation.test.ts` |
+| pass | store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion | `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `packages/project-memory/src/__tests__/store-cleanup-target.test.ts` | 0 | 1 | 1.4 s |  |
+| `packages/project-memory/src/__tests__/store-initialization.test.ts` | 0 | 10 | 2.4 s |  |
+| `src/indexer/__tests__/project-memory-isolation.test.ts` | 0 | 1 | 2.8 s |  |
+
+## t16
+
+Run at 2026-11-03T18:25:42.152Z on commit `107b8526f`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**smoke: store-resource-and-latency-study**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | project-memory-resource-study-has-current-source-complete-corpora-and-honest-bounds | `src/shared/__tests__/project-memory-resource-evidence.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/project-memory-resource-evidence.test.ts` | 0 | 1 | 0.6 s |  |
+
+## t17
+
+Run at 2026-11-03T19:30:32.391Z on commit `08544844a`. Tests check: **passed**. 1 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**smoke: store-macos-apfs-linux-ext4-qualification**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | store-macos-apfs-linux-ext4-production-evidence-matches-current-source | `src/shared/__tests__/project-memory-platform-evidence.test.ts` |
+
+**smoke: final-source-package-and-backend-full-sweep-and-evidence-handoff**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Qualification/evidence HANDOFF accepted under explicit user deferral, not backend-suite success. Full sweep remains FAIL, preserved in t17-backend-results.json and initial failed gate 96cd0d2df. User authorization and issue https://github.com/insors-ai/insrc/issues/98 recorded in docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-deferral.json and t17.md; diagnosis t17-analysis.json, commit 08544844a. Assess the task's run/archive/handoff checks against that user decision without treating raw backend tests as passed.
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/shared/__tests__/project-memory-platform-evidence.test.ts` | 0 | 1 | 0.7 s |  |

@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "build",
+    "standalone": true,
+    "sizeClass": "trivial",
+    "epicHash": "43e0b651654e0757",
+    "storyId": "S001",
+    "createdAt": "2026-11-05T11:35:38.156Z",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed issue → build; existing per-session configuration and IPC contracts reused.",
+    "epicCreatedAt": "2026-11-05T11:35:38.156Z",
+    "updatedAt": "2026-11-05T11:44:35.222Z"
+  },
+  "body": {
+    "focus": "Fix approved ISSUE-3fdb2b75703e6f09: preserve per-session provider/model/effort on history switches and ensure new-session selectors open and work. Diagnose runtime webview failure, preserve legacy defaults, and add executable restoration/selector regression tests.",
+    "producesLld": false,
+    "commit": "fc97aa815",
+    "tasks": [
+      {
+        "id": "S001",
+        "passed": false
+      }
+    ],
+    "summary": "Corrected saved-model alias/unknown-model labels, escaped dynamic button text, retained provider choices while catalog is unavailable, and bounded selector popups with inside-click handling. Added executable selector/restore and fresh-store next-turn regressions. 301 affected tests and both typechecks passed locally. Installed pre-fix history restoration worked during diagnosis; full reported reset/click failure remains unconfirmed and manual validation of this build is pending.",
+    "testRecord": {
+      "md": "docs/standalone/43e0b651654e0757-E2026110543e0b651/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-3fdb2b75703e6f09.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/43e0b651654e0757-E2026110543e0b651/S001/IMPLEMENTATION.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/43e0b651654e0757-E2026110543e0b651/S001/evidence/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/preserve-provider-model-effort-when-reopening-E202611053fdb2b75/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T11:44:35.222Z"
+      }
+    ]
+  }
+}

@@ -1,0 +1,462 @@
+TAP version 13
+# Subtest: store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes
+ok 1 - store-admission-public-submit-protected-input-and-host-errors-preserve-queue-bytes
+  ---
+  duration_ms: 341.202583
+  type: 'test'
+  ...
+# Subtest: store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries
+ok 2 - store-admission-real-queue-derived-redacted-hash-time-and-deterministic-terminal-retries
+  ---
+  duration_ms: 241.510708
+  type: 'test'
+  ...
+# Subtest: store-admission-attestation-envelope-size-and-verified-time-fail-before-persist
+ok 3 - store-admission-attestation-envelope-size-and-verified-time-fail-before-persist
+  ---
+  duration_ms: 144.521625
+  type: 'test'
+  ...
+# Subtest: store-admission-host-registered-new-source-lifecycle-is-required-after-forget
+ok 4 - store-admission-host-registered-new-source-lifecycle-is-required-after-forget
+  ---
+  duration_ms: 280.254916
+  type: 'test'
+  ...
+# Subtest: store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget
+ok 5 - store-barriers-unseen-pending-plans-terminalize-without-effects-after-broad-forget
+  ---
+  duration_ms: 1420.18
+  type: 'test'
+  ...
+# Subtest: store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project
+ok 6 - store-barriers-selectors-distinguish-source-lifecycle-visibility-producer-and-project
+  ---
+  duration_ms: 930.65625
+  type: 'test'
+  ...
+# Subtest: store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes
+ok 7 - store-barriers-higher-sequence-stays-closed-and-only-host-registered-new-lifecycle-resumes
+  ---
+  duration_ms: 980.689042
+  type: 'test'
+  ...
+# Subtest: store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle
+ok 8 - store-barriers-new-frame-cannot-carry-evidence-from-a-closed-source-lifecycle
+  ---
+  duration_ms: 250.411917
+  type: 'test'
+  ...
+# Subtest: store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation
+ok 9 - store-barriers-control-syntax-scope-and-frame-authority-fail-before-mutation
+  ---
+  duration_ms: 124.569291
+  type: 'test'
+  ...
+# Subtest: store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening
+ok 10 - store-barriers-exact-memory-source-subject-protect-qualified-lineage-without-broadening
+  ---
+  duration_ms: 1144.154958
+  type: 'test'
+  ...
+# Subtest: store-barriers-protection-overflow-is-explicit-before-partial-matching
+ok 11 - store-barriers-protection-overflow-is-explicit-before-partial-matching
+  ---
+  duration_ms: 1.446917
+  type: 'test'
+  ...
+# Subtest: store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion
+ok 12 - store-cleanup-preflight-rejects-overlap-alias-and-inode-change-without-deletion
+  ---
+  duration_ms: 355.992
+  type: 'test'
+  ...
+# Subtest: store-codec-canonical-roundtrip-all-row-kinds
+ok 13 - store-codec-canonical-roundtrip-all-row-kinds
+  ---
+  duration_ms: 6.960625
+  type: 'test'
+  ...
+# Subtest: store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+ok 14 - store-codec-rejects-missing-extra-and-duplicated-envelope-fields
+  ---
+  duration_ms: 17.366875
+  type: 'test'
+  ...
+# Subtest: store-codec-validates-nested-lineage-outcomes-and-source-shapes
+ok 15 - store-codec-validates-nested-lineage-outcomes-and-source-shapes
+  ---
+  duration_ms: 2.741125
+  type: 'test'
+  ...
+# Subtest: store-codec-reserves-bounded-immutable-effect-batches
+ok 16 - store-codec-reserves-bounded-immutable-effect-batches
+  ---
+  duration_ms: 2.126542
+  type: 'test'
+  ...
+# Subtest: store-codec-qualified-identities-and-explicit-arrow-schema
+ok 17 - store-codec-qualified-identities-and-explicit-arrow-schema
+  ---
+  duration_ms: 78.227792
+  type: 'test'
+  ...
+# Subtest: store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+ok 18 - store-codec-vector-bearing-plan-requires-compatible-embedding-metadata
+  ---
+  duration_ms: 3.249667
+  type: 'test'
+  ...
+# Subtest: production-store-queue-process-crash-replay-and-forget-qualification
+ok 19 - production-store-queue-process-crash-replay-and-forget-qualification
+  ---
+  duration_ms: 9298.359333
+  type: 'test'
+  ...
+# {"platform":"darwin","node":"22.23.2","scenarios":14}
+# Subtest: store-embedding-profile-preserves-text-and-converts-float32-once
+ok 20 - store-embedding-profile-preserves-text-and-converts-float32-once
+  ---
+  duration_ms: 1.61925
+  type: 'test'
+  ...
+# Subtest: store-embedding-profile-rejects-missing-or-mismatched-metadata
+ok 21 - store-embedding-profile-rejects-missing-or-mismatched-metadata
+  ---
+  duration_ms: 0.599125
+  type: 'test'
+  ...
+# Subtest: store-embedding-profile-rejects-unsafe-text-and-vectors
+ok 22 - store-embedding-profile-rejects-unsafe-text-and-vectors
+  ---
+  duration_ms: 0.207833
+  type: 'test'
+  ...
+# Subtest: store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+ok 23 - store-plan-snapshots-bounds-protected-kinds-frame-and-profile
+  ---
+  duration_ms: 19.208958
+  type: 'test'
+  ...
+# Subtest: store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+ok 24 - store-plan-scope-epoch-predicates-never-interpolate-untrusted-text
+  ---
+  duration_ms: 5.936583
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-generation-predecessor-reference-and-history-guards
+ok 25 - store-plan-exact-generation-predecessor-reference-and-history-guards
+  ---
+  duration_ms: 13.96425
+  type: 'test'
+  ...
+# Subtest: store-plan-source-provenance-span-authority-and-evidence-sets
+ok 26 - store-plan-source-provenance-span-authority-and-evidence-sets
+  ---
+  duration_ms: 3.753166
+  type: 'test'
+  ...
+# Subtest: store-plan-lifecycle-complete-matrix-and-reason-constraints
+ok 27 - store-plan-lifecycle-complete-matrix-and-reason-constraints
+  ---
+  duration_ms: 1.441167
+  type: 'test'
+  ...
+# Subtest: store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+ok 28 - store-plan-carried-evidence-preserves-vectors-and-complete-lineage
+  ---
+  duration_ms: 5.8545
+  type: 'test'
+  ...
+# Subtest: store-plan-paired-supersession-is-atomic-and-acyclic
+ok 29 - store-plan-paired-supersession-is-atomic-and-acyclic
+  ---
+  duration_ms: 10.7375
+  type: 'test'
+  ...
+# Subtest: store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+ok 30 - store-plan-exact-tombstones-supersession-and-no-effect-dispositions
+  ---
+  duration_ms: 6.76475
+  type: 'test'
+  ...
+# Subtest: store-plan-logical-forget-requires-exact-monotone-marker
+ok 31 - store-plan-logical-forget-requires-exact-monotone-marker
+  ---
+  duration_ms: 4.373542
+  type: 'test'
+  ...
+# Subtest: store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary
+ok 32 - store-host-factory-durable-submit-cold-terminal-status-and-protected-error-boundary
+  ---
+  duration_ms: 733.319542
+  type: 'test'
+  ...
+# Subtest: store-initialization-gates-real-queue-recovery-on-validated-authority
+ok 33 - store-initialization-gates-real-queue-recovery-on-validated-authority
+  ---
+  duration_ms: 220.979792
+  type: 'test'
+  ...
+# Subtest: store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+ok 34 - store-initialization-reopened-profile-prepares-matching-plan-and-native-query
+  ---
+  duration_ms: 67.313
+  type: 'test'
+  ...
+# Subtest: store-initialization-fresh-profile-and-read-only-reopen
+ok 35 - store-initialization-fresh-profile-and-read-only-reopen
+  ---
+  duration_ms: 56.17125
+  type: 'test'
+  ...
+# Subtest: store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+ok 36 - store-initialization-refuses-queue-only-and-unknown-roots-without-replacement
+  ---
+  duration_ms: 80.48175
+  type: 'test'
+  ...
+# Subtest: store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+ok 37 - store-initialization-preserves-missing-corrupt-and-mismatched-profile-data
+  ---
+  duration_ms: 73.011625
+  type: 'test'
+  ...
+# Subtest: store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+ok 38 - store-initialization-never-replaces-ready-store-with-missing-control-or-extra-table
+  ---
+  duration_ms: 90.8255
+  type: 'test'
+  ...
+# Subtest: store-initialization-resumes-only-recognized-generation-zero
+ok 39 - store-initialization-resumes-only-recognized-generation-zero
+  ---
+  duration_ms: 176.777333
+  type: 'test'
+  ...
+# Subtest: store-initialization-validates-pending-markers-and-native-directory-identity
+ok 40 - store-initialization-validates-pending-markers-and-native-directory-identity
+  ---
+  duration_ms: 51.48
+  type: 'test'
+  ...
+# Subtest: store-initialization-rolls-back-each-acquired-native-resource
+ok 41 - store-initialization-rolls-back-each-acquired-native-resource
+  ---
+  duration_ms: 232.128959
+  type: 'test'
+  ...
+# Subtest: store-initialization-unverified-close-is-explicit-and-owner-stays-held
+ok 42 - store-initialization-unverified-close-is-explicit-and-owner-stays-held
+  ---
+  duration_ms: 632.365917
+  type: 'test'
+  ...
+# Subtest: store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion
+ok 43 - store-lifecycle-two-participant-drain-keeps-proofs-live-without-lane-inversion
+  ---
+  duration_ms: 394.344792
+  type: 'test'
+  ...
+# Subtest: store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return
+ok 44 - store-lifecycle-read-capture-and-active-projection-count-once-and-cancel-before-return
+  ---
+  duration_ms: 333.36225
+  type: 'test'
+  ...
+# Subtest: store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close
+ok 45 - store-lifecycle-close-wait-stays-pending-and-retains-owner-until-native-handles-close
+  ---
+  duration_ms: 79.530667
+  type: 'test'
+  ...
+# Subtest: store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error
+ok 46 - store-lifecycle-startup-rollback-attempts-queue-before-store-and-preserves-original-error
+  ---
+  duration_ms: 135.197708
+  type: 'test'
+  ...
+# Subtest: store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner
+ok 47 - store-lifecycle-failed-reader-and-participant-cleanup-attempts-all-handles-and-retains-owner
+  ---
+  duration_ms: 971.848834
+  type: 'test'
+  ...
+# Subtest: native-store-primitives-process-crash-and-runtime-qualification
+ok 48 - native-store-primitives-process-crash-and-runtime-qualification
+  ---
+  duration_ms: 3528.51525
+  type: 'test'
+  ...
+# {"platform":"darwin","node":"22.23.2","scenarios":8}
+# Subtest: store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle
+ok 49 - store-reads-scalar-snapshot-is-bound-pinned-and-consumed-without-native-handle
+  ---
+  duration_ms: 423.888709
+  type: 'test'
+  ...
+# Subtest: store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated
+ok 50 - store-reads-scope-subsets-epoch-and-sql-like-qualifiers-stay-isolated
+  ---
+  duration_ms: 574.448792
+  type: 'test'
+  ...
+# Subtest: store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content
+ok 51 - store-reads-concurrent-forget-and-generation-change-discard-pinned-old-content
+  ---
+  duration_ms: 521.81
+  type: 'test'
+  ...
+# Subtest: store-reads-binding-change-during-projection-is-rechecked-before-return
+ok 52 - store-reads-binding-change-during-projection-is-rechecked-before-return
+  ---
+  duration_ms: 177.509625
+  type: 'test'
+  ...
+# Subtest: store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content
+ok 53 - store-reads-cleanup-wait-cannot-return-forgotten-rebound-expired-or-overdue-content
+  ---
+  duration_ms: 689.833584
+  type: 'test'
+  ...
+# Subtest: store-reads-time-boundaries-expire-sources-without-a-generation-change
+ok 54 - store-reads-time-boundaries-expire-sources-without-a-generation-change
+  ---
+  duration_ms: 198.324541
+  type: 'test'
+  ...
+# Subtest: store-reads-future-validity-is-published-as-a-cache-boundary
+ok 55 - store-reads-future-validity-is-published-as-a-cache-boundary
+  ---
+  duration_ms: 163.352458
+  type: 'test'
+  ...
+# Subtest: store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline
+ok 56 - store-reads-lease-cap-idempotent-release-idle-expiry-and-active-deadline
+  ---
+  duration_ms: 404.923375
+  type: 'test'
+  ...
+# Subtest: store-reads-profile-query-text-float32-and-cold-current-projection-agree
+ok 57 - store-reads-profile-query-text-float32-and-cold-current-projection-agree
+  ---
+  duration_ms: 192.540333
+  type: 'test'
+  ...
+# Subtest: store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases
+ok 58 - store-reads-mixed-null-vectors-use-distinct-pinned-handles-and-reject-cross-instance-leases
+  ---
+  duration_ms: 365.262292
+  type: 'test'
+  ...
+# Subtest: store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection
+ok 59 - store-reads-cold-filter-column-corruption-cannot-hide-content-or-protection
+  ---
+  duration_ms: 380.021208
+  type: 'test'
+  ...
+# Subtest: store-reads-result-reference-and-byte-overflow-return-no-truncated-projection
+ok 60 - store-reads-result-reference-and-byte-overflow-return-no-truncated-projection
+  ---
+  duration_ms: 2.634834
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-retained-ack-recycle-and-cold-authority
+ok 61 - store-proof-real-queue-retained-ack-recycle-and-cold-authority
+  ---
+  duration_ms: 501.477375
+  type: 'test'
+  ...
+# Subtest: store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+ok 62 - store-proof-real-queue-rejects-retained-pending-and-terminal-conflicts
+  ---
+  duration_ms: 267.416041
+  type: 'test'
+  ...
+# Subtest: store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+ok 63 - store-proof-scope-epoch-and-projection-do-not-leak-domain-content
+  ---
+  duration_ms: 153.565375
+  type: 'test'
+  ...
+# Subtest: store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+ok 64 - store-proof-unavailable-duplicate-malformed-and-missing-authority-never-become-absent
+  ---
+  duration_ms: 1101.449208
+  type: 'test'
+  ...
+# Subtest: store-successful-forget-requires-matching-protection-for-every-selector
+ok 65 - store-successful-forget-requires-matching-protection-for-every-selector
+  ---
+  duration_ms: 1204.082583
+  type: 'test'
+  ...
+# Subtest: store-cold-recovery-rejects-missing-or-inconsistent-protection-before-queue-recovery
+ok 66 - store-cold-recovery-rejects-missing-or-inconsistent-protection-before-queue-recovery
+  ---
+  duration_ms: 1447.809666
+  type: 'test'
+  ...
+# Subtest: store-final-validity-rejects-clock-rollback-even-without-future-boundary
+ok 67 - store-final-validity-rejects-clock-rollback-even-without-future-boundary
+  ---
+  duration_ms: 433.982208
+  type: 'test'
+  ...
+# Subtest: store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+ok 68 - store-writer-one-version-complete-effects-receipt-root-and-cold-replay
+  ---
+  duration_ms: 283.544792
+  type: 'test'
+  ...
+# Subtest: store-writer-serial-generation-revisions-conflicts-and-retained-identity
+ok 69 - store-writer-serial-generation-revisions-conflicts-and-retained-identity
+  ---
+  duration_ms: 174.0405
+  type: 'test'
+  ...
+# Subtest: store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+ok 70 - store-writer-no-effect-failure-and-quarantine-are-atomic-and-immutable
+  ---
+  duration_ms: 114.756209
+  type: 'test'
+  ...
+# Subtest: store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+ok 71 - store-writer-cleanup-pending-is-logical-protection-with-one-atomic-proof
+  ---
+  duration_ms: 105.155584
+  type: 'test'
+  ...
+# Subtest: store-writer-native-rejection-fences-until-verified-close-and-reopen
+ok 72 - store-writer-native-rejection-fences-until-verified-close-and-reopen
+  ---
+  duration_ms: 210.984875
+  type: 'test'
+  ...
+# Subtest: store-writer-timeout-retains-lane-native-work-and-owner-through-close
+ok 73 - store-writer-timeout-retains-lane-native-work-and-owner-through-close
+  ---
+  duration_ms: 243.7475
+  type: 'test'
+  ...
+# Subtest: store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+ok 74 - store-writer-bounds-admission-before-copy-and-drains-admitted-retries
+  ---
+  duration_ms: 386.569791
+  type: 'test'
+  ...
+# Subtest: store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+ok 75 - store-writer-unverifiable-outcome-retains-process-owner-and-refuses-cold-corruption
+  ---
+  duration_ms: 363.766875
+  type: 'test'
+  ...
+1..75
+# tests 75
+# suites 0
+# pass 75
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 36887.376541

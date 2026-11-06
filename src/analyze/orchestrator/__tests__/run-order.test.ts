@@ -21,6 +21,7 @@ import { upsertEntities } from '../../../db/entities.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo, updateRepoStatus } from '../../../db/repos.js';
 import { openIndexRun, closeIndexRun } from '../../../indexer/run-record.js';
+import { docRelationsRevision } from '../../../indexer/doc-relations-read.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity } from '../../../shared/types.js';
 import { writeBundle } from '../../context/cache.js';
@@ -200,7 +201,7 @@ test("runAnalyze's scopeChecked option reaches runShaper through ShapeOpts and d
 	try {
 		const bundle = {
 			system: 's', focus: 'f', summary: 'CACHED', structure: 'st', surface: 'su', artefacts: 'a', upstream: 'u',
-			meta: { mode: 'run', shaper: 'code', toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, repoPath: indexed },
+			meta: { mode: 'run', shaper: 'code', toolCalls: 1, modelId: 'm', emptyLayers: [], schemaVersion: 2, repoPath: indexed, docRelationsRevision: await docRelationsRevision(indexed) },
 		} as unknown as AnalyzeContextBundle;
 		writeBundle(id, { mode: 'run', hash: _computeCacheKeyForTest(prompt, { intent }) }, bundle);
 		await updateRepoStatus(null, indexed, 'indexing');

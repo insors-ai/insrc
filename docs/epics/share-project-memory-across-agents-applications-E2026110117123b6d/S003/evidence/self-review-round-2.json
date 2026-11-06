@@ -1,0 +1,60 @@
+{
+  "reviewType": "user-authorized controller self-review round 2; not an independent daemon CR",
+  "reviewedCommit": "ae9146c01ea014fdcc01f8c44e0e92fb42d7deb0",
+  "sourceHashes": {
+    "packages/project-memory/src/store/plan.ts": "d5e69dbf01579424360080da93512e753c8bb47b94ff36c8545284301a5421b4",
+    "packages/project-memory/src/store/reads.ts": "d852b83c34f51928f2d8d2b40cb5b4a8fddf11dfc4d51730e3339a5b9c4127d1",
+    "packages/project-memory/src/store/lance-store.ts": "3c9bf7cdf492109262f98a0d5a194fc22df5f6823259bc5b7aa31bb81224e921",
+    "packages/project-memory/src/__tests__/store-self-review.test.ts": "837516d3454eeacec7b4df341e400d656ea8638a3b8313abf35b64d45e683fa7"
+  },
+  "runtime": "Node 22.23.2, macOS APFS",
+  "tests": {
+    "command": "/opt/homebrew/opt/node@22/bin/node --import tsx --test --test-concurrency=1 packages/project-memory/src/__tests__/store-*.test.ts",
+    "pass": 75,
+    "fail": 0,
+    "skip": 0,
+    "cancelled": 0,
+    "durationMs": 36887.376541,
+    "tap": "self-review-round-2-store.tap",
+    "tapSha256": "55e99a8f9281ca5569f1922f99466e93bde01f39b06f77aadf3ba8b6a41950ca"
+  },
+  "build": {
+    "commands": [
+      "./node_modules/.bin/tsc -p packages/project-memory/tsconfig.json --noEmit",
+      "./node_modules/.bin/tsc -p packages/project-memory/tsconfig.json"
+    ],
+    "exitCode": 0
+  },
+  "originalProbes": [
+    {
+      "probe": "missing-forget-marker.mts",
+      "blockedWith": "INVALID_REQUEST",
+      "exitCode": 1,
+      "expectedRejectionVerified": true
+    },
+    {
+      "probe": "cold-missing-marker.mts",
+      "blockedWith": "STORE_UNAVAILABLE",
+      "exitCode": 1,
+      "expectedRejectionVerified": true
+    },
+    {
+      "probe": "backward-clock.mts",
+      "blockedWith": "REVISION_CONFLICT",
+      "exitCode": 1,
+      "expectedRejectionVerified": true
+    }
+  ],
+  "findings": {
+    "SR1": "resolved",
+    "SR2": "resolved for missing/inconsistent retained protection dependencies",
+    "SR3": "resolved",
+    "newBlockers": 0
+  },
+  "limits": [
+    "No new full backend, Linux, SIGKILL/platform or resource qualification sweep. Prior platform fingerprints describe the earlier candidate.",
+    "Cold integrity tests inject logical corruption into closed isolated native stores; no hardware/torn-transaction claim.",
+    "Receipt rejection dependencies require a streamed metadata scan; history-dependent recovery latency remains. No new resource/SLO claim.",
+    "No formal daemon CR record, workflow approval or runtime/model config changes."
+  ]
+}

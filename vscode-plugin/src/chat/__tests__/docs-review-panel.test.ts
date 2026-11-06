@@ -15,6 +15,8 @@ import { createDocsReviewHost, DOCS_BODY_RENDERER_SOURCE, DOCS_SECTIONS_SOURCE, 
 import type { StructuredRenderer, CompanionSlotState, CompanionRefKind } from '../docs-review-panel.js';
 import { DOCS_COMMENTS_SOURCE } from '../docs-review-comments.js';
 import { DOCS_LIST_SOURCE } from '../docs-review-list.js';
+import { createReviewPresenter } from '../review-presenter.js';
+const NOOP_LOGGER = { warn: () => {}, error: () => {} };
 import { mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -1247,9 +1249,9 @@ test('t1 (contract): protocol.ts types functionalDefinition by indexing off Docs
 const SHELL_BASELINE = {
   nonce:  'FIXED-NONCE',
   // ISSUE-7fa297efd4bd1c59: the presented strip (markup + CSS + rvPresented renderer) in the shell.
-  chars:  136357,
-  bytes:  136421,
-  sha256: '7e42432980d18eb93cb31192a3253f1ed8d235b417398c8f47e98788f15eb080',
+  chars:  136787,
+  bytes:  136851,
+  sha256: '848bdcc38400a8cfa003236d51178e64d76297d7d2719e7996a2f4db3a144098',
 } as const;
 
 function renderShellFor(nonce: string): string {
@@ -1862,10 +1864,13 @@ interface WebviewRun {
   controls(): { approve: ControlMode; reject: ControlMode; feedback: ControlMode };
 }
 /** Evaluate the REAL bootstrap from the emitted shell against DOM stubs. */
-function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined } = {}): WebviewRun {
+function runWebview(opts: { markedMissing?: boolean | undefined; breakPlacement?: boolean | undefined; breakDiagram?: boolean | undefined; breakExperience?: boolean | undefined; countCreates?: boolean | undefined; saved?: { state: unknown } | undefined; textNodes?: boolean | undefined; presentKey?: string | undefined } = {}): WebviewRun {
   const fc = fakeChannel();
   const { client } = fakeClient();
-  createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' }).open();
+  const host = createDocsReviewHost({ createPanel: () => fc.channel, client, genNonce: () => 'WV' });
+  // E202611031bd72813:S001 t9: a presentKey panel embeds its key in the shell (insrcPanelKey)
+  if (opts.presentKey !== undefined) host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: opts.presentKey });
+  else host.open();
   const html = fc.html();
   let script = html.slice(html.indexOf('<script nonce="WV">') + '<script nonce="WV">'.length, html.lastIndexOf('</script>'));
   // Drop the vendored marked bundle (a stub is injected as a global instead) but
@@ -7341,4 +7346,240 @@ test('docs review shell: a BUILD row is listed between ISSUE and CR, counted in 
   assert.equal(w.bar.kind.textContent, 'BUILD');
   assert.equal(w.controls().approve, 'on');
   assert.equal(w.controls().reject, 'on');
+});
+
+test('E202611031bd72813:S001 t8: each presentKey opens its OWN editor panel (titled with the key); a repeat present reveals instead of replacing; dispose removes only its entry; the legacy single-panel path is unchanged', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const { client } = fakeClient({});
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      const ch = fc.channel;
+      made.push(rec);
+      return {
+        setHtml: ch.setHtml,
+        postMessage: ch.postMessage,
+        onMessage: ch.onMessage,
+        onDidDispose: ch.onDidDispose,
+        reveal: () => { rec.reveals += 1; },
+        dispose: ch.dispose,
+      };
+    },
+    client,
+  });
+  // double present: two distinct presentKeys -> two panels, first panel's content unchanged
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#1' });
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#2' });
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 2, 'double present -> two editor panels');
+  assert.deepEqual(made.map((m) => m.title), ['insrc docs review — LLD-abc-s7#1', 'insrc docs review — LLD-abc-s7#2'], 'each panel titled with its presentKey');
+  assert.ok(made[0]!.fc.posted.some((p) => p.payload.type === 'docs-content'), 'panel #1 got its document');
+  assert.ok(made[1]!.fc.posted.some((p) => p.payload.type === 'docs-content'), 'panel #2 got its document');
+  assert.equal(made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-content').length, 1, "panel #1's content was not replaced by #2");
+  // repeat present on #1: reveals, no new panel
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#1' });
+  await tick(); await tick();
+  assert.equal(made.length, 2, 'a repeat presentKey does not create a panel');
+  assert.ok(made[0]!.reveals >= 1, 'it reveals the existing one');
+  // dispose of panel #2 removes only its entry; presenting #2 again creates a fresh panel
+  made[1]!.fc.fireDispose();
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true, presentKey: 'LLD-abc-s7#2' });
+  await tick(); await tick();
+  assert.equal(made.length, 3, 'after dispose the entry is gone: presenting again creates a new panel');
+  assert.equal(made[2]!.title, 'insrc docs review — LLD-abc-s7#2');
+  // legacy path: open() + openArtifact without presentKey still use the single 'insrc docs review' panel
+  host.open();
+  await tick();
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH, quiet: true });
+  await tick(); await tick();
+  assert.equal(made.length, 4, 'the legacy open created the one shared panel');
+  assert.equal(made[3]!.title, 'insrc docs review', 'legacy title unchanged');
+  host.openArtifact({ artifactId: 'LLD-abc-s7', mdPath: DOC_PATH });
+  await tick();
+  assert.equal(made.length, 4, 'a presentKey-less openArtifact reuses the shared panel (no new panel)');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t8/MR2: two presentKey panels hold INDEPENDENT document state — a decision from panel A is validated against A’s own open document, reaches the daemon, and is answered only on A’s channel; a boot ping on B re-posts B’s own document on B’s channel; disposing one sibling leaves the other fully working', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const docs = [
+    { id: 'LLD-a-S001', kind: 'LLD', title: 'A', status: 'pending' },
+    { id: 'LLD-b-S001', kind: 'LLD', title: 'B', status: 'pending' },
+  ];
+  const { client, calls } = fakeClient({
+    pending: () => docs as DocsArtifactSummary[],
+    content: (id) => ({ markdown: `# body of ${id}`, openQuestions: [], blocked: false, docPath: `docs/${id}.md` }),
+  });
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      made.push(rec);
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => { rec.reveals += 1; }, dispose: ch.dispose };
+    },
+    client,
+  });
+  host.openArtifact({ artifactId: 'LLD-a-S001', mdPath: 'docs/LLD-a-S001.md', quiet: true, presentKey: 'A#1' });
+  host.openArtifact({ artifactId: 'LLD-b-S001', mdPath: 'docs/LLD-b-S001.md', quiet: true, presentKey: 'B#2' });
+  await tick(); await tick(); await tick(); await tick();
+  assert.equal(made.length, 2);
+  const contentsOf = (fc: ReturnType<typeof fakeChannel>): string[] => fc.posted.filter((p) => p.payload.type === 'docs-content').map((p) => (p.payload as { artifactId: string }).artifactId);
+  assert.deepEqual(contentsOf(made[0]!.fc), ['LLD-a-S001'], 'panel A loaded A');
+  assert.deepEqual(contentsOf(made[1]!.fc), ['LLD-b-S001'], 'panel B loaded B — not superseded by A');
+  // a decision from panel A on A's artifact: validated against A's open document, daemon called, answered on A only
+  made[0]!.fc.send(env('docs-decision', { artifactId: 'LLD-a-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'the decision reached the daemon');
+  assert.equal(calls.decide[0]!.path, 'docs/LLD-a-S001.md', 'decided by A’s own docPath');
+  assert.equal(made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 1, 'the result was answered on A’s channel');
+  assert.equal(made[1]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 0, 'and never on B’s');
+  // a boot ping (shell reload) on B re-posts B's OWN document on B's channel
+  const aContentsBefore = contentsOf(made[0]!.fc).length;
+  made[1]!.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(made[1]!.fc).at(-1), 'LLD-b-S001', 'B’s reload re-posted B’s document');
+  assert.equal(contentsOf(made[0]!.fc).length, aContentsBefore, 'A’s channel was untouched by B’s ping');
+  // a decision for B's artifact sent from panel A is refused on A (not the open document there)
+  made[0]!.fc.send(env('docs-decision', { artifactId: 'LLD-b-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'a decision for another panel’s document never reaches the daemon');
+  const refused = made[0]!.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').at(-1)!.payload as { ok: boolean };
+  assert.equal(refused.ok, false, 'refused on the sending panel');
+  // disposing sibling B leaves A fully working
+  made[1]!.fc.fireDispose();
+  made[0]!.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(made[0]!.fc).at(-1), 'LLD-a-S001', 'A still reloads its own document after B was disposed');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t8/MR2-R2: closing the LEGACY panel leaves keyed presentation panels fully alive — their posts, boot reloads, watches and decision results keep flowing; reopening the legacy panel works', async () => {
+  const made: { title: string; fc: ReturnType<typeof fakeChannel>; reveals: number }[] = [];
+  const docs = [
+    { id: 'LLD-a-S001', kind: 'LLD', title: 'A', status: 'pending' },
+    { id: 'LLD-b-S001', kind: 'LLD', title: 'B', status: 'pending' },
+  ];
+  const { client, calls } = fakeClient({
+    pending: () => docs as DocsArtifactSummary[],
+    content: (id) => ({ markdown: `# body of ${id}`, openQuestions: [], blocked: false, docPath: `docs/${id}.md` }),
+  });
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      const rec = { title: opts.title, fc, reveals: 0 };
+      made.push(rec);
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => { rec.reveals += 1; }, dispose: ch.dispose };
+    },
+    client,
+    pollMs: 0,
+  });
+  // legacy panel + two keyed panels
+  host.open();
+  await tick();
+  host.openArtifact({ artifactId: 'LLD-a-S001', mdPath: 'docs/LLD-a-S001.md', quiet: true, presentKey: 'A#1' });
+  host.openArtifact({ artifactId: 'LLD-b-S001', mdPath: 'docs/LLD-b-S001.md', quiet: true, presentKey: 'B#2' });
+  await tick(); await tick(); await tick(); await tick();
+  assert.equal(made.length, 3, 'legacy + two keyed panels');
+  const legacy = made[0]!;
+  const keyedA = made[1]!;
+  const contentsOf = (fc: ReturnType<typeof fakeChannel>): string[] => fc.posted.filter((p) => p.payload.type === 'docs-content').map((p) => (p.payload as { artifactId: string }).artifactId);
+  assert.deepEqual(contentsOf(keyedA.fc), ['LLD-a-S001']);
+  // close ONLY the legacy panel
+  legacy.fc.fireDispose();
+  await tick();
+  // the surviving keyed panel still gets a boot reload with its own document
+  keyedA.fc.send(env('open-doc', { artifactId: '' }));
+  await tick(); await tick(); await tick();
+  assert.equal(contentsOf(keyedA.fc).at(-1), 'LLD-a-S001', 'keyed panel A still reloads its document after the legacy panel closed');
+  // a decision from the surviving keyed panel still reaches the daemon AND is answered on its channel
+  keyedA.fc.send(env('docs-decision', { artifactId: 'LLD-a-S001', decision: 'approve', comments: [] }));
+  await tick(); await tick(); await tick();
+  assert.equal(calls.decide.length, 1, 'the decision still reached the daemon');
+  assert.equal(keyedA.fc.posted.filter((p) => p.payload.type === 'docs-decision-result').length, 1, 'and its result reached the surviving panel');
+  // reopening the legacy panel works and gets the list
+  host.open();
+  await tick(); await tick();
+  assert.equal(made.length, 4, 'a new legacy panel was created on reopen');
+  assert.ok(made[3]!.fc.posted.some((p) => p.payload.type === 'docs-list'), 'the reopened legacy panel got the pending list');
+  host.dispose();
+});
+
+test('E202611031bd72813:S001 t9: drafts are keyed by the composite presentKey:artifactId — two panels showing the same artifact keep isolated drafts, and A->B->A within one panel restores A', () => {
+  const DOC_A = { ...INLINE_DOC, artifactId: 'LLD-a' };
+  const DOC_B = { ...INLINE_DOC, artifactId: 'LLD-b' };
+  // panel #1 (presentKey LLD-a#1): draft on LLD-a
+  const p1 = runWebview({ textNodes: true, presentKey: 'LLD-a#1' });
+  p1.deliver({ ...DOC_A, reveal: true });
+  draftOn(p1, SUMMARY_P, 'cut to 8 lines', 'panel one note');
+  p1.bar.field.value = 'field one';
+  fire(p1.bar.field, 'input');
+  const state1 = p1.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state1.rv['LLD-a#1:LLD-a'], 'draft saved under the composite key presentKey:artifactId');
+  assert.equal(state1.rv['LLD-a'], undefined, 'not under the bare artifact id');
+
+  // panel #2 (presentKey LLD-a#2), SAME artifact, SAME saved state: isolated drafts
+  const p2 = runWebview({ textNodes: true, presentKey: 'LLD-a#2', saved: p1.saved });
+  p2.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(p2.body).length, 0, 'panel #2 does not inherit panel #1 drafts');
+  assert.equal(p2.bar.field.value, '', 'nor its field');
+  draftOn(p2, SUMMARY_P, 'cut to 8 lines', 'panel two note');
+  p2.bar.field.value = 'field two';
+  fire(p2.bar.field, 'input');
+  const state2 = p2.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state2.rv['LLD-a#1:LLD-a'] && state2.rv['LLD-a#2:LLD-a'], 'both panels keep their own drafts side by side');
+
+  // within panel #2: A -> B -> A restores A's drafts and field
+  p2.deliver({ ...DOC_B, reveal: true });
+  assert.equal(marksIn(p2.body).length, 0, 'B has none');
+  p2.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(p2.body).length, 1, 'back on A: its draft is restored in this panel');
+  assert.equal(p2.bar.field.value, 'field two', 'and its field');
+
+  // the legacy panel (no presentKey) keeps the bare artifactId key
+  const legacy = runWebview({ textNodes: true, saved: p2.saved });
+  legacy.deliver({ ...DOC_A, reveal: true });
+  assert.equal(marksIn(legacy.body).length, 0, 'legacy panel does not see either presentKey panel\'s drafts');
+  draftOn(legacy, SUMMARY_P, 'cut to 8 lines', 'legacy note');
+  const state3 = legacy.saved.state as { rv: Record<string, unknown> };
+  assert.ok(state3.rv['LLD-a'], 'legacy key is the bare artifactId, unchanged');
+});
+
+test('E202611031bd72813:S001 t8: the REAL presenter wired to the REAL review host opens one panel per presentKey — a repeated declaration is deduped, a new declaration opens again', async () => {
+  const made: { title: string }[] = [];
+  const { client } = fakeClient({});
+  const host = createDocsReviewHost({
+    createPanel: (opts) => {
+      const fc = fakeChannel();
+      made.push({ title: opts.title });
+      const ch = fc.channel;
+      return { setHtml: ch.setHtml, postMessage: ch.postMessage, onMessage: ch.onMessage, onDidDispose: ch.onDidDispose, reveal: () => {}, dispose: ch.dispose };
+    },
+    client,
+  });
+  const presenter = createReviewPresenter({
+    pendingDocuments: async () => [
+      { id: 'LLD-abc-S001', mdPath: DOC_PATH, kind: 'lld', pending: true } as never,
+      { id: 'HLD-xyz-S002', mdPath: DOC_PATH, kind: 'hld', pending: true } as never,
+    ],
+    open: (t) => host.openArtifact({ artifactId: t.artifactId, mdPath: t.mdPath, quiet: true, presentKey: t.presentKey }),
+    log: NOOP_LOGGER,
+  });
+  // one insrc_present naming the same doc TWICE: deduped within the declaration -> one panel
+  const shown = presenter.begin();
+  await shown.declared(['LLD-abc-S001', 'LLD-abc-S001']);
+  shown.end();
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 1, 'the same document named twice in one declaration opens once');
+  assert.equal(made[0]!.title, 'insrc docs review — LLD-abc-S001#1');
+  // a LATER declaration (another insrc_present) of another document opens again under a fresh key
+  const shown3 = presenter.begin();
+  await shown3.declared(['HLD-xyz-S002']);
+  shown3.end();
+  await tick(); await tick(); await tick();
+  assert.equal(made.length, 2, 'a later declaration opens again under a fresh key');
+  assert.equal(made[1]!.title, 'insrc docs review — HLD-xyz-S002#2');
+  host.dispose();
 });

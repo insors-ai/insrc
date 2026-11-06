@@ -138,8 +138,14 @@ export const MAX_DBS = 64;
  *         The v4 -> v5 migration writes an IndexStateRow for every
  *         workspace repository with fullIndexFinished false and its
  *         pending counts recounted from the stored rows.
+ *   v9 -- document relationships (Epic c2ba6fa6 s10): `doc_relation_proposals`,
+ *         `doc_relation_proposals_carry`, `doc_relation_quality`, empty until a
+ *         repository's first doc-relations pass or measurement.
+ *   v10 -- repair of a store built by the retired v2 entity-membership index:
+ *         `entity_by_file` is rebuilt in the (repoId, filePath) shape and the legacy
+ *         `entity_by_repo` table is dropped (merge of origin/main into v2, D1/D12).
  */
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 
 const META_SCHEMA_VERSION = 'schema_version';
 
@@ -285,6 +291,12 @@ export interface GraphStore {
 	subsystemDirty:      AnyDb;
 	/** ISSUE-7d42b5dc: (repoId, repo-relative file) -> the file's file-graph contribution; (repoId, 0x00) -> the repository's reset counter. */
 	subsystemFile:       AnyDb;
+	/** Epic c2ba6fa6 s10: (repoId, repo-relative document) -> DocRelationRow, the model's proposals for the document. */
+	docRelationProposals: AnyDb;
+	/** Epic c2ba6fa6 s10: the same rows held across a full index, written back for documents whose text is unchanged. */
+	docRelationCarry:     AnyDb;
+	/** Epic c2ba6fa6 s10: repoId -> DocRelationQualityRow (measured figures and the pass's status). */
+	docRelationQuality:   AnyDb;
 
 	// Plans
 	plan:                AnyDb;
@@ -660,6 +672,9 @@ export async function getGraphStore(): Promise<GraphStore> {
 			subsystemByFile:    open_('subsystem_by_file'),
 			subsystemDirty:     open_('subsystem_dirty'),
 			subsystemFile:      open_('subsystem_file'),
+			docRelationProposals: open_('doc_relation_proposals'),
+			docRelationCarry:     open_('doc_relation_proposals_carry'),
+			docRelationQuality:   open_('doc_relation_quality'),
 
 			// Plans -- `plan` is utf8 id keyed; planStep keys are pre-
 			// encoded composite Buffers so binary is fine
@@ -1425,7 +1440,7 @@ function writeSchemaVersion(store: GraphStore, version: number): void {
 
 
 const graphMutators = new Set(['put', 'putSync', 'remove', 'removeSync', 'clearAsync', 'clearSync', 'drop', 'dropSync', 'batch', 'transaction', 'transactionAsync', 'transactionSync', 'childTransaction', 'openDB', 'backup', 'close', 'resize', 'resetReadTxn']);
-const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'entityByFile', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState', 'subsystem', 'subsystemByFile']);
+const structuralTables = new Set(['meta', 'repo', 'entity', 'entityIdByString', 'entityStringByU64', 'nameIndex', 'entityByFile', 'outEdge', 'inEdge', 'unresolved', 'unresolvedByFile', 'unresolvedByTarget', 'exportNames', 'indexState', 'subsystem', 'subsystemByFile', 'docRelationProposals', 'docRelationQuality']);
 /** Guard the owned handles too: a warm handle must not bypass transaction admission.
  * Structural read methods keep their native iterator API; history/cache/config/plan
  * handles deny all Session method calls. Guards consult context only to DENY. */

@@ -1,0 +1,47 @@
+{
+  "runtime": "Node 22.23.2",
+  "chat": {
+    "files": 17,
+    "passed": 773,
+    "failed": 0,
+    "skipped": 0,
+    "durationMs": 38432.949042,
+    "forcedExit": true,
+    "log": "chat-tests.tap"
+  },
+  "backend": {
+    "files": [
+      "src/agent/providers/__tests__/cli-ollama.test.ts",
+      "src/analyze/context/__tests__/provider-from-registry.test.ts"
+    ],
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "log": "backend-tests.tap"
+  },
+  "pluginTypecheck": {
+    "command": "../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "cwd": "vscode-plugin",
+    "exitCode": 0
+  },
+  "backendTypecheck": {
+    "command": "node node_modules/typescript/bin/tsc --noEmit",
+    "cwd": ".",
+    "exitCode": 0
+  },
+  "limits": [
+    "Injected processes; no live model inference or rendered UI test.",
+    "Chat force-exit does not prove natural teardown.",
+    "No global configuration changes; unrelated screen-recording document preserved."
+  ],
+  "narrowedScope": {
+    "commit": "5cac99fe7",
+    "backendNetChange": false,
+    "focusedAndWiringTests": {
+      "passed": 34,
+      "failed": 0,
+      "log": "narrowed-tests.tap"
+    },
+    "note": "Moved environment helper into the extension after build validator scope feedback. Runtime behavior unchanged; plugin typecheck passed again."
+  }
+}

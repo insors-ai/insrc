@@ -99,3 +99,34 @@ test('approval queue: the grant chain accumulates approved tool names once each 
   q.endTurn('turn-2');
   assert.equal(q.takeCompletedBatch(), undefined, 'a cleared batch never completes');
 });
+
+test('E202611031bd72813:S001 t6: snapshot/restore round-trips the full queue state (waiting order, batch decisions, ended turns, grants)', () => {
+  const q = createApprovalQueue();
+  q.enqueue(req('a', { resolution: 'in-turn' }));
+  q.enqueue(req('b'));
+  q.enqueue(req('c', { turnId: 'turn-2' }));
+  q.endTurn('turn-1');
+  q.endTurn('turn-2');
+  assert.deepEqual(q.decide('a', 'approve'), { ok: true, decided: req('a', { resolution: 'in-turn' }) }); // in-turn: no grant, no batch
+  assert.deepEqual(q.decide('b', 'approve'), { ok: true, decided: req('b') }); // turn-ended: grant + batch entry
+  const snap = q.snapshot();
+  assert.deepEqual(snap.waiting.map((r) => r.requestId), ['c'], 'only c still waits');
+  assert.deepEqual(snap.grants, ['Edit'], 'the approved tool is in the grant chain');
+  assert.deepEqual(snap.ended.sort(), ['turn-1', 'turn-2']);
+  assert.deepEqual(snap.batches.map((b) => b.turnId), ['turn-1', 'turn-2'], 'a turn-ended request opens its turn\'s batch');
+  assert.deepEqual(snap.batches[0]!.decisions.map((d) => [d.request.requestId, d.decision]), [['b', 'approve']]);
+  assert.deepEqual(snap.batches[1]!.decisions, [], 'turn-2\'s batch is open but empty (c undecided)');
+
+  // restore into a fresh queue (chat switch + reattach): the state is identical
+  const q2 = createApprovalQueue();
+  q2.restore(snap);
+  assert.deepEqual(q2.head()?.request.requestId, 'c', 'waiting order preserved');
+  assert.deepEqual(q2.grantChain(), ['Edit'], 'grants preserved');
+  assert.deepEqual(q2.decide('c', 'deny'), { ok: true, decided: req('c', { turnId: 'turn-2' }) }, 'a restored request is decidable by its original id');
+  assert.deepEqual(q2.takeCompletedBatch()?.decisions.map((d) => d.request.requestId), ['b'], 'the restored batch still completes for its ended turn');
+  // and a second round-trip is stable
+  const q3 = createApprovalQueue();
+  q3.restore(q2.snapshot());
+  assert.equal(q3.head(), undefined, 'nothing waiting after the batch was taken... c was decided');
+  assert.deepEqual(q3.grantChain(), ['Edit']);
+});

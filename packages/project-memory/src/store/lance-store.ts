@@ -6,19 +6,19 @@ import type { HostPolicy, MemoryLimits, MemoryView, OperationReceipt, Scope } fr
 import type { ReceiptVerifier } from '../queue/types.js';
 import { MemoryError } from '../errors.js';
 import { errno } from '../configuration.js';
-import { arrowSchema, decodeRow, encodeRow, rootRow, ROOT_ROW_ID, STORE_LIMITS } from './codec.js';
+import { arrowSchema, decodeRow, encodeRow, physicalId, rootRow, ROOT_ROW_ID, STORE_LIMITS } from './codec.js';
 import { embeddingProfile, requireProfile, validateProfile } from './embedding-profile.js';
 import { loadFormat, STORE_DIRECTORY, writeFormat } from './format.js';
 import { AtomicWriter } from './writer.js';
 import { receiptVerifier } from './receipts.js';
-import { forgetTarget, frameProtection, loadProtections } from './barriers.js';
+import { broadSelector, forgetTarget, frameProtection, loadProtections } from './barriers.js';
 import type { FrameEligibility } from './barriers.js';
 import type { GuardLookup } from './guards.js';
 import type { WriterHooks } from './writer.js';
 import { ReadLeases } from './reads.js';
 import type { ReadHooks } from './reads.js';
 import { NativePinnedReader } from './native-reads.js';
-import { admittedPayload, rowIdPredicate, snapshotAdmittedFrame } from './plan.js';
+import { admittedPayload, canonical, rowIdPredicate, rowScope, scopeWithin, snapshotAdmittedFrame } from './plan.js';
 import { decimal, validateQueueLimits } from '../queue/codec.js';
 import type { CommittedSnapshot, CurrentProjection, EmbeddingProfile, RootPayload, StoreRow } from './types.js';
 
@@ -288,7 +288,17 @@ export class OwnedLanceStore {
         // before trusting the open version. Otherwise corrupt status/namespace
         // columns could hide memory or protection before a targeted decode.
         const stored = await table.query().where(predicate).limit(2).toArray();
-        if (stored.length !== 1 || this.#decodeNative(stored[0]).rowKind !== row['rowKind']) unavailable();
+        if (stored.length !== 1) unavailable();
+        const decoded = this.#decodeNative(stored[0]);
+        if (decoded.rowKind !== row['rowKind']) unavailable();
+        if (decoded.rowKind === 'receipt') await this.#auditReceiptProtection(decoded, root);
+        if (decoded.rowKind === 'tombstone') {
+          const creators = await table.query().where("rowKind = 'receipt' AND operationId = '" + decoded.payload.createdByOperationId + "'").limit(2).toArray();
+          if (creators.length !== 1) unavailable();
+          const creator = this.#decodeNative(creators[0]);
+          if (creator.rowKind !== 'receipt' || !creator.payload.tombstoneIds.includes(decoded.payload.tombstoneId) || creator.payload.generation !== decoded.payload.invalidFromGeneration || creator.projectId !== decoded.projectId || creator.scopeEpoch !== decoded.scopeEpoch || decoded.payload.queueId !== root.queueId || creator.payload.committedAt !== decoded.payload.createdAt || !scopeWithin(rowScope(decoded), creator.payload.scope)) unavailable();
+          if (broadSelector(decoded.payload.selector) && (decoded.sessionId !== null || decoded.branch !== null || decoded.environment !== null || canonical(rowScope(decoded)) !== canonical(creator.payload.scope))) unavailable();
+        }
         if (row['generation'] !== null && (!decimal(row['generation']) || BigInt(row['generation']) > BigInt(root.generation))) unavailable();
         if (row['rowKind'] === 'receipt') {
           if (!decimal(row['generation']) || row['generation'] === '0' || typeof row['identityDigest'] !== 'string' || !/^[a-f0-9]{64}$/.test(row['identityDigest'])) unavailable();
@@ -305,6 +315,46 @@ export class OwnedLanceStore {
     await this.#checkIdentity();
     if (await table.version() !== version) unavailable();
     this.#observedVersion = version;
+  }
+  /** A terminal receipt must never outlive the protection it publishes or cites.
+   * Stream narrow keys and retain at most one decoded marker plus bounded ID sets;
+   * do not materialize all protection history during cold recovery. */
+  async #auditReceiptProtection(receipt: Extract<StoreRow, { rowKind: 'receipt' }>, root: RootPayload): Promise<void> {
+    const table = this.#resources.table; if (!table) unavailable();
+    const p = receipt.payload, owned = new Set(p.tombstoneIds), rejected = new Set(p.rejectedByTombstoneIds);
+    if (!owned.size && !rejected.size) return;
+    const requested = new Set([...owned, ...rejected]), found = new Set<string>();
+    for (const id of requested) if (!/^tombstone:[a-f0-9]{64}$/.test(id)) unavailable();
+    let bytes = 0;
+    const predicate = "rowKind = 'tombstone'" + (rejected.size ? '' : " AND operationId = '" + p.operationId + "'");
+    for await (const batch of table.query().where(predicate).select(['rowId', 'namespaceKey'])) {
+      for (const item of batch) {
+        const id = item['rowId'], namespace = item['namespaceKey'];
+        if (typeof id !== 'string' || typeof namespace !== 'string' || !/^[a-f0-9]{64}$/.test(namespace)) unavailable();
+        // Logical protection IDs are not native scalar columns. Derive physical
+        // keys from narrow namespace metadata before fetching any payload.
+        let logical: string | undefined;
+        for (const candidate of requested) if (physicalId('tombstone', namespace, candidate) === id) { logical = candidate; break; }
+        if (logical === undefined) continue;
+        if (found.has(logical)) unavailable(); found.add(logical);
+        const rows = await table.query().where(rowIdPredicate(id)).limit(2).toArray();
+        if (rows.length !== 1) unavailable();
+        const marker = this.#decodeNative(rows[0]); if (marker.rowKind !== 'tombstone') unavailable();
+        const m = marker.payload, own = owned.has(m.tombstoneId), reject = rejected.has(m.tombstoneId);
+        if (m.tombstoneId !== logical || (!own && !reject)) unavailable();
+        bytes += Buffer.byteLength(canonical(marker)); if (bytes > STORE_LIMITS.maxBytes) unavailable();
+        if (marker.projectId !== receipt.projectId || marker.scopeEpoch !== receipt.scopeEpoch || m.queueId !== root.queueId || m.invalidFromGeneration === '0') unavailable();
+        if (own) {
+          if (m.createdByOperationId !== p.operationId || m.invalidFromGeneration !== p.generation || m.createdAt !== p.committedAt) unavailable();
+          owned.delete(m.tombstoneId);
+        }
+        if (reject) {
+          if (BigInt(m.invalidFromGeneration) >= BigInt(p.generation)) unavailable();
+          rejected.delete(m.tombstoneId);
+        }
+      }
+    }
+    if (owned.size || rejected.size) unavailable();
   }
   commit(plan: unknown): Promise<OperationReceipt> {
     if (this.#closing) return Promise.reject(new MemoryError('NOT_READY', 'Memory store is closing.'));

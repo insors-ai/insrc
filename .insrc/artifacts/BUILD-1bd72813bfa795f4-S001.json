@@ -1,0 +1,970 @@
+{
+  "meta": {
+    "workflow": "build",
+    "epicHash": "1bd72813bfa795f4",
+    "storyId": "S001",
+    "createdAt": "2026-11-03T19:59:20.775Z",
+    "updatedAt": "2026-11-05T08:54:14.044Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-03T16:24:43.002Z",
+    "epicSlug": "multiple-concurrent-chats-chat-panel-active"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": true
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      }
+    ],
+    "summary": "t5: observer transitions corrected — done only on real terminal or verified pid death with a caught-up observer; budget aborts/observation failures keep last status; retention archives pinned generations; 178 panel + output tests pass, tsc clean.",
+    "testRecord": {
+      "md": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/stream-events.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/turn-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-file-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-output.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/extension-chat-wiring.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/approval-queue.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/approval-queue.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/review-presenter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/review-presenter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/docs-review-comments.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/probes/async-routing.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/probes/followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/probes/panels.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review/probes/present-replay.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-2.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/original-async-routing.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/original-followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/original-panels.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/original-present-replay.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/panel-dispose.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/present-turns.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/routing-collision.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/probes/spawn-gap.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-2/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol-contract.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/stream-events.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-3.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/legacy-present.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/original-async-routing.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/original-followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/original-panels.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/panel-dispose.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/present-turns.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/routing-collision.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/probes/same-chat-request.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-3/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-4.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/async-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/legacy-present.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/original-followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/panel-dispose.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/restored-approval.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/restored-denial.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/routing-collision.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/same-chat-request.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/sync-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/probes/unverified-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-4/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-5.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/async-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/legacy-present.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/original-followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/panel-dispose.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/restored-approval.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/restored-denial.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/routing-collision.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/same-chat-request.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/sync-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/unverified-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/probes/wrong-chat-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-5/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-6.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/affected-tests.tap"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/evidence.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/async-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/batch-handoff.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/legacy-present.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/original-followup.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/panel-dispose.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/restored-approval.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/restored-denial.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/routing-collision.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/same-chat-request.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/sync-live-unwritable.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/targeted-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/unverified-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/probes/wrong-chat-stop.mts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-6/typecheck.txt"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:20:08.129Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/MANUAL-CODE-REVIEW-ROUND-7.md",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/affected-tests.tap",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/evidence.json",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/async-live-unwritable.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/batch-handoff.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/legacy-present.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/original-followup.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/panel-dispose.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/restored-approval.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/restored-denial.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/routing-collision.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/same-chat-request.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/sync-live-unwritable.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/targeted-stop.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/unverified-stop.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/probes/wrong-chat-stop.mts",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/multiple-concurrent-chats-chat-panel-active-E202611031bd72813/S001/evidence/manual-code-review-round-7/typecheck.txt",
+          "version": "985628056"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-05T08:54:14.044Z"
+      }
+    ],
+    "commit": "985628056"
+  }
+}

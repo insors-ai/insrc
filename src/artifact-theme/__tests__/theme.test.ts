@@ -129,7 +129,7 @@ test('theme.test.ts: legendSlotHtml wraps both modes for the boot script to togg
 
 test('theme.test.ts: pageStyleTags is the one shared page-style composition for every shell (R1)', () => {
 	const tags = pageStyleTags('.my-structural{}');
-	assert.match(tags, /@font-face\{font-family:'Poppins'/);
+	assert.match(tags, /<style data-iv-fonts>@font-face\{font-family:'Poppins'/);
 	assert.match(tags, /<style data-iv-mode="light">/);
 	assert.match(tags, /<style data-iv-mode="dark" disabled>/);
 	assert.ok(tags.indexOf('<style data-iv-mode="light">') < tags.indexOf('<style data-iv-mode="dark"'), 'light before dark');
@@ -150,7 +150,8 @@ test('theme.test.ts: the boot script embeds the tested exportableSvg and toggles
 
 test('theme.test.ts: pageStyleTags puts the font-face rules inside a style element', () => {
 	const tags = pageStyleTags('');
-	assert.ok(tags.startsWith('<style>@font-face{font-family:\'Poppins\''), 'the fonts open in a style element, never as page text');
+	assert.ok(tags.startsWith('<style data-iv-fonts>@font-face{font-family:\'Poppins\''), 'the fonts open in a style element, never as page text');
+	assert.ok(!/<style[^>]*>\s*<style/.test(tags), 'no style element is nested in another (a nested tag would read as CSS text)');
 	const outside = tags.replace(/<style[^>]*>[\s\S]*?<\/style>/g, '');
 	assert.equal(outside, '', 'every byte of the output is inside a style element');
 });

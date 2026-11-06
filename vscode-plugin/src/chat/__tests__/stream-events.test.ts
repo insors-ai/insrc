@@ -10,6 +10,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { TURN_EVENT_KINDS, type TurnEvent, type TurnEventKind } from '../stream-events.js';
+import { contractTurnEvents } from '../protocol-contract.js';
 
 test("TURN_EVENT_KINDS reserves 'approval-request' alongside every prior kind (additive)", () => {
   // Every pre-S001 kind is still present, unchanged.
@@ -44,6 +45,12 @@ test('every existing TurnEvent kind still constructs with its original shape (no
     { kind: 'error', turnId: 't', message: 'boom' },
   ];
   assert.equal(samples.length, 6);
+  // the compile-time contract (protocol-contract.ts, typechecked with the plugin sources) pins one
+  // representative per CURRENT kind: every kind in the runtime array must appear there
+  for (const kind of TURN_EVENT_KINDS) {
+    assert.ok(contractTurnEvents.some((e) => e.kind === kind), `contract covers TurnEvent kind ${kind}`);
+  }
+  assert.equal(contractTurnEvents.length, TURN_EVENT_KINDS.length, 'contract pins exactly the runtime kinds');
 });
 
 test('S004: ApprovalRequestEvent is a valid TurnEvent member with its reserved kind + correlation fields', () => {

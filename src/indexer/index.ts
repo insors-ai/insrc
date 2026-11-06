@@ -2,22 +2,24 @@ import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, extname, relative, sep, basename } from 'node:path';
 import type { DbClient } from '../db/client.js';
-import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider } from '../shared/types.js';
+import type { RegisteredRepo, RepoLastRun, IndexJob, ConfigScope, Entity, LLMProvider, Relation } from '../shared/types.js';
 import type { SummariseDocResult } from '../analyze/summariser/index.js';
 import { upsertEntities, listEntityFilesForRepo, deleteEntitiesForRepo, reconcileEntityVectors } from '../db/entities.js';
 import {
   upsertRelations,
   deleteUnresolvedForRepo,
+  listUnresolvedRelations,
 } from '../db/relations.js';
 import { beginFullIndexState, finishFullIndexState, markFullIndexUnfinished, addUncommittedFile, readIndexState, setEmbeddingAvailable, setUncommittedFiles } from '../db/index-state.js';
 import { restoreCarriedDocSummaries } from '../db/doc-summaries.js';
+import { restoreCarriedDocRelations } from '../db/doc-relations.js';
 import { deleteCachedExplorationsForRepo } from '../db/exploration-cache.js';
 import { runCrossFileResolver } from './cross-file-resolver.js';
 import { withBackgroundHold } from '../shared/locks/maintenance-lock.js';
 import { resolveExternalEndpoints } from './external-endpoints.js';
 import { resolveMessagingEndpoints } from './messaging-endpoints.js';
 import { detectSourceRoots } from './source-roots.js';
-import { commitFile, getEntity } from '../db/entities.js';
+import { commitFile, entityU64ForId, getEntity } from '../db/entities.js';
 import { writeOfRelation } from '../db/file-commit.js';
 import { updateRepoStatus, lookupRepoId, UnregisteredRepoError } from '../db/repos.js';
 import { bumpIndexRunDone, closeIndexRun, openIndexRun, readIndexRun, setIndexRunSelected } from './run-record.js';
@@ -158,6 +160,13 @@ export class IndexerService {
     enqueue:       repoPath => this.queue.enqueue({ kind: 'subsystems', repoPath }),
     isStopping:    () => this.queue.isStopping,
     clock:         this.subsystemSchedulerClock(),
+  });
+  /** When document-relations passes run (Epic c2ba6fa6 s10): the same pacing and retry, its own state. */
+  private readonly docRelations = new SubsystemScheduler({
+    graphComplete: async repoPath => (await readIndexState(repoPath))?.graphComplete === true,
+    enqueue:       repoPath => this.queue.enqueue({ kind: 'doc-relations', repoPath }),
+    isStopping:    () => this.queue.isStopping,
+    clock:         this.docRelationsSchedulerClock(),
   });
   private readonly watcher: Watcher;
   private readonly supported: Set<string>;
@@ -455,6 +464,8 @@ export class IndexerService {
       case 'doc-summarise-repo':   await this.docSummariseRepo(job.repoPath);   break;
       case 'doc-summarise-entity': await this.docSummariseEntity(job.entityId); break;
       case 'subsystems':           return this.subsystemPass(job.repoPath);
+      case 'doc-relations':        return this.docRelationsPass(job.repoPath);
+      case 'doc-relations-measure': return this.docRelationsMeasure(job.repoPath, job.setHash);
     }
   }
 
@@ -623,6 +634,20 @@ export class IndexerService {
     // One commit: the file's entities, relationships and pending rows go together (Epic c2ba6fa6 s2).
     void ids;
     await commitFile({ repoPath, filePath: file, contentHash: null, entities: [], relations: [] });
+    await this.reReadCitingDocuments(repoPath, file);
+  }
+
+  /**
+   * After a file's removal (s10): its incoming document links went back to
+   * pending awaiting its file entity. Each markdown document holding one is
+   * read again, so its link is written as 'no-candidate' and the repository
+   * does not stay incomplete on a link to a file that is gone.
+   */
+  protected async reReadCitingDocuments(repoPath: string, filePath: string): Promise<void> {
+    const rows = await listUnresolvedRelations(this.db, repoPath, undefined, { awaiting: [makeEntityId(repoPath, filePath, 'file', filePath)] });
+    const docs = new Set(rows.filter(r => r.kind === 'REFERENCES' && /\.mdx?$/i.test(r.fromFile) && r.fromFile !== filePath).map(r => r.fromFile));
+    for (const doc of docs) this.queue.enqueue({ kind: 'file', filePath: doc, event: 'update' });
+    if (docs.size > 0) log.debug({ file: filePath, documents: docs.size }, 'documents citing a removed file queued for re-reading');
   }
 
   /**
@@ -687,6 +712,30 @@ export class IndexerService {
    */
   protected async enqueueSubsystemsIfComplete(repoPath: string): Promise<void> {
     await this.subsystems.request(repoPath);
+    // The document-relations pass (s10) follows the same triggers: it too starts only from a complete graph.
+    await this.docRelations.request(repoPath);
+  }
+
+  /**
+   * The document-relations pass for one repository (Epic c2ba6fa6 s10): its
+   * outcome is a SubsystemsOutcome for the scheduler, or a non-outcome (the
+   * provider is unavailable), which the scheduler counts as a failed pass.
+   * A seam: a test overrides it.
+   */
+  protected async docRelationsPass(repoPath: string): Promise<unknown> {
+    const { runDocRelationsPass } = await import('./doc-relations-pass.js');
+    return runDocRelationsPass({
+      repoPath,
+      waitForCodeIdle: () => this.queue.waitForIndexIdle(),
+      isCodeIdle:      () => this.queue.isIndexIdle,
+      shouldStop:      () => this.queue.isStopping,
+    });
+  }
+
+  /** The measurement against the repository's hand-checked set (Epic c2ba6fa6 s10). A seam: a test overrides it. */
+  protected async docRelationsMeasure(repoPath: string, setHash: string): Promise<unknown> {
+    const { runDocRelationsMeasurement } = await import('./doc-relations-measure.js');
+    return runDocRelationsMeasurement({ repoPath, setHash, shouldStop: () => this.queue.isStopping });
   }
 
   /**
@@ -695,13 +744,16 @@ export class IndexerService {
    * ran (here, or on the document-summary worker), or a failure.
    */
   async runQueuedJob(job: IndexJob, run: () => Promise<unknown>): Promise<void> {
-    if (job.kind !== 'subsystems') { await run(); return; }
-    this.subsystems.started(job.repoPath);
+    // A subsystems or doc-relations job (s10) tells its own scheduler when it starts and how it ended: an
+    // outcome, or undefined (a failure, an abandoned worker reply, an unavailable provider) -- a failed pass.
+    const scheduler = job.kind === 'subsystems' ? this.subsystems : job.kind === 'doc-relations' ? this.docRelations : undefined;
+    if (scheduler === undefined || !('repoPath' in job)) { await run(); return; }
+    scheduler.started(job.repoPath);
     let outcome: SubsystemsOutcome | undefined;
     try {
       outcome = asSubsystemsOutcome(await run());
     } finally {
-      this.subsystems.finished(job.repoPath, outcome);
+      scheduler.finished(job.repoPath, outcome);
     }
   }
 
@@ -710,9 +762,20 @@ export class IndexerService {
     return undefined;
   }
 
+  /** The document-relations scheduler's time and timers: the real ones (a seam for tests). */
+  protected docRelationsSchedulerClock(): SchedulerClock | undefined {
+    return undefined;
+  }
+
   /** Stop: clear the subsystem scheduler's timers (both stop paths call it). */
   disposeSubsystemScheduler(): void {
     this.subsystems.dispose();
+    this.docRelations.dispose();
+  }
+
+  /** Test seam: the document-relations scheduler's armed timers. */
+  _docRelationsTimersForTest(): { pacing: number; retry: number } {
+    return this.docRelations._timersForTest();
   }
 
   /** Test seam: how many per-repo settle timers are armed. */
@@ -900,6 +963,10 @@ export class IndexerService {
       // Every document the rebuild stores is stored by now (after the index clean-up).
       const summaries = await restoreCarriedDocSummaries(repoPath);
       log.info({ repo: repoPath, ...summaries }, 'full index: carried document summaries written back');
+      // Model-proposed document relationships (s10): restored for documents whose text is unchanged, before
+      // the full index requests the document-relations pass, so that pass does not send them again.
+      const relations = await restoreCarriedDocRelations(repoPath);
+      log.info({ repo: repoPath, ...relations }, 'full index: carried document relationships written back');
       await finishFullIndexState(repoPath, endpointPassFailed);
 
       // Build the entity_vec HNSW index now that the bulk-insert
@@ -955,6 +1022,7 @@ export class IndexerService {
     if (event === 'delete') {
       // One commit removes the file's entities, relationships and pending rows together (ac4).
       await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+      await this.reReadCitingDocuments(repoPath, filePath);
       log.info({ file: filePath }, 'file deleted from index');
       this.scheduleSettle(repoPath, filePath);
       return;
@@ -1236,6 +1304,7 @@ export class IndexerService {
       // the delete event's would (s2 review -- nothing is deleted first now).
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         await commitFile({ repoPath, filePath, contentHash: null, entities: [], relations: [] });
+        await this.reReadCitingDocuments(repoPath, filePath);
         return false;
       }
       // Unreadable: the previous rows stay, and the caller records the file as uncommitted.
@@ -1273,8 +1342,8 @@ export class IndexerService {
     const fileEntity = result.entities.find(e => e.kind === 'file' && e.file === filePath);
     if (fileEntity) fileEntity.hash = hash;
 
-    // Resolve relative imports
-    const resolved = resolveRelations(result.relations, filePath, repoPath, result.entities);
+    // Resolve relative imports; then decide each document link stored or pending (s10).
+    const resolved = await documentLinksForCommit(resolveRelations(result.relations, filePath, repoPath, result.entities), filePath, repoPath);
     const resolvedCount = resolved.filter(r => r.resolved).length;
 
     // Embed entities (no-op if Ollama is unavailable)
@@ -1515,4 +1584,32 @@ export class IndexerService {
     }
     return best;
   }
+}
+
+/**
+ * The document links of a markdown file as the file commit takes them (Epic
+ * c2ba6fa6 s10). A path link whose target file entity is stored is written
+ * stored; one whose target is not is written pending, awaiting that id, class
+ * 'no-candidate' -- not a completeness cause -- so Pass 0 promotes it when the
+ * target commits. A name reference is always written pending, 'no-candidate',
+ * and resolved at read. Both pending forms name the citing file and the
+ * repository, which the store requires of a pending row. Only a store read: no
+ * file system probe.
+ */
+export async function documentLinksForCommit(relations: Relation[], filePath: string, repoPath: string): Promise<Relation[]> {
+  const out: Relation[] = [];
+  for (const rel of relations) {
+    if (rel.kind !== 'REFERENCES' || rel.meta?.['docLink'] !== true) { out.push(rel); continue; }
+    const where = { file: filePath, repo: repoPath };
+    if (typeof rel.meta['nameRef'] === 'string') {
+      out.push({ ...rel, resolved: false, meta: { ...rel.meta, ...where, class: 'no-candidate', reason: 'doc-name-ref' } });
+    } else if (await entityU64ForId(rel.to) !== undefined) {
+      const { awaitsId: _a, ...meta } = rel.meta;
+      void _a;
+      out.push({ ...rel, resolved: true, meta: { ...meta, repo: repoPath } });
+    } else {
+      out.push({ ...rel, resolved: false, meta: { ...rel.meta, ...where, awaitsId: true, class: 'no-candidate', reason: 'doc-link-target-absent' } });
+    }
+  }
+  return out;
 }

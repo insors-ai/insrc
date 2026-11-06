@@ -67,18 +67,24 @@ test('stream input preserves exact prompt and options, and missing correlation c
 });
 
 test('initial input write failure stops the process and returns a visible error without retry', async () => {
-  for (const failure of ['missing','throws','rejects'] as const) {
+  // main's write seam (sync decision D11): false = undelivered, a throw is undelivered, onError = an asynchronous failure
+  for (const failure of ['missing','throws','false','onError'] as const) {
     const spawner = makeFakeSpawner({ lines: [], hangUntilKilled: true });
     const adapter = createProviderRegistry({ isInstalled: () => true, spawn: (command,args,opts) => {
       const p=spawner.spawn(command,args,opts);
       if(failure==='missing') { const {write: _write,...rest}=p;return rest; }
-      return {...p,write:()=>{if(failure==='throws')throw new Error('closed input');return Promise.reject(new Error('closed input'));}};
+      return {...p,write:(_data: string, onError?: (err: unknown) => void)=>{
+        if(failure==='throws')throw new Error('closed input');
+        if(failure==='onError'){ queueMicrotask(() => onError?.(new Error('closed input'))); return true; }
+        return false;
+      }};
     } }).get('claude');
     const events=await collect(adapter.run({provider:'claude',cwd:'/tmp',prompt:'hi'}));
-    assert.equal(events.at(-1)?.kind,'error');
-    assert.match((events.at(-1) as {message:string}).message,/stdin unavailable|closed input/);
+    assert.equal(events.at(-1)?.kind,'error', failure);
+    assert.match((events.at(-1) as {message:string}).message,/stdin/, failure);
     assert.equal(spawner.calls.length,1);
-    assert.deepEqual(spawner.procs[0]!.signals(),['SIGTERM']);
+    const signals=spawner.procs[0]!.signals();
+    assert.ok(signals.length>=1&&signals.every(sig=>sig==='SIGTERM'), failure);
   }
 });
 
@@ -144,34 +150,16 @@ test('live pipe and retained output preserve tools and final reply after a queue
   }
 });
 
-test('legacy failed result survives two reloads without duplicate visible output', async () => {
+test('a legacy turn id (no request uuid) ends at its first result, as on main (sync decision D9)', async () => {
   const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'issue83-legacy-')), 'output'), pollMs: 5 });
-  const previous = await sessionOutput.beginTurn('session', 'previous');
-  appendFileSync(previous.outPath, JSON.stringify({ type: 'result', is_error: true, result: 'wrong previous turn' }) + '\n');
   const segment = await sessionOutput.beginTurn('session', 'legacy-turn');
-  const prefix = [text('already displayed'), JSON.stringify({ type: 'result', is_error: false }), text('actual reply'), JSON.stringify({ type: 'result', is_error: true, result: 'native failure retained' })].join('\n') + '\n';
-  appendFileSync(segment.outPath, prefix);
-  let alive = true;
-  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, isAlive: () => alive, processStartTime: () => 1, livenessPollMs: 5 }).get('claude');
-  let cursor = segment.cursor;
-  for (let reload = 0; reload < 2; reload++) {
-    const controller = new AbortController();
-    const events: TurnEvent[] = [];
-    const following = (async () => {
-      for await (const event of adapter.resume({ cursor, pid: 123, startedAt: 1 }, { signal: controller.signal, onProgress: c => { cursor = c; } })) events.push(event);
-    })();
-    if (reload === 0) await waitFor(() => cursor.offset === segment.cursor.offset + Buffer.byteLength(prefix));
-    else await new Promise(r => setTimeout(r, 20));
-    controller.abort();
-    await following;
-    assert.deepEqual(events.map(e => e.kind), reload === 0 ? ['assistant-delta', 'assistant-delta'] : []);
-    assert.equal(cursor.offset, segment.cursor.offset + Buffer.byteLength(prefix));
-  }
-  alive = false;
-  const events = await collect(adapter.resume({ cursor, pid: 123, startedAt: 1 }));
-  assert.deepEqual(events.map(e => e.kind), ['done']);
-  assert.equal((events[0] as {ok:boolean}).ok, false);
-  assert.equal((events[0] as {message:string}).message, 'native failure retained');
+  appendFileSync(segment.outPath, [text('already displayed'), JSON.stringify({ type: 'result', is_error: true, result: 'native failure' }), text('after the result')].join('\n') + '\n');
+  await sessionOutput.endTurn('session', 'legacy-turn', { code: 0, signal: null });
+  const adapter = createProviderRegistry({ spawn: makeFakeSpawner({ lines: [] }).spawn, isInstalled: () => true, sessionOutput, isAlive: () => false, livenessPollMs: 5 }).get('claude');
+  const events = await collect(adapter.resume({ cursor: segment.cursor, pid: 123, startedAt: 1 }));
+  assert.deepEqual(events.map(e => e.kind), ['assistant-delta', 'done']);
+  assert.equal((events[1] as {ok:boolean}).ok, false);
+  assert.equal((events[1] as {message:string}).message, 'native failure');
 });
 
 test('checkpointed own terminal is recovered on reattach without duplicated content', async () => {
@@ -203,20 +191,14 @@ test('Codex item completion retains content and native turn completion does not 
   } finally {spawner.procs[0]?.exitNow();}
 });
 
-test('legacy replay waits through multiple results and reports missing retained prefixes explicitly', async () => {
+test('a retained segment that is gone is an observation failure, never an invented completion', async () => {
   const sessionOutput = createSessionOutput({ root: join(mkdtempSync(join(tmpdir(), 'issue83-old-')), 'output'), pollMs: 5 });
   const segment = await sessionOutput.beginTurn('session', 'old-turn');
-  appendFileSync(segment.outPath, [JSON.stringify({type:'result',is_error:true,result:'prior failure'}),text('actual reply'),JSON.stringify({type:'result',is_error:false})].join('\n')+'\n');
   await sessionOutput.endTurn('session','old-turn',{code:0,signal:null});
-  const warnings:string[]=[];
-  const adapter=createProviderRegistry({spawn:makeFakeSpawner({lines:[]}).spawn,isInstalled:()=>true,sessionOutput,isAlive:()=>false,logger:{warn:m=>warnings.push(m),error:()=>{}}}).get('claude');
-  const events=await collect(adapter.resume({cursor:segment.cursor,pid:123,startedAt:1}));
-  assert.deepEqual(events.map(e=>e.kind),['assistant-delta','done']);
-  assert.equal((events[0] as {text:string}).text,'actual reply');
-  assert.equal((events[1] as {ok:boolean}).ok,true);
+  const adapter=createProviderRegistry({spawn:makeFakeSpawner({lines:[]}).spawn,isInstalled:()=>true,sessionOutput,isAlive:()=>false,logger:{warn:()=>{},error:()=>{}}}).get('claude');
   const missing=await collect(adapter.resume({cursor:{...segment.cursor,turnId:'missing'},pid:123,startedAt:1}));
-  assert.deepEqual(missing,[],'retention failure must not invent successful completion');
-  assert.equal(warnings.length,1);
+  assert.ok(missing.every(e=>e.kind!=='done'),'retention failure must not invent successful completion');
+  assert.equal(missing.at(-1)?.kind,'error');
 });
 
 test('a correlated Claude turn ends the CLI stdin at its own result, not before', async () => {

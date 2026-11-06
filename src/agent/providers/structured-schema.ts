@@ -399,7 +399,9 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
     if (!yielded) yield plain(value); // Keep invalid data for original-schema diagnostics.
    });
   }
-  yield* unique(sequence(plain(value), steps));
+  const choices = sequence(plain(value), steps);
+  // Merge equivalent branch interpretations locally; stream collection products.
+  yield* Array.isArray(node['anyOf']) || Array.isArray(node['oneOf']) ? unique(choices) : choices;
  }
  yield* decode(structuredClone(raw), root, '');
 }

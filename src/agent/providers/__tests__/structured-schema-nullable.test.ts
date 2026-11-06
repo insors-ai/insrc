@@ -144,3 +144,10 @@ test('equivalent union decodings merge branch provenance before array Cartesian 
  const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
  assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items.map(()=>({}))});assert.equal(raw.items[0]!.note,null);
 });
+
+test('distinct ambiguous item alternatives stream without exhausting the collection product',()=>{
+ const item={anyOf:[{type:'object',properties:{a:{type:'string'},b:{type:['string','null']}}},{type:'object',properties:{a:{type:['string','null']},b:{type:'string'}}}]};
+ const raw={items:Array.from({length:1000},()=>({a:null,b:null}))};
+ const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
+ assert.equal(result.ok,false);if(!result.ok)assert.equal(result.issues?.[0]?.code,'AMBIGUOUS_OPTIONAL_NULLS');assert.deepEqual(raw.items[0],{a:null,b:null});
+});

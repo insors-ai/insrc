@@ -576,6 +576,8 @@ Call the classifier that the daemon's own run pipeline uses (analyze/classifier/
 
 - `q68525952` — Should a prompt-only call be refused later (alternative a3) once agents send the request object, and what evidence (share of prompt-only calls) should trigger that?
   - **resolved**: Enforce by declared contract — User accepted the recommendation (2026-11-06). _(2026-11-06T19:33:20.976Z)_
+- `q16e5c479` — Which explorations beyond concept.resolve and the doc explorations should honour the resolved scope's area in a follow-up Story? Other code-family runners still ignore ctx.scope for their area filter, although they now read the right repository.
+  - **resolved**: Existing area filters only — User accepted the recommendation; capability.reuse-check is still handled in this Story as a plan task (round-3 finding). _(2026-11-06T19:33:59.117Z)_
 
 ## Citations
 

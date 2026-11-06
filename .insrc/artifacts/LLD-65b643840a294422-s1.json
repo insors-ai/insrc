@@ -67,6 +67,13 @@
         "choice": "Enforce by declared contract",
         "rationale": "User accepted the recommendation (2026-11-06).",
         "resolvedAt": "2026-11-06T19:33:20.976Z"
+      },
+      "q16e5c479": {
+        "question": "Which explorations beyond concept.resolve and the doc explorations should honour the resolved scope's area in a follow-up Story? Other code-family runners still ignore ctx.scope for their area filter, although they now read the right repository.",
+        "status": "resolved",
+        "choice": "Existing area filters only",
+        "rationale": "User accepted the recommendation; capability.reuse-check is still handled in this Story as a plan task (round-3 finding).",
+        "resolvedAt": "2026-11-06T19:33:59.117Z"
       }
     }
   },

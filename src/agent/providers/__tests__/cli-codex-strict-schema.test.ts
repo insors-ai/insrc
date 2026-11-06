@@ -54,14 +54,16 @@ function judgeLikeSchema(): StructuredSchema {
 	};
 }
 
+const nullable = (schema: unknown) => ({ anyOf: [schema, { type: 'null' }] });
+
 const STRICT = {
 	type: 'object',
 	required: ['ok', 'note', 'checks'],
 	additionalProperties: false,
 	properties: {
 		ok:     { type: 'boolean' },
-		note:   { type: 'string' },
-		checks: { type: 'array', items: { type: 'object', required: ['check', 'evidence'], additionalProperties: false, properties: { check: { type: 'string' }, evidence: { type: 'string' } } } },
+		note:   nullable({ type: 'string' }),
+		checks: nullable({ type: 'array', items: { type: 'object', required: ['check', 'evidence'], additionalProperties: false, properties: { check: { type: 'string' }, evidence: nullable({ type: 'string' }) } } }),
 	},
 };
 
@@ -153,18 +155,20 @@ test('the codex copy of a schema keeps only the keywords codex was probed to acc
 	const copy = codexStrictSchema(schema) as Record<string, any>;
 	const seen = keywordsIn(copy);
 	for (const kw of REFUSED) assert.ok(!seen.has(kw), `${kw} left out`);
-	const p = copy['properties'];
+	const properties = copy['properties'];
+	for (const [name, property] of Object.entries(properties)) if (name !== 'tags') assert.deepEqual((property as any).anyOf[1], {type:'null'}, `${name} remains optional through null`);
+	const p = Object.fromEntries(Object.entries(properties).map(([name, property]) => [name, name === 'tags' ? property : (property as any).anyOf[0]]));
 	assert.deepEqual(p.tags, { type: 'array', items: { type: 'string' }, minItems: 1, maxItems: 5 });
 	assert.deepEqual(p.mode, { type: 'string', enum: ['a', 'b'] });
-	assert.deepEqual(p.nested, { type: 'object', properties: { n: { type: 'integer', minimum: 0, maximum: 9 } }, required: ['n'], additionalProperties: false });
+	assert.deepEqual(p.nested, { type: 'object', properties: { n: nullable({ type: 'integer', minimum: 0, maximum: 9 }) }, required: ['n'], additionalProperties: false });
 	assert.deepEqual(p.cond, { type: 'string' });
 	assert.deepEqual(p.when, { type: 'string', format: 'date-time' }, 'date-time is kept');
 	assert.deepEqual(p.site, { type: 'string', pattern: '^https?://' }, 'uri is left out');
 	assert.deepEqual(p.either, { anyOf: [{ type: 'array', items: { type: 'string' } }, { type: 'null' }] });
 	assert.deepEqual(p.pair, { type: 'array' }, 'prefixItems (never probed) is left out');
-	assert.deepEqual(p.deps, { type: 'object', properties: { a: { type: 'string' } }, required: ['a'], additionalProperties: false }, 'dependentSchemas is left out');
+	assert.deepEqual(p.deps, { type: 'object', properties: { a: nullable({ type: 'string' }) }, required: ['a'], additionalProperties: false }, 'dependentSchemas is left out');
 	assert.deepEqual(p.rest, { type: 'array', items: { type: 'string' } }, 'unevaluatedItems is left out');
-	assert.deepEqual(p.choice, { anyOf: [{ type: 'object', properties: { k: { type: 'string' } }, required: ['k'], additionalProperties: false }, { type: 'null' }] }, 'oneOf is kept as the strict anyOf');
+	assert.deepEqual(p.choice, { anyOf: [{ type: 'object', properties: { k: nullable({ type: 'string' }) }, required: ['k'], additionalProperties: false }, { type: 'null' }] }, 'oneOf is kept as the strict anyOf');
 	assert.deepEqual(p.not, { type: 'string' }, 'a property named not is kept');
 	assert.deepEqual(p.uniqueItems, { type: 'boolean' }, 'a property named uniqueItems is kept');
 	assert.deepEqual(copy['required'], Object.keys(mixedSchema().properties as object));
@@ -325,11 +329,11 @@ test('a schema whose $ref points into a part the codex copy leaves out or rename
 		type: 'object', properties: { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } },
 		$defs: { w: { type: 'string', minLength: 1 } },
 	};
-	assert.deepEqual((codexStrictSchema(intoKept) as Record<string, any>)['properties'], { v: { $ref: '#/$defs/w' }, u: { $ref: '#/properties/v' } });
+	assert.deepEqual((codexStrictSchema(intoKept) as Record<string, any>)['properties'], { v: nullable({ $ref: '#/$defs/w' }), u: nullable({ $ref: '#/properties/v' }) });
 });
 
 test('Codex wire schemas omit string lengths recursively but preserve original host validation and other constraints', async () => {
- const schema: StructuredSchema = {type:'object',required:['value','rows'],additionalProperties:false,properties:{
+ const schema: StructuredSchema = {type:'object',required:['value','rows','minLength'],additionalProperties:false,properties:{
   value:{type:'string',minLength:2,maxLength:4,pattern:'^[a-z]+$'},
   rows:{type:'array',minItems:1,maxItems:3,items:{$ref:'#/$defs/row'}},
   minLength:{type:'string',enum:['minLength'],default:'minLength'},

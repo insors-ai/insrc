@@ -68,6 +68,10 @@ function processInPlace(node: unknown): void {
 			}
 			if (hasFixedProps) {
 				const propsObj = properties as Record<string, unknown>;
+				const required = new Set(Array.isArray(obj['required']) ? obj['required'] : []);
+				for (const [name, property] of Object.entries(propsObj)) {
+					if (!required.has(name)) propsObj[name] = { anyOf: [property, { type: 'null' }] };
+				}
 				obj['required'] = Object.keys(propsObj);
 			}
 		}

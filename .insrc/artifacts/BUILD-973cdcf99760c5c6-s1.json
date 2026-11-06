@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "82ed577374f2d6addd5ef22a44fdbde2fe7e394dc9ea0dd956cb6a24472a89a4",
+        "at": "2026-11-06T18:08:51.335Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-a1bd8e64-1364-40d1-8c60-7ba111375e88",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T18:04:49.517Z",
+    "epicCreatedAt": "2026-11-06T17:57:52.558Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "973cdcf99760c5c6",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Approved small bugfix routed issue → build with no LLD/plan; the no-LLD build uses the trivial standalone envelope.",
+    "epicSlug": "align-design-review-response-schemas-chunk",
+    "updatedAt": "2026-11-06T18:07:46.304Z"
+  },
+  "body": {
+    "focus": "Approved ISSUE-973cdcf99760c5c6: align design-review assignment schemas, prompt guidance and host finding-decision permissions without changing historical checkpoint formats.",
+    "producesLld": false,
+    "commit": "48fb93a7f",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Aligned live design-review output schemas, prompt guidance and host validation with a shared per-chunk decision permission. Ordinary and initial-final chunks forbid findingDecisions; only the designated impact final exposes it. Kept broad historical schemas unchanged. All 89 design-review tests, typecheck and production build passed.",
+    "testRecord": {
+      "md": "docs/standalone/align-design-review-response-schemas-chunk-E20261106973cdcf9/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-973cdcf99760c5c6.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-973cdcf99760c5c6.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/align-design-review-response-schemas-chunk-E20261106973cdcf9/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/assignment-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/controller.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/contracts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/coordinator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/policy.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/review/design-review/results.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T18:07:46.304Z"
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,232 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "a7428265867f6dd9fdd7552812499671581e3321ce5b90bce94200f8ce9d632e",
+        "at": "2026-11-06T18:07:46.349Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "973cdcf99760c5c6",
+    "storyId": "s1",
+    "createdAt": "2026-11-06T18:07:46.304Z",
+    "updatedAt": "2026-11-06T18:07:46.304Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-06T17:57:52.558Z",
+    "epicSlug": "align-design-review-response-schemas-chunk",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "48fb93a7f",
+        "ranAt": "2026-11-06T18:07:46.304Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/review/design-review/__tests__/assignment-schema.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/assignment-schema.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/controller.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/controller.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/coordinator.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts"
+            ]
+          },
+          {
+            "name": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/review/design-review/__tests__/impact-execution.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/assignment-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 738,
+            "titles": [
+              {
+                "title": "live chunk schemas and trailing prompt schemas expose decisions only on the designated impact final",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary chunk schemas reject absent-permission fields even when empty or null while valid results still pass",
+                "result": "pass"
+              },
+              {
+                "title": "impact final schema retains nullable transport decoding and historical final decisions without mutating broad schemas",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/controller.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 843,
+            "titles": [
+              {
+                "title": "trusted controller authority, execution sequence and durable exact replay are enforced",
+                "result": "pass"
+              },
+              {
+                "title": "controller disconnect preserves accepted chunks and never reassigns interrupted work",
+                "result": "pass"
+              },
+              {
+                "title": "controller results use the common schema and produce deterministic complete counts",
+                "result": "pass"
+              },
+              {
+                "title": "failed controller activity persistence fences a concurrently submitted valid plan",
+                "result": "pass"
+              },
+              {
+                "title": "observed controller subject changes invalidate every exchange boundary and cannot be restored into acceptance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2070,
+            "titles": [
+              {
+                "title": "native acknowledgement is durable and duplicate start does not dispatch another review",
+                "result": "pass"
+              },
+              {
+                "title": "findings and verification gaps continue chunks, while failed durability and mutation stop advancement",
+                "result": "pass"
+              },
+              {
+                "title": "native execution has request-independent activity options and model-free observations",
+                "result": "pass"
+              },
+              {
+                "title": "contradictory native status retries only the failed unit and pauses with pointed details",
+                "result": "pass"
+              },
+              {
+                "title": "native schema failures retain pointed diagnostic corrections without raw output and pause after three retries",
+                "result": "pass"
+              },
+              {
+                "title": "slow progress persistence coalesces activity instead of accumulating checkpoint writes",
+                "result": "pass"
+              },
+              {
+                "title": "native inactivity is supervised by the owner and observation never renews its grace",
+                "result": "pass"
+              },
+              {
+                "title": "a native provider returning after inactivity cannot publish a late valid plan",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-consolidation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 696,
+            "titles": [
+              {
+                "title": "exact fresh-retained partition counts carried blockers and derives decisions only from the accepted final result",
+                "result": "pass"
+              },
+              {
+                "title": "missing reconciliation is accepted incomplete with conservative carry and supersession references a real current finding",
+                "result": "pass"
+              },
+              {
+                "title": "invalid dispositions cannot close retained-only concerns or cite unknown duplicate or uninspected sources",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint report projection is derived and cannot be persisted with invented counts or origins",
+                "result": "pass"
+              },
+              {
+                "title": "stored impact reports enforce the same document and checkpoint references as live acceptance",
+                "result": "pass"
+              },
+              {
+                "title": "partial reconciliation with final self-inspection is idempotent and preserves omitted blockers",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 756,
+            "titles": [
+              {
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

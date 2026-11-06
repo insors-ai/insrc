@@ -3,6 +3,7 @@ import { StringDecoder } from 'node:string_decoder';
 import type { ActivityReviewSessionOpts, StructuredSchema } from '../../shared/types.js';
 import type { ReviewActivityEvent } from '../../shared/review-activity.js';
 import { validateAgainstSchema } from './structured-output.js';
+import { validateCodexReply } from './structured-schema.js';
 import { ReviewDiagnosticCollector, ReviewOutputFailureError } from '../../shared/review-diagnostics.js';
 import type { ReviewDiagnosticSnapshot, ReviewValidationIssue } from '../../shared/review-diagnostics.js';
 
@@ -41,7 +42,7 @@ export class ReviewActivityStream<T> {
  result(): { accepted: true; value: T } | { accepted: false } { return this.accepted ? {accepted:true,value:this.value!} : {accepted:false}; }
  completed(): T {
   if (this.failed || !this.finalSucceeded || this.pendingFinal === undefined) throw new ReviewOutputFailureError('Review native session did not produce a successful final assessment', this.diagnosticSnapshot());
-  const checked = validateAgainstSchema<T>(this.schema,this.pendingFinal);
+  const checked = this.kind === 'codex' ? validateCodexReply<T>(this.schema,this.pendingFinal) : validateAgainstSchema<T>(this.schema,this.pendingFinal);
   if (!checked.ok) throw new ReviewOutputFailureError('Review final assessment does not match schema', this.diagnosticSnapshot());
   return checked.value;
  }
@@ -97,7 +98,7 @@ export class ReviewActivityStream<T> {
  private async candidate(raw: unknown): Promise<void> {
   if (this.failed || this.accepted) return;
   if (Buffer.byteLength(JSON.stringify(raw)??'')>CANDIDATE_BYTES) throw new Error('Review candidate exceeds 4 MiB');
-  const checked=validateAgainstSchema<T>(this.schema,raw);
+  const checked=this.kind === 'codex' ? validateCodexReply<T>(this.schema,raw) : validateAgainstSchema<T>(this.schema,raw);
   if(!checked.ok){
    this.diagnostics.rejected(raw, Object.keys(this.schema['properties'] as object ?? {}));
    for(const issue of checked.issues?.length ? checked.issues : [{code:'SCHEMA_CONFIGURATION_ERROR',field:'/',correction:'Correct the supplied review schema before resubmitting.',message:checked.errors[0]??'Schema validation failed'}]) this.diagnostics.issue(issue);

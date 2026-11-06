@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793969295143-uq721w",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T12:49:07.406Z",
+    "epicCreatedAt": "2026-11-06T12:49:07.406Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 52262,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "d4cf0037bc85680a",
+    "epicSlug": "decode-nullable-codex-replies-through-shared",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a0a86829ab96615f17427e301844416b8afbd59e71ec6dc303d95f4457cbe2c0",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T12:49:59.954Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "d4cf0037bc85680a",
+      "slug": "EPIC-d4cf0037bc85680a"
+    }
+  },
+  "body": {
+    "title": "Decode nullable Codex replies through the shared response handler",
+    "reproduction": "Review code-review-7386983710e0c464-s1-r1 attempt 1 runs code inspection and returns a passed assessment with no findings, but the host marks it failed after about 95 seconds because /error must be string. The saved raw feedback contains error:null. The installed nullable formatter legitimately permits this transport representation for the optional error field. [c3]",
+    "rootCause": "The strict schema formatter wraps optional properties in nullable unions, but validateCodexReply validates the raw reply directly against the original schema without decoding synthetic null values. In addition, ReviewActivityStream validates both candidate submissions and final responses through generic validateAgainstSchema rather than the existing Codex-specific response handler, so it bypasses Codex-specific validation semantics. [c1][c2]",
+    "fixIntent": "Use one shared Codex response boundary to decode transport-only nulls to omitted optional fields and then validate the decoded value against the unchanged original host schema. Route Codex activity-stream candidate and final response handling through that boundary, alongside existing structured and bounded reviewer responses; keep Claude behavior unchanged. Handle nested objects, arrays and applicable schema branches/references; preserve explicit null allowed by the original schema, reject required nonnullable nulls, and retain all original bounds and validation errors. Preserve raw diagnostics, avoid caller schema/reply mutation, and cover the actual error:null rejection plus acceptance and rejection cases across affected paths. [c1][c2][c3]"
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/agent/providers/structured-schema.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/agent/providers/review-activity-stream.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": ".insrc/tmp/code-review/code-review-7386983710e0c464-s1-r1.json"
+    },
+    {
+      "id": "c4",
+      "kind": "stakeholder",
+      "ref": "User request: also route responses through the Codex response handler."
+    }
+  ]
+}

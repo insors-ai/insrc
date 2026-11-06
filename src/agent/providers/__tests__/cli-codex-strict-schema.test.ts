@@ -359,3 +359,15 @@ test('Codex wire schemas omit string lengths recursively but preserve original h
  }
  assert.deepEqual(schema,original);
 });
+
+test('Codex structured and bounded reviewer responses use the shared optional-null decoder',async()=>{
+ const schema:StructuredSchema={type:'object',required:['ok'],additionalProperties:false,properties:{ok:{type:'boolean'},error:{type:'string',minLength:1}}};
+ for(const mode of ['structured','review'] as const){
+  const f=fakeCodex({ok:true,error:null}),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-codex-null-reply-')));
+  try{
+   const p=new CliProvider({kind:'codex',binPath:f.bin});
+   const value=mode==='structured'?await p.completeStructured([{role:'user',content:'nullable reply'}],schema,{internalRetry:false}):await p.runReviewSession('nullable reply',schema,{cwd,deadlineMs:30000,internalRetry:false});
+   assert.deepEqual(value,{ok:true});assert.deepEqual(schema.properties!['error'],{type:'string',minLength:1});
+  }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
+ }
+});

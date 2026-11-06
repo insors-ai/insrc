@@ -33,8 +33,8 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
  */
 
 import { ReviewBudgetError } from './budget/accounting.js';
-import { Ajv, type ErrorObject, type ValidateFunction } from 'ajv';
-import { formatAjvError } from './structured-schema.js';
+import { Ajv, type ValidateFunction } from 'ajv';
+import { formatAjvError, reviewValidationIssue } from './structured-schema.js';
 export { codexStrictSchema, validateCodexReply, rootUnionKey, processSchemaForOpenAIStrict } from './structured-schema.js';
 export type { RootUnionKey } from './structured-schema.js';
 import { getLogger } from '../../shared/logger.js';
@@ -117,20 +117,6 @@ export function validateAgainstSchema<T>(
 	return { ok: false, errors, issues: (validate.errors ?? []).slice(0, 8).map(reviewValidationIssue) };
 }
 
-/** Plain issue data from the SAME AJV validation, without exporting SDK types. */
-function reviewValidationIssue(error: ErrorObject): ReviewValidationIssue {
- const root = error.instancePath === '';
- const property = error.params['missingProperty'] ?? error.params['additionalProperty'];
- const field = typeof property === 'string' ? (root ? property : `${error.instancePath}/${property}`) : error.instancePath || '/';
- const required = error.keyword === 'required';
- const code = required ? 'MISSING_REQUIRED_FIELD' : error.keyword === 'type' ? 'INVALID_FIELD_TYPE' : error.keyword === 'additionalProperties' ? 'UNEXPECTED_FIELD' : 'SCHEMA_CONSTRAINT';
- const correction = required && field === 'findings' ? 'Return findings as a top-level JSON array.'
-  : required ? 'Return the required field in the JSON object.'
-  : error.keyword === 'additionalProperties' ? 'Remove the undeclared JSON field.'
-  : error.keyword === 'type' ? 'Use the field type required by the supplied JSON schema.'
-  : 'Return this field according to the supplied JSON schema.';
- return { code, field, correction, message: formatAjvError(error) };
-}
 
 
 

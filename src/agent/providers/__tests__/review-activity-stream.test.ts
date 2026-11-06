@@ -129,3 +129,17 @@ test('event-window rollover retains malformed-event and UUID-length errors',asyn
   }
  }
 });
+
+test('Codex streamed candidates and final replies share nullable decoding and original draft-2020 validation while Claude stays strict',async()=>{
+ const host={type:'object',required:['taskId','pair'],additionalProperties:false,properties:{taskId:{type:'string'},error:{type:'string'},pair:{type:'array',prefixItems:[{type:'string',minLength:2}],minItems:1,maxItems:1}}};
+ const raw={taskId:'s1',pair:['okay'],error:null};
+ const frames=(value:unknown)=>Buffer.from(json({type:'item.completed',item:{type:'agent_message',text:JSON.stringify(value)}})+json({type:'turn.completed'}));
+ for(const accepted of [true,false]){
+  const candidates:unknown[]=[];const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,onActivity:()=>{},onCandidate:async value=>{candidates.push(value);return{accepted};}};
+  const parser=new ReviewActivityStream('codex',host,opts,()=>{});await parser.start();await parser.feed(frames(raw));
+  assert.deepEqual(candidates,[{taskId:'s1',pair:['okay']}]);assert.deepEqual(parser.completed(),{taskId:'s1',pair:['okay']});assert.equal(raw.error,null);
+ }
+ const opts:ActivityReviewSessionOpts={mode:'activity',cwd:'/tmp',signal:new AbortController().signal,inactivityMs:1800000,onActivity:()=>{},onCandidate:async()=>{throw new Error('invalid response must not be submitted');}};
+ const bad=new ReviewActivityStream('codex',host,opts,()=>{});await bad.start();await bad.feed(frames({...raw,pair:['a']}));assert.throws(()=>bad.completed());assert.ok(bad.diagnosticSnapshot().issues.some(i=>i.field==='/pair/0'&&i.code==='SCHEMA_CONSTRAINT'));
+ const claude=new ReviewActivityStream('claude',host,opts,()=>{});await claude.start();await claude.feed(Buffer.from(json({type:'result',subtype:'success',structured_output:raw})));assert.throws(()=>claude.completed());assert.ok(claude.diagnosticSnapshot().issues.some(i=>i.field==='/error'&&i.code==='INVALID_FIELD_TYPE'));
+});

@@ -5,6 +5,7 @@ import ajvFormats from 'ajv-formats';
 import { formatNames } from 'ajv-formats/dist/formats.js';
 import type { StructuredSchema } from '../../shared/types.js';
 import type { ValidationResult } from './structured-output.js';
+import type { ReviewValidationIssue } from '../../shared/review-diagnostics.js';
 
 export function formatAjvError(e: ErrorObject): string {
 	const path = e.instancePath.length > 0 ? e.instancePath : '/';
@@ -14,6 +15,20 @@ export function formatAjvError(e: ErrorObject): string {
 		? ` (${JSON.stringify(e.params)})`
 		: '';
 	return `${path}: ${msg}${detail}`;
+}
+
+export function reviewValidationIssue(error: ErrorObject): ReviewValidationIssue {
+ const root = error.instancePath === '';
+ const property = error.params['missingProperty'] ?? error.params['additionalProperty'];
+ const field = typeof property === 'string' ? (root ? property : `${error.instancePath}/${property}`) : error.instancePath || '/';
+ const required = error.keyword === 'required';
+ const code = required ? 'MISSING_REQUIRED_FIELD' : error.keyword === 'type' ? 'INVALID_FIELD_TYPE' : error.keyword === 'additionalProperties' ? 'UNEXPECTED_FIELD' : 'SCHEMA_CONSTRAINT';
+ const correction = required && field === 'findings' ? 'Return findings as a top-level JSON array.'
+  : required ? 'Return the required field in the JSON object.'
+  : error.keyword === 'additionalProperties' ? 'Remove the undeclared JSON field.'
+  : error.keyword === 'type' ? 'Use the field type required by the supplied JSON schema.'
+  : 'Return this field according to the supplied JSON schema.';
+ return { code, field, correction, message: formatAjvError(error) };
 }
 
 // ---------------------------------------------------------------------------
@@ -238,29 +253,97 @@ function keepCodexKeywords(node: unknown): unknown {
 	return out;
 }
 
+interface CodexReplyContext {
+ validate: ValidateFunction;
+ at: (pointer: string, value: unknown) => boolean;
+}
+const codexReplyContexts = new WeakMap<StructuredSchema, CodexReplyContext>();
+
+function codexReplyContext(schema: StructuredSchema): CodexReplyContext {
+ const saved = codexReplyContexts.get(schema);
+ if (saved) return saved;
+ // Isolated registries keep local refs rooted in their own original schema.
+ const ajv = new Ajv2020({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
+ ajvFormats.default(ajv);
+ const key = 'urn:insrc:codex-reply';
+ ajv.addSchema(schema, key);
+ const validate = ajv.getSchema(key)!;
+ const context = { validate, at: (pointer: string, value: unknown) => ajv.getSchema(`${key}#${pointer}`)?.(value) === true };
+ codexReplyContexts.set(schema, context);
+ return context;
+}
+
+/** Decode only null sentinels introduced for optional non-nullable properties. */
+function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): unknown {
+ const escape = (part: string) => encodeURIComponent(part.replace(/~/g, '~0').replace(/\//g, '~1'));
+ const resolve = (pointer: string): unknown => {
+  if (pointer === '') return root;
+  let node: unknown = root;
+  for (const part of pointer.slice(1).split('/')) {
+   if (!isObject(node) && !Array.isArray(node)) return undefined;
+   node = (node as Record<string, unknown>)[decodeURIComponent(part).replace(/~1/g, '/').replace(/~0/g, '~')];
+  }
+  return node;
+ };
+ const decode = (value: unknown, node: unknown, pointer: string, active = new Set<unknown>()): unknown => {
+  if (!isObject(node) || value === null || active.has(node)) return value;
+  const next = new Set(active).add(node);
+  if (typeof node['$ref'] === 'string' && (node['$ref'] === '#' || node['$ref'].startsWith('#/'))) {
+   const target = node['$ref'].slice(1);
+   value = decode(value, resolve(target), target, next);
+  }
+  for (const keyword of ['anyOf', 'oneOf'] as const) {
+   const branches = node[keyword];
+   if (!Array.isArray(branches) || context.at(pointer, value)) continue;
+   const candidates = branches.map((branch, index) => {
+    const path = `${pointer}/${keyword}/${index}`;
+    const candidate = decode(value, branch, path, next);
+    return { value: candidate, valid: context.at(path, candidate) };
+   }).filter(candidate => candidate.valid);
+   // Ambiguous branches must not silently discard different caller data.
+   if (candidates.length && candidates.every(candidate => JSON.stringify(candidate.value) === JSON.stringify(candidates[0]!.value))) value = candidates[0]!.value;
+  }
+  if (Array.isArray(node['allOf'])) for (const [index, branch] of node['allOf'].entries()) value = decode(value, branch, `${pointer}/allOf/${index}`, next);
+  if (Array.isArray(value)) {
+   const prefix = Array.isArray(node['prefixItems']) ? node['prefixItems'] : [];
+   return value.map((item, index) => index < prefix.length
+    ? decode(item, prefix[index], `${pointer}/prefixItems/${index}`)
+    : decode(item, node['items'], `${pointer}/items`));
+  }
+  if (!isObject(value)) return value;
+  const result = { ...value }, properties = node['properties'];
+  const required = new Set(Array.isArray(node['required']) ? node['required'] : []);
+  for (const [name, item] of Object.entries(value)) {
+   if (isObject(properties) && Object.hasOwn(properties, name)) {
+    const path = `${pointer}/properties/${escape(name)}`;
+    if (item === null && !required.has(name) && !context.at(path, null)) delete result[name];
+    else result[name] = decode(item, properties[name], path);
+   } else if (isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
+   if (isObject(node['patternProperties']) && Object.hasOwn(result, name)) for (const [pattern, property] of Object.entries(node['patternProperties'])) {
+    if (new RegExp(pattern, 'u').test(name)) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
+   }
+  }
+  return result;
+ };
+ return decode(structuredClone(raw), root, '');
+}
+
 /**
  * The check for a codex reply against the caller's FULL schema: the copy codex
  * is given leaves constraints out (`codexStrictSchema`), and this is where
- * they hold. Unlike `validateAgainstSchema` it reads draft 2020-12 (so
+ * they hold, after decoding transport-only optional nulls. Unlike `validateAgainstSchema` it reads draft 2020-12 (so
  * `prefixItems`, `unevaluatedItems` and `dependentSchemas` hold) and enforces
  * `format` (ISSUE-487ad7a67474d321).
  */
 export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
-	let validate: ValidateFunction;
-	try {
-		validate = codexReplyAjv.compile(schema);
-	} catch (err) {
-		return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] };
-	}
-	if (validate(raw)) {
-		return { ok: true, value: raw as T };
-	}
-	return { ok: false, errors: (validate.errors ?? []).map(formatAjvError) };
+ let context: CodexReplyContext;
+ try { context = codexReplyContext(schema); }
+ catch (err) { return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] }; }
+ const value = context.validate(raw) ? raw : decodeCodexOptionals(raw, schema, context);
+ if (context.validate(value)) return { ok: true, value: value as T };
+ const errors = context.validate.errors ?? [];
+ return { ok: false, errors: errors.map(formatAjvError), issues: errors.slice(0, 8).map(reviewValidationIssue) };
 }
-
-const codexReplyAjv = new Ajv2020({ allErrors: true, useDefaults: false, removeAdditional: false, strict: false });
-// A CommonJS module: under NodeNext its default import is the whole module, whose `default` is the plugin.
-ajvFormats.default(codexReplyAjv);
 
 function isObject(x: unknown): x is Record<string, unknown> {
 	return typeof x === 'object' && x !== null && !Array.isArray(x);

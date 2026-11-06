@@ -62,3 +62,17 @@ test('pattern-matched keys bypass additionalProperties decoding and preserve exp
  if(result.ok)assert.deepEqual(result.value,{item:{note:null},other:{}});
  assert.deepEqual(raw,original);
 });
+
+test('enclosing constraints select a unique decoded union result after common optional fields are decoded',()=>{
+ const branches=[
+  {type:'object',properties:{a:{type:'string'},b:{type:['string','null']}},additionalProperties:false},
+  {type:'object',properties:{a:{type:['string','null']},b:{type:'string'}},additionalProperties:false},
+ ];
+ for(const keyword of ['anyOf','oneOf']){
+  const host={type:'object',required:['entry'],properties:{entry:{required:['a'],[keyword]:branches}},additionalProperties:false};
+  const raw={entry:{a:null,b:null}},saved=structuredClone(raw),result=validateCodexReply(host,raw);
+  assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{a:null}});assert.deepEqual(raw,saved);
+ }
+ const host={type:'object',required:['entry'],properties:{entry:{type:'object',required:['a'],properties:{common:{type:'string'}},anyOf:branches.map(b=>({...b,additionalProperties:true}))}},additionalProperties:false};
+ const raw={entry:{a:null,b:null,common:null}},result=validateCodexReply(host,raw);assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{a:null}});assert.equal(raw.entry.common,null);
+});

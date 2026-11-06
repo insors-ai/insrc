@@ -292,37 +292,39 @@ function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Cod
    const target = node['$ref'].slice(1);
    value = decode(value, resolve(target), target, next);
   }
+  if (Array.isArray(node['allOf'])) for (const [index, branch] of node['allOf'].entries()) value = decode(value, branch, `${pointer}/allOf/${index}`, next);
+  if (Array.isArray(value)) {
+   const prefix = Array.isArray(node['prefixItems']) ? node['prefixItems'] : [];
+   value = value.map((item, index) => index < prefix.length
+    ? decode(item, prefix[index], `${pointer}/prefixItems/${index}`)
+    : decode(item, node['items'], `${pointer}/items`));
+  } else if (isObject(value)) {
+   const result = { ...value }, properties = node['properties'];
+   const required = new Set(Array.isArray(node['required']) ? node['required'] : []);
+   for (const [name, item] of Object.entries(value)) {
+    const patterns = isObject(node['patternProperties']) ? Object.entries(node['patternProperties']).filter(([pattern]) => new RegExp(pattern, 'u').test(name)) : [];
+    if (isObject(properties) && Object.hasOwn(properties, name)) {
+     const path = `${pointer}/properties/${escape(name)}`;
+     if (item === null && !required.has(name) && !context.at(path, null)) delete result[name];
+     else result[name] = decode(item, properties[name], path);
+    } else if (!patterns.length && isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
+    if (Object.hasOwn(result, name)) for (const [pattern, property] of patterns) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
+   }
+   value = result;
+  }
+  // Resolve alternatives only after shared constraints have been normalized.
   for (const keyword of ['anyOf', 'oneOf'] as const) {
    const branches = node[keyword];
    if (!Array.isArray(branches) || context.at(pointer, value)) continue;
    const candidates = branches.map((branch, index) => {
     const path = `${pointer}/${keyword}/${index}`;
     const candidate = decode(value, branch, path, next);
-    return { value: candidate, valid: context.at(path, candidate) };
+    return { value: candidate, valid: context.at(path, candidate) && context.at(pointer, candidate) };
    }).filter(candidate => candidate.valid);
    // Ambiguous branches must not silently discard different caller data.
    if (candidates.length && candidates.every(candidate => JSON.stringify(candidate.value) === JSON.stringify(candidates[0]!.value))) value = candidates[0]!.value;
   }
-  if (Array.isArray(node['allOf'])) for (const [index, branch] of node['allOf'].entries()) value = decode(value, branch, `${pointer}/allOf/${index}`, next);
-  if (Array.isArray(value)) {
-   const prefix = Array.isArray(node['prefixItems']) ? node['prefixItems'] : [];
-   return value.map((item, index) => index < prefix.length
-    ? decode(item, prefix[index], `${pointer}/prefixItems/${index}`)
-    : decode(item, node['items'], `${pointer}/items`));
-  }
-  if (!isObject(value)) return value;
-  const result = { ...value }, properties = node['properties'];
-  const required = new Set(Array.isArray(node['required']) ? node['required'] : []);
-  for (const [name, item] of Object.entries(value)) {
-   const patterns = isObject(node['patternProperties']) ? Object.entries(node['patternProperties']).filter(([pattern]) => new RegExp(pattern, 'u').test(name)) : [];
-   if (isObject(properties) && Object.hasOwn(properties, name)) {
-    const path = `${pointer}/properties/${escape(name)}`;
-    if (item === null && !required.has(name) && !context.at(path, null)) delete result[name];
-    else result[name] = decode(item, properties[name], path);
-   } else if (!patterns.length && isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
-   if (Object.hasOwn(result, name)) for (const [pattern, property] of patterns) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
-  }
-  return result;
+  return value;
  };
  return decode(structuredClone(raw), root, '');
 }

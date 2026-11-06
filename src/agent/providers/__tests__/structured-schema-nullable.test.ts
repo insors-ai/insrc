@@ -54,3 +54,11 @@ test('ambiguous union decoding cannot choose between different data-discarding r
  ]}},additionalProperties:false};
  const raw={entry:{a:null,b:null}},saved=structuredClone(raw);assert.equal(validateCodexReply(host,raw).ok,false);assert.deepEqual(raw,saved);
 });
+
+test('pattern-matched keys bypass additionalProperties decoding and preserve explicitly nullable nested data',()=>{
+ const host={type:'object',properties:{trigger:{type:'string'}},patternProperties:{'^item$':{type:'object',properties:{note:{type:['string','null']}},additionalProperties:false}},additionalProperties:{type:'object',properties:{note:{type:'string'}},additionalProperties:false}};
+ const raw={trigger:null,item:{note:null},other:{note:null}},original=structuredClone(raw);
+ const result=validateCodexReply(host,raw);assert.equal(result.ok,true);
+ if(result.ok)assert.deepEqual(result.value,{item:{note:null},other:{}});
+ assert.deepEqual(raw,original);
+});

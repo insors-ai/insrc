@@ -314,14 +314,13 @@ function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Cod
   const result = { ...value }, properties = node['properties'];
   const required = new Set(Array.isArray(node['required']) ? node['required'] : []);
   for (const [name, item] of Object.entries(value)) {
+   const patterns = isObject(node['patternProperties']) ? Object.entries(node['patternProperties']).filter(([pattern]) => new RegExp(pattern, 'u').test(name)) : [];
    if (isObject(properties) && Object.hasOwn(properties, name)) {
     const path = `${pointer}/properties/${escape(name)}`;
     if (item === null && !required.has(name) && !context.at(path, null)) delete result[name];
     else result[name] = decode(item, properties[name], path);
-   } else if (isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
-   if (isObject(node['patternProperties']) && Object.hasOwn(result, name)) for (const [pattern, property] of Object.entries(node['patternProperties'])) {
-    if (new RegExp(pattern, 'u').test(name)) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
-   }
+   } else if (!patterns.length && isObject(node['additionalProperties'])) result[name] = decode(item, node['additionalProperties'], `${pointer}/additionalProperties`);
+   if (Object.hasOwn(result, name)) for (const [pattern, property] of patterns) result[name] = decode(result[name], property, `${pointer}/patternProperties/${escape(pattern)}`);
   }
   return result;
  };

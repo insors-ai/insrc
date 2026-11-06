@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 5,
+        "contentHash": "9cffbf8463ab8a96e4bdb2395036a347bb7b2f03e5c77c65927b82d036ba7df1",
+        "at": "2026-11-06T13:35:47.335Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-a66f2f7f-eb48-4a92-8945-7a905e95b1be",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T13:28:10.089Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "storyId": "s1",
+    "revision": 5,
+    "updatedAt": "2026-11-06T13:35:13.686Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "end-correlated-claude-turn-s-stdin"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      }
+    ],
+    "summary": "Re-ran the three real-CLI checks on 2026-11-06 and saved their verbatim output in LIVE-CHECKS.md (commit 3038b53b8). Mid-turn EOF: the turn completed at 15.6 s with a matching request id and the process exited 0 at 16.2 s. Stdin left open: the result arrived at 15.8 s and the process was still alive when killed at 75.1 s. Closing at the result with a 20 s background task: the correlated result at 3.5 s, then a second non-correlated result at 25.1 s, exit 0 at 25.7 s, and the background output file was written.",
+    "testRecord": {
+      "md": "docs/standalone/end-correlated-claude-turn-s-stdin-E2026110648ffbec5/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:35:13.686Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:35:13.686Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/end-correlated-claude-turn-s-stdin-E2026110648ffbec5/S001/LIVE-CHECKS.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:35:13.686Z"
+      }
+    ],
+    "commit": "3038b53b8"
+  },
+  "citations": []
+}

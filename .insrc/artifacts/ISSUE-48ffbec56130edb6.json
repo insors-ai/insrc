@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1793963910472-1uokot",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T11:18:58.671Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 28199,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "48ffbec56130edb6",
+    "epicSlug": "end-correlated-claude-turn-s-stdin",
+    "standalone": true,
+    "magnitude": "sized",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a3ce267a09012ee6c0705617b6bfe706537db48372bc87643afb0b1faa067806",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T11:23:31.776Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "6fab702a7015853e",
+      "storyId": "s1",
+      "slug": "STORY-6fab702a7015853e-s1"
+    }
+  },
+  "body": {
+    "title": "End a correlated Claude turn's stdin when its reader is abandoned, and stop an idle process after its result",
+    "reproduction": "In the VS Code chat with the claude provider, start a turn, then switch to another chat (or reload the panel) while the turn is running, so the first chat is detached. The CLI finishes its answer, but the process stays alive and the session's chat lock stays held, so the next message in that chat is blocked or has to kill the idle process. Expected: the process exits once its answer is written and the lock is released. Seen after the second sync of main into v2, because main's detach abandons the reader that v2's code relied on to close the CLI's input.",
+    "rootCause": "A Claude turn is started with a structured user message on stdin and the CLI keeps waiting for more input after its result. The adapter closes that input only inside run()'s read loop when the correlated result arrives. When the reader is abandoned first (the lifecycle's detach stops the iterator and leaves the CLI writing to the session file), run()'s finally leaves a turn that writes to the session file alone, so the input is never closed. The background observer that later finishes the detached turn only reads the file with the recorded pid; it holds no stdin handle, so nothing ends the idle process after the observer has ingested the result.",
+    "fixIntent": "When a correlated Claude turn's reader is abandoned before its result, close the CLI's input so the CLI finishes in-flight work and exits. When the background observer has ingested the correlated result of a detached turn, saved its checkpoint, and finds the process still alive after a grace period, stop that idle process. Claude only: codex and vibe start without a stdin and exit by themselves. Two live checks decide the details: what the CLI does on stdin EOF in the middle of a turn, and whether stopping it after its result cuts off background work."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1322",
+      "quotedText": "if (state.requestUuid !== undefined) proc.endInput?.();"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1376-1380",
+      "quotedText": "if (!terminal && output === undefined) {"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1841"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:486",
+      "quotedText": "finishIterator(it); // stop reading; the CLI keeps writing to the session file"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:640"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:895"
+    },
+    {
+      "id": "c7",
+      "kind": "doc",
+      "ref": "docs/plans/main-sync-2-conflicts.md"
+    }
+  ]
+}

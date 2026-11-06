@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c7c43f8b-63f3-4ffd-8647-f9080d8ea0bf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T13:21:56.877Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Unit tests for abandonment and the cases that must not close",
+      "parent": {
+        "entityId": "STORY-48ffbec56130edb6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-48ffbec56130edb6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-48ffbec56130edb6-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e37aec8dddf49eb83f9a549848adb1a1fa272522171612ca4a1485d5df81f819",
+        "at": "2026-11-06T13:21:56.877Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T13:21:56.878Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Unit tests for abandonment and the cases that must not close",
+    "summary": "Add the tests to vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts: an abandoned session-file turn, an abandoned pipe turn, no early close and no second call after the result, a throwing endInput, and an abandoned Codex turn, using the fake spawner's inputEnds() and signals() handles and iterator return() to abandon the reader.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "Each test named in the LLD's test strategy exists and passes",
+      "The two existing endInput tests stay green",
+      "The full cli-adapter, correlation, utf8 and session-output suites stay green"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: a correlated Claude turn ends the CLI stdin at its own result, not before"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: an abandonment after the result adds no second call"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: an abandoned Codex turn never calls endInput"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

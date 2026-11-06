@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a111be62-0f39-4def-ba11-04164239e5f1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T13:21:56.878Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record the two live checks as reported results",
+      "parent": {
+        "entityId": "STORY-48ffbec56130edb6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-48ffbec56130edb6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-48ffbec56130edb6-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7a8025050b22832c3656411b1844b5b7721849e6d94fdc4af853c33c6562c747",
+        "at": "2026-11-06T13:21:56.878Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T13:21:56.879Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the two live checks as reported results",
+    "summary": "Re-run the real-CLI checks (EOF mid-turn finishes the turn and exits 0; stdin left open idles after the result; closing at the result lets background work finish) from the throwaway scripts, and pass them to the build's validate as reported test results. Because the scripts are not in the repository, the evidence is the exact timings, request-id match and exit codes copied into the reported evidence.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "The mid-turn EOF run completes with the matching request id and exit code 0",
+      "The open-stdin run idles after its result until killed",
+      "The background-task run completes the background work before exit 0",
+      "Both are recorded as reported results whose evidence holds the timings and exit codes"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "real claude CLI: close stdin mid-turn, the turn completes with the matching request id and the process exits 0"
+      },
+      {
+        "level": "live",
+        "name": "real claude CLI: stdin left open idles after the result; closing it at the result lets background work finish"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

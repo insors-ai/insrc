@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3daea425-498f-4b1b-85a0-e0a23bdb60bc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T13:21:56.874Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "storyId": "s1",
+    "envelope": {
+      "description": "End a correlated turn's input in run()'s finally when its reader is abandoned",
+      "parent": {
+        "entityId": "STORY-48ffbec56130edb6-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-48ffbec56130edb6-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dbdee9129d69ae19d34b00c0fc702064cd569ac0429b3b6a85cab0aec972d38b",
+        "at": "2026-11-06T13:21:56.875Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T13:21:56.876Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "End a correlated turn's input in run()'s finally when its reader is abandoned",
+    "summary": "In run()'s finally in vscode-plugin/src/chat/cli-adapter.ts, add the branch for a correlated turn (state.requestUuid defined) with no terminal event: call the endInput() seam once before the existing pipe-turn kill, shielded so a throwing seam cannot skip the rest of the cleanup. Nothing else changes: no early close, no change to the lifecycle, the panel or the observer.",
+    "size": "S",
+    "order": 1,
+    "acceptanceChecks": [
+      "An abandoned correlated session-file turn ends its input once and is not killed",
+      "An abandoned correlated pipe turn ends its input and is still stopped with SIGTERM",
+      "A turn that reached its terminal event adds no second endInput call from the finally",
+      "A throwing endInput does not skip the pipe-turn kill or the pending-request cleanup",
+      "Codex and Vibe turns never call endInput"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: an abandoned session-file Claude turn ends its input once and is not killed"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: an abandoned pipe turn ends its input and is stopped with SIGTERM"
+      },
+      {
+        "level": "unit",
+        "name": "cli-adapter-correlation.test.ts: a throwing endInput does not stop the finally's cleanup"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

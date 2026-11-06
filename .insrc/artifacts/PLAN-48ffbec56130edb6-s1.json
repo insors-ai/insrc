@@ -1,0 +1,243 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793970949432-3ehzvd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T13:17:18.943Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 88050,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "epicSlug": "end-correlated-claude-turn-s-stdin",
+    "storyId": "s1",
+    "lldRunId": "wf-1793964843326-pinqsk",
+    "lldEffectiveHash": "50f12d0b11631f4b2189c54ff6e7938d29da16beba2c17ab79e9dcc7d6f12665",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "55d414a0fe4a1ec58d8a718a5372822174e8f1b1d0719715e498be200b7473ad",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T13:21:56.479Z"
+      }
+    },
+    "rangeBase": "7c24638c786f45ce9ff0fb220da723dc993cdc54"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build is one small edit to the Claude adapter's cleanup path plus its tests. Task 1 adds the branch that ends a correlated turn's input when its reader is abandoned, task 2 pins it with unit tests in the correlation suite, and task 3 records the two real-CLI checks as reported results. Nothing in the lifecycle, the panel or the observer changes."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "End a correlated turn's input in run()'s finally when its reader is abandoned",
+        "summary": "In run()'s finally in vscode-plugin/src/chat/cli-adapter.ts, add the branch for a correlated turn (state.requestUuid defined) with no terminal event: call the endInput() seam once before the existing pipe-turn kill, shielded so a throwing seam cannot skip the rest of the cleanup. Nothing else changes: no early close, no change to the lifecycle, the panel or the observer.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "An abandoned correlated session-file turn ends its input once and is not killed",
+          "An abandoned correlated pipe turn ends its input and is still stopped with SIGTERM",
+          "A turn that reached its terminal event adds no second endInput call from the finally",
+          "A throwing endInput does not skip the pipe-turn kill or the pending-request cleanup",
+          "Codex and Vibe turns never call endInput"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c2",
+          "c3",
+          "c4",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: an abandoned session-file Claude turn ends its input once and is not killed"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: an abandoned pipe turn ends its input and is stopped with SIGTERM"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: a throwing endInput does not stop the finally's cleanup"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Unit tests for abandonment and the cases that must not close",
+        "summary": "Add the tests to vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts: an abandoned session-file turn, an abandoned pipe turn, no early close and no second call after the result, a throwing endInput, and an abandoned Codex turn, using the fake spawner's inputEnds() and signals() handles and iterator return() to abandon the reader.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "Each test named in the LLD's test strategy exists and passes",
+          "The two existing endInput tests stay green",
+          "The full cli-adapter, correlation, utf8 and session-output suites stay green"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c3",
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: a correlated Claude turn ends the CLI stdin at its own result, not before"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: an abandonment after the result adds no second call"
+          },
+          {
+            "level": "unit",
+            "name": "cli-adapter-correlation.test.ts: an abandoned Codex turn never calls endInput"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Record the two live checks as reported results",
+        "summary": "Re-run the real-CLI checks (EOF mid-turn finishes the turn and exits 0; stdin left open idles after the result; closing at the result lets background work finish) from the throwaway scripts, and pass them to the build's validate as reported test results. Because the scripts are not in the repository, the evidence is the exact timings, request-id match and exit codes copied into the reported evidence.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "The mid-turn EOF run completes with the matching request id and exit code 0",
+          "The open-stdin run idles after its result until killed",
+          "The background-task run completes the background work before exit 0",
+          "Both are recorded as reported results whose evidence holds the timings and exit codes"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "live",
+            "name": "real claude CLI: close stdin mid-turn, the turn completes with the matching request id and the process exits 0"
+          },
+          {
+            "level": "live",
+            "name": "real claude CLI: stdin left open idles after the result; closing it at the result lets background work finish"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts: an abandoned session-file Claude turn ends its input once and is not killed",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "same file: an abandoned pipe turn ends its input and is stopped with SIGTERM",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "same file: nothing ends the input before the correlated result (existing test stays green), and an abandonment after the result adds no second call",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "same file: a throwing endInput does not stop the finally's cleanup",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "same file: an abandoned Codex turn never calls endInput (extends the existing prompt-argument test)",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "real claude CLI: close stdin mid-turn, the turn completes with the matching request id and the process exits 0",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "real claude CLI: stdin left open idles after the result; closing it at the result lets background work finish",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: run() abandonment behaviour in the finally"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 contract: the endInput seam, idempotent and optional"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 data model change: the run() abandonment contract"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 error paths: throwing seam, CLI not exiting, pending approval"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 test strategy: unit and live levels, acceptance mapping ac1 to ac3"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 migration: finally branch, tests, live checks as reported results"
+    }
+  ]
+}

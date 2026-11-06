@@ -1,0 +1,455 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793964843326-pinqsk",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T11:36:50.831Z",
+    "epicCreatedAt": "2026-11-06T11:18:58.671Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 163348,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "48ffbec56130edb6",
+    "epicSlug": "end-correlated-claude-turn-s-stdin",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793964843326-pinqsk",
+    "hldEffectiveHash": "50f12d0b11631f4b2189c54ff6e7938d29da16beba2c17ab79e9dcc7d6f12665",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a25960a3e777b020b77828c11bbd9e15b56e37ad06f0bd5abc5f22cef257c4df",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T13:03:03.217Z",
+        "override": {
+          "reason": "Daemon design review failed after retries with invalid_output on /findingDecisions (review id design-review-48ffbec56130edb6-s1-r1, 3 retries exhausted); controller self-review done by the user's decision on 2026-11-06 — no HIGH or MED findings, two LOW notes carried into the build's test record."
+        }
+      }
+    },
+    "rangeBase": "9b37b37980dc5a3009d3bbbc6af5accb93f49158",
+    "questionResolutions": {
+      "qd90111c1": {
+        "question": "alt2: constraintScore is empty because the Story has no acceptance criteria, HLD contracts or epic constraints to score against.",
+        "status": "resolved",
+        "choice": "Proceed explicitly unscored",
+        "rationale": "User decision 2026-11-06: keep constraintScore empty; no acceptance criteria, HLD contracts or epic constraints exist, and the LLD maps ac1 to ac3 to proving tests.",
+        "resolvedAt": "2026-11-06T13:15:13.644Z"
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "When the reader of a Claude turn is abandoned before the turn's result (the chat is detached, you switch chats, or the follow is stopped), the adapter now ends the CLI's input in run()'s finally. The CLI then finishes its in-flight work and exits by itself, so it no longer idles holding the session's chat lock. Nothing closes the input at spawn or before the result, and the background observer is unchanged."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "End a correlated Claude turn's stdin when its reader is abandoned"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "run",
+          "signature": "run(req: TurnRequest, opts?: RunOptions): AsyncIterable<TurnEvent>  // existing method of makeStreamAdapter, finally extended",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "TurnRequest",
+              "purpose": "The turn to start; unchanged.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "RunOptions",
+              "purpose": "Spawn, progress and decoder hooks; unchanged.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "AsyncIterable<TurnEvent>",
+            "meaning": "Unchanged: the turn's events, ending at a done or error."
+          },
+          "errors": [],
+          "preconditions": [
+            "The turn is a correlated Claude turn (the mapper has formatInput, so state.requestUuid is defined)."
+          ],
+          "postconditions": [
+            "If the iterator is abandoned before a terminal event, the CLI's input is ended in the finally, once, before any pipe-turn kill.",
+            "If a terminal event was reached, the finally adds nothing: the input was already ended in the read loop.",
+            "A pipe turn that is abandoned is still stopped with SIGTERM and its pending requests are cleared, as before.",
+            "Codex and Vibe turns (no requestUuid) are untouched."
+          ]
+        },
+        {
+          "name": "endInput",
+          "signature": "endInput?(): void  // existing optional member of SpawnedProcess",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Ends the process stdin; idempotent and never throws."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "A second call, or a call on a destroyed or ended stream, does nothing."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "run() abandonment contract",
+        "change": "invariant-change",
+        "details": "Before: a Claude turn that writes to its session file and is abandoned before its result is only detached from, so its input stays open and the CLI idles after its answer. After: the input is ended when the reader is abandoned before the result. The input is never ended earlier than that, and the observer takes no action on the process. The current behaviour that is kept: the CLI's pid, the live entry and the pending requests are released by the process's exit, not by the stream.",
+        "callSites": [
+          "vscode-plugin/src/chat/cli-adapter.ts:272",
+          "vscode-plugin/src/chat/cli-adapter.ts:1229-1236",
+          "vscode-plugin/src/chat/cli-adapter.ts:1322",
+          "vscode-plugin/src/chat/cli-adapter.ts:1375-1384",
+          "vscode-plugin/src/chat/cli-adapter.ts:1841",
+          "vscode-plugin/src/chat/turn-lifecycle.ts:154-160",
+          "vscode-plugin/src/chat/turn-lifecycle.ts:486"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "The process seam's endInput() throws when called from the finally",
+          "detection": "The call in the finally raises an exception (the production seam is guarded, but a test double or another spawner need not be).",
+          "response": "The call is wrapped so the exception is swallowed and the rest of the finally (pipe-turn kill, pending-request cleanup) still runs.",
+          "userImpact": "None: the cleanup the finally already did is not skipped.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The CLI does not exit after its input ended",
+          "detection": "proc.exit stays unresolved after the abandonment; the adapter does not watch for it.",
+          "response": "No new action: the live map entry stays until exit, and cancel() and the stop paths remain the way to end it.",
+          "userImpact": "The chat lock stays held until the user stops the turn, as for any turn that does not finish.",
+          "recoverable": true
+        },
+        {
+          "scenario": "An in-turn approval is pending when the reader is abandoned",
+          "detection": "A later decide() finds the stdin ended: the process seam's write() returns false for an ended stream.",
+          "response": "decide() reports delivered false and does not consume the request, so the existing follow-up path answers it.",
+          "userImpact": "The approval is answered by a follow-up run instead of over the closed pipe.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "The reader is abandoned after the correlated result",
+          "expected": "The input was already ended in the read loop; the finally sees terminal true and adds no second call."
+        },
+        {
+          "input": "The reader is abandoned while a read is pending and the next line is the result",
+          "expected": "The generator resumes, handles the result (ending the input there) and the finally then does nothing more."
+        },
+        {
+          "input": "The reader is abandoned while a read is pending and the next line is not the result",
+          "expected": "The finally ends the input; the CLI finishes the turn and exits."
+        },
+        {
+          "input": "The input write failed before the first event",
+          "expected": "The turn is already terminal with the stdin error; the finally adds no call."
+        },
+        {
+          "input": "A Codex or Vibe turn is abandoned",
+          "expected": "No request id and no endInput: nothing is called."
+        },
+        {
+          "input": "A pipe turn (no session output) is abandoned before its result",
+          "expected": "The input is ended and the child is stopped with SIGTERM, as before."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "The input is ended at the correlated result inside the read loop, exactly once, and never before it.",
+          "source": "c3"
+        },
+        {
+          "text": "An abandoned pipe turn is stopped with SIGTERM and its pending requests are cleared; a session-file turn is not killed.",
+          "source": "c4"
+        },
+        {
+          "text": "The live entry and the pending requests are released by the process's exit, not by the stream.",
+          "source": "c2"
+        },
+        {
+          "text": "endInput stays optional and idempotent on the process seam, and its production implementation guards destroyed and ended streams.",
+          "source": "c1"
+        },
+        {
+          "text": "The production implementation of endInput stays input.end() behind the destroyed and writableEnded guards.",
+          "source": "c5"
+        },
+        {
+          "text": "Abandoning an iterator stays a non-waiting return(); the lifecycle is not changed.",
+          "source": "c6"
+        },
+        {
+          "text": "Detach keeps leaving the CLI writing to the session file for the observer to finish.",
+          "source": "c7"
+        },
+        {
+          "text": "The observer still reads detached turns and takes no action on the process.",
+          "source": "c9"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin when run() ends a correlated Claude turn's input and when it must not.",
+          "subjects": [
+            "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts: an abandoned session-file Claude turn ends its input once and is not killed",
+            "same file: an abandoned pipe turn ends its input and is stopped with SIGTERM",
+            "same file: nothing ends the input before the correlated result (existing test stays green), and an abandonment after the result adds no second call",
+            "same file: a throwing endInput does not stop the finally's cleanup",
+            "same file: an abandoned Codex turn never calls endInput (extends the existing prompt-argument test)"
+          ],
+          "fixturesNeeded": [
+            "makeFakeSpawner with hangUntilKilled and the inputEnds() and signals() handles from fixtures.ts",
+            "createSessionOutput over a temp root for the session-file case"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Show the real CLI behaves as the design assumes, reported by the builder because the gate cannot run it.",
+          "subjects": [
+            "real claude CLI: close stdin mid-turn, the turn completes with the matching request id and the process exits 0",
+            "real claude CLI: stdin left open idles after the result; closing it at the result lets background work finish"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "cli-adapter-correlation.test.ts: an abandoned session-file Claude turn ends its input once and is not killed",
+            "cli-adapter-correlation.test.ts: an abandoned pipe turn ends its input and is stopped with SIGTERM"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "cli-adapter-correlation.test.ts: a correlated Claude turn ends the CLI stdin at its own result, not before",
+            "cli-adapter-correlation.test.ts: an abandonment after the result adds no second call"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "cli-adapter-correlation.test.ts: a throwing endInput does not stop the finally's cleanup",
+            "cli-adapter-correlation.test.ts: a prompt-argument CLI turn never has an input to end"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test (vscode-plugin)"
+    },
+    "migration": {
+      "stateBefore": "A correlated Claude turn's input is ended only in run()'s read loop at the correlated result (cli-adapter.ts:1322); a session-file turn abandoned earlier is only detached from (cli-adapter.ts:1375-1384), so the CLI idles after its answer and holds the chat lock.",
+      "stateAfter": "run()'s finally also ends the input of a correlated turn that is abandoned before its result, so the CLI finishes its in-flight work and exits by itself. Nothing closes the input earlier, and the observer is unchanged.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the abandonment branch to run()'s finally: for a correlated turn with no terminal event, end the input before the existing pipe-turn kill, shielding the rest of the cleanup from a throwing seam.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Add the unit tests for abandonment, no-early-close and the throwing seam to the correlation suite.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Record the live checks as reported test results in the build's test record.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "No public API, wire format, stored record or setting changes. endInput stays an optional member of the process seam; spawners without it behave as before.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "End the input in run()'s finally when a correlated turn is abandoned before its result",
+        "oneLineSummary": "In run()'s existing finally, call the existing endInput() seam when the turn is correlated and no terminal event was reached.",
+        "approach": "In run()'s finally (cli-adapter.ts:1375-1384), add one branch: when state.requestUuid is defined and 'terminal' is still false, call proc.endInput?.() before the existing pipe-turn kill. endInput() is already idempotent and never throws (it checks destroyed and writableEnded), so a later normal terminal path or a second call is harmless. A turn that reached its terminal has already ended its input in the read loop, so the finally changes nothing for it. A session-file turn is then left to finish its in-flight work and exit by itself (live check: it completes the turn, answers with the matching request id, exits 0, and lets background tasks finish); a pipe turn is still killed as today. Nothing closes the input at spawn or before the correlated result, and the observer is unchanged. Codex and Vibe have no endInput and are untouched.",
+        "pros": [
+          "One branch in one function; reuses the endInput() seam and its guards",
+          "Covers every way the reader is abandoned (detach, switching chats, stop-follow, supersession) because they all end in the finally",
+          "Matches the measured CLI behaviour: finishing in-flight work, then exit 0, with background tasks allowed to finish",
+          "No change to the lifecycle, the panel, the observer or the process seam"
+        ],
+        "cons": [
+          "Depends on the generator's finally running: a return() made while a read is pending takes effect after that read settles, so closing waits for the next output line or the end of output",
+          "A pending in-turn approval can no longer be answered over this process's stdin once the input is closed (it falls to the follow-up path that already exists)"
+        ],
+        "costEstimate": "XS"
+      },
+      {
+        "id": "a2",
+        "name": "Give the lifecycle an explicit handle to end the input at detach",
+        "oneLineSummary": "Expose endInput on the TurnProcess handle passed to onSpawn and have the lifecycle's detach and stop call it directly.",
+        "approach": "Add an optional endInput() to the TurnProcess handle that run() passes to opts.onSpawn, and have turn-lifecycle.ts call it in detachThis and the other places that abandon a live iterator, instead of relying on run()'s finally. The adapter keeps its call at the correlated result.",
+        "pros": [
+          "Closes the input at the moment of detach, independent of when the generator's finally runs",
+          "Makes the intent visible at the call sites in the lifecycle"
+        ],
+        "cons": [
+          "Widens the public TurnProcess contract and touches turn-lifecycle.ts at several abandon sites",
+          "Every present and future abandon site has to remember to call it; the finally covers them all",
+          "Needs matching changes in the test harness handles and the plugin's other TurnProcess consumers"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Closes at the exact moment of detach but widens the TurnProcess contract and every abandon site in the lifecycle for no gain the finally does not already give."
+      },
+      {
+        "id": "a3",
+        "name": "Keep the input open and let a background watcher close it after the result",
+        "oneLineSummary": "When the reader is abandoned, hand the process to a watcher that closes the input once the correlated result appears in the session file.",
+        "approach": "On abandonment, keep a watcher in the adapter that tails the session output for the correlated result of that turn and ends the input when it appears, so the CLI never sees EOF mid-turn.",
+        "pros": [
+          "The CLI never sees EOF before its answer, so it cannot be affected by any EOF-in-the-middle behaviour"
+        ],
+        "cons": [
+          "Adds a second reader per detached turn beside the observer, with its own lifetime and error handling",
+          "The live check shows EOF mid-turn is safe, so the added machinery buys nothing",
+          "A watcher lost with the host leaves the same idle process this defect describes"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Adds a second reader per detached turn to avoid an EOF-in-the-middle risk that the live check shows does not exist."
+      },
+      {
+        "id": "a4",
+        "name": "Close the input at spawn when no approvals can arrive",
+        "oneLineSummary": "End stdin right after writing the user message for turns that cannot raise a permission request.",
+        "approach": "After the user message is written, end the input at once for permission modes where the CLI never asks the host, so the CLI exits at its own result without any later close.",
+        "pros": [
+          "No dependence on the reader at all for those turns"
+        ],
+        "cons": [
+          "It is the preemptive closing the user ruled out",
+          "Does not help turns in review mode, which need stdin for decisions",
+          "Needs a reliable per-mode rule for when a request cannot arise, which the adapter does not have today"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Is the preemptive closing the user ruled out and cannot serve review-mode turns."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "alt2: constraintScore is empty because the Story has no acceptance criteria, HLD contracts or epic constraints to score against."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:272"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1229-1236"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1322"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1375-1384"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1841"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:154-160"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:486"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:640"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:895"
+    },
+    {
+      "id": "c10",
+      "kind": "doc",
+      "ref": "docs/plans/main-sync-2-conflicts.md"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/cli-adapter-correlation.test.ts:204"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/fixtures.ts"
+    }
+  ]
+}

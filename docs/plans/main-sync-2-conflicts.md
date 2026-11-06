@@ -111,11 +111,31 @@ Dry run on 2026-11-06. Nothing was merged. The register comes from `git merge-tr
 
 ## Resolution log
 
+Merge commit `74bd5eca1` (worktree `insrc-sync`, branch `sync-main-into-v2`), then fix commits. Nothing pushed.
+
 | Item | Decision | Confirmed impact | Tests run | Status |
-|------|----------|------------------|-----------|--------|
-| S1 | | | | open |
-| S2 | | | | open |
-| 1 to 11 | | | | open |
+|---|---|---|---|---|
+| S1 schema 9 | D12 | `MIGRATION_V9_TO_V10`, `SCHEMA_VERSION = 10`; the registry order test, the repair test, four pin tests and the exemption message follow | `src/db/graph` and `src/db` migration, operational, subsystem, search-evidence, doc-relations and entities-lmdb tests: 72 pass | done |
+| S2 font tag | D13 | one wrapper; `theme.test.ts` asserts no nested `<style>` | artifact-theme tests | done |
+| 1 `cli-adapter.ts` | D8-D11 | union as decided; the user message goes through `write(data, onError)`; replay and the pre-terminal checkpoint only without saved decoder state; draining readers keep the cursor before the terminal; legacy ids end at the first result | `cli-adapter`, `cli-adapter-correlation`, `cli-adapter-utf8`, `session-output`: 128 pass, then 129 after the run-config argv update | done |
+| 2 `session-output.ts` | D8 | main's pin, re-resolve and generation check with v2's bounded prefix; an archived generation stays readable, so v2's "generation is gone" test now expects the prefix | included above | done |
+| 3-5 chat tests | D9, D11 | legacy tests rewritten; user-message writes filtered from decision counts; run-config argv; chat-panel fixture result line carries the request placeholder | `chat-panel.test.ts`: 221 pass | done |
+| 6 session-source inventory | regenerated | main's 8 new files take main's classification; 37 digests refreshed; sc6 digests refreshed (this fixes CM-S4-GATE, which failed on v2) | inventory test: 2 of 3 pass | done; the 2 v2 files `src/workflow/convert/repair-amendments.ts` and `src/workflow/review/design-review/provenance.ts` are unclassified on v2 too |
+| 7-9 pin tests | D12 | see S1 | see S1 | done |
+| 10 `CLAUDE.md` | v2's side | | | done |
+| 11 `theme.test.ts` | v2's side plus D13 | | | done |
+| not a conflict: `docRelations.measure` | classified `daemon-store` in `repo-call-audit.ts` | the two registry tests failed for the new main method | `repo-call-audit` and `repo-call-table`: pass | done |
+
+### Sweep versus the two parents
+
+`tsc` (root and vscode-plugin), `typecheck:tools`, the forbidden-spawn scan (0 sites failing) and the model-definition check pass. The suites were run in chunks and every failing test was compared with v2 and with main (a clean `origin/main` worktree). No failure is new in the merge except the ones fixed above. Failures that remain are inherited:
+
+- **Also failing on v2:** VS Code `approval-subscribe`, repo-config, webview-host, bundle-catalog, sync-assets and activation tests; `src/mcp` and `src/shared` review-stream and connection-manager tests; `no-live-store-in-tests` (three files); `session-source-inventory` (two unclassified files); `search-guard.test.ts` hangs; workflow gate tests that throw "PENDING REVIEW RE-IMPLEMENTATION" (`approve-build-*`, `gates`, `range-base`, `history`, `convert-preview`, `completion-evidence`).
+- **Also failing on main:** `exec-path-scan` "Ollama is never a registrable provider" (main's adapter names Ollama in code); `project-memory-isolation` (needs the project-memory workspace).
+- **Environmental in the worktree:** `handleWorkflowRun: START` (needs a registered repo cwd). Under the parallel full-directory runs a few tests hang or time out (`ids.test.ts`, `migration-v6-to-v7`, `git-hooks-methods`, `search-guard`, the long daemon groups); `ids`, `migration-v6-to-v7` and `git-hooks-methods` pass when run alone.
+- **Not run in full:** the `chat-panel.test.ts` file never exits on v2 either (one cancelled item, all 168 or 221 tests pass).
+
+Still to do after the fast-forward: D10 (close Claude's stdin when its reader is abandoned; the observer stops an idle process), with the live checks, as tracked work; `npm install` in the main tree; the daemon update.
 
 ## Decisions
 

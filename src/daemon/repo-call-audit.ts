@@ -96,6 +96,7 @@ export const RPC_AUDIT: Readonly<Record<string, AuditEntry>> = {
 	'db.testConnection': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group db)' },
 	'docgen.generate': { kind: 'read-only', evidence: 'docgen generateDocument returns the document, it does not write into a repository (handler-runtime.ts:1259)' },
 	'docgen.list': { kind: 'read-only', evidence: 'docgen listDocTypes returns the registered document types and writes nothing' },
+	'docRelations.measure': { kind: 'daemon-store', evidence: 'doc-relations-rpc.ts measureDocRelations reads the repository\'s hand-checked set and queues a doc-relations-measure job whose figures go to the graph store (doc_relation_quality); it writes no file in the repository' },
 	'docSummary.restoreFromBackup': { kind: 'daemon-store', evidence: 'writes the daemon\'s own stores (LMDB graph, Lance, session, config, keys, todos or connection stores under ~/.insrc), not files of a user repository (handler group docSummary)' },
 	'entity.closure': { kind: 'read-only', evidence: 'reads the graph, registry, config or model lists; writes nothing in a user repository (handler group entity)' },
 	'entity.summary': { kind: 'read-only', evidence: 'reads the graph, registry, config or model lists; writes nothing in a user repository (handler group entity)' },

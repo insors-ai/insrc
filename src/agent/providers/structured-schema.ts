@@ -299,7 +299,7 @@ interface DecodedReply {
 }
 
 /** Defer selected-branch checks until every enclosing conjunct has decoded. */
-function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext): Generator<DecodedReply> {
+function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: CodexReplyContext, state: { revision: number }): Generator<DecodedReply> {
  const escape = (part: string) => encodeURIComponent(part.replace(/~/g, '~0').replace(/\//g, '~1'));
  const resolve = (pointer: string): unknown => {
   if (pointer === '') return root;
@@ -335,13 +335,20 @@ function* decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Co
  type Step = (value: unknown) => Iterable<DecodedReply>;
  const plain = (value: unknown): DecodedReply => ({ value, guards: [] });
  function* unique(values: Iterable<DecodedReply>): Generator<DecodedReply> {
-  const merged = new Map<string | undefined, DecodedReply>();
+  const merged = new Map<string | undefined, ReplyGuard[][]>();
   for (const candidate of values) {
-   const key = JSON.stringify(candidate.value), previous = merged.get(key);
-   if (!previous) merged.set(key, candidate);
-   else merged.set(key, {value: candidate.value, guards: [{instance: [], alternatives: [previous.guards, candidate.guards]}]});
+   const key = JSON.stringify(candidate.value), alternatives = merged.get(key);
+   if (alternatives) {
+    alternatives.push(candidate.guards);
+    state.revision++;
+   } else {
+    const alternatives = [candidate.guards];
+    merged.set(key, alternatives);
+    // Consumers retain this shared disjunction: later equivalent branches can
+    // add valid provenance without yielding duplicate collection choices.
+    yield {value: candidate.value, guards: [{instance: [], alternatives}]};
+   }
   }
-  yield* merged.values();
  }
  function* sequence(candidate: DecodedReply, steps: readonly Step[], index = 0): Generator<DecodedReply> {
   if (index === steps.length) { yield candidate; return; }
@@ -436,26 +443,46 @@ export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): V
  let accepted: { value: T } | undefined, first: { value: unknown } | undefined;
  const candidateValues = new Set<string | undefined>();
  const acceptedValues = new Set<string | undefined>();
- for (const decoded of decodeCodexOptionals(raw, schema, context)) {
-  const candidate = decoded.value;
-  candidateValues.add(JSON.stringify(candidate)); first ??= { value: candidate };
-  const guardHolds = (guard: ReplyGuard, root: unknown): boolean => {
-   let value = root;
-   for (const part of guard.instance) {
-    if (!isObject(value) && !Array.isArray(value)) return false;
-    value = (value as Record<string, unknown>)[part];
-   }
-   return guard.schema !== undefined ? context.at(guard.schema, value)
-    : guard.alternatives?.some(group => group.every(child => guardHolds(child, value))) === true;
-  };
-  if (!context.validate(candidate) || !decoded.guards.every(guard => guardHolds(guard, candidate))) continue;
-  const key = JSON.stringify(candidate);
-  if (acceptedValues.has(key)) continue;
+ const pending = new Map<string | undefined, DecodedReply>();
+ const state = {revision: 0};
+ let checkedRevision = 0;
+ const guardHolds = (guard: ReplyGuard, root: unknown): boolean => {
+  let value = root;
+  for (const part of guard.instance) {
+   if (!isObject(value) && !Array.isArray(value)) return false;
+   value = (value as Record<string, unknown>)[part];
+  }
+  return guard.schema !== undefined ? context.at(guard.schema, value)
+   : guard.alternatives?.some(group => group.every(child => guardHolds(child, value))) === true;
+ };
+ const consider = (decoded: DecodedReply): boolean => {
+  const candidate = decoded.value, key = JSON.stringify(candidate);
+  if (acceptedValues.has(key) || !context.validate(candidate)) return false;
+  if (!decoded.guards.every(guard => guardHolds(guard, candidate))) {
+   const previous = pending.get(key);
+   if (previous !== decoded) pending.set(key, previous ? {value: candidate, guards: [{instance: [], alternatives: [previous.guards, decoded.guards]}]} : decoded);
+   return false;
+  }
+  pending.delete(key);
   acceptedValues.add(key);
-  if (accepted) return { ok: false, errors: ['Codex optional-null decoding is ambiguous under the original schema.'], issues: [{ code: 'AMBIGUOUS_OPTIONAL_NULLS', field: '/', correction: 'Return an unambiguous response under the original schema.' }] };
-  accepted = { value: candidate as T };
+  if (accepted) return true;
+  accepted = {value: candidate as T};
+  return false;
+ };
+ const reconsider = (): boolean => {
+  if (checkedRevision === state.revision) return false;
+  checkedRevision = state.revision;
+  for (const decoded of pending.values()) if (consider(decoded)) return true;
+  return false;
+ };
+ const ambiguous = (): ValidationResult<T> => ({ok: false, errors: ['Codex optional-null decoding is ambiguous under the original schema.'], issues: [{code: 'AMBIGUOUS_OPTIONAL_NULLS', field: '/', correction: 'Return an unambiguous response under the original schema.'}]});
+ for (const decoded of decodeCodexOptionals(raw, schema, context, state)) {
+  candidateValues.add(JSON.stringify(decoded.value)); first ??= {value: decoded.value};
+  if (reconsider() || consider(decoded)) return ambiguous();
  }
- return accepted ? { ok: true, value: accepted.value } : checkedNativeReply<T>(context, candidateValues.size === 1 ? first!.value : raw);
+ // A final duplicate may add applicable provenance without yielding a value.
+ if (reconsider()) return ambiguous();
+ return accepted ? {ok: true, value: accepted.value} : checkedNativeReply<T>(context, candidateValues.size === 1 ? first!.value : raw);
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {

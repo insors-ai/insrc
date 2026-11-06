@@ -151,3 +151,36 @@ test('distinct ambiguous item alternatives stream without exhausting the collect
  const result=validateCodexReply({type:'object',required:['items'],properties:{items:{type:'array',items:item}}},raw);
  assert.equal(result.ok,false);if(!result.ok)assert.equal(result.issues?.[0]?.code,'AMBIGUOUS_OPTIONAL_NULLS');assert.deepEqual(raw.items[0],{a:null,b:null});
 });
+
+test('enclosing unions preserve lazy rejection of ambiguous descendant collection products',()=>{
+ const item={anyOf:[{type:'object',properties:{a:{type:'string'},b:{type:['string','null']}}},{type:'object',properties:{a:{type:['string','null']},b:{type:'string'}}}]};
+ const array={type:'array',items:item};
+ for(const items of [{anyOf:[array,{type:'null'}]},{oneOf:[array,{type:'null'}]},{$ref:'#/$defs/wrapped'}]){
+  const host={type:'object',required:['items'],properties:{items},$defs:{wrapped:{anyOf:[array,{type:'null'}]}}};
+  const raw={items:Array.from({length:1000},()=>({a:null,b:null}))},result=validateCodexReply(host,raw);
+  assert.equal(result.ok,false);if(!result.ok)assert.equal(result.issues?.[0]?.code,'AMBIGUOUS_OPTIONAL_NULLS');assert.deepEqual(raw.items[0],{a:null,b:null});
+ }
+});
+
+test('late equivalent-branch provenance can validate a previously rejected unique decoding',()=>{
+ const first={properties:{a:{type:'string'}},required:['b']};
+ const second={properties:{a:{type:'string'}}};
+ const host={type:'object',required:['entry'],properties:{entry:{allOf:[{anyOf:[first,second]},{properties:{b:{type:'string'}}}]}}};
+ const raw={entry:{a:null,b:null}},result=validateCodexReply(host,raw);
+ assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{entry:{}});assert.deepEqual(raw,{entry:{a:null,b:null}});
+});
+
+test('equivalent wrapped collection branches do not multiply choices across parent arrays',()=>{
+ const nested={type:'array',items:{type:'object',properties:{note:{type:'string'}}}};
+ const host={type:'object',required:['items'],properties:{items:{type:'array',items:{anyOf:[nested,{...nested,minItems:1}]}}}};
+ const raw={items:Array.from({length:1000},()=>[{note:null}])},result=validateCodexReply(host,raw);
+ assert.equal(result.ok,true);if(result.ok)assert.deepEqual(result.value,{items:raw.items.map(()=>[{}])});assert.equal(raw.items[0]![0]!.note,null);
+});
+
+test('late equivalent provenance still exposes two distinct valid decoded results as ambiguous',()=>{
+ const left={properties:{a:{type:'string'},b:{type:['string','null']}}};
+ const right={properties:{a:{type:['string','null']},b:{type:'string'}}};
+ const host={type:'object',required:['entry'],properties:{entry:{allOf:[{anyOf:[{...left,required:['c']},left,{...right,required:['c']},right]},{properties:{c:{type:'string'}}}]}}};
+ const raw={entry:{a:null,b:null,c:null}},result=validateCodexReply(host,raw);
+ assert.equal(result.ok,false);if(!result.ok)assert.equal(result.issues?.[0]?.code,'AMBIGUOUS_OPTIONAL_NULLS');assert.deepEqual(raw,{entry:{a:null,b:null,c:null}});
+});

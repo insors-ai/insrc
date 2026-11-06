@@ -39,6 +39,7 @@ import type { AnalyzeScopeRef, AnalyzeTarget } from '../../shared/analyze-types.
 import { getLogger } from '../../shared/logger.js';
 import { stepCwd } from '../../shared/step-context.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
+import type { DocsArea } from '../docs-retrieval.js';
 
 import { TARGET_TO_KINDS } from '../classifier/validate.js';
 
@@ -347,4 +348,77 @@ async function resolveConnection(connectionId: string, deps: ScopeDeps, executio
 		lookupPath:   repoPath,
 		connectionId,
 	};
+}
+
+// ---------------------------------------------------------------------------
+// What a reader of the stored graph does with its resolved scope
+// ---------------------------------------------------------------------------
+
+/**
+ * The repo whose stored entities a task reads: the registered repo that
+ * contains the scope, or, where none is known (the registry could not be read
+ * or holds no repo), the scope's own directory, as before.
+ */
+export function graphRepoOf(scope: ResolvedScope): string {
+	return scope.repoPath ?? scope.lookupPath;
+}
+
+/**
+ * Whether an entity of that repo lies in the AREA the scope names:
+ *   - symbol: the one entity;
+ *   - file: the entities of that file;
+ *   - module: the entities whose file lies under the directory;
+ *   - repo, manifest directory, workspace: the directory too. When it IS the
+ *     repo that was read, every entity is kept untouched, exactly as before;
+ *     when it is a directory inside that repo, only what lies under it.
+ */
+export function inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; readonly file: string }) => boolean {
+	if (scope.kind === 'symbol') return e => e.id === scope.entityId;
+	if (scope.kind === 'file') return e => e.file === scope.filePath;
+	const dir = scope.lookupPath;
+	if (scope.kind !== 'module' && dir === graphRepoOf(scope)) return () => true;
+	return e => e.file === dir || e.file.startsWith(`${dir}/`);
+}
+
+/**
+ * The area of a docs scope, for a task that hands its selection to document
+ * retrieval: the file of a file scope, the directory of a module scope or of a
+ * directory inside the repo that is read. Undefined when the scope takes the
+ * whole repo, so that retrieval is called exactly as before.
+ */
+export function docsAreaOf(scope: ResolvedScope): DocsArea | undefined {
+	if (scope.kind === 'file' && scope.filePath !== undefined) return { file: scope.filePath };
+	if (scope.kind !== 'module' && scope.lookupPath === graphRepoOf(scope)) return undefined;
+	return { directory: scope.lookupPath };
+}
+
+/** The area a request names, when it is narrower than the repository it lies in. */
+export type ScopeArea =
+	| { readonly kind: 'dir';    readonly path: string }
+	| { readonly kind: 'file';   readonly path: string }
+	| { readonly kind: 'symbol'; readonly entityId: string; readonly filePath: string };
+
+/**
+ * The area a scope names, or null when it is the whole repository (a
+ * workspace, repo or connection scope, or a directory that is the repo
+ * itself), so that a caller keeps its behaviour exactly as before. A symbol's
+ * area is the one entity, the same entity the request sizing reads.
+ */
+export function scopeArea(scope: ResolvedScope): ScopeArea | null {
+	if (scope.kind === 'symbol') {
+		return scope.entityId !== undefined && scope.filePath !== undefined
+			? { kind: 'symbol', entityId: scope.entityId, filePath: scope.filePath }
+			: null;
+	}
+	if (scope.kind === 'file') return scope.filePath !== undefined ? { kind: 'file', path: scope.filePath } : null;
+	if (scope.kind === 'connection' || scope.kind === 'workspace' || scope.kind === 'repo') return null;
+	// module and manifest-dir: a directory, unless it is the repository itself
+	return scope.kind !== 'module' && scope.lookupPath === graphRepoOf(scope) ? null : { kind: 'dir', path: scope.lookupPath };
+}
+
+/** A stable text for the area, for a cache key: `repo` for the whole repository. */
+export function scopeAreaKey(scope: ResolvedScope): string {
+	const area = scopeArea(scope);
+	if (area === null) return 'repo';
+	return area.kind === 'symbol' ? `symbol:${area.entityId}` : `${area.kind}:${area.path}`;
 }

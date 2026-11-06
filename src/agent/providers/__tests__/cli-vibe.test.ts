@@ -13,7 +13,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -203,4 +203,17 @@ test('a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is ret
 		// 429 text is transient: three attempts before the error surfaces.
 		assert.equal(f.calls().length, 3);
 	} finally { f.cleanup(); }
+});
+
+test('Vibe reviewer responses retain strict original nullable semantics without Codex transport decoding',async()=>{
+ const schema={type:'object',required:['verdict'],additionalProperties:false,properties:{verdict:{type:'string'},error:{type:'string'}}};
+ for(const nullable of [false,true]){
+  const input=nullable?{...schema,properties:{...schema.properties,error:{type:['string','null']}}}:schema;
+  const f=fakeVibe('json',JSON.stringify({verdict:'holds',error:null})),cwd=realpathSync(mkdtempSync(join(tmpdir(),'insrc-vibe-null-check-')));
+  try{
+   const p=new CliProvider({kind:'vibe',binPath:f.bin});const call=()=>p.runReviewSession('strict review',input,{cwd,deadlineMs:30000,internalRetry:false});
+   if(nullable)assert.deepEqual(await call(),{verdict:'holds',error:null});
+   else await assert.rejects(call(),/must be string/);
+  }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
+ }
 });

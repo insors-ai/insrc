@@ -328,10 +328,25 @@ function decodeCodexOptionals(raw: unknown, root: StructuredSchema, context: Cod
  return decode(structuredClone(raw), root, '');
 }
 
+/** Full native-schema validation without Codex transport normalization (e.g. Vibe). */
+export function validateNativeReply<T>(schema: StructuredSchema, raw: unknown): ValidationResult<T> {
+ let context: CodexReplyContext;
+ try { context = codexReplyContext(schema); }
+ catch (err) { return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] }; }
+ return checkedNativeReply<T>(context, raw);
+}
+
+function checkedNativeReply<T>(context: CodexReplyContext, value: unknown): ValidationResult<T> {
+ if (context.validate(value)) return { ok: true, value: value as T };
+ const errors = context.validate.errors ?? [];
+ return { ok: false, errors: errors.map(formatAjvError), issues: errors.slice(0, 8).map(reviewValidationIssue) };
+}
+
 /**
  * The check for a codex reply against the caller's FULL schema: the copy codex
  * is given leaves constraints out (`codexStrictSchema`), and this is where
- * they hold, after decoding transport-only optional nulls. Unlike `validateAgainstSchema` it reads draft 2020-12 (so
+ * they hold after decoding transport-only optional nulls. Unlike
+ * `validateAgainstSchema` it reads draft 2020-12 (so
  * `prefixItems`, `unevaluatedItems` and `dependentSchemas` hold) and enforces
  * `format` (ISSUE-487ad7a67474d321).
  */
@@ -340,9 +355,7 @@ export function validateCodexReply<T>(schema: StructuredSchema, raw: unknown): V
  try { context = codexReplyContext(schema); }
  catch (err) { return { ok: false, errors: [`ajv.compile failed: ${(err as Error).message}`] }; }
  const value = context.validate(raw) ? raw : decodeCodexOptionals(raw, schema, context);
- if (context.validate(value)) return { ok: true, value: value as T };
- const errors = context.validate.errors ?? [];
- return { ok: false, errors: errors.map(formatAjvError), issues: errors.slice(0, 8).map(reviewValidationIssue) };
+ return checkedNativeReply<T>(context, value);
 }
 
 function isObject(x: unknown): x is Record<string, unknown> {

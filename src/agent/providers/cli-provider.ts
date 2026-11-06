@@ -72,7 +72,7 @@ import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
-import { codexStrictSchema, rootUnionKey, validateCodexReply } from './structured-schema.js';
+import { codexStrictSchema, rootUnionKey, validateCodexReply, validateNativeReply } from './structured-schema.js';
 import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
@@ -636,7 +636,7 @@ export class CliProvider implements LLMProvider {
 				let parsed: unknown;
 				try { parsed = JSON.parse(text); }
 				catch (err) { errors = [`the review answer was not parseable JSON: ${(err as Error).message}`]; continue; }
-				const checked = validateCodexReply<T>(schema, parsed);
+				const checked = validateNativeReply<T>(schema, parsed);
 				if (checked.ok) return checked.value;
 				errors = checked.errors;
 			}

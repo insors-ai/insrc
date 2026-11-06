@@ -1,0 +1,135 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 4,
+        "contentHash": "d61bbc65977803d5d04652c06709c46aae6bdaa16bf661bb6d470a9a90b8e966",
+        "at": "2026-11-06T13:08:50.144Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-76ed0a2c-9ef1-4fb2-b72d-05c3f07ac26b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T12:50:05.514Z",
+    "epicCreatedAt": "2026-11-06T12:49:07.406Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d4cf0037bc85680a",
+    "storyId": "s1",
+    "revision": 4,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Small bugfix routed directly from approved ISSUE to build; existing provider boundaries only.",
+    "epicSlug": "decode-nullable-codex-replies-through-shared",
+    "updatedAt": "2026-11-06T13:07:24.815Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-d4cf0037bc85680a: central Codex nullable transport decoding and route activity review candidate/final responses through that shared handler. Preserve original host constraints and explicitly nullable values, required null rejection, schema/reply immutability and Claude behavior.",
+    "producesLld": false,
+    "commit": "84fc3b9c4",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Centralizes Codex transport null decoding and streamed response validation with original-schema enforcement and typed diagnostics. Validation-only Vibe path preserves prior semantics. Corrected patternProperties/additionalProperties precedence so explicitly permitted nested nulls survive; added joint-schema regression. All 38 affected provider/stream/decoder tests and typecheck pass; 79 broader initial provider regressions passed. Exact saved error:null assessment now validates locally without modifying its raw response or checkpoint.",
+    "testRecord": {
+      "md": "docs/standalone/decode-nullable-codex-replies-through-shared-E20261106d4cf0037/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-d4cf0037bc85680a.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-d4cf0037bc85680a.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/decode-nullable-codex-replies-through-shared-E20261106d4cf0037/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/review-activity-stream.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/structured-schema-nullable.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/review-activity-stream.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-output.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/structured-schema.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/__tests__/cli-vibe.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/providers/cli-provider.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-06T13:07:24.815Z"
+      }
+    ]
+  },
+  "citations": []
+}

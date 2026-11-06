@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 3,
+        "contentHash": "c97c63b54581b49ba631870548fd1fb0c5d3eb7d1e2dd7a569ab20edb7cc2d8c",
+        "at": "2026-11-06T13:07:24.881Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "d4cf0037bc85680a",
+    "storyId": "s1",
+    "createdAt": "2026-11-06T12:59:11.744Z",
+    "updatedAt": "2026-11-06T13:07:24.815Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-06T12:49:07.406Z",
+    "epicSlug": "decode-nullable-codex-replies-through-shared",
+    "revision": 3
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "84fc3b9c4",
+        "ranAt": "2026-11-06T13:07:24.815Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+            ]
+          },
+          {
+            "name": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-vibe.test.ts"
+            ]
+          },
+          {
+            "name": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/review-activity-stream.test.ts"
+            ]
+          },
+          {
+            "name": "src/agent/providers/__tests__/structured-schema-nullable.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/structured-schema-nullable.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1183,
+            "titles": [
+              {
+                "title": "a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword",
+                "result": "pass"
+              },
+              {
+                "title": "a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not",
+                "result": "pass"
+              },
+              {
+                "title": "a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent",
+                "result": "pass"
+              },
+              {
+                "title": "Codex wire schemas omit string lengths recursively but preserve original host validation and other constraints",
+                "result": "pass"
+              },
+              {
+                "title": "Codex structured and bounded reviewer responses use the shared optional-null decoder",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/cli-vibe.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 6896,
+            "titles": [
+              {
+                "title": "vibeLastAssistantText: bare array, wrapped messages, string content, no assistant",
+                "result": "pass"
+              },
+              {
+                "title": "complete() runs `vibe -p --output text` with the prompt on stdin and the model pinned via VIBE_ACTIVE_MODEL",
+                "result": "pass"
+              },
+              {
+                "title": "complete() without a model leaves VIBE_ACTIVE_MODEL unset (the CLI default applies)",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() parses the last assistant message of the json output and validates it against the schema",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() retries with a feedback note when the answer is not valid JSON, then succeeds",
+                "result": "pass"
+              },
+              {
+                "title": "completeStructured() surfaces a stable error after retries are exhausted",
+                "result": "pass"
+              },
+              {
+                "title": "runEditSession() runs headless with --auto-approve inside the repo cwd",
+                "result": "pass"
+              },
+              {
+                "title": "runReviewSession() restricts tools to read_file + the insrc MCP tools and validates the schema-shaped answer",
+                "result": "pass"
+              },
+              {
+                "title": "a non-zero vibe exit is a CliExitError naming vibe; a transient 429 is retried on a fresh run",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe reviewer responses retain strict original nullable semantics without Codex transport decoding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/review-activity-stream.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1361,
+            "titles": [
+              {
+                "title": "Claude fragmented UTF-8 streams expose metadata and complete structured candidates, not partial input or acknowledgements",
+                "result": "pass"
+              },
+              {
+                "title": "Codex completed messages wait for successful turn finality and duplicate native IDs do not renew",
+                "result": "pass"
+              },
+              {
+                "title": "invalid and oversized candidate/frame data fail explicitly without accepting truncated feedback",
+                "result": "pass"
+              },
+              {
+                "title": "activity subprocess has no fixed timer, serializes observers and bounds retained output",
+                "result": "pass"
+              },
+              {
+                "title": "CLI activity mode ignores bounded provider timers and uses stream flags; durable accepted output survives wrapper failure",
+                "result": "pass"
+              },
+              {
+                "title": "a non-JSON final Codex message cannot promote earlier JSON and terminal failure cannot accept later feedback",
+                "result": "pass"
+              },
+              {
+                "title": "long Claude and Codex streams keep bounded recent-ID deduplication and accept final feedback",
+                "result": "pass"
+              },
+              {
+                "title": "tool state survives event-ID window turnover and duplicate completions remain harmless",
+                "result": "pass"
+              },
+              {
+                "title": "event-window rollover retains malformed-event and UUID-length errors",
+                "result": "pass"
+              },
+              {
+                "title": "Codex streamed candidates and final replies share nullable decoding and original draft-2020 validation while Claude stays strict",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/agent/providers/__tests__/structured-schema-nullable.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 556,
+            "titles": [
+              {
+                "title": "Codex strict conversion makes optional fields nullable recursively without loosening required fields or mutating the host schema",
+                "result": "pass"
+              },
+              {
+                "title": "Codex replies decode synthetic optional nulls through objects arrays and recursive local refs without mutating input",
+                "result": "pass"
+              },
+              {
+                "title": "nullable semantics remain original-schema semantics rather than blanket null removal",
+                "result": "pass"
+              },
+              {
+                "title": "Codex decoding selects applicable union branches and retains original length and required-field diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "Codex optional decoding covers oneOf allOf tuple items dictionaries and escaped local reference paths",
+                "result": "pass"
+              },
+              {
+                "title": "ambiguous union decoding cannot choose between different data-discarding results",
+                "result": "pass"
+              },
+              {
+                "title": "pattern-matched keys bypass additionalProperties decoding and preserve explicitly nullable nested data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -33,6 +33,8 @@ test('parseIntent keeps context and scopeSource, refuses a bad value of either, 
 	assert.throws(() => _parseIntentForTest({ ...BASE, context: 'x'.repeat(MAX_REQUEST_CONTEXT_CHARS + 1) }, 'size-optional'), /at most/);
 	assert.equal(_parseIntentForTest({ ...BASE, context: 'x'.repeat(MAX_REQUEST_CONTEXT_CHARS) }, 'size-optional').context?.length, MAX_REQUEST_CONTEXT_CHARS);
 
+	assert.equal(_parseIntentForTest({ ...BASE, context: '' }, 'size-optional').context, '');
+
 	const plain = _parseIntentForTest(BASE, 'size-optional');
 	assert.equal('context' in plain, false);
 	assert.equal('scopeSource' in plain, false);

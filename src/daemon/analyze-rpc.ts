@@ -1337,7 +1337,8 @@ function parseIntent(value: unknown, size: 'size-required' | 'size-optional'): U
 		result['focus'] = requireString(obj, 'focus');
 	}
 	if (obj['context'] !== undefined) {
-		const context = requireString(obj, 'context');
+		const context = obj['context'];
+		if (typeof context !== 'string') throw new TypeError('intent.context: must be a string');
 		if (context.length > MAX_REQUEST_CONTEXT_CHARS) {
 			throw new TypeError(`intent.context: must be at most ${MAX_REQUEST_CONTEXT_CHARS} characters; got ${context.length}`);
 		}

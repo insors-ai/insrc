@@ -159,9 +159,17 @@ Phase 1 + 2 answer types with concrete recipes. If the user's intent doesn't mat
 For explorations that depend on prior outputs, use the placeholder syntax `$eN.<field>` in params: the executor substitutes at run-time.
 
 Example placeholder patterns:
-- `"path": "$e1.hits[0].path"` — top hit from e1's concept.resolve
+- `"path": "$e1.anchor.path"` — what e1's concept.resolve centres on: the area the request named, else its top-ranked hit
 - `"names": "$e2.profile.exports[0..2]"` — first three exports from e2's module.profile
 - `"subject": "$e1.decisions[0].decision"` — the first decision text from a decision trace
+
+### The anchor of `concept.resolve`
+
+Every `concept.resolve` output carries an `anchor` (absent only when the request named no area and nothing matched). Chain dependent explorations on the anchor, never on `hits[0]`:
+
+- `anchor.source` is `"named-scope"` when the request named a module, directory, file or symbol: the anchor IS that area, even when no hit shares a word with the question and even when a child ranks higher. `"ranked"` means the request named only the whole repository and the anchor is the top-ranked hit.
+- `anchor.kind` is `"dir"` or `"file"`: use `$eN.anchor.path` as in the recipes below.
+- `anchor.kind` is `"symbol"`: the request named ONE entity. `anchor.path` is the FILE the entity lies in and `anchor.entityId` is the entity. Chain the symbol-aware explorations on `$eN.anchor.entityId` (`class.hierarchy(entityId=...)`, `usage.example(entityId=...)`). The file-level explorations (`module.profile`, `convention.detect`, and `import.graph` on the path) look at the whole file, not the one entity: leave them out, unless the question asks about the file, and when you run one write its purpose as `Contextual file expansion: ...` so the answer does not present the file as the subject.
 
 An optional param you do not set may be given as `null`; it means the param is absent. If you cannot express a param via placeholders, leave the exploration's `params` empty and add a note in `purpose`. The executor will then skip the exploration + emit a `failed` output the synthesizer renders as a diagnostic.
 
@@ -170,9 +178,9 @@ An optional param you do not set may be given as `null`; it means the param is a
 For queries like "map the X module", "how is Y organized", "what's the layout of Z":
 
 1. `concept.resolve(query="<intent.focus>")` — get the ranked module candidates. Purpose: "Resolve the user's target to a concrete module path."
-2. `module.profile(path=$e1.hits[0].path)` — depends on `e1`. Purpose: "Profile the resolved module: exports, subdirs, entrypoints."
-3. `import.graph(path=$e1.hits[0].path)` — depends on `e1`. Purpose: "Summarise how the module is used + what it depends on."
-4. `convention.detect(path=$e1.hits[0].path)` — depends on `e1`. Purpose: "Detect the module's naming schema + base-class idioms + test-file convention so the synthesizer can render `## Conventions`."
+2. `module.profile(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Profile the resolved module: exports, subdirs, entrypoints."
+3. `import.graph(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Summarise how the module is used + what it depends on."
+4. `convention.detect(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Detect the module's naming schema + base-class idioms + test-file convention so the synthesizer can render `## Conventions`."
 5. (Optional, only when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports[0..2], kinds=["class","function"])` — depends on `e2`. Purpose: "Anchor the top-level classes/functions the module exposes."
 
 ### Recipe: `decision-trace`
@@ -209,7 +217,7 @@ Emit these explorations in order:
    **Rule anchors a CONFIG KEY** (env var name, TOML/YAML field, feature flag name — matches definitions in `*.yaml` / `*.json` / `*.env` too) → `config.trace(key="<exact-key>")` — depends on `e1`. Purpose: "Enumerate every definition, usage, default of the config key." Prefer this over `search.text` when you want role-classified hits.
 5. (Optional, when `e4` is a symbol.locate that returned a class-like hit) `class.hierarchy(entityId=$e4.hits[0].entityId)` — depends on `e4`. Purpose: "Anchor inheritance chains against the rule."
 6. (Optional, when `e4` is a symbol.locate) `usage.example(entityId=$e4.hits[0].entityId)` — depends on `e4`. Purpose: "Cite representative real callsites."
-7. (Optional, when the module identified by `$e3` is well-defined) `convention.detect(path=$e3.hits[0].path)` — depends on `e3`. Purpose: "Give the reader the naming schema so drifts vs. matches read against the module's own idioms."
+7. (Optional, when the module identified by `$e3` is well-defined) `convention.detect(path=$e3.anchor.path)` — depends on `e3`. Purpose: "Give the reader the naming schema so drifts vs. matches read against the module's own idioms."
 
 Keep it to 4-7 explorations. If the rule's focus does NOT yield a distinctive identifier, string literal, or config key (pure prose rule), stop after step 3 -- the synthesizer will render an honest "no code sites inspected" bundle rather than fabricating one.
 
@@ -232,8 +240,8 @@ For queries like "how does X work", "walk me through Y", "explain the Z pipeline
 Compose a structural + behavioural view. The reader wants to understand: what the module IS, how it EXTENDS via inheritance, how it's TESTED, and what its IDIOMS are. Fan out and let the synthesizer stitch.
 
 1. `concept.resolve(query="<intent.focus>")` — resolve the subject to a concrete module / class / function. Purpose: "Anchor `how-does-it-work` on a concrete symbol or module path."
-2. `module.profile(path=$e1.hits[0].path)` — depends on `e1`. Purpose: "Give the reader the structural view: subdirs, files, entrypoints."
-3. `convention.detect(path=$e1.hits[0].path)` — depends on `e1`. Purpose: "Surface the module's naming schema + base-class idioms so `how-it-works` reads in the module's own vocabulary."
+2. `module.profile(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Give the reader the structural view: subdirs, files, entrypoints."
+3. `convention.detect(path=$e1.anchor.path)` — depends on `e1`. Purpose: "Surface the module's naming schema + base-class idioms so `how-it-works` reads in the module's own vocabulary."
 4. `test.locate(subject="<intent.focus>")` — Purpose: "Show the reader how the subject is exercised in tests -- the fastest read of behaviour."
 5. (Optional, when `$e2.profile.exports` is non-empty) `symbol.locate(names=$e2.profile.exports[0..2], kinds=["class","function"])` — depends on `e2`. Purpose: "Name the top-level classes/functions the module exposes."
 6. (Optional, when `$e5.hits[0].kind === 'class'`) `class.hierarchy(entityId=$e5.hits[0].entityId)` — depends on `e5`. Purpose: "Show the inheritance chain."

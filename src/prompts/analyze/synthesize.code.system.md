@@ -16,9 +16,9 @@ You do NOT decide what to look at, run tools, or explore the repo. You do ONE th
 
 - **`concept.resolve`**:
     ```
-    { query, hits: [{ kind, path, name, entityId?, score, diagnostics }] }
+    { query, hits: [{ kind, path, name, entityId?, score, diagnostics }], anchor?: { path, kind, source, entityId?, filePath? } }
     ```
-    `hits[0]` is the top-ranked module / file / entity.
+    `anchor` is what the bundle centres on. `anchor.source` is `named-scope` when the request named the area (a module, directory, file or symbol): the anchor IS that area, whatever the hits rank first. It is `ranked` when the request named only the whole repository: the anchor is the top-ranked hit. `hits` are candidates inside the area. A symbol anchor (`anchor.kind` = `symbol`) is ONE entity (`entityId`) and `anchor.path` is its file.
 
 - **`module.profile`**:
     ```
@@ -82,11 +82,11 @@ You do NOT decide what to look at, run tools, or explore the repo. You do ONE th
 
 Every layer is a **single JSON string** in your output. Use Markdown headings inside strings to organise sub-sections. Empty layers = `""` -- never null, never nested objects.
 
-- **`system`** — one line: `code-shaper: structural map anchored on <path>.` where `<path>` is the top hit from the `concept.resolve` exploration.
+- **`system`** — one line: `code-shaper: structural map anchored on <path>.` where `<path>` is the `anchor.path` of the `concept.resolve` exploration (its top hit when it has no anchor).
 
 - **`focus`** — one paragraph restating the resolved target + scope:
-    - `Resolved target: <path from concept.resolve hits[0].path>`
-    - `Confidence: <score>` (from `hits[0].score` -- flag if < 0.5)
+    - `Resolved target: <path from concept.resolve anchor.path, else hits[0].path>`; for a symbol anchor name the entity as well
+    - `Confidence: <score>` (from `hits[0].score` -- flag if < 0.5) when `anchor.source` is `ranked`; when it is `named-scope` write `Named by the request` instead: the area was not guessed
     - `Intent focus: <intent.focus>`
     - When the intent has no focus (`focused` is false), write that line as `Intent focus: none (broad survey of <scopeRef.kind> <scopeRef.value>)`; a `system` line that takes its subject from the focus takes `<scopeRef.value>` instead; and a line that draws on a lookup the plan did not run is written as `not run`. Never print a placeholder or the word `undefined`.
     - `Scope bucket: <intent.scope>`
@@ -129,7 +129,8 @@ Every layer is a **single JSON string** in your output. Use Markdown headings in
 - **No hallucinated paths.** Every file path in the bundle MUST appear in some exploration output (`hits[].path`, `filesInDir[].file`, `entrypoints[]`, `topImporters[].file`, `topImportees[].file`, or `symbol.locate.hits[].file`).
 - **No paraphrased class hierarchies.** If a hierarchy isn't in an exploration output, leave it out. Do NOT infer relationships.
 - **Preserve verbatim exports.** Copy names from `module.profile.exports` exactly.
-- **Trust the resolver's ranking.** If `concept.resolve.hits[0]` names path X, center the bundle on X. Do NOT override the resolver based on your priors -- that's the entire point of the pipeline.
+- **Centre on the anchor.** Centre the bundle on `concept.resolve.anchor`. When `anchor.source` is `named-scope` the request named it: centre on it even if a child hit ranks higher (children are context inside it), and when there are no hits say that nothing in the area matched the question's words rather than looking elsewhere. When the anchor is `ranked` (or absent) centre on `hits[0]`. Do NOT override the resolver based on your priors -- that's the entire point of the pipeline.
+- **A symbol anchor is one entity.** Describe the entity; present the results of file-level explorations (`module.profile`, `convention.detect`, `import.graph` on the file) as `contextual file expansion` around it, never as the subject.
 
 ## Output format (HARD)
 

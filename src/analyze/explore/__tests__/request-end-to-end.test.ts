@@ -20,6 +20,8 @@ import { resolveScopeForTarget } from '../../context/scope.js';
 import { savedAnalysisExecution } from '../../connection-access.js';
 import type { Entity } from '../../../shared/types.js';
 import { executeSavedPlan } from '../../__tests__/fixtures/saved-exploration-executor.js';
+import { prepareSynthesize } from '../../context/synthesizer.js';
+import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { ExecutedPlan, Exploration, ExplorationPlan } from '../types.js';
 
 let sandbox: string;
@@ -81,6 +83,9 @@ test('a module-scope request profiles the named module through the real dependen
 	assert.equal(profile.path, dir, 'the named module was profiled');
 	assert.equal(profile.entityCount, 1, 'through the containing repository');
 	for (const id of ['e3', 'e4']) assert.notEqual(outputOf(anchored, id)['type'], 'failed', `${id} ran on the named module`);
+	// a directory anchor is the subject itself: nothing is labelled as contextual
+	const moduleIntent: ClassifiedIntent = { target: 'code', scope: 'XS', focused: true, focus: 'zebra crossing', scopeRef: { kind: 'module', value: dir }, reasoning: 'r' };
+	assert.doesNotMatch(prepareSynthesize({ intent: moduleIntent, executed: anchored, target: 'code' }).userTurn, /Contextual file expansion/);
 
 	// the earlier recipe (hits[0]) had nothing to chain on and did not profile the module
 	const ranked = await execute(scope, recipe('$e1.hits[0].path'));
@@ -108,6 +113,19 @@ test('a small symbol in a large file is sized and searched as the one entity; fi
 	assert.notEqual(outputOf(executed, 'e2')['type'], 'failed', 'usage.example ran on the anchor\'s entity id');
 	// the file-level exploration sees the whole file: it is the contextual expansion the prompt labels, not the subject
 	const fileProfile = outputOf(executed, 'e3')['profile'] as { kind: string; entityCount: number };
+	// ... and the synthesizer's evidence says so, from the real prompt assembly
+	const intent: ClassifiedIntent = { target: 'code', scope: 'XS', focused: true, focus: 'f2', scopeRef: { kind: 'symbol', value: `${large}#f2` }, reasoning: 'r' };
+	const prepared = prepareSynthesize({ intent, executed, target: 'code' });
+	const block = (id: string): string => {
+		const start = prepared.userTurn.indexOf(`### ${id} ::`);
+		const next = prepared.userTurn.indexOf('\n### ', start + 1);
+		return prepared.userTurn.slice(start, next === -1 ? undefined : next);
+	};
+	assert.match(block('e3'), /purpose: Contextual file expansion: this describes the whole file .*large\.ts, not only the symbol e-big-2/);
+	assert.doesNotMatch(block('e2'), /Contextual file expansion/, 'the symbol-aware lookup is the subject, not an expansion');
+	assert.doesNotMatch(block('e1'), /Contextual file expansion/);
+	assert.match(prepared.systemPrompt, /Centre on the anchor/, 'the synthesizer is told to centre on the anchor');
+	assert.match(prepared.systemPrompt, /A symbol anchor is one entity/);
 	assert.equal(fileProfile.kind, 'file');
 	assert.ok(fileProfile.entityCount > 1, `the file-level profile covers the whole file (${fileProfile.entityCount} entities), unlike the symbol`);
 });

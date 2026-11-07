@@ -226,6 +226,35 @@ export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecution
 // Message composition
 // ---------------------------------------------------------------------------
 
+/** The lookups that look at a whole file or directory rather than at one entity. */
+const FILE_LEVEL_TYPES: ReadonlySet<string> = new Set(['module.profile', 'convention.detect', 'import.graph']);
+
+interface SymbolAnchor { readonly path: string; readonly entityId: string | undefined }
+
+/** The symbol anchors the executed concept.resolve lookups returned: the request (or the top hit) is ONE entity. */
+function symbolAnchorsOf(executed: ExecutedPlan): readonly SymbolAnchor[] {
+	const out: SymbolAnchor[] = [];
+	for (const r of executed.results) {
+		if (r.exploration.type !== 'concept.resolve') continue;
+		const anchor = (r.output as { anchor?: { kind?: string; path?: string; entityId?: string } }).anchor;
+		if (anchor?.kind === 'symbol' && typeof anchor.path === 'string') out.push({ path: anchor.path, entityId: anchor.entityId });
+	}
+	return out;
+}
+
+/**
+ * The purpose line of a lookup as the synthesizer reads it. A file-level
+ * lookup on the file a symbol anchor lies in is stated as contextual file
+ * expansion: it describes the whole file, not the one entity the answer is about.
+ */
+function purposeOf(exp: { readonly type: string; readonly purpose: string; readonly params: Record<string, unknown> }, anchors: readonly SymbolAnchor[]): string {
+	if (!FILE_LEVEL_TYPES.has(exp.type)) return exp.purpose;
+	const path = exp.params['path'];
+	const anchor = anchors.find(a => a.path === path);
+	if (anchor === undefined) return exp.purpose;
+	return `Contextual file expansion: this describes the whole file ${anchor.path}, not only the symbol ${anchor.entityId ?? ''} the answer is about. ${exp.purpose}`;
+}
+
 function buildMessages(
 	promptContent: string,
 	intent:        ClassifiedIntent,
@@ -234,10 +263,11 @@ function buildMessages(
 	// Render the executed plan as a series of numbered blocks the LLM
 	// can scan sequentially. Each block: id, type, purpose, output as
 	// pretty-printed JSON.
+	const symbolAnchors = symbolAnchorsOf(executed);
 	const evidenceBlocks = executed.results
 		.map(r =>
 			`### ${r.exploration.id} :: ${r.exploration.type}\n` +
-			`purpose: ${r.exploration.purpose}\n` +
+			`purpose: ${purposeOf(r.exploration, symbolAnchors)}\n` +
 			`output:\n` +
 			'```json\n' +
 			JSON.stringify(r.output, null, 2) +

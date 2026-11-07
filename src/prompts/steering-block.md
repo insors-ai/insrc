@@ -63,6 +63,18 @@ a call from memory when the contract is one lookup away.
     relationship question from a text match alone.
   - For "where is X used", also grep for the name and report any call site the
     analyzer missed — its call graph can be incomplete.
+<!-- insrc:analyze-request:start -->
+  - **Send a structured `request`, not just the prompt.** Read the user's prompt
+    yourself and decide what it is about, then call `insrc_analyze_step` (or
+    `insrc_analyze`) with `request: { question, scopeRef: { kind, value },
+    target?, sizeHint?, context? }`. `scopeRef` names what to analyse: a
+    module or file as an ABSOLUTE path, a symbol by name, or the repo; use
+    `workspace` only when the prompt names no area. Put background the user
+    gave that bears on the answer in `context` (it never decides the scope).
+    The daemon checks the scope against the repository and answers
+    `scope-not-found` or `scope-repo-mismatch` rather than guessing. A
+    `focus`-only call still works and analyses the whole workspace.
+<!-- insrc:analyze-request:end -->
 - **Draw / diagram / document / map the code** (a self-contained HTML doc from
   the graph) → `insrc_docgen`. For PROPOSED designs, use the workflow
   artifact definitions below; docgen describes existing code, not a future model.

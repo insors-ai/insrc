@@ -35,6 +35,7 @@ import { fileURLToPath } from 'node:url';
 import { listRepos as listRegisteredRepos } from '../db/repos.js';
 import { getLogger } from '../shared/logger.js';
 import { listWorkflowGuides, guideMarkerStart, guideMarkerEnd } from './guide-sections.js';
+import { DAEMON_FEATURES } from './status.js';
 import type { RegisteredRepo, SteeringSelection } from '../shared/types.js';
 
 export type { SteeringSelection };
@@ -95,6 +96,34 @@ export function stripGuideSections(steeringText: string): string {
 	}
 	// Collapse the blank runs left where sections were removed, then trim.
 	return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
+export const REQUEST_GUIDANCE_START = '<!-- insrc:analyze-request:start -->';
+export const REQUEST_GUIDANCE_END   = '<!-- insrc:analyze-request:end -->';
+
+/** The capability a daemon advertises when its analyze tools accept a structured request. */
+const REQUEST_FEATURE = 'analyze-request';
+
+/** Whether this daemon accepts a structured analyze request (it advertises the capability in daemon.status). */
+export function daemonAcceptsAnalyzeRequest(): boolean {
+	return DAEMON_FEATURES.includes(REQUEST_FEATURE);
+}
+
+/**
+ * The request guidance region of the steering text, kept when the daemon accepts
+ * a structured request and removed when it does not, so a repo is never told to
+ * send a `request` that its daemon would drop. The marker lines go either way.
+ * Pure. A malformed pair (open without close) is left as it is.
+ */
+export function gateRequestGuidance(steeringText: string, accepted: boolean): string {
+	const startIdx = steeringText.indexOf(REQUEST_GUIDANCE_START);
+	if (startIdx === -1) return steeringText;
+	const endIdx = steeringText.indexOf(REQUEST_GUIDANCE_END, startIdx + REQUEST_GUIDANCE_START.length);
+	if (endIdx === -1) return steeringText;
+	const after = steeringText.slice(endIdx + REQUEST_GUIDANCE_END.length).replace(/^\n/, '');
+	if (!accepted) return steeringText.slice(0, startIdx) + after;
+	const body = steeringText.slice(startIdx + REQUEST_GUIDANCE_START.length, endIdx).replace(/^\n/, '');
+	return steeringText.slice(0, startIdx) + body + after;
 }
 
 /** Wrap the block body in the insrc:steering markers. */
@@ -223,7 +252,7 @@ export async function injectSteeringBlock(
 		return { files: targets.map(t => ({ file: t.file, action: 'skipped' as const })) };
 	}
 
-	const block = stripGuideSections(readSteeringBlock());   // throws → caller guards (no partial write); inject the skeleton only
+	const block = stripGuideSections(gateRequestGuidance(readSteeringBlock(), daemonAcceptsAnalyzeRequest()));   // throws → caller guards (no partial write); inject the skeleton only
 	const files: SteeringFileOutcome[] = [];
 
 	for (const t of targets) {
@@ -264,6 +293,8 @@ export interface SteeringRefreshDeps {
 	readonly readFile:  (path: string) => Promise<string | null>;
 	/** Persist refreshed file content. */
 	readonly writeFile: (path: string, content: string) => Promise<void>;
+	/** Whether the daemon accepts a structured analyze request; the request guidance is published only then. */
+	readonly acceptsRequest?: (() => boolean) | undefined;
 }
 
 /** Flat per-file outcome list across every walked repo. */
@@ -309,7 +340,7 @@ export async function refreshSteeringAcrossRepos(
 	// injects (the daemon-update path, runUpdateSteeringRefresh, supplies its own
 	// readBlock pointed at the freshly-built asset — it must not bypass the strip).
 	// Idempotent, so an already-stripped block passes through unchanged.
-	const block = stripGuideSections(d.readBlock());   // may throw → caller guards
+	const block = stripGuideSections(gateRequestGuidance(d.readBlock(), (d.acceptsRequest ?? daemonAcceptsAnalyzeRequest)()));   // may throw → caller guards
 	const repos = await d.listRepos();           // may reject → caller guards
 	const outcomes: SteeringFileOutcome[] = [];
 

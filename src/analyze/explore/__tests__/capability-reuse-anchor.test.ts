@@ -163,3 +163,23 @@ test('an empty named area is checked on both execution modes and its completenes
 		assert.match(JSON.stringify(out.completeness), /holds no stored entity/, `${mode}: the record states that the area held nothing`);
 	}
 });
+
+test('a limit of one leaves the named subject as the only candidate on both execution modes, although a child matches the words better', async () => {
+	const dir = file('src', 'pay');
+	const scope = await scopeOf('module', dir);
+	const limited = { id: 'e1', type: 'capability.reuse-check', purpose: 'p', params: { capability: 'refund', limit: 1 } } as Exploration;
+
+	const model = recordingModel();
+	const oneShot = await runCapabilityReuseCheck(limited, ctxFor(scope), model.provider);
+	assert.deepEqual(oneShot.candidates.map(c => c.path), [dir], 'one-shot: only the named module is checked');
+
+	const narrow = getNarrowRunner('capability.reuse-check');
+	assert.ok(narrow !== undefined);
+	const prepared = await narrow.prepare(limited, ctxFor(scope)) as Awaited<ReturnType<typeof prepareCapabilityReuseCheck>>;
+	assert.equal(prepared.kind, 'narrow-llm');
+	if (prepared.kind !== 'narrow-llm') return;
+	assert.deepEqual(prepared.prepared.profiles.map(p => p.path), [dir], 'multi-turn: only the named module is profiled');
+	assert.equal([...prepared.userTurn.matchAll(/path: (\S+)/g)].length, 1, 'and only it is put to the model');
+	// the cut is stated, not silent
+	assert.match(JSON.stringify(oneShot.completeness), /candidate modules/);
+});

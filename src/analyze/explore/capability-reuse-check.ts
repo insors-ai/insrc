@@ -468,6 +468,7 @@ function pickTopDistinct<T extends { path: string; kind: string; score: number }
 	limit: number,
 ): T[] {
 	const chosen: T[] = [];
+	if (limit <= 0) return chosen;
 	const seen = new Set<string>();
 	// Prefer dir hits over file hits for the same directory prefix.
 	const sorted = [...hits].sort((a, b) => {

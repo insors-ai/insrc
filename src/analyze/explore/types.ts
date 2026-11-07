@@ -147,6 +147,23 @@ export interface ConceptHit {
 	};
 }
 
+/**
+ * What the dependent lookups centre on. With a named area it is the area
+ * itself (`named-scope`), even when no hit shares a word with the question;
+ * with a repository or workspace scope it is the top-ranked hit (`ranked`),
+ * or absent when there is none.
+ */
+export interface ConceptAnchor {
+	/** The absolute path: the directory, the file, or, for a symbol, the file the symbol lies in. */
+	readonly path:      string;
+	readonly kind:      'dir' | 'file' | 'symbol' | 'repo';
+	readonly source:    'named-scope' | 'ranked';
+	/** A symbol anchor: the entity. */
+	readonly entityId?: string | undefined;
+	/** A symbol anchor: the file the entity lies in (also the `path`). */
+	readonly filePath?: string | undefined;
+}
+
 export interface ConceptResolveOutput {
 	readonly type:  'concept.resolve';
 	/** What this result holds and what it left out (shared contract sc1). */
@@ -154,6 +171,8 @@ export interface ConceptResolveOutput {
 	readonly query: string;
 	/** Ranked by score desc. Cap ~20. */
 	readonly hits:  readonly ConceptHit[];
+	/** What the dependent lookups centre on: the named area, else the top-ranked hit. */
+	readonly anchor?: ConceptAnchor | undefined;
 }
 
 /** Compact profile of a module (directory-level) or a file. */

@@ -50,8 +50,10 @@ import { getDb } from '../../db/client.js';
 import { listEntitiesForRepo } from '../../db/entities.js';
 import { getLogger } from '../../shared/logger.js';
 import type { Entity } from '../../shared/types.js';
+import { inAreaOf, scopeArea, type ScopeArea } from '../context/scope.js';
 
 import type {
+	ConceptAnchor,
 	ConceptHit,
 	ConceptResolveOutput,
 	Exploration,
@@ -531,7 +533,7 @@ export async function runConceptResolve(
 	const tokens = tokenise(params.query);
 	if (tokens.length === 0) {
 		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('debug', () => [{ query: params.query }, 'concept.resolve: no salient tokens']);
-		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
+		return withAnchor({ type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] }, ctx);
 	}
 
 	const structuralBoost = tokens.some(t => STRUCTURAL_TOKENS.has(t));
@@ -545,13 +547,17 @@ export async function runConceptResolve(
 	const matchTokens = tokens.filter(t => !STRUCTURAL_TOKENS.has(t));
 	if (matchTokens.length === 0) {
 		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('debug', () => [{ query: params.query, tokens }, 'concept.resolve: no non-structural tokens; empty result']);
-		return { type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] };
+		return withAnchor({ type: 'concept.resolve', completeness: noQueryCompleteness(), query: params.query, hits: [] }, ctx);
 	}
 
 	const includeKinds = params.includeKinds ?? ['dir', 'file', 'entity'];
 
 	const db = await getDb();
-	const entities = await listEntitiesForRepo(db, ctx.repoPath);
+	// With a named area only what lies in it is a candidate; the repository is still the graph key.
+	const area = ctx.scope !== undefined ? scopeArea(ctx.scope) : null;
+	const inArea = ctx.scope !== undefined && area !== null ? inAreaOf(ctx.scope) : undefined;
+	const allEntities = await listEntitiesForRepo(db, ctx.repoPath);
+	const entities = inArea !== undefined ? allEntities.filter(inArea) : allEntities;
 
 	// Assemble the candidate pool.
 	const rawCandidates: Candidate[] = [];
@@ -563,7 +569,7 @@ export async function runConceptResolve(
 	// Annotate every candidate with an entityCount so the density
 	// signal can discriminate real code modules from empty docs
 	// dirs that share a name.
-	const candidates = annotateEntityCounts(rawCandidates, entities);
+	const candidates = annotateEntityCounts(area === null ? rawCandidates : rawCandidates.filter(c => candidateInArea(c, area)), entities);
 
 	// Score every candidate. Drop zero-hit candidates inline.
 	const scored: ScoredCandidate[] = [];
@@ -611,7 +617,7 @@ export async function runConceptResolve(
 			topPath: hits[0]?.path,
 	}, 'concept.resolve: complete']);
 
-	return {
+	return withAnchor({
 		type: 'concept.resolve',
 		completeness: graphCompleteness({
 			returned: hits.length,
@@ -622,7 +628,32 @@ export async function runConceptResolve(
 		}),
 		query: params.query,
 		hits,
-	};
+	}, ctx);
+}
+
+/** Whether a candidate lies in the named area. A directory area holds itself and everything below it; a file area its file; a symbol area only the entity. */
+function candidateInArea(c: Candidate, area: ScopeArea): boolean {
+	if (area.kind === 'dir') return c.path === area.path || c.path.startsWith(`${area.path}/`);
+	if (area.kind === 'file') return c.kind !== 'dir' && c.path === area.path;
+	return c.kind === 'entity' && c.entityId === area.entityId;
+}
+
+/** The anchor of a result: the named area itself, else the top-ranked hit converted. */
+function anchorOf(out: ConceptResolveOutput, ctx: ExplorationRunnerContext): ConceptAnchor | undefined {
+	const area = ctx.scope !== undefined ? scopeArea(ctx.scope) : null;
+	if (area !== null) {
+		if (area.kind === 'symbol') return { path: area.filePath, kind: 'symbol', source: 'named-scope', entityId: area.entityId, filePath: area.filePath };
+		return { path: area.path, kind: area.kind, source: 'named-scope' };
+	}
+	const top = out.hits[0];
+	if (top === undefined) return undefined;
+	if (top.kind === 'entity') return { path: top.path, kind: 'symbol', source: 'ranked', ...(top.entityId !== undefined ? { entityId: top.entityId } : {}), filePath: top.path };
+	return { path: top.path, kind: top.kind, source: 'ranked' };
+}
+
+function withAnchor(out: ConceptResolveOutput, ctx: ExplorationRunnerContext): ConceptResolveOutput {
+	const anchor = anchorOf(out, ctx);
+	return anchor === undefined ? out : { ...out, anchor };
 }
 
 /** The system's code for a file-system error, or its message. */

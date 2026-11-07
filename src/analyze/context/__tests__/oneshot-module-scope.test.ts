@@ -22,7 +22,9 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import { _runShaperAtEntryForTest as runShaper } from '../index.js';
-import { _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
+import { _buildToolDepsForTest, _realPipelineStepsForTest, type PipelineSteps } from '../driver.js';
+import { resolveScopeForTarget } from '../scope.js';
+import { savedAnalysisExecution } from '../../connection-access.js';
 
 useTemporaryLance();
 
@@ -85,4 +87,14 @@ test('the one-shot shaper session and executePlan use the containing repository 
 	assert.equal(manifest.repoPath, repo);
 	assert.equal(manifest.scopeKind, 'manifest-dir');
 	assert.match(manifest.found, /chart\.ts/, 'the symbol lookup found the entity stored under the repository root');
+});
+
+test('the one-shot shaper session is keyed on the containing repository for module and manifest-dir scopes, and the area travels as the scope', async () => {
+	for (const [kind, value] of [['module', join(repo, 'src', 'pay')], ['manifest-dir', join(repo, 'deploy')]] as const) {
+		const scope = await resolveScopeForTarget({ kind, value }, 'code');
+		const toolDeps = _buildToolDepsForTest({ connectionExecution: savedAnalysisExecution(scope.lookupPath), runId: 'r1', shaperId: 'code', invocationMode: 'run', scope, provider });
+		assert.equal(toolDeps.repoPath, repo, kind);
+		assert.deepEqual(toolDeps.closureRepos, [repo], kind);
+		assert.equal(scope.lookupPath, value, `${kind}: the named area is the scope's own path`);
+	}
 });

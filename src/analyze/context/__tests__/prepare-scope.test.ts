@@ -177,7 +177,7 @@ test('generic and classification-mode requests on a symbol in an unindexed repo 
 // The tool loop's path
 // ---------------------------------------------------------------------------
 
-test("tool loop's path for classification and task modes is the resolved lookupPath", async () => {
+test("tool loop's repository for classification and task modes is the containing repository of the resolved scope", async () => {
 	const provider = {} as unknown as LLMProvider;
 	// The tools run in, and graph reads are keyed on, the registered repository that contains the
 	// scope (a module's directory is no registered repository); the area travels as the scope.

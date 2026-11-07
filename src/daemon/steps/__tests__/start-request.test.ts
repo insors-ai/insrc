@@ -26,6 +26,7 @@ import type { ScopeDeps } from '../../../analyze/context/scope.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { stepScope } from '../analyze-step/scope.js';
+import { measureResolvedScope } from '../../../analyze/measure.js';
 
 const ROOT = mkdtempSync(join(tmpdir(), 'insrc-start-request-'));
 setGraphStorePath(join(ROOT, 'graph.lmdb'));
@@ -118,7 +119,15 @@ test('a valid request mints a state whose intent has the named scope, context an
 	assert.equal(decoded.intent.context, 'background');
 	assert.equal(decoded.intent.scopeSource, 'request');
 	assert.equal(decoded.repoPath, A);
-	assert.ok(['XS', 'S', 'M', 'L', 'XL'].includes(decoded.intent.scope), 'the size is the one measured from the named area');
+	// the size is the one measured from the named area, not from the whole repository
+	await upsertEntities(null, [
+		{ id: 'e-outside-1', repo: A, file: join(A, 'other', 'z.ts'), kind: 'function', name: 'z1', language: 'typescript', startLine: 1, endLine: 2 },
+		{ id: 'e-outside-2', repo: A, file: join(A, 'other', 'z.ts'), kind: 'function', name: 'z2', language: 'typescript', startLine: 3, endLine: 4 },
+	] as unknown as Entity[]);
+	const moduleMeasure = await measureResolvedScope(await stepScope({ target: 'code', scopeRef: { kind: 'module', value: join(A, 'src') } }, undefined, undefined, A), 'code');
+	const wholeMeasure  = await measureResolvedScope(await stepScope({ target: 'code', scopeRef: { kind: 'workspace', value: A } }, undefined, undefined, A), 'code');
+	assert.ok(moduleMeasure.items < wholeMeasure.items, `the module holds fewer entities (${moduleMeasure.items}) than the repository (${wholeMeasure.items})`);
+	assert.equal(decoded.intent.scope, moduleMeasure.size);
 
 	// a prompt-only call still starts, on the workspace scope
 	const prompt = JSON.parse(((await handleAnalyzeStep({ phase: 'start', repo: A, focus: 'how does it work' })).content[0] as { text: string }).text) as { state: string };

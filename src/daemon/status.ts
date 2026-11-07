@@ -84,6 +84,12 @@ export function queueStatusFromBoard(indexing: IndexingStatus): { queueDepth: nu
  * the status is answered with an empty repository list and `storeFailure`.
  * Any other error from the read propagates as before.
  */
+/**
+ * What this daemon can do that a caller may need to know before it asks. One list,
+ * returned by every status answer, in the threaded and the single-threaded daemon.
+ */
+export const DAEMON_FEATURES: readonly string[] = ['analyze-request'];
+
 export async function buildDaemonStatus(src: DaemonStatusSources): Promise<DaemonStatus> {
 	const health = src.storeHealth ?? getStoreHealth;
 
@@ -107,6 +113,7 @@ export async function buildDaemonStatus(src: DaemonStatusSources): Promise<Daemo
 		modelPullStatus: src.modelState.status === 'pulling' ? 'pulling' : 'ready',
 		...(src.modelState.pct !== undefined && { modelPullPct: src.modelState.pct }),
 		installedCommit: src.installedCommit,
+		features: DAEMON_FEATURES,
 		...(src.lmdbFileSizeMb !== undefined && { lmdbFileSizeMb: src.lmdbFileSizeMb }),
 		...(failure !== undefined && { storeFailure: failure }),
 		...(src.queueLanes !== undefined && { queueLanes: src.queueLanes() }),

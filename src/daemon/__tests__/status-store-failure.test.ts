@@ -50,6 +50,7 @@ test('daemon status payload: no storeFailure when healthy; kind, time, operation
 	assert.deepEqual(healthy, {
 		uptime: 61, repos: [REPO], queueDepth: 3, embeddingsPending: 3,
 		modelPullStatus: 'pulling', modelPullPct: 40, installedCommit: 'abc123', lmdbFileSizeMb: 9,
+		features: ['analyze-request'],
 	});
 	assert.equal('storeFailure' in healthy, false);
 	assert.equal(storeFailureForStatus({ state: 'ok' }), undefined);

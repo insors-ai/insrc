@@ -1229,6 +1229,13 @@ export interface DaemonStatus {
    * daemon threads, so a consumer that does not know the field sees no change.
    */
   threads?:          ThreadView[];
+  /**
+   * What this daemon can do that a caller may need to know before it asks:
+   * 'analyze-request' (the analyze tools accept a structured request). Absent
+   * on a daemon from before the field existed, which reads as no feature; a
+   * consumer that does not know a name sees no change.
+   */
+  features?:         readonly string[];
 }
 
 /** What a daemon worker thread is for (`ThreadView.role`). */

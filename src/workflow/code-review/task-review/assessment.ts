@@ -9,6 +9,7 @@ import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 import type { ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { normalizeTaskResult } from './results.js';
+import { requireReuseIdentity } from './attribution-binding.js';
 
 export const AttributionSchema = Type.Object({ tasks: Type.Array(Type.Object({ taskId: Type.String(), changeIndexes: Type.Array(Type.Integer({ minimum: 0 })), testIndexes: Type.Array(Type.Integer({ minimum: 0 })) }, { additionalProperties: false })) }, { additionalProperties: false });
 function applicableTaskIds(prepared:PreparedReviewPacket):string[]{
@@ -74,6 +75,7 @@ export function attributionSchema(review:AdmittedReview) {
 }
 export function directReviewAssignments(review:AdmittedReview):readonly TaskAssignment[]|undefined { return review.attempt.header.attempt===1 ? directAssignments(review.prepared) : undefined; }
 function sourceAssessment(review:AdmittedReview,assignment:TaskAssignment):TaskReviewResult {
+ requireReuseIdentity(review,assignment);
  const decision=assignment.reassessment,ordinal=decision?.sourceAttempt;
  requireReview(decision?.action==='reuse'&&ordinal!==undefined&&ordinal<review.attempt.header.attempt,'origins','Reuse requires an earlier source attempt');
  const source=review.checkpoint.attempts.find(entry=>entry.header.attempt===ordinal),result=source?.['review-response'].tasks.find(task=>task.taskId===assignment.taskId);
@@ -83,7 +85,9 @@ function sourceAssessment(review:AdmittedReview,assignment:TaskAssignment):TaskR
 /** Attribution output is internal reviewer policy; ordinary task feedback remains unchanged. */
 export function reviewAssignments(review:AdmittedReview,input:unknown):readonly TaskAssignment[] {
  if(review.attempt.header.attempt===1)return deriveTaskAssignments(review.prepared,decodeReview(AttributionSchema,input).tasks);
- const plan=decodeReview(ReassessmentSchema,input),assignments=deriveTaskAssignments(review.prepared,plan.tasks).map(assignment=>{
+ const plan=decodeReview(ReassessmentSchema,input);
+ requireReview(review.attempt.header.attributionState!=='accepted'||plan.summary===review.attempt.header.reassessmentSummary,'attribution','Accepted reassessment summary cannot change');
+ const assignments=deriveTaskAssignments(review.prepared,plan.tasks).map(assignment=>{
   const decision=plan.tasks.find(task=>task.taskId===assignment.taskId)!;
   const mapped={...assignment,reassessment:{action:decision.action,reason:decision.reason,...(decision.action==='reuse'?{sourceAttempt:decision.sourceAttempt}:{})}};
   if(decision.action==='reuse')sourceAssessment(review,mapped);

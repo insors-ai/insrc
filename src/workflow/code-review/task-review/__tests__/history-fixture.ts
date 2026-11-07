@@ -7,6 +7,7 @@ export async function historyFixture(party:ReviewerParty='daemon'){
  const f=await fixture(true,3),base=f.packet.reviewSet[0]!.commit;
  f.put('stable-t1.js','export const stable1 = true;\n');f.put('stable-t3.js','export const stable3 = true;\n');f.git('add','stable-t1.js','stable-t3.js');f.git('commit','-qm','independent unchanged task scopes');const stable=f.git('rev-parse','HEAD');
  f.packet.reviewRevision=stable;f.packet.reviewSet.push({commit:stable,parent:base,files:['stable-t1.js','stable-t3.js'].map(path=>({path,segments:[{after:[1,1]}]}))});
+ await f.refreshBinding(['t1','t2','t3'].map(taskId=>({taskId,changeIndexes:[taskId==='t1'?1:taskId==='t2'?0:2],testIndexes:[0]})));
  const unchangedPacket=structuredClone(f.packet),state=f.checkpoint('history'),entry=state.attempts[0]!;
  entry['review-response'].tasks[0]!.inspectedReferences=[`${stable}:stable-t1.js`];entry['review-response'].tasks[2]!.inspectedReferences=[`${stable}:stable-t3.js`];
  entry.header.reviewer=party;entry['review-response'].tasks[0]!.summary='TASK1_ONLY_FEEDBACK';

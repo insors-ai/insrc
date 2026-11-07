@@ -37,8 +37,10 @@ test('reuse decisions: source task/attempt/party validation, acyclic ancestry an
   const rewritten={...f.scope(),tasks:f.scope().tasks.map(task=>({...task,result:f.fresh(task.taskId)}))};assert.throws(()=>reviewAssignments(review,rewritten),'model cannot supply its own reused feedback');
   const before=review.checkpoint.attempts[0]!.header.reviewer;review.checkpoint.attempts[0]!.header.reviewer='controller';assert.throws(()=>reviewAssignments(review,f.scope()),/foreign-party/);review.checkpoint.attempts[0]!.header.reviewer=before;
   const old=review.checkpoint.attempts[0]!['review-response'].tasks;review.checkpoint.attempts[0]!['review-response'].tasks=old.filter(result=>result.taskId!=='t3');assert.throws(()=>reviewAssignments(review,f.scope()),/Missing/);review.checkpoint.attempts[0]!['review-response'].tasks=old;
-  const defect=reviewAssignments(review,f.scope(1,'t3')).find(assignment=>assignment.taskId==='t2')!;
-  const unrelated={...defect,changes:defect.changes.map(change=>({...change,path:'other.js',previousPath:'other.js'}))};await assert.rejects(reuseAssessment(review,unrelated,f.deps.sources,await taskReferences(f.deps.sources,review.prepared,defect)),/outside the submitted/);
+  const unchanged=await prepareReviewAdmission(f.repo,'history',2,f.unchangedPacket,'daemon',f.deps.sources);
+  const unchangedScope=f.scope(1,'t3');for(const row of unchangedScope.tasks)row.changeIndexes=row.changeIndexes.filter(i=>i!==3);
+  const defect=reviewAssignments(unchanged,unchangedScope).find(assignment=>assignment.taskId==='t2')!;
+  const unrelated={...defect,changes:defect.changes.map(change=>({...change,path:'other.js',previousPath:'other.js'}))};await assert.rejects(reuseAssessment(unchanged,unrelated,f.deps.sources,await taskReferences(f.deps.sources,unchanged.prepared,defect)),/outside the submitted|inputs changed/);
  }finally{f.cleanup();}
 });
 

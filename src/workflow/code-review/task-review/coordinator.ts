@@ -162,7 +162,7 @@ export class TaskReviewCoordinator {
   const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined);
   const active=this.active.get(path); if(active)active.progress=tracker;
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
-  let assignments: readonly TaskAssignment[] | undefined;
+  let assignments: readonly TaskAssignment[] | undefined = await restoreAcceptedAssignments(review);
   let attributionFailure: { error: unknown; timedOut: boolean } | undefined;
   for (const task of selected.sort((a,b)=>a.order-b.order)) {
    if (entry['review-response'].tasks.some(result=>result.taskId===task.id)) continue;
@@ -203,27 +203,35 @@ export class TaskReviewCoordinator {
     codeTaskCommands:codeTaskCommands(prepared,review),onActivity:event=>{if(monitor.observe(event)){const prior=tracker.snapshot().phase;tracker.activity(event,monitor.snapshot().tools.length);progress.request(prior!==tracker.snapshot().phase);}},onCandidate:candidate,
    });
    const flow=(async()=>{
-    const provider=resolveProvider();requireReviewActivity(provider);
     if(!assignments){
      if(attributionFailure)throw attributionFailure.error;
-     assignments=directReviewAssignments(review);
+     const direct=directReviewAssignments(review);
+     if(direct){
+      const bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,direct));
+      try{await save(path,checkpoint);}catch(error){persistenceError=error;throw error;}
+      assignments=bound;
+     }
      if(!assignments){
       const acceptScope=(raw:unknown)=>serial(async()=>{
        check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;
-       try { assignments=reviewAssignments(review,raw); }
+       let bound:readonly TaskAssignment[];
+       try { bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,reviewAssignments(review,raw))); }
        catch (error) {
+        if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
         if (!(error instanceof TaskReviewInputError)) throw error;
         try { await recordAttributionRejection(review,error,()=>save(path,checkpoint)); }
         catch (failure) { persistenceError=failure; throw failure; }
         throw error;
        }
-       if(resolveFailureDiagnostics(entry,'attribution'))try{await save(path,checkpoint);}catch(error){
+       resolveFailureDiagnostics(entry,'attribution');try{await save(path,checkpoint);}catch(error){
         if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
         if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
         assignments=undefined;persistenceError=error;throw error;
        }
+       assignments=bound;
        return{accepted:true};
       });
+      const provider=resolveProvider();requireReviewActivity(provider);
       for (;;) {
        requireReview((entry.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');
        const priorRejections=entry.header.attributionRepair?.rejections ?? 0;
@@ -253,6 +261,7 @@ export class TaskReviewCoordinator {
      check();const assessed=await assessTaskResult(this.deps.sources,assignment,raw,references);
      await commitResult(assessed);return{accepted:true};
     });
+    const provider=resolveProvider();requireReviewActivity(provider);
     const raw=await provider.runReviewSession!(assignmentPrompt(prepared,assignment,references,checkpoint.project,review),assignmentResultSchema(assignment),options('assessment',acceptTask));
     if(!durable)await acceptTask(raw);
    })();
@@ -280,3 +289,4 @@ export class TaskReviewCoordinator {
 
  }
 }
+import { assignmentsToRows, bindTaskFinalIdentities, restoreAcceptedAssignments } from './attribution-binding.js';

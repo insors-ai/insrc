@@ -64,7 +64,7 @@ export class ControllerTaskReview {
   let assignments:readonly TaskAssignment[];
   try{
    requireReview((this.review.attempt.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');
-   assignments=reviewAssignments(this.review,input);
+   assignments=await bindTaskFinalIdentities(this.review,assignmentsToRows(this.review,reviewAssignments(this.review,input)));
   }catch(error){
    if(await recordAttributionRejection(this.review,error,()=>this.persist()))return this.frame(owner);
    this.monitor?.stop();this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
@@ -76,7 +76,7 @@ export class ControllerTaskReview {
   }
   this.checkTime();
   const priorDiagnostics=this.review.attempt['review-response'].failureDiagnostics;
-  if(resolveFailureDiagnostics(this.review.attempt,'attribution'))try{await this.persist();}catch(error){
+  resolveFailureDiagnostics(this.review.attempt,'attribution');try{await this.persist();}catch(error){
    if(priorDiagnostics)this.review.attempt['review-response'].failureDiagnostics=priorDiagnostics;else delete this.review.attempt['review-response'].failureDiagnostics;
    throw error;
   }
@@ -165,10 +165,13 @@ export class ControllerTaskReview {
   }
   this.assertOwner(owner);
   if(!this.monitor){
-   this.executionId=randomUUID();this.sequence=0;this.assignments??=directReviewAssignments(this.review);
+   this.executionId=randomUUID();this.sequence=0;
+   const restored=this.assignments??await restoreAcceptedAssignments(this.review), direct=restored?undefined:directReviewAssignments(this.review);
+   const candidate=restored??(direct?await bindTaskFinalIdentities(this.review,assignmentsToRows(this.review,direct)):undefined);
    this.progress.task(task,this.selected.indexOf(task)+1,this.selected.length,this.review.attempt['review-response'].tasks.length);
    this.review.attempt.header.status='running';this.review.attempt.header.activeTaskId=task.id;
    await this.persist();
+   this.assignments=candidate;
    const executionId=this.executionId;
    this.monitor=new ReviewActivityMonitor(error=>{void this.queue(undefined,async()=>{
     if(this.executionId===executionId&&this.current()?.id===task.id){log.warn({taskId:task.id,diagnostic:error.snapshot},'Controller review inactivity');await this.expire();}
@@ -226,3 +229,4 @@ export class ControllerTaskReview {
  }
  private retire(drop:boolean):void{this.progressPersistence.stop();this.progress.stopped();this.monitor?.stop();if(drop)this.stopped=true;this.deps.release(drop);this.resolveDone();}
 }
+import { assignmentsToRows, bindTaskFinalIdentities, restoreAcceptedAssignments } from './attribution-binding.js';

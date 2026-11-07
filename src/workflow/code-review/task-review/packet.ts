@@ -23,6 +23,7 @@ export interface PreparedReviewPacket {
  readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly ReviewChange[]; readonly tasks: readonly PlanTask[];
  readonly originChanges: readonly SelectedChange[];
  readonly projection?: ReviewProjection | undefined;
+ readonly finalTestBlobs?: readonly (string | null)[] | undefined;
  readonly documents: Readonly<Partial<Record<DocumentRole, string>>>;
  readonly derived?: StoredDerived | undefined;
 }
@@ -196,7 +197,9 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   requireReview(!packet.taskId || packet.taskId === unit.id, 'taskId', 'Task is not in the review');
  }
  const revisions = [...new Set([...(packet.reviewRevision ? [packet.reviewRevision] : []), ...packet.reviewSet.flatMap(c => [c.commit, ...(c.parent ? [c.parent] : [])])])];
+ const finalTestBlobs: (string | null)[] = [];
  for (const test of packet.tests) {
+  finalTestBlobs.push(packet.reviewRevision ? (await sources.file(packet.reviewRevision, test.file))?.oid ?? null : null);
   requireReview(test.evidenceReferences.length > 0 || test.result === 'not_run', 'tests', 'Reported execution needs provenance');
   let found = false;
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
@@ -204,7 +207,7 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
  }
  const projection = packet.reviewRevision ? await projectReviewScope(changes, packet.reviewRevision, sources, budget) : undefined;
  const effective: readonly ReviewChange[] = projection ? projection.entries.map(entry => ({ ...entry, origin: changes[entry.originChangeIndex]! })) : changes;
- return { epicHash: hash, packet, changes: effective, originChanges: changes, ...(projection ? { projection } : {}), tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
+ return { epicHash: hash, packet, changes: effective, originChanges: changes, ...(projection ? { projection, finalTestBlobs } : {}), tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }

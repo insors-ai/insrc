@@ -14,6 +14,7 @@ import type { ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 import { resultReferences, validateTaskBody } from './record.js';
+import { restoreAcceptedAssignments } from './attribution-binding.js';
 
 export function canonicalReviewStory(story: string, hash: string): string {
  const local = story.startsWith(`STORY-${hash}-`) ? story.slice(`STORY-${hash}-`.length) : story;
@@ -39,6 +40,8 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
    requireReview(Number.isFinite(Date.parse(entry.header.createdAt)) && (!entry.header.completedAt || Number.isFinite(Date.parse(entry.header.completedAt))), 'checkpoint', 'Invalid attempt timestamp');
    validateFailureDiagnostics(entry);
    const prepared = await prepareReviewPacket(entry.submitted, sources, true, undefined, entry.header.derived);
+   requireReview(!entry.submitted.reviewRevision || entry.header.finalScopeIdentity === prepared.projection?.identity, 'attribution', 'Saved final scope does not match pinned source');
+   const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared });
    requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');
    const selected = prepared.tasks.filter(task => !saved.taskId || task.id === saved.taskId).map(task => task.id);
@@ -52,7 +55,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
      requireReview(match, 'evidence', 'Expected committed evidence reference'); reviewPath(match[2]!);
      await sources.commit(match[1]!); requireReview(await sources.file(match[1]!, match[2]!), 'evidence', 'Unresolved saved evidence reference');
     }
-    validateTaskResult(result, { taskId: result.taskId, changes: prepared.changes, evidenceReferences: refs });
+    validateTaskResult(result, { taskId: result.taskId, changes: boundAssignments?.find(a => a.taskId === result.taskId)?.changes ?? (entry.submitted.reviewRevision ? [] : prepared.changes), evidenceReferences: refs });
    }
    if (!['pending', 'running'].includes(entry.header.status)) requireReview(results.length === selected.length && entry.header.completedAt && aggregateTaskStatus(results) === entry.header.status, 'checkpoint', 'Terminal attempt disagrees with saved tasks');
    if (entry['review-response'].crPublication === 'complete') requireReview(entry.header.completedAt && !['pending', 'running'].includes(entry.header.status), 'checkpoint', 'Published attempt is not terminal');
@@ -90,6 +93,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  if (saved && priorPrepared) requireReview(prepared.epicHash === priorPrepared.epicHash && canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) === canonicalReviewStory(saved.storyId, prepared.epicHash) && prepared.packet.taskId === saved.taskId, 'scope', 'New attempt changes review subject');
  const entry: ReviewAttempt = { header: { attempt, reviewer, status: 'pending', createdAt: new Date().toISOString(), selectedTaskIds: prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId).map(task => task.id), ...(prepared.derived ? { derived: prepared.derived } : {}) }, submitted: prepared.packet,
   'review-response': { summary: 'Review admitted; CR publication pending.', tasks: [], crPublication: 'pending' } };
+ if (prepared.projection) { entry.header.finalScopeIdentity = prepared.projection.identity; entry.header.attributionState = 'pending'; }
  if (!prepared.packet.taskId) {
   try { entry.header.buildFingerprint = reviewedBuildFingerprint(JSON.parse(await readFile(artifactJsonPath(canonical, buildArtifactId(prepared.epicHash, canonicalReviewStory(prepared.packet.storyId, prepared.epicHash))), 'utf8'))); }
   catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }

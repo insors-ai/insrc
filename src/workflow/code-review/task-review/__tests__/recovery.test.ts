@@ -30,7 +30,7 @@ test('interrupted recovery: only absent tasks rerun and terminal failed/incomple
    await assert.rejects(coordinator.start(f.repo,'resume',1,undefined,{operation:'resume'}),/already-running/);
    await coordinator.settled(f.repo,'resume');
    const completed=f.read(ack.path).attempts[0]!;
-   assert.deepEqual(completed['review-response'].tasks.slice(0,2),preserved);assert.equal(completed['review-response'].tasks[2]!.taskId,'t2');assert.equal(calls,2,'one attribution and one unfinished assessment');
+   assert.deepEqual(completed['review-response'].tasks.slice(0,2),preserved);assert.equal(completed['review-response'].tasks[2]!.taskId,'t2');assert.equal(calls,1,'accepted mapping restores without attribution; only unfinished assessment runs');
    assert.equal(completed.header.status,status);assert.equal(completed.header.interrupted,undefined);assert.equal(completed['review-response'].crPublication,'complete');
   }finally{f.cleanup();}
  }
@@ -43,11 +43,11 @@ test('controller recovery: new trusted connection, old-owner refusal, disconnect
  const a=await channel(host.path),foreign=await channel(host.path);let b:Awaited<ReturnType<typeof channel>>|undefined,c:Awaited<ReturnType<typeof channel>>|undefined;
  try{
   const request={repo:f.repo,epicHash:hash,reviewId:'controller-resume',attempt:1,operation:'resume'};
-  const first=await a.call<ControllerFrame>('codeReview.task.start',request);assert.equal(first.kind,'scope');assert.deepEqual(first.completedTaskIds,['t1']);
+  const first=await a.call<ControllerFrame>('codeReview.task.start',request);assert.equal(first.kind,'task');assert.deepEqual(first.completedTaskIds,['t1']);
   await assert.rejects(foreign.call('codeReview.task.assignment',request),/wrong-reviewer/);
-  await a.call('codeReview.task.scope',{...request,scope:scope(2)});a.close();await eventually(()=>f.read(first.path).attempts[0]!.header.interrupted===true);
+  a.close();await eventually(()=>f.read(first.path).attempts[0]!.header.interrupted===true);
   b=await channel(host.path);const rebound=await b.call<ControllerFrame>('codeReview.task.start',request);assert.equal(rebound.attempt,1);assert.deepEqual(rebound.pendingTaskIds,['t2']);
-  const task=await b.call<ControllerFrame>('codeReview.task.scope',{...request,scope:scope(2)});assert.equal(task.taskId,'t2');
+  const task=rebound;assert.equal(task.taskId,'t2');
   const done=await b.call<ControllerFrame>('codeReview.task.result',{...request,result:{...f.result,taskId:'t2'}});assert.equal(done.kind,'done');assert.equal(done.crPublication,'complete');
   c=await channel(host.path);const replay=await c.call<ControllerFrame>('codeReview.task.start',request);assert.equal(replay.kind,'done');
   await assert.rejects(b.call('codeReview.task.assignment',request),/wrong-reviewer/);
@@ -105,8 +105,8 @@ test('controller recovery preserves every terminal outcome and selects missing t
    if(status==='failed')prior.error='Reviewer unavailable';
    entry['review-response'].tasks=[prior,{...structuredClone(f.result),taskId:'t3'}];await saveCheckpoint(checkpointPath(f.repo,'sparse'),state);
    const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>{throw new Error('Actual controller must not spawn provider');},publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
-   const frame=await coordinator.startController(f.repo,'sparse',1,undefined,owner,hash,'resume');assert.equal(frame.kind,'scope');
-   const task=await coordinator.controllerScope(f.repo,'sparse',1,scope(3),owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});assert.equal(task.taskId,'t2');
+   const frame=await coordinator.startController(f.repo,'sparse',1,undefined,owner,hash,'resume');assert.equal(frame.kind,'task');
+   const task=frame;assert.equal(task.taskId,'t2');
    const done=await coordinator.controllerResult(f.repo,'sparse',1,{...f.result,taskId:'t2'},owner,{taskId:task.taskId,executionId:task.executionId,sequence:task.nextSequence});assert.equal(done.kind,'done');assert.equal(done.status,status);
    assert.deepEqual(f.read(frame.path).attempts[0]!['review-response'].tasks.slice(0,2),entry['review-response'].tasks);
   }finally{f.cleanup();}

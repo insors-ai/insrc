@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "77edff6dcaad190bc6058738e6840d5fb9402b9b5fbd1403e36d3079bda0fc4c",
-        "at": "2026-11-07T05:42:10.307Z",
+        "number": 10,
+        "contentHash": "4167d63266eb72f00fa46f7c1a26f348555069380bc8e1a8604b0a24d07eee08",
+        "at": "2026-11-07T05:54:35.353Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T05:42:10.173Z",
+    "updatedAt": "2026-11-07T05:54:35.209Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 8
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -476,6 +476,103 @@
               },
               {
                 "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "671f18101",
+        "ranAt": "2026-11-07T05:54:35.209Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Attribution accounts for all original entries/tests and replacement-witness closure, refusing missing coverage.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "effective attribution preserves all entries/tests and requires replacement witness closure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "The same final blobs/paths/spans reach selectedCode, attributionPrompt, assignmentPrompt, native grants, result schemas and host validation.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "final blobs, paths and spans reach prompts, native grants and strict result validation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "renamed final paths alone authorize findings; previousPath remains provenance context",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "native response schema bounds decimal intervals, gaps and deletion anchors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Both routes reject historical/unassigned coordinates and all findings on none scopes; genuine final defects and mandatory coverage omissions still block.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "native and controller routes share final scope and reject historical findings without suppressing final defects",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+                "title": "both reviewer routes reject invalid locations and preserve mandatory coverage omissions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3289,
+            "titles": [
+              {
+                "title": "effective attribution preserves all entries/tests and requires replacement witness closure",
+                "result": "pass"
+              },
+              {
+                "title": "final blobs, paths and spans reach prompts, native grants and strict result validation",
+                "result": "pass"
+              },
+              {
+                "title": "native response schema bounds decimal intervals, gaps and deletion anchors",
+                "result": "pass"
+              },
+              {
+                "title": "both reviewer routes reject invalid locations and preserve mandatory coverage omissions",
+                "result": "pass"
+              },
+              {
+                "title": "native and controller routes share final scope and reject historical findings without suppressing final defects",
+                "result": "pass"
+              },
+              {
+                "title": "renamed final paths alone authorize findings; previousPath remains provenance context",
                 "result": "pass"
               }
             ],

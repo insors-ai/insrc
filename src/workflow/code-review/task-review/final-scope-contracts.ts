@@ -19,7 +19,7 @@ export type ReviewedSegment = Static<typeof ReviewedSegmentSchema>;
 export const OriginRefSchema = object({ changeIndex: index, segmentIndex: index });
 export type OriginRef = Static<typeof OriginRefSchema>;
 export const OriginDispositionSchema = object({ source: OriginRefSchema, sourcePart: ReviewedSegmentSchema,
- kind: Type.Union(['surviving', 'superseded', 'deleted'].map(s => Type.Literal(s))),
+ kind: Type.Union((['surviving', 'superseded', 'deleted'] as const).map(s => Type.Literal(s))),
  finalSegments: Type.Array(ReviewedSegmentSchema, { maxItems: 100000 }),
  replacementWitnesses: Type.Array(OriginRefSchema, { maxItems: 10000 }),
 });

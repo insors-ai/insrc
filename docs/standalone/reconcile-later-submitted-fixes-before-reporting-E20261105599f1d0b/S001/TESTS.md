@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 29 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 35 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -136,3 +136,34 @@ Run at 2026-11-07T05:42:10.173Z on commit `fcdde7b58`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 10 | 2.6 s |  |
+
+## t4
+
+Run at 2026-11-07T05:54:35.209Z on commit `671f18101`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Attribution accounts for all original entries/tests and replacement-witness closure, refusing missing coverage.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | effective attribution preserves all entries/tests and requires replacement witness closure | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+
+**integration: The same final blobs/paths/spans reach selectedCode, attributionPrompt, assignmentPrompt, native grants, result schemas and host validation.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | final blobs, paths and spans reach prompts, native grants and strict result validation | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+| pass | renamed final paths alone authorize findings; previousPath remains provenance context | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+| pass | native response schema bounds decimal intervals, gaps and deletion anchors | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+
+**integration: Both routes reject historical/unassigned coordinates and all findings on none scopes; genuine final defects and mandatory coverage omissions still block.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | native and controller routes share final scope and reject historical findings without suppressing final defects | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+| pass | both reviewer routes reject invalid locations and preserve mandatory coverage omissions | `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/effective-scope.test.ts` | 0 | 6 | 3.3 s |  |

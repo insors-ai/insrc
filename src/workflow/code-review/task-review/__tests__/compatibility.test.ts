@@ -30,7 +30,7 @@ test('recovery end-to-end: real IPC/Git, both adapters, interruption boundaries 
   await assert.rejects(foreign.call('codeReview.task.assignment',{...request}),/explicit retrigger/);
   second=await channel(host.path);const resumed=await second.call<ControllerFrame>('codeReview.task.start',{...request,packet:undefined,operation:'resume'});
   assert.equal(resumed.attempt,2);assert.deepEqual(resumed.completedTaskIds,['t1']);assert.deepEqual(resumed.pendingTaskIds,['t2','t3']);assert.deepEqual(f.read(start.path).attempts[0],f.original);
-  const continued=await second.call<ControllerFrame>('codeReview.task.scope',{...request,scope:f.scope()});assert.equal(continued.taskId,'t2');
+  const continued=resumed;assert.equal(continued.taskId,'t2');
   const done=await second.call<ControllerFrame>('codeReview.task.result',{...request,result:f.fresh('t2')});assert.equal(done.status,'incomplete');assert.equal(done.crPublication,'complete');
   const saved=f.read(start.path);assert.equal(saved.attempts[1]!['review-response'].origins!.filter(origin=>origin.taskId==='t1').length,1);assert.deepEqual(saved.attempts[1]!['review-response'].tasks[0],before.attempts[1]!['review-response'].tasks[0]);
   const replay=await second.call<ControllerFrame>('codeReview.task.start',{...request,packet:undefined,operation:'resume'});assert.equal(replay.kind,'done');assert.equal(replay.status,'incomplete');

@@ -6,6 +6,8 @@ import type { ReviewProgress } from './progress.js';
 import { CloneType, Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
+import { AcceptedTaskAttributionSchema, AttributionFailureSchema } from './final-scope-contracts.js';
+import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
 
 const cloneFields = <T extends Record<string, TSchema>>(fields: T): T => Object.fromEntries(Object.entries(fields).map(([key, schema]) => [key, CloneType(schema)])) as T;
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
@@ -97,7 +99,8 @@ export function parsePacket(input: unknown, historical = false): ReviewPacket {
 }
 export interface ReviewAttempt {
  progress?: ReviewProgress;
- header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; attributionRepair?: { rejections: number; feedback: string }; reassessmentSummary?: string };
+ header: { attempt: number; reviewer: ReviewerParty; status: ReviewStatus; createdAt: string; completedAt?: string; activeTaskId?: string; interrupted?: boolean; selectedTaskIds: readonly string[]; derived?: StoredDerived | undefined; buildFingerprint?: string; attributionRepair?: { rejections: number; feedback: string }; reassessmentSummary?: string;
+ finalScopeIdentity?: string; attributionState?: 'pending' | 'accepted' | 'failed'; acceptedAttribution?: readonly AcceptedTaskAttribution[]; taskScopeIdentities?: readonly { taskId: string; identity: string }[]; attributionIdentity?: string; attributionFailure?: { code: string; summary: string } };
  submitted: ReviewPacket;
  'review-response': { failureDiagnostics?: readonly FailureDiagnostic[]; summary: string; tasks: readonly TaskReviewResult[]; crPath?: string; crPublication: 'pending' | 'complete'; error?: string; origins?: readonly TaskResultOrigin[] };
 }
@@ -114,6 +117,6 @@ export interface TaskBasedCodeReviewRecord {
 
 export const CheckpointSchema = Type.Object({ schemaVersion:Type.Literal(1), reviewId:text, project:text, storyId:text, taskId:Type.Optional(text), attempts:Type.Array(Type.Object({
  progress:Type.Optional(ProgressSchema),
- header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), derived:Type.Optional(DerivedSchema), buildFingerprint:Type.Optional(text), attributionRepair:Type.Optional(object({rejections:Type.Integer({minimum:1,maximum:3}),feedback:Type.String({minLength:1,maxLength:8192})})), reassessmentSummary:Type.Optional(text) },{additionalProperties:false}),
+ header:Type.Object({ attempt:Type.Integer({ minimum:1, maximum:Number.MAX_SAFE_INTEGER }), reviewer:Type.Union([Type.Literal('daemon'),Type.Literal('controller')]), status:Type.Union([Type.Literal('pending'),Type.Literal('running'),TaskResultSchema.properties.status]), createdAt:text, completedAt:Type.Optional(text), activeTaskId:Type.Optional(text), interrupted:Type.Optional(Type.Boolean()), selectedTaskIds:Type.Array(text), derived:Type.Optional(DerivedSchema), buildFingerprint:Type.Optional(text), attributionRepair:Type.Optional(object({rejections:Type.Integer({minimum:1,maximum:3}),feedback:Type.String({minLength:1,maxLength:8192})})), reassessmentSummary:Type.Optional(text), finalScopeIdentity:Type.Optional(Type.String({pattern:'^[0-9a-f]{64}$'})), attributionState:Type.Optional(Type.Union((['pending','accepted','failed'] as const).map(s=>Type.Literal(s)))), acceptedAttribution:Type.Optional(Type.Array(AcceptedTaskAttributionSchema,{maxItems:10000})), taskScopeIdentities:Type.Optional(Type.Array(object({taskId:text,identity:Type.String({pattern:'^[0-9a-f]{64}$'})}),{maxItems:10000})), attributionIdentity:Type.Optional(Type.String({pattern:'^[0-9a-f]{64}$'})), attributionFailure:Type.Optional(AttributionFailureSchema) },{additionalProperties:false}),
  submitted:StoredPacketSchema, 'review-response':Type.Object({ failureDiagnostics:Type.Optional(FailureDiagnosticsSchema), summary:Type.String(), tasks:Type.Array(TaskResultSchema), crPath:Type.Optional(text), crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]), error:Type.Optional(text), origins:Type.Optional(Type.Array(TaskOriginSchema, {maxItems:10000})) },{additionalProperties:false})
  },{additionalProperties:false}),{minItems:1}) },{additionalProperties:false});

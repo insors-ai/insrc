@@ -6,6 +6,7 @@ import { constants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { CheckpointSchema, decodeReview, MAX_REVIEW_JSON_BYTES, requireReview } from './contracts.js';
 import type { ReviewCheckpoint } from './contracts.js';
+import { validateSavedAttribution } from './attribution-binding.js';
 
 export function checkpointPath(project: string, id: string): string {
  requireReview(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(id), 'reviewId', 'Expected a literal review identifier');
@@ -13,7 +14,7 @@ export function checkpointPath(project: string, id: string): string {
 }
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint): Promise<void> {
- for (const attempt of checkpoint.attempts) validateFailureDiagnostics(attempt);
+ for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
  const serialized = JSON.stringify(decodeReview(CheckpointSchema, checkpoint), null, 2) + '\n';
  requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
  await mkdir(dirname(path), { recursive: true, mode: 0o700 });
@@ -41,7 +42,7 @@ export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | u
   const stat = await file.stat();
   requireReview(stat.isFile() && stat.size <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'Expected bounded checkpoint file');
   const checkpoint = decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
-  for (const attempt of checkpoint.attempts) validateFailureDiagnostics(attempt);
+  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
   return checkpoint;
  } finally { await file.close(); }
 }

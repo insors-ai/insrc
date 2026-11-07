@@ -99,7 +99,7 @@ const RAW: RawBundle = { system: 'sys', focus: 'Intent focus: none', summary: 's
 interface Seen { decompose: Array<{ scope: ResolvedScope; intent: ClassifiedIntent }>; executePlan: Array<{ repoPath: string; scope?: ResolvedScope }>; synthesize: number }
 
 /** A report without its measure: these tests are about the completeness part. The measure has its own tests. */
-const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, ...rest } = report; return rest; };
+const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, scope: _s, ...rest } = report; return rest; };
 
 function standIns(over: Partial<PipelineSteps> = {}): { steps: PipelineSteps; seen: Seen } {
 	const seen: Seen = { decompose: [], executePlan: [], synthesize: 0 };

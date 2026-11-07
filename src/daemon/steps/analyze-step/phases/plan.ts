@@ -198,6 +198,7 @@ export async function handlePlan(
 		intent:   { ...state.intent, scope: measure.size },
 		executed,
 		measure,
+		reportScope: { ref: state.intent.scopeRef, source: state.intent.scopeSource },
 		target:   synthesizerKey,
 	}, execution);
 	// Not retryable: the file will still be missing on the next call.

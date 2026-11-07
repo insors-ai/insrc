@@ -61,8 +61,8 @@ const REPO = '/work/app';
 
 /** What the stand-in measuring step returns for every scope. */
 const AREA: RequestMeasure = { source: 'named-area', items: 600, files: 100, characters: null, size: 'M', determined: true };
-/** A report without its measure: these tests are about the completeness part. The measure has its own tests. */
-const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, ...rest } = report; return rest; };
+/** A report without its measure and scope: these tests are about the completeness part. The measure and the scope have their own tests. */
+const sansMeasure = (report: AnswerReport | undefined): unknown => { if (report === undefined) return undefined; const { measure: _m, scope: _s, ...rest } = report; return rest; };
 
 const INTENT: ClassifiedIntent = {
 	target:    'code',
@@ -751,4 +751,22 @@ test("pipeline: an executePlan that throws ends as ShaperLookupFailedError (code
 	assert.ok(PIPELINE_CAUSES.includes('lookup-failed') && PIPELINE_CAUSES.includes('index-state-read-failed'));
 	assert.ok(errorForPipelineCause('index-state-read-failed', 'x') instanceof ShaperIndexStateReadError);
 	assert.equal(new Set(PIPELINE_CAUSES).size, PIPELINE_CAUSES.length, 'no cause listed twice');
+});
+
+test('the one-shot pipeline\'s report states the scope and who named it, with the same line the step tool renders for the same intent', async () => {
+	const { renderScopeLine } = await import('../../completeness.js');
+	const lines: string[] = [];
+	for (const source of ['request', 'prompt', undefined] as const) {
+		const intent = { ...INTENT, scopeRef: { kind: 'workspace', value: REPO }, ...(source !== undefined ? { scopeSource: source } : {}) } as ClassifiedIntent;
+		const { outcome } = await run({}, intent, 'run', { kind: 'workspace', value: REPO, repoPath: REPO, lookupPath: REPO });
+		assert.equal(outcome.kind, 'bundle');
+		if (outcome.kind !== 'bundle') return;
+		const scope = outcome.found?.report.scope;
+		assert.deepEqual([scope?.kind, scope?.value, scope?.named], ['workspace', REPO, source ?? 'not-recorded']);
+		lines.push(renderScopeLine(scope!));
+	}
+	assert.equal(new Set(lines).size, 3, 'a structured workspace request, a prompt-only call and an older payload render differently');
+	assert.match(lines[0]!, /named by the request/);
+	assert.match(lines[1]!, /the caller named no scope/);
+	assert.match(lines[2]!, /was not recorded/);
 });

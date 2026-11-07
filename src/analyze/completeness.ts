@@ -174,6 +174,21 @@ export interface SourceNote {
 	readonly reason:     string;
 }
 
+/**
+ * The scope an analysis ran on. `named` says who chose it: `request` (the
+ * caller named it), `prompt` (the caller sent only a prompt, so the whole
+ * repository was the default) or `not-recorded` (an older payload). `anchor`
+ * is how the lookups chose their centre, set only when an executed
+ * concept.resolve result establishes it: `named-scope` (the scope itself) or
+ * `ranked` (text matching over the repository).
+ */
+export interface AnswerReportScope {
+	readonly kind:    string;
+	readonly value:   string;
+	readonly named:   'request' | 'prompt' | 'not-recorded';
+	readonly anchor?: 'named-scope' | 'ranked' | undefined;
+}
+
 export interface AnswerReport {
 	readonly completeness: {
 		readonly complete:    boolean;
@@ -185,6 +200,8 @@ export interface AnswerReport {
 	readonly answerFailure?: string | undefined;
 	/** What the request touched and its size; absent on a report made before the measure existed. */
 	readonly measure?:  RequestMeasure | undefined;
+	/** The scope the analysis ran on and who named it; absent on a report made before the scope was stated. */
+	readonly scope?:    AnswerReportScope | undefined;
 	/** Typed by Story s3. */
 	readonly handling?: unknown;
 }
@@ -331,13 +348,37 @@ export function renderMeasureLine(measure: RequestMeasure): string {
 }
 
 /**
+ * The one line an answer carries about its scope, under the measure line: what
+ * the analysis ran on and whether the caller named it. How the lookups chose
+ * their centre is stated only when an executed concept.resolve result
+ * established it; an analysis that ran no such lookup (a documents analysis
+ * among them) is not described as text-matched.
+ */
+export function renderScopeLine(scope: AnswerReportScope): string {
+	const what = `${scope.kind} ${oneLine(scope.value)}`;
+	const lead = scope.named === 'request'
+		? `Scope: ${what}, named by the request.`
+		: scope.named === 'prompt'
+			? `Scope: ${what}, the whole repository by default: the caller named no scope.`
+			: `Scope: ${what}; whether the caller named it was not recorded.`;
+	const anchor = scope.anchor === 'ranked'
+		? ' The lookups centred on the best text match found over that scope.'
+		: scope.anchor === 'named-scope'
+			? ' The lookups centred on that scope itself.'
+			: '';
+	return `${lead}${anchor}`;
+}
+
+/**
  * The head of an answer's text: the completeness line and, when the report
- * has a measure, the measure line under it. Every writer of an answer's head
- * goes through this, so the two lines are never written apart.
+ * has them, the measure line and the scope line under it. Every writer of an
+ * answer's head goes through this, so the lines are never written apart.
  */
 export function renderReportHead(report: AnswerReport): string {
-	const line = renderCompletenessLine(report);
-	return report.measure !== undefined ? `${line}\n${renderMeasureLine(report.measure)}` : line;
+	const lines = [renderCompletenessLine(report)];
+	if (report.measure !== undefined) lines.push(renderMeasureLine(report.measure));
+	if (report.scope !== undefined) lines.push(renderScopeLine(report.scope));
+	return lines.join('\n');
 }
 
 /**

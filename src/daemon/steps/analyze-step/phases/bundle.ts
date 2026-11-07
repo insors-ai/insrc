@@ -122,7 +122,7 @@ export async function handleBundle(
 	// because the schema it was given has no such field.
 	// Its measure is taken from the same results, with the caller's stated size as the hint.
 	const results = state.executed?.results ?? [];
-	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint));
+	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint), { ref: state.intent.scopeRef, source: state.intent.scopeSource });
 	// (3b) The subsystems of the scope and of the files the bundle cites (Epic
 	// c2ba6fa6 s8), from the stored subsystem rows, as runShaper's bundles carry them.
 	const scopeRef = state.intent.scopeRef;

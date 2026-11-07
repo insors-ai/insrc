@@ -1661,7 +1661,7 @@ async function tryExplorationPipeline(
 	// The request's measure is taken here too, from what the lookups returned:
 	// it is the report's measure, and its size is the size the answer step is given.
 	const measure = measureLookupResults(executed.results, sizeHint);
-	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results, measure) };
+	const found: AnswerStepFound = { results: executed.results, report: reportFromLookups(executed.results, measure, { ref: unsized.scopeRef, source: unsized.scopeSource }) };
 	const answerIntent: ClassifiedIntent = { ...unsized, scope: measure.size };
 
 	// (c.1) Freeform.probe short-circuit: when a plan's SOLE

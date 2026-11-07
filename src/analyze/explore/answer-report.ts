@@ -10,7 +10,8 @@
  */
 
 import { deriveAnswerReport, isCompletenessRecord } from '../completeness.js';
-import type { AnswerReport, ReportSource } from '../completeness.js';
+import type { AnswerReport, AnswerReportScope, ReportSource } from '../completeness.js';
+import type { AnalyzeScopeRef } from '../../shared/analyze-types.js';
 import type { RequestMeasure } from '../measure.js';
 import type { ExecutedExploration } from './types.js';
 
@@ -34,7 +35,23 @@ export const NO_COMPLETENESS_RECORD = 'the lookup returned no completeness recor
  * A measure of the request, when one is given, goes into the report as it is;
  * a report built without one is exactly the report of the lookups.
  */
-export function reportFromLookups(results: readonly ExecutedExploration[], measure?: RequestMeasure): AnswerReport {
+export interface ReportScopeInput {
+	readonly ref:    AnalyzeScopeRef;
+	/** Who named the scope: absent on an intent from before the field existed. */
+	readonly source: 'request' | 'prompt' | undefined;
+}
+
+/** How the executed lookups chose their centre, when a concept.resolve result says. */
+function anchorSourceOf(results: readonly ExecutedExploration[]): 'named-scope' | 'ranked' | undefined {
+	for (const r of results) {
+		if (r.exploration.type !== 'concept.resolve') continue;
+		const anchor = (r.output as { anchor?: { source?: unknown } }).anchor;
+		if (anchor?.source === 'named-scope' || anchor?.source === 'ranked') return anchor.source;
+	}
+	return undefined;
+}
+
+export function reportFromLookups(results: readonly ExecutedExploration[], measure?: RequestMeasure, scope?: ReportScopeInput): AnswerReport {
 	const sources: ReportSource[] = results.map((r): ReportSource => {
 		const base = { sourceId: lookupSourceId(r), sourceKind: 'lookup' as const };
 		const out = r.output;
@@ -44,5 +61,8 @@ export function reportFromLookups(results: readonly ExecutedExploration[], measu
 		return isCompletenessRecord(completeness) ? { ...base, completeness } : { ...base, failure: NO_COMPLETENESS_RECORD };
 	});
 	const report = deriveAnswerReport(sources);
-	return measure !== undefined ? { ...report, measure } : report;
+	const anchor = scope !== undefined ? anchorSourceOf(results) : undefined;
+	const stated: AnswerReportScope | undefined = scope === undefined ? undefined
+		: { kind: scope.ref.kind, value: scope.ref.value, named: scope.source ?? 'not-recorded', ...(anchor !== undefined ? { anchor } : {}) };
+	return { ...report, ...(measure !== undefined ? { measure } : {}), ...(stated !== undefined ? { scope: stated } : {}) };
 }

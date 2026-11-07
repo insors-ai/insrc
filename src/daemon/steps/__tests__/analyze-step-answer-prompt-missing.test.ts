@@ -123,7 +123,10 @@ function assertCarriesFindings(out: StepOutputError, ids: readonly string[]): vo
 	assert.equal(data.results.find(r => r.exploration.id === 'e2')?.output.type, 'concept.resolve');
 	assert.equal(data.results.find(r => r.exploration.id === 'e3')?.output.type, 'failed');
 	// The report is the one derived from those results, and names the failed lookup.
-	assert.deepEqual(data.report, reportFromLookups(data.results, measureLookupResults(data.results)));
+	// (its scope line has its own test: the report names the scope the request ran on)
+	const { scope: reportScope, ...reportRest } = data.report;
+	assert.equal(reportScope?.named, 'not-recorded');
+	assert.deepEqual(reportRest, reportFromLookups(data.results, measureLookupResults(data.results)));
 	assert.equal(data.report.completeness.complete, false);
 	assert.deepEqual(data.report.completeness.failed.map(f => f.sourceId), ['doc.constraint.enumerate [e3]']);
 	// The message starts with the completeness line and names the missing file.

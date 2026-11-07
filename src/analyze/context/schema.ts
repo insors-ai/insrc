@@ -179,6 +179,18 @@ export const ANALYZE_CONTEXT_BUNDLE_SCHEMA = {
 				answerFailure: { type: 'string' },
 				// Typed by Stories s2 and s3.
 				measure:  {},
+				// The scope the analysis ran on and who named it (LLD-65b643840a294422-s1).
+				scope: {
+					type:                 'object',
+					additionalProperties: false,
+					required:             ['kind', 'value', 'named'],
+					properties: {
+						kind:   { type: 'string', minLength: 1 },
+						value:  { type: 'string' },
+						named:  { type: 'string', enum: ['request', 'prompt', 'not-recorded'] },
+						anchor: { type: 'string', enum: ['named-scope', 'ranked'] },
+					},
+				},
 				handling: {},
 			},
 		},

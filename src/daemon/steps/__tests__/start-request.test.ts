@@ -176,4 +176,57 @@ test('the narrow phase through the real handler repeats the scope check on resum
 	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
 });
 
+const LAYERS = { system: 's', focus: 'f', summary: 'sum', structure: 'st', surface: 'su', artefacts: 'a', upstream: 'u' };
+
+test('a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded; the same intent renders the same scope line through a narrow continuation; request, prompt and older payloads differ', async () => {
+	for (const repo of [A, B]) {
+		await addRepo(null, { path: repo, name: repo, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' }).catch(() => undefined);
+		await upsertEntities(null, [{ id: `e-${repo}`, repo, file: join(repo, 'src', 'x.ts'), kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 2 } as unknown as Entity]);
+	}
+	type Source = 'request' | 'prompt' | undefined;
+	const intentFor = (source: Source): StepStatePayload['intent'] => ({
+		target: 'code', scope: 'M', focused: true, focus: 'q', scopeRef: { kind: 'workspace', value: A }, reasoning: 'r',
+		...(source !== undefined ? { scopeSource: source } : {}),
+	});
+	const call = async (input: Record<string, unknown>): Promise<{ next: string; state: string; markdown?: string; report?: { scope?: unknown } }> =>
+		JSON.parse(((await handleAnalyzeStep(input as never)).content[0] as { text: string }).text);
+
+	/** plan (no explorations) -> bundle: the rendered answer's head lines */
+	const viaPlan = async (source: Source): Promise<string[]> => {
+		const state = await encodeState({ version: STATE_VERSION, runId: `plan-${source}`, repoPath: A, repoIndexedAt: null, intent: intentFor(source), synthesizerKey: 'code', stage: 'awaiting_plan' });
+		const planned = await call({ phase: 'plan', state, plan: { answerType: 'structural-map', synthesisHint: 'x', explorations: [] } });
+		assert.equal(planned.next, 'emit_bundle');
+		const done = await call({ phase: 'bundle', state: planned.state, bundle: LAYERS });
+		assert.equal(done.next, 'done');
+		return done.markdown!.split('\n').filter(l => l.startsWith('Scope:'));
+	};
+	/** narrow -> bundle */
+	const viaNarrow = async (source: Source): Promise<string[]> => {
+		const state = await encodeState({
+			version: STATE_VERSION, runId: `narrow-${source}`, repoPath: A, repoIndexedAt: 1_720_000_000_000, intent: intentFor(source),
+			synthesizerKey: 'adherence', stage: 'awaiting_narrow',
+			plan: { answerType: 'adherence-check', synthesisHint: 'h', explorations: [{ id: 'e1', type: 'doc.decision.trace', purpose: 'p', params: { topic: 't' } }] },
+			narrow: { explorationId: 'e1', explorationType: 'doc.decision.trace', preparedBlob: { topic: 't', retrievedSectionCount: 0, validEntityIds: [] }, resumeState: { results: [], outputs: [], totalCached: 0, totalMsSoFar: 0 } },
+		});
+		const narrowed = await call({ phase: 'narrow', explorationId: 'e1', narrow: { topic: 't', decisions: [], notFoundNote: '' }, state });
+		assert.equal(narrowed.next, 'emit_bundle');
+		const done = await call({ phase: 'bundle', state: narrowed.state, bundle: LAYERS });
+		assert.equal(done.next, 'done');
+		return done.markdown!.split('\n').filter(l => l.startsWith('Scope:'));
+	};
+
+	const lines: Record<string, string> = {};
+	for (const source of ['request', 'prompt', undefined] as const) {
+		const direct = await viaPlan(source);
+		const continued = await viaNarrow(source);
+		assert.equal(direct.length, 1, `${source}: one scope line`);
+		assert.deepEqual(continued, direct, `${source}: a narrow continuation renders the same scope line`);
+		lines[String(source)] = direct[0]!;
+	}
+	assert.match(lines['request']!, /named by the request/);
+	assert.match(lines['prompt']!, /the caller named no scope/);
+	assert.match(lines['undefined']!, /whether the caller named it was not recorded/, 'a token minted before the fields existed');
+	assert.equal(new Set(Object.values(lines)).size, 3, 'a structured workspace request, a prompt-only call and an older token render differently');
+});
+
 test.after(async () => { await closeGraphStore(); rmSync(ROOT, { recursive: true, force: true }); });

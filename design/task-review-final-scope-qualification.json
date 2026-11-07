@@ -471,6 +471,10 @@
         {
           "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
           "title": "terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary"
         }
       ],
       "clarification": "User-approved PLAN revision4/c24: review.maxJsonBytes replaces the fixed JSON bound; each attempt requalifies and a fitting next attempt may require raising the configured capacity. No history rewrite."
@@ -510,6 +514,10 @@
         {
           "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
           "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes"
         }
       ]
     },

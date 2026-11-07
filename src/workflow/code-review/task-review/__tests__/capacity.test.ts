@@ -2,6 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
+import { reviewJsonLimit } from '../contracts.js';
 import { fixture, hash } from './publication-fixture.js';
 import { prepareReviewPacket } from '../packet.js';
 import { readCapacityBaseline, terminalCapacity, capacityCheckedResult } from '../capacity.js';
@@ -71,7 +72,7 @@ test('terminal capacity: oversized accepted mappings and results cannot consume 
  const f=await fixture(true,2);try{
   const review=await pending(f);
   await bindTaskFinalIdentities(review,[{taskId:'t1',changeIndexes:[0],testIndexes:[0],decision:{action:'initial'}},{taskId:'t2',changeIndexes:[],testIndexes:[],decision:{action:'initial'}}]);
-  const huge={...structuredClone(f.result),advice:Array.from({length:48},()=> 'x'.repeat(65536))};
+  const huge={...structuredClone(f.result),advice:Array.from({length:Math.floor(reviewJsonLimit()/65536)-16},()=> 'x'.repeat(65536))};
   const result=capacityCheckedResult(review,huge);assert.equal(result.status,'failed');assert.match(result.error!,/storage capacity/);assert.equal(result.advice.length,0);
   assert.equal(review.attempt['review-response'].tasks.length,0);assert.doesNotThrow(()=>terminalCapacity(review,review.capacity!));
  }finally{f.cleanup();}
@@ -80,7 +81,7 @@ test('terminal capacity: oversized accepted mappings and results cannot consume 
 test('terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible',async()=>{
  const f=await fixture(true,2);try{
   const review=await pending(f),base=review.prepared.tasks[0]!;
-  const tasks=Array.from({length:50},(_,i)=>({...base,id:`t${String(i+1).padStart(240,'0')}`,order:i+1,dependsOn:[]}));
+  const tasks=Array.from({length:Math.ceil(reviewJsonLimit()/65536)+50},(_,i)=>({...base,id:`t${String(i+1).padStart(240,'0')}`,order:i+1,dependsOn:[]}));
   review.prepared={...review.prepared,tasks};review.attempt.header.selectedTaskIds=tasks.map(t=>t.id);review.attempt.header.attempt=2;
   assert.doesNotThrow(()=>terminalCapacity(review,review.capacity!));const before=JSON.stringify(review.attempt);
   await assert.rejects(bindTaskFinalIdentities(review,tasks.map(t=>({taskId:t.id,changeIndexes:[0],testIndexes:[0],decision:{action:'reassess',reason:'x'.repeat(65536)}}))),/projection_limit/);
@@ -92,10 +93,10 @@ test('terminal capacity: boundary failures publish and raising configured capaci
  const {writeFileSync,readFileSync}=await import('node:fs');const {prepareReviewAdmission}=await import('../admission.js');
  for(const route of ['daemon','controller']as const){
   const f=await fixture(true,2);try{
-   const prior=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),head=JSON.parse(readFileSync(prior.jsonPath,'utf8')) as {meta:Record<string,unknown>};head.meta['capacityPadding']='';writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');
+   const limit=reviewJsonLimit(),prior=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),head=JSON.parse(readFileSync(prior.jsonPath,'utf8')) as {meta:Record<string,unknown>};head.meta['capacityPadding']='';writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');
    const review=await pending(f,'boundary');review.attempt.header.reviewer=route;const m=terminalCapacity(review,review.capacity!),bound=Math.max(...m.flatMap(x=>Object.values(x)));
-   head.meta['capacityPadding']='x'.repeat(4*1024*1024-bound);writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');review.capacity=await readCapacityBaseline(f.repo,hash,'s1');
-   assert.equal(Math.max(...terminalCapacity(review,review.capacity).flatMap(x=>Object.values(x))),4*1024*1024);
+   head.meta['capacityPadding']='x'.repeat(limit-bound);writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');review.capacity=await readCapacityBaseline(f.repo,hash,'s1');
+   assert.equal(Math.max(...terminalCapacity(review,review.capacity).flatMap(x=>Object.values(x))),limit);
    if(route==='daemon'){
     const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async()=>{throw new Error('Boundary attribution provider failure');}),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{...f.deps,...(baseline?{baseline}:{})})});
     await c.start(f.repo,'boundary',1,f.packet);await c.settled(f.repo,'boundary');
@@ -104,13 +105,13 @@ test('terminal capacity: boundary failures publish and raising configured capaci
     try{await client.call('codeReview.task.start',{repo:f.repo,epicHash:hash,reviewId:'boundary',attempt:1,packet:f.packet});for(let i=0;i<3;i++)await client.call('codeReview.task.scope',{repo:f.repo,epicHash:hash,reviewId:'boundary',attempt:1,scope:{tasks:[{taskId:`foreign${i}`,changeIndexes:[0],testIndexes:[0]}]}});}finally{client.close();await host.server.close();}
    }
    const cp=f.read(checkpointPath(f.repo,'boundary'));assert.equal(cp.attempts[0]!['review-response'].crPublication,'complete');assert.equal(cp.attempts[0]!['review-response'].tasks.length,2);
-   assert.ok(Buffer.byteLength(readFileSync(prior.jsonPath,'utf8'))<=4*1024*1024);assert.ok(Buffer.byteLength(readFileSync(checkpointPath(f.repo,'boundary'),'utf8'))<=4*1024*1024);
+   assert.ok(Buffer.byteLength(readFileSync(prior.jsonPath,'utf8'))<=limit);assert.ok(Buffer.byteLength(readFileSync(checkpointPath(f.repo,'boundary'),'utf8'))<=limit);
    await assert.rejects(prepareReviewAdmission(f.repo,'boundary',2,f.packet,route,f.deps.sources),/projection_limit/);
    const {execFileSync}=await import('node:child_process');const {mkdirSync}=await import('node:fs');
-   const configHome=f.repo+'/review-home';mkdirSync(configHome+'/.insrc',{recursive:true});writeFileSync(configHome+'/.insrc/config.json',JSON.stringify({review:{maxJsonBytes:8*1024*1024}}));
+   const configHome=f.repo+'/review-home';mkdirSync(configHome+'/.insrc',{recursive:true});writeFileSync(configHome+'/.insrc/config.json',JSON.stringify({review:{maxJsonBytes:2*limit}}));
    writeFileSync(configHome+'/packet.json',JSON.stringify(f.packet));
-   const script=`import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{registerGitTools}from'./src/daemon/tools/builtins/git/index.ts';import{RegistryReviewSources}from'./src/workflow/code-review/task-review/sources.ts';import{prepareReviewAdmission}from'./src/workflow/code-review/task-review/admission.ts';registerGitTools();const repo=process.argv[1];const next=await prepareReviewAdmission(repo,'boundary',2,JSON.parse(readFileSync(process.argv[2],'utf8')),process.argv[3],new RegistryReviewSources({repoPath:repo,sessionId:'capacity-resume',requestId:1,send:()=>{}}));assert.equal(next.attempt.header.attributionState,'pending');`;
-   execFileSync(process.execPath,['--import','tsx','--input-type=module','-e',script,f.repo,configHome+'/packet.json',route],{cwd:process.cwd(),env:{...process.env,HOME:configHome},stdio:'pipe'});
+   const script=`import assert from 'node:assert/strict';import{readFileSync}from'node:fs';import{registerGitTools}from'./src/daemon/tools/builtins/git/index.ts';import{RegistryReviewSources}from'./src/workflow/code-review/task-review/sources.ts';import{prepareReviewAdmission}from'./src/workflow/code-review/task-review/admission.ts';registerGitTools();const repo=process.argv[1];const next=await prepareReviewAdmission(repo,'boundary',2,JSON.parse(readFileSync(process.argv[2],'utf8')),process.argv[3],new RegistryReviewSources({repoPath:repo,sessionId:'capacity-resume',requestId:1,send:()=>{}}));assert.equal(next.attempt.header.attributionState,'pending');process.exit(0);`;
+   execFileSync(process.execPath,['--import','tsx','--input-type=module','-e',script,f.repo,configHome+'/packet.json',route],{cwd:process.cwd(),env:{...process.env,HOME:configHome},stdio:'pipe',timeout:60000});
   }finally{f.cleanup();}
  }
 });
@@ -118,7 +119,7 @@ test('terminal capacity: boundary failures publish and raising configured capaci
 test('terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes',async()=>{
  for(const route of ['daemon','controller']as const){
   const f=await fixture(true,2);try{
-   const huge={...structuredClone(f.result),advice:Array.from({length:48},()=> 'x'.repeat(65536))};
+   const huge={...structuredClone(f.result),advice:Array.from({length:Math.floor(reviewJsonLimit()/65536)-16},()=> 'x'.repeat(65536))};
    const scope={tasks:['t1','t2'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))};
    if(route==='daemon'){
     const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async prompt=>prompt.startsWith('Derive task attribution')?scope:prompt.includes('"taskId":"t1"')?huge:{...f.result,taskId:'t2'}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
@@ -129,6 +130,59 @@ test('terminal capacity: both actual routes refuse oversized results and preserv
     try{await client.call('codeReview.task.start',{...request,packet:f.packet});await client.call('codeReview.task.scope',{...request,scope});await client.call('codeReview.task.result',{...request,result:huge});await client.call('codeReview.task.result',{...request,result:{...f.result,taskId:'t2'}});}finally{client.close();await host.server.close();}
    }
    const a=f.read(checkpointPath(f.repo,'growth')).attempts[0]!;assert.equal(a['review-response'].crPublication,'complete');assert.deepEqual(a['review-response'].tasks.map(t=>t.status),['failed','passed']);assert.match(a['review-response'].tasks[0]!.error!,/storage capacity/);
+  }finally{f.cleanup();}
+ }
+});
+
+test('terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary',async()=>{
+ const {readFileSync,writeFileSync}=await import('node:fs');
+ const {eventually}=await import('./controller-fixture.js');
+ const {taskFailure}=await import('../assessment.js');
+ for(const route of ['daemon','controller']as const)for(const outcome of ['passed','changes_requested','failed','incomplete']as const){
+  const f=await fixture(true,2);let clock=0,expire:(()=>void)|undefined;
+  try{
+   const prior=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),head=JSON.parse(readFileSync(prior.jsonPath,'utf8'));
+   head.meta.capacityPadding='';writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');
+   const review=await pending(f,'diagnostic-boundary');review.attempt.header.reviewer=route;
+   const bound=Math.max(...terminalCapacity(review,review.capacity!).flatMap(m=>Object.values(m))),limit=reviewJsonLimit();
+   head.meta.capacityPadding='x'.repeat(limit-bound);writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');review.capacity=await readCapacityBaseline(f.repo,hash,'s1');
+   assert.equal(Math.max(...terminalCapacity(review,review.capacity).flatMap(m=>Object.values(m))),limit);
+   const diagnostic=(which:'claude'|'codex')=>({provider:which,issues:[{code:`BOUNDARY_${which}`,field:'findings',correction:'Return required findings.',occurrences:1}],lastRejectedFeedback:{preview:'é\n"'.repeat(1000),truncated:false}});
+   const scope={tasks:['t1','t2'].map(taskId=>({taskId,changeIndexes:[0],testIndexes:[0]}))};
+   const result=outcome==='failed'||outcome==='incomplete'?taskFailure('t1','Boundary failure',outcome==='incomplete'):{...structuredClone(f.result),status:outcome,...(outcome==='changes_requested'?{findings:[{severity:'MED' as const,location:'source.js:1',message:'Boundary defect',rationale:'Assertion mismatch',evidenceReferences:f.result.inspectedReferences}]}:{})};
+   const c=new TaskReviewCoordinator({sources:f.deps.sources,now:()=>clock,timer:callback=>{expire=callback;return()=>{};},provider:()=>({capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:import('../../../../shared/types.js').ActivityReviewSessionOpts)=>{
+    if(prompt.startsWith('Derive task attribution'))return scope;
+    const taskId=prompt.includes('"taskId":"t1"')?'t1':'t2';
+    assert.equal(f.read(review.path).attempts[0]!.header.attributionState,'accepted','diagnostics grow after acceptance');
+    await opts.onDiagnostic!(diagnostic('claude'));await opts.onDiagnostic!(diagnostic('codex'));
+    if(taskId==='t2')return {...f.result,taskId};
+    if(outcome==='failed')throw new Error('Boundary transport failure');
+    if(outcome==='incomplete'){clock+=1800000;expire!();return new Promise((_,reject)=>opts.signal!.addEventListener('abort',()=>reject(opts.signal!.reason),{once:true}));}
+    return result;
+   }} as unknown as import('../../../../shared/types.js').LLMProvider),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{...f.deps,...(baseline?{baseline}:{})})});
+   if(route==='daemon'){await c.start(f.repo,'diagnostic-boundary',1,f.packet);await c.settled(f.repo,'diagnostic-boundary');}
+   else{
+    const owner={id:'boundary-owner',signal:new AbortController().signal};let frame=await c.startController(f.repo,'diagnostic-boundary',1,f.packet,owner);
+    frame=await c.controllerScope(f.repo,'diagnostic-boundary',1,scope,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    for(const taskId of ['t1','t2']){
+     for(const which of ['claude','codex']as const){
+      await c.controllerActivity(f.repo,'diagnostic-boundary',1,{kind:'diagnostic',phase:'assessment',diagnostic:diagnostic(which)},owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+      frame={...frame,nextSequence:frame.nextSequence!+1};
+     }
+     if(taskId==='t1'&&outcome==='incomplete'){
+      clock+=1800000;expire!();await eventually(()=>f.read(review.path).attempts[0]!['review-response'].tasks.length===1);
+      frame=await c.controllerAssignment(f.repo,'diagnostic-boundary',1,owner);
+     }else frame=await c.controllerResult(f.repo,'diagnostic-boundary',1,taskId==='t1'?result:{...f.result,taskId},owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    }
+   }
+   const entry=f.read(review.path).attempts[0]!,diagnostics=entry['review-response'].failureDiagnostics!;
+   assert.equal(entry['review-response'].crPublication,'complete');assert.deepEqual(entry['review-response'].tasks.map(t=>t.status),[outcome,'passed']);
+   assert.equal(diagnostics.length,4);validateFailureDiagnostics(entry);
+   for(const d of diagnostics){assert.equal(d.diagnostic.issues[0]!.code,`BOUNDARY_${d.diagnostic.provider}`);assert.equal(d.diagnostic.lastRejectedFeedback!.preview,'é\n"'.repeat(1000));}
+   for(const path of [review.path,prior.jsonPath])assert.ok(Buffer.byteLength(readFileSync(path,'utf8'))<=limit,`${route}/${outcome}: ${path} fits`);
+   const body=f.readRecord(prior.jsonPath).body;assert.equal(body.reviews.at(-1)!.tasks[0]!.status,outcome);
+   assert.match(body.reviews.at(-1)!.summary,/BOUNDARY_claude/);assert.match(body.reviews.at(-1)!.summary,/BOUNDARY_codex/);
+   assert.equal(body.reviews.at(-1)!.summary.includes('é'),false,'verbose previews remain only in checkpoint');
   }finally{f.cleanup();}
  }
 });

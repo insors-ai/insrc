@@ -120,7 +120,9 @@ export async function projectFileIntervals(origin: SelectedChange, originChangeI
  let changes: readonly ChangedRange[];
  if (origin.after?.oid === final?.oid || (origin.after === null && final === null)) changes = [];
  else {
-  changes = await sources.changedRanges(revision, origin.commit, [...new Set([finalPath, origin.path])]);
+  // Absence at the verified final path has no blob to compare. Diff the
+  // original path's removal; verifiedRuns still checks every original line.
+  changes = await sources.changedRanges(revision, origin.commit, final === null ? [origin.path] : [...new Set([finalPath, origin.path])]);
   requireReview(changes.length > 0, 'scope_conflict', 'Different committed blobs have no verifiable diff');
  }
  const dispositions = projectIntervals(origin.segments, originChangeIndex, before, after, changes, budget?.fragment.bind(budget));

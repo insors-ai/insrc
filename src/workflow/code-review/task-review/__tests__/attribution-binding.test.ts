@@ -106,7 +106,7 @@ test('task identity binds relevant code requirements documents and full tests bu
 
 test('fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes', async () => {
  for (const party of ['daemon', 'controller'] as const) {
-  const f = await historyFixture(party); try {
+  const f = await historyFixture(party,true); try {
    const review = await prepareReviewAdmission(f.repo, 'history', 2, f.unchangedPacket, party, f.deps.sources), scope = f.scope(1, 't1');
    for (const row of scope.tasks) row.changeIndexes = row.changeIndexes.filter(i => i !== 3);
    scope.summary = 'EXACT saved mixed decision summary';
@@ -115,7 +115,7 @@ test('fresh native/controller resume restores exact mixed decisions and summary 
    assert.equal(review.attempt['review-response'].origins, undefined, 'a planned reuse has no completed origin');
    const header = structuredClone(review.attempt.header), restored = await restoreAcceptedAssignments(review);
    assert.equal(restored![1]!.reassessment!.sourceAttempt, 1); assert.deepEqual(review.attempt.header, header);
-   const result = { ...f.result, inspectedReferences: [`${f.unchangedPacket.reviewRevision}:stable-t1.js`], testCoverage: { ...f.result.testCoverage, evidenceReferences: [`${f.unchangedPacket.reviewRevision}:test.js`] } };
+   const result = { ...f.result, inspectedReferences: [`${f.unchangedPacket.reviewRevision}:stable-t1.js`], testCoverage: { ...f.result.testCoverage, evidenceReferences: [`${f.unchangedPacket.reviewRevision}:test-t1.js`] } };
    let calls = 0;
    const restarted = new TaskReviewCoordinator({ sources: f.deps.sources, provider: () => provider(async prompt => { calls++; assert.ok(!prompt.startsWith('Derive task attribution')); return result; }) });
    if (party === 'daemon') { await restarted.start(f.repo, 'history', 2, undefined, { operation: 'resume' }); await restarted.settled(f.repo, 'history'); assert.equal(calls, 1); }
@@ -130,6 +130,8 @@ test('fresh native/controller resume restores exact mixed decisions and summary 
    assert.equal(saved.header.attributionIdentity, header.attributionIdentity); assert.equal(saved.header.reassessmentSummary, 'EXACT saved mixed decision summary');
    assert.deepEqual(saved['review-response'].origins!.map(o => o.taskId), ['t2', 't3']);
    assert.deepEqual(saved['review-response'].tasks.find(t => t.taskId === 't2'), f.original['review-response'].tasks[1]);
+   assert.deepEqual(saved.header.acceptedAttribution!.map(r=>r.testIndexes),[[0],[1],[2]]);
+   assert.deepEqual(saved['review-response'].tasks.find(t=>t.taskId==='t3'),f.original['review-response'].tasks[2]);
   } finally { f.cleanup(); }
  }
 });

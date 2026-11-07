@@ -210,3 +210,27 @@ test('a proven prior pending checkpoint may re-attribute only after explicit res
   } finally { f.cleanup(); }
  }
 });
+
+test('same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes',async()=>{
+ for(const party of ['daemon','controller']as const){
+  const f=await fixture();let faults=2,calls=0;
+  const c=new TaskReviewCoordinator({sources:f.deps.sources,save:async(path,state)=>{
+   await saveCheckpoint(path,state);
+   if(state.reviewId==='repeat-resume'&&state.attempts[0]!.header.attributionState==='accepted'&&faults-->0)throw new CheckpointSaveError('replaced',new Error('Lost durability acknowledgement'));
+  },provider:()=>provider(async()=>{calls++;return f.result;})});
+  const owner={id:'resume-owner',signal:new AbortController().signal};
+  const resume=()=>party==='daemon'?c.start(f.repo,'repeat-resume',1,undefined,{operation:'resume'}):c.startController(f.repo,'repeat-resume',1,undefined,owner,hash,'resume');
+  try{
+   if(party==='daemon'){await c.start(f.repo,'repeat-resume',1,f.packet);await c.settled(f.repo,'repeat-resume');}
+   else await assert.rejects(c.startController(f.repo,'repeat-resume',1,f.packet,owner),CheckpointSaveError);
+   const path=checkpointPath(f.repo,'repeat-resume'),accepted=(await loadCheckpoint(path))!.attempts[0]!.header;
+   await assert.rejects(resume(),CheckpointSaveError);assert.equal(calls,0);
+   const pending=(await loadCheckpoint(path))!.attempts[0]!;assert.equal(pending.header.status,'pending');
+   const frame=await resume();
+   if(party==='daemon'){await c.settled(f.repo,'repeat-resume');assert.equal(calls,1);}
+   else {const task=frame as import('../controller.js').ControllerFrame;await c.controllerResult(f.repo,'repeat-resume',1,f.result,owner,{taskId:task.taskId,executionId:task.executionId,sequence:task.nextSequence});}
+   const done=(await loadCheckpoint(path))!.attempts[0]!;
+   assert.deepEqual(done.header.acceptedAttribution,accepted.acceptedAttribution);assert.equal(done.header.attributionIdentity,accepted.attributionIdentity);assert.equal(done['review-response'].tasks[0]!.status,'passed');
+  }finally{f.cleanup();}
+ }
+});

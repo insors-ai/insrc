@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1791349476498-tih4l4`
 **HLD effective hash:** `faa0f59939ce...`
 
-This Story adds one shared helper that measures the single rendered input of an answer-writing model call against a stated character budget and, when it is over, divides the evidence into ordered parts, reasons over each part serially, assembles evidence and findings in code and lets the model write only a bounded summary through a staged combine that always ends. Four callers use it: the lookup synthesis, the free-form short-circuit's final emit, the plan-tree aggregator and the step tool's answer turn. The handling report is typed, carried to the run's answer report (including the aggregate's, which today never reaches it), and a failed part or a failed combine is reported without losing the other parts' results.
+This Story adds one shared helper that divides an answer-writing model call's input into ordered parts when either the HLD's table from measured size to method says the request is above the partition size, or the rendered input does not fit a conservative character budget measured before every provider attempt. Each part is reasoned over serially, evidence and findings are assembled in code, and a staged combine writes only a bounded summary and always ends. Four callers use it: the lookup synthesis, the free-form lookup's final emit, the plan-tree aggregator and the step tool's answer turn. The handling report is typed, carried to the delivered answer on every path (including the free-form short-circuit and the plan tree's aggregates), shown in the answer's head, and a failed part, a failed combine or a failure that carries data is reported without losing the other results.
 
 ## Contents
 
@@ -51,12 +51,12 @@ synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>>
 ```
 
 **Parameters:**
-- `args: SynthesizeArgs` — Existing arguments, plus the optional onHandling callback that receives the HandlingReport.
+- `args: SynthesizeArgs` — Existing arguments, plus the optional size (the measure's size, for the table) and the optional onHandling callback that receives the HandlingReport.
 
-**Returns:** `Promise<Omit<AnalyzeContextBundle, 'meta'>>` — The bundle; within budget it is the one call made today, over budget the assembled bundle of the parts.
+**Returns:** `Promise<Omit<AnalyzeContextBundle, 'meta'>>` — The bundle: the one call made today when the size is below the partition size and the input fits, else the assembled bundle of the parts.
 
 **Errors:**
-- `HandlingBudgetError` when The fixed context leaves no room for the minimum section, or every part failed; carries the lookup results and the report.
+- `HandlingBudgetError` when The fixed context leaves no room for the minimum section, a combine stage cannot shrink, or every part failed; carries the lookup results and the report.
 - `SynthesizerPromptMissingError` when Existing: no prompt for the key.
 
 **Preconditions:**
@@ -74,9 +74,9 @@ prepareSynthesize(args: Omit<SynthesizeArgs, 'runId' | 'provider'>, progress?: A
 
 **Parameters:**
 - `args: Omit<SynthesizeArgs, 'runId' | 'provider'>` — Existing arguments.
-- `progress: AnswerProgress` _(optional)_ — What the in-session model has done so far; absent on the first call.
+- `progress: AnswerProgress` _(optional)_ — What the in-session model has done so far; absent on the first call, and an absent progress gives today's result.
 
-**Returns:** `SynthesizePrepared` — The existing prompt, user turn and schema for the next turn, now with a turn field naming 'answer', 'part' or 'combine' and its identity.
+**Returns:** `SynthesizePrepared` — The existing prompt, user turn and schema, now with a turn field naming 'answer', 'part' or 'combine' and its identity.
 
 **Errors:**
 - `SynthesizerPromptMissingError` when Existing: no prompt for the key.
@@ -86,25 +86,27 @@ prepareSynthesize(args: Omit<SynthesizeArgs, 'runId' | 'provider'>, progress?: A
 - progress comes from the stored step state
 
 **Postconditions:**
-- The rendered input of the turn is within the budget
+- The rendered input of the turn fits the budget
 
 ### 2.3 `finalizeSynthesize`
 
 ```typescript
-finalizeSynthesize(raw: unknown, progress?: AnswerProgress): FinalizedAnswerTurn
+finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext, progress?: AnswerProgress): Omit<AnalyzeContextBundle, 'meta'> | FinalizedAnswerTurn
 ```
 
 **Parameters:**
-- `raw: unknown` — The JSON the in-session model emitted for the current turn, validated against that turn's schema.
-- `progress: AnswerProgress` _(optional)_ — The progress the turn was prepared with.
+- `raw: unknown` — The JSON the in-session model emitted for the current turn.
+- `execution: ConnectionExecutionContext` _(optional)_ — Existing second parameter, kept in place; validateAgainstSchema requires it for session-memory calls.
+- `progress: AnswerProgress` _(optional)_ — New third parameter: the progress the turn was prepared with.
 
-**Returns:** `FinalizedAnswerTurn` — Either the final bundle, or the next progress to persist.
+**Returns:** `Omit<AnalyzeContextBundle, 'meta'> | FinalizedAnswerTurn` — Without progress it returns the bundle exactly as today. With progress it returns a FinalizedAnswerTurn: {kind:'final', layers, handling} or {kind:'next', progress}.
 
 **Errors:**
-- `SynthesizerSchemaUnrecoverable` when Existing: the reply fails the schema; the caller counts it in progress.retries.
+- `SynthesizerSchemaUnrecoverable` when Existing: the reply fails the schema; the bundle handler counts it in progress.retries.
 
 **Postconditions:**
 - Evidence layers are assembled in code and never taken from a combine reply
+- A caller that passes no progress is unchanged
 
 ### 2.4 `runAggregator`
 
@@ -113,13 +115,13 @@ runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>
 ```
 
 **Parameters:**
-- `args: RunAggregatorArgs` — Existing arguments: upstream outputs and absent inputs.
+- `args: RunAggregatorArgs` — Existing arguments: upstream outputs and absent inputs; gains the optional size of the run.
 
 **Returns:** `Promise<AggregateReport>` — The report; metadata gains the optional handling field.
 
 **Errors:**
 - `HandlingBudgetError` when As for synthesize.
-- `Error with the existing aggregator prefixes` when A single call or the combine fails with no part results to return.
+- `Error with the existing aggregator prefixes` when A single call fails with no part results to return.
 
 **Preconditions:**
 - The absent-input section is rendered in every part and every combine call and counted in the measure
@@ -130,26 +132,57 @@ runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>
 ### 2.5 `runFinalStructuredEmit`
 
 ```typescript
-runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structuredOutputRetries: number, maxOutputTokens: number, onTrace?: (event: ShaperTraceEvent) => void, execution?: ConnectionExecutionContext): Promise<AnalyzeContextBundle>
+runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structuredOutputRetries: number, maxOutputTokens: number, onTrace?: (event: ShaperTraceEvent) => void, execution?: ConnectionExecutionContext, onHandling?: (h: HandlingReport) => void): Promise<AnalyzeContextBundle>
 ```
 
 **Parameters:**
-- `messages: LLMMessage[]` — The tool-loop conversation. Over budget, its tool-result messages are the blocks the helper divides.
+- `messages: LLMMessage[]` — The tool-loop conversation; over the limits its tool-result messages are the blocks the helper divides.
 - `provider: LLMProvider` — Existing; its inputBudgetChars feeds the budget.
 - `structuredOutputRetries: number` — Existing.
 - `maxOutputTokens: number` — Existing; also the output reserve for a local model.
 - `onTrace: (event: ShaperTraceEvent) => void` _(optional)_ — Existing.
 - `execution: ConnectionExecutionContext` _(optional)_ — Existing.
+- `onHandling: (h: HandlingReport) => void` _(optional)_ — New: receives the HandlingReport; the tool loop passes it to its result as a handling field and the free-form lookup copies it to its output.
 
-**Returns:** `Promise<AnalyzeContextBundle>` — The bundle the free-form short-circuit returns directly when the conversation fits, or the assembled bundle when it does not.
+**Returns:** `Promise<AnalyzeContextBundle>` — The bundle: the one call made today when the conversation fits, else the assembled bundle.
 
 **Errors:**
 - `HandlingBudgetError` when As for synthesize.
 
 **Postconditions:**
-- A conversation within budget makes the one call made today
+- A conversation that fits makes the one call made today
 
-### 2.6 `collectPlanSources`
+### 2.6 `failedOutput`
+
+```typescript
+failedOutput(exp: Exploration, err: unknown, execution?: ConnectionExecutionContext): FailedExplorationOutput
+```
+
+**Parameters:**
+- `exp: Exploration` — Existing.
+- `err: unknown` — Existing: the thrown error; a LookupFailedError now also carries an optional handling report.
+- `execution: ConnectionExecutionContext` _(optional)_ — Existing.
+
+**Returns:** `FailedExplorationOutput` — The failed output with partial findings as today, and the handling report when the error carried one.
+
+**Postconditions:**
+- A HandlingBudgetError raised inside the free-form lookup has been turned into a LookupFailedError carrying its tool results and handling, so no data is lost
+
+### 2.7 `extractSoleFreeformResult`
+
+```typescript
+extractSoleFreeformResult(executed: Awaited<ReturnType<typeof executePlan>>): { rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null
+```
+
+**Parameters:**
+- `executed: Awaited<ReturnType<typeof executePlan>>` — Existing.
+
+**Returns:** `{ rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null` — As today, plus the free-form output's handling, which the pipeline puts on the report that reportFromLookups derives.
+
+**Postconditions:**
+- A failed free-form output still returns null, so it reaches the answer-step failure with its report
+
+### 2.8 `collectPlanSources`
 
 ```typescript
 collectPlanSources(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: string): ReportSource[]
@@ -165,7 +198,7 @@ collectPlanSources(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: st
 **Postconditions:**
 - The aggregate task is still not a source of its own completeness; only its handling is read
 
-### 2.7 `concludeRun`
+### 2.9 `concludeRun`
 
 ```typescript
 concludeRun(tree: PlanTreeNode, executed: ExecutorResult, contextReport: AnswerReport | undefined, measure?: RequestMeasure): { report: AnswerReport; finalReport: unknown }
@@ -177,12 +210,12 @@ concludeRun(tree: PlanTreeNode, executed: ExecutorResult, contextReport: AnswerR
 - `contextReport: AnswerReport | undefined` — Existing: the run context's report.
 - `measure: RequestMeasure` _(optional)_ — Existing.
 
-**Returns:** `{ report: AnswerReport; finalReport: unknown }` — The report now carries handling merged from the run context and from the root and nested aggregates.
+**Returns:** `{ report: AnswerReport; finalReport: unknown }` — The report carries handling merged from the run context and from the root and nested aggregates, and its visible head shows it.
 
 **Postconditions:**
 - A partially failed aggregation makes the run's completeness false
 
-### 2.8 `mergeAnswerReports`
+### 2.10 `mergeAnswerReports`
 
 ```typescript
 mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix?: string): AnswerReport
@@ -198,58 +231,76 @@ mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix?: string): 
 **Postconditions:**
 - The signature and the prefix behaviour are unchanged
 
+### 2.11 `renderReportHead`
+
+```typescript
+renderReportHead(report: AnswerReport): string
+```
+
+**Parameters:**
+- `report: AnswerReport` — Existing.
+
+**Returns:** `string` — The head as today, plus one handling line after the measure line when the report has handling.
+
+**Postconditions:**
+- Both paths show the line, because the lookup path and concludeRun both build their head from this function
+- A report without handling renders as today
+
 ## 3. Data model changes
 
 ### 3.1 `HandlingReport` — new
 
-The sc4 contract typed. method, parts, partitionedBy, notCovered[{part, reason}] as sketched, plus additive fields: combineStages, inputChars, budgetChars, budgetSource ('provider' | 'context-window' | 'default'). partitionedBy gains 'mixed' for a merged report whose sources used different divisions. Counting: parts is the number of first-level parts including failed ones; a single pass has parts 1 and method 'single-pass'. A part id is its ordinal and heading, e.g. 'part 3: docs/a'; mergeHandling qualifies it with the plan path ('t03.t05 / part 3: docs/a'), so equal local ordinals in different plans stay distinct. Merged inputChars is the maximum, budgetChars the minimum, combineStages the sum.
+The sc4 contract typed. method, parts, partitionedBy, notCovered[{part, reason}] as sketched, plus additive fields: combineStages (optional), inputChars, budgetChars, budgetSource ('provider' | 'context-window' | 'default'), and trigger ('size' | 'fit' | 'both') saying which condition divided it. partitionedBy gains 'mixed'. Counting: parts is the number of first-level parts including failed ones; a single pass has parts 1. A part id is its ordinal and heading ('part 3: docs/a'); mergeHandling qualifies it with the plan path. Composition by mergeHandling(first, second, prefix): an absent side is ignored; method is 'partitioned' if either is; parts is the sum of the two parts counts (a single pass counts 1); notCovered is the concatenation with the first side's part ids qualified by the prefix; inputChars is the maximum; budgetChars and budgetSource are those of the side with the smaller budgetChars; combineStages is the sum when either has it; partitionedBy is the common value or 'mixed'; trigger is the union. So a single-pass root with a partitioned child reports 'partitioned' with parts one more than the child's.
 
 ```
-readonly combineStages?: number | undefined; readonly inputChars: number; readonly budgetChars: number; readonly budgetSource: 'provider' | 'context-window' | 'default'; partitionedBy adds 'mixed'
+readonly combineStages?: number | undefined; readonly inputChars: number; readonly budgetChars: number; readonly budgetSource: 'provider' | 'context-window' | 'default'; readonly trigger: 'size' | 'fit' | 'both'; partitionedBy adds 'mixed'
 ```
-
-**Call sites:**
-- `src/analyze/completeness.ts:206`
-- `src/analyze/context/schema.ts:194`
-
-### 3.2 `AnswerReport.handling` — field-modify
-
-Type changes from unknown to HandlingReport | undefined. Current-behaviour invariant it might break: the bundle schema declares handling as an open object (src/analyze/context/schema.ts:194), and isAnswerReport does not validate it, so a stored value such as {} is valid today. A read-boundary guard parseHandling(value: unknown): HandlingReport | undefined accepts only a value with the required fields and treats anything else as absent; the merger, the renderer and isAnswerReport use it, and a stored {} is read as no handling, never as a report.
 
 **Call sites:**
 - `src/analyze/completeness.ts:206`
 - `src/analyze/completeness.ts:404-420`
-- `src/analyze/context/schema.ts:194`
 
-### 3.3 `answerInputBudget` — new
+### 3.2 `AnswerReport.handling` — field-modify
 
-answerInputBudget(provider?: LLMProvider, outputTokens?: number) returns {chars, source}. The budget is provider.inputBudgetChars when declared (source 'provider'); else for a local model (context window tokens minus outputTokens) times 3 characters per token (source 'context-window', the window being the figure ollamaContextWindow gives num_ctx); else 80,000 characters (source 'default'; also what the step tool uses, which has no provider). A reserve of 4,000 characters for message framing, the schema text and schema-repair retries is subtracted. The decision is single-pass when the rendered input (messages, repeated context, absent-input section) is at most the budget, and partitioned only when it is over. The truncation of a local model below its window cannot be detected through completeStructured, which returns parsed content only; the protection is the ratio and the reserve, and the HandlingReport records the budget so the limit is visible.
+Type changes from unknown to HandlingReport | undefined. Current-behaviour invariant it might break: the bundle schema declares handling as an open object, so a stored value such as {} is valid today, and isAnswerReport does not validate it. A read-boundary guard parseHandling(value: unknown): HandlingReport | undefined accepts only a value with the required fields and treats anything else as absent; mergeHandling, renderReportHead and isAnswerReport use it, and a stored {} is read as no handling.
+
+**Call sites:**
+- `src/analyze/completeness.ts:206`
+- `src/analyze/completeness.ts:377-382`
+- `src/analyze/completeness.ts:404-420`
+
+### 3.3 `HANDLING_TABLE and answerInputBudget` — new
+
+HANDLING_TABLE maps the sc3 size to the method: XS and S single pass, M, L and XL partitioned; 'determined: false' is XL, so an unmeasured request is partitioned. answerInputBudget(provider?, outputTokens?) returns {chars, source}: provider.inputBudgetChars when declared (source 'provider'); else for a local model (window tokens minus outputTokens) times 2 characters per token (source 'context-window'), where the window is the figure ollamaContextWindow gives num_ctx; else 60,000 characters (source 'default', also used by the step tool, which has no provider); a 16,000-character reserve is then subtracted for framing, schema text and the first repair note. The decision to divide is: the table says partitioned, OR the rendered input (messages, repeated context, absent-input section) exceeds the budget. The fit is measured before every provider attempt, including each repair retry with the actual repair note, which is capped at 8,000 characters of listed errors (the rest summarised as a count); a retry that would not fit divides the part further, up to three times. The ratio is a conservative estimate and not a bound: no character count can prove a local model's input fits, completeStructured returns parsed content only and Ollama's processed-token count is cache-dependent and not returned, so the report records the budget and its source and does not claim truncation is prevented.
 
 **Call sites:**
 - `src/shared/types.ts:199-203`
 - `src/analyze/context/shaper-provider.ts:205-250`
+- `src/agent/providers/structured-output.ts:150-175`
 - `src/agent/providers/ollama.ts:571-605`
 
 ### 3.4 `PartPlan, PartResult and the caller adapters` — new
 
-A PartPlan is the ordered blocks of the evidence with an ordinal separate from the block key, grouped by directory then file in stable order; one block larger than the room is cut into consecutive sections of at least 4,000 characters and its sections keep its key and an index. A PartResult holds the part's heading, its summary (capped at 2,000 characters, enforced by the schema), and the part's assembled content. Two adapters map a PartResult onto a final output without a model: the bundle adapter takes system, focus and summary from the final combine and concatenates structure, surface, artefacts and upstream of the covered parts by ordinal under part headings; the aggregate adapter takes the summary from the final combine and concatenates the findings of the covered parts by ordinal, each finding keeping its sources. A combine reply is never read for evidence or findings. Combine stages: the summaries are grouped so that fixed context plus the group fits, giving g of at least 2, and each stage turns N summaries into ceil(N/g); if fixed context plus two capped summaries does not fit, HandlingBudgetError is raised.
+A PartPlan is the ordered blocks of the evidence with an ordinal separate from the block key, grouped by directory then file in stable order; one block larger than the room is cut into consecutive sections of at least 4,000 characters, each keeping its key and an index. A PartResult holds the part's heading, its summary (capped at 2,000 characters by the schema) and its assembled content. The bundle adapter takes system, focus and summary from the final combine and concatenates structure, surface, artefacts and upstream of the covered parts by ordinal under part headings; the aggregate adapter takes the summary from the final combine and concatenates the findings of the covered parts by ordinal, each keeping its sources. A combine reply is never read for evidence or findings. Combine stages: N summaries become ceil(N/g) with g at least 2, so it ends in at most ceil(log2 N) stages; if fixed context plus two capped summaries does not fit, HandlingBudgetError is raised. A combine failure returns the adapter's output from the per-part results with 'combine' in notCovered.
 
 **Call sites:**
 - `src/analyze/context/synthesizer.ts:117-169`
 - `src/analyze/runtimes/shared/aggregator.ts:100-155`
 - `src/analyze/runtimes/shared/aggregate-types.ts:28-80`
 
-### 3.5 `HandlingBudgetError` — new
+### 3.5 `HandlingBudgetError and LookupFailedError` — new
 
-A typed error for the case where the fixed context leaves no room for the minimum section, a stage cannot shrink, or every part failed. It carries the lookup results and the report with every part named in notCovered, and is passed through the driver and the step tool as the answer-step failure declared by Story s1 rather than mapped to 'answer-invalid'.
+HandlingBudgetError is a typed error for a fixed context with no room for the minimum section, a stage that cannot shrink, or every part failed; it carries the lookup results and the report with every part named in notCovered. LookupFailedError (message, partial, cause) gains an optional handling field. The free-form lookup catches a HandlingBudgetError from the tool loop and throws a LookupFailedError carrying the tool results as partial and the handling, so executePlan keeps them in the failed output instead of dropping them, and the pipeline then raises the answer-step failure that Story s1 declares, with the report. The driver passes HandlingBudgetError through unchanged instead of mapping it to 'answer-invalid'.
 
 **Call sites:**
-- `src/analyze/context/driver.ts:1668-1690`
-- `src/daemon/steps/analyze-step/handler.ts:118`
+- `src/analyze/explore/lookup-failed.ts:20-34`
+- `src/analyze/explore/freeform-probe.ts:150-200`
+- `src/analyze/explore/executor.ts:690-715`
+- `src/analyze/context/driver.ts:1662-1690`
 
 ### 3.6 `AnswerProgress and StepStatePayload` — field-add
 
-AnswerProgress is {completed: PartResult[] by ordinal, pending: {kind 'part' | 'combine', ordinal or stage and group index}, stageOutputs: summaries of the current combine stage, failures: {part, reason}[], retries: number}. It is held in the step state beside the stages awaiting_part and awaiting_combine, passed to prepareSynthesize and finalizeSynthesize, and persisted by re-encoding the state token on every valid transition; an invalid reply for a part or combine turn increments retries and re-encodes the state, and at the bound (the structured-output retry setting) the part is recorded as failed or the combine as failed, and the flow continues. Terminal success and terminal failure release the progress.
+AnswerProgress is {completed: PartResult[] by ordinal, pending: {kind 'part' | 'combine', ordinal or stage and group index}, stageOutputs, failures: {part, reason}[], retries}. It is held in the step state beside the stages awaiting_part and awaiting_combine and passed to prepareSynthesize and finalizeSynthesize(raw, execution, progress); the bundle handler persists it by re-encoding the state token on every valid transition, increments retries and re-encodes on an invalid reply, records the part or the combine as failed at the retry bound and continues, and releases it on terminal success and failure. The handler consumes FinalizedAnswerTurn: 'final' continues as today with the layers and records the handling; 'next' persists the progress and emits the next turn. A state written before the change lacks progress and is read as a single-pass state.
 
 **Call sites:**
 - `src/daemon/steps/analyze-step/phases/bundle.ts:90`
@@ -257,7 +308,7 @@ AnswerProgress is {completed: PartResult[] by ordinal, pending: {kind 'part' | '
 
 ### 3.7 `StepOutputEmitPart and StepOutputEmitCombine` — new
 
-Two outputs added to the StepOutput union beside StepOutputEmitBundle, with the same fields (guidance, prompt, userTurn, schema, state) plus the part ordinal and the total, or the stage and group. A reply to either reuses the registered bundle argument of seven string layers (a part reply is a seven-layer bundle of that part with its summary within the cap; a combine reply fills system, focus and summary, and the four evidence layers, which the adapter ignores, as empty strings), so the registered MCP schema and StepInputBundle are unchanged and the legacy emit_bundle turn is kept for an input that fits. A typed answer failure is returned as StepOutputError with the code declared by Story s1 and its data, not as an uncaught exception.
+Two outputs added to the StepOutput union beside StepOutputEmitBundle with the same fields plus the part ordinal and total, or the stage and group. A reply reuses the registered bundle argument of seven string layers (a part reply is a seven-layer bundle of that part with its summary within the cap; a combine reply fills system, focus and summary and leaves the four evidence layers empty), so the registered MCP schema and StepInputBundle are unchanged and the legacy emit_bundle turn is kept. A typed answer failure is returned as StepOutputError with the code Story s1 declares and its data, not as an uncaught exception.
 
 **Call sites:**
 - `src/mcp/server.ts:408-425`
@@ -280,10 +331,10 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc4` | implements | Types HandlingReport with additive fields (combineStages, inputChars, budgetChars, budgetSource, and 'mixed' for partitionedBy) and fills it on every answer of both paths. |
-| `sc2` | consumes | Fills AnswerReport.handling; keeps the binary mergeAnswerReports(first, second, prefix) and its prefix rule; uncovered parts add source notes and make completeness false. |
-| `sc1` | consumes | A result whose part or combine failed is incomplete; the plan-task completeness records are read as today and the aggregate's handling is added as sources. |
-| `sc3` | consumes | measure.characters stays a hint; the decision is made on the single rendered input, which also counts the context the measure does not. |
+| `sc4` | implements | Types HandlingReport with additive fields (combineStages, inputChars, budgetChars, budgetSource, trigger, and 'mixed' for partitionedBy), states the composition rules, and fills it on every answer of both paths. |
+| `sc2` | consumes | Fills AnswerReport.handling; keeps the binary mergeAnswerReports(first, second, prefix); renders one handling line in renderReportHead; uncovered parts add source notes and make completeness false. |
+| `sc1` | consumes | A result whose part or combine failed is incomplete; plan-task completeness records are read as today and the aggregate's handling is added as sources. |
+| `sc3` | consumes | Reads RequestMeasure.size for HANDLING_TABLE (an undetermined measure is XL); measure.characters stays a hint. |
 | `sc6` | consumes | Uses the answer-step-failed code declared by sc6 and raised by Story s1 for HandlingBudgetError and all-parts-failed; no new code. |
 
 ## 6. Error paths
@@ -300,7 +351,7 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
   - User impact: A typed failure that keeps what the lookups found; no empty answer is written
 - **The combine call fails or its reply stays invalid after the retries** (recoverable)
   - Detection: The combine call throws, or its reply fails the schema at the retry bound
-  - Response: The output is built from the per-part results unchanged by the adapter, its summary layer being the part summaries concatenated by ordinal, and the failure is added to notCovered as 'combine'; nothing is thrown
+  - Response: The output is built from the per-part results unchanged by the adapter, its summary layer being the part summaries concatenated by ordinal, and 'combine' is added to notCovered; nothing is thrown
   - User impact: The per-part results are returned with the combine failure reported
 - **A combine stage cannot shrink its input** (recoverable)
   - Detection: The helper checks before a stage that fixed context plus two capped summaries fits the budget, and after a stage that the count of summaries fell
@@ -310,21 +361,29 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
   - Detection: Fixed rendered characters plus the minimum section of 4,000 characters is more than the budget
   - Response: HandlingBudgetError with the results and the report; dividing the evidence cannot make the call fit, so no partial answer is written
   - User impact: A typed failure that says the context is larger than the model accepts
+- **A schema-repair retry would not fit** (recoverable)
+  - Detection: The helper measures the actual input of the retry (the part, the schema text and the repair note, which lists every validation error and is capped at 8,000 characters with the rest counted) before the attempt
+  - Response: The part is divided into smaller consecutive sections up to three times, then recorded as not covered
+  - User impact: A malformed reply with many errors cannot push a call over the limit unnoticed
 - **The provider refuses a part as too large** (recoverable)
   - Detection: InputTooLargeError from the provider, whose sizes may be undefined
-  - Response: The part is cut into smaller consecutive sections up to three times, and then recorded as not covered
+  - Response: The part is divided into smaller consecutive sections up to three times, and then recorded as not covered
   - User impact: The part is read in full or named; nothing is silently cut
-- **A local model truncates its input silently below its declared window** (terminal)
-  - Detection: Not detectable: completeStructured returns parsed content only and the local model's processed-token count is not available to the caller and is cache-dependent
-  - Response: Prevented, not detected: the budget uses 3 characters per token, subtracts the output tokens and a 4,000-character reserve, and the HandlingReport records the budget and its source
-  - User impact: The limitation is stated; a window figure that is wrong is visible in the report
-- **A typed answer failure is thrown from inside synthesize or the final emit** (terminal)
+- **A local model's input is larger than the estimate said** (terminal)
+  - Detection: Not detectable by the caller: completeStructured returns parsed content only and Ollama's processed-token count is cache-dependent and not returned
+  - Response: Not claimed to be prevented: the estimate is conservative (2 characters per token, output tokens and a 16,000-character reserve subtracted), the budget and its source are recorded in the report, and the limitation is stated
+  - User impact: A wrong window figure is visible in the report; accuracy is protected by dividing earlier, at the cost of more calls
+- **A typed answer failure is thrown from inside the free-form final emit** (terminal)
+  - Detection: The free-form lookup catches HandlingBudgetError from the tool loop, as executePlan would otherwise turn any error that is not a ConnectionExecutionError into a failed lookup with no data
+  - Response: It throws a LookupFailedError carrying the tool results as partial and the HandlingReport; failedOutput keeps both; the pipeline raises the answer-step failure with the report and does not attempt a second synthesis
+  - User impact: The caller receives the failure with what the search found and how far the handling got
+- **A typed answer failure is thrown from inside synthesize** (terminal)
   - Detection: The driver's catch sees HandlingBudgetError or ShaperAnswerStepFailedError
   - Response: The driver passes it through unchanged instead of mapping it to 'answer-invalid', and the step tool returns it as StepOutputError with the declared code and its data
   - User impact: The caller receives the error with the lookup results and the report
 - **A stored handling value is malformed** (recoverable)
   - Detection: parseHandling finds a missing required field or a wrong type, as for the stored {}
-  - Response: The value is treated as absent by the merger, the renderer and isAnswerReport; it is not written back
+  - Response: The value is treated as absent by mergeHandling, renderReportHead and isAnswerReport; it is not written back
   - User impact: An old record is read without handling instead of failing
 - **The aggregate of a nested plan reports uncovered parts** (recoverable)
   - Detection: collectPlanSources reads parseHandling(metadata.handling) of that plan's aggregate task and finds a non-empty notCovered
@@ -335,41 +394,50 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 | Input | Expected |
 | :--- | :--- |
-| Rendered input exactly at the budget | Single pass; division starts only when the input is over the budget. |
-| A model with no declared limit, and the step tool | The default of 80,000 characters is used and recorded with budgetSource 'default'. |
-| A single block larger than the room | It is cut into consecutive sections with its key and an index; the whole content is read and the report says partitionedBy 'section'. |
-| A request with no results and a fixed context within the budget | Single pass with parts 1; no division. |
-| Two nested plans that both have a part 1 | mergeHandling qualifies each part id with its plan path, so the two stay distinct in notCovered. |
-| Nested calls with different budgets or divisions | Merged inputChars is the maximum, budgetChars the minimum, combineStages the sum and partitionedBy 'mixed'. |
-| A free-form conversation within the budget | The short-circuit returns the one call's bundle as today, with handling single-pass and parts 1. |
+| A size of XS or S whose rendered input fits the budget | Single pass: the one call made today, with handling single-pass, parts 1 and trigger absent. |
+| A size of M or larger whose rendered input fits the budget | The table divides it: partitioned with trigger 'size'. |
+| A size of S whose rendered input exceeds the budget | The fit check divides it: partitioned with trigger 'fit'; both conditions give trigger 'both'. |
+| A measure that could not be determined | Size XL: partitioned by the table. |
+| Rendered input exactly at the budget | The fit check does not divide it. |
+| A model with no declared limit, and the step tool | The default of 60,000 characters is used and recorded with budgetSource 'default'. |
+| A single block larger than the room | It is cut into consecutive sections with its key and an index; the whole content is read and partitionedBy is 'section'. |
+| A request with no results | Single pass with parts 1 if the table says so and the fixed context fits. |
+| A single-pass root report merged with a partitioned child | Merged method 'partitioned', parts the sum with the single pass counted as 1, budget taken from the side with the smaller budgetChars. |
+| Two nested plans that both have a part 1 | mergeHandling qualifies each part id with its plan path, so the two stay distinct. |
+| A free-form conversation that fits | The short-circuit returns the one call's bundle as today with handling single-pass, copied onto the report. |
 | A stored bundle with handling {} | It validates against the open schema and parseHandling reads it as absent. |
-| The budget is lowered in a test | The same path divides a small input, so the behaviour is exercised without a large fixture. |
+| finalizeSynthesize called as today with no progress, with a saved or a session-memory execution | It returns the bundle as today and validates with the execution it was given. |
 | A step state written before the change | It lacks progress and is read as a single-pass state. |
 
 **Invariants to preserve**
 
 - Model calls are made one after another, never in parallel, including part and combine calls [[c1]]
-- An input within the budget makes the same single model call as today [[c1]]
-- The free-form short-circuit returns the loop's bundle directly when the conversation fits, with no extra model pass [[c2]]
+- A request below the partition size whose input fits makes the same single model call as today [[c1]]
+- finalizeSynthesize keeps its existing execution parameter in second place, and the bundle handler keeps passing it [[c1]]
+- A failed free-form lookup does not take the free-form short-circuit and keeps the data it carries [[c2]]
 - The plan's aggregate task is not a source of its own completeness; only its handling is read [[c3]]
 - mergeAnswerReports keeps its binary signature and its prefix rule for the run context's sources [[c3]]
+- A report without handling renders the same head as today [[c3]]
 - The step tool's registered bundle argument and legacy emit_bundle turn stay valid [[c5]]
 
 ## 7. Test strategy
 
-**Test framework:** `node:test run through tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), matching the existing analyze, orchestrator, executor and daemon step-tool suites`
+**Test framework:** `node:test run through tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), matching the existing analyze, orchestrator, executor and daemon step-tool suites; live runs gate behind INSRC_LIVE_TESTS=1 as the project does`
 
 **Test levels**
 
-- **unit** — Prove the budget, division, assembly and combine rules without a model
-  - Subjects: `answerInputBudget: provider budget, context window with the 3 characters per token ratio and output tokens, the 80,000 default, the 4,000 reserve, exact-boundary inputs (at the budget is single pass, one over is divided)`, `division by directory then file then consecutive sections, ordinals separate from keys, sections of one block kept in order with none dropped`, `unsplittable overhead: fixed context larger than the budget, no room for the 4,000-character minimum section, and a combine stage that cannot fit two capped summaries all raise HandlingBudgetError with results and report`, `combine terminates: N summaries become ceil(N/g) per stage, at most ceil(log2 N) stages, and a stage whose count does not fall is a combine failure`, `the bundle adapter and the aggregate adapter keep evidence layers and findings exactly, in order, through several combine stages`, `combine failure returns the per-part results with the failure in notCovered and throws nothing`, `parseHandling reads a stored {} and other malformed values as absent`, `mergeHandling: equal local part ordinals in two nested plans stay distinct by plan path; inputChars maximum, budgetChars minimum, combineStages sum, partitionedBy 'mixed'`, `mergeAnswerReports keeps its binary signature and prefix behaviour`
-  - Fixtures: `a scripted provider that records each call, counts that no two overlap, and can fail a chosen part, the combine, or refuse an input as too large`, `a lowered budget so a small input divides`
-- **integration** — Prove the four callers and the bridge into the run report end to end, through real modules and a scripted provider
-  - Subjects: `synthesize: an input within the budget makes the one call of today; over the budget it divides, and a failed part is named`, `free-form short-circuit: a conversation within the budget returns the loop's bundle with handling single-pass; one over the budget is divided and combined`, `runAggregator with the absent-input section counted in every part and every combine call`, `collectPlanSources and concludeRun with a root and a nested aggregate that each have uncovered parts: the run is incomplete and the report's handling is merged`, `driver passes HandlingBudgetError and ShaperAnswerStepFailedError through without mapping them to 'answer-invalid'`, `step tool through the real handler: emit_part and emit_combine turns, replies submitted through the registered bundle argument, progress persisted with token replacement, repeated invalid replies across separate calls reaching the retry bound, progress released on terminal success and failure, a typed failure returned as StepOutputError with data, a state written before the change read as single pass`, `the legacy emit_bundle turn still passes for an input that fits`
+- **unit** — Prove the table, budget, fit check, division, assembly and combine rules without a model
+  - Subjects: `HANDLING_TABLE: XS and S single pass, M, L and XL partitioned, an undetermined measure is XL`, `decision: the table alone divides (trigger 'size'), the fit check alone divides a small size (trigger 'fit'), both give 'both', and an input exactly at the budget is not divided by the fit check`, `answerInputBudget: provider budget, context window at 2 characters per token with output tokens subtracted, the 60,000 default, the 16,000 reserve, exact boundaries`, `fit measured before every attempt including a repair retry with the actual repair note, the note capped at 8,000 characters with the rest counted, and a retry that would not fit dividing the part up to three times`, `division by directory then file then consecutive sections, ordinals separate from keys, sections of one block kept in order with none dropped`, `unsplittable overhead: fixed context larger than the budget, no room for the 4,000-character minimum section, and a combine stage that cannot fit two capped summaries all raise HandlingBudgetError with results and report`, `combine terminates: N summaries become ceil(N/g) per stage, at most ceil(log2 N) stages, and a stage whose count does not fall is a combine failure`, `the bundle adapter and the aggregate adapter keep evidence layers and findings exactly, in order, through several combine stages`, `combine failure returns the per-part results with 'combine' in notCovered and throws nothing`, `parseHandling reads a stored {} and other malformed values as absent`, `mergeHandling: absent side ignored; single-pass root with partitioned child gives 'partitioned' and the summed parts; budgetChars and budgetSource from the side with the smaller budget; combineStages sum; partitionedBy 'mixed'; equal local part ordinals in two nested plans stay distinct by plan path`, `mergeAnswerReports keeps its binary signature and prefix behaviour`, `renderReportHead: a report without handling renders exactly as today; with handling it adds one line with method, parts, budget and each not-covered part with its reason`
+  - Fixtures: `a scripted provider that records each call, proves no two overlap, and can fail a chosen part, the combine or a repair attempt, refuse an input as too large, or return a reply with many validation errors`, `a lowered budget so a small input divides`
+- **integration** — Prove the four callers, the failure routes and the bridge into the delivered answer, through real modules and a scripted provider
+  - Subjects: `synthesize: below the partition size and fitting makes the one call of today; above it or not fitting it divides, and a failed part is named`, `free-form lookup: a conversation that fits returns the loop's bundle with handling single-pass copied onto the report reportFromLookups derives; one that does not fit is divided and combined; a HandlingBudgetError becomes a LookupFailedError carrying the tool results and the handling, survives executePlan into the failed output, does not take the short-circuit and reaches the answer-step failure with the report`, `runAggregator with the absent-input section counted in every part and every combine call`, `collectPlanSources and concludeRun with a root and a nested aggregate that each have uncovered parts: the run is incomplete, the report's handling is merged and the visible head shows the handling line`, `driver passes HandlingBudgetError and ShaperAnswerStepFailedError through without mapping them to 'answer-invalid'`, `step tool through the real handler: finalizeSynthesize called with a saved and with a session-memory execution, with and without progress; emit_part and emit_combine turns; replies submitted through the registered bundle argument; progress persisted with token replacement; repeated invalid replies across separate calls reaching the retry bound; progress released on terminal success and failure; a typed failure returned as StepOutputError with data; a state written before the change read as single pass`, `the legacy emit_bundle turn still passes for an input that fits`
   - Fixtures: `step tool state fixtures including one from before the change`, `a plan tree with a nested plan whose aggregate task records have handling`
 - **integration** — Prove the accepted exception of Story s7 is closed by a run, not only by a direct call to the aggregator
   - Subjects: `a broad docs analysis run through the real docs aggregate runtime and the plan walk, with an oversized terminal input and a nested aggregate: the run completes, the final report is delivered, and its head states the handling and the completeness`
   - Fixtures: `a docs plan tree with oversized upstream outputs, a scripted provider, a lowered budget`
+- **live** — Reproduce the actual failure of 2026-10-08 with real run-context construction, planning and the real provider limit
+  - Subjects: `the broad docs request on this repository that previously stopped at the aggregate step runs to a final report, and the recorded run (run id, handling line, parts, completeness) is kept as the regression record`
+  - Fixtures: `a registered and indexed repository, a configured provider, INSRC_LIVE_TESTS=1`
 - **contract** — Prove the shape other Stories consume
   - Subjects: `HandlingReport against the sc4 sketch plus the additive fields`, `the bundle schema keeps its open handling object valid and AnswerReport.handling is typed`, `the registered MCP bundle argument is unchanged`
 
@@ -377,61 +445,62 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `handling-budget.test.ts: every size and both paths take the rendered-input rule, exact-boundary and unknown-limit cases`, `synthesize-handling.test.ts: single pass versus divided decision for the lookup path and the free-form short-circuit` |
+| `ac1` | `handling-table.test.ts: every size on both paths takes the table, and the fit check divides what the table would not`, `handling-budget.test.ts: exact-boundary, repair-retry and unknown-limit cases`, `synthesize-handling.test.ts: single pass versus divided decision for the lookup path and the free-form lookup` |
 | `ac2` | `partition-combine.test.ts: every part is reasoned over serially and evidence and findings are kept exactly through several combine stages`, `partition-combine.test.ts: the combine terminates and a combine failure returns the per-part results` |
-| `ac3` | `handling-report.test.ts: parts and notCovered with plan-qualified ids appear in the answer report`, `run-handling-report.test.ts: a root and a nested aggregate with uncovered parts make the run incomplete` |
-| `ac4` | `synthesize-handling.test.ts: an input within the budget makes the same single call`, `freeform-handling.test.ts: a conversation within the budget returns directly` |
-| `ac5` | `partition-combine.test.ts: a failed part is kept out, the others are kept, completeness is false`, `step-tool-parts.test.ts: the retry bound marks a part not covered across separate calls` |
+| `ac3` | `handling-report.test.ts: parts and notCovered with plan-qualified ids appear in the answer report and in the rendered head`, `run-handling-report.test.ts: a root and a nested aggregate with uncovered parts make the run incomplete and the visible head shows the handling line` |
+| `ac4` | `synthesize-handling.test.ts: a small size whose input fits makes the same single call`, `freeform-handling.test.ts: a conversation that fits returns directly` |
+| `ac5` | `partition-combine.test.ts: a failed part is kept out, the others are kept, completeness is false`, `step-tool-parts.test.ts: the retry bound marks a part not covered across separate calls`, `freeform-handling.test.ts: a HandlingBudgetError keeps the tool results and the handling through executePlan` |
 | `ac6` | `partition-combine.test.ts: one block larger than the room is read in consecutive sections with none dropped` |
-| `ac7` | `docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker and delivers a final report with its handling`, `aggregator-handling.test.ts: the aggregator divides an oversized input and keeps the absent-input section in every call` |
+| `ac7` | `docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker and delivers a final report with its handling`, `aggregator-handling.test.ts: the aggregator divides an oversized input and keeps the absent-input section in every call`, `docs-broad-live.test.ts: the recorded live run of the broad docs request returns a final report` |
 
 ## 8. Migration
 
-**State before:** synthesize and runAggregator render the whole of their inputs into one prompt and make one model call with no size check (src/analyze/context/synthesizer.ts:117-169, src/analyze/runtimes/shared/aggregator.ts:100-155). The free-form short-circuit returns the tool loop's bundle from a final emit whose input is the whole conversation (src/analyze/context/driver.ts:1004-1044, 1668-1690). prepareSynthesize returns that one prompt to the step tool. AnswerReport.handling is typed unknown (src/analyze/completeness.ts:206), mergeAnswerReports is binary with a prefix (src/analyze/completeness.ts:404-420), and collectPlanSources skips each plan's aggregate task, so nothing about an aggregate reaches the run's report (src/analyze/executor/plan-sources.ts:43-92). The step tool's bundle phase returns a retryable error on a bad reply and keeps no progress (src/daemon/steps/analyze-step/phases/bundle.ts:90).
+**State before:** synthesize and runAggregator render the whole of their inputs into one prompt and make one model call with no size check (src/analyze/context/synthesizer.ts:117-169, src/analyze/runtimes/shared/aggregator.ts:100-155). finalizeSynthesize(raw, execution?) is called by the bundle handler with the execution (src/analyze/context/synthesizer.ts:191-225, src/daemon/steps/analyze-step/phases/bundle.ts:90). The free-form lookup's final emit takes the whole conversation, a non-ConnectionExecutionError from it becomes a failed lookup that keeps data only for a LookupFailedError, and the short-circuit copies only the seven layers (src/analyze/explore/freeform-probe.ts:150-200, src/analyze/explore/executor.ts:690-715, src/analyze/context/driver.ts:1004-1044, 1662-1690). AnswerReport.handling is typed unknown (src/analyze/completeness.ts:206), mergeAnswerReports is binary with a prefix, renderReportHead shows no handling (src/analyze/completeness.ts:377-420), and collectPlanSources skips each plan's aggregate task (src/analyze/executor/plan-sources.ts:43-92). The step tool keeps no progress on a bad reply.
 
-**State after:** The four callers use one shared helper that measures the single rendered input against a stated budget. Within budget each makes the same single call. Over budget the evidence is divided into ordered parts, each part is reasoned over serially, evidence and findings are assembled in code, a staged combine writes only the summary and always ends, and a failed part or a failed combine is named while the other results are kept. AnswerReport.handling is the typed HandlingReport read through a guard, merged with plan-path-qualified part ids, and the aggregate's handling reaches the run's report. The step tool carries an AnswerProgress object persisted on every transition, with part and combine turns that reuse the registered bundle argument.
+**State after:** The four callers use one shared helper that divides when the HLD's table says so or the rendered input does not fit a conservative budget measured before every attempt. Evidence and findings are assembled in code, a staged combine writes only the summary and always ends, a failed part or combine is named while the other results are kept. finalizeSynthesize keeps execution in second place and takes progress third. A typed failure from the free-form final emit survives the executor with its data and the handling, the handling reaches the delivered answer on every path through the report, and renderReportHead shows it. The step tool carries an AnswerProgress object persisted on every transition.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Add HandlingReport, its read guard parseHandling and mergeHandling, and the budget policy with the single-pass decision only; nothing divides yet — ↩ rollbackable
-2. Type AnswerReport.handling, make mergeAnswerReports merge handling through mergeHandling with its unchanged signature, and keep the bundle schema's open handling object valid — ↩ rollbackable
-3. Add the division, assembly adapters and staged combine, and move synthesize, runAggregator and the free-form final emit onto them so the in-budget case is unchanged — ↩ rollbackable
-4. Make collectPlanSources read each plan's aggregate handling and concludeRun merge it, so the run's completeness reflects uncovered parts — ↩ rollbackable
-5. Add the optional AnswerProgress to the step state and the emit_part and emit_combine outputs, persisting progress on every transition — ↩ rollbackable
-6. Pass HandlingBudgetError and the answer-step failure through the driver and the step tool as the declared typed failure — ↩ rollbackable
+1. Add HandlingReport, parseHandling, mergeHandling, HANDLING_TABLE and the budget policy with the single-pass decision only; nothing divides yet — ↩ rollbackable
+2. Type AnswerReport.handling, merge handling in mergeAnswerReports with its unchanged signature, and render the handling line in renderReportHead — ↩ rollbackable
+3. Add division, assembly adapters and the staged combine, and move synthesize and runAggregator onto them so the in-budget small case is unchanged — ↩ rollbackable
+4. Move the free-form final emit onto the helper, add the handling callback and field, carry handling in LookupFailedError and failedOutput, and copy it in extractSoleFreeformResult onto the derived report — ↩ rollbackable
+5. Make collectPlanSources read each plan's aggregate handling and concludeRun merge it — ↩ rollbackable
+6. Add the optional AnswerProgress to the step state, the third progress parameter of finalizeSynthesize and the emit_part and emit_combine outputs, persisting progress on every transition — ↩ rollbackable
+7. Pass HandlingBudgetError and the answer-step failure through the driver and the step tool as the declared typed failure — ↩ rollbackable
 
-**Backward compat:** All new state and report fields are optional or additive, and the one addition to an existing union value (partitionedBy 'mixed') is on a contract this Story owns. A step state written before the change lacks the progress and is read as a single-pass state. A stored bundle with an open handling object stays valid and a malformed value is read as absent. An input within the budget produces the same calls and the same result as before. synthesize, runAggregator, mergeAnswerReports, collectPlanSources and concludeRun keep their signatures; prepareSynthesize and finalizeSynthesize gain an optional progress parameter and the existing callers are unchanged. The registered MCP bundle argument is unchanged and the legacy emit_bundle turn is kept.
+**Backward compat:** All new state and report fields are optional or additive, and the one addition to an existing union value (partitionedBy 'mixed') is on a contract this Story owns. finalizeSynthesize keeps raw and execution in their positions and returns the bundle exactly as before when no progress is given, so the bundle handler's existing call is unchanged. A step state written before the change lacks the progress and is read as a single-pass state. A stored bundle with an open handling object stays valid and a malformed value is read as absent. A report without handling renders the same head. A small request whose input fits makes the same calls as before. synthesize, runAggregator, runFinalStructuredEmit, mergeAnswerReports, collectPlanSources, concludeRun and renderReportHead keep their signatures with new parameters optional. The registered MCP bundle argument is unchanged and the legacy emit_bundle turn is kept.
 
 ## 9. Alternatives considered
 
-### 9.1 a1: One shared partition-and-combine helper with a stated budget policy, caller adapters and a resumable progress object — **CHOSEN**
+### 9.1 a1: Size table plus a rendered-input fit check in one shared helper, with caller adapters, carried-data failures and a rendered handling line — **CHOSEN**
 
-One helper measures the single rendered input of a model call against a stated character budget and, over budget, divides the evidence into ordered parts, runs one call per part serially, assembles evidence and findings deterministically in code and has the model write only a bounded summary through a terminating staged combine; four callers use it through small adapters.
+One helper divides an answer-writing call's input when either the HLD's size table says the request is above the partition size or the rendered input does not fit a conservative character budget, and it carries the handling report to the delivered answer on every path.
 
-A helper module with three parts. (1) Budget policy: the budget is provider.inputBudgetChars when the provider declares it; else, for a local model, (context window tokens minus the output tokens) times 3 characters per token; else a stated default of 80,000 characters; a reserve of 4,000 characters is kept for message framing, the schema text and the schema-repair retries; the step tool, which has no provider, uses the default. The report records the budget and where it came from. A local model that silently truncates below its declared window cannot be detected from the provider contract, so the protection is the conservative ratio and the reserve, and the limitation is stated. (2) Division and assembly: the rendered input is measured once, including repeated context and the absent-input section, which is counted in every part and every combine call. Over budget, the evidence blocks are grouped by directory then file in stable order, and one block larger than the room is cut into consecutive sections; blocks carry an ordinal that is separate from their key. Each part reply is a seven-layer bundle (or an aggregate summary plus findings) whose summary is capped at 2,000 characters; the caller adapter assembles the final output in code: evidence layers and findings are concatenated by ordinal with part headings and are never passed through the combine model, which writes only the summary-level layers from the bounded part summaries. The combine groups summaries so that each call fits, and each stage turns N summaries into ceil(N/g) summaries with g at least 2, so it ends in at most ceil(log2 N) stages; if fixed context plus two capped summaries does not fit, or one block cannot be given the minimum 4,000-character section, a typed budget error carries the results and the report. A provider size refusal subdivides the part a bounded three times. A failed part is named in notCovered and makes completeness false; if the combine fails, the output is built from the per-part results unchanged with the combine failure reported. All-parts-failed is the typed answer failure. (3) Callers: synthesize, runAggregator, the tool loop's final emit that feeds the free-form short-circuit, and the step tool's answer turn. The step tool carries an AnswerProgress object (completed parts, the pending part or combine group, intermediate combine outputs, failures, retry count) through prepare and finalize, persisted on every transition with token replacement. The aggregate's handling reaches the run through collectPlanSources and concludeRun for the root and nested plans, with plan-path-qualified part ids.
+(1) Decision: the helper partitions when EITHER condition holds: the measured size (sc3) is at or above the table's partition size, or the single rendered input (messages, repeated context, absent-input section) exceeds the budget. The table maps XS and S to single pass, and M, L and XL to parts; the fit check forces division of anything that does not fit regardless of size, and it is measured before every provider attempt, including each schema-repair retry with its actual repair note (the note is capped at 8,000 characters of listed errors, the rest summarised as a count), and a retry whose input would not fit divides the part further. (2) Budget: provider.inputBudgetChars when declared; else for a local model (window tokens minus output tokens) times 2 characters per token, stated as a conservative estimate and not a bound; else 60,000 characters; a reserve of 16,000 characters for framing, schema text and the first repair note. The report records the budget and its source, and the wording never claims truncation is prevented. (3) Division and assembly as before: blocks by directory then file, one oversize block in consecutive sections of at least 4,000 characters, ordinals separate from keys, part replies capped at 2,000 characters of summary, evidence and findings assembled in code by ordinal, a staged combine of N summaries into ceil(N/g) with g at least 2 that writes only the summary layers, a combine failure returning the per-part results with the failure reported, a typed budget error carrying the results and the report when nothing can fit. (4) Callers: synthesize, runAggregator, the free-form final emit and the step tool. The free-form final emit reports its HandlingReport through a handling callback on the tool loop's arguments and a handling field on the loop's result and on the free-form lookup output; a HandlingBudgetError from it is turned by the free-form lookup into a LookupFailedError that carries the tool results as partial and the HandlingReport, so the executor keeps them and the pipeline reports the answer-step failure with the report. The short-circuit copies the handling into the report that reportFromLookups derives. finalizeSynthesize keeps its execution parameter and gains progress after it. (5) Reporting: mergeHandling composes a merged report by fixed rules, collectPlanSources reads each plan's aggregate handling, and renderReportHead renders a handling line on both paths. (6) Step tool: an AnswerProgress object, emit_part and emit_combine outputs that reuse the registered bundle argument, persisted on every transition.
 
-### 9.2 a2: Handling table keyed by size class, separate implementations per path
+### 9.2 a2: Size table only, separate implementations per path
 
-Pick single pass or parts from the five sizes with a fixed table, with one implementation in the lookup pipeline and another in the plan-tree aggregator.
+Decide only from the five sizes with a fixed table and implement division and combine once for the lookup pipeline and once for the aggregator.
 
-Define a table from size (XS..XL) to single-pass or partitioned with fixed part counts, and implement the division and combine separately for synthesize and for runAggregator. The size class from the measure decides, not the rendered input. The step tool and the free-form short-circuit get their own handling.
+Define a table from size to single pass or partitioned with fixed part counts, and implement the division and combine separately for synthesize and for runAggregator. The size class decides; there is no check that a call fits.
 
-**Rejected because:** Literal to the HLD wording but a size class does not bound characters, and two implementations can drift.
+**Rejected because:** Literal to the HLD but a size class does not bound characters, so an input can still overflow a call.
 
 ### 9.3 a3: Smallest: halve and retry when the provider refuses the input
 
-Keep one pass as today and only when the provider refuses the input as too large split it in half, retry, and combine the halves.
+Keep one pass as today and only when the provider refuses the input as too large split it in half, retry and combine the halves.
 
-Catch the provider's size refusal in synthesize and runAggregator, split the input at a file boundary into two halves, run each and combine, repeating on refusal. No budget policy, no step tool part turn beyond a retry.
+Catch the provider's size refusal in synthesize and runAggregator, split the input at a file boundary into two halves, run each and combine, repeating on refusal. No table, no budget, no step tool part turn beyond a retry.
 
 **Rejected because:** A local model truncates silently instead of refusing, so input is lost with no signal; this violates k1, k2 and k3.
 
 ## 10. References
 
-- **[[c1]]** `code` `src/analyze/context/synthesizer.ts:117-169`
-- **[[c2]]** `code` `src/analyze/context/driver.ts:1668-1690`
+- **[[c1]]** `code` `src/analyze/context/synthesizer.ts:117-225`
+- **[[c2]]** `code` `src/analyze/context/driver.ts:1662-1690`
 - **[[c3]]** `code` `src/analyze/executor/plan-sources.ts:43-92`
 - **[[c4]]** `code` `src/analyze/context/shaper-provider.ts:205-250`
 - **[[c5]]** `code` `src/daemon/steps/analyze-step/types.ts:56-157`

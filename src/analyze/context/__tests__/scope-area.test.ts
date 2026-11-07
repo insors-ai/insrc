@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-	docsAreaOf, graphRepoOf, inAreaOf, scopeArea, scopeAreaKey, type ResolvedScope,
+	docsAreaOf, graphRepoOf, inAreaOf, planRepoOf, scopeArea, scopeAreaKey, type ResolvedScope,
 } from '../scope.js';
 import * as taskScope from '../../runtimes/shared/task-scope.js';
 
@@ -64,4 +64,17 @@ test('graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the
 	assert.equal(keys[0], 'repo');
 	assert.equal(new Set(keys).size, keys.length);
 	assert.equal(scopeAreaKey(REPO_SCOPE), scopeAreaKey(WORKSPACE));
+});
+
+test('planRepoOf: the containing repository for an area scope, today\'s own path for a repo or workspace scope', () => {
+	assert.equal(planRepoOf(MODULE), REPO);
+	assert.equal(planRepoOf(MANIFEST), REPO);
+	assert.equal(planRepoOf(CONNECTION), REPO);
+	assert.equal(planRepoOf(REPO_SCOPE), REPO);
+	assert.equal(planRepoOf(WORKSPACE), REPO);
+	// a workspace or repo scope that names a directory inside the repository keeps that path, as before
+	assert.equal(planRepoOf(scope({ kind: 'workspace', value: '/repo/sub', lookupPath: '/repo/sub' })), '/repo/sub');
+	assert.equal(planRepoOf(scope({ kind: 'repo', value: '/repo/sub', lookupPath: '/repo/sub' })), '/repo/sub');
+	// no registered repository contains an area scope: its own directory, as before
+	assert.equal(planRepoOf({ kind: 'module', value: '/x/y', repoPath: null, lookupPath: '/x/y' }), '/x/y');
 });

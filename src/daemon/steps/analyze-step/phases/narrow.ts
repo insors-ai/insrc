@@ -35,7 +35,7 @@ import { failedOutput, getNarrowRunner, stepPlan } from '../../../../analyze/exp
 import type { Exploration, ExplorationOutput } from '../../../../analyze/explore/index.js';
 import { putCachedExploration } from '../../../../db/exploration-cache.js';
 import { getLogger } from '../../../../shared/logger.js';
-import { graphRepoOf } from '../../../../analyze/context/scope.js';
+import { planRepoOf } from '../../../../analyze/context/scope.js';
 import { stepScope } from '../scope.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
 import { measureLookupResults } from '../../../../analyze/measure.js';
@@ -214,8 +214,8 @@ export async function handleNarrow(
 		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,
 		// Graph reads are keyed on the containing registered repository; the named area travels as `scope`.
-		repoPath:            graphRepoOf(scope),
-		closureRepos:        [graphRepoOf(scope)],
+		repoPath:            planRepoOf(scope),
+		closureRepos:        [planRepoOf(scope)],
 		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		// The request's size as the start phase measured it, for a lookup that sizes its own work.

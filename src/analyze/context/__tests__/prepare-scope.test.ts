@@ -179,10 +179,10 @@ test('generic and classification-mode requests on a symbol in an unindexed repo 
 
 test("tool loop's path for classification and task modes is the resolved lookupPath", async () => {
 	const provider = {} as unknown as LLMProvider;
-	// `path` is the directory the tools run in; `closure` is the repository graph reads are keyed on
-	// (the module's directory is no registered repository).
+	// The tools run in, and graph reads are keyed on, the registered repository that contains the
+	// scope (a module's directory is no registered repository); the area travels as the scope.
 	const cases: ReadonlyArray<{ ref: AnalyzeScopeRef; path: string; closure: string }> = [
-		{ ref: { kind: 'module',     value: `${REPO}/src` },     path: `${REPO}/src`, closure: REPO },   // its own directory, as before
+		{ ref: { kind: 'module',     value: `${REPO}/src` },     path: REPO, closure: REPO },   // was the module's own directory
 		{ ref: { kind: 'file',       value: FILE },              path: REPO, closure: REPO },            // was the file's directory
 		{ ref: { kind: 'symbol',     value: `${FILE}#settle` },  path: REPO, closure: REPO },
 		{ ref: { kind: 'connection', value: 'ledger-db' },       path: REPO, closure: REPO },            // was the working directory

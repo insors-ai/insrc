@@ -406,6 +406,16 @@ export function graphRepoOf(scope: ResolvedScope): string {
  *     repo that was read, every entity is kept untouched, exactly as before;
  *     when it is a directory inside that repo, only what lies under it.
  */
+/**
+ * The key graph reads are given at the places a plan context is built: the
+ * containing registered repository for a scope that names an AREA (module,
+ * manifest directory, file, symbol, connection), and, for a repo or workspace
+ * scope, the value it has always had (its own path), so those callers see no change.
+ */
+export function planRepoOf(scope: ResolvedScope): string {
+	return scope.kind === 'repo' || scope.kind === 'workspace' ? scope.lookupPath : graphRepoOf(scope);
+}
+
 export function inAreaOf(scope: ResolvedScope): (entity: { readonly id: string; readonly file: string }) => boolean {
 	if (scope.kind === 'symbol') return e => e.id === scope.entityId;
 	if (scope.kind === 'file') return e => e.file === scope.filePath;

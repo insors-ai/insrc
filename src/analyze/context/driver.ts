@@ -85,7 +85,7 @@ import {
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
 import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { freshnessPathOf, graphRepoOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
+import { freshnessPathOf, planRepoOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
 	modelFacingBundleSchema,
@@ -1231,7 +1231,8 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	// The directory the tools run in: the scope's own directory for a
 	// repo / module / manifest directory / workspace; the containing
 	// repo for a file or a symbol; the declaring repo for a connection.
-	const repoPath = args.scope.lookupPath;
+	// The tools' graph reads are keyed on the containing repository for an area scope (planRepoOf).
+	const repoPath = planRepoOf(args.scope);
 	return {
 		sessionId,
 		repoPath,
@@ -1243,7 +1244,7 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 		// their queries. A future revision may widen to the transitive
 		// DEPENDS_ON closure, but doing so at the shaper boundary is
 		// out of scope for the docs module.
-		closureRepos:   [graphRepoOf(args.scope)],
+		closureRepos:   [repoPath],
 		send:           () => { /* shaper does not stream */ },
 		requestId:      0,
 		ollamaProvider: args.provider,
@@ -1620,7 +1621,7 @@ async function tryExplorationPipeline(
 	// All seven kinds of scope are served: the lookups run in the
 	// directory the scope resolved to.
 	// Graph reads are keyed on the containing registered repository; the named area travels as `scope`.
-	const repoPath = graphRepoOf(args.scope);
+	const repoPath = planRepoOf(args.scope);
 	// A throw from either read is a named cause, never a raw rejection.
 	let lastIndexedMs: number | undefined;
 	try {

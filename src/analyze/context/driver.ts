@@ -1231,8 +1231,9 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 	// The directory the tools run in: the scope's own directory for a
 	// repo / module / manifest directory / workspace; the containing
 	// repo for a file or a symbol; the declaring repo for a connection.
-	// The tools' graph reads are keyed on the containing repository for an area scope (planRepoOf).
-	const repoPath = planRepoOf(args.scope);
+	// A run-mode session keys the tools' graph reads on the containing repository for an area scope (planRepoOf);
+	// the classification and task modes keep the directory they always had.
+	const repoPath = args.invocationMode === 'run' ? planRepoOf(args.scope) : args.scope.lookupPath;
 	return {
 		sessionId,
 		repoPath,

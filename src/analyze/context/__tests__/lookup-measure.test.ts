@@ -29,7 +29,7 @@ import { makeEntityId } from '../../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { PATHS } from '../../../shared/paths.js';
 import type { Entity, LLMProvider } from '../../../shared/types.js';
-import { buildCompleteness, renderCompletenessLine, renderMeasureLine } from '../../completeness.js';
+import { buildCompleteness, renderCompletenessLine, renderMeasureLine, renderScopeLine } from '../../completeness.js';
 import {  _getRunnersForTest, _overrideRunnerForTest } from '../../explore/executor.js';
 import { measureOwnRequest, runFreeformProbe } from '../../explore/freeform-probe.js';
 import type { ExecutedPlan, Exploration, ExplorationPlan, ExplorationRunnerContext } from '../../explore/types.js';
@@ -153,9 +153,9 @@ test("the context builder gives the planning call the size of the named-area mea
 	const characters = JSON.stringify(searchOutput(40, 25), null, 2).length;
 	const measure: RequestMeasure = { source: 'lookup-results', items: 40, files: 25, characters, size: 'M', determined: true, sizeHint: 'L' };
 	assert.deepEqual(bundle.report?.measure, measure);
-	// The answer an agent reads carries the measure line under the completeness line.
+	// The answer an agent reads carries the measure line under the completeness line, and the scope line under that.
 	assert.deepEqual(renderBundleAsMarkdown(bundle, { includeMeta: false }).split('\n\n')[0]!.split('\n'),
-		[renderCompletenessLine(bundle.report!), renderMeasureLine(measure)]);
+		[renderCompletenessLine(bundle.report!), renderMeasureLine(measure), renderScopeLine(bundle.report!.scope!)]);
 	assert.match(renderMeasureLine(measure), /^Size: M, measured from what the lookups returned: 25 files, 40 items, .* The caller asked for L\.$/);
 
 	// --- A size on the intent the builder is given is not read, and with no size stated there is no hint. ---

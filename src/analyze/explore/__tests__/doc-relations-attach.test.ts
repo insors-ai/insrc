@@ -22,6 +22,7 @@ import { useTemporaryLance } from '../../../db/lance/__tests__/helpers/temp-lanc
 import { addRepo, lookupRepoId } from '../../../db/repos.js';
 import { findEntitiesByFile } from '../../../db/entities.js';
 import { getCachedExploration } from '../../../db/exploration-cache.js';
+import { cacheExplorationFor } from '../exploration-cache-key.js';
 import { fileEntityHashInTxn, writeDocRelationQualityInTxn, writeDocRelationRowInTxn } from '../../../db/doc-relations.js';
 import type { DbClient } from '../../../db/client.js';
 import type { Entity } from '../../../shared/types.js';
@@ -125,7 +126,7 @@ test('s10 t9: attachDocRelations on fresh, executePlanWithContext and stepPlanWi
 	assert.match((fresh.results[0]!.output as DocMentionOutput).relatedOrigin!, /1 of 2 related document links proposed by a model/);
 	assert.match((fresh.results[0]!.output as DocMentionOutput).relatedStale!, /computed from an older index \(generation 1; the index is now at generation \d+\)/);
 	// The cache holds the runner's output without anything attached.
-	const cachedRow = await getCachedExploration(repo, 1n, exp);
+	const cachedRow = await getCachedExploration(repo, 1n, cacheExplorationFor(exp, undefined));
 	assert.ok(cachedRow !== null);
 	assert.equal((cachedRow as DocMentionOutput).relatedOrigin, undefined);
 

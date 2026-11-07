@@ -4,33 +4,40 @@ Run 2026-11-07 on `v2` after the daemon was updated and the MCP client restarted
 
 ## Build and suites
 
-`npm run build` passes (typecheck and copy-assets). Suites were run once each in foreground chunks.
-Every failure listed below also fails on the pre-Story commit `d923f91dc` (compared per file);
-none touches the analyzer request path.
+`npm run build` passes (typecheck and copy-assets). Each suite was run once, in foreground chunks
+(`--test-force-exit`). Counts are from the run, before the repairs listed below; tests / pass / fail.
 
-Fixed in this Story (failed because of this change, pass now): `lookup-measure` (new `Scope:` line),
-`doc-relations-attach` (area-keyed cache row), `step-host` (request-or-focus message),
-`forward-step` progress test (code-review tool is no longer a forwarded tool),
-tool-surface golden file (regenerated; it also absorbed earlier committed drift in the
-code-review, review and approve tools).
+| Suite | Run | Tests | Pass | Fail |
+| :--- | :--- | ---: | ---: | ---: |
+| analyze: `explore` + `analyze/__tests__` | 1 | 251 | 249 | 1 (`doc-relations-attach`, mine, fixed) |
+| analyze: `context` | 1 | 497 | 443 | 3 (`lookup-measure` mine, fixed; `provider-bypass-audit`, `role-router-global-tiers` other work) |
+| daemon-step: `daemon/steps/__tests__` | 1 | 106 | 84 | 20 (1 mine, `step-host`, fixed; rest below) plus `peer-state-store-leakfree` hang |
+| daemon: `daemon/__tests__` (two halves, `search-filter` and `code-review-rpc-fallback` excluded) | 2 | 466 | 435 | 18 |
+| db | 1 | 672 | 669 | 3 |
+| mcp | 1 | 134 | 112 | 22 (1 mine, forwarder progress test, fixed; rest below) |
 
-Inherited, by cause:
+Fixed in this Story (they failed because of this change and pass now): `lookup-measure` (new `Scope:` line),
+`doc-relations-attach` (area-keyed cache row), `step-host` (request-or-focus message), the forwarder progress
+test in `forward-step.test.ts` (the code-review tool is no longer a forwarded tool), and the tool-surface golden
+file (regenerated; it also absorbed earlier committed drift in the code-review, review and approve tools).
 
-- Review engine being rebuilt in another session (handlers throw `PENDING REVIEW RE-IMPLEMENTATION`;
-  `buildAuthorParty` moved to `workflow/code-review/author.js`): `T11 codeReviewStream` and
-  `reviewArtifactStream` (16), `in-daemon review client`, `review-resolve-daemon`,
-  `workflow-review-rpc`, `code-review-rpc`, `code-review-freshness-request`, `step-host` review
-  progress and equivalence, `no-live-store-in-tests` (3).
-- Source files the tests import do not exist: `workflow/artifacts/provenance/writer.js`
-  (`CM-S3-*` connection-management tests, `task-persistence`), `workflow/review-pipeline/call-events.ts`
-  (`model-literal-scan`).
-- Out-of-date tests: `handler-runtime`, `lifecycle-wiring`, `daemon-doc-repo-table`, `present-steering`,
-  `schema-registry`, `repo-schema-guard`, `import-graph`, `mcp-process-e2e`, `repo-completeness`,
-  `team-settle`, `provider-bypass-audit`, `role-router-global-tiers`.
-- Environmental or lifecycle: shutdown and watchdog tests, `search request contract` (passes alone),
-  `entity.closure under index` (180 s timeout).
-- Hang past 9 minutes on both commits, excluded: `peer-state-store-leakfree`, `search-filter`.
-- `task-review-plan-path` (task-review code, other session) failed in one run and passed on the baseline run.
+Inherited: the files below fail the same way on the pre-Story commit `d923f91dc` (compared per file, by failure
+count: `nested-planner-memory`, `owner-measurement`, `private-cache`, `provider-diagnostics`, `root-bound-scope`,
+`root-run-memory`, `step-host` (2), `task-persistence`, `tool-owner-context`, `analysis-client-refusal`,
+`embedding-denial`, `freeform-owner-relay`, `in-daemon-client`, `daemon-doc-repo-table`, `handler-runtime`,
+`lifecycle-wiring`, `model-literal-scan`, `repo-completeness`, `review-resolve-daemon`, `team-settle`,
+`workflow-review-rpc`, the db audits, and in mcp `daemon-stream-utf8`, `import-graph`, `mcp-process-e2e`,
+`repo-schema-guard`, `schema-registry`). `peer-state-store-leakfree` hangs on both commits.
+By cause: the review engine being rebuilt in another session (handlers throw `PENDING REVIEW RE-IMPLEMENTATION`,
+`buildAuthorParty` moved to `workflow/code-review/author.js`); source files the tests import that do not exist
+(`workflow/artifacts/provenance/writer.js`, `workflow/review-pipeline/call-events.ts`); tests out of date with
+their code; shutdown and watchdog lifecycle tests.
+
+Not from this Story and not inherited from the baseline: `task-review-plan-path` passes on `d923f91dc` and fails
+at HEAD. The cause is the `reviewRevision` full-commit pin check in `task-review/contracts.ts`, added by the other
+session's commit `1a761053e` after the baseline; the test expects the older message. Not checked against the baseline
+because it was not run there: `provider-bypass-audit`, `role-router-global-tiers`, `code-review-rpc-fallback`
+(excluded as a hang) and `search-filter` (hang) were not compared per file.
 
 ## Live runs against the updated daemon
 

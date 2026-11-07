@@ -7,6 +7,7 @@ import { CloneType, Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 
+const cloneFields = <T extends Record<string, TSchema>>(fields: T): T => Object.fromEntries(Object.entries(fields).map(([key, schema]) => [key, CloneType(schema)])) as T;
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const strings = Type.Array(text, { maxItems: 10000 });
@@ -19,14 +20,17 @@ export const DerivedSchema = object({ epicHash: text, unit: object({ id: text, t
 export type StoredDerived = Static<typeof DerivedSchema>;
 export const TestDetailSchema = object({ file: text, cases: Type.Array(text, { minItems: 1, maxItems: 10000 }), command: text,
  result: Type.Union((['pass', 'fail', 'skipped', 'not_run'] as const).map(s => Type.Literal(s))), executionDetails: text, evidenceReferences: strings });
-export const StoredPacketSchema = object({ storyId: text, taskId: Type.Optional(text), functionalSummary: text,
+const storedPacketFields = { reviewRevision: Type.Optional(oid), storyId: text, taskId: Type.Optional(text), functionalSummary: text,
  documents: object({ story: Type.Optional(DocumentSchema), lld: Type.Optional(DocumentSchema), plan: Type.Optional(DocumentSchema), issue: Type.Optional(DocumentSchema) }),
  reviewSet: Type.Array(object({ commit: oid, parent: Type.Union([oid, Type.Null()]), files: Type.Array(object({ path: text,
   previousPath: Type.Optional(text), segments: Type.Array(object({ before: Type.Optional(range), after: Type.Optional(range), deletionAt: Type.Optional(Type.Integer({ minimum: 0 })) }), { maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }) }), { minItems: 1, maxItems: 10000 }),
- tests: Type.Array(TestDetailSchema, { maxItems: 10000 }) });
+ tests: Type.Array(TestDetailSchema, { maxItems: 10000 }) };
+export const StoredPacketSchema = object(cloneFields(storedPacketFields));
 /** New submissions exclude prior-version selections. Stored history remains immutable. */
-export const PacketSchema = CloneType(StoredPacketSchema);
-Reflect.deleteProperty(PacketSchema.properties.reviewSet.items.properties.files.items.properties.segments.items.properties, 'before');
+const submissionFields = cloneFields(storedPacketFields);
+Reflect.deleteProperty(submissionFields.reviewSet.items.properties.files.items.properties.segments.items.properties, 'before');
+// Object construction computes required from the NEW non-optional field.
+export const PacketSchema = object({ ...submissionFields, reviewRevision: CloneType(oid) });
 export const TaskResultSchema = object({ taskId: text,
  status: Type.Union((['passed', 'changes_requested', 'incomplete', 'failed'] as const).map(s => Type.Literal(s))), summary: text,
  findings: Type.Array(object({ severity: Type.Union((['HIGH', 'MED', 'LOW'] as const).map(s => Type.Literal(s))), location: text,
@@ -65,7 +69,12 @@ export function reviewPath(path: string): void {
  requireReview(!/[\\\x00-\x1f\x7f:]/.test(path) && !path.startsWith('/') && path.split('/').every(p => p && p !== '.' && p !== '..'), 'path', 'Expected repository-relative literal path');
 }
 export function parsePacket(input: unknown, historical = false): ReviewPacket {
- const packet = decodeReview(historical ? StoredPacketSchema : PacketSchema, input);
+ let packet: ReviewPacket;
+ try { packet = decodeReview(historical ? StoredPacketSchema : PacketSchema, input); }
+ catch (error) {
+  if (error instanceof TaskReviewInputError && error.field === '/reviewRevision') throw new TaskReviewInputError('reviewRevision', 'Expected a full commit object ID');
+  throw error;
+ }
  for (const document of Object.values(packet.documents)) reviewPath(document.path);
  for (const test of packet.tests) reviewPath(test.file);
  const selected = new Set<string>();
@@ -73,6 +82,7 @@ export function parsePacket(input: unknown, historical = false): ReviewPacket {
   requireReview(commit.parent !== commit.commit, 'parent', 'A commit is not its own parent');
   for (const file of commit.files) {
    reviewPath(file.path); if (file.previousPath) reviewPath(file.previousPath);
+   requireReview(historical || file.segments.length > 0, 'scope_conflict', `Origin change ${selected.size} (${file.path}) has no selected segments`);
    for (const segment of file.segments) {
     requireReview(historical || segment.before === undefined, 'segments', 'Before-version selections are not accepted; submit reviewed-version blocks or a deletion anchor');
     requireReview(segment.before || segment.after || segment.deletionAt !== undefined, 'segments', 'A reviewed block or deletion anchor is required');

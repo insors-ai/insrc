@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { registerGitTools } from '../../../../daemon/tools/builtins/git/index.js';
 import { RegistryReviewSources } from '../sources.js';
-import { parsePacket } from '../contracts.js';
+import { parsePacket, PacketSchema, StoredPacketSchema, decodeReview, TaskReviewInputError } from '../contracts.js';
 import type { ReviewPacket, TaskReviewResult } from '../contracts.js';
 import { prepareReviewPacket, deriveTaskAssignments, selectedCode } from '../packet.js';
 import { validateTaskResult, aggregateTaskStatus, normalizeTaskResult } from '../results.js';
@@ -30,13 +30,50 @@ function fixture() {
  git('add', '.'); git('commit', '-qm', 'base'); const base = git('rev-parse', 'HEAD');
  put('src/a.ts', 'FIRST\nsecond\nthird\nfourth\nFIFTH\n'); put('unrelated.ts', 'unrelated change\n');
  git('add', '.'); git('commit', '-qm', 'selected and unrelated'); const commit = git('rev-parse', 'HEAD');
- const packet: ReviewPacket = { storyId: `STORY-${hash}-s1`, functionalSummary: 'Change first behavior',
+ const packet: ReviewPacket = { reviewRevision: commit, storyId: `STORY-${hash}-s1`, functionalSummary: 'Change first behavior',
   documents: { story: { path: 'story.json', commit: base }, lld: { path: 'lld.json', commit: base }, plan: { path: 'plan.json', commit: base } },
   reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }],
   tests: [{ file: 'test.ts', cases: ['behavior'], command: 'target test', result: 'pass', executionDetails: 'Builder reported run', evidenceReferences: [`${commit}:test.ts`] }] };
  const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-test', requestId: 1, send: () => {} });
  return { repo, git, put, base, commit, packet, plan, sources, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
 }
+
+test('final pin schema requires the pin without mutating historical schemas', async () => {
+ const f = fixture(); try {
+  assert.ok(PacketSchema.required?.includes('reviewRevision'));
+  assert.ok(!StoredPacketSchema.required?.includes('reviewRevision'));
+  const { reviewRevision: _pin, ...historical } = f.packet;
+  const bytes = JSON.stringify(historical);
+  assert.throws(() => decodeReview(PacketSchema, historical), TaskReviewInputError);
+  assert.deepEqual(parsePacket(historical, true), historical);
+  assert.equal(JSON.stringify(historical), bytes);
+  for (const pin of ['HEAD', 'main', '1234']) assert.throws(() => parsePacket({ ...f.packet, reviewRevision: pin }), TaskReviewInputError);
+  assert.throws(() => parsePacket({ ...f.packet, projection: { revision: f.commit } }), TaskReviewInputError);
+  const before = structuredClone(f.packet); before.reviewSet[0]!.files[0]!.segments = [{ before: [1, 1] }];
+  assert.throws(() => parsePacket(before), TaskReviewInputError);
+  assert.deepEqual(parsePacket(before, true), before);
+ } finally { f.cleanup(); }
+});
+
+test('final pin validates object type and ancestry with truthful source failures', async () => {
+ const f = fixture(); try {
+  const field = (expected: string) => (error: unknown) => error instanceof TaskReviewInputError && error.field === expected;
+  for (const reviewRevision of ['9'.repeat(40), f.git('rev-parse', `${f.commit}:src/a.ts`)]) {
+   await assert.rejects(prepareReviewPacket({ ...f.packet, reviewRevision }, f.sources), field('reviewRevision'));
+  }
+  await assert.rejects(prepareReviewPacket({ ...f.packet, reviewRevision: f.base }, f.sources), field('reviewRevision.ancestry'));
+  assert.equal(await f.sources.isAncestor(f.base, f.commit), true);
+  assert.equal(await f.sources.isAncestor(f.commit, f.base), false);
+  assert.equal(await f.sources.isAncestor(f.commit, f.commit), true);
+  const failure = new TaskReviewInputError('source', 'Transport/integrity failure');
+  const broken = { commit: async () => { throw failure; }, isAncestor: f.sources.isAncestor.bind(f.sources), file: f.sources.file.bind(f.sources), changedRanges: f.sources.changedRanges.bind(f.sources) };
+  await assert.rejects(prepareReviewPacket(f.packet, broken), error => error === failure);
+  const empty = structuredClone(f.packet); empty.reviewSet[0]!.files[0]!.segments = [];
+  let reads = 0;
+  await assert.rejects(prepareReviewPacket(empty, { ...broken, commit: async () => { reads++; return []; } }), field('scope_conflict'));
+  assert.equal(reads, 0, 'zero-segment refusal precedes source work, admission and model calls');
+ } finally { f.cleanup(); }
+});
 
 test('selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes', async () => {
  const f = fixture(); try {
@@ -69,7 +106,9 @@ test('selected-change packet preserves deletion rename and non-textual limits wi
   writeFileSync(join(f.repo, 'binary.bin'), Buffer.from([0, 255, 1])); f.git('add', '.'); f.git('commit', '-qm', 'move remove binary');
   const commit = f.git('rev-parse', 'HEAD'); const packet = structuredClone(f.packet);
   packet.reviewSet = [{ commit, parent: f.commit, files: [{ path: 'moved.ts', previousPath: 'src/a.ts', segments: [] }, { path: 'unrelated.ts', segments: [{ deletionAt: 0 }] }, { path: 'binary.bin', segments: [] }] }];
-  const prepared = await prepareReviewPacket(packet, f.sources);
+  packet.reviewRevision = commit;
+  await assert.rejects(prepareReviewPacket(packet, f.sources), /scope_conflict/);
+  const prepared = await prepareReviewPacket(packet, f.sources, true);
   assert.equal(prepared.changes.length, 3); assert.equal(prepared.changes[1]!.after, null);
   assert.deepEqual(selectedCode(prepared.changes[2]!).blocks, []);
   assert.equal(prepared.changes[0]!.limitations.length, 1); assert.equal(prepared.changes[2]!.limitations.length, 1);

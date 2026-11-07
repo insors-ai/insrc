@@ -30,7 +30,7 @@ async function admitted() {
 	git('add', '.'); git('commit', '-qm', 'base'); const base = git('rev-parse', 'HEAD');
 	put('src/a.ts', 'FIRST\nsecond\n');
 	git('add', '.'); git('commit', '-qm', 'change'); const commit = git('rev-parse', 'HEAD');
-	const packet: ReviewPacket = { storyId: 's1', functionalSummary: 'Change behaviour', documents: {}, reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [] };
+	const packet: ReviewPacket = { reviewRevision: commit, storyId: 's1', functionalSummary: 'Change behaviour', documents: {}, reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [] };
 	const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-derived-completion', requestId: 1, send: () => {} });
 	const review = await prepareReviewAdmission(repo, 'review-1', 1, packet, 'daemon', sources, { epicHash: hash });
 	return { review, build, cleanup: () => rmSync(repo, { recursive: true, force: true }) };

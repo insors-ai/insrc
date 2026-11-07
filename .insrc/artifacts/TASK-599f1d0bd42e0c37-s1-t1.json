@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8ab5058d-7483-4423-a4b6-716a409cc538",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.612Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Pinned input and history contracts",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "fead74b59dc240d3e9f3efbabefd1befce702f48c87bdf00d28cbda7e107b540",
+        "at": "2026-11-07T04:46:32.613Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.614Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Pinned input and history contracts",
+    "summary": "Construct fresh strict submission schemas requiring reviewRevision and historical optional-pin readers; define proposed projection, decision, binding and snapshot types.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "PacketSchema.required includes reviewRevision; reject symbolic/missing/noncommit pins and fresh before-block selections; historical no-pin bytes remain readable.",
+      "Use existing typed Git ancestry adapter; preserve source/transport integrity errors and never infer HEAD.",
+      "Strict pending/accepted/failed and accepted/unmapped branches require their correct fields."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "New packets require a full commit reviewRevision; reject missing/symbolic/unavailable/non-commit pins. Same-attempt replay rejects changed pin; historical completed no-pin records remain readable without granting model execution."
+      },
+      {
+        "level": "unit",
+        "name": "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller."
+      },
+      {
+        "level": "unit",
+        "name": "Schema-construction regression: missing reviewRevision is rejected by the actual PacketSchema/decodeReview path, PacketSchema.required includes it, and historical StoredPacketSchema still decodes no-pin records. Cloning/replacing an optional property without rebuilding required must not satisfy this test. [[c2]]"
+      },
+      {
+        "level": "unit",
+        "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope."
+      },
+      {
+        "level": "unit",
+        "name": "New pinned zero-segment original selections reject field=scope_conflict before checkpoint replacement or provider dispatch; historical no-pin metadata records remain readable without granting new execution. Nonempty origins that become fully superseded still have complete dispositions and findingScope=none. [[c2]] [[c3]] [[c18]]"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -13,7 +13,7 @@ import { DOCUMENT_ROLES } from '../route.js';
 const oid = 'a'.repeat(40);
 const doc = (path: string) => ({ path, commit: oid });
 const packet = (documents: Record<string, unknown>) => ({
-	storyId: 's1', functionalSummary: 'Change behaviour', documents,
+	reviewRevision: 'b'.repeat(40), storyId: 's1', functionalSummary: 'Change behaviour', documents,
 	reviewSet: [{ commit: 'b'.repeat(40), parent: oid, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [],
 });
 const advertised = z.object(CODE_REVIEW_INPUT);

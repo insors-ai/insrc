@@ -40,7 +40,7 @@ function fixture() {
 	git('add', '.'); git('commit', '-qm', 'change'); const commit = git('rev-parse', 'HEAD');
 	const at = (name: string) => ({ path: artifact(name), commit: base });
 	const packetWith = (documents: ReviewPacket['documents']): ReviewPacket => ({
-		storyId: 's1', functionalSummary: 'Change behaviour', documents,
+		reviewRevision: commit, storyId: 's1', functionalSummary: 'Change behaviour', documents,
 		reviewSet: [{ commit, parent: base, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }], tests: [],
 	});
 	const sources = new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review-route-admission', requestId: 1, send: () => {} });

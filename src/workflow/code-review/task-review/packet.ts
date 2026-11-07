@@ -119,6 +119,13 @@ async function storedDocuments(packet: ReviewPacket, stored: StoredDerived, sour
 }
 export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
+ if (packet.reviewRevision !== undefined) {
+  await sources.commit(packet.reviewRevision, 'reviewRevision');
+  for (const pointer of packet.reviewSet) {
+   await sources.commit(pointer.commit);
+   requireReview(await sources.isAncestor(pointer.commit, packet.reviewRevision), 'reviewRevision.ancestry', 'Origin is not an ancestor of the final revision');
+  }
+ }
  const { docs, hash } = route ? await routedDocuments(packet, route, sources) : stored ? await storedDocuments(packet, stored, sources) : await pinnedTriple(packet, sources, historical);
  const plan = docs.plan?.head;
  let tasks: PlanTask[] = [];

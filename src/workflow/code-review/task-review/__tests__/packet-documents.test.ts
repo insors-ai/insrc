@@ -8,7 +8,7 @@ const oid = (n: number): string => n.toString(16).repeat(40).slice(0, 40);
 const doc = (path: string, n = 1) => ({ path, commit: oid(n) });
 const ROLES = { story: doc('story.json'), lld: doc('lld.json'), plan: doc('plan.json'), issue: doc('issue.json') } as const;
 const packet = (documents: Record<string, unknown>) => ({
-	storyId: 's1', functionalSummary: 'Change behaviour', documents,
+	reviewRevision: oid(2), storyId: 's1', functionalSummary: 'Change behaviour', documents,
 	reviewSet: [{ commit: oid(2), parent: oid(1), files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }],
 	tests: [],
 });

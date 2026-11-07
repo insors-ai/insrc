@@ -19,8 +19,9 @@ test('selected code: exact pinned after blocks reach attribution and assessment 
   f.git('add', 'source.js'); f.git('commit', '-qm', 'two changed lines');
   const commit = f.git('rev-parse', 'HEAD');
   f.packet.reviewSet = [{ commit, parent, files: [{ path: 'source.js', segments: [{ after: [1, 1] }] }] }];
+  f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
   const reads: string[] = [];
-  const sources = { commit: f.deps.sources.commit.bind(f.deps.sources), changedRanges: f.deps.sources.changedRanges.bind(f.deps.sources), file: async (oid: string, path: string) => { reads.push(`${oid}:${path}`); return f.deps.sources.file(oid, path); } };
+  const sources = { isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), commit: f.deps.sources.commit.bind(f.deps.sources), changedRanges: f.deps.sources.changedRanges.bind(f.deps.sources), file: async (oid: string, path: string) => { reads.push(`${oid}:${path}`); return f.deps.sources.file(oid, path); } };
   f.put('source.js', 'WORKTREE_ONLY_SECRET\n');
   const prepared = await prepareReviewPacket(f.packet, sources);
   assert.ok(!reads.includes(`${parent}:source.js`), 'old implementation is fetched only if needed');
@@ -47,6 +48,7 @@ test('deletion markers select exact reviewed-version boundaries without removed 
   f.put('source.js', 'keep first\nkeep last\n'); f.git('add', 'source.js'); f.git('commit', '-qm', 'delete middle');
   const commit = f.git('rev-parse', 'HEAD');
   f.packet.reviewSet = [{ commit, parent, files: [{ path: 'source.js', segments: [{ deletionAt: 1 }] }] }];
+  f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
   const prepared = await prepareReviewPacket(f.packet, f.deps.sources);
   assert.deepEqual(selectedCode(prepared.changes[0]!).blocks, [{ deletionAt: 1, deleted: true }]);
   assert.ok(!attributionPrompt(prepared).includes('REMOVE_ME'));
@@ -56,6 +58,7 @@ test('deletion markers select exact reviewed-version boundaries without removed 
   assert.throws(() => parsePacket(f.packet), /cannot carry code ranges/);
   unlinkSync(join(f.repo, 'source.js')); f.git('add', 'source.js'); f.git('commit', '-qm', 'delete file');
   f.packet.reviewSet = [{ commit: f.git('rev-parse', 'HEAD'), parent: commit, files: [{ path: 'source.js', segments: [{ deletionAt: 0 }] }] }];
+  f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
   assert.equal(selectedCode((await prepareReviewPacket(f.packet, f.deps.sources)).changes[0]!).deletedFile, true);
  } finally { f.cleanup(); }
 });
@@ -82,6 +85,7 @@ test('selected code preserves Unicode and missing final newline for an added fil
   f.put('added.js', 'const café = "你好";\r\nexport { café };');
   f.git('add', 'added.js'); f.git('commit', '-qm', 'add unicode source');
   f.packet.reviewSet = [{ commit: f.git('rev-parse', 'HEAD'), parent, files: [{ path: 'added.js', segments: [{ after: [1, 2] }] }] }];
+  f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
   const prepared = await prepareReviewPacket(f.packet, f.deps.sources);
   assert.deepEqual(selectedCode(prepared.changes[0]!).blocks, [{ lines: [1, 2], code: 'const café = "你好";\r\nexport { café };' }]);
   f.packet.reviewSet[0]!.files[0]!.segments = [{ after: [1, 3] }];

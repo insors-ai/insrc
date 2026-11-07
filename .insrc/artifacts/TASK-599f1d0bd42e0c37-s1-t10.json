@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c07dc92c-7caa-4874-a88d-3af7e3460479",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.626Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Semantic regression and production qualification",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7b14e45a854c9947a6dff2c180c55e63bca6329bbd157e153d20abd7ad3e9393",
+        "at": "2026-11-07T04:46:32.626Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.627Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Semantic regression and production qualification",
+    "summary": "Complete all 35 LLD subjects and ac1-ac5 mapping with disposable compiled MCP/IPC smoke and scoped production checks.",
+    "size": "L",
+    "order": 10,
+    "acceptanceChecks": [
+      "Synthetic reproduction uses immutable f0d5da04756e1e96a5043c0063a8891dd2455c7e and 76d3d899a5f144721e2a3328a9933e346be3b600; reviewer result depends on assertions of received final code/test evidence, preserves separate genuine defect, never claims missing checkpoint recovery.",
+      "Both routes qualify fresh-memory exact reuse, save fencing/re-ACK, unmapped publication/capacity and isolated review ids/pins/cleanup.",
+      "Scoped task-review/MCP tests, TypeScript and production build plus disposable compiled smoke pass; no deployment of partial task commits.",
+      "Create explicit commit packet for this implementation only before mandatory independent code review; no generic HEAD scope."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks. Reproduce the actual S3 t3/t9 pair: the t3 first-report lookup is fixed by included commit 76d3d899a, and the final reviewed source must not retain its historical blocker. [[c1]]"
+      },
+      {
+        "level": "integration",
+        "name": "Genuine current test-coverage/provenance defect non-regression: alongside a historical defect fixed later in the packet, deliberately omit a current provenance or requiredReferences test. The final review must still report that demonstrated coverage defect; final-version reconciliation must not suppress it or auto-pass it. [[c1]]"
+      },
+      {
+        "level": "integration",
+        "name": "Two independent native/controller reviews with different reviewIds and final pins can progress concurrently; changes, bindings, feedback, optional-execution disclosures and completion/cleanup of one never alter or unblock the other. Provider work remains serial within each review and the existing activity/retry policy is unchanged. [[c1]] [[c13]]"
+      },
+      {
+        "level": "integration",
+        "name": "Historical reproduction evidence: construct a labelled synthetic explicit packet from durable CR review 1 t3/t9 scope and immutable commits f0d5da04756e1e96a5043c0063a8891dd2455c7e and 76d3d899a5f144721e2a3328a9933e346be3b600. Preserve the separate genuine provenance-coverage defect; make no assertion that the absent temporary packet/attribution/timing was recovered. [[c19]] [[c20]]"
+      },
+      {
+        "level": "smoke",
+        "name": "Disposable compiled MCP/IPC review packet pins a final revision over a multi-commit story; task review inspects final blocks, preserves origin provenance, excludes unrelated HEAD/worktree changes and publishes the correct current result."
+      },
+      {
+        "level": "smoke",
+        "name": "Production build and scoped task-review/MCP tests pass; no direct cloud REST, retired engine or installed-daemon activation is introduced."
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -34,7 +34,7 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "draft",
+      "status": "approved",
       "revision": {
         "number": 7,
         "contentHash": "23751c251037b75a135ea30423890640b45071afa886ede307161e404cf66ff8",
@@ -45,8 +45,21 @@
           "properties": {}
         }
       },
-      "signoffs": []
-    }
+      "signoffs": [],
+      "approval": {
+        "revision": 7,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:29:54.387Z",
+        "override": {
+          "reason": "User explicitly approved this presented LLD after independent daemon design review design-final-pin-r1-1793853283849 attempt 6 passed all 11 chunks with HIGH=0/MED=0/LOW=0 and no limitations. Reviewed content identity 008480de1dd2b27880d995058decee5699ebdf2e58bf0a2e9d8706508aded1ab. The current framework has not implemented S4 approval-history publication; this override bridges that evidence-recording gap, preserves the passed checkpoint report and does not waive the performed independent review."
+        }
+      }
+    },
+    "rangeBase": "3308a0a10218d606c7395aafe2cf7308036053f3"
   },
   "body": {
     "summary": {

@@ -25,6 +25,7 @@ async function languageFixture(language:typeof languages[number], after:string=l
  f.git('add',language.path,language.test,'unrelated-secret.txt');f.git('commit','-qm','language baseline');const parent=f.git('rev-parse','HEAD');
  f.put(language.path,after);f.git('add',language.path);f.git('commit','-qm','body-only regression');const commit=f.git('rev-parse','HEAD');
  f.packet.reviewSet=[{commit,parent,files:[{path:language.path,segments:[{after:[1,1]}]}]}];
+  f.packet.reviewRevision = f.packet.reviewSet[0]!.commit;
  f.packet.tests=[{file:language.test,cases:['total computes product'],command:language.command,result:'pass',executionDetails:'Builder report only; execution revision not independently established',evidenceReferences:[`${parent}:${language.test}`]}];
  const prepared=await prepareReviewPacket(f.packet,f.deps.sources),assignment=directAssignments(prepared)![0]!,refs=await taskReferences(f.deps.sources,prepared,assignment);
  const result:TaskReviewResult={...structuredClone(f.result),inspectedReferences:[`${commit}:${language.path}`],testCoverage:{assessment:'verified',explanation:'Inspected the committed assertion of product behavior; no independent execution claimed.',evidenceReferences:[`${commit}:${language.test}`]},advice:[],executedTests:[]};

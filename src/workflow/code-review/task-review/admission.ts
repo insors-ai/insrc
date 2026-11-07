@@ -72,6 +72,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   requireReview(latest.header.attempt === attempt, 'attempt', 'attempt-conflict: resume must select latest attempt');
   requireReview(latest.header.reviewer === reviewer, 'reviewer', 'wrong-reviewer');
   requireReview(request.packet === undefined || isDeepStrictEqual(request.packet, latest.submitted), 'packet', 'attempt-conflict: resume input is pinned');
+  requireReview(!['pending', 'running'].includes(latest.header.status) || latest.submitted.reviewRevision !== undefined, 'reviewRevision', 'Interrupted unpinned history is read-only; submit a new pinned attempt');
   requireReview(!context.epicHash || context.epicHash === priorPrepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
   return { path, checkpoint: saved, attempt: latest, prepared: priorPrepared };
  }

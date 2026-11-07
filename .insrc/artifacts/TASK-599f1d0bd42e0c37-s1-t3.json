@@ -1,0 +1,99 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7e3c8765-1517-4422-a8be-42d34c12196e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.616Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Witness lineage and bounded projection",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2ce3f186a93b161debfafc761b3240edf098db157d6db5877e77b260710ed71",
+        "at": "2026-11-07T04:46:32.616Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.617Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Witness lineage and bounded projection",
+    "summary": "Verify replacement witnesses, selected renames and merge resolution scope, and enforce source/projection limits.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Replacement witnesses are strictly later ancestor-verified selected origins; reject cycles, unknown indexes and unselected interference.",
+      "Actual Git rename chains determine final paths; ambiguous/colliding/unselected paths and merge replacements reject.",
+      "10000 reads, 100000 fragments, 64 MiB cumulative decoded bytes and existing 2 MiB diff/input limits retain approved error-field distinctions; all reads serial."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope."
+      },
+      {
+        "level": "unit",
+        "name": "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly."
+      },
+      {
+        "level": "unit",
+        "name": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope."
+      },
+      {
+        "level": "unit",
+        "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope."
+      },
+      {
+        "level": "unit",
+        "name": "Resource error fields: assert field=input for oversized decoded packet, field=changes for reused truncated Git diff, and field=projection_limit for projection-local read/byte/fragment/snapshot counters. Preserve source/commit/transport-integrity failures; assert no task dispatch and no partially accepted mapping at every budget boundary. [[c2]] [[c3]] [[c4]]"
+      },
+      {
+        "level": "integration",
+        "name": "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected."
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

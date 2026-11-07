@@ -23,6 +23,7 @@ test('recovery admission: saved pins, latest-only resume, contiguous attempts an
   for(const attempt of [0,-1,1.1,Number.MAX_SAFE_INTEGER+1])await assert.rejects(prepareReviewAdmission(f.repo,'resume',attempt,undefined,'daemon',f.deps.sources,{operation:'resume'}));
   await assert.rejects(prepareReviewAdmission(f.repo,'resume',2,undefined,'daemon',f.deps.sources,{operation:'resume'}),/latest attempt/);
   await assert.rejects(prepareReviewAdmission(f.repo,'resume',1,{...f.packet,functionalSummary:'Changed'},'daemon',f.deps.sources,{operation:'resume'}),/pinned/);
+  await assert.rejects(prepareReviewAdmission(f.repo,'resume',1,{...f.packet,reviewRevision:f.packet.reviewSet[0]!.parent!},'daemon',f.deps.sources,{operation:'resume'}),/pinned/);
   await assert.rejects(prepareReviewAdmission(f.repo,'resume',1,undefined,'controller',f.deps.sources,{operation:'resume'}),/wrong-reviewer/);
   await assert.rejects(prepareReviewAdmission(f.repo,'resume',2,f.packet,'daemon',f.deps.sources),/terminal and published/);
   await assert.rejects(prepareReviewAdmission(f.repo,'missing',1,undefined,'daemon',f.deps.sources,{operation:'resume'}),/missing-checkpoint/);
@@ -46,6 +47,20 @@ test('recovery admission: saved pins, latest-only resume, contiguous attempts an
   f.put('.insrc/tmp/code-review/huge.json',' '.repeat(MAX_REVIEW_JSON_BYTES+1));await assert.rejects(loadCheckpoint(checkpointPath(f.repo,'huge')),/bounded checkpoint/);
   symlinkSync(path,checkpointPath(f.repo,'linked'));await assert.rejects(loadCheckpoint(checkpointPath(f.repo,'linked')));
  } finally {f.cleanup();}
+});
+
+test('interrupted unpinned attempts remain readable but cannot execute on resume', async () => {
+ const f = await fixture();
+ try {
+  const state = f.checkpoint('unpinned');
+  delete state.attempts[0]!.submitted.reviewRevision;
+  const path = checkpointPath(f.repo, 'unpinned');
+  await saveCheckpoint(path, state);
+  const bytes = readFileSync(path, 'utf8');
+  assert.deepEqual(await loadCheckpoint(path), state);
+  await assert.rejects(prepareReviewAdmission(f.repo, 'unpinned', 1, undefined, 'daemon', f.deps.sources, { operation: 'resume' }), /Interrupted unpinned history is read-only/);
+  assert.equal(readFileSync(path, 'utf8'), bytes);
+ } finally { f.cleanup(); }
 });
 
 test('attempt schema compatibility: optional origins and old checkpoint/CR meaning', async () => {

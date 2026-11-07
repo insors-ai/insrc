@@ -1,0 +1,95 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e57c4b44-3274-404b-98c4-f82ae00e14c6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.617Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Effective task scope and route parity",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3957fd357e498fe49c6fce34d1b3f0ccb5812d78f8cb213a727fc8165ba0dcb3",
+        "at": "2026-11-07T04:46:32.618Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.618Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Effective task scope and route parity",
+    "summary": "Thread effective final objects through attribution, native/controller prompts and commands, task schemas and host result validation.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Cover all original changes/tests and replacement-witness closure; preserve none entries as provenance only.",
+      "Only final paths/ranges/anchors authorize findings; none never triggers whole-file fallback or previousPath authorization.",
+      "Both routes receive equivalent final code, requirements and complete test evidence; coverage mandatory and execution optional."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope."
+      },
+      {
+        "level": "unit",
+        "name": "Final-only finding locations and native schema agree; superseded-only entries allow no code findings while genuine final defects still block."
+      },
+      {
+        "level": "unit",
+        "name": "EffectiveTaskChange threading: prove final text reaches selectedCode/assignmentPrompt/native grants, the same final paths/spans reach assignmentResultSchema and validateTaskResult, superseded-only rows reject findings, and ProjectedEntry.segments equals the normalized union of its surviving/deleted dispositions. [[c3]] [[c5]] [[c16]] [[c17]]"
+      },
+      {
+        "level": "integration",
+        "name": "Attribution accounts for every original entry, including superseded entries, and every supplied test; cross-task final source is shared with origin references rather than obsolete embedded versions."
+      },
+      {
+        "level": "integration",
+        "name": "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected."
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

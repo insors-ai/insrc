@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-241774db-574f-4c31-bfab-18816e6ce08c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.623Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Full terminal-envelope capacity gates",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "67dbb7ab3729704869d4428d76f469028cad0e37f9a4075e60b8329be1dfaa7a",
+        "at": "2026-11-07T04:46:32.623Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.624Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Full terminal-envelope capacity gates",
+    "summary": "Preflight and requalify complete checkpoint and CR envelopes using real serializers, shared bounded failure factory and remaining terminal reserve.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Before admission save/ACK/provider qualify failed and incomplete 4 MiB envelopes including prior history, tasks, snapshots, diagnostics/repair/completion metadata and escaped pretty JSON.",
+      "Store shared failure once with code <=64 and summary <=8192 UTF-8 bytes; preserve 32 KiB diagnostics policy, no trimming/dropping to fit.",
+      "Check actual accepted mapping before save and later result/diagnostic growth against remaining terminal reserve; external/storage conflicts explicit.",
+      "Reject oversized 10000-task small-input unit before save/model; exact-fit admitted units can fail attribution, publish all outcomes and permit next attempt."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Resource error fields: assert field=input for oversized decoded packet, field=changes for reused truncated Git diff, and field=projection_limit for projection-local read/byte/fragment/snapshot counters. Preserve source/commit/transport-integrity failures; assert no task dispatch and no partially accepted mapping at every budget boundary. [[c2]] [[c3]] [[c4]]"
+      },
+      {
+        "level": "unit",
+        "name": "Terminal capacity qualification: use real checkpoint/CR serializers and runtime attribution-terminal result constructor for failed/incomplete branches. Exercise the 10000-task small-input case, exact just-fit/one-byte-over limits, long IDs, escaped/Unicode diagnostics at the existing 32 KiB aggregate cap, shared failure detail, preexisting checkpoint/CR history, completion metadata, accepted mapping decisions and remaining-outcome reserve. Reject oversized admission before any provider/save; do not trim tasks or diagnostics to fit. [[c2]] [[c10]] [[c11]] [[c21]] [[c22]] [[c23]]"
+      },
+      {
+        "level": "integration",
+        "name": "Both native/controller routes: attribution timeout, provider failure, exhausted invalid scope submissions and oversized unaccepted mapping publish an unmapped_failure pinned summary with actual diagnostics, no task identities/findings/reuse and no invented mapping. Verify publication completion and successful next-attempt admission; reject passing results, mapped findings, missing selected terminal outcomes and a false downgrade from accepted state. [[c9]] [[c10]] [[c11]] [[c12]] [[c21]]"
+      },
+      {
+        "level": "integration",
+        "name": "Both routes: a preflight-admitted unit at the terminal capacity boundary times out/fails/exhausts attribution, preserves all selected task outcomes and existing bounded diagnostics, publishes the unmapped snapshot and admits the next sequential attempt. Verify actual bytes for the complete checkpoint and merged CR envelope. An oversized 10000-task unit is refused before provider dispatch; later accepted results/mappings cannot consume the remaining terminal reserve. [[c9]] [[c10]] [[c11]] [[c12]] [[c21]] [[c22]] [[c23]]"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

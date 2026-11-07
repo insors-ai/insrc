@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-042cb9b6-edd4-488e-acb1-e3177db5a4f7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.615Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Exact final interval and blob projection",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "093718e1534e8c8244922d5957a7905c9e34b3f0a1f853880ec8b378bb944763",
+        "at": "2026-11-07T04:46:32.615Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.615Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Exact final interval and blob projection",
+    "summary": "Implement serial committed-object projection of original selected intervals, including stable entry indexes, exact shifted spans and deletion boundaries.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Identical blob OIDs map without a changed-text diff; offsets, overlapping partial runs and empty-file anchor zero are exact.",
+      "Every nonempty original segment is partitioned into surviving/superseded/deleted dispositions; zero-segment pinned origins reject scope_conflict.",
+      "No fuzzy matching, unselected gap coalescing, whole-file empty scope or source mutation."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller."
+      },
+      {
+        "level": "unit",
+        "name": "Identity and shifted-line projection preserve only selected surviving text, excluding unrelated insertions and working-tree canaries."
+      },
+      {
+        "level": "unit",
+        "name": "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope."
+      },
+      {
+        "level": "unit",
+        "name": "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly."
+      },
+      {
+        "level": "unit",
+        "name": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope."
+      },
+      {
+        "level": "unit",
+        "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope."
+      },
+      {
+        "level": "unit",
+        "name": "New pinned zero-segment original selections reject field=scope_conflict before checkpoint replacement or provider dispatch; historical no-pin metadata records remain readable without granting new execution. Nonempty origins that become fully superseded still have complete dispositions and findingScope=none. [[c2]] [[c3]] [[c18]]"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

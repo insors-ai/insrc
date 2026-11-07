@@ -15,6 +15,7 @@ import { publishTaskCheckpoint } from '../publication.js';
 import type { ReviewerParty } from '../contracts.js';
 import { codeTaskCommands } from '../policy.js';
 import { validateTaskBody } from '../record.js';
+import { MAX_ATTRIBUTION_SUBMISSIONS } from '../attribution-repair.js';
 
 test('reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength',async()=>{
  const f=await historyFixture();
@@ -102,11 +103,16 @@ test('all-reuse attempts and invalid attribution preserve route parity without e
   try{
    const owner={id:'actual-controller',signal:new AbortController().signal};
    if(party==='controller'){
-    const start=await coordinator.startController(f.repo,'history',2,f.packet,owner,hash);assert.equal(start.kind,'scope');
-    const done=await coordinator.controllerScope(f.repo,'history',2,plan,owner,{taskId:start.taskId,executionId:start.executionId,sequence:start.nextSequence});assert.equal(done.kind,'done');assert.equal(calls,0);
-   }else{await coordinator.start(f.repo,'history',2,f.packet);await coordinator.settled(f.repo,'history');assert.equal(calls,1);}
+    let frame=await coordinator.startController(f.repo,'history',2,f.packet,owner,hash);assert.equal(frame.kind,'scope');
+    const submissions=invalid?MAX_ATTRIBUTION_SUBMISSIONS:1;
+    for(let index=0;index<submissions;index++){
+     frame=await coordinator.controllerScope(f.repo,'history',2,plan,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+     assert.equal(frame.kind,index===submissions-1?'done':'scope');
+    }
+    assert.equal(calls,0);
+   }else{await coordinator.start(f.repo,'history',2,f.packet);await coordinator.settled(f.repo,'history');assert.equal(calls,invalid?MAX_ATTRIBUTION_SUBMISSIONS:1);}
    const saved=f.read(checkpointPath(f.repo,'history')).attempts[1]!;assert.equal(saved.header.status,invalid?'failed':'incomplete');assert.equal(saved['review-response'].crPublication,'complete');
-   if(invalid){assert.deepEqual(saved['review-response'].tasks.map(result=>result.status),['failed','failed','failed']);assert.equal(saved['review-response'].origins,undefined);}
+   if(invalid){assert.equal(saved.header.attributionRepair?.rejections,MAX_ATTRIBUTION_SUBMISSIONS);assert.deepEqual(saved['review-response'].tasks.map(result=>result.status),['failed','failed','failed']);assert.equal(saved['review-response'].origins,undefined);}
    else{assert.deepEqual(saved['review-response'].tasks,f.original['review-response'].tasks);assert.equal(saved['review-response'].origins!.length,3);}
   }finally{f.cleanup();}
  }

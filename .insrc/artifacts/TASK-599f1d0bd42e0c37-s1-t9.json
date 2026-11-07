@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-07c42a3b-0914-495e-b271-274c430d3fd6",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.625Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Submitters, MCP and coordinated transition",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f970486088f253b4ab1101dad8c46a026e6c1fb5b6f1b0fbe5238d0b958b5437",
+        "at": "2026-11-07T04:46:32.625Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.625Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Submitters, MCP and coordinated transition",
+    "summary": "Update every fresh packet producer, MCP schema and guidance; document operator-controlled transition after full qualification.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Explicit pin required, commit pointers only provenance and supplied change set only scope; missing pin errors actionable.",
+      "Drain or explicitly interrupt before coordinated producer/daemon restart; no activation flag, automatic deployment or promised in-flight completion.",
+      "Retain upgraded reader after pinned records exist; no blind downgrade or history rewrite; interrupted unpinned work needs new pinned attempt.",
+      "Do not implement separate native diagnostics, rejected-result repair or coverage classification issues; sequence/rebase their shared modules."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+      },
+      {
+        "level": "smoke",
+        "name": "Disposable compiled MCP/IPC review packet pins a final revision over a multi-commit story; task review inspects final blocks, preserves origin provenance, excludes unrelated HEAD/worktree changes and publishes the correct current result."
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

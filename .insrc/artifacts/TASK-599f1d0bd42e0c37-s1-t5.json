@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-7c586ce1-9f43-47ed-a020-bbf0f44414b9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T04:46:32.619Z",
+    "epicCreatedAt": "2026-11-05T03:38:11.751Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "599f1d0bd42e0c37",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Durable attribution decisions and identities",
+      "parent": {
+        "entityId": "STORY-599f1d0bd42e0c37-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-599f1d0bd42e0c37-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-599f1d0bd42e0c37-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a658190ccb311ab39c51f7c807650cc22e71b0beb72498bc2b0ec9cbce143fe8",
+        "at": "2026-11-07T04:46:32.619Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T04:46:32.620Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Durable attribution decisions and identities",
+    "summary": "Persist exact mappings, initial/reassess/reuse decisions, summaries and task bindings; reconstruct without model rediscovery.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "Digest binds ordered ids/change indexes/test indexes/decisions/task identities; offline index-only and decision-only tampering reject.",
+      "Task identity binds final blob/scope, requirements/docs and full tests, excluding irrelevant global pin movement.",
+      "Accepted state saved once before ACK/reuse/dispatch even with no diagnostics; same-attempt conflicts reject.",
+      "Reuse requires correct reviewer, prior ordinal and matching inputs; exact durable decisions survive interruption before completed origin exists."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable."
+      },
+      {
+        "level": "unit",
+        "name": "Host reuse binding: both routes persist taskScopeIdentities after direct/model attribution even with no diagnostics; sourceAssessment and reuseAssessment reject a changed relevant final blob, scope, requirement or test input and missing identities. Identical task inputs across unrelated revision movement may reuse; conflicting same-attempt identity writes fail. [[c8]] [[c9]] [[c10]]"
+      },
+      {
+        "level": "unit",
+        "name": "Durable accepted attribution: atomically persist canonical taskId/changeIndexes/testIndexes rows with state=accepted, taskScopeIdentities and attributionIdentity on native/controller/direct paths, even with no diagnostic repair. Reject bad indexes, duplicate tasks/row indexes, omitted changes/tests, missing witness closure and conflicting replacement; unsuccessful save acknowledgement dispatches no task assessment and follows the pre/post-replacement recovery contract. [[c3]] [[c8]] [[c9]] [[c10]]"
+      },
+      {
+        "level": "unit",
+        "name": "Offline attribution binding: mutate ONLY one accepted task changeIndexes/testIndexes list (including adding another task’s valid entry) while preserving all existing digest strings. Recomputed final-attribution-v1 identity must reject the record. Test selectedTaskIds/testCount/state mutations, valid shared entries and empty task scopes, and retain full source-aware task-identity verification on resume/publication. [[c10]] [[c11]] [[c12]]"
+      },
+      {
+        "level": "unit",
+        "name": "Accepted reassessment persistence: qualify initial/reassess/reuse union rules, durable reason/sourceAttempt and reassessmentSummary, identity binding over decisions, strict absence of sourceAttempt on reassess, and rejection of source-party/ordinal/input mismatch. A planned reuse without a completed origin must remain reconstructible. [[c8]] [[c9]] [[c10]]"
+      },
+      {
+        "level": "integration",
+        "name": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+      },
+      {
+        "level": "integration",
+        "name": "Lose all reviewer memory after accepted attribution in a multi-task review with distinct assigned tests. A fresh publication service loads only the checkpoint and pinned source adapter, reconstructs saved mappings, recomputes task bindings, publishes/renders/rereads the correct final per-task scopes and supports exact resume without a new attribution/model call. [[c3]] [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]"
+      },
+      {
+        "level": "integration",
+        "name": "Both routes: accept a mixed reassess/reuse plan with distinct test assignments, interrupt before a reuse task executes, discard all reviewer memory, reload and restore EXACT action/reason/sourceAttempt/summary with unchanged hashes and source result. Continue without a new attribution call; copy the exact reused result and create its real origin only after completion. [[c3]] [[c8]] [[c9]] [[c10]]"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

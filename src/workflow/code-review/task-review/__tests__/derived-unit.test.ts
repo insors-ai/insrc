@@ -30,7 +30,7 @@ function fixture(files = 1) {
 	for (let i = 0; i < files; i++) put(`src/f${i}.ts`, 'ONE\ntwo\n');
 	git('add', '.'); git('commit', '-qm', 'change'); const commit = git('rev-parse', 'HEAD');
 	const packetWith = (documents: ReviewPacket['documents']): ReviewPacket => ({
-		storyId: 's1', functionalSummary: 'Change behaviour', documents,
+		reviewRevision: commit, storyId: 's1', functionalSummary: 'Change behaviour', documents,
 		reviewSet: [{ commit, parent: base, files: Array.from({ length: files }, (_, i) => ({ path: `src/f${i}.ts`, segments: [{ after: [1, 1] as [number, number] }] })) }],
 		tests: [{ file: 'test.ts', cases: ['behaviour'], command: 'target test', result: 'pass', executionDetails: 'Builder reported run', evidenceReferences: [`${commit}:test.ts`] }],
 	});

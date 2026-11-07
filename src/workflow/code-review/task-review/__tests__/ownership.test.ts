@@ -56,7 +56,7 @@ test('Different review ids overlap with serial per-review provider calls and mer
 test('story fence accounts for admission and publication and releases after failures', async()=>{
  const f=await fixture(true);let entered!:()=>void,unblock!:()=>void;
  const hit=new Promise<void>(resolve=>{entered=resolve;}),wait=new Promise<void>(resolve=>{unblock=resolve;});
- const sources={file:f.deps.sources.file.bind(f.deps.sources),changedRanges:f.deps.sources.changedRanges.bind(f.deps.sources),commit:async(oid:string)=>{entered();await wait;return f.deps.sources.commit(oid);}};
+ const sources={isAncestor:f.deps.sources.isAncestor.bind(f.deps.sources),file:f.deps.sources.file.bind(f.deps.sources),changedRanges:f.deps.sources.changedRanges.bind(f.deps.sources),commit:async(oid:string)=>{entered();await wait;return f.deps.sources.commit(oid);}};
  const coordinator=new TaskReviewCoordinator({sources,provider:()=>provider(async prompt=>prompt.startsWith('Derive task attribution')?scope(1):f.result)});
  try {
   const starting=coordinator.start(f.repo,'admitting',1,f.packet,{epicHash:hash});await hit;

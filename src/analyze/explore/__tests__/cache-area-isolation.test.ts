@@ -142,3 +142,57 @@ test('a row keyed the old way is not read, and the narrow phase writes under the
 	assert.equal(await getCachedExploration(repo, LAST, cacheExplorationFor(decision, await scopeOf('billing'))), null, 'another area does not');
 	assert.equal(await getCachedExploration(repo, LAST, decision), null, 'nor does the old-shape key');
 });
+
+test('a version-2 row, written exactly as the previous code wrote it, is not read by either executor', async () => {
+	const { createHash } = await import('node:crypto');
+	const { getGraphStore, withWriteTxn } = await import('../../../db/graph/store.js');
+	const { lookupRepoIdInTxn } = await import('../../../db/repos.js');
+	const { Packr } = await import('msgpackr');
+	const concept = exp('e1', 'concept.resolve', { query: 'handle version two' });
+	const pay = await scopeOf('pay');
+
+	// the key the previous code computed: version 2, the lookup's own params, no area
+	const v2Hash = createHash('sha256').update(JSON.stringify({ v: 2, type: concept.type, params: { query: 'handle version two' } }), 'utf8').digest('hex').slice(0, 16);
+	const stale = { type: 'concept.resolve', completeness: { complete: true }, query: 'handle version two', hits: [{ kind: 'dir', path: '/stale', name: 'stale', score: 1, diagnostics: {} }] };
+	await withWriteTxn(s => {
+		const key = Buffer.alloc(20);
+		key.writeUInt32BE(lookupRepoIdInTxn(s, repo)!, 0);
+		key.writeBigUInt64BE(LAST, 4);
+		Buffer.from(v2Hash, 'hex').copy(key, 12, 0, 8);
+		s.explorationCache.put(key, new Packr({ useRecords: false }).pack({ exploration: concept, output: stale, cachedAt: 1 }));
+	});
+	const store = await getGraphStore();
+	assert.equal([...store.explorationCache.getKeys()].length, 1, 'the version-2 row is in the store');
+
+	// neither the whole-repository key nor the area key of the current code addresses it
+	assert.equal(await getCachedExploration(repo, LAST, concept), null);
+	assert.equal(await getCachedExploration(repo, LAST, cacheExplorationFor(concept, pay)), null);
+	const workspace = await resolveScopeForTarget({ kind: 'workspace', value: repo }, 'code');
+	assert.equal(await getCachedExploration(repo, LAST, cacheExplorationFor(concept, workspace)), null);
+
+	// ... and neither executor serves it
+	const oneShot = await executeSavedPlan(args([concept], pay));
+	assert.equal(oneShot.results[0]!.cached, false);
+	assert.doesNotMatch(JSON.stringify(oneShot.results[0]!.output), /\/stale/);
+	for (const scope of [workspace]) {
+		const stepped = await stepSavedPlan(args([concept], scope));
+		assert.equal(stepped.kind, 'done');
+		if (stepped.kind === 'done') {
+			assert.equal(stepped.executed.results[0]!.cached, false);
+			assert.doesNotMatch(JSON.stringify(stepped.executed.results[0]!.output), /\/stale/);
+		}
+	}
+
+	// a lookup that has no area in its key: only the version keeps its version-2 row from being read
+	const text = exp('e2', 'search.text', { pattern: 'needle' });
+	const v2Text = createHash('sha256').update(JSON.stringify({ v: 2, type: text.type, params: { pattern: 'needle' } }), 'utf8').digest('hex').slice(0, 16);
+	await withWriteTxn(s => {
+		const key = Buffer.alloc(20);
+		key.writeUInt32BE(lookupRepoIdInTxn(s, repo)!, 0);
+		key.writeBigUInt64BE(LAST, 4);
+		Buffer.from(v2Text, 'hex').copy(key, 12, 0, 8);
+		s.explorationCache.put(key, new Packr({ useRecords: false }).pack({ exploration: text, output: { type: 'search.text', pattern: 'needle', hits: [], backend: 'node', root: repo }, cachedAt: 1 }));
+	});
+	assert.ok([...store.explorationCache.getKeys()].length >= 2, 'the version-2 rows are in the store beside what the executors wrote');
+	assert.equal(await getCachedExploration(repo, LAST, text), null, 'the version-2 row of a lookup with no area is not read');
+});

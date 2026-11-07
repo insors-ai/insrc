@@ -14,6 +14,7 @@
 import type { ExecutedExploration, ExplorationPlan } from '../../../analyze/explore/index.js';
 import type { BundleMeta } from '../../../analyze/context/types.js';
 import type { AnswerReport } from '../../../analyze/completeness.js';
+import type { AnalyzeRequest } from '../../../shared/analyze-types.js';
 
 // ---------------------------------------------------------------------------
 // Input phases
@@ -23,7 +24,10 @@ export type StepPhase = 'start' | 'plan' | 'narrow' | 'bundle';
 
 export interface StepInputStart {
 	readonly phase:   'start';
-	readonly focus:   string;
+	/** The structured request; sent instead of `focus`. */
+	readonly request?: AnalyzeRequest | undefined;
+	/** The prompt, for a prompt-only call. One of `request` and `focus` is required. */
+	readonly focus?:  string | undefined;
 	readonly repo?:   string;
 	readonly target?: 'code' | 'docs' | 'data' | 'infra' | 'generic';
 	readonly scope?:  'XS' | 'S' | 'M' | 'L' | 'XL';

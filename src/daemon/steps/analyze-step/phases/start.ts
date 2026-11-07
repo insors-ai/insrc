@@ -26,12 +26,12 @@ import { resolveRepoLastIndexedAt } from '../../../../analyze/context/driver.js'
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import { readBundleForStep } from '../cache-lookup.js';
 import { encodeState, STATE_VERSION, type StepStatePayload } from '../state.js';
+import { buildIntentFromRequest } from '../../../../analyze/context/request.js';
 import { stepScope } from '../scope.js';
 import { pickSynthesizerKey } from '../synthesizer-key.js';
 import type { StepInputStart, StepOutputDone, StepOutputEmitPlan } from '../types.js';
 import type { ClassifiedIntent } from '../../../../shared/analyze-types.js';
 import { measureResolvedScope } from '../../../../analyze/measure.js';
-import type { UnsizedIntent } from '../../../../analyze/measure.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
 
@@ -57,15 +57,10 @@ export async function handleStart(
 	}
 
 	const runId  = `mcp-step-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-	const target = input.target ?? 'code';
-
-	const unsized: UnsizedIntent = {
-		target,
-		focused:  true,
-		focus:    input.focus,
-		scopeRef: { kind: 'workspace', value: repoPath },
-		reasoning: `insrc_analyze_step invocation: ${input.focus}`,
-	};
+	// One builder for both tools: a structured request, or the old prompt fields on the workspace scope.
+	const { intent: unsized, sizeHint } = buildIntentFromRequest(input, repoPath);
+	const target = unsized.target;
+	const focus  = unsized.focus ?? '';
 
 	// Check the pairing and resolve the scope before anything is
 	// minted: a refused pairing throws here, so no state exists for it.
@@ -74,7 +69,7 @@ export async function handleStart(
 	// The size the planning prompt is given: counted from the area the scope
 	// names. A size the caller stated is a hint, carried in the state to the
 	// phases that measure what the lookups returned. No default is taken.
-	const area = await measureResolvedScope(resolvedScope, target, input.scope);
+	const area = await measureResolvedScope(resolvedScope, target, sizeHint);
 	const scope = area.size;
 	const intent: ClassifiedIntent = { ...unsized, scope };
 
@@ -90,7 +85,7 @@ export async function handleStart(
 		...(repoIndexedAt !== null ? { repoIndexedAt } : {}),
 	});
 	if (cachedBundle !== null) {
-		captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus: input.focus }, 'insrc_analyze_step[start]: cache hit; returning done']);
+		captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus }, 'insrc_analyze_step[start]: cache hit; returning done']);
 		return {
 			next:     'done',
 			markdown: renderBundleAsMarkdown(cachedBundle),
@@ -114,12 +109,12 @@ export async function handleStart(
 		repoPath,
 		repoIndexedAt,
 		intent,
-		...(input.scope !== undefined ? { sizeHint: input.scope } : {}),
+		...(sizeHint !== undefined ? { sizeHint } : {}),
 		synthesizerKey,
 		stage:          'awaiting_plan',
 	};
 
-	captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus: input.focus, synthesizerKey }, 'insrc_analyze_step[start]: emitting decomposer prompt']);
+	captureAnalysisDiagnostics(log, execution).emit('info', () => [{ runId, repoPath, target, scope, focus, synthesizerKey }, 'insrc_analyze_step[start]: emitting decomposer prompt']);
 
 	return {
 		next:     'emit_plan',

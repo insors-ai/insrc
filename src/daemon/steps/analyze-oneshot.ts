@@ -17,6 +17,8 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import { buildRun } from '../analyze-rpc.js';
 import { resolveRepoPath } from './resolve-repo.js';
 import { getLogger } from '../../shared/logger.js';
+import { buildIntentFromRequest } from '../../analyze/context/request.js';
+import type { AnalyzeRequest } from '../../shared/analyze-types.js';
 import { stepClient } from '../../shared/step-context.js';
 import { familyForClient } from '../model-registry.js';
 import { runWithClientProviderContext } from '../../analyze/context/shaper-provider.js';
@@ -39,23 +41,21 @@ type OneShotSize   = typeof SIZES[number];
  * with none stated no size is sent at all.
  */
 export function oneShotRunParams(
-	args:     { readonly focus: string; readonly target?: OneShotTarget | undefined; readonly scope?: OneShotSize | undefined },
+	args:     { readonly request?: AnalyzeRequest | undefined; readonly focus?: string | undefined; readonly target?: OneShotTarget | undefined; readonly scope?: OneShotSize | undefined },
 	repoPath: string,
 	runId:    string,
 ) {
-	const intent = {
-		target:    args.target ?? 'code',
-		focused:   true,
-		focus:     args.focus,
-		scopeRef:  { kind: 'workspace', value: repoPath },
-		reasoning: `MCP invocation: ${args.focus}`,
-	};
-	return { runId, intent, expectedRepo: repoPath, ...(args.scope !== undefined ? { sizeHint: args.scope } : {}) };
+	// One builder for both tools; it also returns the call's repository for the run's scope check.
+	const { intent, sizeHint } = buildIntentFromRequest(args, repoPath);
+	return { runId, intent, expectedRepo: repoPath, ...(sizeHint !== undefined ? { sizeHint } : {}) };
 }
 
 export interface AnalyzeOneShotArgs {
 	readonly repo?:   string | undefined;
-	readonly focus:   string;
+	/** The structured request; sent instead of `focus`. */
+	readonly request?: AnalyzeRequest | undefined;
+	/** The prompt, for a prompt-only call. One of `request` and `focus` is required. */
+	readonly focus?:  string | undefined;
 	readonly target?: OneShotTarget | undefined;
 	readonly scope?:  OneShotSize | undefined;
 }
@@ -77,7 +77,10 @@ export interface AnalyzeOneShotDeps {
 export function checkOneShotArgs(raw: unknown): AnalyzeOneShotArgs | string {
 	if (typeof raw !== 'object' || raw === null) return 'insrc_analyze: the arguments must be an object';
 	const a = raw as Record<string, unknown>;
-	if (typeof a['focus'] !== 'string' || a['focus'].trim().length === 0) return 'insrc_analyze: `focus` (a non-empty string) is required';
+	if (a['focus'] !== undefined && typeof a['focus'] !== 'string') return 'insrc_analyze: `focus` must be a string';
+	if (a['request'] !== undefined && (typeof a['request'] !== 'object' || a['request'] === null || Array.isArray(a['request']))) return 'insrc_analyze: `request` must be an object';
+	// The shared builder checks the request's fields and the pairing of request and focus.
+	try { buildIntentFromRequest({ request: a['request'] as AnalyzeRequest | undefined, focus: a['focus'] as string | undefined }, '/'); } catch (err) { return `insrc_analyze: ${(err as Error).message}`; }
 	if (a['repo'] !== undefined && typeof a['repo'] !== 'string') return 'insrc_analyze: `repo` must be a string';
 	if (a['target'] !== undefined && !(TARGETS as readonly unknown[]).includes(a['target'])) return `insrc_analyze: \`target\` must be one of ${TARGETS.join(', ')}`;
 	if (a['scope'] !== undefined && !(SIZES as readonly unknown[]).includes(a['scope'])) return `insrc_analyze: \`scope\` must be one of ${SIZES.join(', ')}`;
@@ -115,8 +118,8 @@ export async function runAnalyzeOneShot(
 			runId,
 			repoPath,
 			target: intent.target,
-			sizeHint: args.scope ?? '(none)',
-			focus:  intent.focus.slice(0, 80),
+			sizeHint: rpcParams.sizeHint ?? '(none)',
+			focus:  (intent.focus ?? '').slice(0, 80),
 			client: deps.clientName ?? '(unknown)',
 			clientDefault: clientDefault ?? '(none)',
 		},

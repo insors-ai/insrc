@@ -19,7 +19,7 @@ import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { handleAnalyzeStep } from '../analyze-step/handler.js';
-import { encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
+import { decodeState, encodeState, STATE_VERSION, type StepStatePayload } from '../analyze-step/state.js';
 import '../../../workflow/__tests__/helpers/converted-repos.js';
 import { ScopeNotFoundError, ScopeRepoMismatchError } from '../../../analyze/context/invariants.js';
 import type { ScopeDeps } from '../../../analyze/context/scope.js';
@@ -100,6 +100,65 @@ test('the plan phase through the real handler refuses a nonexistent path, a wron
 	const sneaky = await planWith('file', `${A}/../b/src/y.ts`);
 	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
 	assert.match(sneaky.error?.message ?? '', /not in the call's repository/);
+});
+
+test('a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start', async () => {
+	for (const repo of [A, B]) {
+		await addRepo(null, { path: repo, name: repo, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' }).catch(() => undefined);
+		await upsertEntities(null, [{ id: `e-${repo}`, repo, file: join(repo, 'src', 'x.ts'), kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 2 } as unknown as Entity]);
+	}
+	const start = async (request: unknown) => {
+		const envelope = await handleAnalyzeStep({ phase: 'start', repo: A, request });
+		return JSON.parse((envelope.content[0] as { text: string }).text) as { next: string; state: string; error?: { code: string } };
+	};
+	const ok = await start({ question: 'how does it work', scopeRef: { kind: 'module', value: join(A, 'src') }, context: 'background' });
+	assert.equal(ok.next, 'emit_plan');
+	const decoded = await decodeState(ok.state);
+	assert.deepEqual(decoded.intent.scopeRef, { kind: 'module', value: join(A, 'src') });
+	assert.equal(decoded.intent.context, 'background');
+	assert.equal(decoded.intent.scopeSource, 'request');
+	assert.equal(decoded.repoPath, A);
+	assert.ok(['XS', 'S', 'M', 'L', 'XL'].includes(decoded.intent.scope), 'the size is the one measured from the named area');
+
+	// a prompt-only call still starts, on the workspace scope
+	const prompt = JSON.parse(((await handleAnalyzeStep({ phase: 'start', repo: A, focus: 'how does it work' })).content[0] as { text: string }).text) as { state: string };
+	const promptState = await decodeState(prompt.state);
+	assert.deepEqual(promptState.intent.scopeRef, { kind: 'workspace', value: A });
+	assert.equal(promptState.intent.scopeSource, 'prompt');
+
+	// refused at start, before any state is minted
+	const missing = await start({ question: 'q', scopeRef: { kind: 'module', value: join(A, 'src', 'nope') } });
+	assert.equal(missing.next, 'error');
+	assert.equal(missing.error?.code, 'scope-not-found');
+	const sneaky = await start({ question: 'q', scopeRef: { kind: 'file', value: `${A}/../b/src/y.ts` } });
+	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
+});
+
+test('the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw \'..\' path into another registered repository are refused', async () => {
+	for (const repo of [A, B]) {
+		await addRepo(null, { path: repo, name: repo, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' }).catch(() => undefined);
+		await upsertEntities(null, [{ id: `e-${repo}`, repo, file: join(repo, 'src', 'x.ts'), kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 2 } as unknown as Entity]);
+	}
+	const narrowWith = async (kind: 'module' | 'file', value: string) => {
+		const state: StepStatePayload = {
+			version: STATE_VERSION, runId: 'req-narrow', repoPath: A, repoIndexedAt: 1_720_000_000_000,
+			intent: { target: 'code', scope: 'M', focused: true, focus: 'q', scopeRef: { kind, value }, reasoning: 'r' },
+			synthesizerKey: 'adherence', stage: 'awaiting_narrow',
+			plan: { answerType: 'adherence-check', synthesisHint: 'test', explorations: [{ id: 'e1', type: 'doc.decision.trace', purpose: 'p', params: { topic: 't' } }] },
+			narrow: {
+				explorationId: 'e1', explorationType: 'doc.decision.trace',
+				preparedBlob: { topic: 't', retrievedSectionCount: 0, validEntityIds: [] },
+				resumeState: { results: [], outputs: [], totalCached: 0, totalMsSoFar: 0 },
+			},
+		};
+		const envelope = await handleAnalyzeStep({ phase: 'narrow', explorationId: 'e1', narrow: { topic: 't', decisions: [], notFoundNote: '' }, state: await encodeState(state) });
+		return JSON.parse((envelope.content[0] as { text: string }).text) as { next: string; error?: { code: string } };
+	};
+	const missing = await narrowWith('module', `${A}/src/nope`);
+	assert.equal(missing.next, 'error');
+	assert.equal(missing.error?.code, 'scope-not-found');
+	const sneaky = await narrowWith('file', `${A}/../b/src/y.ts`);
+	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
 });
 
 test.after(async () => { await closeGraphStore(); rmSync(ROOT, { recursive: true, force: true }); });

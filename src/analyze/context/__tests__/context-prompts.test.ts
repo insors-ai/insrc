@@ -21,6 +21,8 @@ import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import type { Entity, LLMMessage, LLMProvider } from '../../../shared/types.js';
 import { savedAnalysisExecution } from '../../connection-access.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
+import { runAnalyzeOneShot } from '../../../daemon/steps/analyze-oneshot.js';
+import { runWithRoutingContext, type RoutingSeamContext } from '../shaper-provider.js';
 import { decompose } from '../decomposer.js';
 import { resolveScopeForTarget } from '../scope.js';
 import { synthesize } from '../synthesizer.js';
@@ -77,6 +79,32 @@ test('context reaches the planning and synthesis prompts through both handlers a
 	}).catch(() => undefined);
 	assert.equal(lineWith(synthesis, 'Background context from the caller').length, 1, 'one synthesis line for the context');
 	assert.match(synthesis, new RegExp(`Background context from the caller \\(it is background only[^)]*\\): ${CONTEXT}`));
+
+	// --- the one-shot tool itself: the real handler, the real run and the real prompt assembly ---
+	const turns: string[] = [];
+	const model = {
+		completeStructured: async (m: LLMMessage[]) => {
+			const turn = String(m[1]!.content);
+			turns.push(turn);
+			return turn.includes('Classify the answer type')
+				? { answerType: 'how-does-it-work', synthesisHint: 'h', explorations: PLAN.explorations }
+				: { system: 'sys', focus: 'f', summary: 'sum', structure: 'st', surface: 'su', artefacts: 'a', upstream: 'u' };
+		},
+	} as unknown as LLMProvider;
+	const routing = { router: { resolveProviderForRole: () => ({ provider: model }) } } as unknown as RoutingSeamContext;
+	const oneShot = await runWithRoutingContext(routing, () => runAnalyzeOneShot({ request: { question: 'how does settlement work', scopeRef: { kind: 'module', value: dir }, context: CONTEXT }, repo }));
+	assert.equal(oneShot.isError === true, false, oneShot.content[0]!.text.slice(0, 400));
+	const planningTurn = turns.find(t => t.includes('Classify the answer type'));
+	const synthesisTurn = turns.find(t => t.includes('Compose the AnalyzeContextBundle'));
+	assert.ok(planningTurn !== undefined && synthesisTurn !== undefined, 'the one-shot run made its planning call and its answer call');
+	for (const [label, turn] of [['one-shot planning', planningTurn!], ['one-shot synthesis', synthesisTurn!]] as const) {
+		assert.equal(lineWith(turn, 'Background context from the caller').length, 1, `${label}: one line for the context`);
+		assert.match(turn, new RegExp(CONTEXT), label);
+		assert.match(turn, new RegExp(`"value": "${dir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`), `${label}: the intent still names the module`);
+	}
+	assert.match(planningTurn!, /Named scope: the module /);
+	assert.match(oneShot.content[0]!.text, /^Complete\./m);
+	assert.match(oneShot.content[0]!.text, /Scope: module .*, named by the request\./, 'and the answer states the scope the request named');
 
 	// --- the step tool: start (planning prompt), plan and narrow (synthesis prompt) ---
 	const call = async (input: Record<string, unknown>): Promise<{ next: string; state: string; userTurn: string }> =>

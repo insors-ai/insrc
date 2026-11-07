@@ -280,9 +280,11 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'  - "does the code follow <rule> from <doc>?"\n' +
 				'  - "what conventions does <module> follow?"\n' +
 				'  - "list every registered <data source | infra manifest>"\n' +
-				'  - Any question where you\'d otherwise grep + read to answer.\n\n' +
-				'Call again with a narrower `focus` to drill down. Fall back ' +
-				'to Read/Grep/Glob only when the tool returns an empty or ' +
+				'  - Any question a text match alone would answer wrongly or incompletely.\n\n' +
+				'Use Read/Grep/Glob instead when a text match alone answers it ' +
+				'("where does this text occur?", "show me this function"). ' +
+				'Call again with a narrower `request` to drill down. Fall back ' +
+				'to Read/Grep/Glob also when the tool returns an empty or ' +
 				'clearly off-topic bundle.',
 			annotations: {
 				readOnlyHint:   true,
@@ -315,8 +317,9 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'required). Use when:\n\n' +
 				'  - The user asks about a repository\'s code structure, ' +
 				'conventions, adherence, reuse candidates, or design decisions.\n' +
-				'  - You want to answer using the citation-grounded analyze ' +
-				'framework rather than manual grep + read.\n\n' +
+				'  - A text match alone would give a wrong or incomplete answer.\n\n' +
+				'Use Read/Grep/Glob instead when a text match alone answers it ' +
+				'("where does this text occur?", "show me this function").\n\n' +
 				'Multi-turn loop:\n\n' +
 				'  1. Call phase=\'start\' with a `request` built from the user\'s prompt\n' +
 				'     (question + scopeRef), or `focus` alone for a whole-workspace\n' +

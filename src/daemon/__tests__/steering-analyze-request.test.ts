@@ -62,6 +62,10 @@ test('the injected skeleton from steering-block.md, the template and both tool d
 			const t = tools.find(x => x.name === name)!;
 			assert.match(flat(t.description ?? ''), /`request`/, `${name} description`);
 			assert.match(flat(t.description ?? ''), /scopeRef/, `${name} description`);
+			// ... and the rule that chooses between a text search and the analyzer, not a blanket "grep + read" substitute.
+			assert.match(flat(t.description ?? ''), /text match alone/, `${name} keeps the decision rule`);
+			assert.match(flat(t.description ?? ''), /Use Read\/Grep\/Glob instead when a text match alone answers it/, `${name} sends plain lookups to the file tools`);
+			assert.equal(/rather than manual grep \+ read|otherwise grep \+ read/.test(flat(t.description ?? '')), false, `${name} no longer says to replace grep + read wholesale`);
 		}
 	} finally { await client.close(); await server.close(); }
 

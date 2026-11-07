@@ -340,6 +340,7 @@ test("chat theme: every selector and element id of the shell and the row rendere
     '.chatbtn .chatlbl',
     '.chatbtn .chev',
     '.chatmenu',
+    '#insrc-histmenu',
     '.popup .item .sub[data-dot="green"]',
     '.popup .item .sub[data-dot="red"]',
     '.popup .item .sub[data-dot="yellow"]',

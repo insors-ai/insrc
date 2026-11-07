@@ -63,8 +63,9 @@ export function requireReview(condition: unknown, field: string, message: string
 }
 /** Snapshot untrusted input once; callers cannot mutate an admitted packet through their original object. */
 export function decodeReview<T extends TSchema>(schema: T, input: unknown): Static<T> {
+ const limit=reviewJsonLimit();
  let value: unknown;
- try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= reviewJsonLimit(), 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
+ try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= limit, 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
  catch { throw new TaskReviewInputError('input', 'Expected bounded JSON'); }
  const errors = [...Value.Errors(schema, value)];
  requireReview(errors.length === 0, errors[0]?.path ?? 'input', errors[0]?.message ?? 'Invalid schema');

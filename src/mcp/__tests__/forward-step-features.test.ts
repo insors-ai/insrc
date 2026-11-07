@@ -81,6 +81,14 @@ test('a request call to a daemon lacking analyze-request is refused with DaemonT
 		assert.equal(seen.length, 1);
 		assert.deepEqual((seen[0]!.args as { request: unknown }).request, REQUEST);
 
+		// ... and a prompt-only call is forwarded to that daemon too
+		seen.length = 0;
+		for (const tool of ['insrc_analyze_step', 'insrc_analyze'] as const) {
+			const env = await call(tool, tool === 'insrc_analyze_step' ? { phase: 'start', focus: 'q' } : { focus: 'q' });
+			assert.equal(env.isError === true, false, tool);
+		}
+		assert.equal(seen.length, 2);
+
 		// the same MCP process, the same forwarder, the daemon's capability switched between calls: each call sees the change
 		const outcomes: string[] = [];
 		for (const advertised of [undefined, ['analyze-request'], undefined, ['analyze-request']] as const) {

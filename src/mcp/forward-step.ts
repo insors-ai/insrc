@@ -216,10 +216,12 @@ function forwardStepNow(
 					featureId = undefined;
 					const features = (frame['result'] as Pick<DaemonStatus, 'features'> | undefined)?.features;
 					if (!Array.isArray(features) || !features.includes(REQUEST_FEATURE)) {
-						failWith(new DaemonTooOldError(
+						// Named even on a session-attached connection: a missing capability is not private, and the caller must be told to update.
+						if (!settled) log.warn({ tool }, 'step.call refused: daemon lacks analyze-request');
+						finish(envelopeFor(new DaemonTooOldError(
 							`${tool}: the insrc daemon does not accept a structured analyze request (it does not advertise '${REQUEST_FEATURE}'). ` +
 							`Update the daemon and restart it, then call ${tool} again; until then send only \`focus\`.`,
-						));
+						)));
 						return;
 					}
 					sendStep();

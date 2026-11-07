@@ -640,19 +640,14 @@
 														"type": "object",
 														"properties": {
 															"after": {
+																"minItems": 2,
+																"maxItems": 2,
 																"type": "array",
-																"items": [
-																	{
-																		"type": "integer",
-																		"minimum": 1,
-																		"maximum": 9007199254740991
-																	},
-																	{
-																		"type": "integer",
-																		"minimum": 1,
-																		"maximum": 9007199254740991
-																	}
-																]
+																"items": {
+																	"type": "integer",
+																	"minimum": 1,
+																	"maximum": 9007199254740991
+																}
 															},
 															"deletionAt": {
 																"type": "integer",

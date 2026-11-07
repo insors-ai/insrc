@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 79 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 83 pass, 1 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -98,7 +98,7 @@ Run at 2026-11-07T05:14:21.146Z on commit `3a632606b`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-07T05:42:10.173Z on commit `fcdde7b58`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T12:23:58.893Z on commit `0b6204998`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Selected later ancestor-verified witnesses justify full/partial replacement or deletion; unknown, cyclic or backward witnesses and out-of-set overwrite reject.**
 
@@ -106,6 +106,7 @@ Run at 2026-11-07T05:42:10.173Z on commit `fcdde7b58`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | selected later witnesses justify complete supersession and immutable origin accounting | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
 | pass | partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | selected rename then deletion projects absent final blobs and still requires the deletion witness | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
 
 **unit: Actual selected rename and merge-resolution lineage maps exact final paths; unverified/colliding paths and unselected conflict resolution reject.**
 
@@ -135,7 +136,7 @@ Run at 2026-11-07T05:42:10.173Z on commit `fcdde7b58`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 10 | 2.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 11 | 2.8 s |  |
 
 ## t4
 
@@ -204,7 +205,7 @@ Run at 2026-11-07T06:09:49.147Z on commit `a937e90c0`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-07T06:30:25.152Z on commit `03943cf59`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T12:25:29.995Z on commit `0b6204998`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Pre-rename file open/write/sync/close and rename failures classify not_replaced; post-rename directory/cleanup failures classify replaced; uncertain/read-failed outcomes remain explicit.**
 
@@ -212,6 +213,7 @@ Run at 2026-11-07T06:30:25.152Z on commit `03943cf59`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
 | pass | unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
 
 **integration: Every failed acceptance acknowledgement fences both routes with no dispatch or rollback overwrite and no attribution/model-failure relabel.**
 
@@ -233,17 +235,18 @@ Run at 2026-11-07T06:30:25.152Z on commit `03943cf59`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 7 | 4 s |  |
+| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 8 | 5 s |  |
 
 ## t7
 
-Run at 2026-11-07T06:47:53.207Z on commit `b7b0e4a5e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T12:27:09.623Z on commit `0b6204998`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Source-verified final snapshot publication and offline merge/validate/render roundtrip preserve shifted/renamed per-task scope, provenance and byte-idempotence without live Git in readers.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+| pass | failed accepted reuse publishes truthful failure without invented provenance on both routes | `src/workflow/code-review/task-review/__tests__/history.test.ts` |
 
 **integration: Accepted/unmapped snapshot required fields, partitions, witness closure, task subsets and canonical bindings reject tampering, omitted metadata and foreign findings.**
 
@@ -269,17 +272,19 @@ Run at 2026-11-07T06:47:53.207Z on commit `b7b0e4a5e`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 6 | 2.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 6 | 2.4 s |  |
+| `src/workflow/code-review/task-review/__tests__/history.test.ts` | 0 | 6 | 10.9 s |  |
 
 ## t8
 
-Run at 2026-11-07T08:34:18.498Z on commit `fa70c3e60`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T12:28:58.592Z on commit `0b6204998`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves against configurable review.maxJsonBytes (default4MiB), including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
 
 **integration: Exercise 10000-task small-input overflow, exact-fit/one-byte-over, long IDs and escaped/Unicode diagnostics at unchanged 32 KiB aggregate policy with shared bounded failure detail.**
 
@@ -303,8 +308,8 @@ Run at 2026-11-07T08:34:18.498Z on commit `fa70c3e60`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/config/__tests__/review.test.ts` | 0 | 2 | 1.4 s |  |
-| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.4 s |  |
+| `src/config/__tests__/review.test.ts` | 0 | 2 | 1.3 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 8 | 18 s |  |
 
 ## t9
 
@@ -341,13 +346,16 @@ Run at 2026-11-07T08:39:55.471Z on commit `1a761053e`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-07T09:03:54.932Z on commit `f9052c424`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-07T12:31:09.828Z on commit `0b6204998`. Tests check: **failed**. 11 pass, 1 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+named test cases that did not pass: fail: 'MCP tool surface: the thirteen tools keep their names, descriptions and input schemas' in src/mcp/__tests__/forward-step.test.ts
 
 **integration: Both routes review immutable later-fixed code without stale blocker while retaining a demonstrated final provenance/requiredReferences coverage defect; synthetic reviewer responses assert received final code and test evidence.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect | `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` |
+| pass | fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes | `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` |
 
 **integration: Labelled synthetic t3/t9 reproduction uses the two approved immutable commits and durable CR evidence without claiming unavailable raw packet/attribution/timing recovery.**
 
@@ -376,17 +384,17 @@ Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/t10-final
 | :--- | :--- | :--- |
 | pass | qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` |
 | pass | MCP transition rejects missing final pins before dispatch on both independent reviewer routes | `src/mcp/__tests__/task-review.test.ts` |
-| pass | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
+| fail | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/forward-step.test.ts` | 0 | 6 | 2.3 s |  |
-| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.7 s |  |
-| `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 3.8 s |  |
-| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.6 s |  |
-| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 7 | 4.4 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 1 | 6 | 2.5 s |  |
+| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 4 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 8 | 18.3 s |  |
+| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 8 | 4.7 s |  |
 | `src/workflow/code-review/task-review/__tests__/cleanup.test.ts` | 0 | 5 | 2.8 s |  |
-| `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` | 0 | 2 | 2.8 s |  |
-| `src/workflow/code-review/task-review/__tests__/qualification.test.ts` | 0 | 3 | 2.1 s |  |
+| `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` | 0 | 2 | 2.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/qualification.test.ts` | 0 | 4 | 3.3 s |  |

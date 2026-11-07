@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "1c3aeebd644914f40a90c5a52dfd1e69fec34a3b8f9b2324ef7058bebcec278f",
+        "at": "2026-11-07T09:51:56.293Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T09:53:34.639Z",
+        "override": {
+          "reason": "User explicitly approved override to commit and push the isolated MCP compatibility fix. Mandatory independent review unavailable because Codex omits the broken code-review tool. Seven focused tests and production build pass; live Codex exposure deferred until updated MCP restart. Validation scope warning concerns pre-existing unrelated AGENTS.md/CLAUDE.md edits, which are excluded from this commit. Preserve failed validation record and do not claim live registration verified."
+        }
+      }
+    },
+    "workflow": "build",
+    "runId": "store-abd7b027-dad7-4895-8022-81f0bdd1c37e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T09:49:35.323Z",
+    "epicCreatedAt": "2026-11-07T09:48:50.811Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "bd94ffe3cce0cd70",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "Approved small bugfix routed directly from issue to standalone build.",
+    "epicSlug": "restore-codex-exposure-code-review-mcp",
+    "updatedAt": "2026-11-07T09:51:12.534Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-bd94ffe3cce0cd70: restore Codex MCP schema compatibility preserving exact range constraints.",
+    "producesLld": false,
+    "commit": "fc4003f3f",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "MCP converter emits homogeneous tuples as fixed-length arrays with a single item schema. Range integer bounds and length remain enforced; heterogeneous tuples retain positional validation. Seven focused regression/integration tests pass. Actual Codex exposure awaits installed MCP update; independent code-review tool is currently omitted by Codex.",
+    "testRecord": {
+      "md": "docs/standalone/restore-codex-exposure-code-review-mcp-E20261107bd94ffe3/S001/TESTS.md"
+    },
+    "changeLog": []
+  },
+  "citations": []
+}

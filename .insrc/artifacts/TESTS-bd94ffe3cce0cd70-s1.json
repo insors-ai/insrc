@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "11c5f2ec378bb28e2441b0aaaea0396d5c1e6546a869020d113a3b08d4c9eb54",
+        "at": "2026-11-07T09:51:12.645Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "bd94ffe3cce0cd70",
+    "storyId": "s1",
+    "createdAt": "2026-11-07T09:51:12.534Z",
+    "updatedAt": "2026-11-07T09:51:12.534Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-07T09:48:50.811Z",
+    "epicSlug": "restore-codex-exposure-code-review-mcp",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "fc4003f3f",
+        "ranAt": "2026-11-07T09:51:12.534Z",
+        "testsPassed": true,
+        "tests": [],
+        "files": [],
+        "note": "no tests named for a trivial build"
+      }
+    ]
+  },
+  "citations": []
+}

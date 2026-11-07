@@ -1,0 +1,750 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794054802973-szl4bh",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-07T12:39:44.150Z",
+    "epicCreatedAt": "2026-11-07T12:39:44.150Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 380847,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "546198e11c24c1e3",
+    "epicSlug": "show-provider-icons-chat-dropdowns-relabel",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794054802973-szl4bh",
+    "hldEffectiveHash": "0ceb6f7a0bc533217c8e50f83e31706a22209079f3362e57ef16faee5404a998",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "3078a403a4ccbfaaacf6d7e39e77953e0d983272c7d2586a7213b66c38ccfb81",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T14:02:34.775Z",
+        "override": {
+          "reason": "No blocking MED/HIGH findings remain after 3 review rounds (scope and behavior chunks pass; the 2 round-2 behavior defects are resolved). The 'incomplete' verdict is held open solely by the daemon's unavailable browser host — a could-not-verify visual-rendering gap that the review discipline treats as non-blocking — plus one LOW prose issue (behavior-r3-01) to be corrected at build time."
+        }
+      }
+    },
+    "rangeBase": "d669662911f4c1ab3493aaa63babc1af9f4dd172"
+  },
+  "body": {
+    "alternativesConsidered": [
+      {
+        "chosen": true,
+        "id": "a1",
+        "name": "Button triggers + custom div menus, mitem reused unchanged, membership-driven trigger rendering",
+        "oneLineSummary": "Custom menus with cached entries; per-row icons via mitem's existing icon param; the trigger and selected row update optimistically on activation."
+      },
+      {
+        "id": "a2",
+        "name": "Text-glyph prefix on native options",
+        "oneLineSummary": "Prefix each option's text with a per-provider text mark; no structural change.",
+        "reasonRejected": "violates the real-icon constraint (a text glyph is not the real provider SVG); while the empty-state wording could be changed independently, it still leaves the native popup unable to render per-row icons."
+      },
+      {
+        "id": "a3",
+        "name": "ARIA listbox wrapper shared with the provider/model menus",
+        "oneLineSummary": "A role=listbox/option structure reused by all four menus, trigger from selected row.",
+        "reasonRejected": "satisfies both constraints but rewires the run-config provider/model menus — scope creep and regression risk the Story does not need."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "contractDetails": {
+      "api": [
+        {
+          "errors": [],
+          "name": "mitem",
+          "parameters": [
+            {
+              "name": "sel",
+              "optional": false,
+              "purpose": "true marks the row as the selected chat",
+              "type": "boolean"
+            },
+            {
+              "name": "label",
+              "optional": false,
+              "purpose": "the visible row text (chat title)",
+              "type": "string"
+            },
+            {
+              "name": "sub",
+              "optional": true,
+              "purpose": "optional secondary text under the label",
+              "type": "string"
+            },
+            {
+              "name": "onclick",
+              "optional": true,
+              "purpose": "row activation callback",
+              "type": "() => void"
+            },
+            {
+              "name": "onhover",
+              "optional": true,
+              "purpose": "row hover callback",
+              "type": "() => void"
+            },
+            {
+              "name": "dis",
+              "optional": true,
+              "purpose": "disables the row when true",
+              "type": "boolean"
+            },
+            {
+              "name": "icon",
+              "optional": true,
+              "purpose": "the provider icon mark to paint in the .pico slot",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "the returned row is a role=menuitem div whose .pico descendant renders the provider icon when icon is set, and whose .chk descendant marks the row when sel is true"
+          ],
+          "preconditions": [
+            "icon, when provided, is the inline SVG string returned by pico(provider)"
+          ],
+          "returns": {
+            "meaning": "a role=menuitem row with .pico/.chk/.lbl descendants",
+            "type": "HTMLDivElement"
+          },
+          "signature": "mitem(sel: boolean, label: string, sub?: string, onclick?: () => void, onhover?: () => void, dis?: boolean, icon?: string): HTMLDivElement"
+        },
+        {
+          "errors": [],
+          "name": "pico",
+          "parameters": [
+            {
+              "name": "provider",
+              "optional": false,
+              "purpose": "the provider id (claude/codex/vibe) to resolve",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "returns the inline SVG mark for the provider, reused unchanged as the per-row icon for both chat dropdowns"
+          ],
+          "preconditions": [
+            "provider is one of the ids present in ICONS"
+          ],
+          "returns": {
+            "meaning": "the inline SVG mark for the provider id",
+            "type": "string"
+          },
+          "signature": "pico(provider: string): string"
+        },
+        {
+          "errors": [],
+          "name": "paintSel",
+          "parameters": [
+            {
+              "name": "sel",
+              "optional": false,
+              "purpose": "the select element to paint",
+              "type": "HTMLElement"
+            },
+            {
+              "name": "p",
+              "optional": false,
+              "purpose": "the provider id whose mark is painted",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "removed: it and picoUrl/paintOpt only painted the two native chat selects with a data-URI background-image; with those selects replaced by custom menus the helpers have no remaining caller. The run-config provider/model menus already render through mitem + pico, not paintSel, and are untouched."
+          ],
+          "preconditions": [
+            "sel is one of the two native chat selects (#insrc-history / #insrc-active)"
+          ],
+          "returns": {
+            "meaning": "paints the select element’s background with the provider mark (removed after the change)",
+            "type": "void"
+          },
+          "signature": "paintSel(sel: HTMLElement, p: string): void"
+        },
+        {
+          "errors": [],
+          "name": "paintOpt",
+          "parameters": [
+            {
+              "name": "o",
+              "optional": false,
+              "purpose": "the option element to paint",
+              "type": "HTMLElement"
+            },
+            {
+              "name": "p",
+              "optional": false,
+              "purpose": "the provider id whose mark is painted",
+              "type": "string"
+            }
+          ],
+          "postconditions": [
+            "removed alongside paintSel/picoUrl: chat rows render via mitem’s icon slot instead of an option background-image; the run-config menus are already mitem-based and untouched."
+          ],
+          "preconditions": [
+            "o is a native option inside one of the two chat selects"
+          ],
+          "returns": {
+            "meaning": "assigns the option’s background-image to the provider mark (removed after the change)",
+            "type": "void"
+          },
+          "signature": "paintOpt(o: HTMLElement, p: string): void"
+        }
+      ],
+      "surfaceLevel": "internal"
+    },
+    "dataModelChanges": [
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2537",
+          "vscode-plugin/src/chat/chat-panel.ts:2538",
+          "vscode-plugin/src/chat/chat-panel.ts:2488",
+          "vscode-plugin/src/chat/chat-panel.ts:2493"
+        ],
+        "change": "field-modify",
+        "details": "Replace the two native <select> controls (#insrc-active, #insrc-history) with <button> triggers (aria-haspopup='menu', aria-expanded toggled) plus custom div menus, and cache the list entries client-side as histEntries (ChatSummary[]) and actEntries (ActiveChatEntry[]) plus the selected-id strings histSel and actSel. The trigger renders from selected-id membership: histChatFor(id) returns the histEntries entry when id is present, else undefined; activeChatFor(id) returns the actEntries entry when id is present, else undefined. An unsaved draft has no persisted record, so it is absent from BOTH lists (activeChats enumerates persisted records with status, and history holds only saved chats); membership-driven rendering therefore clears both selections and shows the empty placeholders ('no active work' / 'new…') until the draft's first save enters it into history.",
+        "entity": "insrc-active / insrc-history chrome controls"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2383",
+          "vscode-plugin/src/chat/chat-panel.ts:2493"
+        ],
+        "change": "field-modify",
+        "details": "Each open row is built through mitem with sel = (chat.id === selectedId), label = chat.title and icon = pico(chat.provider), so the real inline provider SVG renders per row — the gap the native option background-image cannot close. Active rows additionally render a status dot coloured through the DOT map {waiting-input:'red', working:'yellow', done:'green'}; the active trigger still shows the highest-ranked status.",
+        "entity": "chat dropdown rows (history + active)"
+      },
+      {
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2367",
+          "vscode-plugin/src/chat/chat-panel.ts:2422",
+          "vscode-plugin/src/chat/chat-panel.ts:2474",
+          "vscode-plugin/src/chat/chat-panel.ts:2484",
+          "vscode-plugin/src/chat/chat-panel.ts:2488",
+          "vscode-plugin/src/chat/chat-panel.ts:2493"
+        ],
+        "change": "invariant-change",
+        "details": "Activation becomes a WRITER, and both selected ids are reconciled to the host-confirmed current session (cur) on EVERY host message: (1) on activating chat B — an active row or a persisted history row — the click/Enter handler writes actSel = histSel = B optimistically and re-renders both triggers before posting open-chat {chatId: B}, so the triggers flip immediately; activating the history 'new…' row posts new-chat {provider: curProv} unchanged (no optimistic write — there is no chat yet). (2) on session-restored, cur = m.sessionId, then reconcile BOTH selections and re-render in the order actSel then histSel: actSel = cur when cur is present in actEntries, else cleared ('no active work'); histSel = cur when cur is present in histEntries, else cleared ('new…'). (3) on history-list AND on active-list, re-settle BOTH selections against cur the same way (actSel = cur when present in actEntries else clear; histSel = cur when present in histEntries else clear): a rejected open-chat arrives as history-list alone (no session-restored, no active-list), so the history-list handler reconciles both selections — the active trigger snaps back to the confirmed session even when the stale id B remains in the cached actEntries and no active-list arrives. (4) the run-config branch (2484) no longer paints the chat triggers from curProv — it only updates curProv and the run-config button labels; paintSel/paintOpt/picoUrl are removed with the native chat selects.",
+        "entity": "activation + session-restored selection state"
+      },
+      {
+        "entity": "chat dropdown menu keyboard/focus lifecycle",
+        "change": "invariant-change",
+        "details": "Keyboard and focus lifecycle (replaces the native selects' built-in interaction). The two triggers are <button> elements with aria-haspopup='menu'; Enter/Space on a focused trigger toggles its menu (the same keydown pattern as the existing '>' send button, line 2510), and aria-expanded reflects the open state. Each menu is a role='menu' panel whose rows are mitem's role='menuitem' divs; the chat-menu builder assigns a roving tabindex (the focused row tabindex=0, the others -1) and tracks the focused index in a JS variable the keydown handler reads (mitem's signature and structure are unchanged, so the run-config callers are untouched). On open, focus moves to the selected row when one exists, else to the first enabled row; an empty menu shows a single disabled placeholder row and focus stays on the trigger. Arrow Up/Down move the focused row with wrap-around, Home/End jump to first/last, Enter/Space activate the focused row (the same handler as click), Escape closes the menu and returns focus to its trigger, Tab closes the menu and moves focus onward, and an outside click closes the menu — the existing document click + Escape closePops pattern (lines 2394-2395) is extended to cover the two chat menus. On activation the menu closes and focus returns to its trigger. Opening one chat menu closes the other chat menu and the run-config provider/effort popups.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2382",
+          "vscode-plugin/src/chat/chat-panel.ts:2394",
+          "vscode-plugin/src/chat/chat-panel.ts:2395",
+          "vscode-plugin/src/chat/chat-panel.ts:2510"
+        ]
+      }
+    ],
+    "errorPaths": {
+      "edgeCases": [
+        {
+          "expected": "the active trigger reads 'no active work' and the menu opens with zero rows (or a disabled placeholder)",
+          "input": "no chat is active (actEntries empty and no restored session)"
+        },
+        {
+          "expected": "actSel flips A→B optimistically, the trigger re-renders to B's icon/title immediately, and open-chat is posted with B's chatId",
+          "input": "the user activates chat B while chat A is already active (A→B switch)"
+        },
+        {
+          "input": "history contains a persisted chat whose session is not in the active list (completed / aged-out / legacy session)",
+          "expected": "the history row renders normally (icon + title); activating it posts open-chat with its chatId exactly like any persisted history row — it is never treated as a draft and never posts new-chat"
+        },
+        {
+          "expected": "the row's status dot and the trigger's aggregate status match the DOT map colour, and the provider icon renders alongside — not replacing — the status",
+          "input": "an active chat's status is waiting-input / working / done"
+        },
+        {
+          "input": "the current chat is a not-yet-saved draft (no persisted record, so absent from both the active list and history)",
+          "expected": "both triggers show their empty placeholders — 'no active work' (active) and 'new…' (history) — until the draft's first save enters it into history; the draft is never routed through new-chat or open-chat as a separate row"
+        }
+      ],
+      "errorCases": [
+        {
+          "detection": "pico(provider) returns no mark for a provider id absent from ICONS, leaving the row icon slot empty",
+          "recoverable": true,
+          "response": "render the row without an icon and fall back to the chat title alone; the trigger shows the title without an icon",
+          "scenario": "a chat entry carries a provider id that has no ICONS entry (unknown or legacy provider)",
+          "userImpact": "the chat is still listed and selectable; only the icon is missing for that provider"
+        },
+        {
+          "scenario": "the selected id (actSel/histSel) points at a chat the host no longer recognises (rejected open-chat or removed between renders)",
+          "detection": "an open-chat was rejected or the selected chat was removed: the host answers with history-list alone (no session-restored, no active-list) and cur is unchanged; histChatFor(id) and activeChatFor(id) return undefined for the optimistic id (it is neither in histEntries/actEntries nor the confirmed current cur)",
+          "response": "the history-list handler re-settles BOTH actSel and histSel against cur (actSel = cur when present in actEntries else clear; histSel = cur when present in histEntries else clear), so both triggers return to the confirmed session — the active trigger clears the stale id even though it may remain in the cached actEntries and no active-list arrives",
+          "userImpact": "both triggers snap back to the confirmed session on the history-list response alone — no crash and no stuck stale icon",
+          "recoverable": true
+        },
+        {
+          "scenario": "the session-restored message arrives before the list entries have been cached",
+          "detection": "session-restored arrives before history-list / active-list have cached histEntries / actEntries",
+          "response": "defer reconciliation to the next history-list / active-list render: keep the raw restored id (cur) and re-run the membership check once histEntries/actEntries are populated (histSel then actSel)",
+          "userImpact": "the triggers may briefly read the empty placeholder, then flip to the restored chat when the lists arrive",
+          "recoverable": true
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "source": "c5",
+          "text": "activating an active row posts open-chat with its chatId; activating a persisted history row posts open-chat with its chatId; activating the history 'new…' row posts new-chat with the current provider — each message is unchanged, and a persisted history row is never routed through new-chat regardless of active-list membership."
+        },
+        {
+          "source": "c6",
+          "text": "mitem's first parameter stays a SELECTED boolean and its role=menuitem / .pico / .chk / .lbl structure is unchanged, so the run-config renderProvPane/renderModelPane callers are untouched; the chat-menu builder sets tabindex on the returned rows, not mitem itself."
+        },
+        {
+          "source": "c2",
+          "text": "the per-row provider mark is the real inline SVG from pico(provider), not a text glyph or an option background-image (which the native popup cannot render)."
+        },
+        {
+          "source": "c5",
+          "text": "the DOT status-colour mapping {waiting-input:'red', working:'yellow', done:'green'} and the highest-ranked aggregate status on the active trigger are preserved."
+        },
+        {
+          "source": "c5",
+          "text": "an unsaved draft has no persisted record and is therefore absent from both actEntries and histEntries; it renders the empty placeholders (never a synthesized row) and is never an activation route."
+        }
+      ]
+    },
+    "hldContextSlice": {
+      "adjacentBoundaries": [],
+      "boundary": {
+        "depends": [],
+        "internal": "Show provider icons in the chat dropdowns and relabel the empty active state",
+        "owns": [],
+        "storyId": "s1"
+      },
+      "consumedContracts": [],
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "nonFunctional": {},
+      "ownedContracts": [],
+      "rolloutPhase": "standalone"
+    },
+    "interactionWithShared": [],
+    "migration": {
+      "backwardCompat": "No public API is affected — the change is internal webview chrome. The open-chat / new-chat IPC messages and the ChatSummary/ActiveChatEntry payloads are unchanged, so no host or IPC contract needs to stay backward compatible. Steps 1-5 are one atomic webview change and roll back together: changing the markup alone leaves the existing .options/.value/change handlers incompatible with the replacement buttons.",
+      "dataRewriteRequired": false,
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Replace the two native <select> controls (#insrc-active, #insrc-history) with button triggers plus custom div menus, and cache the list entries client-side as histEntries/actEntries plus the selected-id strings histSel/actSel.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Render each open row through mitem with icon = pico(chat.provider) and sel = (chat.id === selectedId); add the DOT-coloured status dot to active rows.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Change the activation handlers (active and history) to WRITE actSel/histSel optimistically and re-render the triggers before posting open-chat / new-chat.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Reconcile actSel then histSel on session-restored, and re-settle both selections on history-list / active-list (recovering a rejected open-chat); remove paintSel/paintOpt/picoUrl with the native chat selects.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Wire the keyboard/focus/aria lifecycle for both menus (roving focus, Enter/Space activation, Escape/Tab/outside-click dismissal, popup coordination).",
+          "rollbackable": true
+        }
+      ],
+      "stateAfter": "Both controls are button triggers plus custom div menus whose rows render the real inline provider icon via mitem's icon param (pico(chat.provider)) and, for active rows, a DOT-coloured status dot, with a keyboard/focus lifecycle (roving focus, Escape/Tab/outside-click dismissal, popup coordination). The active trigger reads 'no active work' when no id is selected (membership-driven rendering); activation writes actSel/histSel optimistically and re-renders the triggers before posting the unchanged messages; session-restored reconciles actSel then histSel against the restored session and cached entries, and history-list/active-list re-settle the selections to the confirmed current session (recovering a rejected open-chat).",
+      "stateBefore": "The dev-chat header renders two native <select> controls — #insrc-active with an 'active…' empty placeholder and #insrc-history with a 'new…' empty placeholder. Per-chat provider marks are painted as option background-images via paintOpt/paintSel/picoUrl, which native select popups cannot render, and activation reads act.value/hs.value through change listeners to post open-chat / open-chat+new-chat.",
+      "zeroDowntime": true
+    },
+    "openQuestions": [],
+    "summary": {
+      "audience": "product",
+      "prose": "The dev-chat header's two dropdowns — history and active chats — will each show the provider icon (Claude, Codex or Vibe) next to every chat, so a user can tell at a glance which provider a chat is running on. When no chat is active, the active-chat dropdown reads 'no active work' instead of the current 'active…' placeholder. The change is contained to the chat webview: the native <select> controls are replaced with custom menus so the real inline provider icon can render per row, which the native popup cannot."
+    },
+    "testStrategy": {
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "unit: every history row's innerHTML contains the pico(chat.provider) SVG string",
+            "unit: every active row's innerHTML contains the pico(chat.provider) SVG string"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "unit: with actEntries empty and no restored session, the insrc-active trigger text is 'no active work'",
+            "unit: the run-config branch no longer repaints the chat triggers from curProv, so the placeholder cannot be overwritten",
+            "unit: a not-yet-saved draft (absent from both lists) renders 'no active work' on the active trigger and 'new…' on the history trigger"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "unit: activating chat B sets actSel/histSel to B and re-renders both triggers to B’s icon/title before posting open-chat (A→B switch)",
+            "unit: activating a persisted history row posts open-chat with its chatId; activating the history ‘new…’ row posts new-chat with the current provider (message split)",
+            "unit: on a history-list-only rejection response, BOTH triggers reconcile against cur (the active trigger clears the stale id with no active-list message)"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "unit: session-restored sets actSel AND histSel to the restored session id when it is present in actEntries/histEntries",
+            "unit: session-restored clears actSel when the restored id is absent from actEntries, yielding 'no active work'",
+            "unit: history-list re-settles both selections to cur after a rejected open-chat (recovery), and does NOT synthesize a row for an id that is not cur",
+            "unit: the active trigger shows the highest-ranked aggregate status even when the selected row carries a different status (per-row vs aggregate)"
+          ]
+        }
+      ],
+      "testFramework": "node:test (tsx) with the chat-panel fake-DOM harness for pure logic; real-browser (headless Chrome screenshot) for interaction. Fake-DOM limitations and how each is handled: (1) innerHTML is not parsed into descendants, so icon tests assert the returned row's innerHTML CONTAINS the pico(chat.provider) SVG string (a string match), not a .pico descendant read; (2) native focus is inert, so the menu tracks its focused index in a JS variable and unit tests assert that index's transitions by invoking the keydown handler with synthetic events — actual focus movement, document-level outside-click propagation and bubbling are verified in the real browser, not fake-DOM; (3) document listeners are not dispatched in fake-DOM, so dismissal tests invoke the close handler directly, and real-browser smoke verifies actual outside-click.",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the pure logic against the fake-DOM harness: the row innerHTML contains the real per-row provider SVG string, the empty active trigger reads 'no active work', activation writes the selected id optimistically, every host message (session-restored/history-list/active-list) reconciles BOTH selections against cur (including recovery from a rejected open-chat on a history-list-only response and the session-restored-before-list ordering), the persisted-history vs new-chat message split, unknown-provider fallback, and the menu keyboard/focus logic via the roving-focus index.",
+          "subjects": [
+            "vscode-plugin/src/chat/chat-panel.ts:2383 mitem row render (innerHTML contains pico SVG string)",
+            "vscode-plugin/src/chat/chat-panel.ts:2537 insrc-active trigger",
+            "vscode-plugin/src/chat/chat-panel.ts:2538 insrc-history trigger",
+            "vscode-plugin/src/chat/chat-panel.ts:2367 active activation",
+            "vscode-plugin/src/chat/chat-panel.ts:2422 history activation",
+            "vscode-plugin/src/chat/chat-panel.ts:2474 session-restored reconcile",
+            "vscode-plugin/src/chat/chat-panel.ts:2488 history-list reconcile (rejected open-chat recovery)",
+            "vscode-plugin/src/chat/chat-panel.ts:2493 active-list reconcile",
+            "vscode-plugin/src/chat/chat-panel.ts:2394-2395 menu keyboard/focus (roving-focus index)",
+            "vscode-plugin/src/chat/__tests__/chat-panel.test.ts:5928 migrate existing native options/change assertions"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Confirm in the real webview browser (headless Chrome screenshot): the header renders without error, both triggers open their custom menus, the per-row provider SVGs render, the active trigger reads 'no active work' when empty, focus moves into the menu on open and returns to the trigger on activation, keyboard navigation (Arrow/Enter/Escape/Tab) works, and an outside click dismisses the menu.",
+          "subjects": [
+            "vscode-plugin/src/chat/chat-panel.ts header render",
+            "vscode-plugin/src/chat/chat-panel.ts both chat menus open + per-row provider SVG render",
+            "vscode-plugin/src/chat/chat-panel.ts focus entry/return + keyboard navigation + outside-click dismissal",
+            "vscode-plugin/src/chat/chat-panel.ts active trigger empty-state 'no active work'"
+          ]
+        }
+      ]
+    },
+    "uxDefinition": {
+      "body": [
+        {
+          "text": "Header — two triggers (active 'no active work', history 'new…')",
+          "type": "TextBlock",
+          "weight": "bolder"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "text": "[no active work ▾] #insrc-active",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "[new… ▾] #insrc-history",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "text": "Active menu — open, anchored below its trigger",
+          "type": "TextBlock",
+          "weight": "bolder"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "good",
+                  "text": "Cl",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "Chat A — Claude",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            },
+            {
+              "items": [
+                {
+                  "color": "good",
+                  "text": "●",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "warning",
+                  "text": "Cx",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "Chat B — Codex",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            },
+            {
+              "items": [
+                {
+                  "color": "warning",
+                  "text": "●",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "attention",
+                  "text": "Vb",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "Chat C — Vibe",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            },
+            {
+              "items": [
+                {
+                  "color": "attention",
+                  "text": "●",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "text": "History menu — open, anchored below its trigger",
+          "type": "TextBlock",
+          "weight": "bolder"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "good",
+                  "text": "Cl",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "Chat D — Claude",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "warning",
+                  "text": "Cx",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "Chat E — Codex",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "columns": [
+            {
+              "items": [
+                {
+                  "color": "good",
+                  "text": "+",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "auto"
+            },
+            {
+              "items": [
+                {
+                  "text": "new… (starts a new chat)",
+                  "type": "TextBlock"
+                }
+              ],
+              "type": "Column",
+              "width": "stretch"
+            }
+          ],
+          "type": "ColumnSet"
+        },
+        {
+          "text": "Empty states",
+          "type": "TextBlock",
+          "weight": "bolder"
+        },
+        {
+          "text": "Active trigger with no selection reads 'no active work' (no icon). History trigger with no selection reads 'new…' (no icon).",
+          "type": "TextBlock",
+          "wrap": true
+        }
+      ],
+      "narrative": "Mock of the dev-chat header's two dropdowns. The header shows the two button triggers — #insrc-active reading 'no active work' and #insrc-history reading 'new…' — each opening an anchored menu shown directly below its trigger. Every chat row shows a DISTINCT provider badge — Cl (Claude, good/green), Cx (Codex, warning/yellow), Vb (Vibe, attention/red) — as a text stand-in for the real inline provider SVG (which the Adaptive Cards subset cannot embed); active rows add a status dot coloured green/yellow/red for done/working/waiting-input. The empty states are called out at the bottom: with no selection the active trigger reads 'no active work' and the history trigger 'new…', with no icon.",
+      "type": "AdaptiveCard",
+      "version": "1.5"
+    },
+    "companions": [
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/show-provider-icons-chat-dropdowns-relabel-E20261107546198e1/S001/ux-mock.html",
+        "title": "UX mock"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "analyze-bundle",
+      "ref": "read:chrome-markup: the two chrome dropdowns #insrc-history/#insrc-active and their empty placeholder options 'new…'/'active…' (vscode-plugin/src/chat/chat-panel.ts:2537-2538)"
+    },
+    {
+      "id": "c2",
+      "kind": "analyze-bundle",
+      "ref": "read:provider-icon-rendering: paintOpt/paintSel paint data-URI SVG backgrounds on options/selects that native popups ignore; pico() resolves the inline SVG from ICONS (vscode-plugin/src/chat/provider-icons.ts:26,32; vscode-plugin/src/chat/chat-panel.ts:2364-2365)"
+    },
+    {
+      "id": "c3",
+      "kind": "analyze-bundle",
+      "ref": "read:select-surface: the list handlers use hs/act .options/.value/'change', option[data-dot] status colours, and the run-config branch paints both selects with curProv (vscode-plugin/src/chat/chat-panel.ts:2488,2493,2474,2484)"
+    },
+    {
+      "id": "c4",
+      "kind": "analyze-bundle",
+      "ref": "read:wire-shapes: ChatSummary.provider and ActiveChatEntry.provider already carry the provider id (vscode-plugin/src/chat/session-store.ts:252; vscode-plugin/src/chat/protocol.ts:87)"
+    },
+    {
+      "id": "c5",
+      "kind": "analyze-bundle",
+      "ref": "read:status-map: the DOT map waiting-input→red/working→yellow/done→green, actChip data-urgent, and the open-chat/new-chat change-listener messages (vscode-plugin/src/chat/chat-panel.ts:2493,2367,2422)"
+    },
+    {
+      "id": "c6",
+      "kind": "analyze-bundle",
+      "ref": "read:mitem-signature: mitem(sel,label,sub,onclick,onhover,dis,icon) takes a selected boolean first and is called by renderProvPane/renderModelPane (vscode-plugin/src/chat/chat-panel.ts:2383-2385)"
+    }
+  ]
+}

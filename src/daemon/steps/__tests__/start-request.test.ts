@@ -139,6 +139,8 @@ test('a valid request mints a state whose intent has the named scope, context an
 	const missing = await start({ question: 'q', scopeRef: { kind: 'module', value: join(A, 'src', 'nope') } });
 	assert.equal(missing.next, 'error');
 	assert.equal(missing.error?.code, 'scope-not-found');
+	const wrongKind = await start({ question: 'q', scopeRef: { kind: 'file', value: join(A, 'src') } });
+	assert.equal(wrongKind.error?.code, 'scope-not-found');
 	const sneaky = await start({ question: 'q', scopeRef: { kind: 'file', value: `${A}/../b/src/y.ts` } });
 	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
 });

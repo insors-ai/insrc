@@ -81,6 +81,18 @@ test('runAnalyzeOneShot hands the call\'s repository to the run, and the real bu
 	assert.equal(result.isError, true);
 	assert.equal((seen[0] as { expectedRepo?: string }).expectedRepo, A);
 
+	// the real tool and the real buildRun, with a structured request that names an invalid scope
+	const viaTool = async (kind: 'module' | 'file', value: string) => runAnalyzeOneShot({ request: { question: 'q', scopeRef: { kind, value } }, repo: A });
+	for (const [kind, value, code] of [
+		['module', `${A}/src/nope`, 'scope-not-found'],
+		['file', `${A}/src`, 'scope-not-found'],
+		['file', `${A}/../b/src/y.ts`, 'scope-repo-mismatch'],
+	] as const) {
+		const refused = await viaTool(kind, value);
+		assert.equal(refused.isError, true, value);
+		assert.match(refused.content[0]!.text, new RegExp(code), value);
+	}
+
 	// the real buildRun with that repository: an invalid scope is refused with its code
 	const run = async (kind: 'module' | 'file', value: string) => buildRun({
 		runId: `req-${kind}`, expectedRepo: A,

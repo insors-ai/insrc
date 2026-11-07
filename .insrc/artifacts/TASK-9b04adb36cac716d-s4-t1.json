@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ba1f4bb0-2070-496b-a62d-6378fbf2ad5b",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.104Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Define permanent review records and lossless aggregate schemas",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b2608046261c4508f8aa9b83e441fb4b3f3dc8fff0f7932114110499732948de",
+        "at": "2026-11-07T19:42:18.104Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.105Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Define permanent review records and lossless aggregate schemas",
+    "summary": "Implement validated design-chunk-review v1 history/binding/digest and publication receipt types; retain complete ordered attempt provenance and immutable baselines. Separate aggregate cardinality limits from per-chunk limits in full and impact consolidation, including host diagnostics and carried finding origins.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "All accepted model and host-added feedback survives consolidation without truncation; 4097+4097 limitations and >256 combined origins pass when byte-admissible.",
+      "Reject unsupported versions, missing/foreign/tampered history; keep S1–S3 semantics and per-chunk model limits."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "U1 permanent payload integrity and digest; aggregate schemas"
+      },
+      {
+        "level": "integration",
+        "name": "I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

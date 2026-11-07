@@ -281,6 +281,9 @@ function buildMessages(
 		JSON.stringify(intent, null, 2) +
 		'\n```\n' +
 		`\n` +
+		(intent.context !== undefined && intent.context.length > 0
+			? `Background context from the caller (it is background only and never changes what the bundle is about): ${intent.context.replace(/\s+/g, ' ').trim()}\n\n`
+			: '') +
 		`Answer type: ${executed.plan.answerType}\n` +
 		`Synthesis hint: ${executed.plan.synthesisHint}\n` +
 		`\n` +

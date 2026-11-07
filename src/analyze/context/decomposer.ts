@@ -360,6 +360,22 @@ function scopeLine(scope: ResolvedScope): string {
 	}
 }
 
+/**
+ * The lines a structured request adds to the planning prompt, each on its own
+ * line: the scope the caller named (a directory scope has no other line that
+ * says so, and a prompt-only call named none) and the background context. The
+ * context never decides the scope: it is background for what to look at inside it.
+ */
+function requestLines(intent: ClassifiedIntent): string {
+	const scope = intent.scopeSource === 'request'
+		? `Named scope: the ${intent.scopeRef.kind} ${intent.scopeRef.value}. Plan the lookups inside it.\n`
+		: '';
+	const context = intent.context !== undefined && intent.context.length > 0
+		? `Background context from the caller (it never changes the scope above): ${intent.context.replace(/\s+/g, ' ').trim()}\n`
+		: '';
+	return scope + context;
+}
+
 /** The planning prompt's section for an intent with no focus. The user
  *  turn names it; a test holds the name and the prompt's heading equal. */
 export const NO_FOCUS_SECTION = 'Recipes for an intent with no focus';
@@ -379,6 +395,7 @@ function buildMessages(promptContent: string, intent: ClassifiedIntent, scope: R
 		// scope's own directory, exactly as the raw value used to print.
 		`Repo path: ${scope.lookupPath}\n` +
 		scopeLine(scope) +
+		requestLines(intent) +
 		`\n` +
 		`Classify the answer type. Emit the ExplorationPlan JSON now. ` +
 		`First char \`{\`, no markdown fence, no prose. Every array present ` +

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 25,
-        "contentHash": "74a05ca59263fcb7a70af8a8a55d700cc588f0ea0ed863afea0d658d31c07183",
-        "at": "2026-11-07T12:35:13.772Z",
+        "number": 27,
+        "contentHash": "8df3142f13292b97f53af2d066ecf793caa95b83d6a9b34e5e434bbf05597d3c",
+        "at": "2026-11-07T13:42:05.557Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T12:35:13.672Z",
+    "updatedAt": "2026-11-07T13:42:05.443Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 25
+    "revision": 27
   },
   "body": {
     "tasks": [
@@ -339,8 +339,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "0b6204998",
-        "ranAt": "2026-11-07T12:23:58.893Z",
+        "commit": "200ab3286",
+        "ranAt": "2026-11-07T13:39:59.722Z",
         "testsPassed": true,
         "tests": [
           {
@@ -361,6 +361,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
                 "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
                 "result": "pass"
               }
             ],
@@ -441,7 +446,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2833,
+            "durationMs": 3554,
             "titles": [
               {
                 "title": "selected later witnesses justify complete supersession and immutable origin accounting",
@@ -485,6 +490,10 @@
               },
               {
                 "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
                 "result": "pass"
               }
             ],
@@ -941,8 +950,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "0b6204998",
-        "ranAt": "2026-11-07T12:28:58.592Z",
+        "commit": "200ab3286",
+        "ranAt": "2026-11-07T13:42:05.443Z",
         "testsPassed": true,
         "tests": [
           {
@@ -958,6 +967,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
                 "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes",
                 "result": "pass"
               }
             ],
@@ -1025,7 +1039,7 @@
             "file": "src/config/__tests__/review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1283,
+            "durationMs": 1319,
             "titles": [
               {
                 "title": "review JSON limit is configurable discoverable live and rejects invalid values",
@@ -1042,7 +1056,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 17977,
+            "durationMs": 22620,
             "titles": [
               {
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
@@ -1074,6 +1088,10 @@
               },
               {
                 "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes",
                 "result": "pass"
               }
             ],

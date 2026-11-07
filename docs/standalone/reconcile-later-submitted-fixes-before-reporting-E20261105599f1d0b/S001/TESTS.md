@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 86 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -98,7 +98,7 @@ Run at 2026-11-07T05:14:21.146Z on commit `3a632606b`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-07T12:23:58.893Z on commit `0b6204998`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T13:39:59.722Z on commit `200ab3286`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Selected later ancestor-verified witnesses justify full/partial replacement or deletion; unknown, cyclic or backward witnesses and out-of-set overwrite reject.**
 
@@ -107,6 +107,7 @@ Run at 2026-11-07T12:23:58.893Z on commit `0b6204998`. Tests check: **passed**. 
 | pass | selected later witnesses justify complete supersession and immutable origin accounting | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
 | pass | partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
 | pass | selected rename then deletion projects absent final blobs and still requires the deletion witness | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
+| pass | verified rename deletion ignores unrelated and identical recreation at the original pathname | `src/workflow/code-review/task-review/__tests__/projection.test.ts` |
 
 **unit: Actual selected rename and merge-resolution lineage maps exact final paths; unverified/colliding paths and unselected conflict resolution reject.**
 
@@ -136,7 +137,7 @@ Run at 2026-11-07T12:23:58.893Z on commit `0b6204998`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 11 | 2.8 s |  |
+| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 12 | 3.6 s |  |
 
 ## t4
 
@@ -277,7 +278,7 @@ Run at 2026-11-07T12:27:09.623Z on commit `0b6204998`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-07T12:28:58.592Z on commit `0b6204998`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T13:42:05.443Z on commit `200ab3286`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves against configurable review.maxJsonBytes (default4MiB), including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.**
 
@@ -285,6 +286,7 @@ Run at 2026-11-07T12:28:58.592Z on commit `0b6204998`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
 | pass | terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
 
 **integration: Exercise 10000-task small-input overflow, exact-fit/one-byte-over, long IDs and escaped/Unicode diagnostics at unchanged 32 KiB aggregate policy with shared bounded failure detail.**
 
@@ -309,7 +311,7 @@ Run at 2026-11-07T12:28:58.592Z on commit `0b6204998`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/review.test.ts` | 0 | 2 | 1.3 s |  |
-| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 8 | 18 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 9 | 22.6 s |  |
 
 ## t9
 

@@ -168,6 +168,10 @@ test('the narrow phase through the real handler repeats the scope check on resum
 	const missing = await narrowWith('module', `${A}/src/nope`);
 	assert.equal(missing.next, 'error');
 	assert.equal(missing.error?.code, 'scope-not-found');
+	const wrongKind = await narrowWith('file', `${A}/src`);
+	assert.equal(wrongKind.error?.code, 'scope-not-found');
+	const wrongModule = await narrowWith('module', `${A}/src/x.ts`);
+	assert.equal(wrongModule.error?.code, 'scope-not-found');
 	const sneaky = await narrowWith('file', `${A}/../b/src/y.ts`);
 	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
 });

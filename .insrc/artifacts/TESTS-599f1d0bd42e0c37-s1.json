@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "626dcdabe6cc3953f379779b3f26d55aee4289f7e41b45330466cb14c6aea263",
-        "at": "2026-11-07T04:56:57.890Z",
+        "number": 4,
+        "contentHash": "856d4dcb3c2a30242aca2effafc809f8de0a6aa4b1d33b22b6799357c6daa501",
+        "at": "2026-11-07T05:08:26.217Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,22 +23,22 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T04:56:57.771Z",
+    "updatedAt": "2026-11-07T05:08:26.091Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 1
+    "revision": 4
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "3622c7780",
-        "ranAt": "2026-11-07T04:56:57.771Z",
+        "commit": "816d06a0a",
+        "ranAt": "2026-11-07T05:08:26.091Z",
         "testsPassed": true,
         "tests": [
           {
-            "name": "New packets require a full commit reviewRevision; reject missing/symbolic/unavailable/non-commit pins. Same-attempt replay rejects changed pin; historical completed no-pin records remain readable without granting model execution.",
+            "name": "Required-pin PacketSchema/decodeReview rejects absent or symbolic pins and fresh before blocks; historical schemas decode unchanged old packets.",
             "level": "unit",
             "source": "mapping",
             "cases": [
@@ -51,7 +51,20 @@
             "files": []
           },
           {
-            "name": "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller.",
+            "name": "Pinned commit object and ancestry checks reject unavailable, noncommit or nonancestor input and preserve source/transport/integrity errors.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+                "title": "final pin validates object type and ancestry with truthful source failures",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Original parent, changed-hunk and safe-path validation remains strict; caller-supplied projection metadata is rejected.",
             "level": "unit",
             "source": "mapping",
             "cases": [
@@ -59,15 +72,7 @@
                 "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
                 "title": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes",
                 "result": "pass"
-              }
-            ],
-            "files": []
-          },
-          {
-            "name": "Schema-construction regression: missing reviewRevision is rejected by the actual PacketSchema/decodeReview path, PacketSchema.required includes it, and historical StoredPacketSchema still decodes no-pin records. Cloning/replacing an optional property without rebuilding required must not satisfy this test. [[c2]]",
-            "level": "unit",
-            "source": "mapping",
-            "cases": [
+              },
               {
                 "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
                 "title": "final pin schema requires the pin without mutating historical schemas",
@@ -77,26 +82,54 @@
             "files": []
           },
           {
-            "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope.",
+            "name": "New pinned zero-segment origins reject scope_conflict before source work, checkpoint replacement or provider dispatch; historical metadata decoding remains unchanged.",
             "level": "unit",
             "source": "mapping",
             "cases": [
               {
+                "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "title": "zero-segment fresh admission rejects before history source work, checkpoint replacement or provider dispatch on both routes",
+                "result": "pass"
+              },
+              {
                 "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
-                "title": "final pin validates object type and ancestry with truthful source failures",
+                "title": "selected-change packet preserves deletion rename and non-textual limits without invented ranges",
                 "result": "pass"
               }
             ],
             "files": []
           },
           {
-            "name": "New pinned zero-segment original selections reject field=scope_conflict before checkpoint replacement or provider dispatch; historical no-pin metadata records remain readable without granting new execution. Nonempty origins that become fully superseded still have complete dispositions and findingScope=none. [[c2]] [[c3]] [[c18]]",
+            "name": "Same-attempt resume rejects a changed pin; interrupted no-pin history cannot execute and its checkpoint bytes remain unchanged.",
             "level": "unit",
             "source": "mapping",
             "cases": [
               {
-                "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
-                "title": "final pin validates object type and ancestry with truthful source failures",
+                "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+                "title": "interrupted unpinned attempts remain readable but cannot execute on resume",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Strict pending/accepted/failed and accepted/unmapped schema branches require their own fields and refuse cross-branch fields.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+                "title": "accepted attribution decision unions retain only permitted fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+                "title": "permanent snapshot branches cannot fabricate accepted rows for unmapped failure",
                 "result": "pass"
               }
             ],
@@ -105,10 +138,35 @@
         ],
         "files": [
           {
+            "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2257,
+            "titles": [
+              {
+                "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections",
+                "result": "pass"
+              },
+              {
+                "title": "interrupted unpinned attempts remain readable but cannot execute on resume",
+                "result": "pass"
+              },
+              {
+                "title": "zero-segment fresh admission rejects before history source work, checkpoint replacement or provider dispatch on both routes",
+                "result": "pass"
+              },
+              {
+                "title": "attempt schema compatibility: optional origins and old checkpoint/CR meaning",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1199,
+            "durationMs": 1208,
             "titles": [
               {
                 "title": "final pin schema requires the pin without mutating historical schemas",
@@ -136,6 +194,23 @@
               },
               {
                 "title": "ordinary result normalization retains feedback and conservatively derives incomplete status",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 540,
+            "titles": [
+              {
+                "title": "accepted attribution decision unions retain only permitted fields",
+                "result": "pass"
+              },
+              {
+                "title": "permanent snapshot branches cannot fabricate accepted rows for unmapped failure",
                 "result": "pass"
               }
             ],

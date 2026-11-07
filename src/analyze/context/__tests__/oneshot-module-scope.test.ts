@@ -60,7 +60,7 @@ const RAW = { system: 'sys', focus: 'f', summary: 'sum', structure: 'st', surfac
 const provider = new Proxy({}, { get: (_t, prop) => (prop === 'then' ? undefined : () => { throw new Error(`the tool loop was reached (${String(prop)})`); }) }) as unknown as LLMProvider;
 
 async function lookup(kind: 'module' | 'manifest-dir', value: string, name: string): Promise<{ found: string; repoPath: string; scopeKind: string }> {
-	const plan = { answerType: 'structural-map', synthesisHint: 'h', explorations: [{ id: 'e1', type: 'symbol.locate', purpose: 'p', params: { names: [name], matchMode: 'exact' } }] } as unknown as ExplorationPlan;
+	const plan = { answerType: 'structural-map', synthesisHint: 'h', explorations: [{ id: 'e1', type: 'symbol.locate', purpose: 'p', params: { names: [name], matchMode: 'exact' } }, { id: 'e2', type: 'module.profile', purpose: 'p', params: { path: value } }] } as unknown as ExplorationPlan;
 	let executedSeen: ExecutedPlan | undefined;
 	let seenRepo = '';
 	let seenScope = '';
@@ -82,11 +82,13 @@ test('the one-shot shaper session and executePlan use the containing repository 
 	assert.equal(mod.repoPath, repo);
 	assert.equal(mod.scopeKind, 'module');
 	assert.match(mod.found, /settle\.ts/, 'the symbol lookup found the entity stored under the repository root');
+	assert.match(mod.found, /"entityCount":1\b/, 'the module profile counted the entity stored under the repository root');
 
 	const manifest = await lookup('manifest-dir', join(repo, 'deploy'), 'chart');
 	assert.equal(manifest.repoPath, repo);
 	assert.equal(manifest.scopeKind, 'manifest-dir');
 	assert.match(manifest.found, /chart\.ts/, 'the symbol lookup found the entity stored under the repository root');
+	assert.match(manifest.found, /"entityCount":1\b/, 'the module profile counted the entity stored under the repository root');
 });
 
 test('the one-shot shaper session is keyed on the containing repository for module and manifest-dir scopes, and the area travels as the scope', async () => {

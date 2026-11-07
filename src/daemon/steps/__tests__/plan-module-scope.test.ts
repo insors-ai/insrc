@@ -62,6 +62,8 @@ for (const c of [
 		const text = (envelope.content[0] as { text: string }).text;
 		assert.equal(envelope.isError === true, false, text.slice(0, 300));
 		assert.match(text, c.file, 'the symbol lookup found the entity stored under the repository root');
+		const turn = (JSON.parse(text) as { userTurn: string }).userTurn;
+		assert.match(turn, /"entityCount": 1,/, 'the module profile counted the entity stored under the repository root');
 		assert.match(text, /module\.profile/, 'the module profile ran');
 	});
 }

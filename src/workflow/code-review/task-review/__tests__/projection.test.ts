@@ -185,3 +185,21 @@ test('selected rename then deletion projects absent final blobs and still requir
   packet.reviewSet.pop();await assert.rejects(prepareReviewPacket(packet,f.deps.sources),/scope_conflict/);
  }finally{f.cleanup();}
 });
+
+test('verified rename deletion ignores unrelated and identical recreation at the original pathname',async()=>{
+ for(const replacement of ['export const unrelated = 99;\n','export const total = 2;\n']){
+  const f=await fixture();try{
+   const first=f.packet.reviewSet[0]!.commit;
+   f.git('mv','source.js','moved.js');f.put('moved.js','export const total = 3;\n');f.git('add','moved.js');f.git('commit','-qm','selected move');const move=f.git('rev-parse','HEAD');
+   f.git('rm','moved.js');f.put('source.js',replacement);f.git('add','source.js');f.git('commit','-qm','selected deletion and independent recreated path');const revision=f.git('rev-parse','HEAD');
+   const packet:ReviewPacket={...f.packet,reviewRevision:revision,reviewSet:[...f.packet.reviewSet,
+    {commit:move,parent:first,files:[{path:'moved.js',previousPath:'source.js',segments:[{after:[1,1]}]}]},
+    {commit:revision,parent:move,files:[{path:'moved.js',segments:[{deletionAt:0}]},{path:'source.js',segments:[{after:[1,1]}]}]}]};
+   const result=await prepareReviewPacket(packet,f.deps.sources);
+   assert.deepEqual(result.projection!.entries.map(e=>e.findingScope),['none','none','selected','selected']);
+   assert.ok(result.projection!.entries.slice(0,3).every(e=>e.path==='moved.js'&&e.after===null));
+   assert.equal(result.projection!.entries[3]!.path,'source.js');assert.deepEqual(result.projection!.entries[3]!.segments,[{after:[1,1]}]);
+   packet.reviewSet[2]!.files.shift();await assert.rejects(prepareReviewPacket(packet,f.deps.sources),/scope_conflict/,'recreation cannot substitute for the missing selected deletion witness');
+  }finally{f.cleanup();}
+ }
+});

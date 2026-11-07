@@ -119,10 +119,13 @@ export async function projectFileIntervals(origin: SelectedChange, originChangeI
  const before = lines(origin.after, budget?.decode.bind(budget)), after = lines(final, budget?.decode.bind(budget));
  let changes: readonly ChangedRange[];
  if (origin.after?.oid === final?.oid || (origin.after === null && final === null)) changes = [];
+ else if (final === null) {
+  // Both sides are already verified: the entire original text is gone.
+  // A tree diff at origin.path could read an unrelated replacement file.
+  changes = before.length ? [{ before: [1, before.length], deletionAt: 0 }] : [];
+ }
  else {
-  // Absence at the verified final path has no blob to compare. Diff the
-  // original path's removal; verifiedRuns still checks every original line.
-  changes = await sources.changedRanges(revision, origin.commit, final === null ? [origin.path] : [...new Set([finalPath, origin.path])]);
+  changes = await sources.changedRanges(revision, origin.commit, [...new Set([finalPath, origin.path])]);
   requireReview(changes.length > 0, 'scope_conflict', 'Different committed blobs have no verifiable diff');
  }
  const dispositions = projectIntervals(origin.segments, originChangeIndex, before, after, changes, budget?.fragment.bind(budget));

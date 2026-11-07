@@ -138,6 +138,10 @@
         {
           "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
           "title": "selected later witnesses justify complete supersession and immutable origin accounting"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname"
         }
       ]
     },
@@ -344,6 +348,10 @@
         {
           "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
           "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes"
         }
       ],
       "clarification": "User-approved PLAN revision4/c24: review.maxJsonBytes replaces the fixed JSON bound; each attempt requalifies and a fitting next attempt may require raising the configured capacity. No history rewrite."

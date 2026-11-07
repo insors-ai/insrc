@@ -186,3 +186,44 @@ test('terminal capacity: both routes persist late diagnostics and every outcome 
   }finally{f.cleanup();}
  }
 });
+
+test('terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes',async()=>{
+ const {readFileSync,writeFileSync}=await import('node:fs');const {eventually}=await import('./controller-fixture.js');
+ for(const route of ['daemon','controller']as const)for(const outcome of ['failed','incomplete']as const){
+  const f=await fixture(true,2);let clock=0,expire:(()=>void)|undefined;
+  try{
+   const prior=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),head=JSON.parse(readFileSync(prior.jsonPath,'utf8'));
+   head.meta.capacityPadding='';writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');
+   const review=await pending(f,'unmapped-boundary');review.attempt.header.reviewer=route;const limit=reviewJsonLimit();
+   const bound=Math.max(...terminalCapacity(review,review.capacity!).flatMap(m=>Object.values(m)));
+   head.meta.capacityPadding='x'.repeat(limit-bound);writeFileSync(prior.jsonPath,JSON.stringify(head,null,2)+'\n');review.capacity=await readCapacityBaseline(f.repo,hash,'s1');
+   assert.equal(Math.max(...terminalCapacity(review,review.capacity).flatMap(m=>Object.values(m))),limit);
+   const snapshots=(['claude','codex']as const).map(provider=>({provider,issues:[{code:`ATTRIBUTION_${provider}`,field:'tasks',correction:'Return every selected task.',occurrences:1}],lastRejectedFeedback:{preview:provider==='claude'?'é\n"'.repeat(1000):'x'.repeat(8192),truncated:false}}));
+   const c=new TaskReviewCoordinator({sources:f.deps.sources,now:()=>clock,timer:callback=>{expire=callback;return()=>{};},provider:()=>({capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:import('../../../../shared/types.js').ActivityReviewSessionOpts)=>{
+    assert.ok(prompt.startsWith('Derive task attribution'),'no task assessment may run');
+    assert.equal(f.read(review.path).attempts[0]!.header.attributionState,'pending');
+    for(const diagnostic of snapshots)await opts.onDiagnostic!(diagnostic);
+    if(outcome==='failed')throw new Error('Boundary attribution transport failure');
+    return new Promise((_,reject)=>{opts.signal!.addEventListener('abort',()=>reject(opts.signal!.reason),{once:true});clock+=1800000;expire!();});
+   }} as unknown as import('../../../../shared/types.js').LLMProvider),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{...f.deps,...(baseline?{baseline}:{})})});
+   if(route==='daemon'){await c.start(f.repo,'unmapped-boundary',1,f.packet);await c.settled(f.repo,'unmapped-boundary');}
+   else{
+    const owner={id:'unmapped-boundary-owner',signal:new AbortController().signal};let frame=await c.startController(f.repo,'unmapped-boundary',1,f.packet,owner);
+    assert.equal(frame.kind,'scope');
+    for(const diagnostic of snapshots){await c.controllerActivity(f.repo,'unmapped-boundary',1,{kind:'diagnostic',phase:'attribution',diagnostic},owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});frame={...frame,nextSequence:frame.nextSequence!+1};}
+    if(outcome==='failed')for(let i=0;i<3;i++)frame=await c.controllerScope(f.repo,'unmapped-boundary',1,{tasks:[{taskId:`foreign${i}`,changeIndexes:[0],testIndexes:[0]}]},owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    else{clock+=1800000;expire!();await eventually(()=>f.read(review.path).attempts[0]!['review-response'].crPublication==='complete');}
+   }
+   const entry=f.read(review.path).attempts[0]!,response=entry['review-response'];
+   assert.equal(response.crPublication,'complete');assert.deepEqual(response.tasks.map(t=>t.status),[outcome,outcome]);
+   assert.equal(entry.header.attributionState,'failed');assert.equal(entry.header.acceptedAttribution,undefined);assert.equal(entry.header.taskScopeIdentities,undefined);assert.equal(response.origins,undefined);
+   assert.ok(Buffer.byteLength(entry.header.attributionFailure!.code)<=64);assert.ok(Buffer.byteLength(entry.header.attributionFailure!.summary)<=8192);
+   assert.ok(response.tasks.every(t=>!t.findings.length&&t.testCoverage.assessment==='unverified'));validateFailureDiagnostics(entry);
+   assert.deepEqual(response.failureDiagnostics!.map(d=>({phase:d.phase,taskId:d.taskId,diagnostic:d.diagnostic})),snapshots.map(diagnostic=>({phase:'attribution',taskId:undefined,diagnostic})),'shared diagnostics retained once, not copied per task');
+   for(const path of [review.path,prior.jsonPath])assert.ok(Buffer.byteLength(readFileSync(path,'utf8'))<=limit,`${route}/${outcome} fits`);
+   const summary=f.readRecord(prior.jsonPath).body.reviews.at(-1)!,scope=summary.scope.finalScope!;
+   assert.equal(scope.attributionState,'unmapped_failure');assert.deepEqual(scope.tasks,[]);assert.equal(summary.taskScopeIdentities,undefined);assert.equal(summary.origins,undefined);
+   assert.deepEqual(summary.tasks.map(t=>t.status),[outcome,outcome]);assert.match(summary.summary,/ATTRIBUTION_claude/);assert.match(summary.summary,/ATTRIBUTION_codex/);assert.equal(summary.summary.includes('é'),false);
+  }finally{f.cleanup();}
+ }
+});

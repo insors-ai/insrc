@@ -444,7 +444,11 @@ test('with a stubbed vector search an area passes only candidate ids inside the 
 		assert.equal(embedded > 0, true, 'the query was embedded for the area that has candidates');
 		const insideIds = new Set([inside.id, insideToo.id]);
 		const vectorFilter = asked.at(-1)?.filter as { ids?: Iterable<string> } | undefined;
-		if (vectorFilter?.ids !== undefined) assert.ok([...vectorFilter.ids].every(id => insideIds.has(id)), 'the vector search was offered only the area\'s ids');
+		assert.ok(vectorFilter !== undefined, 'the scoped call reached the vector search');
+		assert.ok(vectorFilter.ids !== undefined, 'the scoped vector search was given a candidate-id filter');
+		assert.deepEqual([...vectorFilter.ids].sort(), [...insideIds].sort(), 'the vector search was offered exactly the area\'s ids, and not the outside section\'s');
+		const wholeFilter = asked[0]?.filter as { ids?: Iterable<string> } | undefined;
+		assert.ok(wholeFilter !== undefined && wholeFilter.ids === undefined, 'without an area the search carries no id filter');
 
 		const fileArea = await retrieveDocSections({ db, query: 'settlement ledger rules', closureRepos: [REPO], area: { file: `${REPO}/docs/pay/one.md` } });
 		assert.deepEqual([...new Set(fileArea.map(r => r.file))], [`${REPO}/docs/pay/one.md`]);

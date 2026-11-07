@@ -177,14 +177,14 @@ export class ConnectionOutsideScopeError extends Error {
 }
 
 /** The code of each of the scope errors, as a request's failure states it. */
-export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch' | 'repo-indexing';
+export type ScopeErrorCode = 'scope-not-indexed' | 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch' | 'repo-indexing' | 'scope-not-found' | 'scope-repo-mismatch';
 
 /** A scope error as a coded failure. `scope-not-indexed` carries the path that
  *  was looked for and the repo it was found registered as, if any. */
 export type ScopeErrorMapping =
 	| { readonly code: 'scope-not-indexed'; readonly message: string; readonly data: { readonly scopePath: string; readonly registeredAs: string | undefined } }
 	| { readonly code: 'repo-indexing'; readonly message: string; readonly data: RepoIndexingData }
-	| { readonly code: 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch'; readonly message: string };
+	| { readonly code: 'scope-ref-unresolved' | 'scope-ref-kind-target-mismatch' | 'scope-not-found' | 'scope-repo-mismatch'; readonly message: string };
 
 /**
  * The ONE mapping from the three scope error classes to their codes. Returns
@@ -203,6 +203,8 @@ export function scopeErrorMapping(err: unknown): ScopeErrorMapping | undefined {
 	if (err instanceof RepoIndexingError) return { code: 'repo-indexing', message: err.message, data: err.data };
 	if (err instanceof ScopeRefUnresolvedError) return { code: 'scope-ref-unresolved', message: err.message };
 	if (err instanceof ScopeKindTargetMismatchError) return { code: 'scope-ref-kind-target-mismatch', message: err.message };
+	if (err instanceof ScopeNotFoundError) return { code: 'scope-not-found', message: err.message };
+	if (err instanceof ScopeRepoMismatchError) return { code: 'scope-repo-mismatch', message: err.message };
 	return undefined;
 }
 

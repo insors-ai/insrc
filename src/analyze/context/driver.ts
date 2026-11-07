@@ -490,6 +490,10 @@ export async function readUnattachedSavedShaperCache(args: ShaperEntryArgs): Pro
 	assertExplicitConnectionExecution(undefined);
 	if (args.opts.connectionExecution !== undefined) throw new ConnectionExecutionError('session-expired');
 	loadAnalyzeConfig();
+	// The saved front door reads the cache first, so a request carrying the call's repository is validated before it.
+	if (args.invocationMode === 'run' && 'intent' in args.inputs && (args.inputs as RunShapeInput).expectedRepo !== undefined) {
+		await prepareScope(args.invocationMode, args.inputs, args.scopeDeps);
+	}
 	const cached = (await prepareShaperCache(args)).cachedBundle;
 	return cached === null ? null : served(cached, args.inputs);
 }
@@ -521,6 +525,13 @@ async function buildShaperBundle(args: RunShaperArgs): Promise<AnalyzeContextBun
 	const cfg = loadAnalyzeConfig();
 	const { promptPath, invocationMode, shaperId, inputs, opts } = args;
 	const runId = opts.runId;
+
+	// A request that carries the call's repository is validated BEFORE the cache is read: a cached
+	// bundle must not be served for a scope the request may not name (nonexistent path, wrong kind,
+	// another repository). A request without one keeps the cache first, as before.
+	if (invocationMode === 'run' && 'intent' in inputs && (inputs as RunShapeInput).expectedRepo !== undefined) {
+		await prepareScope(invocationMode, inputs, args.scopeDeps, execution);
+	}
 
 	const { promptContent, cacheKey, steps, lastIndexedOf, cachedBundle } = await prepareShaperCache(args, execution);
 	if (cachedBundle !== null) return cachedBundle;

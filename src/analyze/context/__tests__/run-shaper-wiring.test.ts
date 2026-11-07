@@ -12,7 +12,7 @@ import { _runShaperAtEntryForTest as runShaper } from '../index.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -41,7 +41,7 @@ import {
 	_computeCacheKeyForTest,
 	_stableStringifyForTest,
 } from '../driver.js';
-import { RepoIndexingError, ScopeKindTargetMismatchError, ScopeNotIndexedError } from '../invariants.js';
+import { RepoIndexingError, ScopeKindTargetMismatchError, ScopeNotFoundError, ScopeNotIndexedError, ScopeRepoMismatchError } from '../invariants.js';
 import { validateBundleWithErrors } from '../schema.js';
 import { _classifyShaperErrorForTest as daemonClassify } from '../../../daemon/analyze-rpc.js';
 import { _classifyShaperErrorForTest as planTreeClassify } from '../../orchestrator/driver.js';
@@ -667,4 +667,42 @@ test('s10 t9: bundle cache stale by docRelationsRevision', async () => {
 	await rebuiltAfter('a second same-named file', async () => {
 		await commitFile({ repoPath: repo, filePath: `${repo}/lib/a.ts`, contentHash: 'h2', relations: [], entities: [fileEntity(`${repo}/lib/a.ts`)] });
 	});
+});
+
+// ---------------------------------------------------------------------------
+// A request's scope is validated before the cache is read (ISSUE-65b643840a294422, t5)
+// ---------------------------------------------------------------------------
+
+test("runShaper: with the call's repository a cached bundle is not served for a nonexistent path, a wrong path kind or a raw '..' path into another registered repository; without it the cache still comes first", async () => {
+	const other = join(sandbox, 'other');
+	mkdirSync(join(other, 'src'), { recursive: true });
+	writeFileSync(join(other, 'src', 'y.ts'), '');
+	await addRepo(null, { path: other, name: other, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+	await upsertEntities(null, [{
+		id: 'e-other', repo: other, file: `${other}/src/y.ts`, kind: 'function', name: 'g',
+		language: 'typescript', startLine: 1, endLine: 3,
+	} as unknown as Entity]);
+
+	const cases: Array<{ kind: 'module' | 'file'; value: string; error: typeof ScopeNotFoundError | typeof ScopeRepoMismatchError }> = [
+		{ kind: 'module', value: `${repo}/src/nope`, error: ScopeNotFoundError },
+		{ kind: 'file', value: `${repo}/src`, error: ScopeNotFoundError },
+		// a raw string: the '..' reaches the code under test unnormalised
+		{ kind: 'file', value: `${repo}/../other/src/y.ts`, error: ScopeRepoMismatchError },
+	];
+	for (const c of cases) {
+		const intent = unfocused({ kind: c.kind, value: c.value });
+		const id = runId(`req-${c.kind}`);
+		await seedBundle(id, intent, { repoPath: repo });
+		// no repository from the call: the cache comes first and the bundle is served
+		const served = await callWith(intent, id, standIns().steps);
+		assert.equal(served.summary, 'CACHED', c.value);
+		// the call's repository: refused before the cache
+		await assert.rejects(
+			runShaper({
+				promptPath: 'prompts/analyze/code.system.md', invocationMode: 'run', shaperId: 'code',
+				inputs: { intent, expectedRepo: repo }, opts: { runId: id }, provider: forbiddenLoop().provider, pipelineSteps: standIns().steps,
+			}),
+			c.error, c.value,
+		);
+	}
 });

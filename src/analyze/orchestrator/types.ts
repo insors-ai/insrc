@@ -283,6 +283,8 @@ export type RunErrorCode =
 	| 'classifier-prompt-missing'
 	| 'scope-ref-unresolved'
 	| 'scope-ref-kind-target-mismatch'
+	| 'scope-not-found'
+	| 'scope-repo-mismatch'
 	| 'invalid-input'
 	// run-bundle shaper (mirrors analyze-rpc.ts error codes)
 	| 'scope-not-indexed'

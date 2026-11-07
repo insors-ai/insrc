@@ -166,6 +166,8 @@ export type AnalyzeRpcErrorCode =
 	| 'classifier-prompt-missing'
 	| 'scope-ref-unresolved'
 	| 'scope-ref-kind-target-mismatch'
+	| 'scope-not-found'
+	| 'scope-repo-mismatch'
 	| 'plan-builder-llm-unavailable'
 	| 'plan-builder-schema-unrecoverable'
 	| 'plan-builder-prompt-missing'

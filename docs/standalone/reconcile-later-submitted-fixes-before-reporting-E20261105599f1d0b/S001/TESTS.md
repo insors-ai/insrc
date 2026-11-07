@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -270,3 +270,38 @@ Run at 2026-11-07T06:47:53.207Z on commit `b7b0e4a5e`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 6 | 2.5 s |  |
+
+## t8
+
+Run at 2026-11-07T08:28:43.788Z on commit `e9117e1ff`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+
+**integration: Exercise 10000-task small-input overflow, exact-fit/one-byte-over, long IDs and escaped/Unicode diagnostics at unchanged 32 KiB aggregate policy with shared bounded failure detail.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain reserved completion space | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | review JSON limit is configurable discoverable live and rejects invalid values | `src/config/__tests__/review.test.ts` |
+| pass | configured review JSON limit reaches decoders checkpoint writers readers projection and CR store | `src/config/__tests__/review.test.ts` |
+
+**integration: Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; capacity-boundary attribution failure publishes all outcomes and permits next attempt; oversized work dispatches/saves nothing.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | terminal capacity: oversized accepted mappings and results cannot consume remaining terminal reserve | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/config/__tests__/review.test.ts` | 0 | 2 | 1.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.9 s |  |

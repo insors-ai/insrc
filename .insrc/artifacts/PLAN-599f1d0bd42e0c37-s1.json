@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794029804912-9a4h7t",
+    "runId": "wf-1794040227324-fv5as4",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-07T05:38:36.092Z",
+    "createdAt": "2026-11-07T08:32:31.107Z",
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 106893,
+    "elapsedMs": 119258,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "599f1d0bd42e0c37",
@@ -30,12 +30,12 @@
       "references": [],
       "attachments": []
     },
-    "revision": 3,
+    "revision": 4,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 3,
-        "contentHash": "fae2b6f6d9cfcdb80056a4bc1cdb49ab563a548f0611e50cb1f4ff580f943df2",
+        "number": 4,
+        "contentHash": "aa504f42f17a78f70a6a30e5f2de1d4f8981d42a7e896a9e7e65ef61a1266fe9",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,21 +45,21 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 3,
+        "revision": 4,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-07T05:41:45.404Z"
+        "at": "2026-11-07T08:33:15.007Z"
       }
     },
-    "rangeBase": "fcdde7b58bd26ed06f86fa732656bcfff3aa2416"
+    "rangeBase": "3a7778b764a059a9d8f0ca5c7ece7251ed5bbbe1"
   },
   "body": {
     "summary": {
       "audience": "technical",
-      "prose": "Review each selected task against one explicit final revision while preserving immutable commit provenance and caller-selected scope. Implement bounded projection, identical native/controller inputs, durable reassessment/recovery and offline final-scope history, then qualify complete terminal storage capacity before coordinated rollout. Ten dependency-ordered tasks cover the approved standalone LLD; all 35 test subjects are mapped explicitly, with no adjacent reliability fixes or live deployment included. Task-level test gates exercise each task's own implementation boundary; testStrategyCoverage retains exact LLD subject text and maps collective coverage across the listed tasks. The independently user-authorized test-only repair expectation correction is baseline maintenance, not an added production scope."
+      "prose": "Review each selected task against one explicit final revision while preserving immutable commit provenance and caller-selected scope. Implement bounded projection, identical native/controller inputs, durable reassessment/recovery and offline final-scope history, then qualify complete terminal storage capacity before coordinated rollout. Ten dependency-ordered tasks cover the approved standalone LLD; all 35 test subjects are mapped explicitly, with no adjacent reliability fixes or live deployment included. Task-level test gates exercise each task's own implementation boundary; testStrategyCoverage retains exact LLD subject text and maps collective coverage across the listed tasks. The independently user-authorized test-only repair expectation correction is baseline maintenance, not an added production scope. User clarification2026-11-07: T8's JSON bound is configurable through review.maxJsonBytes (default4194304). Every attempt requalifies retained history; when a budget is full, raising it may admit a fitting attempt without rewriting history. This supersedes only fixed-capacity language; all35 LLD subjects and other task scopes remain."
     },
     "tasks": [
       {
@@ -323,28 +323,29 @@
       {
         "id": "t8",
         "title": "Full terminal-envelope capacity gates",
-        "summary": "Preflight and requalify complete checkpoint and CR envelopes using real serializers, shared bounded failure factory and remaining terminal reserve.",
+        "summary": "Preflight complete terminal checkpoint/CR envelopes against configurable review.maxJsonBytes, retain full failure/diagnostic capacity, and permit raising the budget without rewriting history.",
         "size": "L",
         "order": 8,
         "dependsOn": [
           "t7"
         ],
         "acceptanceChecks": [
-          "Before admission save/ACK/provider qualify failed and incomplete 4 MiB envelopes including prior history, tasks, snapshots, diagnostics/repair/completion metadata and escaped pretty JSON.",
+          "Before admission save/ACK/provider qualify failed and incomplete envelopes against review.maxJsonBytes (positive safe integer bytes, live configuration, default4MiB), including prior history, tasks, snapshots, diagnostics/repair/completion metadata and escaped pretty JSON.",
           "Store shared failure once with code <=64 and summary <=8192 UTF-8 bytes; preserve 32 KiB diagnostics policy, no trimming/dropping to fit.",
           "Check actual accepted mapping before save and later result/diagnostic growth against remaining terminal reserve; external/storage conflicts explicit.",
-          "Reject oversized 10000-task small-input unit before save/model; exact-fit admitted units can fail attribution, publish all outcomes and permit next attempt."
+          "Reject oversized10000-task small-input units before save/model. Exact-fit admitted units can fail attribution and publish all outcomes. Every next attempt requalifies retained history against the configured limit; refuse explicitly when full, and admit fitting attempts after raising the setting without rewriting history."
         ],
         "derivedFrom": [
           "c8",
           "c21",
           "c22",
-          "c23"
+          "c23",
+          "c24"
         ],
         "tests": [
           {
             "level": "integration",
-            "name": "Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider."
+            "name": "Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves against configurable review.maxJsonBytes (default4MiB), including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider."
           },
           {
             "level": "integration",
@@ -352,7 +353,7 @@
           },
           {
             "level": "integration",
-            "name": "Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; capacity-boundary attribution failure publishes all outcomes and permits next attempt; oversized work dispatches/saves nothing."
+            "name": "Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; boundary failures publish all outcomes, next attempts requalify and can be admitted after raising configured capacity without rewriting history; oversized work dispatches/saves nothing."
           }
         ]
       },
@@ -792,6 +793,11 @@
       "id": "c23",
       "kind": "code",
       "ref": "src/workflow/code-review/task-review/diagnostic-schema.ts"
+    },
+    {
+      "id": "c24",
+      "kind": "stakeholder",
+      "ref": "User clarification 2026-11-07: why 4MB cap? make it configurable"
     }
   ]
 }

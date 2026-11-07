@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 15,
-        "contentHash": "f4b22b328b497d9584bd5ba91680aa473222707064c470756a7932260d3c9909",
-        "at": "2026-11-07T06:49:03.115Z",
+        "number": 16,
+        "contentHash": "0942f20965cef0cdd81ee5a9d533cb8f6878bab125e6137d1d8b0c22ef1e2adb",
+        "at": "2026-11-07T08:29:50.402Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
-    "revision": 15,
-    "updatedAt": "2026-11-07T06:47:53.207Z",
+    "revision": 16,
+    "updatedAt": "2026-11-07T08:28:43.788Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting"
@@ -64,9 +64,13 @@
       {
         "id": "t7",
         "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": false
       }
     ],
-    "summary": "T7 implementation checks passed the first validation; corrected its missing named-test mapping and filled the requested evidence gaps: explicit unpinned fresh refusal, independently rehashed replacement-witness tampering/closure, and native timeout permanent publication. Six final-history integration tests pass, production build and typecheck pass. No review waiver or scope change.",
+    "summary": "T8 qualifies complete failed/incomplete checkpoint and canonical CR envelopes before admission and accepted attribution, retaining remaining-task/32KiB diagnostic capacity and checking actual merged canonical bytes under the store queue. USER REQUIREMENT CHANGE in the current turn: 'why 4MB cap? make it configurable'. Implemented review.maxJsonBytes (4MiB default, positive safe integer, live config reads) consistently across all decoders/checkpoints/snapshots/response schemas/CR writes and capacity gates, registered settings catalog, documented operator use. A next attempt that cannot fit retained history refuses until the configured budget is raised; both-route integration tests show raising to8MiB admits it without rewriting old attempts. Production build passed; 28 focused tests passed. Broad config/task-review sweep:344 pass,1 pre-existing unrelated tools.convertEscalate role/settings mismatch (HEAD package.json declares role absent from HEAD taxonomy); neither file changed. No real ~/.insrc/config.json modified; tests isolate HOME under/tmp.",
     "testRecord": {
       "md": "docs/standalone/reconcile-later-submitted-fixes-before-reporting-E20261105599f1d0b/S001/TESTS.md"
     },
@@ -76,409 +80,507 @@
           "file": ".insrc/artifacts/LLD-599f1d0bd42e0c37-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-599f1d0bd42e0c37-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-599f1d0bd42e0c37-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-599f1d0bd42e0c37-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t10.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t7.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t8.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-599f1d0bd42e0c37-s1-t9.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-599f1d0bd42e0c37-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-599f1d0bd42e0c37-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "docs/standalone/reconcile-later-submitted-fixes-before-reporting-E20261105599f1d0b/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-completion.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/derived-unit.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/documents-contract.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/history-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/history.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/ownership.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/packet-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/policy.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/publication-fixture.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-admission.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/route-documents.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/admission.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/final-scope-contracts.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/packet.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/sources.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/projection-intervals.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/daemon/tools/builtins/git/diff.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/projection.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/assessment.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/policy.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/result-schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/results.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/compatibility.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/recovery.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/attribution-binding.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/checkpoint.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/controller.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/coordinator.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/attribution-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
       },
       {
         "target": {
           "file": "src/workflow/code-review/task-review/execution.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T06:47:53.207Z"
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "docs/daemon.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/config-catalog-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/config/__tests__/review.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/config/config-catalog.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/config/review-defaults.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/config/review.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/task-review-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/artifact-core/store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/capacity.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/final-scope-history.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/publication.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
+      },
+      {
+        "target": {
+          "file": "src/workflow/code-review/task-review/summary.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T08:28:43.788Z"
       }
     ],
-    "commit": "03943cf59"
+    "commit": "e9117e1ff"
   },
   "citations": []
 }

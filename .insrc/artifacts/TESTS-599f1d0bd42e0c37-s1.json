@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 15,
-        "contentHash": "9753472f886f446f07230ded4fe9a09b8ee1aa0685fd50bac413b9bce6db1f72",
-        "at": "2026-11-07T06:47:53.356Z",
+        "number": 16,
+        "contentHash": "b2d0cb2b9d081c7345297ccbc559f0039e435438625fe10ce9c3ef574df7e60b",
+        "at": "2026-11-07T08:28:43.942Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T06:47:53.207Z",
+    "updatedAt": "2026-11-07T08:28:43.788Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 15
+    "revision": 16
   },
   "body": {
     "tasks": [
@@ -876,6 +876,139 @@
               },
               {
                 "title": "final history: replacement witness closure and graph are checked independently of recomputed digests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "e9117e1ff",
+        "ranAt": "2026-11-07T08:28:43.788Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Exercise 10000-task small-input overflow, exact-fit/one-byte-over, long IDs and escaped/Unicode diagnostics at unchanged 32 KiB aggregate policy with shared bounded failure detail.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain reserved completion space",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/review.test.ts",
+                "title": "review JSON limit is configurable discoverable live and rejects invalid values",
+                "result": "pass"
+              },
+              {
+                "file": "src/config/__tests__/review.test.ts",
+                "title": "configured review JSON limit reaches decoders checkpoint writers readers projection and CR store",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; capacity-boundary attribution failure publishes all outcomes and permits next attempt; oversized work dispatches/saves nothing.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: oversized accepted mappings and results cannot consume remaining terminal reserve",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/config/__tests__/review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1481,
+            "titles": [
+              {
+                "title": "review JSON limit is configurable discoverable live and rejects invalid values",
+                "result": "pass"
+              },
+              {
+                "title": "configured review JSON limit reaches decoders checkpoint writers readers projection and CR store",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5879,
+            "titles": [
+              {
+                "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain reserved completion space",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: oversized accepted mappings and results cannot consume remaining terminal reserve",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
                 "result": "pass"
               }
             ],

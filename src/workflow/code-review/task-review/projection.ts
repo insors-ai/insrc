@@ -26,7 +26,7 @@ function boundedSources(source: ReviewSources, budget: ProjectionBudget): Review
  const commits = new Map<string, readonly string[]>(), files = new Map<string, PinnedBlob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>();
  return {
   async commit(oid, field) { if (commits.has(oid)) return commits.get(oid)!; budget.read(); const value = await source.commit(oid, field); commits.set(oid, value); return value; },
-  async file(commit, path) { const key = JSON.stringify([commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); files.set(key, value); return value; },
+  async file(commit, path) { const key = JSON.stringify([commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); if (value) budget.decode(value.bytes.byteLength); files.set(key, value); return value; },
   async changedRanges(commit, parent, paths) { const key = JSON.stringify([commit, parent, paths]); if (diffs.has(key)) return diffs.get(key)!; budget.read(); const value = await source.changedRanges(commit, parent, paths); diffs.set(key, value); return value; },
   async isAncestor(a, b) { const key = JSON.stringify([a, b]); if (ancestors.has(key)) return ancestors.get(key)!; budget.read(); const value = await source.isAncestor(a, b); ancestors.set(key, value); return value; },
  };

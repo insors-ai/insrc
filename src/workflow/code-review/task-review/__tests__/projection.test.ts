@@ -1,16 +1,18 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { renameSync } from 'node:fs';
+import { renameSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fixture } from './publication-fixture.js';
 import { prepareReviewPacket } from '../packet.js';
 import { projectReviewScope, ProjectionBudget, validateProjectionWitnesses } from '../projection.js';
 import { normalizeProjectedSegments } from '../projection-intervals.js';
-import { TaskReviewInputError } from '../contracts.js';
+import { TaskReviewInputError, MAX_REVIEW_JSON_BYTES } from '../contracts.js';
 import type { ReviewPacket } from '../contracts.js';
 import type { ReviewSources } from '../sources.js';
 import { buildDiffArgv, buildStatArgv, gitDiffTool } from '../../../../daemon/tools/builtins/git/diff.js';
+import { checkpointPath } from '../checkpoint.js';
+import { TaskReviewCoordinator } from '../coordinator.js';
 
 async function fixedFixture() {
  const f = await fixture(); const parent = f.packet.reviewSet[0]!.commit;
@@ -68,6 +70,7 @@ test('selected rename chains compare exact blobs independently of rename similar
    { commit: move, parent: first, files: [{ path: 'moved.js', previousPath: 'source.js', segments: [{ after: [1, 1] }] }] },
    { commit: revision, parent: move, files: [{ path: 'final.js', previousPath: 'moved.js', segments: [{ after: [1, 1] }] }] }] };
   const origins = (await prepareReviewPacket(packet, f.deps.sources)).changes;
+  await assert.rejects(projectReviewScope(origins, revision, f.deps.sources, new ProjectionBudget({ bytes: 0 })), error => error instanceof TaskReviewInputError && error.field === 'projection_limit', 'rename verification blobs consume the cumulative budget');
   const result = await projectReviewScope(origins, revision, f.deps.sources);
   assert.deepEqual(result.entries.map(e => e.path), ['final.js', 'final.js', 'final.js']);
   assert.deepEqual(result.entries.map(e => e.findingScope), ['none', 'none', 'selected']);
@@ -113,7 +116,11 @@ test('typed blob diff mode requires both objects and cannot fall back to HEAD or
 test('projection budgets refuse before exceeding limits, preserve source fields and use serial reads', async () => {
  const f = await fixedFixture(); try {
   const origins = (await prepareReviewPacket(f.packet, f.deps.sources)).changes;
-  for (const limits of [{ reads: 0 }, { bytes: 1 }, { fragments: 0 }, { snapshot: 1 }]) await assert.rejects(projectReviewScope(origins, f.revision, f.deps.sources, new ProjectionBudget(limits)), error => error instanceof TaskReviewInputError && error.field === 'projection_limit');
+  const checkpoint = checkpointPath(f.repo, 'publication'), saved = readFileSync(checkpoint, 'utf8');
+  for (const limits of [{ reads: 0 }, { bytes: 1 }, { fragments: 0 }, { snapshot: 1 }]) {
+   await assert.rejects(projectReviewScope(origins, f.revision, f.deps.sources, new ProjectionBudget(limits)), error => error instanceof TaskReviewInputError && error.field === 'projection_limit');
+   assert.equal(readFileSync(checkpoint, 'utf8'), saved, 'projection refusal cannot mutate admitted checkpoints');
+  }
   let active = 0, calls = 0;
   const serial = <A extends unknown[], R>(fn: (...args: A) => Promise<R>) => async (...args: A) => { assert.equal(active++, 0); calls++; try { await Promise.resolve(); return await fn(...args); } finally { active--; } };
   const sources: ReviewSources = { commit: serial(f.deps.sources.commit.bind(f.deps.sources)), file: serial(f.deps.sources.file.bind(f.deps.sources)), changedRanges: serial(f.deps.sources.changedRanges.bind(f.deps.sources)), isAncestor: serial(f.deps.sources.isAncestor.bind(f.deps.sources)) };
@@ -122,6 +129,21 @@ test('projection budgets refuse before exceeding limits, preserve source fields 
    const failure = new TaskReviewInputError(field, 'Existing transport or truncated diff failure');
    await assert.rejects(projectReviewScope(origins, f.revision, { ...sources, changedRanges: async () => { throw failure; } }), error => error === failure);
   }
+ } finally { f.cleanup(); }
+});
+
+test('actual diff truncation stays changes while oversized JSON refuses input before source/provider work', async () => {
+ const f = await fixture(); try {
+  const path = checkpointPath(f.repo, 'publication'), bytes = readFileSync(path, 'utf8');
+  let calls = 0;
+  const unexpected = async (): Promise<never> => { calls++; throw new Error('Unexpected source read'); };
+  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected }, provider: () => { calls++; throw new Error('Unexpected provider'); } });
+  await assert.rejects(coordinator.start(f.repo, 'oversized', 1, { ...f.packet, functionalSummary: 'x'.repeat(MAX_REVIEW_JSON_BYTES) }), error => error instanceof TaskReviewInputError && error.field === 'input');
+  assert.equal(calls, 0); assert.equal(existsSync(checkpointPath(f.repo, 'oversized')), false); assert.equal(readFileSync(path, 'utf8'), bytes);
+  f.put('large.txt', `${'old content\n'.repeat(250000)}`); f.git('add', 'large.txt'); f.git('commit', '-qm', 'large old blob'); const parent = f.git('rev-parse', 'HEAD');
+  f.put('large.txt', `${'new content\n'.repeat(250000)}`); f.git('add', 'large.txt'); f.git('commit', '-qm', 'large new blob'); const commit = f.git('rev-parse', 'HEAD');
+  await assert.rejects(f.deps.sources.changedRanges(commit, parent, ['large.txt']), error => error instanceof TaskReviewInputError && error.field === 'changes');
+  assert.equal(readFileSync(path, 'utf8'), bytes);
  } finally { f.cleanup(); }
 });
 

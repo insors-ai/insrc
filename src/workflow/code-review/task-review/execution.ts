@@ -6,7 +6,8 @@ import type { PreparedReviewPacket } from './packet.js';
 import { saveCheckpoint, loadCheckpoint, CheckpointSaveError } from './checkpoint.js';
 import { aggregateTaskStatus } from './results.js';
 export interface AdmittedReview { path:string;checkpoint:ReviewCheckpoint;attempt:ReviewAttempt;prepared:PreparedReviewPacket; storageFailure?: CheckpointSaveError | undefined; }
-export interface ReviewPersistence { readonly save?:typeof saveCheckpoint|undefined; readonly read?:typeof loadCheckpoint|undefined; readonly publish?:((project:string,id:string,epicHash:string)=>Promise<unknown>)|undefined; }
+export interface AcceptanceFence { readonly prior: ReviewCheckpoint; readonly candidate: ReviewCheckpoint; readonly error: CheckpointSaveError; }
+export interface ReviewPersistence { readonly save?:typeof saveCheckpoint|undefined; readonly read?:typeof loadCheckpoint|undefined; readonly onAcceptanceFailure?: ((fence: AcceptanceFence) => void) | undefined; readonly publish?:((project:string,id:string,epicHash:string)=>Promise<unknown>)|undefined; }
 export async function persistReview(review:AdmittedReview,deps:ReviewPersistence):Promise<void>{if(review.storageFailure)throw review.storageFailure;await(deps.save??saveCheckpoint)(review.path,review.checkpoint);}
 /** No failed acceptance can dispatch or roll back, even if rename made it visible. */
 export async function persistAcceptedAttribution(review: AdmittedReview, deps: ReviewPersistence, prior: ReviewCheckpoint): Promise<void> {
@@ -22,6 +23,7 @@ export async function persistAcceptedAttribution(review: AdmittedReview, deps: R
    if (error.visibleState !== 'unverifiable') { review.checkpoint = visible!; review.attempt = visible!.attempts.at(-1)!; }
   } catch { error.visibleState = 'unverifiable'; }
   error.message += `; visible state ${error.visibleState}; explicit resume required, no automatic retry`;
+  deps.onAcceptanceFailure?.({ prior: structuredClone(prior), candidate, error });
   throw error;
  }
 }

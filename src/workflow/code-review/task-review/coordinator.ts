@@ -23,7 +23,7 @@ import { attributionSchema, attributionPrompt, directReviewAssignments, reviewAs
 import { ControllerTaskReview } from './controller.js';
 import type { ControllerReviewOwner, ControllerFrame } from './controller.js';
 import { completeReview, persistAcceptedAttribution } from './execution.js';
-import type { AdmittedReview } from './execution.js';
+import type { AdmittedReview, AcceptanceFence } from './execution.js';
 
 const log = getLogger('task-review');
 
@@ -42,6 +42,7 @@ interface ActiveReview { checkpoint: ReviewCheckpoint; attempt: ReviewAttempt; d
 export class TaskReviewCoordinator {
  private readonly active = new Map<string, ActiveReview | null>();
  private readonly controllers = new Map<string, ControllerTaskReview>();
+ private readonly storageFences = new Map<string, AcceptanceFence>();
  // Unknown scope during admission blocks cleanup conservatively until pins resolve.
  private readonly storyWork = new Map<string, string | undefined>();
  private readonly cleaning = new Set<string>();
@@ -98,7 +99,7 @@ export class TaskReviewCoordinator {
  async startController(project:string,id:string,attempt:number,input:unknown,owner:ControllerReviewOwner,epicHash?:string,operation?:ReviewOperation):Promise<ControllerFrame>{
   requireReview(owner.signal instanceof AbortSignal&&!owner.signal.aborted&&!owner.requestSignal?.aborted,'reviewer','Disconnected or unsupported controller lifetime');owner.assertReviewer?.();
   const admitted=await this.admit(project,id,attempt,input,'controller',epicHash,operation);
-  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,release:drop=>{if(this.active.get(admitted.path)?.done===controller.done)this.release(admitted.path);if(drop&&this.controllers.get(admitted.path)===controller)this.controllers.delete(admitted.path);}});
+  const controller=new ControllerTaskReview(admitted,owner,{...this.deps,onAcceptanceFailure:fence=>this.storageFences.set(admitted.path,fence),release:drop=>{if(this.active.get(admitted.path)?.done===controller.done)this.release(admitted.path);if(drop&&this.controllers.get(admitted.path)===controller)this.controllers.delete(admitted.path);}});
   this.controllers.set(admitted.path,controller);this.active.set(admitted.path,{checkpoint:admitted.checkpoint,attempt:admitted.attempt,done:controller.done});
   return controller.assignment(owner);
  }
@@ -138,6 +139,11 @@ export class TaskReviewCoordinator {
   this.reserve(path, scope); // Reserve before any awaited admission or provider use.
   try {
    const admitted = await prepareReviewAdmission(project, reviewId, attempt, input, reviewer, this.deps.sources, { epicHash, operation });
+   const fence=this.storageFences.get(admitted.path);
+   if(fence){
+    const visible=await loadCheckpoint(admitted.path);
+    if(operation!=='resume'||!visible||(!isDeepStrictEqual(visible,fence.prior)&&!isDeepStrictEqual(visible,fence.candidate)))throw fence.error;
+   }
    this.storyWork.set(path, this.storyKey(project, admitted.prepared.epicHash, admitted.checkpoint.storyId));
    if (operation === 'resume' && admitted.attempt['review-response'].crPublication === 'complete') return admitted;
    if (admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) preflight?.();
@@ -145,6 +151,7 @@ export class TaskReviewCoordinator {
     admitted.attempt.header.status = 'pending'; delete admitted.attempt.header.interrupted; delete admitted.attempt.header.activeTaskId; delete admitted.attempt.header.completedAt;
    }
    await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
+   this.storageFences.delete(admitted.path);
    return admitted;
   } catch (error) { this.release(path); throw error; }
  }
@@ -153,6 +160,7 @@ export class TaskReviewCoordinator {
   const path = checkpointPath(project, reviewId);
   requireReview(!this.active.has(path), 'reviewId', 'already-running');
   this.controllers.delete(path);
+  this.storageFences.delete(path);
  }
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */
  isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }
@@ -214,7 +222,7 @@ export class TaskReviewCoordinator {
      if(direct){
       const prior=structuredClone(lastDurable);
       const bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,direct));
-      try{await persistAcceptedAttribution(review,{...this.deps,save},prior);}catch(error){persistenceError=error;cancellation.abort(error);throw error;}
+      try{await persistAcceptedAttribution(review,{...this.deps,save,onAcceptanceFailure:fence=>this.storageFences.set(path,fence)},prior);}catch(error){persistenceError=error;cancellation.abort(error);throw error;}
       assignments=bound;
      }
      if(!assignments){
@@ -229,7 +237,7 @@ export class TaskReviewCoordinator {
         catch (failure) { persistenceError=failure; throw failure; }
         throw error;
        }
-       resolveFailureDiagnostics(entry,'attribution');try{await persistAcceptedAttribution(review,{...this.deps,save},prior);}catch(error){
+       resolveFailureDiagnostics(entry,'attribution');try{await persistAcceptedAttribution(review,{...this.deps,save,onAcceptanceFailure:fence=>this.storageFences.set(path,fence)},prior);}catch(error){
         if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
         if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
         assignments=undefined;persistenceError=error;cancellation.abort(error);throw error;

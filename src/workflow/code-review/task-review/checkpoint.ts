@@ -28,13 +28,30 @@ export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint,
  requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
  const temporary = `${path}.${randomUUID()}.tmp`;
  let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;
+ const identity = async (): Promise<string | null | undefined> => {
+  let handle;
+  try { handle = await io.open(path, constants.O_RDONLY | constants.O_NOFOLLOW); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null; throw error; }
+  try { const stat = await handle.stat({ bigint: true }); return stat.ino > 0n ? `${stat.dev}:${stat.ino}` : undefined; }
+  finally { await handle.close(); }
+ };
  try {
   await io.mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  const priorIdentity = await identity();
   const file = await io.open(temporary, 'wx', 0o600); created = true;
-  try { await file.writeFile(serialized); await file.sync(); } catch (cause) { failure = { cause }; }
+  let temporaryIdentity: string | undefined;
+  try { await file.writeFile(serialized); await file.sync(); const stat = await file.stat({ bigint: true }); if(stat.ino > 0n)temporaryIdentity = `${stat.dev}:${stat.ino}`; } catch (cause) { failure = { cause }; }
   try { await file.close(); } catch (cause) { failure ??= { cause }; }
   if (failure) throw failure.cause;
-  renameStarted = true; await io.rename(temporary, path); replaced = true;
+  renameStarted = true;
+  try { await io.rename(temporary, path); replaced = true; }
+  catch (cause) {
+   // Under the caller's review ownership, inode identity establishes visible
+   // replacement without guessing from errno or exception text. Failure to
+   // establish either identity remains uncertain (including failed readback).
+   try { const visible = await identity(); if (temporaryIdentity!==undefined&&temporaryIdentity!==priorIdentity&&visible===temporaryIdentity) replaced = true; else if (priorIdentity!==undefined&&priorIdentity!==temporaryIdentity&&visible===priorIdentity) renameStarted = false; } catch { /* outcome remains unknown */ }
+   throw cause;
+  }
   const directory = await io.open(dirname(path), 'r');
   try { await directory.sync(); }
   catch (cause) { if (!['EINVAL', 'ENOTSUP', 'EISDIR'].includes((cause as NodeJS.ErrnoException).code ?? '')) failure = { cause }; }

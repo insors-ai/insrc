@@ -8,6 +8,7 @@ import { checkpointPath, saveCheckpoint, loadCheckpoint, CheckpointSaveError } f
 import type { CheckpointIO } from '../checkpoint.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import { historyFixture } from './history-fixture.js';
+import type { ReviewCheckpoint } from '../contracts.js';
 
 test('checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures', async () => {
  const f = await fixture(); try {
@@ -17,20 +18,24 @@ test('checkpoint writer classifies pre-replacement, visible replacement and unce
    const fault = new Error(`Injected ${stage}`);
    const io: CheckpointIO = { mkdir: async (...args) => { if (stage === 'mkdir') throw fault; return mkdir(...args); },
     open: async (...args) => {
-     const directory = args[1] === 'r'; if (stage === (directory ? 'directory-open' : 'file-open')) throw fault;
+     const directory = args[1] === 'r', temporary = args[1] === 'wx'; if (directory && stage === 'directory-open' || temporary && stage === 'file-open') throw fault;
      const handle = await open(...args);
      return new Proxy(handle, { get(target, property) {
       if (property === 'writeFile' && stage === 'write') return async () => { throw fault; };
       if (property === 'sync' && stage === (directory ? 'directory-sync' : 'file-sync')) return async () => { throw fault; };
-      if (property === 'close' && stage === (directory ? 'directory-close' : 'file-close')) return async () => { await target.close(); throw fault; };
+      if (property === 'close' && (directory && stage === 'directory-close' || temporary && stage === 'file-close')) return async () => { await target.close(); throw fault; };
       const value = Reflect.get(target, property, target); return typeof value === 'function' ? value.bind(target) : value;
      } });
     }, rename: async (...args) => { if (stage === 'rename-before') throw fault; await rename(...args); if (stage === 'rename-after') throw fault; },
     unlink: async (...args) => { if (stage === 'cleanup') throw fault; return unlink(...args); } };
-   const expected = stage.startsWith('rename-') ? 'uncertain' : stage.startsWith('directory-') || stage === 'cleanup' ? 'replaced' : 'not_replaced';
+   const expected = stage === 'rename-after' || stage.startsWith('directory-') || stage === 'cleanup' ? 'replaced' : 'not_replaced';
    await assert.rejects(saveCheckpoint(path, candidate, io), error => error instanceof CheckpointSaveError && error.outcome === expected && error.cause === fault, stage);
    assert.deepEqual(await loadCheckpoint(path), ['rename-after', 'directory-open', 'directory-sync', 'directory-close', 'cleanup'].includes(stage) ? candidate : prior);
   }
+  const path = checkpointPath(f.repo, 'rename-unknown'), prior = f.checkpoint('rename-unknown'); await saveCheckpoint(path, prior);
+  let rejected = false;
+  const unknown: CheckpointIO = { mkdir, unlink, rename: async () => { rejected = true; throw new Error('Unknown rename result'); }, open: async (...args) => { if (rejected) throw new Error('Readback unavailable'); return open(...args); } };
+  await assert.rejects(saveCheckpoint(path, prior, unknown), error => error instanceof CheckpointSaveError && error.outcome === 'uncertain');
  } finally { f.cleanup(); }
 });
 
@@ -46,7 +51,7 @@ test('unsupported directory sync retains successful-save policy and cleanup neve
    await saveCheckpoint(path, state, io); assert.deepEqual(await loadCheckpoint(path), state);
   }
   let collision = '';
-  const io: CheckpointIO = { mkdir, rename, unlink, open: async (...args) => { collision = String(args[0]); await writeFile(collision, 'unowned collision'); throw Object.assign(new Error('exists'), { code: 'EEXIST' }); } };
+  const io: CheckpointIO = { mkdir, rename, unlink, open: async (...args) => { if(args[1]!=='wx')return open(...args);collision = String(args[0]); await writeFile(collision, 'unowned collision'); throw Object.assign(new Error('exists'), { code: 'EEXIST' }); } };
   await assert.rejects(saveCheckpoint(checkpointPath(f.repo, 'collision'), f.checkpoint('collision'), io), error => error instanceof CheckpointSaveError && error.outcome === 'not_replaced');
   assert.equal(await readFile(collision, 'utf8'), 'unowned collision');
  } finally { f.cleanup(); }
@@ -135,6 +140,73 @@ test('failed mixed-plan acceptance dispatches neither an immediate reuse nor a f
    assert.equal(saved.attempts[1]!.header.attributionState, 'accepted');
    assert.equal(saved.attempts[1]!.header.acceptedAttribution![0]!.decision.action, 'reuse');
    assert.equal(saved.attempts[1]!['review-response'].origins, undefined); assert.deepEqual(saved.attempts[1]!['review-response'].tasks, []);
+  } finally { f.cleanup(); }
+ }
+});
+
+test('later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored', async () => {
+ for (const party of ['daemon', 'controller'] as const) {
+  const f = await fixture(); let fault = true, calls = 0, candidate: ReviewCheckpoint | undefined;
+  const path = checkpointPath(f.repo, 'consistent-conflict');
+  const coordinator = new TaskReviewCoordinator({ sources: f.deps.sources, save: async (file, state) => {
+   if (fault && state.reviewId === 'consistent-conflict' && state.attempts[0]!.header.attributionState === 'accepted') {
+    fault = false; candidate = structuredClone(state);
+    const conflicting = structuredClone(state); conflicting.attempts[0]!['review-response'].summary = 'Structurally valid third state';
+    await saveCheckpoint(file, conflicting); throw new CheckpointSaveError('uncertain', new Error('Conflicting visible state'));
+   }
+   await saveCheckpoint(file, state);
+  }, provider: () => provider(async () => { calls++; return f.result; }) });
+  const resume = () => party === 'daemon' ? coordinator.start(f.repo, 'consistent-conflict', 1, undefined, { operation: 'resume' })
+   : coordinator.startController(f.repo, 'consistent-conflict', 1, undefined, { id: 'resumed', signal: new AbortController().signal }, hash, 'resume');
+  try {
+   if (party === 'daemon') { await coordinator.start(f.repo, 'consistent-conflict', 1, f.packet); await coordinator.settled(f.repo, 'consistent-conflict'); }
+   else await assert.rejects(coordinator.startController(f.repo, 'consistent-conflict', 1, f.packet, { id: 'first', signal: new AbortController().signal }), CheckpointSaveError);
+   assert.ok(candidate); const conflicting = await readFile(path, 'utf8');
+   assert.ok(await loadCheckpoint(path), 'the third state passes schema and binding checks');
+   await assert.rejects(resume(), CheckpointSaveError); assert.equal(await readFile(path, 'utf8'), conflicting); assert.equal(calls, 0);
+   const bad = structuredClone(candidate); bad.attempts[0]!.header.attributionIdentity = 'f'.repeat(64); await writeFile(path, JSON.stringify(bad));
+   await assert.rejects(resume(), /binding mismatch/); assert.equal(calls, 0);
+   await saveCheckpoint(path, candidate);
+   const commit = f.packet.reviewSet[0]!.commit, object = `${f.repo}/.git/objects/${commit.slice(0,2)}/${commit.slice(2)}`, original = await readFile(object); await unlink(object);
+   await assert.rejects(resume(), /source|commit|unavailable/); assert.equal(calls, 0); await writeFile(object, original);
+   if (party === 'daemon') { await resume(); await coordinator.settled(f.repo, 'consistent-conflict'); assert.equal(calls, 1); }
+   else {
+    const owner = { id: 'restored', signal: new AbortController().signal }, frame = await coordinator.startController(f.repo, 'consistent-conflict', 1, undefined, owner, hash, 'resume');
+    await coordinator.controllerResult(f.repo, 'consistent-conflict', 1, f.result, owner, { taskId: frame.taskId, executionId: frame.executionId, sequence: frame.nextSequence });
+   }
+   assert.deepEqual((await loadCheckpoint(path))!.attempts[0]!.header.acceptedAttribution, candidate.attempts[0]!.header.acceptedAttribution);
+  } finally { f.cleanup(); }
+ }
+});
+
+test('a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits', async () => {
+ for (const party of ['daemon', 'controller'] as const) {
+  const f = await fixture(true, 3); let fail = true, attributionCalls = 0, proposed: ReviewCheckpoint | undefined;
+  const first = { tasks: ['t1','t2','t3'].map(taskId => ({ taskId, changeIndexes: [0], testIndexes: [0] })) };
+  const second = { tasks: first.tasks.map(row => row.taskId === 't1' ? { ...row, changeIndexes: [], testIndexes: [] } : row) };
+  const coordinator = new TaskReviewCoordinator({ sources: f.deps.sources, save: async (path, state) => {
+   if (fail && state.reviewId === 'pending-recovery' && state.attempts[0]!.header.attributionState === 'accepted') {
+    fail = false; proposed = structuredClone(state); throw new CheckpointSaveError('not_replaced', new Error('Failed before replacement'));
+   }
+   await saveCheckpoint(path, state);
+  }, provider: () => provider(async prompt => { if (prompt.startsWith('Derive task attribution')) return ++attributionCalls === 1 ? first : second; return { ...f.result, taskId: /"taskId":"(t\d+)"/.exec(prompt)![1]! }; }) });
+  try {
+   if (party === 'daemon') { await coordinator.start(f.repo, 'pending-recovery', 1, f.packet); await coordinator.settled(f.repo, 'pending-recovery'); }
+   else {
+    const owner = { id: 'first', signal: new AbortController().signal }, frame = await coordinator.startController(f.repo, 'pending-recovery', 1, f.packet, owner);
+    await assert.rejects(coordinator.controllerScope(f.repo, 'pending-recovery', 1, first, owner, { taskId: frame.taskId, executionId: frame.executionId, sequence: frame.nextSequence }), CheckpointSaveError);
+   }
+   const path = checkpointPath(f.repo, 'pending-recovery'), pending = (await loadCheckpoint(path))!;
+   assert.equal(pending.attempts[0]!.header.attributionState, 'pending'); assert.equal(pending.attempts[0]!.header.acceptedAttribution, undefined);
+   if (party === 'daemon') { assert.equal(attributionCalls, 1); await coordinator.start(f.repo, 'pending-recovery', 1, undefined, { operation: 'resume' }); await coordinator.settled(f.repo, 'pending-recovery'); assert.equal(attributionCalls, 2); }
+   else {
+    const owner = { id: 'resumed', signal: new AbortController().signal }, frame = await coordinator.startController(f.repo, 'pending-recovery', 1, undefined, owner, hash, 'resume'); assert.equal(frame.kind, 'scope');
+    let task = await coordinator.controllerScope(f.repo, 'pending-recovery', 1, second, owner, { taskId: frame.taskId, executionId: frame.executionId, sequence: frame.nextSequence });
+    while (task.kind === 'task') task = await coordinator.controllerResult(f.repo, 'pending-recovery', 1, { ...f.result, taskId: task.taskId! }, owner, { taskId: task.taskId, executionId: task.executionId, sequence: task.nextSequence });
+   }
+   const accepted = (await loadCheckpoint(path))!.attempts[0]!.header;
+   assert.deepEqual(accepted.acceptedAttribution![0]!.changeIndexes, []);
+   assert.notDeepEqual(accepted.acceptedAttribution, proposed!.attempts[0]!.header.acceptedAttribution, 'an unsaved candidate was never accepted authority');
   } finally { f.cleanup(); }
  }
 });

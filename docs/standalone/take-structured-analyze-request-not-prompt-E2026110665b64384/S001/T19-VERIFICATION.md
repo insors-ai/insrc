@@ -33,11 +33,22 @@ By cause: the review engine being rebuilt in another session (handlers throw `PE
 (`workflow/artifacts/provenance/writer.js`, `workflow/review-pipeline/call-events.ts`); tests out of date with
 their code; shutdown and watchdog lifecycle tests.
 
-Not from this Story and not inherited from the baseline: `task-review-plan-path` passes on `d923f91dc` and fails
-at HEAD. The cause is the `reviewRevision` full-commit pin check in `task-review/contracts.ts`, added by the other
-session's commit `1a761053e` after the baseline; the test expects the older message. Not checked against the baseline
-because it was not run there: `provider-bypass-audit`, `role-router-global-tiers`, `code-review-rpc-fallback`
-(excluded as a hang) and `search-filter` (hang) were not compared per file.
+Every failing file was run on its own at HEAD and on a detached checkout of `d923f91dc`, and the failure counts
+compared. Identical except as noted:
+
+- Same count on both: all the files named above, plus `review-stream` (16, the `T11` tests), `provider-bypass-audit`,
+  `role-router-global-tiers`, `daemon-doc-repo-table`, `handler-runtime`, `lifecycle-wiring`, `model-literal-scan`,
+  `repo-completeness`, `review-resolve-daemon`, `workflow-review-rpc`, `daemon-stream-utf8`, `import-graph`,
+  `mcp-process-e2e`, `present-steering`, `repo-schema-guard`, `schema-registry`. `code-review-freshness-request`,
+  `code-review-rpc` and `search-guard` fail to load on both (no test count).
+- Excluded from the suite runs because they do not finish, and identical on both commits when run alone:
+  `search-filter` (hangs, killed at 70 s), `code-review-rpc-fallback` (aborts, exit 134), `peer-state-store-leakfree`
+  (hangs).
+- Pass when run alone at HEAD, so only failed inside the combined run: `search-request-contract`,
+  `shutdown-store-failure` (it fails 3 on the baseline).
+- Not inherited from the baseline, and not from this Story: `task-review-plan-path`. It passes at `d923f91dc` and at
+  `3622c7780^`, and fails at `3622c7780` (the other session's `s1/t1 require final review pins`), so that commit
+  broke it: the test expects the message from before the `reviewRevision` full-commit pin check.
 
 ## Live runs against the updated daemon
 

@@ -31,6 +31,7 @@ test('the injected skeleton from steering-block.md, the template and both tool d
 		assert.match(injected, /Send a structured `request`, not just the prompt/);
 		assert.match(injected, /request: \{ question, scopeRef: \{ kind, value \}/);
 		assert.match(injected, /ABSOLUTE path/);
+		assert.match(injected, /a symbol as `<absolute file path>#<entity name>` \(a bare name is not accepted\)/);
 		assert.match(injected, /scope-not-found/);
 		assert.match(injected, /scope-repo-mismatch/);
 		assert.match(injected, /A `focus`-only call still works/);

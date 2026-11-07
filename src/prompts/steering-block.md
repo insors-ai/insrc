@@ -68,7 +68,8 @@ a call from memory when the contract is one lookup away.
     yourself and decide what it is about, then call `insrc_analyze_step` (or
     `insrc_analyze`) with `request: { question, scopeRef: { kind, value },
     target?, sizeHint?, context? }`. `scopeRef` names what to analyse: a
-    module or file as an ABSOLUTE path, a symbol by name, or the repo; use
+    module or file as an ABSOLUTE path, a symbol as
+    `<absolute file path>#<entity name>` (a bare name is not accepted), or the repo; use
     `workspace` only when the prompt names no area. Put background the user
     gave that bears on the answer in `context` (it never decides the scope).
     The daemon checks the scope against the repository and answers

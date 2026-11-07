@@ -117,7 +117,7 @@ const ANALYZE_REQUEST = z.object({
 	scopeRef: z.object({
 		kind:  z.enum(['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace']),
 		value: z.string().min(1)
-			.describe('An absolute path for module / file / manifest-dir, a symbol name, a connection name, or the repo path.'),
+			.describe('An absolute path for module / file / manifest-dir; for a symbol, `<absolute file path>#<entity name>` (a bare name is not accepted); a connection name; or the repo path.'),
 	}).describe('What to analyse. Decide it from the prompt; use `workspace` only when the prompt names no area.'),
 	target: z.enum(['code', 'docs', 'data', 'infra', 'generic']).optional()
 		.describe('Optional target hint; defaults to code.'),

@@ -95,8 +95,8 @@ test('selected-change packet: commit pointers, exact ranges, committed documents
   const unsafe = structuredClone(f.packet); unsafe.reviewSet[0]!.files[0]!.path = '../secret'; assert.throws(() => parsePacket(unsafe), /relative/);
   const missing = structuredClone(f.packet); missing.documents.lld.path = 'missing.json'; await assert.rejects(prepareReviewPacket(missing, f.sources), /Missing committed/);
   const missingTest = structuredClone(f.packet); missingTest.tests[0]!.file = 'missing-test.ts'; await assert.rejects(prepareReviewPacket(missingTest, f.sources), /Test file/);
-  const root = structuredClone(f.packet); root.reviewSet = [{ commit: f.base, parent: null, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }];
-  assert.equal((await prepareReviewPacket(root, f.sources)).changes[0]!.before, null);
+  const root = structuredClone(f.packet); root.reviewRevision = f.base; root.reviewSet = [{ commit: f.base, parent: null, files: [{ path: 'src/a.ts', segments: [{ after: [1, 1] }] }] }];
+  assert.equal((await prepareReviewPacket(root, f.sources)).originChanges[0]!.before, null);
  } finally { f.cleanup(); }
 });
 

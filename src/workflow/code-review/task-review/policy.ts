@@ -2,7 +2,7 @@ import { previousRoundFeedback } from './previous-round-feedback.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { resultReferences } from './record.js';
 import type { AdmittedReview } from './execution.js';
-import { selectedCode } from './packet.js';
+import { selectedCode, originalChange } from './packet.js';
 import type { PreparedReviewPacket, TaskAssignment } from './packet.js';
 
 export const TASK_REVIEW_POLICY = `Review actual changed implementation against requirements, design and acceptance checks. Mandatory review scope: inspect ALL submitted in-scope changed code/modules, requirements and acceptance checks, and relevant test coverage (test bodies/assertions against required behavior). Do not skip any module or required coverage assessment because of time, size, difficulty, missing access or another reason; report any such omission in limitations and return incomplete. A verified testCoverage assessment means that the coverage review itself is complete and evidence-backed; it does not mean the reviewer executed tests, and demonstrated missing/incorrect tests are findings rather than an excuse to skip the coverage assessment.
@@ -18,12 +18,17 @@ export function codeTaskCommands(prepared: PreparedReviewPacket, review?: Admitt
   if (!/\s/.test(`${doc.commit}:${doc.path}`) && safe.test(command)) commands.push(command);
  }
  for (const change of prepared.changes) {
-  for (const [oid, path] of [[change.commit, change.path], [change.parent, change.previousPath]]) {
+  const origin = originalChange(change);
+  for (const [oid, path] of [[change.commit, change.path], [origin.commit, origin.path], [origin.parent, origin.previousPath]]) {
    if (oid && path && !/\s/.test(path) && safe.test(`git show ${oid}:${path}`)) {
     commands.push(`git show ${oid}:${path}`);
     commands.push(`git --no-pager log --no-ext-diff --no-textconv -p -n 20 ${oid} -- ${path}`);
    }
   }
+ }
+ if (prepared.packet.reviewRevision) for (const test of prepared.packet.tests) {
+  const read = `git show ${prepared.packet.reviewRevision}:${test.file}`;
+  if (!/\s/.test(test.file) && safe.test(read)) commands.push(read);
  }
  for (const pointer of prepared.packet.reviewSet) for (const test of prepared.packet.tests) {
   for (const oid of [pointer.commit, pointer.parent]) if (oid) {

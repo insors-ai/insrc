@@ -70,7 +70,7 @@ test('deletion anchors preserve empty-file zero and mark touched boundaries for 
 test('committed projection uses identical-blob fast path and ignores HEAD/worktree changes', async () => {
  const f = await fixture();
  try {
-  const prepared = await prepareReviewPacket(f.packet, f.deps.sources), origin = prepared.changes[0]!;
+  const prepared = await prepareReviewPacket(f.packet, f.deps.sources), origin = prepared.originChanges[0]!;
   let diffs = 0;
   const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: f.deps.sources.file.bind(f.deps.sources), changedRanges: async (...args) => { diffs++; return f.deps.sources.changedRanges(...args); } };
   const identity = await projectFileIntervals(origin, 0, origin.commit, origin.path, sources);
@@ -93,7 +93,7 @@ test('projection refuses malformed or omitted changes, invalid UTF-8 and binary 
  assert.throws(() => normalizeProjectedSegments([{ after: [2, 1] }]), /scope_conflict/);
  const f = await fixture();
  try {
-  const origin = (await prepareReviewPacket(f.packet, f.deps.sources)).changes[0]!;
+  const origin = (await prepareReviewPacket(f.packet, f.deps.sources)).originChanges[0]!;
   for (const bytes of [new Uint8Array([255]), new Uint8Array([0])]) {
    let diffs = 0;
    const sources: ReviewSources = { commit: f.deps.sources.commit.bind(f.deps.sources), isAncestor: f.deps.sources.isAncestor.bind(f.deps.sources), file: async () => ({ bytes, oid: 'f'.repeat(40) }), changedRanges: async () => { diffs++; return []; } };

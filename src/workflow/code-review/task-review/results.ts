@@ -2,11 +2,10 @@
 import { isDeepStrictEqual } from 'node:util';
 import { decodeReview, requireReview, TaskResultSchema } from './contracts.js';
 import type { TaskReviewResult, TaskResultOrigin, ReviewerParty } from './contracts.js';
-import type { SelectedChange } from './packet.js';
 
 export interface TaskResultScope {
  readonly taskId: string;
- readonly changes: readonly Pick<SelectedChange, 'path' | 'previousPath' | 'segments'>[];
+ readonly changes: readonly { readonly path: string; readonly previousPath?: string | undefined; readonly findingScope?: 'selected' | 'none' | undefined; readonly segments: readonly { readonly before?: readonly [number, number] | undefined; readonly after?: readonly [number, number] | undefined; readonly deletionAt?: number | undefined }[] }[];
  /** Resolved source/test/document references supplied by the host, including any permitted extra context. */
  readonly evidenceReferences: readonly string[];
 }
@@ -24,8 +23,10 @@ export function validateTaskResult(input: unknown, scope: TaskResultScope): Task
   const path = location?.[1] ?? finding.location;
   const start = Number(location?.[2]), end = Number(location?.[3] ?? location?.[2]);
   requireReview(scope.changes.some(c => {
+   if (c.findingScope === 'none') return false;
+   if (c.findingScope === 'selected' && path !== c.path) return false;
    if (path !== c.path && !(path === c.previousPath && (!c.segments.length || c.segments.some(s => s.before)))) return false;
-   if (!c.segments.length) return !location;
+   if (!c.segments.length) return c.findingScope === undefined && !location;
    return location && Number.isSafeInteger(start) && Number.isSafeInteger(end) && end >= start && c.segments.some(s =>
     [s.before, s.after].some(r => r && start >= r[0] && end <= r[1]) || (s.deletionAt !== undefined && start === Math.max(1, s.deletionAt) && end === start));
   }), 'location', 'Finding is outside the submitted changed segments');

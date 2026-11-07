@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "63e8001479831fbe3211ca7eafcf325d823e7ead6776c9e90cdb7e709a84cd1c",
-        "at": "2026-11-07T05:33:45.216Z",
+        "number": 8,
+        "contentHash": "77edff6dcaad190bc6058738e6840d5fb9402b9b5fbd1403e36d3079bda0fc4c",
+        "at": "2026-11-07T05:42:10.307Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T05:33:45.029Z",
+    "updatedAt": "2026-11-07T05:42:10.173Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 7
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -339,8 +339,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "1c50bcfb5",
-        "ranAt": "2026-11-07T05:33:45.029Z",
+        "commit": "fcdde7b58",
+        "ranAt": "2026-11-07T05:42:10.173Z",
         "testsPassed": true,
         "tests": [
           {
@@ -436,7 +436,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2336,
+            "durationMs": 2558,
             "titles": [
               {
                 "title": "selected later witnesses justify complete supersession and immutable origin accounting",
@@ -456,6 +456,10 @@
               },
               {
                 "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "title": "identical final blobs cannot hide an unselected rename-away and recreation",
                 "result": "pass"
               },
               {

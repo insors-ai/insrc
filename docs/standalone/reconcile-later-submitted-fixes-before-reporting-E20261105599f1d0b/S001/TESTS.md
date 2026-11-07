@@ -98,7 +98,7 @@ Run at 2026-11-07T05:14:21.146Z on commit `3a632606b`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-07T05:33:45.029Z on commit `1c50bcfb5`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T05:42:10.173Z on commit `fcdde7b58`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: Selected later ancestor-verified witnesses justify full/partial replacement or deletion; unknown, cyclic or backward witnesses and out-of-set overwrite reject.**
 
@@ -135,4 +135,4 @@ Run at 2026-11-07T05:33:45.029Z on commit `1c50bcfb5`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 9 | 2.3 s |  |
+| `src/workflow/code-review/task-review/__tests__/projection.test.ts` | 0 | 10 | 2.6 s |  |

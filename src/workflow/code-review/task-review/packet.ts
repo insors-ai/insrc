@@ -10,6 +10,8 @@ import type { CommittedDocument, ReviewPacket, StoredDerived, SubmittedTestDetai
 import type { PinnedBlob, ReviewSources } from './sources.js';
 import { DOCUMENT_ROLES, requiredDocumentRoles } from './route.js';
 import type { DocumentRole, StoryRoute } from './route.js';
+import type { EffectiveTaskChange, ReviewProjection } from './final-scope-contracts.js';
+import { projectReviewScope, ProjectionBudget, boundedProjectionSources } from './projection.js';
 
 const utf8 = (blob: PinnedBlob): string => new TextDecoder('utf-8', { fatal: true }).decode(blob.bytes);
 export interface SelectedChange {
@@ -18,10 +20,14 @@ export interface SelectedChange {
  readonly before: PinnedBlob | null; readonly after: PinnedBlob | null; readonly limitations: readonly string[];
 }
 export interface PreparedReviewPacket {
- readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly SelectedChange[]; readonly tasks: readonly PlanTask[];
+ readonly epicHash: string; readonly packet: ReviewPacket; readonly changes: readonly ReviewChange[]; readonly tasks: readonly PlanTask[];
+ readonly originChanges: readonly SelectedChange[];
+ readonly projection?: ReviewProjection | undefined;
  readonly documents: Readonly<Partial<Record<DocumentRole, string>>>;
  readonly derived?: StoredDerived | undefined;
 }
+export type ReviewChange = SelectedChange | EffectiveTaskChange;
+export function originalChange(change: ReviewChange): SelectedChange { return 'origin' in change ? change.origin : change; }
 function head(text: string): Record<string, unknown> {
  let value: unknown;
  try { value = JSON.parse(text); } catch { requireReview(false, 'documents', 'Malformed committed artifact JSON'); }
@@ -119,6 +125,8 @@ async function storedDocuments(packet: ReviewPacket, stored: StoredDerived, sour
 }
 export async function prepareReviewPacket(input: unknown, sources: ReviewSources, historical = false, route?: StoryRoute, stored?: StoredDerived): Promise<PreparedReviewPacket> {
  const packet = parsePacket(input, historical);
+ const budget = packet.reviewRevision ? new ProjectionBudget() : undefined;
+ if (budget) sources = boundedProjectionSources(sources, budget);
  if (packet.reviewRevision !== undefined) {
   await sources.commit(packet.reviewRevision, 'reviewRevision');
   for (const pointer of packet.reviewSet) {
@@ -187,18 +195,20 @@ export async function prepareReviewPacket(input: unknown, sources: ReviewSources
   derived = { epicHash: hash, unit: { id: unit.id, title: unit.title, summary: unit.summary, size: unit.size, acceptanceChecks: [...unit.acceptanceChecks] } };
   requireReview(!packet.taskId || packet.taskId === unit.id, 'taskId', 'Task is not in the review');
  }
- const revisions = [...new Set(packet.reviewSet.flatMap(c => [c.commit, ...(c.parent ? [c.parent] : [])]))];
+ const revisions = [...new Set([...(packet.reviewRevision ? [packet.reviewRevision] : []), ...packet.reviewSet.flatMap(c => [c.commit, ...(c.parent ? [c.parent] : [])])])];
  for (const test of packet.tests) {
   requireReview(test.evidenceReferences.length > 0 || test.result === 'not_run', 'tests', 'Reported execution needs provenance');
   let found = false;
   for (const revision of revisions) if (await sources.file(revision, test.file)) { found = true; break; }
   requireReview(found, 'tests', 'Test file is absent from the supplied committed source');
  }
- return { epicHash: hash, packet, changes, tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
+ const projection = packet.reviewRevision ? await projectReviewScope(changes, packet.reviewRevision, sources, budget) : undefined;
+ const effective: readonly ReviewChange[] = projection ? projection.entries.map(entry => ({ ...entry, origin: changes[entry.originChangeIndex]! })) : changes;
+ return { epicHash: hash, packet, changes: effective, originChanges: changes, ...(projection ? { projection } : {}), tasks, ...(derived ? { derived } : {}), documents: Object.fromEntries(Object.entries(docs).map(([role, doc]) => [role, doc.text])) as Partial<Record<DocumentRole, string>> };
 }
 /** Internal derivation output, not additional submitter input or a model-facing persistence protocol. */
 export interface TaskAttribution { taskId: string; changeIndexes: readonly number[]; testIndexes: readonly number[]; }
-export interface TaskAssignment { readonly taskId: string; readonly size: PlanTask['size']; readonly timeoutMs: number; readonly changes: readonly SelectedChange[]; readonly tests: readonly SubmittedTestDetail[]; readonly acceptanceChecks: readonly string[]; readonly reassessment?: { readonly action: 'reassess' | 'reuse'; readonly reason: string; readonly sourceAttempt?: number | undefined } | undefined; }
+export interface TaskAssignment { readonly taskId: string; readonly size: PlanTask['size']; readonly timeoutMs: number; readonly changes: readonly ReviewChange[]; readonly tests: readonly SubmittedTestDetail[]; readonly acceptanceChecks: readonly string[]; readonly reassessment?: { readonly action: 'reassess' | 'reuse'; readonly reason: string; readonly sourceAttempt?: number | undefined } | undefined; }
 export function deriveTaskAssignments(prepared: PreparedReviewPacket, attribution: readonly TaskAttribution[]): readonly TaskAssignment[] {
  const selected = prepared.tasks.filter(t => !prepared.packet.taskId || t.id === prepared.packet.taskId).sort((a, b) => a.order - b.order);
  requireReview(attribution.length === selected.length && new Set(attribution.map(a => a.taskId)).size === selected.length, 'attribution', 'Every applicable task needs exactly one derived scope');
@@ -206,6 +216,10 @@ export function deriveTaskAssignments(prepared: PreparedReviewPacket, attributio
  const assignments = selected.map(task => {
   const scope = attribution.find(a => a.taskId === task.id);
   requireReview(scope, 'attribution', 'Unknown or missing task scope');
+  requireReview(new Set(scope.changeIndexes).size === scope.changeIndexes.length && new Set(scope.testIndexes).size === scope.testIndexes.length, 'attribution', 'Duplicate change or test index');
+  for (const disposition of prepared.projection?.dispositions ?? []) if (scope.changeIndexes.includes(disposition.source.changeIndex)) {
+   requireReview(disposition.replacementWitnesses.every(w => scope.changeIndexes.includes(w.changeIndex)), 'attribution', 'Task scope omits a required replacement witness');
+  }
   const changes = scope.changeIndexes.map(i => { requireReview(Number.isSafeInteger(i) && prepared.changes[i], 'attribution', 'Unknown selected change'); covered.add(i); return prepared.changes[i]!; });
   const tests = scope.testIndexes.map(i => { requireReview(Number.isSafeInteger(i) && prepared.packet.tests[i], 'attribution', 'Unknown test'); assignedTests.add(i); return prepared.packet.tests[i]!; });
   return { taskId: task.id, size: task.size, timeoutMs: { S: 300000, M: 600000, L: 900000 }[task.size], changes, tests, acceptanceChecks: task.acceptanceChecks };
@@ -217,12 +231,14 @@ export function deriveTaskAssignments(prepared: PreparedReviewPacket, attributio
 }
 
 /** Model input contains selected reviewed-version text only, never full blobs or prior code. */
-export function selectedCode(change: SelectedChange) {
- const text = change.after && change.segments.some(segment => segment.after) ? utf8(change.after) : '';
+export function selectedCode(change: ReviewChange) {
+ const segments: readonly { after?: readonly [number, number] | undefined; deletionAt?: number | undefined }[] = change.segments;
+ const text = change.after && segments.some(segment => segment.after) ? utf8(change.after) : '';
  const lines = text.split('\n');
- return { commit: change.commit, parent: change.parent, path: change.path, previousPath: change.previousPath,
-  blocks: change.segments.map(segment => segment.after
+ const provenance = 'origin' in change ? { origin: { commit: change.origin.commit, parent: change.origin.parent, path: change.origin.path, previousPath: change.origin.previousPath, segments: change.origin.segments }, findingScope: change.findingScope } : { parent: change.parent, previousPath: change.previousPath, limitations: change.limitations };
+ return { commit: change.commit, path: change.path, ...provenance,
+  blocks: segments.map(segment => segment.after
    ? { lines: segment.after, code: lines.slice(segment.after[0] - 1, segment.after[1]).join('\n') + (segment.after[1] < lines.length ? '\n' : '') }
    : { deletionAt: segment.deletionAt, deleted: true }),
-  deletedFile: change.after === null, limitations: change.limitations };
+  deletedFile: change.after === null };
 }

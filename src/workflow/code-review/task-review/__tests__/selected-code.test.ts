@@ -67,6 +67,8 @@ test('immutable historical before/after packets remain resumable but cannot be s
  const f = await fixture();
  try {
   const checkpoint = f.checkpoint('old-packet');
+  delete checkpoint.attempts[0]!.submitted.reviewRevision;
+  checkpoint.attempts[0]!.header.status = 'passed';
   checkpoint.attempts[0]!.submitted.reviewSet[0]!.files[0]!.segments[0]!.before = [1, 1];
   const path = checkpointPath(f.repo, 'old-packet');
   await saveCheckpoint(path, checkpoint);
@@ -74,7 +76,7 @@ test('immutable historical before/after packets remain resumable but cannot be s
   const resumed = await prepareReviewAdmission(f.repo, 'old-packet', 1, undefined, 'daemon', f.deps.sources, { operation: 'resume' });
   assert.deepEqual(resumed.attempt.submitted, checkpoint.attempts[0]!.submitted);
   assert.equal(readFileSync(path, 'utf8'), before);
-  await assert.rejects(prepareReviewAdmission(f.repo, 'new-packet', 1, checkpoint.attempts[0]!.submitted, 'daemon', f.deps.sources), /Unexpected property|Before-version/);
+  await assert.rejects(prepareReviewAdmission(f.repo, 'new-packet', 1, { ...checkpoint.attempts[0]!.submitted, reviewRevision: f.packet.reviewRevision }, 'daemon', f.deps.sources), /Unexpected property|Before-version/);
  } finally { f.cleanup(); }
 });
 

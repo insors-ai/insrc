@@ -22,14 +22,17 @@ export class ProjectionBudget {
  metadata(value: unknown): void { this.metadataBytes += Buffer.byteLength(JSON.stringify(value)); requireReview(this.metadataBytes <= this.limits.snapshot, 'projection_limit', 'Projection metadata limit'); }
 }
 /** All callers await these reads serially; cache only successfully verified reads. */
-function boundedSources(source: ReviewSources, budget: ProjectionBudget): ReviewSources {
+const sourceBudgets = new WeakMap<ReviewSources, ProjectionBudget>();
+export function boundedProjectionSources(source: ReviewSources, budget: ProjectionBudget): ReviewSources {
+ if (sourceBudgets.get(source) === budget) return source;
  const commits = new Map<string, readonly string[]>(), files = new Map<string, PinnedBlob | null>(), diffs = new Map<string, readonly ChangedRange[]>(), ancestors = new Map<string, boolean>();
- return {
+ const wrapped: ReviewSources = {
   async commit(oid, field) { if (commits.has(oid)) return commits.get(oid)!; budget.read(); const value = await source.commit(oid, field); commits.set(oid, value); return value; },
   async file(commit, path) { const key = JSON.stringify([commit, path]); if (files.has(key)) return files.get(key)!; budget.read(); const value = await source.file(commit, path); if (value) budget.decode(value.bytes.byteLength); files.set(key, value); return value; },
   async changedRanges(commit, parent, paths) { const key = JSON.stringify([commit, parent, paths]); if (diffs.has(key)) return diffs.get(key)!; budget.read(); const value = await source.changedRanges(commit, parent, paths); diffs.set(key, value); return value; },
   async isAncestor(a, b) { const key = JSON.stringify([a, b]); if (ancestors.has(key)) return ancestors.get(key)!; budget.read(); const value = await source.isAncestor(a, b); ancestors.set(key, value); return value; },
  };
+ sourceBudgets.set(wrapped, budget); return wrapped;
 }
 function covers(target: ReviewedSegment, scopes: readonly ReviewedSegment[]): boolean {
  if ('deletionAt' in target) return scopes.some(s => 'deletionAt' in s && s.deletionAt === target.deletionAt);
@@ -101,7 +104,7 @@ export async function validateProjectionWitnesses(origins: readonly SelectedChan
 }
 export async function projectReviewScope(origins: readonly SelectedChange[], revision: string, source: ReviewSources, budget = new ProjectionBudget()): Promise<ReviewProjection> {
  requireReview(origins.length > 0 && origins.length <= 10000, 'scope_conflict', 'Invalid origin count');
- const sources = boundedSources(source, budget);
+ const sources = boundedProjectionSources(source, budget);
  await sources.commit(revision, 'reviewRevision');
  for (const origin of origins) { await sources.commit(origin.commit); requireReview(await sources.isAncestor(origin.commit, revision), 'reviewRevision.ancestry', 'Origin is not an ancestor of final revision'); }
  const files = [];

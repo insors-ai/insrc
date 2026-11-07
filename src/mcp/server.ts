@@ -107,6 +107,27 @@ const SERVER_INFO = {
 // ---------------------------------------------------------------------------
 
 /**
+ * The structured request an agent builds from the user's prompt: the question,
+ * the scope it names, and background. Both analyze tools take it; the daemon
+ * checks the scope against the repository and the file system.
+ */
+const ANALYZE_REQUEST = z.object({
+	question: z.string().min(1)
+		.describe('What to answer, in the user\'s words or tightened by you. Not the whole conversation.'),
+	scopeRef: z.object({
+		kind:  z.enum(['repo', 'module', 'file', 'symbol', 'connection', 'manifest-dir', 'workspace']),
+		value: z.string().min(1)
+			.describe('An absolute path for module / file / manifest-dir, a symbol name, a connection name, or the repo path.'),
+	}).describe('What to analyse. Decide it from the prompt; use `workspace` only when the prompt names no area.'),
+	target: z.enum(['code', 'docs', 'data', 'infra', 'generic']).optional()
+		.describe('Optional target hint; defaults to code.'),
+	sizeHint: z.enum(['XS', 'S', 'M', 'L', 'XL']).optional()
+		.describe('Optional. The size you expect; a hint only, as the size is measured.'),
+	context: z.string().max(4000).optional()
+		.describe('Optional background the user gave that bears on the answer (at most 4000 characters). It never decides the scope.'),
+});
+
+/**
  * Input schema for `insrc_analyze`. Kept small on purpose -- most
  * runs need only `focus` + an inferred repo. Extra knobs
  * (`target`, `scope`, `answerType`) exist so a caller who knows
@@ -126,12 +147,19 @@ const ANALYZE_INPUT = {
 	focus: z.string()
 		.min(1)
 		.describe(
-			'One-line natural-language framing of what to analyze. E.g. ' +
+			'Prompt-only fallback: one-line natural-language framing of what to analyze, run over the whole workspace. E.g. ' +
 			'"map the payable extraction module", "does the CLAUDE.md Haiku ' +
 			'rule hold?", or "list every registered data source". The ' +
 			'framework\'s classifier turns this into a structured intent + ' +
 			'picks a deterministic recipe.',
+		)
+		.optional(),
+	request: ANALYZE_REQUEST.optional()
+		.describe(
+			'Preferred over `focus`: the structured request built from the user\'s prompt (question, scopeRef, optional target, sizeHint, context). ' +
+			'Send `request` or `focus`, not both with different text; `target` and `scope` are ignored when `request` is sent.',
 		),
+
 	target: z.enum(['code', 'docs', 'data', 'infra', 'generic'])
 		.describe(
 			'Optional target hint. Skip the classifier\'s target inference ' +
@@ -241,6 +269,10 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'intents, prefer the sibling tool `insrc_analyze_step` -- it ' +
 				'hands narrow-LLM reasoning to YOUR model in-session (better ' +
 				'accuracy, no subprocess spawns, no separate billing).\n\n' +
+				'Read the user\'s prompt yourself and send a structured `request`: ' +
+				'the `question`, the `scopeRef` it names (a module or file path, a ' +
+				'symbol, a repo) and any `context`. Send `focus` alone only for a ' +
+				'question about the whole workspace.\n\n' +
 				'Prefer either analyze tool over Read/Grep/Glob for:\n' +
 				'  - "map / explore <module>"\n' +
 				'  - "does the codebase already do <X>?"\n' +
@@ -286,7 +318,9 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				'  - You want to answer using the citation-grounded analyze ' +
 				'framework rather than manual grep + read.\n\n' +
 				'Multi-turn loop:\n\n' +
-				'  1. Call phase=\'start\' with the user\'s focus. Server returns\n' +
+				'  1. Call phase=\'start\' with a `request` built from the user\'s prompt\n' +
+				'     (question + scopeRef), or `focus` alone for a whole-workspace\n' +
+				'     question. Server returns\n' +
 				'     { next: \'emit_plan\', prompt, schema, state }.\n' +
 				'  2. Follow the prompt to emit a JSON object matching the schema\n' +
 				'     (the ExplorationPlan). Then call phase=\'plan\' with your\n' +
@@ -320,8 +354,10 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 					),
 				// start-only inputs
 				focus: z.string().min(1)
-					.describe('Only for phase=start. Natural-language framing of what to analyze.')
+					.describe('Only for phase=start. Prompt-only fallback: natural-language framing of what to analyze, over the whole workspace. Prefer `request`.')
 					.optional(),
+				request: ANALYZE_REQUEST.optional()
+					.describe('Only for phase=start. Preferred over `focus`: the structured request built from the user\'s prompt (question, scopeRef, optional target, sizeHint, context). `target` and `scope` are ignored when it is sent.'),
 				repo: z.string()
 					.describe('Only for phase=start. Absolute repo path; falls back to INSRC_REPO env.')
 					.optional(),

@@ -19,7 +19,7 @@ import type { ReviewSources } from './sources.js';
 import { assessTaskResult, attributionSchema, attributionPrompt, directReviewAssignments, reviewAssignments, reuseAssessment, taskFailure, taskReferences } from './assessment.js';
 import { assignmentPrompt } from './policy.js';
 import { assignmentResultSchema } from './result-schema.js';
-import { completeReview, persistReview } from './execution.js';
+import { completeReview, persistReview, persistAcceptedAttribution } from './execution.js';
 import type { AdmittedReview, ReviewPersistence } from './execution.js';
 
 /** Trusted in-process transport lifetime, never accepted from caller JSON. */
@@ -42,6 +42,7 @@ export class ControllerTaskReview {
  private resolveDone!:()=>void;
  private tail:Promise<unknown>=Promise.resolve();
  private assignments:readonly TaskAssignment[]|undefined;
+ private lastDurable:ReviewCheckpoint;
  private monitor:ReviewActivityMonitor|undefined;
  private executionId:string|undefined;
  private sequence=0;
@@ -50,8 +51,9 @@ export class ControllerTaskReview {
  private stopped=false;
  private readonly selected:readonly PlanTask[];
  constructor(private readonly review:AdmittedReview,private readonly owner:ControllerReviewOwner,private readonly deps:ControllerDeps){
+  this.lastDurable=structuredClone(review.checkpoint);
   this.progress=new ReviewProgressTracker(deps.now?{now:deps.now,wall:()=>new Date().toISOString()}:undefined);
-  this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:()=>persistReview(this.review,this.deps)});
+  this.progressPersistence=new ReviewProgressPersistence(review.attempt,this.progress,{serial:work=>this.queue(undefined,work),save:async()=>{await persistReview(this.review,this.deps);this.lastDurable=structuredClone(this.review.checkpoint);}});
   this.done=new Promise(resolve=>{this.resolveDone=resolve;});
   this.selected=review.prepared.tasks.filter(task=>!review.prepared.packet.taskId||task.id===review.prepared.packet.taskId).sort((a,b)=>a.order-b.order);
   const disconnect=()=>{if(this.finished){this.retire(true);return;}void this.queue(undefined,()=>this.stop()).catch(error=>log.warn({error:String(error)},'Controller interruption could not be persisted'));};
@@ -61,6 +63,7 @@ export class ControllerTaskReview {
  scope(input:unknown,owner:ControllerReviewOwner,envelope:unknown):Promise<ControllerFrame>{return this.exchange('scope',input,owner,envelope,async()=>{
   requireReview(!this.assignments&&!directReviewAssignments(this.review),'scope','Task attribution is not awaiting a response');
   this.checkTime();
+  const previous=structuredClone(this.lastDurable);
   let assignments:readonly TaskAssignment[];
   try{
    requireReview((this.review.attempt.header.attributionRepair?.rejections ?? 0) < MAX_ATTRIBUTION_SUBMISSIONS,'attribution','Attribution correction budget exhausted');
@@ -76,7 +79,7 @@ export class ControllerTaskReview {
   }
   this.checkTime();
   const priorDiagnostics=this.review.attempt['review-response'].failureDiagnostics;
-  resolveFailureDiagnostics(this.review.attempt,'attribution');try{await this.persist();}catch(error){
+  resolveFailureDiagnostics(this.review.attempt,'attribution');try{await this.accept(previous);}catch(error){
    if(priorDiagnostics)this.review.attempt['review-response'].failureDiagnostics=priorDiagnostics;else delete this.review.attempt['review-response'].failureDiagnostics;
    throw error;
   }
@@ -166,11 +169,11 @@ export class ControllerTaskReview {
   this.assertOwner(owner);
   if(!this.monitor){
    this.executionId=randomUUID();this.sequence=0;
-   const restored=this.assignments??await restoreAcceptedAssignments(this.review), direct=restored?undefined:directReviewAssignments(this.review);
+   const prior=structuredClone(this.lastDurable),restored=this.assignments??await restoreAcceptedAssignments(this.review), direct=restored?undefined:directReviewAssignments(this.review);
    const candidate=restored??(direct?await bindTaskFinalIdentities(this.review,assignmentsToRows(this.review,direct)):undefined);
    this.progress.task(task,this.selected.indexOf(task)+1,this.selected.length,this.review.attempt['review-response'].tasks.length);
    this.review.attempt.header.status='running';this.review.attempt.header.activeTaskId=task.id;
-   await this.persist();
+   if(direct)await this.accept(prior);else await this.persist();
    this.assignments=candidate;
    const executionId=this.executionId;
    this.monitor=new ReviewActivityMonitor(error=>{void this.queue(undefined,async()=>{
@@ -220,7 +223,12 @@ export class ControllerTaskReview {
   if(!this.finished&&!this.stopped){this.progress.phase('interrupted');this.progress.stopped();this.review.attempt.header.interrupted=true;await this.persist();}
   this.retire(true);
  }
- private async persist():Promise<void>{this.progressPersistence.boundary();await persistReview(this.review,this.deps);}
+ private async persist():Promise<void>{this.progressPersistence.boundary();await persistReview(this.review,this.deps);this.lastDurable=structuredClone(this.review.checkpoint);}
+ private async accept(prior:ReviewCheckpoint):Promise<void>{
+  this.progressPersistence.boundary();
+  try{await persistAcceptedAttribution(this.review,this.deps,prior);this.lastDurable=structuredClone(this.review.checkpoint);}
+  catch(error){this.retire(true);throw error;}
+ }
  private async complete():Promise<void>{
   this.progressPersistence.stop();this.progress.phase('cr_publication',this.review.attempt['review-response'].tasks.length);this.progress.stopped();
   await this.persist();await completeReview(this.review,this.deps);

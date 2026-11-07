@@ -12,25 +12,38 @@ export function checkpointPath(project: string, id: string): string {
  requireReview(/^[a-zA-Z0-9][a-zA-Z0-9_-]{0,127}$/.test(id), 'reviewId', 'Expected a literal review identifier');
  return join(project, '.insrc/tmp/code-review', `${id}.json`);
 }
+export type CheckpointSaveOutcome = 'not_replaced' | 'replaced' | 'uncertain';
+export class CheckpointSaveError extends Error {
+ visibleState?: 'candidate' | 'prior' | 'unverifiable';
+ constructor(readonly outcome: CheckpointSaveOutcome, cause: unknown) {
+  super(`Checkpoint save failed (${outcome}): ${cause instanceof Error ? cause.message : String(cause)}`, { cause }); this.name = 'CheckpointSaveError';
+ }
+}
+const defaultIO = { open, mkdir, rename, unlink };
+export type CheckpointIO = typeof defaultIO;
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
-export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint): Promise<void> {
+export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
  const serialized = JSON.stringify(decodeReview(CheckpointSchema, checkpoint), null, 2) + '\n';
  requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
- await mkdir(dirname(path), { recursive: true, mode: 0o700 });
  const temporary = `${path}.${randomUUID()}.tmp`;
- let failed = false;
+ let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;
  try {
-  const file = await open(temporary, 'wx', 0o600);
-  try { await file.writeFile(serialized); await file.sync(); }
-  finally { await file.close(); }
-  await rename(temporary, path);
-  const directory = await open(dirname(path), 'r');
+  await io.mkdir(dirname(path), { recursive: true, mode: 0o700 });
+  const file = await io.open(temporary, 'wx', 0o600); created = true;
+  try { await file.writeFile(serialized); await file.sync(); } catch (cause) { failure = { cause }; }
+  try { await file.close(); } catch (cause) { failure ??= { cause }; }
+  if (failure) throw failure.cause;
+  renameStarted = true; await io.rename(temporary, path); replaced = true;
+  const directory = await io.open(dirname(path), 'r');
   try { await directory.sync(); }
-  catch (error) { if (!['EINVAL', 'ENOTSUP', 'EISDIR'].includes((error as NodeJS.ErrnoException).code ?? '')) throw error; }
-  finally { await directory.close(); }
- } catch (error) { failed = true; throw error; }
- finally { await unlink(temporary).catch(error => { if (!failed && error.code !== 'ENOENT') throw error; }); }
+  catch (cause) { if (!['EINVAL', 'ENOTSUP', 'EISDIR'].includes((cause as NodeJS.ErrnoException).code ?? '')) failure = { cause }; }
+  try { await directory.close(); } catch (cause) { failure ??= { cause }; }
+ } catch (cause) { failure ??= { cause }; }
+ finally {
+  if (created) try { await io.unlink(temporary); } catch (cause) { if ((cause as NodeJS.ErrnoException).code !== 'ENOENT') failure ??= { cause }; }
+ }
+ if (failure) throw new CheckpointSaveError(replaced ? 'replaced' : renameStarted ? 'uncertain' : 'not_replaced', failure.cause);
 }
 
 /** Missing is valid for first admission; symlinks and oversized/corrupt files are not. */

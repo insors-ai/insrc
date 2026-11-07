@@ -22,7 +22,7 @@ import { assignmentResultSchema } from './result-schema.js';
 import { attributionSchema, attributionPrompt, directReviewAssignments, reviewAssignments, reuseAssessment, taskReferences, assessTaskResult, taskFailure } from './assessment.js';
 import { ControllerTaskReview } from './controller.js';
 import type { ControllerReviewOwner, ControllerFrame } from './controller.js';
-import { completeReview } from './execution.js';
+import { completeReview, persistAcceptedAttribution } from './execution.js';
 import type { AdmittedReview } from './execution.js';
 
 const log = getLogger('task-review');
@@ -31,6 +31,7 @@ export interface TaskReviewDeps {
  readonly sources: ReviewSources;
  readonly provider: () => LLMProvider;
  readonly save?: typeof saveCheckpoint;
+ readonly read?: typeof loadCheckpoint;
  readonly publish?: ((project: string, reviewId: string, epicHash: string) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
@@ -158,7 +159,11 @@ export class TaskReviewCoordinator {
  async settled(project: string, reviewId: string): Promise<void> { await this.active.get(checkpointPath(project, reviewId))?.done; }
  private async run(path: string, checkpoint: ReviewCheckpoint, entry: ReviewAttempt, prepared: PreparedReviewPacket, resolveProvider: () => LLMProvider): Promise<void> {
   const review:AdmittedReview={path,checkpoint,attempt:entry,prepared};
-  const save = this.deps.save ?? saveCheckpoint;
+  let lastDurable=structuredClone(checkpoint);
+  const save:typeof saveCheckpoint=async(savedPath,state,io)=>{
+   if(review.storageFailure)throw review.storageFailure;
+   const snapshot=structuredClone(state);await(this.deps.save??saveCheckpoint)(savedPath,snapshot,io);lastDurable=snapshot;
+  };
   const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined);
   const active=this.active.get(path); if(active)active.progress=tracker;
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
@@ -207,13 +212,14 @@ export class TaskReviewCoordinator {
      if(attributionFailure)throw attributionFailure.error;
      const direct=directReviewAssignments(review);
      if(direct){
+      const prior=structuredClone(lastDurable);
       const bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,direct));
-      try{await save(path,checkpoint);}catch(error){persistenceError=error;throw error;}
+      try{await persistAcceptedAttribution(review,{...this.deps,save},prior);}catch(error){persistenceError=error;cancellation.abort(error);throw error;}
       assignments=bound;
      }
      if(!assignments){
       const acceptScope=(raw:unknown)=>serial(async()=>{
-       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary;
+       check();const priorDiagnostics=entry['review-response'].failureDiagnostics,priorSummary=entry.header.reassessmentSummary,prior=structuredClone(lastDurable);
        let bound:readonly TaskAssignment[];
        try { bound=await bindTaskFinalIdentities(review,assignmentsToRows(review,reviewAssignments(review,raw))); }
        catch (error) {
@@ -223,10 +229,10 @@ export class TaskReviewCoordinator {
         catch (failure) { persistenceError=failure; throw failure; }
         throw error;
        }
-       resolveFailureDiagnostics(entry,'attribution');try{await save(path,checkpoint);}catch(error){
+       resolveFailureDiagnostics(entry,'attribution');try{await persistAcceptedAttribution(review,{...this.deps,save},prior);}catch(error){
         if(priorDiagnostics)entry['review-response'].failureDiagnostics=priorDiagnostics;else delete entry['review-response'].failureDiagnostics;
         if(priorSummary!==undefined)entry.header.reassessmentSummary=priorSummary;else delete entry.header.reassessmentSummary;
-        assignments=undefined;persistenceError=error;throw error;
+        assignments=undefined;persistenceError=error;cancellation.abort(error);throw error;
        }
        assignments=bound;
        return{accepted:true};

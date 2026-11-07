@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 10,
-        "contentHash": "4167d63266eb72f00fa46f7c1a26f348555069380bc8e1a8604b0a24d07eee08",
-        "at": "2026-11-07T05:54:35.353Z",
+        "number": 11,
+        "contentHash": "d7b53520deb56062a1ba9e5a387a079eeb9b32fc01907a58f344e7acf7bc7512",
+        "at": "2026-11-07T06:09:49.290Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T05:54:35.209Z",
+    "updatedAt": "2026-11-07T06:09:49.147Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 10
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -573,6 +573,93 @@
               },
               {
                 "title": "renamed final paths alone authorize findings; previousPath remains provenance context",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "a937e90c0",
+        "ranAt": "2026-11-07T06:09:49.147Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Canonical accepted task rows, decisions, task identities and summary persist before ACK/reuse/dispatch even without diagnostics.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Canonical final-attribution-v1 binding detects changed indexes, selectedTaskIds, testCount, state or decisions; shared valid rows and empty scopes remain valid.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Task identities bind final relevant source, requirements/doc identities and full assigned tests; unrelated global pin movement permits reuse while changed relevant inputs or wrong party/source ordinal reject.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "After loss of memory restore exact mixed reassess/reuse action/reason/sourceAttempt and summary without attribution rediscovery; no completed origin is fabricated before actual reuse completion.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3522,
+            "titles": [
+              {
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              },
+              {
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              },
+              {
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
                 "result": "pass"
               }
             ],

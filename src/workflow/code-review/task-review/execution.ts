@@ -1,12 +1,30 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile } from 'node:fs/promises';
+import { isDeepStrictEqual } from 'node:util';
 import type { ReviewCheckpoint, ReviewAttempt } from './contracts.js';
 import type { PreparedReviewPacket } from './packet.js';
-import { saveCheckpoint } from './checkpoint.js';
+import { saveCheckpoint, loadCheckpoint, CheckpointSaveError } from './checkpoint.js';
 import { aggregateTaskStatus } from './results.js';
-export interface AdmittedReview { path:string;checkpoint:ReviewCheckpoint;attempt:ReviewAttempt;prepared:PreparedReviewPacket; }
-export interface ReviewPersistence { readonly save?:typeof saveCheckpoint|undefined; readonly publish?:((project:string,id:string,epicHash:string)=>Promise<unknown>)|undefined; }
-export async function persistReview(review:AdmittedReview,deps:ReviewPersistence):Promise<void>{await(deps.save??saveCheckpoint)(review.path,review.checkpoint);}
+export interface AdmittedReview { path:string;checkpoint:ReviewCheckpoint;attempt:ReviewAttempt;prepared:PreparedReviewPacket; storageFailure?: CheckpointSaveError | undefined; }
+export interface ReviewPersistence { readonly save?:typeof saveCheckpoint|undefined; readonly read?:typeof loadCheckpoint|undefined; readonly publish?:((project:string,id:string,epicHash:string)=>Promise<unknown>)|undefined; }
+export async function persistReview(review:AdmittedReview,deps:ReviewPersistence):Promise<void>{if(review.storageFailure)throw review.storageFailure;await(deps.save??saveCheckpoint)(review.path,review.checkpoint);}
+/** No failed acceptance can dispatch or roll back, even if rename made it visible. */
+export async function persistAcceptedAttribution(review: AdmittedReview, deps: ReviewPersistence, prior: ReviewCheckpoint): Promise<void> {
+ if (review.storageFailure) throw review.storageFailure;
+ const candidate = structuredClone(review.checkpoint);
+ try { await persistReview(review, deps); }
+ catch (cause) {
+  const error = cause instanceof CheckpointSaveError ? cause : new CheckpointSaveError('uncertain', cause);
+  review.storageFailure = error;
+  try {
+   const visible = await (deps.read ?? loadCheckpoint)(review.path);
+   error.visibleState = visible && isDeepStrictEqual(visible, candidate) ? 'candidate' : visible && isDeepStrictEqual(visible, prior) ? 'prior' : 'unverifiable';
+   if (error.visibleState !== 'unverifiable') { review.checkpoint = visible!; review.attempt = visible!.attempts.at(-1)!; }
+  } catch { error.visibleState = 'unverifiable'; }
+  error.message += `; visible state ${error.visibleState}; explicit resume required, no automatic retry`;
+  throw error;
+ }
+}
 /** Completion metadata and CR durability have the same ordering for both parties. */
 export async function completeReview(review:AdmittedReview,deps:ReviewPersistence):Promise<void>{
  const entry=review.attempt;

@@ -5,7 +5,7 @@ import { prepareReviewPacket } from '../packet.js';
 import { attributionPrompt,attributionSchema,AttributionSchema,ReassessmentSchema,reviewAssignments } from '../assessment.js';
 import { decodeReview } from '../contracts.js';
 import { codexStrictSchema,validateCodexReply } from '../../../../agent/providers/structured-schema.js';
-import type { TaskReviewResult } from '../contracts.js';
+import type { TaskReviewResult, ReviewAttempt } from '../contracts.js';
 import type { AdmittedReview } from '../execution.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import { publishTaskCheckpoint } from '../publication.js';
@@ -20,11 +20,17 @@ async function fiveTaskFixture(){
 }
 const row=(taskId:string)=>({taskId,changeIndexes:[0],testIndexes:[0]});
 const reassessment=(taskId:string)=>({...row(taskId),action:'reassess',reason:'Fresh review of selected task'});
+// These units test a NEW candidate mapping, not mutation of an accepted mapping.
+function unaccepted(entry: ReviewAttempt): void {
+ entry.header.attributionState='pending';
+ delete entry.header.acceptedAttribution;delete entry.header.taskScopeIdentities;delete entry.header.attributionIdentity;
+}
 
 test('single-task attribution prompt and native schema select t4 only on initial and subsequent attempts',async()=>{
  const f=await fiveTaskFixture();try{
   const prepared=await prepareReviewPacket(f.packet,f.deps.sources),checkpoint=f.checkpoint('scope-unit'),entry=checkpoint.attempts[0]!;
   const review:AdmittedReview={prepared,checkpoint,attempt:entry,path:'scope-unit'};
+  unaccepted(entry);
   const generic=JSON.stringify([AttributionSchema,ReassessmentSchema]);
   for(const attempt of [1,2]){
    entry.header.attempt=attempt;
@@ -42,6 +48,7 @@ test('whole-story attribution retains every Plan task and strict host uniqueness
  const f=await fiveTaskFixture();try{
   delete f.packet.taskId;const prepared=await prepareReviewPacket(f.packet,f.deps.sources),checkpoint=f.checkpoint('whole-unit'),entry=checkpoint.attempts[0]!;
   const review:AdmittedReview={prepared,checkpoint,attempt:entry,path:'whole-unit'};
+  unaccepted(entry);
   for(const attempt of [1,2]){
    entry.header.attempt=attempt;const tasks=['t1','t2','t3','t4','t5'].map(id=>attempt===1?row(id):reassessment(id));
    const wrap=(rows:typeof tasks)=>attempt===1?{tasks:rows}:{summary:'Review all selected tasks',tasks:rows};
@@ -78,6 +85,7 @@ test('Codex strict reassessment rows permit fresh review without a source and re
  const f=await fiveTaskFixture();try{
   const prepared=await prepareReviewPacket(f.packet,f.deps.sources),checkpoint=f.checkpoint('codex-actions'),entry=checkpoint.attempts[0]!;
   entry.header.attempt=2;
+  unaccepted(entry);
   const review:AdmittedReview={prepared,checkpoint,attempt:entry,path:'codex-actions'};
   const schema=attributionSchema(review),original=JSON.stringify(schema),wire=codexStrictSchema(schema);
   const fresh={summary:'Fresh reassessment',tasks:[reassessment('t4')]};

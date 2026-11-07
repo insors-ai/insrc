@@ -348,8 +348,8 @@ test('pipeline returns a bundle for an unfocused intent on a repo, a module and 
 		assert.deepEqual(planned.intent, unfocused, kind);
 		assert.equal(planned.intent.focused, false, kind);
 		assert.equal(planned.intent.focus, undefined, kind);
-		// ... its plan was executed where the scope resolved to, and an answer written.
-		assert.equal((calls.executePlan[0] as { repoPath: string }).repoPath, value, kind);
+		// ... its plan was executed keyed on the registered repository the scope lies in, and an answer written.
+		assert.equal((calls.executePlan[0] as { repoPath: string }).repoPath, REPO, kind);
 		assert.equal(calls.synthesize.length, 1, kind);
 	}
 });
@@ -404,16 +404,17 @@ test('pipeline returns a bundle for file, symbol, manifest directory and connect
 		);
 		assert.equal(outcome.kind, 'bundle', `${c.ref.kind}: ${JSON.stringify(outcome)}`);
 		assert.equal(calls.decompose.length, 1, `${c.ref.kind}: the planning call was made`);
-		// The lookups ran in the directory the scope resolved to.
+		// The lookups are keyed on the registered repository the scope lies in (a manifest directory is no registered repository).
 		const executed = calls.executePlan[0] as { repoPath: string; closureRepos: string[] };
-		assert.equal(executed.repoPath, c.lookupPath, c.ref.kind);
-		assert.deepEqual(executed.closureRepos, [c.lookupPath], c.ref.kind);
+		const graphRepo = c.ref.kind === 'manifest-dir' ? REPO : c.lookupPath;
+		assert.equal(executed.repoPath, graphRepo, c.ref.kind);
+		assert.deepEqual(executed.closureRepos, [graphRepo], c.ref.kind);
 		// ... and the last-indexed time was read for the scope's own path.
 		assert.deepEqual(seen, [c.freshness], c.ref.kind);
 	}
 });
 
-test('module scope: lookup path and cache key unchanged', async () => {
+test('module scope: the lookups are keyed on the containing repository, the freshness read stays on the module', async () => {
 	// A module inside a registered repo. Before scope resolution existed
 	// the lookups ran in the module's own directory, and the lookup cache
 	// key is made from that path, the last-indexed time and the plan.
@@ -431,14 +432,14 @@ test('module scope: lookup path and cache key unchanged', async () => {
 	);
 	assert.equal(outcome.kind, 'bundle');
 	assert.deepEqual(calls.executePlan, [{
-		runId: 'r1', repoPath: moduleDir, closureRepos: [moduleDir],
+		runId: 'r1', repoPath: REPO, closureRepos: [REPO],
 		repoLastIndexedAtMs: 1_700_000_000_000n, plan: PLAN,
 		scope,
 		requestSize: 'M',
 	}]);
 	assert.deepEqual(seen, [moduleDir]);
-	// NOT the repo root.
-	assert.notEqual((calls.executePlan[0] as { repoPath: string }).repoPath, REPO);
+	// The graph key is the registered repository; the module travels as the scope.
+	assert.equal((calls.executePlan[0] as { scope: { lookupPath: string } }).scope.lookupPath, moduleDir);
 });
 
 // ---------------------------------------------------------------------------

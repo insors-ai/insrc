@@ -72,8 +72,9 @@ test('the real start, plan and narrow scope check refuses a nonexistent path, a 
 	// a workspace scope is untouched
 	const ws = await stepScope(intent('workspace', A), deps(), undefined, A);
 	assert.equal(ws.lookupPath, A);
-	// no expected repository (a caller that does not pass one): the repository comparison is skipped, the stat still runs
-	await assert.rejects(stepScope(intent('module', join(A, 'src', 'nope')), deps()), ScopeNotFoundError);
+	// no expected repository (a caller that does not pass one): the request checks are not made, as before
+	const unchecked = await stepScope(intent('module', join(A, 'src', 'nope')), deps());
+	assert.equal(unchecked.lookupPath, join(A, 'src', 'nope'));
 });
 
 

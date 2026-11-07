@@ -40,7 +40,7 @@ export async function stepScope(
 	assertAnalysisConnectionExecution(execution);
 	const scope = await resolveScopeForTarget(intent.scopeRef, intent.target, scopeDepsWithBase(deps, expectedRepo), undefined, execution);
 	// The path exists with the right type and lies in the call's repository, before anything is read.
-	await validateRequestScope(scope, expectedRepo);
+	if (expectedRepo !== undefined) await validateRequestScope(scope, expectedRepo);
 	// The run's own checks, through the one function the run uses
 	// (ensureScopeQueryable), made before anything is measured, read from the
 	// cache or looked up: every phase makes this call, so a repository that goes

@@ -49,6 +49,7 @@ import {
 	STATE_VERSION,
 	type StepStatePayload,
 } from '../state.js';
+import { graphRepoOf } from '../../../../analyze/context/scope.js';
 import { stepScope } from '../scope.js';
 import { refineSynthesizerKey } from '../synthesizer-key.js';
 import type {
@@ -123,8 +124,9 @@ export async function handlePlan(
 	const step = await stepPlan({
 		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,
-		repoPath:            scope.lookupPath,
-		closureRepos:        [scope.lookupPath],
+		// Graph reads are keyed on the containing registered repository; the named area travels as `scope`.
+		repoPath:            graphRepoOf(scope),
+		closureRepos:        [graphRepoOf(scope)],
 		scope,
 		repoLastIndexedAtMs: BigInt(state.repoIndexedAt ?? 0),
 		// The request's size as the start phase measured it, for a lookup that sizes its own work.

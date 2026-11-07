@@ -156,12 +156,12 @@ test('runShaper, run mode: an unfocused request on a module gets a stamped bundl
 	assert.equal(bundle.meta.toolCalls, 1);
 
 	// The scope was resolved once and handed on: the registered repo is
-	// found, and the lookups run in the module's own directory.
+	// found, and the lookups are keyed on it (the module's directory is no registered repository); the module is the scope.
 	const expected: ResolvedScope = { kind: 'module', value: moduleDir, repoPath: repo, lookupPath: moduleDir };
 	assert.deepEqual(seen.decompose.map(d => d.scope), [expected]);
 	assert.equal(seen.decompose[0]!.intent.focused, false);
 	assert.equal(seen.executePlan.length, 1);
-	assert.equal(seen.executePlan[0]!.repoPath, moduleDir);
+	assert.equal(seen.executePlan[0]!.repoPath, repo);
 	assert.deepEqual(seen.executePlan[0]!.scope, expected);
 	assert.equal(seen.synthesize, 1);
 	// A run-mode request never reaches the tool loop.
@@ -705,4 +705,14 @@ test("runShaper: with the call's repository a cached bundle is not served for a 
 			c.error, c.value,
 		);
 	}
+});
+
+test('runShaper: a module scope reaches the lookups keyed on the containing repository with the named area as the scope, and the tool session closure is the repository', async () => {
+	const intent = unfocused({ kind: 'module', value: `${repo}/src` });
+	const { steps, seen } = standIns();
+	await callWith(intent, runId('module-key'), steps);
+	assert.equal(seen.executePlan.length, 1);
+	assert.equal(seen.executePlan[0]!.repoPath, repo, 'graph reads are keyed on the registered repository, not the module directory');
+	assert.equal(seen.executePlan[0]!.scope?.lookupPath, `${repo}/src`, 'the named area travels as the scope');
+	assert.equal(seen.executePlan[0]!.scope?.kind, 'module');
 });

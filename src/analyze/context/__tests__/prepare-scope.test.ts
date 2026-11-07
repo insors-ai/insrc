@@ -179,11 +179,13 @@ test('generic and classification-mode requests on a symbol in an unindexed repo 
 
 test("tool loop's path for classification and task modes is the resolved lookupPath", async () => {
 	const provider = {} as unknown as LLMProvider;
-	const cases: ReadonlyArray<{ ref: AnalyzeScopeRef; path: string }> = [
-		{ ref: { kind: 'module',     value: `${REPO}/src` },     path: `${REPO}/src` },   // its own directory, as before
-		{ ref: { kind: 'file',       value: FILE },              path: REPO },            // was the file's directory
-		{ ref: { kind: 'symbol',     value: `${FILE}#settle` },  path: REPO },
-		{ ref: { kind: 'connection', value: 'ledger-db' },       path: REPO },            // was the working directory
+	// `path` is the directory the tools run in; `closure` is the repository graph reads are keyed on
+	// (the module's directory is no registered repository).
+	const cases: ReadonlyArray<{ ref: AnalyzeScopeRef; path: string; closure: string }> = [
+		{ ref: { kind: 'module',     value: `${REPO}/src` },     path: `${REPO}/src`, closure: REPO },   // its own directory, as before
+		{ ref: { kind: 'file',       value: FILE },              path: REPO, closure: REPO },            // was the file's directory
+		{ ref: { kind: 'symbol',     value: `${FILE}#settle` },  path: REPO, closure: REPO },
+		{ ref: { kind: 'connection', value: 'ledger-db' },       path: REPO, closure: REPO },            // was the working directory
 	];
 	for (const c of cases) {
 		const forClassification = await prepareScope('classification', classInput(c.ref), deps());
@@ -191,7 +193,7 @@ test("tool loop's path for classification and task modes is the resolved lookupP
 		for (const [mode, scope] of [['classification', forClassification], ['task', forTask]] as const) {
 			const toolDeps = _buildToolDepsForTest({ connectionExecution: savedAnalysisExecution(scope.lookupPath), runId: 'r1', shaperId: 'generic', invocationMode: mode, scope, provider });
 			assert.equal(toolDeps.repoPath, c.path, `${mode} ${c.ref.kind}`);
-			assert.deepEqual(toolDeps.closureRepos, [c.path], `${mode} ${c.ref.kind}`);
+			assert.deepEqual(toolDeps.closureRepos, [c.closure], `${mode} ${c.ref.kind}`);
 			assert.notEqual(toolDeps.repoPath, process.cwd(), `${mode} ${c.ref.kind}: not the working directory`);
 		}
 	}

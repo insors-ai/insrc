@@ -85,7 +85,7 @@ import {
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
 import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { freshnessPathOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
+import { freshnessPathOf, graphRepoOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
 	modelFacingBundleSchema,
@@ -1243,7 +1243,7 @@ function buildToolDeps(args: BuildToolDepsArgs): ToolDeps {
 		// their queries. A future revision may widen to the transitive
 		// DEPENDS_ON closure, but doing so at the shaper boundary is
 		// out of scope for the docs module.
-		closureRepos:   [repoPath],
+		closureRepos:   [graphRepoOf(args.scope)],
 		send:           () => { /* shaper does not stream */ },
 		requestId:      0,
 		ollamaProvider: args.provider,
@@ -1282,7 +1282,8 @@ export async function prepareScope(
 		const target = (inputs as RunShapeInput).intent.target;
 		const expectedRepo = (inputs as RunShapeInput).expectedRepo;
 		const scope = await resolveScopeForTarget(ref, target, scopeDepsWithBase(deps, expectedRepo), undefined, execution);
-		await validateRequestScope(scope, expectedRepo);
+		// Only a request that carries the call's repository is validated: the other run-mode callers keep their checks.
+		if (expectedRepo !== undefined) await validateRequestScope(scope, expectedRepo);
 		return scope;
 	}
 	return resolveScope(ref, deps, execution);
@@ -1618,7 +1619,8 @@ async function tryExplorationPipeline(
 	// (b) Execute the plan.
 	// All seven kinds of scope are served: the lookups run in the
 	// directory the scope resolved to.
-	const repoPath = args.scope.lookupPath;
+	// Graph reads are keyed on the containing registered repository; the named area travels as `scope`.
+	const repoPath = graphRepoOf(args.scope);
 	// A throw from either read is a named cause, never a raw rejection.
 	let lastIndexedMs: number | undefined;
 	try {

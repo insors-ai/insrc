@@ -161,8 +161,8 @@ test('a docs constraint task and a docs decision task with a module scope retrie
 	assert.deepEqual(prompts.map(shown), [['PAY-REFUNDS', 'PAY-LEDGER', 'PAY-DISPUTES'], ['PAY-REFUNDS', 'PAY-LEDGER', 'PAY-DISPUTES']]);
 	assert.deepEqual([ca.retrievedSectionCount, da.retrievedSectionCount], [3, 3]);
 
-	// --- the lookup pipeline's direct calls of the prepare functions: no area, the whole repo ---
-	// The arguments are the ones src/analyze/explore/executor.ts builds.
+	// --- a direct call of the prepare functions with no area: the whole repo ---
+	// The lookup pipeline (src/analyze/explore/executor.ts) passes the area the request's scope names (see doc-area-forwarding.test.ts); with none it passes no area.
 	const pc = await prepareDocConstraintEnumerate({ subject: 'refund shipping', repoPath: REPO, db, runId: 'r1', logContext: 'exploration' });
 	const pd = await prepareDocDecisionTrace({ topic: 'refund shipping', repoPath: REPO, db, runId: 'r1', logContext: 'exploration' });
 	for (const p of [pc, pd]) {
@@ -172,10 +172,11 @@ test('a docs constraint task and a docs decision task with a module scope retrie
 		assert.equal(p.prepared.retrievedSectionCount, 6);
 		assert.equal(p.retrieved.length, 6);
 	}
-	// The pipeline passes no area to either.
+	// The pipeline derives the area from the request's scope and passes it on, to both; with no scope it passes none.
 	const pipeline = readFileSync(join(HERE, '..', '..', '..', 'explore', 'executor.ts'), 'utf8');
 	assert.equal(pipeline.match(/return prepareDoc(ConstraintEnumerate|DecisionTrace)\(\{/g)!.length, 2);
-	assert.ok(!/\barea\b\s*[:,}]/.test(pipeline), 'the lookup pipeline names no area');
+	assert.equal(pipeline.match(/docsAreaOf\(ctx\.scope\)/g)!.length, 2, 'the lookup pipeline takes the area from the request\'s scope for both');
+	assert.equal(pipeline.match(/\.\.\.\(area !== undefined \? \{ area \} : \{\}\)/g)!.length, 2, 'and passes it only when there is one');
 
 	// --- retrieval itself: an area with no document is empty, and an absent area is the whole closure ---
 	const q = { db, query: 'refund shipping', closureRepos: [REPO], previewChars: 0 } as const;

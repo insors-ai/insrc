@@ -69,6 +69,14 @@ export class RegistryReviewSources implements ReviewSources {
  }
  file(commit: string, path: string): Promise<PinnedBlob | null> { return this.object(`${commit}:${path}`, 'blob'); }
  async changedRanges(commit: string, parent: string | null, paths: readonly string[]): Promise<readonly ChangedRange[]> {
+  if (parent !== null && paths.length === 2 && paths[0] !== paths[1]) {
+   // Path lineage is verified separately. Compare those exact committed blobs:
+   // rename similarity heuristics must never determine selected line mapping.
+   const result = await callTool(gitDiffTool, { cwd: this.deps.repoPath, from: `${parent}:${paths[1]}`, to: `${commit}:${paths[0]}`, objectPair: true, context: 0, maxBytes: 2 * 1024 * 1024 }, this.deps);
+   requireReview(result.success, 'changes', result.success ? '' : result.error.message);
+   requireReview(!result.data.truncated, 'changes', 'Diff exceeded its bound; selection cannot be verified');
+   return changedRuns(result.output);
+  }
   const emptyTree = createHash(commit.length === 40 ? 'sha1' : 'sha256').update('tree 0\0').digest('hex');
   const result = await callTool(gitDiffTool, { cwd: this.deps.repoPath, from: parent ?? emptyTree, to: commit,
    paths: [...paths], context: 0, maxBytes: 2 * 1024 * 1024 }, this.deps);

@@ -20,8 +20,9 @@ export interface FileIntervalProjection {
 }
 interface Run { oldStart: number; oldEnd: number; newStart: number; newEnd: number; }
 const count = (start: number, end: number) => end - start + 1;
-function lines(blob: PinnedBlob | null): readonly string[] {
+function lines(blob: PinnedBlob | null, charge?: (bytes: number) => void): readonly string[] {
  if (blob === null) return [];
+ charge?.(blob.bytes.byteLength);
  let text: string;
  try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(blob.bytes); }
  catch { requireReview(false, 'scope_conflict', 'Committed projection source is not UTF-8'); }
@@ -74,12 +75,12 @@ function verifiedRuns(changes: readonly ChangedRange[], before: readonly string[
 
 /** Pure partition, exposed within this private subsystem for deterministic tests. */
 export function projectIntervals(segments: SelectedChange['segments'], originChangeIndex: number,
- before: readonly string[], after: readonly string[], changes: readonly ChangedRange[]): readonly IntervalDisposition[] {
+ before: readonly string[], after: readonly string[], changes: readonly ChangedRange[], fragment?: () => void): readonly IntervalDisposition[] {
  requireReview(segments.length > 0, 'scope_conflict', `Origin change ${originChangeIndex} has no selected segments`);
  const runs = verifiedRuns(changes, before, after), output: IntervalDisposition[] = [];
  for (const [segmentIndex, segment] of segments.entries()) {
   const source = { changeIndex: originChangeIndex, segmentIndex };
-  const add = (sourcePart: ReviewedSegment, kind: IntervalDisposition['kind'], final: ReviewedSegment[], replacements: ReviewedSegment[] = []) => output.push({ source, sourcePart, kind, finalSegments: final, replacementSegments: replacements });
+  const add = (sourcePart: ReviewedSegment, kind: IntervalDisposition['kind'], final: ReviewedSegment[], replacements: ReviewedSegment[] = []) => { fragment?.(); output.push({ source, sourcePart, kind, finalSegments: final, replacementSegments: replacements }); };
   requireReview(segment.before === undefined, 'scope_conflict', 'Projection requires reviewed-version selections');
   if (segment.after) {
    const [start, end] = segment.after;
@@ -112,18 +113,17 @@ export function projectIntervals(segments: SelectedChange['segments'], originCha
 /** T2's committed-blob stage. finalPath must be verified by the T3 lineage
  * caller; this candidate is intentionally not wired into admission on its own. */
 export async function projectFileIntervals(origin: SelectedChange, originChangeIndex: number, revision: string,
- finalPath: string, sources: ReviewSources): Promise<FileIntervalProjection> {
+ finalPath: string, sources: ReviewSources, budget?: { decode(bytes: number): void; fragment(): void }): Promise<FileIntervalProjection> {
  requireReview(origin.segments.length > 0, 'scope_conflict', `Origin change ${originChangeIndex} (${origin.path}) has no selected segments`);
  const final = await sources.file(revision, finalPath);
- const before = lines(origin.after), after = lines(final);
+ const before = lines(origin.after, budget?.decode.bind(budget)), after = lines(final, budget?.decode.bind(budget));
  let changes: readonly ChangedRange[];
  if (origin.after?.oid === final?.oid || (origin.after === null && final === null)) changes = [];
  else {
-  requireReview(origin.path === finalPath, 'scope_conflict', 'Renamed projection requires verified lineage from the scope assembler');
-  changes = await sources.changedRanges(revision, origin.commit, [finalPath]);
+  changes = await sources.changedRanges(revision, origin.commit, [...new Set([finalPath, origin.path])]);
   requireReview(changes.length > 0, 'scope_conflict', 'Different committed blobs have no verifiable diff');
  }
- const dispositions = projectIntervals(origin.segments, originChangeIndex, before, after, changes);
+ const dispositions = projectIntervals(origin.segments, originChangeIndex, before, after, changes, budget?.fragment.bind(budget));
  const active = normalizeProjectedSegments(dispositions.flatMap(d => d.finalSegments));
  return { entry: { originChangeIndex, commit: revision, path: finalPath, after: final, findingScope: active.length ? 'selected' : 'none', segments: active }, dispositions };
 }

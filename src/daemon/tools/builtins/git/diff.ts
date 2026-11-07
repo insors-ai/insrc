@@ -54,6 +54,7 @@ export const gitDiffTool = {
     staged: Type.Optional(Type.Boolean({ description: 'When true, diff index vs HEAD (what `git commit` would record).' })),
     from: Type.Optional(Type.String({ description: 'Starting ref for a range diff (commit SHA, branch, tag, "HEAD~3").' })),
     to: Type.Optional(Type.String({ description: 'Ending ref. When omitted with `from`, defaults to HEAD.' })),
+    objectPair: Type.Optional(Type.Boolean({ description: 'Compare two explicit Git objects (including commit:path blobs), without range syntax or pathspecs. Requires from and to.' })),
     excludeDeleted: Type.Optional(Type.Boolean({ description: 'Leave out the files the change deleted (--diff-filter=d), from the file list and the body.' })),
     againstWorktree: Type.Optional(Type.Boolean({ description: 'With `from` and without `to`: diff `from` against the working tree (git diff <from>), tracked files only.' })),
     path: Type.Optional(Type.String({ description: 'Restrict the diff to this file or directory.' })),
@@ -81,6 +82,10 @@ export const gitDiffTool = {
     const to = strInput(input, 'to');
     const path = strInput(input, 'path');
     const againstWorktree = input['againstWorktree'] === true;
+    const objectPair = input['objectPair'] === true;
+    if (objectPair && (!from || !to || staged || againstWorktree || input['path'] !== undefined || input['paths'] !== undefined || input['exclude'] !== undefined)) {
+      return withFailure({ output: '[git:diff] objectPair requires two explicit objects and no pathspec or working-tree mode', format: 'text', success: false, error: 'invalid-input' }, 'rejected');
+    }
     if (againstWorktree && (from === undefined || to !== undefined || staged)) {
       return withFailure({
         output: '[git:diff] invalid-input: `againstWorktree` needs `from` and cannot be combined with `to` or `staged`',
@@ -122,14 +127,14 @@ export const gitDiffTool = {
     );
 
     const excludeDeleted = input['excludeDeleted'] === true;
-    const diffOpts: DiffOpts = { staged, ignoreWhitespace, ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
+    const diffOpts: DiffOpts = { staged, ignoreWhitespace, ...(objectPair ? { objectPair } : {}), ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
     if (from !== undefined) { diffOpts.from = from; }
     if (to !== undefined) { diffOpts.to = to; }
     if (path !== undefined) { diffOpts.path = path; }
     if (rawPaths !== undefined) { diffOpts.paths = rawPaths; }
     if (exclude.length > 0) { diffOpts.exclude = exclude; }
     if (context !== undefined) { diffOpts.context = context; }
-    const statOpts: DiffOpts = { staged, ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
+    const statOpts: DiffOpts = { staged, ...(objectPair ? { objectPair } : {}), ...(againstWorktree ? { againstWorktree } : {}), ...(excludeDeleted ? { excludeDeleted } : {}) };
     if (from !== undefined) { statOpts.from = from; }
     if (to !== undefined) { statOpts.to = to; }
     if (path !== undefined) { statOpts.path = path; }
@@ -207,6 +212,7 @@ export const gitDiffTool = {
 // ---------------------------------------------------------------------------
 
 export interface DiffOpts {
+  objectPair?: boolean;
   staged?: boolean;
   /** With `from` and no `to`: `git diff <from>`, that revision against the working tree. */
   againstWorktree?: boolean;
@@ -256,7 +262,9 @@ export function buildDiffArgv(o: DiffOpts): { argv: string[]; mode: string; rang
 
   let mode: string;
   let range: string;
-  if (o.staged) {
+  if (o.objectPair && o.from && o.to) {
+    base.push(o.from, o.to); mode = 'objects'; range = `${o.from} -- ${o.to}`;
+  } else if (o.staged) {
     base.push('--cached');
     mode = 'staged';
     range = 'HEAD -- index';
@@ -283,7 +291,8 @@ export function buildStatArgv(o: DiffOpts): string[] {
   // `dir/{a => b}/file` rename display (ISSUE-b97752e9).
   const base = ['git', 'diff', '--no-color', '--numstat', '-z'];
   if (o.excludeDeleted) { base.push('--diff-filter=d'); }
-  if (o.staged) { base.push('--cached'); }
+  if (o.objectPair && o.from && o.to) { base.push(o.from, o.to); }
+  else if (o.staged) { base.push('--cached'); }
   else if (o.from && o.againstWorktree) { base.push(o.from); }
   else if (o.from) { base.push(`${o.from}..${o.to ?? 'HEAD'}`); }
   base.push(...pathspecArgs(o));

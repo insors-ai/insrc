@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 47,
-        "contentHash": "a9a0d20ae013c6ad88c0c8c6db2f433f842575162d8b6c4a95281c0795f3e7d9",
-        "at": "2026-11-07T09:31:53.869Z",
+        "number": 51,
+        "contentHash": "905a4c6defb518a5e824ac2bb23a615d72640578ec6f85ff007d93d42d1426e7",
+        "at": "2026-11-07T11:18:41.072Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "65b643840a294422",
     "storyId": "s1",
     "createdAt": "2026-11-06T19:48:13.986Z",
-    "updatedAt": "2026-11-07T09:31:53.821Z",
+    "updatedAt": "2026-11-07T11:18:41.020Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-06T14:30:38.353Z",
     "epicSlug": "take-structured-analyze-request-not-prompt",
-    "revision": 47
+    "revision": 51
   },
   "body": {
     "tasks": [
@@ -223,8 +223,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "489eee9c8",
-        "ranAt": "2026-11-07T04:41:11.353Z",
+        "commit": "3308ff579",
+        "ranAt": "2026-11-07T11:16:40.776Z",
         "testsPassed": true,
         "tests": [
           {
@@ -251,10 +251,14 @@
             "file": "src/analyze/context/__tests__/scope-area.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 592,
+            "durationMs": 516,
             "titles": [
               {
                 "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              },
+              {
+                "title": "planRepoOf: the containing repository for an area scope, today's own path for a repo or workspace scope",
                 "result": "pass"
               }
             ],
@@ -264,7 +268,7 @@
             "file": "src/analyze/context/__tests__/scope-validate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 584,
+            "durationMs": 548,
             "titles": [
               {
                 "title": "validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path",
@@ -459,8 +463,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "a7ac49610",
-        "ranAt": "2026-11-07T04:36:18.252Z",
+        "commit": "3308ff579",
+        "ranAt": "2026-11-07T11:17:40.721Z",
         "testsPassed": true,
         "tests": [
           {
@@ -495,7 +499,7 @@
             "file": "src/daemon/steps/__tests__/analyze-oneshot-request.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 777,
+            "durationMs": 646,
             "titles": [
               {
                 "title": "checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository",
@@ -508,7 +512,7 @@
             "file": "src/daemon/steps/__tests__/start-request.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 867,
+            "durationMs": 799,
             "titles": [
               {
                 "title": "the real start, plan and narrow scope check refuses a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch",
@@ -524,6 +528,10 @@
               },
               {
                 "title": "the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw '..' path into another registered repository are refused",
+                "result": "pass"
+              },
+              {
+                "title": "a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded; the same intent renders the same scope line through a narrow continuation; request, prompt and older payloads differ",
                 "result": "pass"
               }
             ],
@@ -919,8 +927,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "5a789d964",
-        "ranAt": "2026-11-07T05:29:16.116Z",
+        "commit": "3308ff579",
+        "ranAt": "2026-11-07T11:15:45.380Z",
         "testsPassed": true,
         "tests": [
           {
@@ -957,7 +965,7 @@
             "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 970,
+            "durationMs": 930,
             "titles": [
               {
                 "title": "a capability question with no word in common with the named module still inspects that module, first, on the one-shot and the multi-turn mode",
@@ -974,6 +982,10 @@
               {
                 "title": "an empty named area is checked on both execution modes and its completeness says there was nothing in it",
                 "result": "pass"
+              },
+              {
+                "title": "a limit of one leaves the named subject as the only candidate on both execution modes, although a child matches the words better",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -982,8 +994,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "5fccd7b93",
-        "ranAt": "2026-11-07T05:33:17.596Z",
+        "commit": "3308ff579",
+        "ranAt": "2026-11-07T11:18:41.020Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1041,7 +1053,7 @@
             "file": "src/analyze/__tests__/docs-retrieval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 679,
+            "durationMs": 562,
             "titles": [
               {
                 "title": "empty query returns []",
@@ -1122,7 +1134,7 @@
             "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 870,
+            "durationMs": 712,
             "titles": [
               {
                 "title": "the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward the area for a module and a file scope and no area for a repo or workspace scope, on both execution modes",
@@ -1143,7 +1155,7 @@
             "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 779,
+            "durationMs": 643,
             "titles": [
               {
                 "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",

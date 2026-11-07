@@ -62,7 +62,7 @@ Run at 2026-11-06T19:55:09.054Z on commit `76512b76b`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-07T04:41:11.353Z on commit `489eee9c8`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T11:16:40.776Z on commit `3308ff579`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: scope-validate.test.ts: validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path**
 
@@ -75,8 +75,8 @@ Run at 2026-11-07T04:41:11.353Z on commit `489eee9c8`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/context/__tests__/scope-area.test.ts` | 0 | 1 | 0.6 s |  |
-| `src/analyze/context/__tests__/scope-validate.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/analyze/context/__tests__/scope-area.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/analyze/context/__tests__/scope-validate.test.ts` | 0 | 1 | 0.5 s |  |
 
 ## t5
 
@@ -107,7 +107,7 @@ Run at 2026-11-07T04:40:00.085Z on commit `489eee9c8`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-07T04:36:18.252Z on commit `a7ac49610`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T11:17:40.721Z on commit `3308ff579`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: analyze-oneshot-request.test.ts: checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository**
 
@@ -125,8 +125,8 @@ Run at 2026-11-07T04:36:18.252Z on commit `a7ac49610`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/steps/__tests__/analyze-oneshot-request.test.ts` | 0 | 1 | 0.8 s |  |
-| `src/daemon/steps/__tests__/start-request.test.ts` | 0 | 4 | 0.9 s |  |
+| `src/daemon/steps/__tests__/analyze-oneshot-request.test.ts` | 0 | 1 | 0.6 s |  |
+| `src/daemon/steps/__tests__/start-request.test.ts` | 0 | 5 | 0.8 s |  |
 
 ## t7
 
@@ -201,7 +201,7 @@ Run at 2026-11-07T05:24:39.893Z on commit `f808738cc`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-07T05:29:16.116Z on commit `5a789d964`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T11:15:45.380Z on commit `3308ff579`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: capability-reuse-anchor.test.ts: a capability question with no lexical match still inspects the named module, a higher-ranked child does not replace the subject, a symbol anchor is handled by entity id, on both execution modes**
 
@@ -216,11 +216,11 @@ Run at 2026-11-07T05:29:16.116Z on commit `5a789d964`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/explore/__tests__/capability-reuse-anchor.test.ts` | 0 | 4 | 1 s |  |
+| `src/analyze/explore/__tests__/capability-reuse-anchor.test.ts` | 0 | 5 | 0.9 s |  |
 
 ## t11
 
-Run at 2026-11-07T05:33:17.596Z on commit `5fccd7b93`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T11:18:41.020Z on commit `3308ff579`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: doc-area-forwarding.test.ts: the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward docsAreaOf(ctx.scope) for file and module scopes and no area for repo or workspace scopes**
 
@@ -246,9 +246,9 @@ Run at 2026-11-07T05:33:17.596Z on commit `5fccd7b93`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/analyze/__tests__/docs-retrieval.test.ts` | 0 | 18 | 0.7 s |  |
-| `src/analyze/explore/__tests__/doc-area-forwarding.test.ts` | 0 | 3 | 0.9 s |  |
-| `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` | 0 | 1 | 0.8 s |  |
+| `src/analyze/__tests__/docs-retrieval.test.ts` | 0 | 18 | 0.6 s |  |
+| `src/analyze/explore/__tests__/doc-area-forwarding.test.ts` | 0 | 3 | 0.7 s |  |
+| `src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts` | 0 | 1 | 0.6 s |  |
 
 ## t12
 

@@ -2202,6 +2202,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chatbtn .chatlbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
       `.chatbtn .chev{opacity:.6;font-size:10px;}` +
       `.chatmenu{bottom:auto;right:auto;top:calc(100% + 6px);left:0;width:auto;min-width:220px;max-width:min(360px,calc(100vw - 28px));max-height:min(300px,50vh);overflow:auto;}` +
+      // The history chip is RIGHT-aligned: its menu must anchor to the chip's right edge and open
+      // leftward, or the left-anchored .chatmenu default pushes it past the right viewport edge.
+      `#insrc-histmenu{left:auto;right:0;}` +
       // The ground and text are set here too: the shared sheet's `.insrc-term-diff` rule would paint them.
       `.insrc-term-diff{border:1px solid var(--border-lit);border-radius:6px;margin:6px 0;overflow:hidden;background:var(--panel);color:var(--fg);}` +
       // S001 sc1: the shared collapse/chevron primitive styles (icon-only chevron + 3-line clamp, k6 a/b).

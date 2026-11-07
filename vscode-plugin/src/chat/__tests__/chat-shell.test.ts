@@ -837,6 +837,13 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu
   assert.ok(actMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'row A inlines the Claude SVG');
   assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'row B inlines the Codex SVG');
 
+  // The history menu's persisted-chat rows carry the same real per-row SVG (historyRow -> pico()).
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  assert.equal(histMenu.children.length, 3, 'two history rows + the new… row');
+  assert.ok(histMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'history row A inlines the Claude SVG');
+  assert.ok(histMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'history row B inlines the Codex SVG');
+
   // Both triggers render the settled chat's icon + title (chatTrig -> pico(e.provider)).
   v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
   assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'the active trigger inlines the Codex SVG');
@@ -876,6 +883,29 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a ro
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: '' });
 });
 
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list', () => {
+  const v = runShell();
+  // Chat B is a persisted history chat that is NOT in the active list — the persisted-history
+  // path must still open it. The open-chat/new-chat split is by row kind, not active membership.
+  v.msg({ type: 'active-list', chats: [{ id: 'a', title: 'Chat A', provider: 'claude', status: 'done', lastActivityAt: 1 }] });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  const bRow = histMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+
+  // A persisted history row posts open-chat, never new-chat.
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // The history trigger optimistically re-renders to the chosen chat with its provider icon.
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger re-rendered to the persisted chat');
+  assert.ok(hs.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with the Codex icon');
+  // Chat B is absent from the active list, so the active trigger stays empty until the host confirms.
+  assert.ok(act.innerHTML.includes('no active work'), 'the active trigger does not claim a chat absent from the active list');
+});
+
 test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)', () => {
   const v = runShell();
   v.msg({ type: 'active-list', chats: chatEntries('claude') });
@@ -894,24 +924,31 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restore
   assert.ok(hs.innerHTML.includes('new…'), 'and the history trigger');
 });
 
-test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) clears the stale optimistic selection', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session', () => {
   const v = runShell();
-  v.msg({ type: 'history-list', chats: [
-    { id: 'a', title: 'Chat A', provider: 'claude', lastActivityAt: 1 },
-    { id: 'gone', title: 'Gone', provider: 'codex', lastActivityAt: 2 },
-  ] });
+  // A confirmed session A; B is cached in BOTH the active and history lists.
+  v.msg({ type: 'session-restored', sessionId: 'a', transcript: [], firstIndex: 0, total: 0 });
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
   const hs = v.el('insrc-history');
-  const histMenu = v.el('insrc-histmenu');
-  fire(hs, 'click');
-  const gone = histMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Gone')!;
-  (gone as unknown as { onclick: () => void }).onclick();
-  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'gone' });
-  assert.ok(hs.innerHTML.includes('Gone'), 'the history trigger shows the optimistic selection');
+  const actMenu = v.el('insrc-actmenu');
 
-  // The host rejects: a history-list WITHOUT 'gone' arrives (no session-restored) — the stale id clears.
+  // The user optimistically opens B (pickChat): both triggers re-render to B before any host reply.
+  fire(act, 'click');
+  const bRow = actMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger shows the optimistic B');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger shows the optimistic B');
+
+  // The host REJECTS the open: a history-list WITHOUT B arrives (no session-restored), while B
+  // remains cached in actEntries. reconcile() must re-settle BOTH triggers to the confirmed session A.
   v.msg({ type: 'history-list', chats: [{ id: 'a', title: 'Chat A', provider: 'claude', lastActivityAt: 1 }] });
-  assert.ok(hs.innerHTML.includes('new…'), 'the history trigger cleared the stale id');
-  assert.ok(!hs.innerHTML.includes('Gone'), 'the rejected selection is gone');
+  assert.ok(hs.innerHTML.includes('Chat A'), 'the history trigger recovered to the confirmed session A');
+  assert.ok(!hs.innerHTML.includes('Chat B'), 'the rejected B is gone from the history trigger');
+  assert.ok(act.innerHTML.includes('Chat A'), 'the active trigger recovered to the confirmed session A (no active-list message)');
+  assert.ok(!act.innerHTML.includes('Chat B'), 'the rejected B is gone from the active trigger');
 });
 
 test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)', () => {
@@ -964,6 +1001,50 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboa
   fire(actMenu, 'keydown', key('End'));
   assert.equal(rows[2]!.getAttribute('tabindex'), '0', 'End focuses C');
 
+  // Enter activates the focused row (C after End) — open-chat + close.
+  fire(actMenu, 'keydown', key('Enter'));
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'c' }, 'Enter activates the focused row');
+  assert.equal(act.getAttribute('aria-expanded'), 'false', 'Enter closes the menu');
+
+  fire(act, 'click');
+  assert.equal(act.getAttribute('aria-expanded'), 'true', 'menu re-opens for Escape');
   fire(actMenu, 'keydown', key('Escape'));
   assert.equal(act.getAttribute('aria-expanded'), 'false', 'Escape closes the menu');
+
+  // Tab also closes (a roving menu must not trap focus).
+  fire(act, 'click');
+  assert.equal(act.getAttribute('aria-expanded'), 'true', 'menu re-opens for Tab');
+  fire(actMenu, 'keydown', key('Tab'));
+  assert.equal(act.getAttribute('aria-expanded'), 'false', 'Tab closes the menu');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: [{ id: 'x', title: 'Mystery', provider: 'mystery', status: 'done', lastActivityAt: 1 }] });
+  v.msg({ type: 'history-list', chats: [{ id: 'x', title: 'Mystery', provider: 'mystery', lastActivityAt: 1 }] });
+  const act = v.el('insrc-active');
+  fire(act, 'click');
+  const row = v.el('insrc-actmenu').children[0]!;
+  // pico('mystery') -> '' — the row still labels itself but carries NO provider SVG or image.
+  assert.equal(row.querySelector('.lbl')!.textContent, 'Mystery', 'the row still renders its title');
+  assert.ok(!row.innerHTML.includes('<svg'), 'no SVG for an unknown provider');
+  assert.ok(!row.innerHTML.includes('<img'), 'and no image tag');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive', () => {
+  const v = runShell();
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  // The session arrives BEFORE either list: neither dropdown knows the id yet.
+  v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('no active work'), 'before the lists, the active trigger is empty');
+  assert.ok(hs.innerHTML.includes('new…'), 'before the lists, the history trigger is empty');
+
+  // The lists arrive afterwards: reconcile() settles BOTH triggers on the restored chat.
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger settles on the restored chat once the active list arrives');
+  assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with its provider icon');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger settles on the restored chat once the history list arrives');
 });

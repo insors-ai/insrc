@@ -40,6 +40,7 @@ import type {
 	StructuredSchema,
 } from '../../shared/types.js';
 
+import { getEntity } from '../../db/entities.js';
 import { runConceptResolve } from './concept-resolve.js';
 import { runModuleProfile } from './module-profile.js';
 import type {
@@ -181,6 +182,11 @@ export interface CapabilityReuseCheckPrepared {
 		readonly path:    string;
 		readonly profile: ModuleProfile | undefined;
 		readonly score:   number;
+		/** The request named this module, file or symbol: the subject of the check. */
+		readonly namedByRequest?: boolean | undefined;
+		/** A symbol subject: the entity (its file is `path`) and its name. */
+		readonly entityId?:   string | undefined;
+		readonly symbolName?: string | undefined;
 	}>;
 	readonly conceptHits:   number;
 	/** What prepare left out. Absent on a value minted before the field existed. */
@@ -236,7 +242,11 @@ export async function prepareCapabilityReuseCheck(
 	};
 	const concept = await runConceptResolve(conceptExp, ctx);
 
-	if (concept.hits.length === 0) {
+	// The area the request named is the subject of the check even when no hit shares a word with
+	// the capability: it is inspected first, and the ranked children come after it.
+	const named = concept.anchor?.source === 'named-scope' ? concept.anchor : undefined;
+
+	if (concept.hits.length === 0 && named === undefined) {
 		captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('info', () => [{ runId: ctx.runId, capability }, 'capability.reuse-check: concept.resolve returned no hits']);
 		return {
 			kind: 'short-circuit',
@@ -251,12 +261,20 @@ export async function prepareCapabilityReuseCheck(
 		};
 	}
 
-	const topHits = pickTopDistinct(concept.hits, limit);
+	const subject = named !== undefined
+		? { path: named.path, kind: named.kind === 'dir' ? 'dir' as const : 'file' as const, score: 1, entityId: named.kind === 'symbol' ? named.entityId : undefined }
+		: undefined;
+	const others = pickTopDistinct(subject === undefined ? concept.hits : concept.hits.filter(h => h.path !== subject.path), subject === undefined ? limit : Math.max(limit - 1, 0));
+	const topHits: Array<{ path: string; kind: string; score: number; entityId?: string | undefined }> = subject === undefined ? others : [subject, ...others];
 
 	// (2) module.profile each candidate serially.
-	const profiles: Array<{ path: string; profile: ModuleProfile | undefined; score: number }> = [];
+	const profiles: Array<{ path: string; profile: ModuleProfile | undefined; score: number; namedByRequest?: boolean; entityId?: string; symbolName?: string }> = [];
 	const skipped: SkippedItem[] = [];
 	for (const h of topHits) {
+		const isSubject = subject !== undefined && h.path === subject.path;
+		const entityId = isSubject ? subject.entityId : undefined;
+		const symbolName = entityId !== undefined ? (await getEntity(null, entityId))?.name : undefined;
+		const mark = { ...(isSubject ? { namedByRequest: true } : {}), ...(entityId !== undefined ? { entityId } : {}), ...(symbolName !== undefined ? { symbolName } : {}) };
 		const profileExp: Exploration = {
 			id:      `${exp.id}-inner-profile-${h.path}`,
 			type:    'module.profile',
@@ -265,10 +283,13 @@ export async function prepareCapabilityReuseCheck(
 		};
 		try {
 			const prof = await runModuleProfile(profileExp, ctx);
-			profiles.push({ path: h.path, profile: prof.profile, score: h.score });
+			profiles.push({ path: h.path, profile: prof.profile, score: h.score, ...mark });
+			if (isSubject && prof.profile.entityCount === 0) {
+				skipped.push({ what: h.path, reason: 'the area the request named holds no stored entity, so there was nothing in it to check' });
+			}
 		} catch (err) {
 			captureAnalysisDiagnostics(log, ctx.connectionExecution).emit('warn', () => [{ runId: ctx.runId, path: h.path, err: (err as Error).message }, 'capability.reuse-check: module.profile failed for candidate; keeping as unrelated placeholder']);
-			profiles.push({ path: h.path, profile: undefined, score: h.score });
+			profiles.push({ path: h.path, profile: undefined, score: h.score, ...mark });
 			skipped.push({
 				what:   h.path,
 				reason: `its profile could not be read (${(err as Error).message}), so the model judged it without one`,
@@ -279,7 +300,7 @@ export async function prepareCapabilityReuseCheck(
 	// Candidates: the inner search may have cut its matches, and only `limit` of them are checked.
 	// The inner search's own limits bound what the candidates were drawn from.
 	const limited: ReachedLimit[] = (concept.completeness.limited ?? []).map(l => ({ ...l, scope: 'source' as const }));
-	const distinctHits = new Set(concept.hits.map(h => h.path)).size;
+	const distinctHits = new Set([...concept.hits.map(h => h.path), ...(subject !== undefined ? [subject.path] : [])]).size;
 	if (distinctHits > topHits.length) {
 		limited.push(reachedLimit('candidate modules', limit, 'overall', distinctHits));
 	}
@@ -325,9 +346,12 @@ export function finalizeCapabilityReuseCheck(
 
 	const candidates: CapabilityReuseCandidate[] = prepared.profiles.map(p => {
 		const v = verdicts.get(p.path);
-		const evidenceEntities = p.profile !== undefined
-			? p.profile.exports.slice(0, 5)
-			: [];
+		// A symbol subject is one entity: only it is evidence, not the rest of its file.
+		const evidenceEntities = p.entityId !== undefined
+			? (p.symbolName !== undefined ? [p.symbolName] : [])
+			: p.profile !== undefined
+				? p.profile.exports.slice(0, 5)
+				: [];
 		return {
 			path:             p.path,
 			moduleName:       basenameOf(p.path),
@@ -337,6 +361,8 @@ export function finalizeCapabilityReuseCheck(
 				: 'LLM emitted no verdict for this path.'),
 			evidenceEntities,
 			conceptScore:     Math.round(p.score * 1_000) / 1_000,
+			...(p.namedByRequest === true ? { namedByRequest: true } : {}),
+			...(p.entityId !== undefined ? { entityId: p.entityId } : {}),
 		};
 	});
 
@@ -382,14 +408,20 @@ export function finalizeCapabilityReuseCheck(
 function buildMessages(
 	promptContent: string,
 	capability:    string,
-	profiles:      ReadonlyArray<{ path: string; profile: ModuleProfile | undefined; score: number }>,
+	profiles:      ReadonlyArray<{ path: string; profile: ModuleProfile | undefined; score: number; namedByRequest?: boolean | undefined; entityId?: string | undefined; symbolName?: string | undefined }>,
 ): LLMMessage[] {
 	const candidateBlocks = profiles.map((p, idx) => {
 		const prof = p.profile;
-		const exports = prof !== undefined ? prof.exports.slice(0, 8).join(', ') : '(unavailable)';
+		const exports = p.entityId !== undefined
+			? (p.symbolName ?? p.entityId)
+			: prof !== undefined ? prof.exports.slice(0, 8).join(', ') : '(unavailable)';
 		const subdirs = prof !== undefined ? prof.subdirs.slice(0, 8).join(', ') : '(unavailable)';
 		const files   = prof !== undefined ? prof.filesInDir.slice(0, 8).map(f => f.file).join(', ') : '(unavailable)';
+		const subjectNote = p.namedByRequest !== true ? '' : p.entityId !== undefined
+			? `   subject: the request named this one symbol (${p.symbolName ?? p.entityId}); the files and exports below describe its whole file and are context only\n`
+			: `   subject: the request named this area; judge it first, whatever its score\n`;
 		return `${idx + 1}. path: ${p.path}\n` +
+			subjectNote +
 			`   conceptScore: ${p.score.toFixed(3)}\n` +
 			`   exports: ${exports}\n` +
 			`   subdirs: ${subdirs}\n` +

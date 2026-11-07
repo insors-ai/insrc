@@ -445,6 +445,10 @@ export interface CapabilityReuseCandidate {
 	/** Score from the underlying concept.resolve, kept for the
 	 *  synthesizer's ranking display. */
 	readonly conceptScore:    number;
+	/** The request named this one symbol: `path` is its file and this is the entity. */
+	readonly entityId?:       string | undefined;
+	/** The request named this module, file or symbol: it is the subject of the check, not a ranked guess. */
+	readonly namedByRequest?: boolean | undefined;
 }
 
 export interface CapabilityReuseCheckOutput {

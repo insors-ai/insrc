@@ -67,6 +67,18 @@ export interface ForwardStepDeps {
 
 let _nextId = 1;
 
+/** The analyze tools, whose calls may carry a structured request. */
+const REQUEST_TOOLS: ReadonlySet<string> = new Set(['insrc_analyze_step', 'insrc_analyze']);
+/** The feature a daemon advertises (daemon.status `features`) when its analyze tools accept a structured request. */
+const REQUEST_FEATURE = 'analyze-request';
+
+/** Whether a call carries a structured request: an older daemon would ignore it (step tool) or refuse the missing focus (one-shot). */
+function carriesRequest(tool: string, args: unknown): boolean {
+	if (!REQUEST_TOOLS.has(tool) || typeof args !== 'object' || args === null) return false;
+	const request = (args as Record<string, unknown>)['request'];
+	return typeof request === 'object' && request !== null;
+}
+
 /** Test seam: where every forwarder connects, so a test never reaches the live daemon socket. */
 let _connectOverride: (() => Socket) | undefined;
 export function _setForwardConnectForTests(connect?: () => Socket): void {
@@ -156,6 +168,15 @@ function forwardStepNow(
 		const socket = connect !== undefined ? connect() : createConnection(PATHS.sockFile);
 		const expired = () => failWith(new Error('Connection session is unavailable.'));
         bootstrap?.signal.addEventListener('abort', expired, { once: true });
+        // A call that carries a structured request first asks this connection's daemon what it can do:
+        // an older daemon would silently drop the request, so it is refused here with a clear message.
+        const needsFeatures = !bootstrap && carriesRequest(tool, rawArgs);
+        let featureId: number | undefined;
+        const begin = () => {
+			if (!needsFeatures) { sendStep(); return; }
+			featureId = _nextId++;
+			socket.write(JSON.stringify({ id: featureId, method: 'daemon.status', client: { label: 'mcp', pid: process.pid } }) + '\n');
+		};
         const sendStep = () => {
 			socket.write(JSON.stringify({
 				id: _nextId++, method: 'step.call', stream: true,
@@ -166,7 +187,7 @@ function forwardStepNow(
         socket.on('connect', () => {
          if (bootstrap?.signal.aborted) { expired(); return; }
          if (bootstrap) socket.write(JSON.stringify({ id: attachId, method: 'db.connections.v2.session.attach', params: bootstrap.token }) + '\n');
-         else sendStep();
+         else begin();
         });
 		// Decoded as a stream: a multi-byte character split across two chunks must
 		// not be decoded half by half (that turns it into replacement characters).
@@ -188,8 +209,21 @@ function forwardStepNow(
                 if (!attached) {
                  const result = frame['result'] as Record<string, unknown> | undefined;
                  if (frame['id'] !== attachId || !result || result['attached'] !== true || result['daemonEpoch'] !== bootstrap!.token.daemonEpoch || result['repoRoot'] !== bootstrap!.token.repoRoot || result['audience'] !== 'mcp-unverified' || !Number.isSafeInteger(result['controlGeneration']) || (result['controlGeneration'] as number) < 1 || bootstrap!.signal.aborted) { expired(); return; }
-                 attached = true; sendStep(); continue;
+                 attached = true; begin(); continue;
                 }
+				if (featureId !== undefined && frame['id'] === featureId) {
+					featureId = undefined;
+					const features = (frame['result'] as { features?: unknown } | undefined)?.features;
+					if (!Array.isArray(features) || !features.includes(REQUEST_FEATURE)) {
+						failWith(new DaemonTooOldError(
+							`${tool}: the insrc daemon does not accept a structured analyze request (it does not advertise '${REQUEST_FEATURE}'). ` +
+							`Update the daemon and restart it, then call ${tool} again; until then send only \`focus\`.`,
+						));
+						return;
+					}
+					sendStep();
+					continue;
+				}
 				const stream = frame['stream'];
 				if (stream === undefined) {
 					// A plain line: the daemon did not take this as a stream request.

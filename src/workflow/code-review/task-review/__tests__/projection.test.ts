@@ -107,6 +107,17 @@ test('competing selected path moves fail instead of choosing a rename by array o
  } finally { f.cleanup(); }
 });
 
+test('identical final blobs cannot hide an unselected rename-away and recreation', async () => {
+ const f = await fixture(); try {
+  const initial = f.packet.reviewSet[0]!.commit;
+  renameSync(join(f.repo, 'source.js'), join(f.repo, 'other.js')); f.git('add', '.'); f.git('commit', '-qm', 'unselected rename away');
+  f.put('source.js', 'export const total = 2;\n'); f.git('add', '.'); f.git('commit', '-qm', 'unselected recreation'); const revision = f.git('rev-parse', 'HEAD');
+  assert.equal(f.git('rev-parse', `${initial}:source.js`), f.git('rev-parse', `${revision}:source.js`));
+  const packet = { ...f.packet, reviewRevision: revision };
+  await assert.rejects(projectReviewScope((await prepareReviewPacket(packet, f.deps.sources)).changes, revision, f.deps.sources), /Unselected path disappearance or recreation/);
+ } finally { f.cleanup(); }
+});
+
 test('typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree', async () => {
  assert.deepEqual(buildDiffArgv({ objectPair: true, from: 'a:file', to: 'b:moved', context: 0 }).argv, ['git', 'diff', '--no-color', '-U0', 'a:file', 'b:moved']);
  assert.deepEqual(buildStatArgv({ objectPair: true, from: 'a:file', to: 'b:moved' }), ['git', 'diff', '--no-color', '--numstat', '-z', 'a:file', 'b:moved']);

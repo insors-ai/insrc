@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 5,
-        "contentHash": "9c71ab8de2646f4abe2d7b0fed265b3d9a09ad98c3e23f2bbf5613a059a69415",
-        "at": "2026-11-07T05:14:21.274Z",
+        "number": 7,
+        "contentHash": "63e8001479831fbe3211ca7eafcf325d823e7ead6776c9e90cdb7e709a84cd1c",
+        "at": "2026-11-07T05:33:45.216Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T05:14:21.146Z",
+    "updatedAt": "2026-11-07T05:33:45.029Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 5
+    "revision": 7
   },
   "body": {
     "tasks": [
@@ -330,6 +330,148 @@
               },
               {
                 "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "1c50bcfb5",
+        "ranAt": "2026-11-07T05:33:45.029Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Selected later ancestor-verified witnesses justify full/partial replacement or deletion; unknown, cyclic or backward witnesses and out-of-set overwrite reject.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Actual selected rename and merge-resolution lineage maps exact final paths; unverified/colliding paths and unselected conflict resolution reject.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Projected entry segments equal normalized active disposition union; fully superseded nonempty origins retain complete dispositions with findingScope=none.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Projection read/byte/fragment bounds and existing input/diff truncation retain their distinct error fields, with serial reads and no preparation/model side effects on refusal.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2336,
+            "titles": [
+              {
+                "title": "selected later witnesses justify complete supersession and immutable origin accounting",
+                "result": "pass"
+              },
+              {
+                "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves",
+                "result": "pass"
+              },
+              {
+                "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness",
+                "result": "pass"
+              },
+              {
+                "title": "competing selected path moves fail instead of choosing a rename by array order",
+                "result": "pass"
+              },
+              {
+                "title": "typed blob diff mode requires both objects and cannot fall back to HEAD or the working tree",
+                "result": "pass"
+              },
+              {
+                "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads",
+                "result": "pass"
+              },
+              {
+                "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work",
+                "result": "pass"
+              },
+              {
+                "title": "production projection budgets accept their exact ceilings and refuse the next unit",
                 "result": "pass"
               }
             ],

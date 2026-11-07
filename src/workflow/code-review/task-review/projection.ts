@@ -41,6 +41,23 @@ function covers(target: ReviewedSegment, scopes: readonly ReviewedSegment[]): bo
 function intersects(a: ReviewedSegment, b: ReviewedSegment): boolean {
  return 'after' in a && 'after' in b ? a.after[0] <= b.after[1] && b.after[0] <= a.after[1] : 'deletionAt' in a && 'deletionAt' in b && a.deletionAt === b.deletionAt;
 }
+/** A final blob match cannot hide an unselected delete/move and recreation.
+ * Inspect every descendant edge of this path leg, not log's simplified or
+ * first-parent-only history. Selected move boundaries start a new leg. */
+async function pathContinuity(path: string, from: string, to: string, origins: readonly SelectedChange[], sources: ReviewSources): Promise<void> {
+ const pending = [to], seen = new Set<string>();
+ while (pending.length) {
+  const commit = pending.pop()!;
+  if (commit === from || seen.has(commit)) continue;
+  seen.add(commit);
+  for (const parent of await sources.commit(commit)) {
+   if (parent !== from && !await sources.isAncestor(from, parent)) continue;
+   const before = await sources.file(parent, path), after = await sources.file(commit, path);
+   requireReview(Boolean(before) === Boolean(after) || origins.some(o => o.commit === commit && (o.path === path || o.previousPath === path)), 'scope_conflict', 'Unselected path disappearance or recreation interrupts lineage');
+   pending.push(parent);
+  }
+ }
+}
 async function finalPath(origin: SelectedChange, origins: readonly SelectedChange[], revision: string, sources: ReviewSources): Promise<string> {
  let path = origin.path, commit = origin.commit;
  const visited = new Set<string>();
@@ -51,7 +68,7 @@ async function finalPath(origin: SelectedChange, origins: readonly SelectedChang
    if (candidate.previousPath === candidate.path || candidate.previousPath !== path || candidate.commit === commit || keys.has(key) || visited.has(key)) continue;
    if (await sources.isAncestor(commit, candidate.commit) && await sources.isAncestor(candidate.commit, revision)) { moves.push(candidate); keys.add(key); }
   }
-  if (!moves.length) return path;
+  if (!moves.length) { await pathContinuity(path, commit, revision, origins, sources); return path; }
   const first: SelectedChange[] = [];
   for (const move of moves) {
    let preceded = false;
@@ -60,6 +77,8 @@ async function finalPath(origin: SelectedChange, origins: readonly SelectedChang
   }
   requireReview(first.length === 1, 'scope_conflict', 'Ambiguous selected rename lineage');
   const move = first[0]!;
+  requireReview(move.parent !== null && await sources.isAncestor(commit, move.parent), 'scope_conflict', 'Selected move parent does not continue the original lineage');
+  if (move.parent !== null) await pathContinuity(path, commit, move.parent, origins, sources);
   requireReview(move.parent !== null && await sources.file(move.parent, path) && await sources.file(move.commit, move.path)
    && !await sources.file(move.commit, path) && !await sources.file(move.parent, move.path), 'scope_conflict', 'Unverified selected path move');
   visited.add(JSON.stringify([move.commit, move.previousPath, move.path])); path = move.path; commit = move.commit;

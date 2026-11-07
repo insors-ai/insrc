@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794027498531-zhln6k",
+    "runId": "wf-1794029804912-9a4h7t",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-07T05:00:09.585Z",
+    "createdAt": "2026-11-07T05:38:36.092Z",
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 107251,
+    "elapsedMs": 106893,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "599f1d0bd42e0c37",
@@ -26,35 +26,9 @@
     "lldEffectiveHash": "11fe5e0a00045d33ef7f96976c77ad64feeb841f23f47304848d9650e00671b9",
     "authoredBy": "controller",
     "envelope": {
-      "description": "",
-      "references": [],
       "attachments": []
     },
-    "revision": 2,
-    "lifecycle": {
-      "status": "approved",
-      "revision": {
-        "number": 2,
-        "contentHash": "8fed8de8f71873b387ce0c8341db1366f9e149863e4e93a993421f80dea5f232",
-        "at": "",
-        "by": {
-          "id": "insrc:system",
-          "kind": "system",
-          "properties": {}
-        }
-      },
-      "signoffs": [],
-      "approval": {
-        "revision": 2,
-        "by": {
-          "id": "insrc:approval",
-          "kind": "system",
-          "properties": {}
-        },
-        "at": "2026-11-07T05:02:22.996Z"
-      }
-    },
-    "rangeBase": "3622c7780676cbb1aebe980dfbb49404a591f790"
+    "revision": 3
   },
   "body": {
     "summary": {
@@ -152,7 +126,7 @@
         "acceptanceChecks": [
           "Replacement witnesses are strictly later ancestor-verified selected origins; reject cycles, unknown indexes and unselected interference.",
           "Actual Git rename chains determine final paths; ambiguous/colliding/unselected paths and merge replacements reject.",
-          "10000 reads, 100000 fragments, 64 MiB cumulative decoded bytes and existing 2 MiB diff/input limits retain approved error-field distinctions; all reads serial."
+          "10000 reads, 100000 fragments, 64 MiB cumulative decoded source bytes, the existing 4 MiB packet JSON limit and the existing 2 MiB Git diff limit retain approved error-field distinctions; all reads are serial."
         ],
         "derivedFrom": [
           "c3",

@@ -20,6 +20,7 @@ import type { Exploration, ExplorationOutput, ExplorationPlan, FailedExploration
 import { getDb } from '../../../db/client.js';
 import { upsertEntities } from '../../../db/entities.js';
 import { getCachedExploration } from '../../../db/exploration-cache.js';
+import { cacheExplorationFor } from '../../../analyze/explore/exploration-cache-key.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -211,19 +212,19 @@ test('a finalize that throws, and a prepare that throws, leave no row in the loo
 	// prepare throws
 	const bad: Exploration = { id: 'e1', type: 'doc.constraint.enumerate', purpose: 'rules', params: { subject: '' } };
 	await stepPlan({ runId: 'r1', repoPath: REPO, closureRepos: [REPO], repoLastIndexedAtMs: BigInt(INDEXED_AT), plan: plan(bad) });
-	assert.equal(await getCachedExploration(REPO, BigInt(INDEXED_AT), bad), null, 'a failed prepare stored nothing');
+	assert.equal(await getCachedExploration(REPO, BigInt(INDEXED_AT), cacheExplorationFor(bad, undefined)), null, 'a failed prepare stored nothing');
 
 	// finalize throws
 	const { token } = await pauseOn(plan(E_DOC), () => null);
 	const out = await handleNarrow(narrowInput(token, 'e1', VALID_ANSWER));
 	assert.equal((await executedOf(out as StepOutputEmitBundle))[0]!.output.type, 'failed');
-	assert.equal(await getCachedExploration(REPO, BigInt(INDEXED_AT), E_DOC), null,
+	assert.equal(await getCachedExploration(REPO, BigInt(INDEXED_AT), cacheExplorationFor(E_DOC, undefined)), null,
 		'a failed output is never stored: it would be served to every later run');
 
-	// A lookup that succeeds IS stored, under the same key, so the check above is not vacuous.
+	// A lookup that succeeds IS stored, under the same key (the area-aware key function), so the check above is not vacuous.
 	const { token: ok } = await pauseOn(plan(E_DOC));
 	await handleNarrow(narrowInput(ok, 'e1', VALID_ANSWER));
-	const cached = await getCachedExploration(REPO, BigInt(INDEXED_AT), E_DOC);
+	const cached = await getCachedExploration(REPO, BigInt(INDEXED_AT), cacheExplorationFor(E_DOC, undefined));
 	assert.equal(cached?.type, 'doc.constraint.enumerate');
 });
 

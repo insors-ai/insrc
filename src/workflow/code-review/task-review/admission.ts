@@ -4,7 +4,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { artifactJsonPath, buildArtifactId, codeReviewArtifactId } from '../../storage.js';
 import { reviewedBuildFingerprint } from '../build-freshness.js';
-import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, SavedReviewRequestSchema, reviewPath } from './contracts.js';
+import { decodeReview, CheckpointSchema, requireReview, ReviewRequestSchema, SavedReviewRequestSchema, reviewPath, parsePacket } from './contracts.js';
 import type { ReviewAttempt, ReviewerParty, ReviewOperation } from './contracts.js';
 import { checkpointPath, loadCheckpoint } from './checkpoint.js';
 import { prepareReviewPacket } from './packet.js';
@@ -25,7 +25,11 @@ export function canonicalReviewStory(story: string, hash: string): string {
 export async function prepareReviewAdmission(project: string, reviewId: string, attempt: number, input: unknown,
  reviewer: ReviewerParty, sources: ReviewSources, context: { operation?: ReviewOperation | undefined; epicHash?: string | undefined } = {}): Promise<AdmittedReview> {
  const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
- const operation = request.operation ?? 'start', canonical = await realpath(project), path = checkpointPath(canonical, request.reviewId);
+ const operation = request.operation ?? 'start';
+ // Refuse invalid fresh selections before re-reading any saved source history.
+ // Resume still decodes its immutable packet under historical rules below.
+ if (operation === 'start' && request.packet !== undefined) parsePacket(request.packet);
+ const canonical = await realpath(project), path = checkpointPath(canonical, request.reviewId);
  const saved = await loadCheckpoint(path);
  let priorPrepared: PreparedReviewPacket | undefined;
  if (saved) {

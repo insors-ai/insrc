@@ -9,6 +9,7 @@ import { checkpointPath, saveCheckpoint, loadCheckpoint } from '../checkpoint.js
 import { publishTaskCheckpoint } from '../publication.js';
 import { validateTaskBody } from '../record.js';
 import { decodeReview, CheckpointSchema, MAX_REVIEW_JSON_BYTES } from '../contracts.js';
+import { TaskReviewCoordinator } from '../coordinator.js';
 
 test('recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections', async () => {
  const f=await fixture(true,3);
@@ -60,6 +61,28 @@ test('interrupted unpinned attempts remain readable but cannot execute on resume
   assert.deepEqual(await loadCheckpoint(path), state);
   await assert.rejects(prepareReviewAdmission(f.repo, 'unpinned', 1, undefined, 'daemon', f.deps.sources, { operation: 'resume' }), /Interrupted unpinned history is read-only/);
   assert.equal(readFileSync(path, 'utf8'), bytes);
+ } finally { f.cleanup(); }
+});
+
+test('zero-segment fresh admission rejects before history source work, checkpoint replacement or provider dispatch on both routes', async () => {
+ const f = await fixture();
+ try {
+  await publishTaskCheckpoint(f.repo, hash, 'publication', f.deps);
+  const path = checkpointPath(f.repo, 'publication'), bytes = readFileSync(path, 'utf8');
+  const packet = structuredClone(f.packet); packet.reviewSet[0]!.files[0]!.segments = [];
+  let reads = 0, providers = 0, publications = 0;
+  const unexpected = async (): Promise<never> => { reads++; throw new Error('Unexpected source read'); };
+  const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected },
+   provider: () => { providers++; throw new Error('Unexpected provider dispatch'); },
+   publish: async () => { publications++; throw new Error('Unexpected publication'); } });
+  for (const party of ['daemon', 'controller'] as const) for (const existing of [false, true]) {
+   const id = existing ? 'publication' : `zero-${party}`, ordinal = existing ? 2 : 1;
+   if (party === 'daemon') await assert.rejects(coordinator.start(f.repo, id, ordinal, packet), /scope_conflict/);
+   else await assert.rejects(coordinator.startController(f.repo, id, ordinal, packet, { id: 'controller', signal: new AbortController().signal }, hash), /scope_conflict/);
+   assert.equal(readFileSync(path, 'utf8'), bytes);
+   if (!existing) assert.equal(existsSync(checkpointPath(f.repo, id)), false);
+  }
+  assert.equal(reads, 0); assert.equal(providers, 0); assert.equal(publications, 0);
  } finally { f.cleanup(); }
 });
 

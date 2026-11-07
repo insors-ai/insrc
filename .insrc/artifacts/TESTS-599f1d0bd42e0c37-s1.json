@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 4,
-        "contentHash": "856d4dcb3c2a30242aca2effafc809f8de0a6aa4b1d33b22b6799357c6daa501",
-        "at": "2026-11-07T05:08:26.217Z",
+        "number": 5,
+        "contentHash": "9c71ab8de2646f4abe2d7b0fed265b3d9a09ad98c3e23f2bbf5613a059a69415",
+        "at": "2026-11-07T05:14:21.274Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T05:08:26.091Z",
+    "updatedAt": "2026-11-07T05:14:21.146Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 4
+    "revision": 5
   },
   "body": {
     "tasks": [
@@ -211,6 +211,125 @@
               },
               {
                 "title": "permanent snapshot branches cannot fabricate accepted rows for unmapped failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "3a632606b",
+        "ranAt": "2026-11-07T05:14:21.146Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Identity/shifted-line interval mapping preserves selected text and excludes unrelated insertions and worktree canaries.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "committed projection uses identical-blob fast path and ignores HEAD/worktree changes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "interval offsets exclude insertions inside selected spans and support negative shifts",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "all small single-edit intervals preserve exactly the selected surviving line identities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Changed runs split original intervals into exact surviving and superseded source parts without inventing active historical scope.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "interval projection partitions changed overlaps without granting replacement text",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "all small single-edit intervals preserve exactly the selected surviving line identities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Normalize overlapping final intervals with origin accounting, preserve deletion anchors including empty-file zero and never coalesce unselected gaps.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "normalization retains every origin and never coalesces unselected gaps",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "deletion anchors preserve empty-file zero and mark touched boundaries for witness verification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Invalid UTF-8/binary textual mapping and unprovable interval boundaries fail explicitly without dropping origin entries.",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+                "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 902,
+            "titles": [
+              {
+                "title": "all small single-edit intervals preserve exactly the selected surviving line identities",
+                "result": "pass"
+              },
+              {
+                "title": "interval projection partitions changed overlaps without granting replacement text",
+                "result": "pass"
+              },
+              {
+                "title": "interval offsets exclude insertions inside selected spans and support negative shifts",
+                "result": "pass"
+              },
+              {
+                "title": "normalization retains every origin and never coalesces unselected gaps",
+                "result": "pass"
+              },
+              {
+                "title": "deletion anchors preserve empty-file zero and mark touched boundaries for witness verification",
+                "result": "pass"
+              },
+              {
+                "title": "committed projection uses identical-blob fast path and ignores HEAD/worktree changes",
+                "result": "pass"
+              },
+              {
+                "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions",
                 "result": "pass"
               }
             ],

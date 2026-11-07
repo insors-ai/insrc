@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -57,3 +57,41 @@ Run at 2026-11-07T05:08:26.091Z on commit `816d06a0a`. Tests check: **passed**. 
 | `src/workflow/code-review/task-review/__tests__/admission.test.ts` | 0 | 4 | 2.3 s |  |
 | `src/workflow/code-review/task-review/__tests__/contracts.test.ts` | 0 | 7 | 1.2 s |  |
 | `src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts` | 0 | 2 | 0.5 s |  |
+
+## t2
+
+Run at 2026-11-07T05:14:21.146Z on commit `3a632606b`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: Identity/shifted-line interval mapping preserves selected text and excludes unrelated insertions and worktree canaries.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | committed projection uses identical-blob fast path and ignores HEAD/worktree changes | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | interval offsets exclude insertions inside selected spans and support negative shifts | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | all small single-edit intervals preserve exactly the selected surviving line identities | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+
+**unit: Changed runs split original intervals into exact surviving and superseded source parts without inventing active historical scope.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | interval projection partitions changed overlaps without granting replacement text | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | all small single-edit intervals preserve exactly the selected surviving line identities | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+
+**unit: Normalize overlapping final intervals with origin accounting, preserve deletion anchors including empty-file zero and never coalesce unselected gaps.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | normalization retains every origin and never coalesces unselected gaps | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+| pass | deletion anchors preserve empty-file zero and mark touched boundaries for witness verification | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+
+**unit: Invalid UTF-8/binary textual mapping and unprovable interval boundaries fail explicitly without dropping origin entries.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions | `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts` | 0 | 7 | 0.9 s |  |

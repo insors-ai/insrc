@@ -86,6 +86,8 @@ export interface ScopeDeps {
 	 * refuses it.
 	 */
 	readonly baseDir?: string | undefined;
+	/** Test seam: how the validation reads the file system. Absent, the real file system. */
+	readonly kindOfPath?: ((path: string) => Promise<'file' | 'directory' | 'other' | 'missing'>) | undefined;
 	listRepos(): Promise<readonly RegisteredRepo[]>;
 	findEntitiesByFile(file: string): Promise<readonly Entity[]>;
 	listEntitiesForRepo(repoPath: string, opts?: { readonly limit: 1 } | undefined): Promise<readonly Entity[]>;
@@ -110,6 +112,11 @@ const REAL_DEPS: ScopeDeps = {
 };
 
 /** The scope readers with relative paths resolved against `baseDir` (the call's repository); `deps` unchanged when there is none. */
+/** The validation's file-system reader for a set of scope readers: their seam, or the real one. */
+export function checkDepsOf(deps: ScopeDeps | undefined): ScopeCheckDeps | undefined {
+	return deps?.kindOfPath !== undefined ? { kindOfPath: deps.kindOfPath } : undefined;
+}
+
 export function scopeDepsWithBase(deps: ScopeDeps | undefined, baseDir: string | undefined): ScopeDeps | undefined {
 	return baseDir === undefined ? deps : { ...(deps ?? REAL_DEPS), baseDir };
 }

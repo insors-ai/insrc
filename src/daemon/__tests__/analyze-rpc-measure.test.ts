@@ -273,7 +273,7 @@ test("the one-shot tool and the workflow runner state no size of their own and t
 	const first = await withModel(null, () => buildRun({ ...stated, runId: shared }), LOOKUPS);
 	assert.ok(first.ok);
 	assert.deepEqual(roles.filter(r => r === 'analyze.decompose'), ['analyze.decompose']);
-	const planned = await withModel(fourTaskPlan(small, 'XL'), () => plan({ runId: shared, intent: { ...intentOn(small, 'XL'), focused: true, focus: 'where is fn0', reasoning: stated.intent.reasoning, scopeRef: stated.intent.scopeRef } }), LOOKUPS);
+	const planned = await withModel(fourTaskPlan(small, 'XL'), () => plan({ runId: shared, intent: { ...intentOn(small, 'XL'), focused: true, focus: 'where is fn0', reasoning: stated.intent.reasoning, scopeRef: stated.intent.scopeRef, ...(stated.intent.scopeSource !== undefined ? { scopeSource: stated.intent.scopeSource } : {}) } }), LOOKUPS);
 	assert.ok(planned.ok, planned.ok ? '' : planned.error.message);
 	assert.deepEqual(roles.filter(r => r === 'analyze.decompose'), ['analyze.decompose'], "the run context was not built again for the plan request");
 	assert.ok(roles.includes('analyze.plan'), 'the planner was asked');

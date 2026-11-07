@@ -30,6 +30,8 @@ function deps(f: Fixture = { indexed: true }): ScopeDeps & { calls: string[] } {
 	const calls: string[] = [];
 	return {
 		calls,
+		// Stand-in file system: a path with an extension is a file, any other path a directory.
+		kindOfPath:          async (path) => (/\.[a-z]+$/.test(path) ? 'file' : 'directory'),
 		listRepos:           async () => { calls.push('listRepos'); return [{ path: REPO, status: f.indexed ? 'ready' : 'indexing' } as unknown as RegisteredRepo]; },
 		findEntitiesByFile:  async (file) => { calls.push('findEntitiesByFile'); return f.indexed && file === FILE ? [ent] : []; },
 		listEntitiesForRepo: async () => { calls.push('listEntitiesForRepo'); return f.indexed ? [ent] : []; },

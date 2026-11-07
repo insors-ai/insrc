@@ -64,6 +64,8 @@ test.afterEach(async () => {
 
 /** Readers for resolveScope that touch no store: no repos, one connection. */
 const NO_STORE: ScopeDeps = {
+	// Stand-in file system: a path with an extension is a file, any other path a directory.
+	kindOfPath:          async (path) => (/\.[a-z]+$/.test(path) ? 'file' : 'directory'),
 	listRepos:           async () => [{ path: '/some/repo', status: 'ready' } as unknown as RegisteredRepo],
 	findEntitiesByFile:  async () => [],
 	listEntitiesForRepo: async () => [],

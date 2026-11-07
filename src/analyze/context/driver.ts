@@ -85,7 +85,7 @@ import {
 import { ensureScopeQueryable } from '../runtimes/shared/task-scope.js';
 import { assertSessionReuseNow, beginSessionReuse, assertSessionReuse } from '../session-reuse.js';
 import { assertAnalysisConnectionExecution } from '../connection-access.js';
-import { freshnessPathOf, planRepoOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope } from './scope.js';
+import { freshnessPathOf, planRepoOf, resolveScope, resolveScopeForTarget, scopeDepsWithBase, validateRequestScope, checkDepsOf } from './scope.js';
 import type { ResolvedScope, ScopeDeps } from './scope.js';
 import {
 	modelFacingBundleSchema,
@@ -1284,7 +1284,7 @@ export async function prepareScope(
 		const expectedRepo = (inputs as RunShapeInput).expectedRepo;
 		const scope = await resolveScopeForTarget(ref, target, scopeDepsWithBase(deps, expectedRepo), undefined, execution);
 		// Only a request that carries the call's repository is validated: the other run-mode callers keep their checks.
-		if (expectedRepo !== undefined) await validateRequestScope(scope, expectedRepo);
+		await validateRequestScope(scope, expectedRepo, checkDepsOf(deps));
 		return scope;
 	}
 	return resolveScope(ref, deps, execution);

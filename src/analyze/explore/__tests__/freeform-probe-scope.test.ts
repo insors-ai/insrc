@@ -115,12 +115,12 @@ test("free-form loop's path for a connection is the connection's repo", async ()
 });
 
 test('a module request keeps its own directory, and a bare repo path stands for a workspace scope', async () => {
-	// A module: the loop runs in the module's directory, as before.
+	// A module: the intent keeps the module's own directory as its scope; the loop's tools are keyed on the containing repository.
 	const moduleDir = `${REPO}/src/billing`;
 	const mod: ResolvedScope = { kind: 'module', value: moduleDir, repoPath: REPO, lookupPath: moduleDir };
 	const mArgs = await probe(mod, moduleDir);
 	assert.deepEqual((mArgs.inputs as RunShapeInput).intent.scopeRef, { kind: 'module', value: moduleDir });
-	assert.equal(loopPath(mArgs), moduleDir);
+	assert.equal(loopPath(mArgs), REPO);
 
 	// No scope on the context (a caller that executes a plan on a bare
 	// repo path): exactly what the lookup built before.

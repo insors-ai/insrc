@@ -66,3 +66,17 @@ compared. Identical except as noted:
 
 Observed limit, as designed: `test.locate` and `symbol.locate` have no area filter, so their hits in run 1 included
 files outside the named module. The follow-up Story is limited to runners that already have an area filter.
+
+## Code review round 1 and the fixes
+
+The daemon reviewed the Story as attempt 1 (`analyze-request-s1-r1`, pinned at `fc4003f3f`): 14 tasks passed,
+t6, t7, t10 and t11 asked for changes (all MED), and t19 was incomplete because this note was not in the review set.
+The generated tool-surface golden fixture was left out of the review set: the other session's commit `f9052c424`
+regenerated it over lines this Story added, which the daemon refuses as a scope conflict.
+
+Fixed, one commit each: t10 `pickTopDistinct` returned one candidate for a limit of zero, so a limit of one
+let a ranked child join the named subject (guard added; a new test fails without it); t6 the outside entities are
+seeded before `start` and the module and repository sizes must differ; t7 and t11 the symbol lookup's own output and
+the vector search's exact candidate-id filter are asserted instead of strings the module profile also contains; t4 the
+area cache keys of equivalent path spellings are compared. t4, t6, t10 and t11 were re-validated and pass.
+t7 was not re-validated: the gate flags its commits as before (`scopeRespected: false`), which the user accepted.

@@ -449,6 +449,10 @@
         {
           "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
           "title": "CR publication: idempotent scoped summary and retained checkpoint on publication failure"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+          "title": "qualification: fresh publication restores distinct assigned tests and full identities on both routes without attribution calls"
         }
       ]
     },

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 79 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -338,3 +338,55 @@ Run at 2026-11-07T08:39:55.471Z on commit `1a761053e`. Tests check: **passed**. 
 | `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.9 s |  |
 | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 6 | 2.6 s |  |
 | `src/workflow/code-review/task-review/__tests__/transition.test.ts` | 0 | 3 | 3.3 s |  |
+
+## t10
+
+Run at 2026-11-07T09:03:54.932Z on commit `f9052c424`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+**integration: Both routes review immutable later-fixed code without stale blocker while retaining a demonstrated final provenance/requiredReferences coverage defect; synthetic reviewer responses assert received final code and test evidence.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect | `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` |
+
+**integration: Labelled synthetic t3/t9 reproduction uses the two approved immutable commits and durable CR evidence without claiming unavailable raw packet/attribution/timing recovery.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims | `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` |
+
+**integration: Whole-pipeline fresh-memory reuse, save fencing/re-ACK, final-history publication and capacity tests pass on both routes; independent review ids/pins and cleanup remain isolated.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` |
+| pass | qualification: canonical appended reviews requalify while altered baseline history or metadata is an explicit conflict | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` |
+| pass | fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes | `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` |
+| pass | both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` |
+| pass | Successful story BUILD approval removes only matching fully preserved task/story checkpoints | `src/workflow/code-review/task-review/__tests__/cleanup.test.ts` |
+
+**smoke: Disposable compiled MCP/IPC smoke pins final multi-commit scope, excludes unrelated HEAD/worktree changes and publishes truthful final results.**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/t10-final-smoke.log; command HOME=<isolated /tmp HOME> PATH=<Node22 bin> node scripts/smoke-task-review.mjs. Output compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, explicitRestartResume:true, priorAttemptsPreserved:true, finalMultiCommitPin:eac01bf5f4d22c20fd8d50a1c411c09a360dee1b, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Synthetic native responses assert received final source; installed daemon untouched.
+
+**integration: Scoped task-review/MCP tests, production build and complete 35-subject ac1-ac5 traceability qualify coordinated rollout; no partial deployment or direct cloud/retired engine introduced.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` |
+| pass | MCP transition rejects missing final pins before dispatch on both independent reviewer routes | `src/mcp/__tests__/task-review.test.ts` |
+| pass | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 6 | 2.3 s |  |
+| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 3.8 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 7 | 4.4 s |  |
+| `src/workflow/code-review/task-review/__tests__/cleanup.test.ts` | 0 | 5 | 2.8 s |  |
+| `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` | 0 | 2 | 2.8 s |  |
+| `src/workflow/code-review/task-review/__tests__/qualification.test.ts` | 0 | 3 | 2.1 s |  |

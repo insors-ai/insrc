@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 18,
-        "contentHash": "cd953cc3f9ceafb1c9d782381f220f1dd66da6c9f6d65eae2ba239ddc8038447",
-        "at": "2026-11-07T08:39:55.627Z",
+        "number": 19,
+        "contentHash": "4770a3666cb9f8a1300312975f64b9927908b2c4358ba1b450d99749c59cada9",
+        "at": "2026-11-07T09:03:55.079Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T08:39:55.471Z",
+    "updatedAt": "2026-11-07T09:03:54.932Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 18
+    "revision": 19
   },
   "body": {
     "tasks": [
@@ -1152,6 +1152,338 @@
               },
               {
                 "title": "transition: coordinated rollout and adjacent ownership are explicit in shipped guidance",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "f9052c424",
+        "ranAt": "2026-11-07T09:03:54.932Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Both routes review immutable later-fixed code without stale blocker while retaining a demonstrated final provenance/requiredReferences coverage defect; synthetic reviewer responses assert received final code and test evidence.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+                "title": "historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Labelled synthetic t3/t9 reproduction uses the two approved immutable commits and durable CR evidence without claiming unavailable raw packet/attribution/timing recovery.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+                "title": "historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Whole-pipeline fresh-memory reuse, save fencing/re-ACK, final-history publication and capacity tests pass on both routes; independent review ids/pins and cleanup remain isolated.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+                "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+                "title": "qualification: canonical appended reviews requalify while altered baseline history or metadata is an explicit conflict",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+                "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Disposable compiled MCP/IPC smoke pins final multi-commit scope, excludes unrelated HEAD/worktree changes and publishes truthful final results.",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/t10-final-smoke.log; command HOME=<isolated /tmp HOME> PATH=<Node22 bin> node scripts/smoke-task-review.mjs. Output compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, explicitRestartResume:true, priorAttemptsPreserved:true, finalMultiCommitPin:eac01bf5f4d22c20fd8d50a1c411c09a360dee1b, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Synthetic native responses assert received final source; installed daemon untouched."
+            }
+          },
+          {
+            "name": "Scoped task-review/MCP tests, production build and complete 35-subject ac1-ac5 traceability qualify coordinated rollout; no partial deployment or direct cloud/retired engine introduced.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+                "title": "qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/task-review.test.ts",
+                "title": "MCP transition rejects missing final pins before dispatch on both independent reviewer routes",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2285,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP forwarder: a forwarded insrc_analyze_step with a progressToken emits notifications/progress for each progress frame",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/task-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2724,
+            "titles": [
+              {
+                "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+                "result": "pass"
+              },
+              {
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              },
+              {
+                "title": "normal controller connections are isolated and session close requires explicit resume",
+                "result": "pass"
+              },
+              {
+                "title": "MCP transition rejects missing final pins before dispatch on both independent reviewer routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3773,
+            "titles": [
+              {
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              },
+              {
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              },
+              {
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 5582,
+            "titles": [
+              {
+                "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain reserved completion space",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: oversized accepted mappings and results cannot consume remaining terminal reserve",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4355,
+            "titles": [
+              {
+                "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
+                "result": "pass"
+              },
+              {
+                "title": "unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision",
+                "result": "pass"
+              },
+              {
+                "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement",
+                "result": "pass"
+              },
+              {
+                "title": "unreadable or conflicting acceptance readback stays fenced without overwrite or model work",
+                "result": "pass"
+              },
+              {
+                "title": "failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment",
+                "result": "pass"
+              },
+              {
+                "title": "later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored",
+                "result": "pass"
+              },
+              {
+                "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2831,
+            "titles": [
+              {
+                "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
+                "result": "pass"
+              },
+              {
+                "title": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence",
+                "result": "pass"
+              },
+              {
+                "title": "Rejected approval, task validation and CR publication never clean checkpoints; repeated approval retries partial cleanup",
+                "result": "pass"
+              },
+              {
+                "title": "Cleanup retains malformed/symlink/foreign/future/unrepresented history and reports filesystem failures",
+                "result": "pass"
+              },
+              {
+                "title": "daemon cleanup owner requires approved lifecycle and preserves pointed native diagnostics",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2771,
+            "titles": [
+              {
+                "title": "historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims",
+                "result": "pass"
+              },
+              {
+                "title": "historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2116,
+            "titles": [
+              {
+                "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback",
+                "result": "pass"
+              },
+              {
+                "title": "qualification: canonical appended reviews requalify while altered baseline history or metadata is an explicit conflict",
+                "result": "pass"
+              },
+              {
+                "title": "qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references",
                 "result": "pass"
               }
             ],

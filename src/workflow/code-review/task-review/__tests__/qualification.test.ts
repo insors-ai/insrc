@@ -70,3 +70,29 @@ test('qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavio
  for(const ids of Object.values(manifest.acceptance)){assert.ok(ids.length);assert.ok(ids.every(i=>Number.isInteger(i)&&i>=1&&i<=35));}
  assert.match(manifest.historicalEvidence.reproduction,/not recovered raw checkpoint/);
 });
+
+test('qualification: fresh publication restores distinct assigned tests and full identities on both routes without attribution calls',async()=>{
+ const {RegistryReviewSources}=await import('../sources.js'),{saveCheckpoint}=await import('../checkpoint.js');
+ for(const party of ['daemon','controller']as const){const f=await fixture(true,2);try{
+  if(party==='controller'){f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);}
+  f.put('test-two.js','import assert from "node:assert/strict"; assert.equal(2 + 2, 4);\n');f.git('add','test-two.js');f.git('commit','-qm','distinct test evidence');const pin=f.git('rev-parse','HEAD');f.packet.reviewRevision=pin;
+  f.packet.tests.push({file:'test-two.js',cases:['Task two arithmetic'],command:'node --test test-two.js',result:'not_run',executionDetails:'Distinct assigned assertion source; execution optional',evidenceReferences:[]});
+  await f.refreshBinding([{taskId:'t1',changeIndexes:[0],testIndexes:[0]},{taskId:'t2',changeIndexes:[0],testIndexes:[1]}]);
+  const cp=f.checkpoint('distinct'),a=cp.attempts[0]!;a.header.reviewer=party;a.header.interrupted=true;delete a.header.completedAt;a['review-response'].tasks=[];
+  const path=checkpointPath(f.repo,'distinct');await saveCheckpoint(path,cp);const bindings=structuredClone(a.header);
+  const sources=new RegistryReviewSources({repoPath:f.repo,sessionId:'fresh-publication',requestId:1,send:()=>{}});let calls=0;
+  const output=(prompt:string)=>{
+   const task=JSON.parse(/\nTask: (.+)\nPinned documents:/.exec(prompt)![1]!)as{taskId:string;tests:{file:string}[]};const file=task.taskId==='t1'?'test.js':'test-two.js';assert.deepEqual(task.tests.map(t=>t.file),[file]);
+   return{...f.result,taskId:task.taskId,inspectedReferences:[`${pin}:source.js`],testCoverage:{...f.result.testCoverage,evidenceReferences:[`${pin}:${file}`]}};
+  };
+  const c=new TaskReviewCoordinator({sources,provider:()=>provider(async prompt=>{calls++;assert.ok(!prompt.startsWith('Derive task attribution'));return output(prompt);}),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{sources,through:f.deps.through,...(baseline?{baseline}:{})})});
+  if(party==='daemon'){await c.start(f.repo,'distinct',1,undefined,{operation:'resume'});await c.settled(f.repo,'distinct');assert.equal(calls,2);}
+  else{const owner={id:'fresh-controller',signal:new AbortController().signal};let frame=await c.startController(f.repo,'distinct',1,undefined,owner,hash,'resume');while(frame.kind==='task')frame=await c.controllerResult(f.repo,'distinct',1,output(frame.prompt!),owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});assert.equal(frame.kind,'done');assert.equal(calls,0);}
+  const saved=f.read(path).attempts[0]!;assert.equal(saved['review-response'].crPublication,'complete');assert.deepEqual(saved.header.acceptedAttribution,bindings.acceptedAttribution);assert.deepEqual(saved.header.taskScopeIdentities,bindings.taskScopeIdentities);
+  const record=JSON.parse(readFileSync(`${f.repo}/.insrc/artifacts/CR-${hash}-s1.json`,'utf8'))as{body:unknown};const body=validateTaskBody(record.body),snapshot=body.reviews[0]!.scope.finalScope!;
+  assert.equal(snapshot.testCount,2);assert.deepEqual(snapshot.tasks.map(t=>t.testIndexes),[[0],[1]]);assert.equal(body.status,'passed');
+  if(party==='daemon')await c.start(f.repo,'distinct',1,undefined,{operation:'resume'});
+  else assert.equal((await c.startController(f.repo,'distinct',1,undefined,{id:'terminal-reader',signal:new AbortController().signal},hash,'resume')).kind,'done');
+  assert.equal(calls,party==='daemon'?2:0);
+ }finally{f.cleanup();}}
+});

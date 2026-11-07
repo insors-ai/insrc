@@ -108,6 +108,11 @@ test('a valid request mints a state whose intent has the named scope, context an
 		await addRepo(null, { path: repo, name: repo, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' }).catch(() => undefined);
 		await upsertEntities(null, [{ id: `e-${repo}`, repo, file: join(repo, 'src', 'x.ts'), kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 2 } as unknown as Entity]);
 	}
+	// entities outside the module exist BEFORE the call, in two more files, so the repository is a larger size than the module
+	await upsertEntities(null, [
+		{ id: 'e-outside-1', repo: A, file: join(A, 'other', 'z.ts'), kind: 'function', name: 'z1', language: 'typescript', startLine: 1, endLine: 2 },
+		{ id: 'e-outside-2', repo: A, file: join(A, 'other', 'w.ts'), kind: 'function', name: 'z2', language: 'typescript', startLine: 3, endLine: 4 },
+	] as unknown as Entity[]);
 	const start = async (request: unknown) => {
 		const envelope = await handleAnalyzeStep({ phase: 'start', repo: A, request });
 		return JSON.parse((envelope.content[0] as { text: string }).text) as { next: string; state: string; error?: { code: string } };
@@ -120,14 +125,11 @@ test('a valid request mints a state whose intent has the named scope, context an
 	assert.equal(decoded.intent.scopeSource, 'request');
 	assert.equal(decoded.repoPath, A);
 	// the size is the one measured from the named area, not from the whole repository
-	await upsertEntities(null, [
-		{ id: 'e-outside-1', repo: A, file: join(A, 'other', 'z.ts'), kind: 'function', name: 'z1', language: 'typescript', startLine: 1, endLine: 2 },
-		{ id: 'e-outside-2', repo: A, file: join(A, 'other', 'z.ts'), kind: 'function', name: 'z2', language: 'typescript', startLine: 3, endLine: 4 },
-	] as unknown as Entity[]);
 	const moduleMeasure = await measureResolvedScope(await stepScope({ target: 'code', scopeRef: { kind: 'module', value: join(A, 'src') } }, undefined, undefined, A), 'code');
 	const wholeMeasure  = await measureResolvedScope(await stepScope({ target: 'code', scopeRef: { kind: 'workspace', value: A } }, undefined, undefined, A), 'code');
 	assert.ok(moduleMeasure.items < wholeMeasure.items, `the module holds fewer entities (${moduleMeasure.items}) than the repository (${wholeMeasure.items})`);
 	assert.equal(decoded.intent.scope, moduleMeasure.size);
+	assert.notEqual(moduleMeasure.size, wholeMeasure.size, 'the module and the repository are different sizes, so the minted size can only come from the module');
 
 	// a prompt-only call still starts, on the workspace scope
 	const prompt = JSON.parse(((await handleAnalyzeStep({ phase: 'start', repo: A, focus: 'how does it work' })).content[0] as { text: string }).text) as { state: string };

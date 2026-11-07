@@ -17,7 +17,21 @@ test('accepted attribution decision unions retain only permitted fields', () => 
  const { taskScopeIdentities: _bindings, ...missing } = accepted;
  assert.equal(Value.Check(AttributionStateSchema, missing), false);
  assert.equal(Value.Check(AttributionStateSchema, { ...accepted, attributionFailure: { code: 'failure', summary: 'No mapping' } }), false);
- assert.ok(Value.Check(AttributionStateSchema, { ...pending, attributionState: 'failed', attributionIdentity: identity, attributionFailure: { code: 'failure', summary: 'No mapping' } }));
+ const failed = { ...pending, attributionState: 'failed', attributionIdentity: identity, attributionFailure: { code: 'failure', summary: 'No mapping' } };
+ assert.ok(Value.Check(AttributionStateSchema, failed));
+ for (const key of ['finalScopeIdentity', 'attributionIdentity', 'attributionFailure']) {
+  const incomplete: Record<string, unknown> = { ...failed }; delete incomplete[key];
+  assert.equal(Value.Check(AttributionStateSchema, incomplete), false, `failed requires ${key}`);
+ }
+ for (const field of [{ acceptedAttribution: [row] }, { taskScopeIdentities: [{ taskId: 't1', identity }] }]) {
+  assert.equal(Value.Check(AttributionStateSchema, { ...failed, ...field }), false, 'failed refuses accepted mapping fields');
+ }
+ for (const key of ['acceptedAttribution', 'taskScopeIdentities', 'attributionIdentity', 'finalScopeIdentity']) {
+  const incomplete: Record<string, unknown> = { ...accepted }; delete incomplete[key];
+  assert.equal(Value.Check(AttributionStateSchema, incomplete), false, `accepted requires ${key}`);
+ }
+ assert.equal(Value.Check(AttributionStateSchema, { attributionState: 'pending' }), false);
+ assert.equal(Value.Check(AttributionStateSchema, { ...pending, attributionFailure: failed.attributionFailure }), false);
 });
 
 test('permanent snapshot branches cannot fabricate accepted rows for unmapped failure', () => {
@@ -29,6 +43,7 @@ test('permanent snapshot branches cannot fabricate accepted rows for unmapped fa
  assert.equal(Value.Check(FinalScopeSnapshotSchema, missing), false);
  const accepted = { ...base, attributionState: 'accepted', tasks: [{ ...row, identity }] };
  assert.ok(Value.Check(FinalScopeSnapshotSchema, accepted));
+ assert.equal(Value.Check(FinalScopeSnapshotSchema, { ...accepted, attributionFailure: failed.attributionFailure }), false);
  assert.equal(Value.Check(FinalScopeSnapshotSchema, { ...accepted, tasks: [] }), false);
  assert.equal(Value.Check(FinalScopeSnapshotSchema, { ...accepted, entries: [{ ...base.entries[0], segments: [{ after: [1, 1] }] }] }), false);
 });

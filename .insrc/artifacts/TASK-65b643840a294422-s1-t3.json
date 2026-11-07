@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-79d5f84b-bb72-487e-8067-3c088e3463a4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.955Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move the area helpers to the shared scope module and add scopeArea",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4526a4372bf365bedfcc8903ad2d45d1d603851d7de127597274b55a9fe10d16",
+        "at": "2026-11-06T19:46:57.955Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.955Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the area helpers to the shared scope module and add scopeArea",
+    "summary": "Move graphRepoOf, inAreaOf and docsAreaOf from src/analyze/runtimes/shared/task-scope.ts to src/analyze/context/scope.ts, re-exporting them from the old path so task runtimes are unchanged; add scopeArea (dir, file or symbol area, null for workspace, repo and connection scopes) and scopeAreaKey (the serialised area, or 'repo') built on them.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "task runtimes still pass their existing tests through the re-exports",
+      "scopeArea of a symbol scope is the one entity and null for a workspace, repo or connection scope",
+      "scopeAreaKey differs for two different modules"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scope-area.test.ts: graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

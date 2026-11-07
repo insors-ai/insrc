@@ -1,0 +1,800 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1793993667594-ur3jwn",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:38:55.729Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 265958,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "epicSlug": "take-structured-analyze-request-not-prompt",
+    "storyId": "s1",
+    "lldRunId": "wf-1793992092485-royzfd",
+    "lldEffectiveHash": "1fbc0044dfcb2963e459d69a46e6831625e6275079da1938bd7aec465166987c",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0485db0b6ba21991ff1c2fa5774dc6410bab629ca0af0701c871f15fbb74c94f",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.592Z"
+      }
+    },
+    "rangeBase": "d923f91dc8150a73fd1b81391695c415cc94c97f"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build lays the request type, the shared builder and the area helpers first, then the one validation hook (with a canonical-path rule) on both the step and one-shot paths, then moves the four plan-context sites onto the containing repository. On that base concept.resolve returns an anchor that the recipes, the capability runner and the docs adapters follow, the exploration cache is keyed on the area, and the report, prompts and one-shot cache key carry the scope and context. The daemon capability, the forwarder refusal, the MCP schemas, the gated steering publication and the rollout notes come last, followed by one verification pass."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Add AnalyzeRequest, the two intent fields and the RPC parser support",
+        "summary": "Add AnalyzeRequest to src/shared/analyze-types.ts; add optional context and scopeSource (explicit | undefined) to ClassifiedIntent and UnsizedIntent; make parseIntent in src/daemon/analyze-rpc.ts keep context (string, at most 4000 characters) and scopeSource ('request' or 'prompt') and refuse any other value; an intent without them parses as before.",
+        "size": "S",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "parseIntent keeps context and scopeSource and refuses a bad value of either",
+          "an intent without the fields parses exactly as before",
+          "the project typechecks"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "analyze-rpc-intent.test.ts: parseIntent keeps context and scopeSource, refuses a bad value of either, and parses an intent without them as before"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the synchronous shared request builder",
+        "summary": "Add buildIntentFromRequest in src/analyze/context/request.ts: builds the unsized intent from a request or the old flat fields, sets context and scopeSource, defaults target to code, ignores flat target and scope when a request is present, refuses an empty question, an over-long context and a request with a differing focus; it reads no file system or index.",
+        "size": "S",
+        "order": 2,
+        "dependsOn": [
+          "t1"
+        ],
+        "acceptanceChecks": [
+          "the same request yields the same intent for the step tool's and the one-shot tool's inputs",
+          "a prompt-only call gets the workspace scope and scopeSource prompt",
+          "a request ignores a flat target and size"
+        ],
+        "derivedFrom": [
+          "c1",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "request.test.ts: buildIntentFromRequest makes the same intent for a request through both tools, defaults target to code, ignores a flat target and size, refuses an empty question, an over-long context and a differing focus, and keeps context off scopeRef"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Move the area helpers to the shared scope module and add scopeArea",
+        "summary": "Move graphRepoOf, inAreaOf and docsAreaOf from src/analyze/runtimes/shared/task-scope.ts to src/analyze/context/scope.ts, re-exporting them from the old path so task runtimes are unchanged; add scopeArea (dir, file or symbol area, null for workspace, repo and connection scopes) and scopeAreaKey (the serialised area, or 'repo') built on them.",
+        "size": "S",
+        "order": 3,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "task runtimes still pass their existing tests through the re-exports",
+          "scopeArea of a symbol scope is the one entity and null for a workspace, repo or connection scope",
+          "scopeAreaKey differs for two different modules"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "scope-area.test.ts: graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Add the canonical-path rule and validateRequestScope",
+        "summary": "Add a canonical-path rule before repository resolution: a file, module or manifest-dir scope value is normalised to an absolute path with '.' and '..' segments resolved (symbolic links are not followed) and the one canonical string is used by containment, validateRequestScope, inAreaOf filtering and the cache area key. Add validateRequestScope in src/analyze/context/scope.ts with ScopeNotFoundError (missing or wrong path type) and ScopeRepoMismatchError (scope in a registered repository other than expectedRepo); a valid existing empty directory is a valid empty area.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t3"
+        ],
+        "acceptanceChecks": [
+          "/work/a/../b/file.ts is resolved to /work/b/file.ts and refused with ScopeRepoMismatchError when the call's repository is /work/a",
+          "equivalent spellings of one path give the same scope value and cache key",
+          "a nonexistent file, a directory given as a file scope and a file given as a module scope are refused with ScopeNotFoundError",
+          "an existing directory with no stored entity is accepted"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "scope-validate.test.ts: validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Run the validation hook on both resolution paths with the expected repository",
+        "summary": "Give stepScope and prepareScope an optional expectedRepo argument that calls validateRequestScope after resolution; the step start passes the resolved repository, plan and narrow pass the state's repoPath; oneShotRunParams returns expectedRepo and the daemon's buildRun passes it to prepareScope, so start, plan, narrow and the one-shot run refuse an invalid scope before any read.",
+        "size": "M",
+        "order": 5,
+        "dependsOn": [
+          "t2",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "the real step handlers refuse an invalid scope at start, plan and narrow",
+          "the real one-shot handler refuses an invalid scope before any read",
+          "a continuation repeats the check",
+          "a '..' path that enters another registered repository is refused through both real handlers, comparing the canonical path"
+        ],
+        "derivedFrom": [
+          "c2",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "start-request.test.ts: the real start, plan and narrow handlers refuse a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch"
+          },
+          {
+            "level": "integration",
+            "name": "analyze-oneshot-handler.test.ts: the real one-shot handler and buildRun refuse the same invalid scopes through prepareScope with the repository from oneShotRunParams"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Make both tools use the builder and accept the request",
+        "summary": "Add an optional request to StepInputStart (focus optional, one required) and to the one-shot arguments; handleStart and oneShotRunParams use buildIntentFromRequest; checkOneShotArgs accepts a request in place of a focus and returns a message for a malformed request; prompt-only calls keep working and stay accepted (refusal only by a declared contract in a later Story).",
+        "size": "M",
+        "order": 6,
+        "dependsOn": [
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "handleStart with a request mints a state whose intent has the named scope, context and scopeSource request",
+          "checkOneShotArgs accepts a request with no focus and returns a message for a malformed one",
+          "a prompt-only call behaves as before"
+        ],
+        "derivedFrom": [
+          "c8",
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "analyze-oneshot-request.test.ts: checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository"
+          },
+          {
+            "level": "integration",
+            "name": "start-request.test.ts: a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names"
+          }
+        ]
+      },
+      {
+        "id": "t7",
+        "title": "Key graph reads on the containing repository at all four plan-context sites",
+        "summary": "Use graphRepoOf(scope) for repoPath and closureRepos at step plan (phases/plan.ts), step narrow resume (phases/narrow.ts), the one-shot shaper session (context/driver.ts) and one-shot executePlan (context/driver.ts), passing the named area as ctx.scope; the resumed plan uses the same key as the paused one.",
+        "size": "M",
+        "order": 7,
+        "dependsOn": [
+          "t3",
+          "t5"
+        ],
+        "acceptanceChecks": [
+          "for a module and a manifest-dir scope with entities stored under the registered repository, module.profile and symbol.locate return the module's entities on both tools",
+          "a post-narrow resume uses the same repository key",
+          "a repo or workspace scope keeps today's values"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "plan-module-scope.test.ts: the plan and the narrow resume pass the containing repository and the named area and return the module's entities"
+          },
+          {
+            "level": "integration",
+            "name": "oneshot-module-scope.test.ts: the one-shot shaper session and executePlan use graphRepoOf(scope) for module and manifest-dir scopes"
+          }
+        ]
+      },
+      {
+        "id": "t8",
+        "title": "Scope concept.resolve to its area and return the anchor",
+        "summary": "Restrict concept.resolve candidates to the area (inAreaOf), add ConceptAnchor (path, kind, source, entityId and filePath for a symbol) to the output, convert a ranked entity hit to a symbol anchor, and return the named area as the anchor even when no hit exists; a repo or workspace scope returns hits[0] converted, or none.",
+        "size": "M",
+        "order": 8,
+        "dependsOn": [
+          "t3",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "no hit outside the named area is returned and the anchor is the area with source named-scope even with no hit",
+          "a child that outranks the named module does not displace the anchor",
+          "a workspace or repo scope returns hits[0] as the anchor",
+          "a ranked entity hit becomes a symbol anchor"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "concept-resolve-scope.test.ts: no candidate outside the area, anchor named-scope with an empty hit list, a child does not displace the anchor, symbol anchor identity, entity hit to symbol anchor, workspace and repo results equal today's"
+          }
+        ]
+      },
+      {
+        "id": "t9",
+        "title": "Follow the anchor in the planning recipes and the synthesizer prompt",
+        "summary": "Change the recipes in src/prompts/analyze/decompose.system.md from hits[0].path to anchor.path and the instruction in src/prompts/analyze/synthesize.code.system.md to centre on the anchor; for a symbol anchor chain symbol-aware explorations on the entity id and skip or label file-level dependents (module.profile, convention.detect) as contextual file expansion.",
+        "size": "M",
+        "order": 9,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "a module-scope request profiles the named module through the real dependent runners even when the question shares no word with it",
+          "a small symbol in a large file keeps file-level explorations skipped or labelled contextual and is sized and searched as the one entity",
+          "legacy repo and workspace plans behave as before"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "request-end-to-end.test.ts: a module-scope request profiles the named module with no lexical match and a small symbol in a large file runs symbol-aware runners, skips or labels file-level runners and synthesis centres on the symbol"
+          }
+        ]
+      },
+      {
+        "id": "t10",
+        "title": "Make capability.reuse-check use the named anchor",
+        "summary": "In prepareCapabilityReuseCheck (and its run path) take the candidates from the named-scope anchor when concept.resolve returns one, instead of short-circuiting on empty hits or profiling only ranked hits; handle a symbol anchor by entity id; record completeness honestly when the area is empty.",
+        "size": "M",
+        "order": 10,
+        "dependsOn": [
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "a capability question whose wording shares no token with the named module still inspects that module",
+          "a higher-ranked child does not replace the named subject",
+          "a symbol anchor is handled by entity id"
+        ],
+        "derivedFrom": [
+          "c5",
+          "c12"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "capability-reuse-anchor.test.ts: a capability question with no lexical match still inspects the named module, a higher-ranked child does not replace the subject, a symbol anchor is handled by entity id, on both execution modes"
+          }
+        ]
+      },
+      {
+        "id": "t11",
+        "title": "Forward the docs area at both dispatch tables",
+        "summary": "Give doc.mention an area argument forwarded to retrieveDocSections; make the one-shot RUNNERS dispatch adapters and the step NARROW_RUNNERS.prepare adapters (separate code paths) for doc.mention, doc.decision-trace and doc.constraint-enumerate pass docsAreaOf(ctx.scope); repo and workspace scopes pass no area.",
+        "size": "M",
+        "order": 11,
+        "dependsOn": [
+          "t3",
+          "t7"
+        ],
+        "acceptanceChecks": [
+          "a file and a module docs plan returns no section outside the area on both execution modes",
+          "with no candidate in the area no embedding runs",
+          "repo and workspace scopes call retrieval as before"
+        ],
+        "derivedFrom": [
+          "c6"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "doc-area-forwarding.test.ts: the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward docsAreaOf(ctx.scope) for file and module scopes and no area for repo or workspace scopes"
+          },
+          {
+            "level": "unit",
+            "name": "docs-retrieval.test.ts: with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes and no candidates performs no embedding"
+          },
+          {
+            "level": "integration",
+            "name": "docs-plan-area.test.ts: complete file-scope and module-scope docs plans return no section outside the area through the step executor and the one-shot executor"
+          }
+        ]
+      },
+      {
+        "id": "t12",
+        "title": "Key the persistent exploration cache on the area and raise its version",
+        "summary": "Hash scopeAreaKey into the cache params of concept.resolve, the doc.* explorations and capability.reuse-check through one key function used by the executor and by the narrow phase's write; raise EXPLORATION_CACHE_VERSION to 3 so older rows (without an anchor) are not read.",
+        "size": "M",
+        "order": 12,
+        "dependsOn": [
+          "t8",
+          "t10",
+          "t11"
+        ],
+        "acceptanceChecks": [
+          "two consecutive same-question requests on different modules do not share an entry on either tool, including capability.reuse-check",
+          "a version-2 row is not read",
+          "the narrow write and the executor write use the same key function"
+        ],
+        "derivedFrom": [
+          "c4"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "exploration-cache-scope.test.ts: the key differs per area and per version, a version-2 row is not read and the narrow write uses the executor's key"
+          },
+          {
+            "level": "integration",
+            "name": "cache-area-isolation.test.ts: consecutive same-question requests on different modules, including capability.reuse-check, do not share an entry on the step and one-shot tools and a version-2 row is not read"
+          }
+        ]
+      },
+      {
+        "id": "t13",
+        "title": "Report the scope in the answer",
+        "summary": "Add scope { kind, value, named } to the answer report through reportFromLookups at both call sites (context/driver.ts and the step bundle path) and render one line: the workspace default from scopeSource; anchor selection only when an executed concept.resolve result establishes it; not-recorded for older payloads.",
+        "size": "M",
+        "order": 13,
+        "dependsOn": [
+          "t6",
+          "t8"
+        ],
+        "acceptanceChecks": [
+          "both tools, including a narrow continuation, render the same scope line for the same intent",
+          "a prompt-only docs analysis is not described as text-matched",
+          "a structured workspace request and a prompt-only call with the same question render differently"
+        ],
+        "derivedFrom": [
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "answer-report-scope.test.ts: the scope line for request, prompt and not-recorded sources, same scopeRef with different scopeSource renders differently, a prompt-only docs analysis is not text-matched while a ranked concept.resolve result is"
+          },
+          {
+            "level": "integration",
+            "name": "start-request.test.ts: a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded"
+          }
+        ]
+      },
+      {
+        "id": "t14",
+        "title": "Show scope and context in the prompts and key the one-shot cache",
+        "summary": "Show scope, question and context on separate lines in the planning prompt and context as background in synthesis; include scope, question, context and scopeSource in computeCacheKey.",
+        "size": "M",
+        "order": 14,
+        "dependsOn": [
+          "t6"
+        ],
+        "acceptanceChecks": [
+          "context reaches the planning and synthesis prompts through both handlers and a narrow continuation without changing the named scope",
+          "the one-shot cache key differs for a different scope, question, context or scopeSource and is equal for the same request",
+          "scopeSource is pinned in cache verification including cached final-report rendering"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "context-prompts.test.ts: context reaches the planning and synthesis prompts through both handlers and a narrow continuation without changing the named scope"
+          },
+          {
+            "level": "integration",
+            "name": "cache-key-scope.test.ts: the one-shot computeCacheKey differs for scope, question, context or scopeSource, a cached report renders its own scope line, and isolation is asserted on the one-shot key and the exploration cache"
+          }
+        ]
+      },
+      {
+        "id": "t15",
+        "title": "Advertise the analyze-request capability in the shared status builder",
+        "summary": "Add features (readonly string[]) containing 'analyze-request' to DaemonStatus in src/shared/types.ts and to buildDaemonStatus in src/daemon/status.ts, so the threaded admin handler and the single-threaded handler both return it.",
+        "size": "S",
+        "order": 15,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "daemon.status returns the feature from the threaded and the single-threaded handler",
+          "the DaemonStatus type includes features"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "daemon-status-features.test.ts: buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it"
+          }
+        ]
+      },
+      {
+        "id": "t16",
+        "title": "Refuse request-carrying calls to a daemon without the capability",
+        "summary": "In src/mcp/forward-step.ts, reuse the existing daemon.status request and the DaemonStatus type from t15 (no new RPC) to read features before forwarding a call that carries a request object to insrc_analyze_step or insrc_analyze, on a fresh connection per call, and throw DaemonTooOldError when 'analyze-request' is absent; prompt-only calls are always forwarded.",
+        "size": "M",
+        "order": 16,
+        "dependsOn": [
+          "t15"
+        ],
+        "acceptanceChecks": [
+          "a request call to a daemon without the feature is refused with DaemonTooOldError",
+          "a prompt-only call is forwarded to any daemon",
+          "a same-process reconnect test that switches daemon capability between calls sees the change"
+        ],
+        "derivedFrom": [
+          "c9"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "forward-step-features.test.ts: a request call to a daemon lacking analyze-request is refused with DaemonTooOldError, forwarded to a daemon that advertises it, a prompt-only call is forwarded to either, and a same-process reconnect that switches daemon capability between calls sees the change"
+          }
+        ]
+      },
+      {
+        "id": "t17",
+        "title": "Add the request object to both MCP schemas and regenerate the golden file",
+        "summary": "Add the request object to the zod input schemas of insrc_analyze_step and insrc_analyze in src/mcp/server.ts, update the tool descriptions, and regenerate src/mcp/__tests__/fixtures/tool-surface.golden.json.",
+        "size": "M",
+        "order": 17,
+        "dependsOn": [
+          "t6",
+          "t16"
+        ],
+        "acceptanceChecks": [
+          "the tool-surface test passes against the regenerated golden file",
+          "both registrations accept request-only, prompt-only and mixed calls and reject a malformed request with the schema message",
+          "a request is forwarded to the daemon handlers unchanged"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c8"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "forward-step.test.ts: the thirteen tools keep their names, descriptions and input schemas against the regenerated golden file"
+          },
+          {
+            "level": "integration",
+            "name": "analyze-request-forward.test.ts: both registrations accept request-only, prompt-only and mixed calls, forward the request unchanged and reject a malformed request with the schema message"
+          }
+        ]
+      },
+      {
+        "id": "t18",
+        "title": "Publish the steering text safely and document the rollout",
+        "summary": "Gate publication of the request guidance so the daemon's boot-time steering refresh includes it only when the daemon advertises analyze-request; update src/prompts/steering-block.md (the injected skeleton), src/mcp/steering-template.md and the tool descriptions to tell agents to send the request object while keeping the search-versus-analysis rule; document the deploy order (update MCP processes, then restart the daemon, or suspend analysis during the transition), that in-flight tokens end at the restart, that zeroDowntime is false, that prompt-only calls stay accepted with refusal only by a declared contract in a later Story, and that the follow-up Story is limited to runners that already have an area filter.",
+        "size": "M",
+        "order": 18,
+        "dependsOn": [
+          "t15",
+          "t17"
+        ],
+        "acceptanceChecks": [
+          "the boot refresh does not publish the request guidance when the capability is absent",
+          "the injected skeleton from steering-block.md tells agents to send the request object and keeps the decision rule",
+          "the migration notes state zeroDowntime false and the deploy order"
+        ],
+        "derivedFrom": [
+          "c10",
+          "c11"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "steering-analyze-request.test.ts: the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule"
+          },
+          {
+            "level": "integration",
+            "name": "steering-gated-refresh.test.ts: the boot refresh does not publish the request guidance when the capability is absent and publishes it when present"
+          }
+        ]
+      },
+      {
+        "id": "t19",
+        "title": "Verify the whole change",
+        "summary": "Run the typecheck (npm run build), the analyze, daemon-step, daemon, db and MCP suites once, and one live analysis with a named module scope and one prompt-only call against the daemon; record results in the build record.",
+        "size": "S",
+        "order": 19,
+        "dependsOn": [
+          "t9",
+          "t12",
+          "t13",
+          "t14",
+          "t18"
+        ],
+        "acceptanceChecks": [
+          "npm run build passes",
+          "the named suites pass or any inherited failure is recorded",
+          "a live module-scope analysis and a prompt-only call return answers whose reports state the scope"
+        ],
+        "derivedFrom": [
+          "c11",
+          "c13"
+        ],
+        "tests": [
+          {
+            "level": "smoke",
+            "name": "npm run build typechecks and the analyze, daemon-step, daemon, db and MCP suites pass or inherited failures are recorded"
+          },
+          {
+            "level": "live",
+            "name": "a live module-scope analysis and a prompt-only call against the daemon return answers whose reports state the scope"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/request.test.ts: buildIntentFromRequest makes the same intent for a request through the step tool's and the one-shot tool's inputs; a request without target gets code; a request ignores a flat target and size; a prompt-only call gets the workspace scope and scopeSource prompt; a request and a different focus are refused; an empty question and an over-long context are refused; context is carried on the intent and never changes scopeRef",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/scope-validate.test.ts: validateRequestScope refuses a nonexistent file or directory inside an indexed repository, a directory given as a file scope, a file given as a module scope, and a scope in another registered repository; accepts an existing directory that holds no stored entity as a valid empty area; leaves workspace, repo and connection scopes to the existing checks",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/scope-area.test.ts: graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as the task runtimes' tests already pin after the move, and scopeArea returns null for workspace, repo and connection scopes and the one entity for a symbol",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/__tests__/analyze-oneshot-request.test.ts: checkOneShotArgs accepts a request with no focus, returns a message for a missing question, an unknown scopeRef kind, a non-string value or context and for a request plus a differing focus, and still requires one of the two; oneShotRunParams builds the intent from the builder and returns the expected repository",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/analyze-rpc-intent.test.ts: parseIntent keeps context and scopeSource, refuses a bad value of either, and parses an intent without them as before",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts: with a module, manifest-dir, file or symbol scope no candidate outside the area is returned, the anchor is the area with source named-scope even with an empty hit list, and a child that outranks the named module does not displace the anchor; a symbol scope gives kind symbol with entityId and the file; a ranked hit of kind entity becomes a symbol anchor; with a workspace or repo scope the result equals today's and the anchor is hits[0]",
+        "coveredByTaskIds": [
+          "t8"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/__tests__/docs-retrieval.test.ts: with a stubbed vector search, an area passed to retrieveDocSections passes only candidate ids inside the area, a stronger-matching section outside the area never competes, and no candidates inside the area performs no embedding",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts: the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward docsAreaOf(ctx.scope) for a file and a module scope and forward no area for a repo or workspace scope",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/db/__tests__/exploration-cache-scope.test.ts: the cache key differs for the same exploration and params under different areas and under version 2 and 3, a version-2 row is not read, and the narrow-phase write uses the executor's key",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/answer-report-scope.test.ts: reportFromLookups renders the scope line for request, prompt and not-recorded sources; two intents with the same scopeRef but different scopeSource render differently; a prompt-only docs analysis is not described as text-matched while a ranked concept.resolve result is",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/analyze-step/__tests__/start-request.test.ts: through the real handleStart, plan and narrow handlers, a request with a nonexistent path, a wrong path kind or a scope in another repository is refused at start, and refused at a plan or narrow continuation when the state's repository no longer matches; a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names",
+        "coveredByTaskIds": [
+          "t5",
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/__tests__/analyze-oneshot-handler.test.ts: through the real one-shot handler and buildRun, the same invalid scopes are refused through prepareScope with the repository from oneShotRunParams",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/analyze-step/__tests__/plan-module-scope.test.ts: for a module and a manifest-dir scope with entities stored under the registered repository root, the plan and the narrow resume both pass the containing repository as repoPath and closureRepos and the named area as ctx.scope, the resumed plan uses the same key as the paused one, and module.profile and symbol.locate return the module's entities instead of an empty list",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/oneshot-module-scope.test.ts: the one-shot shaper session and executePlan use graphRepoOf(scope) for a module and a manifest-dir scope with entities stored under the containing repository",
+        "coveredByTaskIds": [
+          "t7"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/cache-area-isolation.test.ts: two consecutive requests with the same question against two different modules, on the step tool and on the one-shot tool, run concept.resolve twice with different areas and the second does not receive the first module's anchor or hits; a row written under version 2 is not read",
+        "coveredByTaskIds": [
+          "t12"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/context/__tests__/cache-key-scope.test.ts: the one-shot computeCacheKey differs for a different scope, question, context or scopeSource and is equal for the same request; a cached final report renders the scope line of its own intent for a structured workspace request and a prompt-only call; the step tool has no bundle cache (readBundleForStep returns null), so isolation is asserted on the one-shot key and on the exploration cache, not on handleStart",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/docs-plan-area.test.ts: a complete file-scope and module-scope docs plan returns no section outside the area through the step executor and the one-shot executor",
+        "coveredByTaskIds": [
+          "t11"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/request-end-to-end.test.ts: a module-scope request runs planning and execution and the recipes chained on the anchor profile the named module even when the question shares no word with it; a symbol-scope request on a small symbol in a large file runs the real symbol-aware dependent runners on the entity, skips or labels contextual the file-level runners, and the synthesis prompt centres on the symbol",
+        "coveredByTaskIds": [
+          "t9"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/analyze/explore/__tests__/context-prompts.test.ts: context reaches the planning prompt and the synthesis prompt through both handlers and through a narrow continuation, without changing the named scope",
+        "coveredByTaskIds": [
+          "t14"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/steps/analyze-step/__tests__/start-request.test.ts: a state token whose intent lacks context and scopeSource still drives the plan and bundle phases and the final report says the origin was not recorded",
+        "coveredByTaskIds": [
+          "t13"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/__tests__/forward-step.test.ts: the thirteen tools keep their names, descriptions and input schemas against the regenerated golden file with the request object on both analyze tools",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/__tests__/analyze-request-forward.test.ts: both registrations accept a request-only call, a prompt-only call and a mixed call, forward the request object to the daemon handlers unchanged, and reject a malformed request with the schema message",
+        "coveredByTaskIds": [
+          "t17"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/mcp/__tests__/forward-step-features.test.ts: mixed versions: the forwarder refuses a request-carrying call to a daemon whose daemon.status lacks analyze-request with DaemonTooOldError, forwards the same call to a daemon that advertises it, and forwards a prompt-only call to either",
+        "coveredByTaskIds": [
+          "t16"
+        ]
+      },
+      {
+        "lldStrategyItem": "src/daemon/__tests__/steering-analyze-request.test.ts: the skeleton returned by the injected-block path from src/prompts/steering-block.md tells agents to read the user's prompt, decide the scope and send the request object, and still contains the search-versus-analysis decision rule; src/mcp/steering-template.md and both tool descriptions say the same",
+        "coveredByTaskIds": [
+          "t18"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: AnalyzeRequest, buildIntentFromRequest and the intent fields"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: validateRequestScope and the stepScope and prepareScope hook"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 dataModelChanges: area helpers and the repository key at four plan-context sites"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 dataModelChanges: persistent exploration cache key and version"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: ConceptResolveOutput.anchor, recipes and capability consumer"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 dataModelChanges: document explorations area forwarding"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: reportFromLookups scope field and one-shot cache key"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: handleStart, oneShotRunParams, checkOneShotArgs, parseIntent"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 contractDetails: daemon capability and forwarder refusal"
+    },
+    {
+      "id": "c10",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 dataModelChanges: MCP schemas, golden file, prompts and steering text"
+    },
+    {
+      "id": "c11",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 migration: deploy order, backward compatibility and verification"
+    },
+    {
+      "id": "c12",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 errorPaths: error cases, edge cases and invariants"
+    },
+    {
+      "id": "c13",
+      "kind": "prior-artifact",
+      "ref": "LLD-65b643840a294422-s1 testStrategy: unit, integration and contract levels"
+    }
+  ]
+}

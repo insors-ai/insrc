@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d0da0fc3-4b2e-4e6f-9492-3f4bbd6ef24f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.960Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Key graph reads on the containing repository at all four plan-context sites",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b24cba59f0853d42a26ab6437ff44290c488b453b2dded45d13e6527c38bb783",
+        "at": "2026-11-06T19:46:57.960Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.960Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Key graph reads on the containing repository at all four plan-context sites",
+    "summary": "Use graphRepoOf(scope) for repoPath and closureRepos at step plan (phases/plan.ts), step narrow resume (phases/narrow.ts), the one-shot shaper session (context/driver.ts) and one-shot executePlan (context/driver.ts), passing the named area as ctx.scope; the resumed plan uses the same key as the paused one.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "for a module and a manifest-dir scope with entities stored under the registered repository, module.profile and symbol.locate return the module's entities on both tools",
+      "a post-narrow resume uses the same repository key",
+      "a repo or workspace scope keeps today's values"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "plan-module-scope.test.ts: the plan and the narrow resume pass the containing repository and the named area and return the module's entities"
+      },
+      {
+        "level": "integration",
+        "name": "oneshot-module-scope.test.ts: the one-shot shaper session and executePlan use graphRepoOf(scope) for module and manifest-dir scopes"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0535ff88-129b-494d-b00d-8020f6be42b1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.959Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make both tools use the builder and accept the request",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1b6a15cc061f0020852e23a0640ab6509c9553538f0ac47e44bf9e92a3b7454c",
+        "at": "2026-11-06T19:46:57.959Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.959Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make both tools use the builder and accept the request",
+    "summary": "Add an optional request to StepInputStart (focus optional, one required) and to the one-shot arguments; handleStart and oneShotRunParams use buildIntentFromRequest; checkOneShotArgs accepts a request in place of a focus and returns a message for a malformed request; prompt-only calls keep working and stay accepted (refusal only by a declared contract in a later Story).",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "handleStart with a request mints a state whose intent has the named scope, context and scopeSource request",
+      "checkOneShotArgs accepts a request with no focus and returns a message for a malformed one",
+      "a prompt-only call behaves as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "analyze-oneshot-request.test.ts: checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository"
+      },
+      {
+        "level": "integration",
+        "name": "start-request.test.ts: a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

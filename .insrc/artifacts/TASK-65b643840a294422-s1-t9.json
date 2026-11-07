@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b7e900b-c7ca-4ec9-83e9-c91a8289c1b9",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.962Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Follow the anchor in the planning recipes and the synthesizer prompt",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1f28e2301c032eb4e1859d9c0fc719f1aa747aa29fc5712de67a75accbf10140",
+        "at": "2026-11-06T19:46:57.962Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.963Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Follow the anchor in the planning recipes and the synthesizer prompt",
+    "summary": "Change the recipes in src/prompts/analyze/decompose.system.md from hits[0].path to anchor.path and the instruction in src/prompts/analyze/synthesize.code.system.md to centre on the anchor; for a symbol anchor chain symbol-aware explorations on the entity id and skip or label file-level dependents (module.profile, convention.detect) as contextual file expansion.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "a module-scope request profiles the named module through the real dependent runners even when the question shares no word with it",
+      "a small symbol in a large file keeps file-level explorations skipped or labelled contextual and is sized and searched as the one entity",
+      "legacy repo and workspace plans behave as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "request-end-to-end.test.ts: a module-scope request profiles the named module with no lexical match and a small symbol in a large file runs symbol-aware runners, skips or labels file-level runners and synthesis centres on the symbol"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

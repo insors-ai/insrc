@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a9ce98af-9bb4-4d93-9218-3087523ae290",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.953Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the synchronous shared request builder",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "44f0edf3f214daf44c49dc70353a840bff00b2b7d136857081fadf8239f9b7d8",
+        "at": "2026-11-06T19:46:57.953Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.954Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the synchronous shared request builder",
+    "summary": "Add buildIntentFromRequest in src/analyze/context/request.ts: builds the unsized intent from a request or the old flat fields, sets context and scopeSource, defaults target to code, ignores flat target and scope when a request is present, refuses an empty question, an over-long context and a request with a differing focus; it reads no file system or index.",
+    "size": "S",
+    "order": 2,
+    "acceptanceChecks": [
+      "the same request yields the same intent for the step tool's and the one-shot tool's inputs",
+      "a prompt-only call gets the workspace scope and scopeSource prompt",
+      "a request ignores a flat target and size"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "request.test.ts: buildIntentFromRequest makes the same intent for a request through both tools, defaults target to code, ignores a flat target and size, refuses an empty question, an over-long context and a differing focus, and keeps context off scopeRef"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

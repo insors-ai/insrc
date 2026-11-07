@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0054383e-5361-43ec-bf6f-4c4dc1ab9d9a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.971Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Refuse request-carrying calls to a daemon without the capability",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "04262ad658c48ce5d73a05942368d00916779cc2d3a813079cb2a66a6296899a",
+        "at": "2026-11-06T19:46:57.971Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.972Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Refuse request-carrying calls to a daemon without the capability",
+    "summary": "In src/mcp/forward-step.ts, reuse the existing daemon.status request and the DaemonStatus type from t15 (no new RPC) to read features before forwarding a call that carries a request object to insrc_analyze_step or insrc_analyze, on a fresh connection per call, and throw DaemonTooOldError when 'analyze-request' is absent; prompt-only calls are always forwarded.",
+    "size": "M",
+    "order": 16,
+    "acceptanceChecks": [
+      "a request call to a daemon without the feature is refused with DaemonTooOldError",
+      "a prompt-only call is forwarded to any daemon",
+      "a same-process reconnect test that switches daemon capability between calls sees the change"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "forward-step-features.test.ts: a request call to a daemon lacking analyze-request is refused with DaemonTooOldError, forwarded to a daemon that advertises it, a prompt-only call is forwarded to either, and a same-process reconnect that switches daemon capability between calls sees the change"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

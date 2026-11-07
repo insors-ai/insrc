@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4d835387-0578-4db7-a629-6f1b6b248a01",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.964Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Make capability.reuse-check use the named anchor",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "adcf034c48075e2b11cea5a0f1fd96c26ba04db46b2af388387dcfc2dd774a3b",
+        "at": "2026-11-06T19:46:57.964Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.964Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Make capability.reuse-check use the named anchor",
+    "summary": "In prepareCapabilityReuseCheck (and its run path) take the candidates from the named-scope anchor when concept.resolve returns one, instead of short-circuiting on empty hits or profiling only ranked hits; handle a symbol anchor by entity id; record completeness honestly when the area is empty.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "a capability question whose wording shares no token with the named module still inspects that module",
+      "a higher-ranked child does not replace the named subject",
+      "a symbol anchor is handled by entity id"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "capability-reuse-anchor.test.ts: a capability question with no lexical match still inspects the named module, a higher-ranked child does not replace the subject, a symbol anchor is handled by entity id, on both execution modes"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fb7766a3-341c-4935-8c01-c4dc70553031",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.968Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Report the scope in the answer",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "92e0218072845902fb6a80a1d3fba4714d4888d6da777277e626250df73c8b94",
+        "at": "2026-11-06T19:46:57.968Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.968Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Report the scope in the answer",
+    "summary": "Add scope { kind, value, named } to the answer report through reportFromLookups at both call sites (context/driver.ts and the step bundle path) and render one line: the workspace default from scopeSource; anchor selection only when an executed concept.resolve result establishes it; not-recorded for older payloads.",
+    "size": "M",
+    "order": 13,
+    "acceptanceChecks": [
+      "both tools, including a narrow continuation, render the same scope line for the same intent",
+      "a prompt-only docs analysis is not described as text-matched",
+      "a structured workspace request and a prompt-only call with the same question render differently"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "answer-report-scope.test.ts: the scope line for request, prompt and not-recorded sources, same scopeRef with different scopeSource renders differently, a prompt-only docs analysis is not text-matched while a ranked concept.resolve result is"
+      },
+      {
+        "level": "integration",
+        "name": "start-request.test.ts: a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

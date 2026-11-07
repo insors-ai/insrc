@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-40c846b0-beca-481e-8763-38b883b444b3",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.973Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Publish the steering text safely and document the rollout",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t17",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "322bea98c59ee14e368e6d43f588ab347066990e141b122e625abd83838d8559",
+        "at": "2026-11-06T19:46:57.973Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.974Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Publish the steering text safely and document the rollout",
+    "summary": "Gate publication of the request guidance so the daemon's boot-time steering refresh includes it only when the daemon advertises analyze-request; update src/prompts/steering-block.md (the injected skeleton), src/mcp/steering-template.md and the tool descriptions to tell agents to send the request object while keeping the search-versus-analysis rule; document the deploy order (update MCP processes, then restart the daemon, or suspend analysis during the transition), that in-flight tokens end at the restart, that zeroDowntime is false, that prompt-only calls stay accepted with refusal only by a declared contract in a later Story, and that the follow-up Story is limited to runners that already have an area filter.",
+    "size": "M",
+    "order": 18,
+    "acceptanceChecks": [
+      "the boot refresh does not publish the request guidance when the capability is absent",
+      "the injected skeleton from steering-block.md tells agents to send the request object and keeps the decision rule",
+      "the migration notes state zeroDowntime false and the deploy order"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "steering-analyze-request.test.ts: the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule"
+      },
+      {
+        "level": "integration",
+        "name": "steering-gated-refresh.test.ts: the boot refresh does not publish the request guidance when the capability is absent and publishes it when present"
+      }
+    ],
+    "planTaskId": "t18"
+  },
+  "citations": []
+}

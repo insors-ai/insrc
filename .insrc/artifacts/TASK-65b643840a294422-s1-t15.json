@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-44a0cadf-5e68-4f7c-9ba7-4ecbc561d45e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.970Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Advertise the analyze-request capability in the shared status builder",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dfcbc2ba93c30e21f5c9439eead1ce33b92bab3186059a47cd145a90e24b3ca7",
+        "at": "2026-11-06T19:46:57.970Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Advertise the analyze-request capability in the shared status builder",
+    "summary": "Add features (readonly string[]) containing 'analyze-request' to DaemonStatus in src/shared/types.ts and to buildDaemonStatus in src/daemon/status.ts, so the threaded admin handler and the single-threaded handler both return it.",
+    "size": "S",
+    "order": 15,
+    "acceptanceChecks": [
+      "daemon.status returns the feature from the threaded and the single-threaded handler",
+      "the DaemonStatus type includes features"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "daemon-status-features.test.ts: buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it"
+      }
+    ],
+    "planTaskId": "t15"
+  },
+  "citations": []
+}

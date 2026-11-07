@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a11e8e43-3ece-4d9b-a306-7be8560d522f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.965Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Forward the docs area at both dispatch tables",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "ed3bd919a8f0806f735f76334ec0e9585707eb06bf311faecf45f92b8e2da353",
+        "at": "2026-11-06T19:46:57.965Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.965Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Forward the docs area at both dispatch tables",
+    "summary": "Give doc.mention an area argument forwarded to retrieveDocSections; make the one-shot RUNNERS dispatch adapters and the step NARROW_RUNNERS.prepare adapters (separate code paths) for doc.mention, doc.decision-trace and doc.constraint-enumerate pass docsAreaOf(ctx.scope); repo and workspace scopes pass no area.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "a file and a module docs plan returns no section outside the area on both execution modes",
+      "with no candidate in the area no embedding runs",
+      "repo and workspace scopes call retrieval as before"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "doc-area-forwarding.test.ts: the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward docsAreaOf(ctx.scope) for file and module scopes and no area for repo or workspace scopes"
+      },
+      {
+        "level": "unit",
+        "name": "docs-retrieval.test.ts: with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes and no candidates performs no embedding"
+      },
+      {
+        "level": "integration",
+        "name": "docs-plan-area.test.ts: complete file-scope and module-scope docs plans return no section outside the area through the step executor and the one-shot executor"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

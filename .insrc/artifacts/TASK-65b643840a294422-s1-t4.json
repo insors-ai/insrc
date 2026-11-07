@@ -1,0 +1,80 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-780f6b31-3849-4b98-a010-30236d3e297a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.956Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the canonical-path rule and validateRequestScope",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "df1fc6769bd2d2a4c89327fcdfdf56c1096c13e889494b7aee7fdbcac24cdaa4",
+        "at": "2026-11-06T19:46:57.956Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.957Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the canonical-path rule and validateRequestScope",
+    "summary": "Add a canonical-path rule before repository resolution: a file, module or manifest-dir scope value is normalised to an absolute path with '.' and '..' segments resolved (symbolic links are not followed) and the one canonical string is used by containment, validateRequestScope, inAreaOf filtering and the cache area key. Add validateRequestScope in src/analyze/context/scope.ts with ScopeNotFoundError (missing or wrong path type) and ScopeRepoMismatchError (scope in a registered repository other than expectedRepo); a valid existing empty directory is a valid empty area.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "/work/a/../b/file.ts is resolved to /work/b/file.ts and refused with ScopeRepoMismatchError when the call's repository is /work/a",
+      "equivalent spellings of one path give the same scope value and cache key",
+      "a nonexistent file, a directory given as a file scope and a file given as a module scope are refused with ScopeNotFoundError",
+      "an existing directory with no stored entity is accepted"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "scope-validate.test.ts: validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

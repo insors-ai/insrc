@@ -1,0 +1,89 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-69604a33-c93d-400c-bd74-3e2bc910e7cc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.957Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Run the validation hook on both resolution paths with the expected repository",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "848bcaff662e8610f3f4b981cad122f8a74633d49fc7f20cc6c293a102b5cc21",
+        "at": "2026-11-06T19:46:57.957Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.958Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Run the validation hook on both resolution paths with the expected repository",
+    "summary": "Give stepScope and prepareScope an optional expectedRepo argument that calls validateRequestScope after resolution; the step start passes the resolved repository, plan and narrow pass the state's repoPath; oneShotRunParams returns expectedRepo and the daemon's buildRun passes it to prepareScope, so start, plan, narrow and the one-shot run refuse an invalid scope before any read.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "the real step handlers refuse an invalid scope at start, plan and narrow",
+      "the real one-shot handler refuses an invalid scope before any read",
+      "a continuation repeats the check",
+      "a '..' path that enters another registered repository is refused through both real handlers, comparing the canonical path"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "start-request.test.ts: the real start, plan and narrow handlers refuse a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch"
+      },
+      {
+        "level": "integration",
+        "name": "analyze-oneshot-handler.test.ts: the real one-shot handler and buildRun refuse the same invalid scopes through prepareScope with the repository from oneShotRunParams"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

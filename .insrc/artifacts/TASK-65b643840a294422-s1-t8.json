@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c8922bf4-01c9-4cdf-b4bf-e1733f85ed80",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.961Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Scope concept.resolve to its area and return the anchor",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "985393bbfeb7a19fbf299c5c2805159551162e88f67f3d5554e335c86813ff77",
+        "at": "2026-11-06T19:46:57.961Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.962Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Scope concept.resolve to its area and return the anchor",
+    "summary": "Restrict concept.resolve candidates to the area (inAreaOf), add ConceptAnchor (path, kind, source, entityId and filePath for a symbol) to the output, convert a ranked entity hit to a symbol anchor, and return the named area as the anchor even when no hit exists; a repo or workspace scope returns hits[0] converted, or none.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "no hit outside the named area is returned and the anchor is the area with source named-scope even with no hit",
+      "a child that outranks the named module does not displace the anchor",
+      "a workspace or repo scope returns hits[0] as the anchor",
+      "a ranked entity hit becomes a symbol anchor"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "concept-resolve-scope.test.ts: no candidate outside the area, anchor named-scope with an empty hit list, a child does not displace the anchor, symbol anchor identity, entity hit to symbol anchor, workspace and repo results equal today's"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

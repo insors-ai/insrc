@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0b4dc18e-c34b-4d75-8348-61d142934c1a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.975Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify the whole change",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t14",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t18",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "909f97e739c772f20249f787c1d3458d62b26fdb11b037c99c2424b381985f27",
+        "at": "2026-11-06T19:46:57.975Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify the whole change",
+    "summary": "Run the typecheck (npm run build), the analyze, daemon-step, daemon, db and MCP suites once, and one live analysis with a named module scope and one prompt-only call against the daemon; record results in the build record.",
+    "size": "S",
+    "order": 19,
+    "acceptanceChecks": [
+      "npm run build passes",
+      "the named suites pass or any inherited failure is recorded",
+      "a live module-scope analysis and a prompt-only call return answers whose reports state the scope"
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "npm run build typechecks and the analyze, daemon-step, daemon, db and MCP suites pass or inherited failures are recorded"
+      },
+      {
+        "level": "live",
+        "name": "a live module-scope analysis and a prompt-only call against the daemon return answers whose reports state the scope"
+      }
+    ],
+    "planTaskId": "t19"
+  },
+  "citations": []
+}

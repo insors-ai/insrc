@@ -1,0 +1,1827 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 47,
+        "contentHash": "a9a0d20ae013c6ad88c0c8c6db2f433f842575162d8b6c4a95281c0795f3e7d9",
+        "at": "2026-11-07T09:31:53.869Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "createdAt": "2026-11-06T19:48:13.986Z",
+    "updatedAt": "2026-11-07T09:31:53.821Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "epicSlug": "take-structured-analyze-request-not-prompt",
+    "revision": 47
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "d07de0287",
+        "ranAt": "2026-11-06T19:50:07.951Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze-rpc-intent.test.ts: parseIntent keeps context and scopeSource, refuses a bad value of either, and parses an intent without them as before",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/analyze-rpc-intent.test.ts",
+                "title": "parseIntent keeps context and scopeSource, refuses a bad value of either, and parses an intent without them as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/analyze-rpc-intent.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 740,
+            "titles": [
+              {
+                "title": "parseIntent keeps context and scopeSource, refuses a bad value of either, and parses an intent without them as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "a66aab929",
+        "ranAt": "2026-11-06T19:51:38.025Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "request.test.ts: buildIntentFromRequest makes the same intent for a request through both tools, defaults target to code, ignores a flat target and size, refuses an empty question, an over-long context and a differing focus, and keeps context off scopeRef",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/request.test.ts",
+                "title": "buildIntentFromRequest makes the same intent for a request through both tools, defaults target to code, ignores a flat target and size, refuses an empty question, an over-long context and a differing focus, and keeps context off scopeRef",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/request.test.ts",
+                "title": "a prompt-only call gets the workspace scope and scopeSource prompt",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 394,
+            "titles": [
+              {
+                "title": "buildIntentFromRequest makes the same intent for a request through both tools, defaults target to code, ignores a flat target and size, refuses an empty question, an over-long context and a differing focus, and keeps context off scopeRef",
+                "result": "pass"
+              },
+              {
+                "title": "a prompt-only call gets the workspace scope and scopeSource prompt",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "76512b76b",
+        "ranAt": "2026-11-06T19:55:09.054Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scope-area.test.ts: graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/scope-area.test.ts",
+                "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a module, a file, a symbol and a connection scope resolve to the registered repo and the area",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+                "title": "a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts",
+                "title": "sourceModulesOf returns one module per directory that directly holds a source file, none for a directory of artifacts only, and none for a directory whose source is all in sub-directories (mutation: count artifact files as source)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 568,
+            "titles": [
+              {
+                "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/source-modules.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 605,
+            "titles": [
+              {
+                "title": "sourceModulesOf returns one module per directory that directly holds a source file, none for a directory of artifacts only, and none for a directory whose source is all in sub-directories (mutation: count artifact files as source)",
+                "result": "pass"
+              },
+              {
+                "title": "sourceModulesOf keeps a stored module entity with its id and lists no directory in or under its directory as a module of its own, also when the entity lies above the area and is not itself listed (mutation: test rule (b) against the area's entities only)",
+                "result": "pass"
+              },
+              {
+                "title": "sourceModulesOf names a module by its path relative to the repo, '.' for the repo's own directory, and does not take 'payments' for part of 'pay' (mutation: test the prefix without the slash)",
+                "result": "pass"
+              },
+              {
+                "title": "moduleOfDirectory reads an absolute path, a relative path, a trailing slash and '.' as the same directory, and moduleOfEntityId reads a stored module entity's id with neither a scope nor a repo's entities (mutation: treat every value as an entity id, as before)",
+                "result": "pass"
+              },
+              {
+                "title": "moduleOfDirectory fails for a directory with no stored source under it, for one outside the repo, for one outside the scope's area and for a directory path under a file or symbol scope, and moduleOfEntityId for the id of an entity of another kind, each with its own message; a relative value with no known repo is joined to the scope's own directory",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/shared/__tests__/task-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 606,
+            "titles": [
+              {
+                "title": "a table test over four families and seven kinds of scope: pairings in the table resolve, the rest throw the mismatch error naming the kinds allowed (mutation: give a family a kind outside its row)",
+                "result": "pass"
+              },
+              {
+                "title": "a kind added to a row of a stand-in table is accepted",
+                "result": "pass"
+              },
+              {
+                "title": "a module, a file, a symbol and a connection scope resolve to the registered repo and the area",
+                "result": "pass"
+              },
+              {
+                "title": "a scope in no registered repo is not indexed for code and docs and resolves for infra and data",
+                "result": "pass"
+              },
+              {
+                "title": "an unreadable or empty registry does not refuse a path scope; a symbol scope fails as resolveScope decides (mutation: treat a null repo as not indexed)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "489eee9c8",
+        "ranAt": "2026-11-07T04:41:11.353Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "scope-validate.test.ts: validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/scope-validate.test.ts",
+                "title": "validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/scope-area.test.ts",
+                "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 592,
+            "titles": [
+              {
+                "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/scope-validate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 584,
+            "titles": [
+              {
+                "title": "validateRequestScope refuses a nonexistent path, a wrong path kind and a scope in another registered repository, accepts an existing empty directory, leaves workspace, repo and connection scopes to the existing checks, and resolves '..' and equivalent spellings to one canonical path",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "489eee9c8",
+        "ranAt": "2026-11-07T04:40:00.085Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "start-request.test.ts: the real start, plan and narrow handlers refuse a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/start-request.test.ts",
+                "title": "the plan phase through the real handler refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository, from the state token",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/start-request.test.ts",
+                "title": "the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw '..' path into another registered repository are refused",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/start-request.test.ts",
+                "title": "a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "analyze-oneshot-handler.test.ts: the real one-shot handler and buildRun refuse the same invalid scopes through prepareScope with the repository from oneShotRunParams",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-oneshot-handler.test.ts",
+                "title": "runAnalyzeOneShot hands the call's repository to the run, and the real buildRun refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository before any read",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+                "title": "runShaper: with the call's repository a cached bundle is not served for a nonexistent path, a wrong path kind or a raw '..' path into another registered repository; without it the cache still comes first",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1080,
+            "titles": [
+              {
+                "title": "runShaper, run mode: an unfocused request on a module gets a stamped bundle, and each step is handed the resolved scope",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a refused pairing fails before the scope is resolved or any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a scope outside every registered repo fails as not indexed before any step runs",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper, run mode: a cause becomes its typed error and does NOT fall through to the tool loop",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper's run-mode bundle carries the report derived from the executed lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup that returns no completeness record is listed as failed, and the answer is still written from the other lookups",
+                "result": "pass"
+              },
+              {
+                "title": "a request answered by the free-form lookup alone returns a bundle with a one-source 'model-directed' report",
+                "result": "pass"
+              },
+              {
+                "title": "a bundle cached before the change is not returned",
+                "result": "pass"
+              },
+              {
+                "title": "the tool loop's final answer is asked for with a schema that has no report, and a classification bundle carries none",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a lastIndexedAt that throws ends as ShaperIndexStateReadError (code 'index-state-read-failed'), through the one injectable reader (PipelineSteps.lastIndexedAt), at runShaper's freshness read and inside the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper cache order: a cache hit does not call scope resolution (a scopeDeps that throws is never reached) and returns the bundle; a hit on a connection scope while another repository's connections file is broken returns the bundle",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit for a bundle whose repository is now being indexed is refused with RepoIndexingError and the bundle is not returned; a bundle without repoPath is a miss",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit whose recorded repository was reindexed since (newer last-indexed time) is a miss and the request is built",
+                "result": "pass"
+              },
+              {
+                "title": "bundle schema: a freshly built bundle with repoPath (a string and null) passes validateBundleWithErrors; an older bundle without it still validates",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a connection-scope bundle (repoPath null) is served from cache without the indexing and freshness checks",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit decides the index state by the same rule as a miss: a generic run, or a run whose caller checked the scope, about a repository being indexed is served from a warm cache as it would be built from a cold one; a code run is refused",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: a cache hit on a code run whose recorded repository the index no longer holds is refused as not indexed, as the same request is from a cold cache",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper (ISSUE-0c845762): a docs run on a scope the index does not hold (in no registered repository, or in a registered repository with no stored entities) is refused as not indexed before any lookup or model call, cold and warm, with the run's message; a caller that checked the scope already is not checked again",
+                "result": "pass"
+              },
+              {
+                "title": "s10 t9: bundle cache stale by docRelationsRevision",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper: with the call's repository a cached bundle is not served for a nonexistent path, a wrong path kind or a raw '..' path into another registered repository; without it the cache still comes first",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/analyze-oneshot-handler.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 863,
+            "titles": [
+              {
+                "title": "the real one-shot handler and buildRun refuse the same invalid scopes through prepareScope with the repository from oneShotRunParams",
+                "result": "pass"
+              },
+              {
+                "title": "runAnalyzeOneShot hands the call's repository to the run, and the real buildRun refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository before any read",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/start-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 839,
+            "titles": [
+              {
+                "title": "the real start, plan and narrow scope check refuses a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "the plan phase through the real handler refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository, from the state token",
+                "result": "pass"
+              },
+              {
+                "title": "a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start",
+                "result": "pass"
+              },
+              {
+                "title": "the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw '..' path into another registered repository are refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "a7ac49610",
+        "ranAt": "2026-11-07T04:36:18.252Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "analyze-oneshot-request.test.ts: checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/analyze-oneshot-request.test.ts",
+                "title": "checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "start-request.test.ts: a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/start-request.test.ts",
+                "title": "a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/analyze-oneshot-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 777,
+            "titles": [
+              {
+                "title": "checkOneShotArgs accepts a request with no focus, returns a message for a malformed request, requires one of request or focus; oneShotRunParams builds the intent from the builder and returns the expected repository",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/start-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 867,
+            "titles": [
+              {
+                "title": "the real start, plan and narrow scope check refuses a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "the plan phase through the real handler refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository, from the state token",
+                "result": "pass"
+              },
+              {
+                "title": "a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start",
+                "result": "pass"
+              },
+              {
+                "title": "the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw '..' path into another registered repository are refused",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "cf118ca9e",
+        "ranAt": "2026-11-07T05:06:38.852Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "plan-module-scope.test.ts: the plan and the narrow resume pass the containing repository and the named area and return the module's entities",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/plan-module-scope.test.ts",
+                "title": "the plan phase passes the containing repository and the named area for a module scope; a symbol lookup returns its entities and the module profile runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/plan-module-scope.test.ts",
+                "title": "the plan phase passes the containing repository and the named area for a manifest-dir scope; a symbol lookup returns its entities and the module profile runs",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/steps/__tests__/plan-module-scope.test.ts",
+                "title": "the narrow resume passes the same containing repository and area as the plan, so the lookup after the pause finds the module's entities",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "oneshot-module-scope.test.ts: the one-shot shaper session and executePlan use graphRepoOf(scope) for module and manifest-dir scopes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/oneshot-module-scope.test.ts",
+                "title": "the one-shot shaper session and executePlan use the containing repository for module and manifest-dir scopes, and a lookup returns the stored entities",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/oneshot-module-scope.test.ts",
+                "title": "the one-shot shaper session is keyed on the containing repository for module and manifest-dir scopes, and the area travels as the scope",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/scope-area.test.ts",
+                "title": "planRepoOf: the containing repository for an area scope, today's own path for a repo or workspace scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/oneshot-module-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 842,
+            "titles": [
+              {
+                "title": "the one-shot shaper session and executePlan use the containing repository for module and manifest-dir scopes, and a lookup returns the stored entities",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot shaper session is keyed on the containing repository for module and manifest-dir scopes, and the area travels as the scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/scope-area.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 635,
+            "titles": [
+              {
+                "title": "graphRepoOf, inAreaOf, docsAreaOf and scopeArea behave as pinned after the move; scopeArea is null for workspace, repo and connection scopes and the one entity for a symbol; scopeAreaKey differs per area",
+                "result": "pass"
+              },
+              {
+                "title": "planRepoOf: the containing repository for an area scope, today's own path for a repo or workspace scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/plan-module-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 888,
+            "titles": [
+              {
+                "title": "the plan phase passes the containing repository and the named area for a module scope; a symbol lookup returns its entities and the module profile runs",
+                "result": "pass"
+              },
+              {
+                "title": "the plan phase passes the containing repository and the named area for a manifest-dir scope; a symbol lookup returns its entities and the module profile runs",
+                "result": "pass"
+              },
+              {
+                "title": "the narrow resume passes the same containing repository and area as the plan, so the lookup after the pause finds the module's entities",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "a595d2be3",
+        "ranAt": "2026-11-07T05:19:34.815Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "concept-resolve-scope.test.ts: no candidate outside the area, anchor named-scope with an empty hit list, a child does not displace the anchor, symbol anchor identity, entity hit to symbol anchor, workspace and repo results equal today's",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+                "title": "module scope: no hit lies outside the area, the anchor is the area even with no hit, and a child that outranks the area does not displace it",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+                "title": "manifest-dir scope: no hit lies outside the area, the anchor is the area even with no hit, and a child that outranks the area does not displace it",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+                "title": "file scope: only that file and its entities are candidates; the anchor is the file",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+                "title": "symbol scope: the one entity is the only candidate; the anchor is the symbol with its entity id and file",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+                "title": "workspace and repo scopes return today's hits and the top hit as the anchor; a ranked entity hit becomes a symbol anchor; no hit gives no anchor",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/concept-resolve-unit.test.ts",
+                "title": "directory match beats file match on same token count (Test 3 case)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 637,
+            "titles": [
+              {
+                "title": "module scope: no hit lies outside the area, the anchor is the area even with no hit, and a child that outranks the area does not displace it",
+                "result": "pass"
+              },
+              {
+                "title": "manifest-dir scope: no hit lies outside the area, the anchor is the area even with no hit, and a child that outranks the area does not displace it",
+                "result": "pass"
+              },
+              {
+                "title": "file scope: only that file and its entities are candidates; the anchor is the file",
+                "result": "pass"
+              },
+              {
+                "title": "symbol scope: the one entity is the only candidate; the anchor is the symbol with its entity id and file",
+                "result": "pass"
+              },
+              {
+                "title": "workspace and repo scopes return today's hits and the top hit as the anchor; a ranked entity hit becomes a symbol anchor; no hit gives no anchor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/concept-resolve-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 634,
+            "titles": [
+              {
+                "title": "tokenise drops stopwords + short tokens",
+                "result": "pass"
+              },
+              {
+                "title": "tokenise lowercases + splits on non-alphanumeric",
+                "result": "pass"
+              },
+              {
+                "title": "tokenise handles snake_case + dot-separated",
+                "result": "pass"
+              },
+              {
+                "title": "tokenise drops framework-generic jargon",
+                "result": "pass"
+              },
+              {
+                "title": "splitIdentifier handles snake_case",
+                "result": "pass"
+              },
+              {
+                "title": "splitIdentifier handles camelCase",
+                "result": "pass"
+              },
+              {
+                "title": "splitIdentifier handles kebab-case",
+                "result": "pass"
+              },
+              {
+                "title": "splitIdentifier splits letter/digit boundary + drops single-char tokens",
+                "result": "pass"
+              },
+              {
+                "title": "splitIdentifier handles filename with extension",
+                "result": "pass"
+              },
+              {
+                "title": "directory match beats file match on same token count (Test 3 case)",
+                "result": "pass"
+              },
+              {
+                "title": "depth does NOT enter the score (docs shallow, code deep is a bad prior)",
+                "result": "pass"
+              },
+              {
+                "title": "zero token hits returns null (dropped)",
+                "result": "pass"
+              },
+              {
+                "title": "structural boost lifts dir scores over the same non-boosted case",
+                "result": "pass"
+              },
+              {
+                "title": "score is bounded to [0, 1]",
+                "result": "pass"
+              },
+              {
+                "title": "name-token match contributes to score",
+                "result": "pass"
+              },
+              {
+                "title": "code dir with real entities beats docs dir with zero entities on same tokens",
+                "result": "pass"
+              },
+              {
+                "title": "entity density buckets are monotonic",
+                "result": "pass"
+              },
+              {
+                "title": "classifier query matches classification/ via prefix (shared 8 chars)",
+                "result": "pass"
+              },
+              {
+                "title": "extract query matches extraction/ via prefix",
+                "result": "pass"
+              },
+              {
+                "title": "exact match still beats prefix match at same density",
+                "result": "pass"
+              },
+              {
+                "title": "test file with exact matches loses to real module with prefix match",
+                "result": "pass"
+              },
+              {
+                "title": "test path regex matches common test directory conventions",
+                "result": "pass"
+              },
+              {
+                "title": "test path penalty fires WITHOUT structuralBoost too (regression: executor-placeholders.test.ts beat executor.ts)",
+                "result": "pass"
+              },
+              {
+                "title": "short query token (<7 chars) does NOT prefix-match (no false hit)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "f808738cc",
+        "ranAt": "2026-11-07T05:24:39.893Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "request-end-to-end.test.ts: a module-scope request profiles the named module with no lexical match and a small symbol in a large file runs symbol-aware runners, skips or labels file-level runners and synthesis centres on the symbol",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts",
+                "title": "a module-scope request profiles the named module through the real dependent runners even when the question shares no word with it",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts",
+                "title": "a small symbol in a large file is sized and searched as the one entity; file-level explorations are contextual",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts",
+                "title": "legacy repo and workspace plans behave as before: the anchor path is the top hit's path",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts",
+                "title": "the planning and synthesis prompts name the anchor: no recipe chains on hits[0].path of a concept.resolve, symbol anchors chain on the entity id and label file-level results",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/no-focus-prompts.test.ts",
+                "title": "planning prompt has a no-focus recipe per kind of source, with existing lookups and no limit parameter",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/no-focus-prompts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 815,
+            "titles": [
+              {
+                "title": "planning prompt has a no-focus recipe per kind of source, with existing lookups and no limit parameter",
+                "result": "pass"
+              },
+              {
+                "title": "the no-focus section sits after the other recipes and before the output format",
+                "result": "pass"
+              },
+              {
+                "title": "planning user turn for an unfocused intent names the no-focus section",
+                "result": "pass"
+              },
+              {
+                "title": "every prompt that prints the intent's focus states the no-focus rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 894,
+            "titles": [
+              {
+                "title": "a module-scope request profiles the named module through the real dependent runners even when the question shares no word with it",
+                "result": "pass"
+              },
+              {
+                "title": "a small symbol in a large file is sized and searched as the one entity; file-level explorations are contextual",
+                "result": "pass"
+              },
+              {
+                "title": "legacy repo and workspace plans behave as before: the anchor path is the top hit's path",
+                "result": "pass"
+              },
+              {
+                "title": "the planning and synthesis prompts name the anchor: no recipe chains on hits[0].path of a concept.resolve, symbol anchors chain on the entity id and label file-level results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "5a789d964",
+        "ranAt": "2026-11-07T05:29:16.116Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "capability-reuse-anchor.test.ts: a capability question with no lexical match still inspects the named module, a higher-ranked child does not replace the subject, a symbol anchor is handled by entity id, on both execution modes",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+                "title": "a capability question with no word in common with the named module still inspects that module, first, on the one-shot and the multi-turn mode",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+                "title": "a higher-ranked child does not replace the named subject, on both execution modes",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+                "title": "a symbol subject is handled by entity id on both execution modes: its file is the candidate, its name the only evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+                "title": "an empty named area is checked on both execution modes and its completeness says there was nothing in it",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 970,
+            "titles": [
+              {
+                "title": "a capability question with no word in common with the named module still inspects that module, first, on the one-shot and the multi-turn mode",
+                "result": "pass"
+              },
+              {
+                "title": "a higher-ranked child does not replace the named subject, on both execution modes",
+                "result": "pass"
+              },
+              {
+                "title": "a symbol subject is handled by entity id on both execution modes: its file is the candidate, its name the only evidence",
+                "result": "pass"
+              },
+              {
+                "title": "an empty named area is checked on both execution modes and its completeness says there was nothing in it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "5fccd7b93",
+        "ranAt": "2026-11-07T05:33:17.596Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "doc-area-forwarding.test.ts: the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward docsAreaOf(ctx.scope) for file and module scopes and no area for repo or workspace scopes",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts",
+                "title": "the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward the area for a module and a file scope and no area for a repo or workspace scope, on both execution modes",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts",
+                "title": "an area with no candidate performs no embedding on either execution mode",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs-retrieval.test.ts: with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes and no candidates performs no embedding",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/docs-retrieval.test.ts",
+                "title": "with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes, and no candidates inside the area performs no embedding",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs-plan-area.test.ts: complete file-scope and module-scope docs plans return no section outside the area through the step executor and the one-shot executor",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts",
+                "title": "complete file-scope and module-scope docs plans return no section outside the area through the step executor and the one-shot executor",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/docs-retrieval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 679,
+            "titles": [
+              {
+                "title": "empty query returns []",
+                "result": "pass"
+              },
+              {
+                "title": "empty closureRepos returns []",
+                "result": "pass"
+              },
+              {
+                "title": "no doc entities in closure returns []",
+                "result": "pass"
+              },
+              {
+                "title": "keyword pass finds docs containing query terms",
+                "result": "pass"
+              },
+              {
+                "title": "keyword pass ignores stopwords + short tokens",
+                "result": "pass"
+              },
+              {
+                "title": "non-doc entities are excluded from results",
+                "result": "pass"
+              },
+              {
+                "title": "results ordered by score desc",
+                "result": "pass"
+              },
+              {
+                "title": "dedup collapses same (file, heading) preferring section",
+                "result": "pass"
+              },
+              {
+                "title": "filenameHint boosts matching docs",
+                "result": "pass"
+              },
+              {
+                "title": "path-hint boost is MULTIPLICATIVE (proportional lift, not additive)",
+                "result": "pass"
+              },
+              {
+                "title": "keyword pass counts ALL query terms, not just first 6",
+                "result": "pass"
+              },
+              {
+                "title": "short precise query is not punished by the divisor",
+                "result": "pass"
+              },
+              {
+                "title": "maxResults caps returned length",
+                "result": "pass"
+              },
+              {
+                "title": "minScore filter drops low-scoring results",
+                "result": "pass"
+              },
+              {
+                "title": "kinds allowlist restricts to prose-only when configured",
+                "result": "pass"
+              },
+              {
+                "title": "previewChars caps the body preview",
+                "result": "pass"
+              },
+              {
+                "title": "previewChars=0 omits preview",
+                "result": "pass"
+              },
+              {
+                "title": "with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes, and no candidates inside the area performs no embedding",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 870,
+            "titles": [
+              {
+                "title": "the adapters for doc.mention, doc.decision-trace and doc.constraint-enumerate forward the area for a module and a file scope and no area for a repo or workspace scope, on both execution modes",
+                "result": "pass"
+              },
+              {
+                "title": "complete file-scope and module-scope docs plans return no section outside the area through the step executor and the one-shot executor",
+                "result": "pass"
+              },
+              {
+                "title": "an area with no candidate performs no embedding on either execution mode",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 779,
+            "titles": [
+              {
+                "title": "a docs constraint task and a docs decision task with a module scope retrieve only sections under that directory and count within it; without an area the runners and the lookup pipeline's calls return what they did (mutation: drop the area at the hand-over from runner to prepare)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "fcdde7b58",
+        "ranAt": "2026-11-07T05:40:09.065Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "exploration-cache-scope.test.ts: the key differs per area and per version, a version-2 row is not read and the narrow write uses the executor's key",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/exploration-cache-scope.test.ts",
+                "title": "the cache key differs per area and per version for the area-aware lookups, a version-2 row is not read and the narrow write uses the executor's key function",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/removed-flags.test.ts",
+                "title": "a lookup output cached before the change is not returned: the cache key includes its version",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cache-area-isolation.test.ts: consecutive same-question requests on different modules, including capability.reuse-check, do not share an entry on the step and one-shot tools and a version-2 row is not read",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "two consecutive same-question requests on different modules do not share an entry on the one-shot executor and the step executor",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "capability.reuse-check on different modules does not share an entry on either executor",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "a row keyed the old way is not read, and the narrow phase writes under the area-aware key",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "a version-2 row, written exactly as the previous code wrote it, is not read by either executor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 982,
+            "titles": [
+              {
+                "title": "two consecutive same-question requests on different modules do not share an entry on the one-shot executor and the step executor",
+                "result": "pass"
+              },
+              {
+                "title": "capability.reuse-check on different modules does not share an entry on either executor",
+                "result": "pass"
+              },
+              {
+                "title": "a row keyed the old way is not read, and the narrow phase writes under the area-aware key",
+                "result": "pass"
+              },
+              {
+                "title": "a version-2 row, written exactly as the previous code wrote it, is not read by either executor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/exploration-cache-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 625,
+            "titles": [
+              {
+                "title": "the cache key differs per area and per version for the area-aware lookups, a version-2 row is not read and the narrow write uses the executor's key function",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/removed-flags.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 635,
+            "titles": [
+              {
+                "title": "no prompt under src/prompts/analyze names a removed field, and each names `completeness`",
+                "result": "pass"
+              },
+              {
+                "title": "a lookup output cached before the change is not returned: the cache key includes its version",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "736ae1190",
+        "ranAt": "2026-11-07T05:47:36.758Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "answer-report-scope.test.ts: the scope line for request, prompt and not-recorded sources, same scopeRef with different scopeSource renders differently, a prompt-only docs analysis is not text-matched while a ranked concept.resolve result is",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/explore/__tests__/answer-report-scope.test.ts",
+                "title": "the scope line for request, prompt and not-recorded sources, the same scopeRef with a different source renders differently, a prompt-only docs analysis is not text-matched while a ranked concept.resolve result is",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+                "title": "the one-shot pipeline's report states the scope and who named it, with the same line the step tool renders for the same intent",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "start-request.test.ts: a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/start-request.test.ts",
+                "title": "a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded; the same intent renders the same scope line through a narrow continuation; request, prompt and older payloads differ",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 834,
+            "titles": [
+              {
+                "title": "private pipeline refuses missing authority before reading request data",
+                "result": "pass"
+              },
+              {
+                "title": "focused request on a repo: stand-in arguments and bundle equal the recorded baseline",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns each cause for the stand-in that produces it, including 'empty-plan' through the fourth stand-in",
+                "result": "pass"
+              },
+              {
+                "title": "a planning call that fails for another reason is replaced by the free-form lookup, as before",
+                "result": "pass"
+              },
+              {
+                "title": "a plan whose exploration carries a param its type does not take is not executed: the one-shot driver runs the freeform.probe fallback instead",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns 'not-applicable' for classification and task modes",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for an unfocused intent on a repo, a module and a workspace",
+                "result": "pass"
+              },
+              {
+                "title": "an unfocused intent whose plan is replaced falls to the free-form lookup with a broad-survey purpose",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline returns a bundle for file, symbol, manifest directory and connection scopes with the resolved lookup path",
+                "result": "pass"
+              },
+              {
+                "title": "module scope: the lookups are keyed on the containing repository, the freshness read stays on the module",
+                "result": "pass"
+              },
+              {
+                "title": "cause-to-error table: one case per cause, ShaperLlmUnavailableError only for a failed planning call",
+                "result": "pass"
+              },
+              {
+                "title": "error messages state the cause, name the failed call, and never say retries or Ollama for another provider",
+                "result": "pass"
+              },
+              {
+                "title": "CLI and sampling call failures give 'planner-model-failed' and 'answer-model-failed' from the pipeline",
+                "result": "pass"
+              },
+              {
+                "title": "runShaper throws ShaperAnswerStepFailedError with reason 'invalid-bundle' for an invalid bundle",
+                "result": "pass"
+              },
+              {
+                "title": "settlePipelineOutcome: a valid bundle is stamped and returned; not-applicable continues; a cause throws its error",
+                "result": "pass"
+              },
+              {
+                "title": "the pipeline's three causes after the lookups ran carry the results and the report, and the cause table gives ShaperAnswerStepFailedError with its reason",
+                "result": "pass"
+              },
+              {
+                "title": "a missing answer prompt found after the lookups ran carries the results and the report under its own code; a missing planning prompt carries none",
+                "result": "pass"
+              },
+              {
+                "title": "a run takes one measure of the area it names: the context builder uses the measure it is handed and does not measure, and the size of its planning call is the size on the run's intent; the plan RPC hands its measure to the builder in the same way",
+                "result": "pass"
+              },
+              {
+                "title": "a caller that hands the context builder no measure, or a measure of lookup results, is measured by the builder as before",
+                "result": "pass"
+              },
+              {
+                "title": "pipeline: an executePlan that throws ends as ShaperLookupFailedError (code 'lookup-failed'); PIPELINE_CAUSES and errorForPipelineCause have one case per member",
+                "result": "pass"
+              },
+              {
+                "title": "the one-shot pipeline's report states the scope and who named it, with the same line the step tool renders for the same intent",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/answer-report-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 447,
+            "titles": [
+              {
+                "title": "the scope line for request, prompt and not-recorded sources, the same scopeRef with a different source renders differently, a prompt-only docs analysis is not text-matched while a ranked concept.resolve result is",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/start-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 960,
+            "titles": [
+              {
+                "title": "the real start, plan and narrow scope check refuses a nonexistent path, a wrong path kind, a '..' path into another repository and a repository mismatch",
+                "result": "pass"
+              },
+              {
+                "title": "the plan phase through the real handler refuses a nonexistent path, a wrong path kind and a raw '..' path into another registered repository, from the state token",
+                "result": "pass"
+              },
+              {
+                "title": "a valid request mints a state whose intent has the named scope, context and scopeSource request and measures the area that scope names; an invalid one is refused at start",
+                "result": "pass"
+              },
+              {
+                "title": "the narrow phase through the real handler repeats the scope check on resume: a nonexistent path and a raw '..' path into another registered repository are refused",
+                "result": "pass"
+              },
+              {
+                "title": "a state token lacking context and scopeSource still drives the plan and bundle phases and the report says the origin was not recorded; the same intent renders the same scope line through a narrow continuation; request, prompt and older payloads differ",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "ea8112871",
+        "ranAt": "2026-11-07T05:53:34.818Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "context-prompts.test.ts: context reaches the planning and synthesis prompts through both handlers and a narrow continuation without changing the named scope",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/context-prompts.test.ts",
+                "title": "context reaches the planning and synthesis prompts through both handlers and a narrow continuation, on its own line, without changing the named scope",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "cache-key-scope.test.ts: the one-shot computeCacheKey differs for scope, question, context or scopeSource, a cached report renders its own scope line, and isolation is asserted on the one-shot key and the exploration cache",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/cache-key-scope.test.ts",
+                "title": "the one-shot cache key differs for a different scope, question, context or scopeSource and is equal for the same request",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/context/__tests__/cache-key-scope.test.ts",
+                "title": "a cached bundle renders its own scope line: requests that differ only in who named the scope do not share a bundle",
+                "result": "pass"
+              },
+              {
+                "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+                "title": "two consecutive same-question requests on different modules do not share an entry on the one-shot executor and the step executor",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/cache-key-scope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 849,
+            "titles": [
+              {
+                "title": "the one-shot cache key differs for a different scope, question, context or scopeSource and is equal for the same request",
+                "result": "pass"
+              },
+              {
+                "title": "a cached bundle renders its own scope line: requests that differ only in who named the scope do not share a bundle",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/context-prompts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1230,
+            "titles": [
+              {
+                "title": "context reaches the planning and synthesis prompts through both handlers and a narrow continuation, on its own line, without changing the named scope",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1142,
+            "titles": [
+              {
+                "title": "two consecutive same-question requests on different modules do not share an entry on the one-shot executor and the step executor",
+                "result": "pass"
+              },
+              {
+                "title": "capability.reuse-check on different modules does not share an entry on either executor",
+                "result": "pass"
+              },
+              {
+                "title": "a row keyed the old way is not read, and the narrow phase writes under the area-aware key",
+                "result": "pass"
+              },
+              {
+                "title": "a version-2 row, written exactly as the previous code wrote it, is not read by either executor",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t15",
+        "commit": "9032fa2e0",
+        "ranAt": "2026-11-07T05:56:35.735Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "daemon-status-features.test.ts: buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/daemon-status-features.test.ts",
+                "title": "buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/__tests__/status-store-failure.test.ts",
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/daemon-status-features.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 984,
+            "titles": [
+              {
+                "title": "buildDaemonStatus includes analyze-request and both the threaded admin handler and the single-threaded handler return it",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/status-store-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 687,
+            "titles": [
+              {
+                "title": "daemon status payload: no storeFailure when healthy; kind, time, operation and cause when locks-lost",
+                "result": "pass"
+              },
+              {
+                "title": "status handler with the store failed returns an empty repository list and storeFailure and does not throw",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t16",
+        "commit": "6d1aadcdf",
+        "ranAt": "2026-11-07T06:04:21.260Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "forward-step-features.test.ts: a request call to a daemon lacking analyze-request is refused with DaemonTooOldError, forwarded to a daemon that advertises it, a prompt-only call is forwarded to either, and a same-process reconnect that switches daemon capability between calls sees the change",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step-features.test.ts",
+                "title": "a request call to a daemon lacking analyze-request is refused with DaemonTooOldError, forwarded to a daemon that advertises it, a prompt-only call is forwarded to either, and a same-process reconnect that switches daemon capability between calls sees the change",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/forward-step-features.test.ts",
+                "title": "a daemon that does not know daemon.status at all refuses a request call by name and runs no handler",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/forward-step-features.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1160,
+            "titles": [
+              {
+                "title": "a request call to a daemon lacking analyze-request is refused with DaemonTooOldError, forwarded to a daemon that advertises it, a prompt-only call is forwarded to either, and a same-process reconnect that switches daemon capability between calls sees the change",
+                "result": "pass"
+              },
+              {
+                "title": "a daemon that does not know daemon.status at all refuses a request call by name and runs no handler",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t17",
+        "commit": "e259494d2",
+        "ranAt": "2026-11-07T06:08:46.607Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "forward-step.test.ts: the thirteen tools keep their names, descriptions and input schemas against the regenerated golden file",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/forward-step.test.ts",
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "analyze-request-forward.test.ts: both registrations accept request-only, prompt-only and mixed calls, forward the request unchanged and reject a malformed request with the schema message",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/analyze-request-forward.test.ts",
+                "title": "both analyze tools accept request-only, prompt-only and mixed calls, forward the request unchanged, and refuse a malformed request with the schema message",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/analyze-request-forward.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1216,
+            "titles": [
+              {
+                "title": "both analyze tools accept request-only, prompt-only and mixed calls, forward the request unchanged, and refuse a malformed request with the schema message",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/forward-step.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2343,
+            "titles": [
+              {
+                "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder progress: frames relayed only with a progress token; the done envelope returned unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "MCP forwarder: a forwarded insrc_analyze_step with a progressToken emits notifications/progress for each progress frame",
+                "result": "pass"
+              },
+              {
+                "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
+                "result": "pass"
+              },
+              {
+                "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
+                "result": "pass"
+              },
+              {
+                "title": "forwarder: a multi-byte character split across two socket chunks arrives whole",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t18",
+        "commit": "c41518979",
+        "ranAt": "2026-11-07T06:13:36.946Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "steering-analyze-request.test.ts: the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/steering-analyze-request.test.ts",
+                "title": "the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "steering-gated-refresh.test.ts: the boot refresh does not publish the request guidance when the capability is absent and publishes it when present",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/__tests__/steering-gated-refresh.test.ts",
+                "title": "the boot refresh does not publish the request guidance when the capability is absent and publishes it when present",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/__tests__/steering-analyze-request.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 896,
+            "titles": [
+              {
+                "title": "the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/__tests__/steering-gated-refresh.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 627,
+            "titles": [
+              {
+                "title": "the boot refresh does not publish the request guidance when the capability is absent and publishes it when present",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t19",
+        "commit": "06b473e4b",
+        "ranAt": "2026-11-07T09:31:53.821Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "npm run build typechecks and the analyze, daemon-step, daemon, db and MCP suites pass or inherited failures are recorded",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/S001/T19-VERIFICATION.md section 'Build and suites': per-suite counts; every failing file run alone at HEAD and at d923f91dc with the counts compared; the one failure not on the baseline (task-review-plan-path) traced to the other session's commit 3622c7780"
+            }
+          },
+          {
+            "name": "a live module-scope analysis and a prompt-only call against the daemon return answers whose reports state the scope",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/S001/T19-VERIFICATION.md section 'Live runs against the updated daemon' (module scope: 'Scope: module ..., named by the request'; prompt-only: 'Scope: workspace ..., the whole repository by default')"
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
+      }
+    ]
+  },
+  "citations": []
+}

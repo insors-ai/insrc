@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-380f8f35-83be-4327-8527-aead321a2641",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-06T19:46:57.969Z",
+    "epicCreatedAt": "2026-11-06T14:30:38.353Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "65b643840a294422",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Show scope and context in the prompts and key the one-shot cache",
+      "parent": {
+        "entityId": "STORY-65b643840a294422-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-65b643840a294422-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-65b643840a294422-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "76178737e5f3f79fa43463faee31857b1fefedf95d95ea9c1eafe1a5c308917c",
+        "at": "2026-11-06T19:46:57.969Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-06T19:46:57.969Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Show scope and context in the prompts and key the one-shot cache",
+    "summary": "Show scope, question and context on separate lines in the planning prompt and context as background in synthesis; include scope, question, context and scopeSource in computeCacheKey.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "context reaches the planning and synthesis prompts through both handlers and a narrow continuation without changing the named scope",
+      "the one-shot cache key differs for a different scope, question, context or scopeSource and is equal for the same request",
+      "scopeSource is pinned in cache verification including cached final-report rendering"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "context-prompts.test.ts: context reaches the planning and synthesis prompts through both handlers and a narrow continuation without changing the named scope"
+      },
+      {
+        "level": "integration",
+        "name": "cache-key-scope.test.ts: the one-shot computeCacheKey differs for scope, question, context or scopeSource, a cached report renders its own scope line, and isolation is asserted on the one-shot key and the exploration cache"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

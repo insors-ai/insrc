@@ -14,6 +14,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import type { LoadedConnections } from '../../db/config.js';
+import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
+import { addRepo } from '../../../db/repos.js';
+import { upsertEntities } from '../../../db/entities.js';
+import { buildRun } from '../../analyze-rpc.js';
+import { runAnalyzeOneShot } from '../analyze-oneshot.js';
+import '../../../workflow/__tests__/helpers/converted-repos.js';
 import { prepareScope } from '../../../analyze/context/driver.js';
 import { ScopeNotFoundError, ScopeRepoMismatchError } from '../../../analyze/context/invariants.js';
 import type { ScopeDeps } from '../../../analyze/context/scope.js';
@@ -22,6 +28,7 @@ import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { oneShotRunParams } from '../analyze-oneshot.js';
 
 const ROOT = mkdtempSync(join(tmpdir(), 'insrc-oneshot-handler-'));
+setGraphStorePath(join(ROOT, 'graph.lmdb'));
 const A = join(ROOT, 'a');
 const B = join(ROOT, 'b');
 mkdirSync(join(A, 'src'), { recursive: true });
@@ -60,4 +67,32 @@ test('the real one-shot handler and buildRun refuse the same invalid scopes thro
 	assert.equal(rel.lookupPath, join(A, 'src'));
 });
 
-test.after(() => { rmSync(ROOT, { recursive: true, force: true }); });
+
+test('runAnalyzeOneShot hands the call\'s repository to the run, and the real buildRun refuses a nonexistent path, a wrong path kind and a raw \'..\' path into another registered repository before any read', async () => {
+	for (const repo of [A, B]) {
+		await addRepo(null, { path: repo, name: repo, addedAt: '2026-01-01T00:00:00.000Z', status: 'ready' });
+		await upsertEntities(null, [{ id: `e-${repo}`, repo, file: join(repo, 'src', 'y.ts'), kind: 'function', name: 'fn', language: 'typescript', startLine: 1, endLine: 2 } as unknown as Entity]);
+	}
+	// the tool: the run it dispatches carries the repository
+	const seen: unknown[] = [];
+	const result = await runAnalyzeOneShot({ focus: 'q', repo: A }, {
+		buildRun: async (params) => { seen.push(params); return { ok: false, error: { code: 'internal-error', message: 'stop' } } as never; },
+	});
+	assert.equal(result.isError, true);
+	assert.equal((seen[0] as { expectedRepo?: string }).expectedRepo, A);
+
+	// the real buildRun with that repository: an invalid scope is refused with its code
+	const run = async (kind: 'module' | 'file', value: string) => buildRun({
+		runId: `req-${kind}`, expectedRepo: A,
+		intent: { target: 'code', focused: true, focus: 'q', scopeRef: { kind, value }, reasoning: 'r' },
+	}) as Promise<{ ok: boolean; error?: { code: string; message: string } }>;
+	const missing = await run('module', `${A}/src/nope`);
+	assert.equal(missing.ok, false);
+	assert.equal(missing.error?.code, 'scope-not-found');
+	assert.equal((await run('file', `${A}/src`)).error?.code, 'scope-not-found');
+	// a raw string: the '..' reaches buildRun unnormalised
+	const sneaky = await run('file', `${A}/../b/src/y.ts`);
+	assert.equal(sneaky.error?.code, 'scope-repo-mismatch');
+});
+
+test.after(async () => { await closeGraphStore(); rmSync(ROOT, { recursive: true, force: true }); });

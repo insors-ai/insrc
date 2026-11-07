@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t1",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "093718e1534e8c8244922d5957a7905c9e34b3f0a1f853880ec8b378bb944763",
-        "at": "2026-11-07T04:46:32.615Z",
+        "number": 2,
+        "contentHash": "66f921aaf0fb6103e9e92e15a38628a3fdfb9c9d374204e0968e1b1fcb8f8bf5",
+        "at": "2026-11-07T05:02:23.523Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.615Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Exact final interval and blob projection",
@@ -70,31 +70,19 @@
     "tests": [
       {
         "level": "unit",
-        "name": "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller."
+        "name": "Identity/shifted-line interval mapping preserves selected text and excludes unrelated insertions and worktree canaries."
       },
       {
         "level": "unit",
-        "name": "Identity and shifted-line projection preserve only selected surviving text, excluding unrelated insertions and working-tree canaries."
+        "name": "Changed runs split original intervals into exact surviving and superseded source parts without inventing active historical scope."
       },
       {
         "level": "unit",
-        "name": "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope."
+        "name": "Normalize overlapping final intervals with origin accounting, preserve deletion anchors including empty-file zero and never coalesce unselected gaps."
       },
       {
         "level": "unit",
-        "name": "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly."
-      },
-      {
-        "level": "unit",
-        "name": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope."
-      },
-      {
-        "level": "unit",
-        "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope."
-      },
-      {
-        "level": "unit",
-        "name": "New pinned zero-segment original selections reject field=scope_conflict before checkpoint replacement or provider dispatch; historical no-pin metadata records remain readable without granting new execution. Nonempty origins that become fully superseded still have complete dispositions and findingScope=none. [[c2]] [[c3]] [[c18]]"
+        "name": "Invalid UTF-8/binary textual mapping and unprovable interval boundaries fail explicitly without dropping origin entries."
       }
     ],
     "planTaskId": "t2"

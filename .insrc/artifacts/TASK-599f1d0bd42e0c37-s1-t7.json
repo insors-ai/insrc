@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t6",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "1ab7625221bb4dbdc37434e0580d97ef31a26009dcac04de068a2dc174228a38",
-        "at": "2026-11-07T04:46:32.622Z",
+        "number": 2,
+        "contentHash": "a12939f86cb15fc1a9281a6e1d183890533226c5e602882c5aaef551e7a0ccac",
+        "at": "2026-11-07T05:02:23.528Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.622Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Pinned permanent history and unmapped failures",
@@ -70,28 +70,20 @@
     ],
     "tests": [
       {
-        "level": "unit",
-        "name": "Permanent final-scope representation validates required pin/snapshot plus the state-specific accepted/unmapped attribution contract, origin-index partitions, witness closure, per-task subsets and canonical projection identity. Reject omitted, oversized, malformed or tampered pin/path/ranges/task rows/digests and findings in another task’s scope; historical no-pin CR bodies remain readable and byte-identical. [[c10]] [[c11]] [[c12]]"
-      },
-      {
-        "level": "unit",
-        "name": "Offline attribution binding: mutate ONLY one accepted task changeIndexes/testIndexes list (including adding another task’s valid entry) while preserving all existing digest strings. Recomputed final-attribution-v1 identity must reject the record. Test selectedTaskIds/testCount/state mutations, valid shared entries and empty task scopes, and retain full source-aware task-identity verification on resume/publication. [[c10]] [[c11]] [[c12]]"
+        "level": "integration",
+        "name": "Source-verified final snapshot publication and offline merge/validate/render roundtrip preserve shifted/renamed per-task scope, provenance and byte-idempotence without live Git in readers."
       },
       {
         "level": "integration",
-        "name": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+        "name": "Accepted/unmapped snapshot required fields, partitions, witness closure, task subsets and canonical bindings reject tampering, omitted metadata and foreign findings."
       },
       {
         "level": "integration",
-        "name": "Publish and reread a shifted and renamed final-coordinate finding through publishTaskCheckpoint -> mergeTaskSummary -> validateTaskBody -> renderTaskReview -> validateTaskBody, with source Git access only before publication. Final line 20 remains valid when origin line 10 was selected; old-coordinate and unassigned-task findings reject. A metadata snapshot is saved without blob text; duplicate publication is byte-idempotent and conflicting snapshots reject. [[c3]] [[c5]] [[c11]] [[c12]]"
+        "name": "Attribution timeout/provider/invalid-scope failure publishes every selected failed/incomplete outcome with true bounded diagnostics, no invented identity/findings/reuse or accepted downgrade, then allows the next sequential attempt."
       },
       {
         "level": "integration",
-        "name": "Lose all reviewer memory after accepted attribution in a multi-task review with distinct assigned tests. A fresh publication service loads only the checkpoint and pinned source adapter, reconstructs saved mappings, recomputes task bindings, publishes/renders/rereads the correct final per-task scopes and supports exact resume without a new attribution/model call. [[c3]] [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]"
-      },
-      {
-        "level": "integration",
-        "name": "Both native/controller routes: attribution timeout, provider failure, exhausted invalid scope submissions and oversized unaccepted mapping publish an unmapped_failure pinned summary with actual diagnostics, no task identities/findings/reuse and no invented mapping. Verify publication completion and successful next-attempt admission; reject passing results, mapped findings, missing selected terminal outcomes and a false downgrade from accepted state. [[c9]] [[c10]] [[c11]] [[c12]] [[c21]]"
+        "name": "Completed historical no-pin histories remain byte-identical/read-only and cannot authorize fresh unpinned execution."
       }
     ],
     "planTaskId": "t7"

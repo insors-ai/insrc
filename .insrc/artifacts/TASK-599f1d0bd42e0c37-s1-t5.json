@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t4",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "a658190ccb311ab39c51f7c807650cc22e71b0beb72498bc2b0ec9cbce143fe8",
-        "at": "2026-11-07T04:46:32.619Z",
+        "number": 2,
+        "contentHash": "c0685e6355034c3fedd51d94540d659a74bb866a1a7a9f20d4c7f9051d7b8c26",
+        "at": "2026-11-07T05:02:23.527Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.620Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Durable attribution decisions and identities",
@@ -70,36 +70,20 @@
     ],
     "tests": [
       {
-        "level": "unit",
-        "name": "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable."
-      },
-      {
-        "level": "unit",
-        "name": "Host reuse binding: both routes persist taskScopeIdentities after direct/model attribution even with no diagnostics; sourceAssessment and reuseAssessment reject a changed relevant final blob, scope, requirement or test input and missing identities. Identical task inputs across unrelated revision movement may reuse; conflicting same-attempt identity writes fail. [[c8]] [[c9]] [[c10]]"
-      },
-      {
-        "level": "unit",
-        "name": "Durable accepted attribution: atomically persist canonical taskId/changeIndexes/testIndexes rows with state=accepted, taskScopeIdentities and attributionIdentity on native/controller/direct paths, even with no diagnostic repair. Reject bad indexes, duplicate tasks/row indexes, omitted changes/tests, missing witness closure and conflicting replacement; unsuccessful save acknowledgement dispatches no task assessment and follows the pre/post-replacement recovery contract. [[c3]] [[c8]] [[c9]] [[c10]]"
-      },
-      {
-        "level": "unit",
-        "name": "Offline attribution binding: mutate ONLY one accepted task changeIndexes/testIndexes list (including adding another task’s valid entry) while preserving all existing digest strings. Recomputed final-attribution-v1 identity must reject the record. Test selectedTaskIds/testCount/state mutations, valid shared entries and empty task scopes, and retain full source-aware task-identity verification on resume/publication. [[c10]] [[c11]] [[c12]]"
-      },
-      {
-        "level": "unit",
-        "name": "Accepted reassessment persistence: qualify initial/reassess/reuse union rules, durable reason/sourceAttempt and reassessmentSummary, identity binding over decisions, strict absence of sourceAttempt on reassess, and rejection of source-party/ordinal/input mismatch. A planned reuse without a completed origin must remain reconstructible. [[c8]] [[c9]] [[c10]]"
+        "level": "integration",
+        "name": "Canonical accepted task rows, decisions, task identities and summary persist before ACK/reuse/dispatch even without diagnostics."
       },
       {
         "level": "integration",
-        "name": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+        "name": "Canonical final-attribution-v1 binding detects changed indexes, selectedTaskIds, testCount, state or decisions; shared valid rows and empty scopes remain valid."
       },
       {
         "level": "integration",
-        "name": "Lose all reviewer memory after accepted attribution in a multi-task review with distinct assigned tests. A fresh publication service loads only the checkpoint and pinned source adapter, reconstructs saved mappings, recomputes task bindings, publishes/renders/rereads the correct final per-task scopes and supports exact resume without a new attribution/model call. [[c3]] [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]"
+        "name": "Task identities bind final relevant source, requirements/doc identities and full assigned tests; unrelated global pin movement permits reuse while changed relevant inputs or wrong party/source ordinal reject."
       },
       {
         "level": "integration",
-        "name": "Both routes: accept a mixed reassess/reuse plan with distinct test assignments, interrupt before a reuse task executes, discard all reviewer memory, reload and restore EXACT action/reason/sourceAttempt/summary with unchanged hashes and source result. Continue without a new attribution call; copy the exact reused result and create its real origin only after completion. [[c3]] [[c8]] [[c9]] [[c10]]"
+        "name": "After loss of memory restore exact mixed reassess/reuse action/reason/sourceAttempt and summary without attribution rediscovery; no completed origin is fabricated before actual reuse completion."
       }
     ],
     "planTaskId": "t5"

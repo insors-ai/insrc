@@ -108,6 +108,7 @@ test('selected-change packet preserves deletion rename and non-textual limits wi
   packet.reviewSet = [{ commit, parent: f.commit, files: [{ path: 'moved.ts', previousPath: 'src/a.ts', segments: [] }, { path: 'unrelated.ts', segments: [{ deletionAt: 0 }] }, { path: 'binary.bin', segments: [] }] }];
   packet.reviewRevision = commit;
   await assert.rejects(prepareReviewPacket(packet, f.sources), /scope_conflict/);
+  delete packet.reviewRevision;
   const prepared = await prepareReviewPacket(packet, f.sources, true);
   assert.equal(prepared.changes.length, 3); assert.equal(prepared.changes[1]!.after, null);
   assert.deepEqual(selectedCode(prepared.changes[2]!).blocks, []);

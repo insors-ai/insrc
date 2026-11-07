@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t5",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "379cdc5c21d42eef91ad993fdcf2e89a436b4c3b293703130822f1860ce1212d",
-        "at": "2026-11-07T04:46:32.620Z",
+        "number": 2,
+        "contentHash": "ff115f96d4b7646f7f62a358c7c117fcc168dcf4236576d65efc007992234d4e",
+        "at": "2026-11-07T05:02:23.528Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.621Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Checkpoint save outcomes and explicit recovery",
@@ -70,20 +70,16 @@
     ],
     "tests": [
       {
-        "level": "unit",
-        "name": "Durable accepted attribution: atomically persist canonical taskId/changeIndexes/testIndexes rows with state=accepted, taskScopeIdentities and attributionIdentity on native/controller/direct paths, even with no diagnostic repair. Reject bad indexes, duplicate tasks/row indexes, omitted changes/tests, missing witness closure and conflicting replacement; unsuccessful save acknowledgement dispatches no task assessment and follows the pre/post-replacement recovery contract. [[c3]] [[c8]] [[c9]] [[c10]]"
-      },
-      {
-        "level": "unit",
-        "name": "Save commit-point qualification: inject temporary open/write/file-sync/file-close and pre-rename failures, rename success followed by directory open/sync/close or cleanup failures, and uncertain/read-failed outcomes. Assert NO acknowledgement/dispatch on every unsuccessful save, correct not_replaced/replaced/uncertain classification, and no rollback overwrite. Exact candidate/prior reconciliation plus explicit successful re-acknowledgement determines recovery; do not assert unchanged pending bytes after successful rename. [[c10]]"
+        "level": "integration",
+        "name": "Pre-rename file open/write/sync/close and rename failures classify not_replaced; post-rename directory/cleanup failures classify replaced; uncertain/read-failed outcomes remain explicit."
       },
       {
         "level": "integration",
-        "name": "Both routes: accept a mixed reassess/reuse plan with distinct test assignments, interrupt before a reuse task executes, discard all reviewer memory, reload and restore EXACT action/reason/sourceAttempt/summary with unchanged hashes and source result. Continue without a new attribution call; copy the exact reused result and create its real origin only after completion. [[c3]] [[c8]] [[c9]] [[c10]]"
+        "name": "Every failed acceptance acknowledgement fences both routes with no dispatch or rollback overwrite and no attribution/model-failure relabel."
       },
       {
         "level": "integration",
-        "name": "Both routes: acceptance save visibly replaces pending with accepted mapping but fails its final durability acknowledgement. Assert no task/provider/reuse dispatch and no successful attribution ACK; a fresh explicit resume validates/re-acknowledges that same mapping then restores it exactly. Repeat for pre-replacement pending recovery, another failed acknowledgement and unreadable/conflicting disk state; no automatic storage retry or accepted-plan replacement. [[c8]] [[c9]] [[c10]]"
+        "name": "Explicit recovery compares exact prior/candidate under ownership, validates source/mapping/bindings and obtains a successful same-mapping save ACK before continuation; repeated failure/conflict remains fenced."
       }
     ],
     "planTaskId": "t6"

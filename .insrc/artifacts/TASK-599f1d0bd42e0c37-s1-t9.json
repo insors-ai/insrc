@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t8",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "f970486088f253b4ab1101dad8c46a026e6c1fb5b6f1b0fbe5238d0b958b5437",
-        "at": "2026-11-07T04:46:32.625Z",
+        "number": 2,
+        "contentHash": "e933f2f0865efeebd88e29dbda4b8cbb3c831669f99fd67ce205c9ece463cae4",
+        "at": "2026-11-07T05:02:23.530Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.625Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Submitters, MCP and coordinated transition",
@@ -71,11 +71,15 @@
     "tests": [
       {
         "level": "integration",
-        "name": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution."
+        "name": "Every fresh in-repo producer and MCP submission schema requires explicit final pin with actionable validation errors and caller-selected change-set scope."
       },
       {
-        "level": "smoke",
-        "name": "Disposable compiled MCP/IPC review packet pins a final revision over a multi-commit story; task review inspects final blocks, preserves origin provenance, excludes unrelated HEAD/worktree changes and publishes the correct current result."
+        "level": "integration",
+        "name": "Historical reader and interrupted-unpinned recovery semantics remain route-correct; coordinated producer/daemon rollout documents drain/interruption, no activation flag and state-preserving rollback only."
+      },
+      {
+        "level": "integration",
+        "name": "Adjacent native diagnostics, rejected-result repair and coverage classification ownership remains separate with shared-module sequencing documented."
       }
     ],
     "planTaskId": "t9"

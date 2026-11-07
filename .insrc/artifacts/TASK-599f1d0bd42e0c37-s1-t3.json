@@ -22,7 +22,7 @@
           "entityId": "PLAN-599f1d0bd42e0c37-s1",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-599f1d0bd42e0c37-s1-t2",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "d2ce3f186a93b161debfafc761b3240edf098db157d6db5877e77b260710ed71",
-        "at": "2026-11-07T04:46:32.616Z",
+        "number": 2,
+        "contentHash": "6ef68495a20dff0d4ae70540b17dff87cfa2a91184ff793313991a31eac4542b",
+        "at": "2026-11-07T05:02:23.524Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T04:46:32.617Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Witness lineage and bounded projection",
@@ -70,27 +70,19 @@
     "tests": [
       {
         "level": "unit",
-        "name": "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope."
+        "name": "Selected later ancestor-verified witnesses justify full/partial replacement or deletion; unknown, cyclic or backward witnesses and out-of-set overwrite reject."
       },
       {
         "level": "unit",
-        "name": "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly."
+        "name": "Actual selected rename and merge-resolution lineage maps exact final paths; unverified/colliding paths and unselected conflict resolution reject."
       },
       {
         "level": "unit",
-        "name": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope."
+        "name": "Projected entry segments equal normalized active disposition union; fully superseded nonempty origins retain complete dispositions with findingScope=none."
       },
       {
         "level": "unit",
-        "name": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope."
-      },
-      {
-        "level": "unit",
-        "name": "Resource error fields: assert field=input for oversized decoded packet, field=changes for reused truncated Git diff, and field=projection_limit for projection-local read/byte/fragment/snapshot counters. Preserve source/commit/transport-integrity failures; assert no task dispatch and no partially accepted mapping at every budget boundary. [[c2]] [[c3]] [[c4]]"
-      },
-      {
-        "level": "integration",
-        "name": "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected."
+        "name": "Projection read/byte/fragment bounds and existing input/diff truncation retain their distinct error fields, with serial reads and no preparation/model side effects on refusal."
       }
     ],
     "planTaskId": "t3"

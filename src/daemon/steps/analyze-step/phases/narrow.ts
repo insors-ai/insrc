@@ -35,6 +35,7 @@ import { failedOutput, getNarrowRunner, stepPlan } from '../../../../analyze/exp
 import type { Exploration, ExplorationOutput } from '../../../../analyze/explore/index.js';
 import { putCachedExploration } from '../../../../db/exploration-cache.js';
 import { getLogger } from '../../../../shared/logger.js';
+import { cacheExplorationFor } from '../../../../analyze/explore/exploration-cache-key.js';
 import { planRepoOf } from '../../../../analyze/context/scope.js';
 import { stepScope } from '../scope.js';
 import { prepareAnswerTurn } from '../answer-turn.js';
@@ -168,15 +169,19 @@ export async function handleNarrow(
 		finalizedOutput = failedOutput(expForOutput, err, execution);
 	}
 
-	// (4) Cache the finalized output (same key executePlan uses). A failed
-	//     output is never cached: the cache holds successful outputs only, and
+	// The token carries the intent, not a resolved scope: resolve it again. It is needed for the
+	// cache key below (the key names the area) and for resuming the plan.
+	const scope = await stepScope(state.intent, undefined, execution, state.repoPath);
+
+	// (4) Cache the finalized output (same key executePlan uses, from the same key function). A
+	//     failed output is never cached: the cache holds successful outputs only, and
 	//     a stored failure would be served to every later run.
 	if (execution?.mode !== 'session-memory' && pausedExp !== undefined && finalizedOutput.type !== 'failed') {
 		try {
 			await putCachedExploration(
 				state.repoPath,
 				BigInt(state.repoIndexedAt ?? 0),
-				pausedExp,
+				cacheExplorationFor(pausedExp, scope),
 				finalizedOutput,
 				execution,
 			);
@@ -208,8 +213,6 @@ export async function handleNarrow(
 			priorResults:    carriedResults.length,
 	}, 'insrc_analyze_step[narrow]: finalized; resuming stepPlan']);
 
-	// The token carries the intent, not a resolved scope: resolve it again.
-	const scope = await stepScope(state.intent, undefined, execution, state.repoPath);
 	const step = await stepPlan({
 		connectionExecution: execution ?? savedAnalysisExecution(scope.lookupPath),
 		runId:               state.runId,

@@ -34,6 +34,7 @@ import type { RepoCompleteness } from '../../shared/types.js';
 import { docsAreaOf, type ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
+import { cacheExplorationFor } from './exploration-cache-key.js';
 import { attachDocRelations } from './doc-relations-attach.js';
 import { getLogger } from '../../shared/logger.js';
 import type { StructuredSchema } from '../../shared/types.js';
@@ -222,7 +223,7 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 			const cacheable = execution.mode !== 'session-memory' && !NON_CACHEABLE.has(exp.type);
 			if (cacheable) {
 				const hit = await getCachedExploration(
-					args.repoPath, args.repoLastIndexedAtMs, exp, execution,
+					args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), execution,
 				);
 				if (hit !== null) {
 					output = hit;
@@ -246,7 +247,7 @@ async function executePlanWithContext(args: ExecutePlanArgs): Promise<ExecutedPl
 					output = await runner(exp, ctx);
 					if (cacheable) {
 						await putCachedExploration(
-							args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
+							args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), output, execution,
 						);
 					}
 				} catch (err) {
@@ -553,7 +554,7 @@ async function stepPlanWithContext(
 			// Narrow-LLM exploration: try cache first (same key as
 			// executePlan), else prepare + pause.
 			const hit = execution.mode === 'session-memory' ? null : await getCachedExploration(
-				args.repoPath, args.repoLastIndexedAtMs, exp, execution,
+				args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), execution,
 			);
 			if (hit !== null) {
 				output = hit;
@@ -591,7 +592,7 @@ async function stepPlanWithContext(
 				} else if (prep.kind === 'short-circuit') {
 					output = prep.shortCircuit;
 					if (execution.mode !== 'session-memory') await putCachedExploration(
-						args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
+						args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), output, execution,
 					);
 				} else {
 					// PAUSE: return the prompt + schema, encode enough
@@ -618,7 +619,7 @@ async function stepPlanWithContext(
 		} else {
 			// Deterministic path -- identical to executePlan.
 			const hit = execution.mode === 'session-memory' ? null : await getCachedExploration(
-				args.repoPath, args.repoLastIndexedAtMs, exp, execution,
+				args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), execution,
 			);
 			if (hit !== null) {
 				output = hit;
@@ -639,7 +640,7 @@ async function stepPlanWithContext(
 					};
 					output = await runner(exp, ctx);
 					if (execution.mode !== 'session-memory') await putCachedExploration(
-						args.repoPath, args.repoLastIndexedAtMs, exp, output, execution,
+						args.repoPath, args.repoLastIndexedAtMs, cacheExplorationFor(exp, args.scope), output, execution,
 					);
 				} catch (err) {
 					if (err instanceof ConnectionExecutionError) throw err;

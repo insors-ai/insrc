@@ -79,11 +79,12 @@ test('a lookup output cached before the change is not returned: the cache key in
 	const exp: Exploration = { id: 'e1', type: 'search.text', purpose: 't', params: { pattern: 'needle' } };
 
 	// The version is part of what is hashed into the key.
-	assert.equal(EXPLORATION_CACHE_VERSION, 2);
+	assert.equal(EXPLORATION_CACHE_VERSION, 3);
 	const { createHash } = await import('node:crypto');
 	const keyOf = (canonical: unknown): string => createHash('sha256').update(JSON.stringify(canonical), 'utf8').digest('hex').slice(0, 16);
 	const v1Key = keyOf({ type: exp.type, params: exp.params });
-	assert.equal(hashExplorationParams(exp), keyOf({ v: 2, type: exp.type, params: exp.params }));
+	assert.equal(hashExplorationParams(exp), keyOf({ v: 3, type: exp.type, params: exp.params }));
+	assert.notEqual(hashExplorationParams(exp), keyOf({ v: 2, type: exp.type, params: exp.params }), 'a row written under version 2 is not found either');
 	assert.notEqual(hashExplorationParams(exp), v1Key, 'the key written before the change is a different key');
 
 	// And so a row stored under the old key is not found by a read made now.

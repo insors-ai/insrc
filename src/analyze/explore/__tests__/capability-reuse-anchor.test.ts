@@ -76,6 +76,24 @@ function recordingModel(): { provider: LLMProvider; turns: string[] } {
 	return { provider, turns };
 }
 
+/**
+ * The check on both execution modes: the one-shot runner (the model is passed in)
+ * and the multi-turn pair (the narrow runner's prepare, then finalize with the
+ * verdicts an outer model gives for the candidates the user turn lists).
+ */
+async function bothModes(capability: string, scope: ResolvedScope): Promise<{ oneShot: CapabilityReuseCheckOutput; multiTurn: CapabilityReuseCheckOutput; oneShotTurn: string; multiTurnTurn: string }> {
+	const model = recordingModel();
+	const oneShot = await runCapabilityReuseCheck(exp(capability), ctxFor(scope), model.provider);
+	const narrow = getNarrowRunner('capability.reuse-check');
+	assert.ok(narrow !== undefined, 'the multi-turn mode has a narrow runner for it');
+	const prepared = await narrow.prepare(exp(capability), ctxFor(scope)) as Awaited<ReturnType<typeof prepareCapabilityReuseCheck>>;
+	assert.equal(prepared.kind, 'narrow-llm');
+	if (prepared.kind !== 'narrow-llm') throw new Error('unreachable');
+	const paths = [...prepared.userTurn.matchAll(/path: (\S+)/g)].map(m => m[1]!);
+	const multiTurn = finalizeCapabilityReuseCheck(prepared.prepared, { verdicts: paths.map(path => ({ path, verdict: 'partial-match' as const, rationale: 'r' })) }, undefined, 'r1');
+	return { oneShot, multiTurn, oneShotTurn: model.turns[0]!, multiTurnTurn: prepared.userTurn };
+}
+
 const scopeOf = (kind: 'module' | 'file' | 'symbol', value: string): Promise<ResolvedScope> => resolveScopeForTarget({ kind, value }, 'code');
 
 test('a capability question with no word in common with the named module still inspects that module, first, on the one-shot and the multi-turn mode', async () => {
@@ -104,41 +122,44 @@ test('a capability question with no word in common with the named module still i
 	assert.equal(finalized.candidates[0]?.verdict, 'unrelated');
 });
 
-test('a higher-ranked child does not replace the named subject', async () => {
+test('a higher-ranked child does not replace the named subject, on both execution modes', async () => {
 	const dir = file('src', 'pay');
 	const scope = await scopeOf('module', dir);
-	const out = await runCapabilityReuseCheck(exp('refund'), ctxFor(scope), recordingModel().provider);
-	const paths = out.candidates.map(c => c.path);
-	assert.equal(paths[0], dir, 'the named module comes first');
-	assert.ok(paths.includes(file('src', 'pay', 'refund')), 'the child that matches the words is also a candidate');
-	assert.equal(out.candidates.filter(c => c.namedByRequest === true).length, 1);
+	const { oneShot, multiTurn } = await bothModes('refund', scope);
+	for (const [mode, out] of [['one-shot', oneShot], ['multi-turn', multiTurn]] as const) {
+		const paths = out.candidates.map(c => c.path);
+		assert.equal(paths[0], dir, `${mode}: the named module comes first`);
+		assert.ok(paths.includes(file('src', 'pay', 'refund')), `${mode}: the child that matches the words is also a candidate`);
+		assert.equal(out.candidates.filter(c => c.namedByRequest === true).length, 1, mode);
+	}
 	// a request that names nothing (workspace scope) behaves as before: ranked candidates, none marked
 	const whole = await resolveScopeForTarget({ kind: 'workspace', value: repo }, 'code');
-	const ranked = await runCapabilityReuseCheck(exp('refund'), ctxFor(whole), recordingModel().provider);
-	assert.ok(ranked.candidates.length > 0);
-	assert.ok(ranked.candidates.every(c => c.namedByRequest === undefined));
+	const ranked = await bothModes('refund', whole);
+	for (const out of [ranked.oneShot, ranked.multiTurn]) {
+		assert.ok(out.candidates.length > 0);
+		assert.ok(out.candidates.every(c => c.namedByRequest === undefined));
+	}
 });
 
-test('a symbol subject is handled by entity id: its file is the candidate, its name the only evidence', async () => {
+test('a symbol subject is handled by entity id on both execution modes: its file is the candidate, its name the only evidence', async () => {
 	const settle = file('src', 'pay', 'settle.ts');
 	const scope = await scopeOf('symbol', `${settle}#settlePayment`);
 	assert.equal(scope.entityId, 'e-settle');
-	const model = recordingModel();
-	const out = await runCapabilityReuseCheck(exp('zebra crossing'), ctxFor(scope), model.provider);
-	assert.equal(out.candidates.length, 1);
-	assert.deepEqual([out.candidates[0]?.path, out.candidates[0]?.entityId, out.candidates[0]?.namedByRequest], [settle, 'e-settle', true]);
-	assert.deepEqual(out.candidates[0]?.evidenceEntities, ['settlePayment']);
-	assert.match(model.turns[0]!, /the request named this one symbol \(settlePayment\)/);
+	const { oneShot, multiTurn, oneShotTurn, multiTurnTurn } = await bothModes('zebra crossing', scope);
+	for (const [mode, out, turn] of [['one-shot', oneShot, oneShotTurn], ['multi-turn', multiTurn, multiTurnTurn]] as const) {
+		assert.equal(out.candidates.length, 1, mode);
+		assert.deepEqual([out.candidates[0]?.path, out.candidates[0]?.entityId, out.candidates[0]?.namedByRequest], [settle, 'e-settle', true], mode);
+		assert.deepEqual(out.candidates[0]?.evidenceEntities, ['settlePayment'], mode);
+		assert.match(turn, /the request named this one symbol \(settlePayment\)/, mode);
+	}
 });
 
-test('an empty named area is checked and its completeness says there was nothing in it', async () => {
+test('an empty named area is checked on both execution modes and its completeness says there was nothing in it', async () => {
 	const dir = file('src', 'empty');
 	const scope = await scopeOf('module', dir);
-	const prepared = await prepareCapabilityReuseCheck(exp('anything at all'), ctxFor(scope));
-	assert.equal(prepared.kind, 'narrow-llm', 'the area is still the subject, not a short-circuit');
-	if (prepared.kind !== 'narrow-llm') return;
-	assert.equal(prepared.prepared.profiles[0]?.path, dir);
-	const out = finalizeCapabilityReuseCheck(prepared.prepared, { verdicts: [{ path: dir, verdict: 'unrelated', rationale: 'empty' }] }, undefined, 'r1') as CapabilityReuseCheckOutput;
-	const reasons = JSON.stringify(out.completeness);
-	assert.match(reasons, /holds no stored entity/, 'the record states that the area held nothing');
+	const { oneShot, multiTurn } = await bothModes('anything at all', scope);
+	for (const [mode, out] of [['one-shot', oneShot], ['multi-turn', multiTurn]] as const) {
+		assert.equal(out.candidates[0]?.path, dir, `${mode}: the area is still the subject, not a short-circuit`);
+		assert.match(JSON.stringify(out.completeness), /holds no stored entity/, `${mode}: the record states that the area held nothing`);
+	}
 });

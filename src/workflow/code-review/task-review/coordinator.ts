@@ -1,3 +1,4 @@
+import { failAttribution, unmappedTaskFailure, attributionTimedOut } from './attribution-failure.js';
 import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
 import { ReviewOutputFailureError } from '../../../shared/review-diagnostics.js';
@@ -176,7 +177,7 @@ export class TaskReviewCoordinator {
   const active=this.active.get(path); if(active)active.progress=tracker;
   const selected = prepared.tasks.filter(task => !prepared.packet.taskId || task.id === prepared.packet.taskId);
   let assignments: readonly TaskAssignment[] | undefined = await restoreAcceptedAssignments(review);
-  let attributionFailure: { error: unknown; timedOut: boolean } | undefined;
+  let attributionFailure: { error: unknown; timedOut: boolean } | undefined = entry.header.attributionState==='failed'?{error:new Error(entry.header.attributionFailure!.summary),timedOut:attributionTimedOut(entry)}:undefined;
   for (const task of selected.sort((a,b)=>a.order-b.order)) {
    if (entry['review-response'].tasks.some(result=>result.taskId===task.id)) continue;
    tracker.task(task,selected.indexOf(task)+1,selected.length,entry['review-response'].tasks.length);
@@ -286,9 +287,9 @@ export class TaskReviewCoordinator {
      if(error instanceof ReviewOutputFailureError)await serial(()=>persistFailureDiagnostic(review,nativePhase,nativePhase==='assessment'?task.id:undefined,error.diagnostic,()=>save(path,checkpoint)));
      const inherited=attributionFailure?.timedOut===true&&error===attributionFailure.error;
      const timedOut=inherited||error instanceof ReviewInactivityError||error instanceof ReviewSessionTimeoutError;
-     if(!assignments)attributionFailure={error,timedOut};
+     if(!assignments){failAttribution(entry,error,timedOut);attributionFailure={error,timedOut};}
      const message=inherited?'Task could not be attributed because shared attribution exceeded its inactivity grace.':error instanceof ReviewSessionTimeoutError?`Provider session stopped: ${error.message}`:timedOut?'Task has no observed review activity for 30 minutes.':`Reviewer failed: ${error instanceof Error?error.message:String(error)}`;
-     await serial(()=>commitResult(taskFailure(task.id,message,timedOut)));
+     await serial(()=>commitResult(assignments?taskFailure(task.id,message,timedOut):unmappedTaskFailure(task.id,timedOut)));
     }else log.warn({reviewId:checkpoint.reviewId,taskId:task.id},'CLI stopped after durable task assessment; retained accepted feedback');
    }finally{
     progress.stop();monitor.stop();cancellation.abort();

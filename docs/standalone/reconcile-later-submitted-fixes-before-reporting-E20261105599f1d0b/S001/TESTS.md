@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 39 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -201,3 +201,36 @@ Run at 2026-11-07T06:09:49.147Z on commit `a937e90c0`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 3.5 s |  |
+
+## t6
+
+Run at 2026-11-07T06:30:25.152Z on commit `03943cf59`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Pre-rename file open/write/sync/close and rename failures classify not_replaced; post-rename directory/cleanup failures classify replaced; uncertain/read-failed outcomes remain explicit.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+
+**integration: Every failed acceptance acknowledgement fences both routes with no dispatch or rollback overwrite and no attribution/model-failure relabel.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+
+**integration: Explicit recovery compares exact prior/candidate under ownership, validates source/mapping/bindings and obtains a successful same-mapping save ACK before continuation; repeated failure/conflict remains fenced.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | unreadable or conflicting acceptance readback stays fenced without overwrite or model work | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+| pass | a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 7 | 4 s |  |

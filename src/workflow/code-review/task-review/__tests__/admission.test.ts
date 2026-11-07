@@ -1,3 +1,4 @@
+import { bindTaskFinalIdentities } from '../attribution-binding.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -97,12 +98,13 @@ test('attempt schema compatibility: optional origins and old checkpoint/CR meani
   const next=await prepareReviewAdmission(f.repo,'publication',2,f.packet,'daemon',f.deps.sources);
   const source=next.checkpoint.attempts[0]!,entry=next.attempt;
   entry.header.completedAt=source.header.completedAt!;entry.header.reassessmentSummary='Selected task is unchanged';entry['review-response'].tasks=structuredClone(source['review-response'].tasks);
+  await bindTaskFinalIdentities(next,[{taskId:'t1',changeIndexes:[0],testIndexes:[0],decision:{action:'reuse',sourceAttempt:1,reason:'Same selected behavior and verified evidence'}}]);
   entry['review-response'].origins=[{taskId:'t1',sourceAttempt:1,reason:'Same selected behavior and verified evidence'}];
   await saveCheckpoint(path,next.checkpoint);const second=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps);
   const saved=f.readRecord(second.jsonPath);assert.equal(saved.body.reviews.length,2);assert.deepEqual(saved.body.reviews[0],record.body.reviews[0]);assert.deepEqual(saved.body.reviews[1]!.origins,entry['review-response'].origins);
   assert.equal(saved.body.reviews[1]!.reassessmentSummary,entry.header.reassessmentSummary);
   assert.match(readFileSync(second.path,'utf8'), /Reused task t1 feedback from attempt 1/);
-  const invalid=structuredClone(saved.body);invalid.reviews[1]!.origins![0]!.sourceAttempt=2;assert.throws(()=>validateTaskBody(invalid),/earlier attempt/);
+  const invalid=structuredClone(saved.body);invalid.reviews[1]!.origins![0]!.sourceAttempt=2;assert.throws(()=>validateTaskBody(invalid),/earlier attempt|Reuse provenance/);
   const altered=structuredClone(saved.body);altered.reviews[1]!.tasks[0]!.advice=['Changed feedback'];assert.throws(()=>validateTaskBody(altered),/changes the saved result/);
   const bytes=readFileSync(path,'utf8');
   const tooLarge=structuredClone(next.checkpoint);tooLarge.attempts[1]!['review-response'].summary='x'.repeat(MAX_REVIEW_JSON_BYTES);

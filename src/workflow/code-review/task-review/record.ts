@@ -6,10 +6,14 @@ import { decodeReview, StoredPacketSchema, requireReview, TaskResultSchema, Task
 import type { CompletedReviewSummary, TaskBasedCodeReviewRecord, TaskReviewResult, ReviewAttempt } from './contracts.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 
+import { FinalScopeSnapshotSchema } from './final-scope-contracts.js';
+import { validateFinalScope } from './final-scope-history.js';
+
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const status = TaskResultSchema.properties.status;
 export const SummarySchema = Type.Object({ reviewId: text, attempt: Type.Integer({ minimum: 1 }), storyId: text, taskId: Type.Optional(text), reviewer: Type.Union([Type.Literal('daemon'), Type.Literal('controller')]), status,
- scope: Type.Pick(StoredPacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet']), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
+ scope: Type.Object({...Type.Pick(StoredPacketSchema, ['storyId', 'taskId', 'documents', 'reviewSet', 'reviewRevision']).properties, finalScope:Type.Optional(FinalScopeSnapshotSchema)},{additionalProperties:false}), tasks: Type.Array(TaskResultSchema, { minItems: 1, maxItems: 10000 }), summary: text, completedAt: text,
+ finalScopeIdentity:Type.Optional(Type.String({pattern:'^[a-f0-9]{64}$'})), attributionIdentity:Type.Optional(Type.String({pattern:'^[a-f0-9]{64}$'})), taskScopeIdentities:Type.Optional(Type.Array(Type.Object({taskId:text,identity:Type.String({pattern:'^[a-f0-9]{64}$'})},{additionalProperties:false}),{maxItems:10000})),
  origins: Type.Optional(Type.Array(TaskOriginSchema, { maxItems:10000 })), reassessmentSummary: Type.Optional(text),
  buildFingerprint: Type.Optional(Type.String({ pattern: '^[a-f0-9]{64}$' })) }, { additionalProperties: false });
 export const TaskBodySchema = Type.Object({ kind: Type.Literal('code-review'), format: Type.Literal('task-based'), storyId: text, status, reviews: Type.Array(SummarySchema, { minItems: 1, maxItems: 10000 }) }, { additionalProperties: false });
@@ -37,10 +41,20 @@ export function validateTaskBody(input: unknown): TaskReviewBody {
   requireReview(Number.isFinite(Date.parse(review.completedAt)), 'completedAt', 'Expected a completion timestamp');
   requireReview(new Set(review.tasks.map(task=>task.taskId)).size === review.tasks.length && (!review.taskId || review.tasks.length === 1 && review.tasks[0]!.taskId === review.taskId), 'tasks', 'Duplicate or foreign task');
   const changes = review.scope.reviewSet.flatMap(pointer => pointer.files.map(file => ({ path:file.path, previousPath:file.previousPath ?? file.path, segments:file.segments })));
-  for (const task of review.tasks) validateTaskResult(task, { taskId:task.taskId, changes, evidenceReferences:resultReferences(task) });
+  const final=validateFinalScope(review);
+  for (const task of review.tasks) {
+   const indexes=final?.tasks.find(t=>t.taskId===task.taskId)?.changeIndexes??[];
+   validateTaskResult(task,{taskId:task.taskId,changes:final?final.entries.filter(e=>indexes.includes(e.originChangeIndex)):changes,evidenceReferences:resultReferences(task)});
+  }
   requireReview(review.status === aggregateTaskStatus(review.tasks), 'status', 'Summary disagrees with task outcomes');
  }
  for (const id of new Set(body.reviews.map(review => review.reviewId))) validateResultOrigins(body.reviews.filter(review => review.reviewId === id));
+ for(const review of body.reviews)for(const row of review.scope.finalScope?.tasks??[])if(row.decision.action==='reuse'){
+  const sourceAttempt=row.decision.sourceAttempt;
+  const source=body.reviews.find(r=>r.reviewId===review.reviewId&&r.attempt===sourceAttempt);
+  requireReview(source?.reviewer===review.reviewer&&source.scope.finalScope?.attributionState==='accepted'&&source.taskScopeIdentities?.find(t=>t.taskId===row.taskId)?.identity===row.identity,'origins','Reuse source lacks matching accepted final task identity');
+ }
+
  requireReview(body.status === latestReviewStatus(body.reviews), 'status', 'CR status disagrees with latest attempt outcomes');
  return body;
 }
@@ -65,6 +79,13 @@ export function renderTaskReview(bodyInput: unknown): string {
  for (const review of body.reviews) {
   lines.push(`## ${review.reviewId} — attempt ${review.attempt}`, '', `Scope: ${review.taskId ? `task ${review.taskId}` : 'whole story'} · reviewer: ${review.reviewer} · ${review.completedAt}`, '', review.summary, '', '### Submitted scope', '');
   for (const pointer of review.scope.reviewSet) for (const file of pointer.files) lines.push(`- \`${pointer.commit}:${file.path}\` — ${JSON.stringify(file.segments)}`);
+  if(review.scope.finalScope){
+   const final=review.scope.finalScope;
+   lines.push('',`### Verified final scope: ${final.revision}`,'',`Projection: ${final.identity} · attribution: ${final.attributionState}`,'');
+   for(const e of final.entries)lines.push(`- \`${e.path}\` (${e.blobOid??'absent'}) — ${e.findingScope}: ${JSON.stringify(e.segments)}`);
+   for(const row of final.tasks)lines.push(`- Task ${row.taskId}: ${row.decision.action}; changes ${row.changeIndexes.join(', ')}; identity ${row.identity}`);
+   if(final.attributionState==='unmapped_failure')lines.push('',`Attribution failure (${final.attributionFailure.code}): ${final.attributionFailure.summary}`);
+  }
   if (review.reassessmentSummary) lines.push('', review.reassessmentSummary);
   for (const task of review.tasks) {
    const origin = review.origins?.find(item => item.taskId === task.taskId);
@@ -88,7 +109,7 @@ export function renderTaskReview(bodyInput: unknown): string {
 /** Permanent pointed failures only; previews and verbose native messages stay temporary. */
 export function taskAttemptSummary(attempt: ReviewAttempt): string {
  const tasks=attempt['review-response'].tasks;
- const base=`${tasks.length} selected task assessment(s): ${aggregateTaskStatus(tasks)}.`;
+ const base=`${tasks.length} selected task assessment(s): ${aggregateTaskStatus(tasks)}.${attempt.header.attributionFailure?` Attribution failure (${attempt.header.attributionFailure.code}): ${attempt.header.attributionFailure.summary}`:''}`;
  const diagnostics=attempt['review-response'].failureDiagnostics;
  if(!diagnostics?.length)return base;
  const pointed=diagnostics.map(entry=>({phase:entry.phase,...(entry.taskId?{taskId:entry.taskId}:{}),provider:entry.diagnostic.provider,resolved:entry.resolved===true,

@@ -76,7 +76,7 @@ test('migration compatibility: preserve origin-bearing history and reject unsupp
   const frozen=JSON.parse(readFileSync(new URL('./fixtures/s1-task-body-schema.json',import.meta.url),'utf8')) as {sourceCommit:string;sourcePath:string;schema:Record<string,unknown>};
   assert.match(frozen.sourceCommit,/^[a-f0-9]{40}$/);assert.equal(frozen.sourcePath,'src/workflow/code-review/task-review/record.ts');
   assert.equal(validateAgainstSchema(frozen.schema,body).ok,false,'the actual frozen S1 strict-reader schema refuses new fields');assert.deepEqual(validateTaskBody(body),body,'current reader preserves the new record');
-  const old=structuredClone(body);for(const summary of old.reviews){delete summary.origins;delete summary.reassessmentSummary;}
+  const old=structuredClone(body);for(const summary of old.reviews){delete summary.origins;delete summary.reassessmentSummary;delete summary.scope.reviewRevision;delete summary.scope.finalScope;delete summary.finalScopeIdentity;delete summary.attributionIdentity;delete summary.taskScopeIdentities;}
   assert.equal(validateAgainstSchema(frozen.schema,old).ok,true,'old-form records remain valid under the frozen production schema');
   assert.equal(readFileSync(json,'utf8'),original,'downgrade rejection never strips stored provenance');assert.equal(body.reviews.length,2);assert.equal(body.reviews[1]!.origins!.length,2);
  }finally{f.cleanup();}

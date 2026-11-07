@@ -13,6 +13,9 @@ import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from '
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
 import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody, taskAttemptSummary } from './record.js';
 
+import { restoreAcceptedAssignments, validateSavedAttribution } from './attribution-binding.js';
+import { captureFinalScope } from './final-scope-history.js';
+
 export interface PublicationDeps { readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly renderWrite?:typeof writeAtomic; }
 
 /** No reviewer invocation: project completed task feedback through the canonical queued store. */
@@ -21,11 +24,24 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
  const checkpoint:ReviewCheckpoint = decodeReview(CheckpointSchema, JSON.parse(await readFile(path,'utf8')));
  requireReview(checkpoint.project === canonical && checkpoint.reviewId === reviewId && checkpoint.schemaVersion === 1, 'checkpoint', 'Checkpoint identity mismatch');
  validateResultOrigins(checkpoint.attempts.map(entry => ({ attempt:entry.header.attempt, reviewer:entry.header.reviewer, tasks:entry['review-response'].tasks, origins:entry['review-response'].origins })));
+ requireReview(checkpoint.attempts.every((a,i)=>a.header.attempt===i+1),'attempt','Attempt history must be contiguous');
+ for(const earlier of checkpoint.attempts.slice(0,-1)){
+  requireReview(earlier['review-response'].crPublication==='complete'&&!['pending','running'].includes(earlier.header.status),'attempt','Earlier attempt must be published');
+  validateSavedAttribution(earlier);
+  if(earlier.submitted.reviewRevision){
+   const priorPrepared=await prepareReviewPacket(earlier.submitted,deps.sources,true,undefined,earlier.header.derived);
+   requireReview(priorPrepared.epicHash===epicHash&&canonicalReviewStory(priorPrepared.packet.storyId,epicHash)===canonicalReviewStory(checkpoint.storyId,epicHash)&&priorPrepared.packet.taskId===checkpoint.taskId,'scope','Earlier scope belongs to another subject');
+   await restoreAcceptedAssignments({path,checkpoint,attempt:earlier,prepared:priorPrepared});captureFinalScope(priorPrepared,earlier);
+  }
+ }
  const attempt = checkpoint.attempts.at(-1)!;
  const prepared = await prepareReviewPacket(attempt.submitted, deps.sources, true, undefined, attempt.header.derived);
  requireReview(prepared.epicHash === epicHash && canonicalReviewStory(checkpoint.storyId,epicHash) === canonicalReviewStory(prepared.packet.storyId,epicHash) && checkpoint.taskId === prepared.packet.taskId, 'scope', 'Checkpoint belongs to another review subject');
  const expected = prepared.tasks.filter(t=>!prepared.packet.taskId || t.id===prepared.packet.taskId).map(t=>t.id).sort();
  requireReview(isDeepStrictEqual([...attempt.header.selectedTaskIds].sort(),expected) && isDeepStrictEqual(attempt['review-response'].tasks.map(t=>t.taskId).sort(),expected), 'tasks', 'Selected tasks have not all completed');
+ validateSavedAttribution(attempt);
+ const assignments=await restoreAcceptedAssignments({path,checkpoint,attempt,prepared});
+ const finalScope=prepared.packet.reviewRevision?captureFinalScope(prepared,attempt):undefined;
  requireReview(attempt.header.completedAt, 'attempt', 'Assessment completion timestamp is missing');
  for(const result of attempt['review-response'].tasks) {
   const refs=resultReferences(result);
@@ -35,10 +51,10 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
    await deps.sources.commit(match[1]!);
    requireReview(await deps.sources.file(match[1]!,match[2]!), 'evidence','Missing committed evidence');
   }
-  validateTaskResult(result,{taskId:result.taskId,changes:prepared.changes,evidenceReferences:refs});
+  validateTaskResult(result,{taskId:result.taskId,changes:finalScope?assignments?.find(a=>a.taskId===result.taskId)?.changes??[]:prepared.changes,evidenceReferences:refs});
  }
  const storyId=prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/,'');
- const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),scope:{storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:taskAttemptSummary(attempt),completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
+ const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),...(finalScope?{finalScopeIdentity:attempt.header.finalScopeIdentity!,attributionIdentity:attempt.header.attributionIdentity!,...(attempt.header.taskScopeIdentities?{taskScopeIdentities:attempt.header.taskScopeIdentities}:{})}:{}),scope:{...(finalScope?{reviewRevision:prepared.packet.reviewRevision!,finalScope}:{}),storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:taskAttemptSummary(attempt),completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);

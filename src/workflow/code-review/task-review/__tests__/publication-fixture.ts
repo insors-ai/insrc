@@ -38,7 +38,7 @@ export async function fixture(full=false,taskCount:1|2|3=1) {
  const sources=new RegistryReviewSources({repoPath:repo,sessionId:'publication-test',requestId:1,send:()=>{}}),through=roundWriterFor(repo);
  const deps={sources,through};
  const refreshBinding=async(rows?:readonly TaskAttribution[])=>{
-  const state=checkpoint('fixture-binding'),attempt=state.attempts[0]!,prepared=await prepareReviewPacket(packet,sources);
+  const state=checkpoint('fixture-binding'),attempt=state.attempts[0]!,prepared=await prepareReviewPacket(packet,sources,true);
   delete attempt.header.acceptedAttribution;delete attempt.header.taskScopeIdentities;delete attempt.header.attributionIdentity;
   attempt.header.attributionState='pending';attempt.header.finalScopeIdentity=prepared.projection!.identity;
   const review={path:checkpointPath(repo,'fixture-binding'),checkpoint:state,attempt,prepared};

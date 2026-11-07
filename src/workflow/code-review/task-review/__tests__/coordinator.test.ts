@@ -186,7 +186,8 @@ test('shared attribution timeout remains incomplete for every remaining task wit
   const complete = await f.read(ack.path);
   assert.deepEqual(complete.attempts[0]!['review-response'].tasks.map(task => task.status), ['incomplete', 'incomplete', 'incomplete']);
   assert.equal(complete.attempts[0]!.header.status, 'incomplete'); assert.equal(calls, 1);
-  assert.match(complete.attempts[0]!['review-response'].tasks[1]!.summary, /shared attribution.*inactivity/);
+  assert.match(complete.attempts[0]!['review-response'].tasks[1]!.summary, /shared attribution failure/);
+  assert.equal(complete.attempts[0]!.header.attributionFailure!.code,'attribution_inactive');
  } finally { await f.cleanup(); }
 });
 

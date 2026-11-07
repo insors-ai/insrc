@@ -40,14 +40,22 @@ export function validateSavedAttribution(attempt: ReviewAttempt): void {
   return;
  }
  requireReview(h.acceptedAttribution && h.taskScopeIdentities && h.attributionIdentity && h.attributionFailure === undefined, 'attribution', 'Incomplete accepted attribution');
- const rows = h.acceptedAttribution, bindings = h.taskScopeIdentities, files = attempt.submitted.reviewSet.reduce((n, p) => n + p.files.length, 0), tests = attempt.submitted.tests.length;
+ validateAcceptedBindings(h as AcceptedBindingHeader, attempt.submitted.reviewSet.reduce((n, p) => n + p.files.length, 0), attempt.submitted.tests.length);
+}
+export interface AcceptedBindingHeader {
+ attempt: number; selectedTaskIds: readonly string[]; finalScopeIdentity: string; attributionIdentity: string;
+ acceptedAttribution: readonly AcceptedTaskAttribution[]; taskScopeIdentities: readonly {taskId:string;identity:string}[];
+}
+export function validateAcceptedBindings(h: AcceptedBindingHeader, files: number, tests: number): void {
+ const rows = h.acceptedAttribution, bindings = h.taskScopeIdentities;
+
  requireReview(rows.length === h.selectedTaskIds.length && bindings.length === rows.length && new Set(rows.map(r => r.taskId)).size === rows.length && new Set(bindings.map(r => r.taskId)).size === bindings.length, 'attribution', 'Duplicate or missing accepted tasks');
  const changes = new Set<number>(), coveredTests = new Set<number>();
  const bound = rows.map(row => {
   decodeReview(AcceptedTaskAttributionSchema, row);
   requireReview(h.selectedTaskIds.includes(row.taskId), 'attribution', 'Foreign accepted task');
   requireReview(row.changeIndexes.every(i => i < files) && row.testIndexes.every(i => i < tests), 'attribution', 'Accepted index exceeds pinned input');
-  requireReview(attempt.header.attempt === 1 ? row.decision.action === 'initial' : row.decision.action !== 'initial', 'attribution', 'Wrong attempt decision');
+  requireReview(h.attempt === 1 ? row.decision.action === 'initial' : row.decision.action !== 'initial', 'attribution', 'Wrong attempt decision');
   if (row.decision.action === 'reuse') requireReview(row.decision.sourceAttempt < h.attempt, 'attribution', 'Reuse source must be earlier');
   for (const i of row.changeIndexes) changes.add(i); for (const i of row.testIndexes) coveredTests.add(i);
   const binding = bindings.find(b => b.taskId === row.taskId); requireReview(binding, 'attribution', 'Missing task identity');

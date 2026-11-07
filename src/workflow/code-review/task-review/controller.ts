@@ -1,3 +1,4 @@
+import { failAttribution, unmappedTaskFailure, attributionTimedOut } from './attribution-failure.js';
 import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
 import { DiagnosticSnapshotSchema } from './diagnostic-schema.js';
@@ -71,8 +72,9 @@ export class ControllerTaskReview {
   }catch(error){
    if(await recordAttributionRejection(this.review,error,()=>this.persist()))return this.frame(owner);
    this.monitor?.stop();this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
+   failAttribution(this.review.attempt,error,false);
    for(const task of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id))){
-    this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(task.id,`Task attribution failed: ${error instanceof Error?error.message:String(error)}`,false)];
+    this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,unmappedTaskFailure(task.id,false)];
     await this.persist();
    }
    this.finished=true;await this.complete();this.retire(false);return this.base('done');
@@ -167,6 +169,10 @@ export class ControllerTaskReview {
    return this.base('done');
   }
   this.assertOwner(owner);
+  if(this.review.attempt.header.attributionState==='failed'){
+   for(const missing of this.selected.filter(t=>!this.review.attempt['review-response'].tasks.some(r=>r.taskId===t.id)))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,unmappedTaskFailure(missing.id,attributionTimedOut(this.review.attempt))];
+   await this.persist();return this.frame(owner);
+  }
   if(!this.monitor){
    this.executionId=randomUUID();this.sequence=0;
    const prior=structuredClone(this.lastDurable),restored=this.assignments??await restoreAcceptedAssignments(this.review), direct=restored?undefined:directReviewAssignments(this.review);
@@ -210,10 +216,11 @@ export class ControllerTaskReview {
   if(this.owner.signal.aborted){await this.stop();return;}
   const task=this.current();if(!task)return;
   this.monitor?.stop();
-  const timedOut=taskFailure(task.id,'Task has no observed review activity for 30 minutes.',true);
+  if(!this.assignments)failAttribution(this.review.attempt,new Error('Task attribution exceeded the 30-minute inactivity grace.'),true);
+  const timedOut=this.assignments?taskFailure(task.id,'Task has no observed review activity for 30 minutes.',true):unmappedTaskFailure(task.id,true);
   this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,timedOut];
   if(!this.assignments){
-   for(const remaining of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id)))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,taskFailure(remaining.id,'Task attribution exceeded the 30-minute inactivity grace.',true)];
+   for(const remaining of this.selected.filter(task=>!this.review.attempt['review-response'].tasks.some(result=>result.taskId===task.id)))this.review.attempt['review-response'].tasks=[...this.review.attempt['review-response'].tasks,unmappedTaskFailure(remaining.id,true)];
   }
   this.monitor=undefined;delete this.review.attempt.header.activeTaskId;
   await this.persist();

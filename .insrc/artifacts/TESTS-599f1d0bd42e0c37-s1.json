@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 11,
-        "contentHash": "d7b53520deb56062a1ba9e5a387a079eeb9b32fc01907a58f344e7acf7bc7512",
-        "at": "2026-11-07T06:09:49.290Z",
+        "number": 13,
+        "contentHash": "25eea407dd2398f2e1c94d0e64d03f5a8794cc07515224f7d0b668dacbf01e36",
+        "at": "2026-11-07T06:30:25.304Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T06:09:49.147Z",
+    "updatedAt": "2026-11-07T06:30:25.152Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 11
+    "revision": 13
   },
   "body": {
     "tasks": [
@@ -660,6 +660,117 @@
               },
               {
                 "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "03943cf59",
+        "ranAt": "2026-11-07T06:30:25.152Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Pre-rename file open/write/sync/close and rename failures classify not_replaced; post-rename directory/cleanup failures classify replaced; uncertain/read-failed outcomes remain explicit.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Every failed acceptance acknowledgement fences both routes with no dispatch or rollback overwrite and no attribution/model-failure relabel.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Explicit recovery compares exact prior/candidate under ownership, validates source/mapping/bindings and obtains a successful same-mapping save ACK before continuation; repeated failure/conflict remains fenced.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "unreadable or conflicting acceptance readback stays fenced without overwrite or model work",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 4040,
+            "titles": [
+              {
+                "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
+                "result": "pass"
+              },
+              {
+                "title": "unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision",
+                "result": "pass"
+              },
+              {
+                "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement",
+                "result": "pass"
+              },
+              {
+                "title": "unreadable or conflicting acceptance readback stays fenced without overwrite or model work",
+                "result": "pass"
+              },
+              {
+                "title": "failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment",
+                "result": "pass"
+              },
+              {
+                "title": "later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored",
+                "result": "pass"
+              },
+              {
+                "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits",
                 "result": "pass"
               }
             ],

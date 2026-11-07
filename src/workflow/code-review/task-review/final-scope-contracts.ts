@@ -12,8 +12,8 @@ const index = Type.Integer({ minimum: 0, maximum: 9999 });
 const indexes = Type.Array(index, { maxItems: 10000, uniqueItems: true });
 const attempt = Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER });
 export const ReviewedSegmentSchema = Type.Union([
- object({ after: Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]) }),
- object({ deletionAt: Type.Integer({ minimum: 0 }) }),
+ object({ after: Type.Tuple([Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER }), Type.Integer({ minimum: 1, maximum: Number.MAX_SAFE_INTEGER })]) }),
+ object({ deletionAt: Type.Integer({ minimum: 0, maximum: Number.MAX_SAFE_INTEGER }) }),
 ]);
 export type ReviewedSegment = Static<typeof ReviewedSegmentSchema>;
 export const OriginRefSchema = object({ changeIndex: index, segmentIndex: index });

@@ -1,3 +1,4 @@
+import { captureFinalScope } from './final-scope-history.js';
 import { validateFailureDiagnostics } from './diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
@@ -64,8 +65,9 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
     const cr = JSON.parse(await readFile(artifactJsonPath(canonical, codeReviewArtifactId(prepared.epicHash, canonicalReviewStory(saved.storyId, prepared.epicHash))), 'utf8')) as { meta?: { schemaVersion?: number }; body?: unknown };
     requireReview(cr.meta?.schemaVersion === 2, 'publication', 'Expected task-based CR history');
     const summary = validateTaskBody(cr.body).reviews.find(review => review.reviewId === reviewId && review.attempt === entry.header.attempt);
-    const scope = { storyId: entry.submitted.storyId, ...(entry.submitted.taskId ? { taskId: entry.submitted.taskId } : {}), documents: entry.submitted.documents, reviewSet: entry.submitted.reviewSet };
+    const scope = { ...(entry.submitted.reviewRevision?{reviewRevision:entry.submitted.reviewRevision,finalScope:captureFinalScope(prepared,entry)}:{}),storyId: entry.submitted.storyId, ...(entry.submitted.taskId ? { taskId: entry.submitted.taskId } : {}), documents: entry.submitted.documents, reviewSet: entry.submitted.reviewSet };
     requireReview(summary && summary.reviewer === entry.header.reviewer && summary.status === entry.header.status && summary.completedAt === entry.header.completedAt
+     && summary.finalScopeIdentity === entry.header.finalScopeIdentity && summary.attributionIdentity === entry.header.attributionIdentity && isDeepStrictEqual(summary.taskScopeIdentities,entry.header.taskScopeIdentities)
      && summary.buildFingerprint === entry.header.buildFingerprint && isDeepStrictEqual(summary.scope, scope) && isDeepStrictEqual(summary.tasks, results)
      && isDeepStrictEqual(summary.origins, entry['review-response'].origins), 'publication', 'Published CR disagrees with pinned attempt');
    }

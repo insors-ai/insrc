@@ -7,7 +7,7 @@ import { CloneType, Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
 import { AcceptedTaskAttributionSchema, AttributionFailureSchema } from './final-scope-contracts.js';
-import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
+import type { AcceptedTaskAttribution, FinalScopeSnapshot } from './final-scope-contracts.js';
 
 const cloneFields = <T extends Record<string, TSchema>>(fields: T): T => Object.fromEntries(Object.entries(fields).map(([key, schema]) => [key, CloneType(schema)])) as T;
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
@@ -107,7 +107,8 @@ export interface ReviewAttempt {
 export interface ReviewCheckpoint { schemaVersion: 1; reviewId: string; project: string; storyId: string; taskId?: string; attempts: readonly ReviewAttempt[]; }
 export interface CompletedReviewSummary {
  reviewId: string; attempt: number; storyId: string; taskId?: string; reviewer: ReviewerParty; status: TaskReviewResult['status'];
- scope: Pick<ReviewPacket, 'storyId' | 'taskId' | 'documents' | 'reviewSet'>; tasks: readonly TaskReviewResult[]; summary: string; completedAt: string; buildFingerprint?: string; reassessmentSummary?: string; origins?: readonly TaskResultOrigin[];
+ scope: Pick<ReviewPacket, 'storyId' | 'taskId' | 'documents' | 'reviewSet'> & { reviewRevision?: string; finalScope?: FinalScopeSnapshot }; tasks: readonly TaskReviewResult[]; summary: string; completedAt: string; buildFingerprint?: string; reassessmentSummary?: string; origins?: readonly TaskResultOrigin[];
+ finalScopeIdentity?: string; attributionIdentity?: string; taskScopeIdentities?: readonly { taskId: string; identity: string }[];
 }
 /** Publication is deliberately distinct from the legacy dimension-shaped version-1 CR. */
 export interface TaskBasedCodeReviewRecord {

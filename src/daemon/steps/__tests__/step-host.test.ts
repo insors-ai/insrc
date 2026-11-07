@@ -296,9 +296,10 @@ test('insrc_analyze through step.call refuses bad arguments with a clear error, 
 	const host = createStepCallHandler(stepToolTable());
 	const context: StepCallContext = { cwd: process.cwd() };
 	const cases: [unknown, RegExp][] = [
-		[{}, /`focus` \(a non-empty string\) is required/],
-		[{ focus: '   ' }, /`focus` \(a non-empty string\) is required/],
-		[{ focus: 7 }, /`focus` \(a non-empty string\) is required/],
+		[{}, /needs either `request` or a non-empty `focus`/],
+		[{ focus: '   ' }, /needs either `request` or a non-empty `focus`/],
+		[{ focus: 7 }, /`focus` must be a string/],
+		[{ request: { question: 'q' } }, /request\.scopeRef\.kind must be one of/],
 		[{ focus: 'q', repo: 3 }, /`repo` must be a string/],
 		[{ focus: 'q', target: 'sql' }, /`target` must be one of code, docs, data, infra, generic/],
 		[{ focus: 'q', scope: 'XXL' }, /`scope` must be one of XS, S, M, L, XL/],

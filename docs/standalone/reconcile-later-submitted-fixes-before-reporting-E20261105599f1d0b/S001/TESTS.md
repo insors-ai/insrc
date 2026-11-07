@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -234,3 +234,44 @@ Run at 2026-11-07T06:30:25.152Z on commit `03943cf59`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 7 | 4 s |  |
+
+## t7
+
+Run at 2026-11-07T06:44:39.040Z on commit `56e5cbbfb`. Tests check: **failed**. 6 pass, 0 fail, 0 skipped, 1 not found; 0 reported by the builder and not run by the gate.
+
+named test cases that did not pass: not found: 'placeholder' in src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts
+
+**integration: Source-verified final snapshot publication and offline merge/validate/render roundtrip preserve shifted/renamed per-task scope, provenance and byte-idempotence without live Git in readers.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+
+**integration: Accepted/unmapped snapshot required fields, partitions, witness closure, task subsets and canonical bindings reject tampering, omitted metadata and foreign findings.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | final history: missing bindings partitions witnesses task subsets and foreign locations reject offline | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+| pass | final history: unmapped attribution preserves bounded true failure without fabricated scopes or accepted downgrade | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+
+**integration: Attribution timeout/provider/invalid-scope failure publishes every selected failed/incomplete outcome with true bounded diagnostics, no invented identity/findings/reuse or accepted downgrade, then allows the next sequential attempt.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+| pass | shared attribution timeout remains incomplete for every remaining task without retry | `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` |
+
+**integration: Completed historical no-pin histories remain byte-identical/read-only and cannot authorize fresh unpinned execution.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | final history: completed no-pin records retain byte-identical read-only coordinates | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+| not found | placeholder | `src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/code-review/task-review/__tests__/coordinator.test.ts` | 0 | 17 | 0.9 s |  |
+| `src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts` | 0 | 2 | 0.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 5 | 1.9 s |  |

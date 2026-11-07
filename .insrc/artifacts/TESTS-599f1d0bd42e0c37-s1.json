@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 13,
-        "contentHash": "25eea407dd2398f2e1c94d0e64d03f5a8794cc07515224f7d0b668dacbf01e36",
-        "at": "2026-11-07T06:30:25.304Z",
+        "number": 14,
+        "contentHash": "6477f28b6a64ba7a795a05f2dc302aee02ff9c42219b6a5b75a1a0408bca286e",
+        "at": "2026-11-07T06:44:39.183Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T06:30:25.152Z",
+    "updatedAt": "2026-11-07T06:44:39.040Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 13
+    "revision": 14
   },
   "body": {
     "tasks": [
@@ -777,6 +777,207 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "56e5cbbfb",
+        "ranAt": "2026-11-07T06:44:39.040Z",
+        "testsPassed": false,
+        "tests": [
+          {
+            "name": "Source-verified final snapshot publication and offline merge/validate/render roundtrip preserve shifted/renamed per-task scope, provenance and byte-idempotence without live Git in readers.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Accepted/unmapped snapshot required fields, partitions, witness closure, task subsets and canonical bindings reject tampering, omitted metadata and foreign findings.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: missing bindings partitions witnesses task subsets and foreign locations reject offline",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: unmapped attribution preserves bounded true failure without fabricated scopes or accepted downgrade",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Attribution timeout/provider/invalid-scope failure publishes every selected failed/incomplete outcome with true bounded diagnostics, no invented identity/findings/reuse or accepted downgrade, then allows the next sequential attempt.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+                "title": "shared attribution timeout remains incomplete for every remaining task without retry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Completed historical no-pin histories remain byte-identical/read-only and cannot authorize fresh unpinned execution.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: completed no-pin records retain byte-identical read-only coordinates",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+                "title": "placeholder",
+                "result": "not found"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/coordinator.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 868,
+            "titles": [
+              {
+                "title": "task review admission: short acknowledgement, initial atomic JSON and same-id exclusion",
+                "result": "pass"
+              },
+              {
+                "title": "task execution: checkpoint before next task, one inactivity grace, failure continuation and no automatic retry",
+                "result": "pass"
+              },
+              {
+                "title": "checkpoint write failure stops scheduling and retains the last complete JSON",
+                "result": "pass"
+              },
+              {
+                "title": "code-task provider tools: committed reads, permitted target tests and unchanged design-review defaults",
+                "result": "pass"
+              },
+              {
+                "title": "native provider timeout is incomplete even when it returns just before the host timer",
+                "result": "pass"
+              },
+              {
+                "title": "malformed provider result is saved as failed without retrying the task",
+                "result": "pass"
+              },
+              {
+                "title": "native task output refuses placeholder references and foreign locations before host completion",
+                "result": "pass"
+              },
+              {
+                "title": "optimistic native status with limitations retains the assessment as incomplete instead of failed",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution timeout remains incomplete for every remaining task without retry",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution provider failure remains failed for every remaining task without retry",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution corrects omitted unchanged regression evidence before any assessment",
+                "result": "pass"
+              },
+              {
+                "title": "shared attribution exhausts three submissions without running assessments or resetting on resume",
+                "result": "pass"
+              },
+              {
+                "title": "controller attribution returns pointed correction frames then accepts complete mapping with replay protection",
+                "result": "pass"
+              },
+              {
+                "title": "native attribution handles the real host-candidate rejection wrapper and preserves diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "controller attribution budget survives disconnect and explicit resume, then exhausts",
+                "result": "pass"
+              },
+              {
+                "title": "attribution omission diagnostics enumerate missing change and test indexes separately",
+                "result": "pass"
+              },
+              {
+                "title": "attribution repair persistence failure stops dispatch without fabricating task failures",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 499,
+            "titles": [
+              {
+                "title": "accepted attribution decision unions retain only permitted fields",
+                "result": "pass"
+              },
+              {
+                "title": "permanent snapshot branches cannot fabricate accepted rows for unmapped failure",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1934,
+            "titles": [
+              {
+                "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently",
+                "result": "pass"
+              },
+              {
+                "title": "final history: missing bindings partitions witnesses task subsets and foreign locations reject offline",
+                "result": "pass"
+              },
+              {
+                "title": "final history: unmapped attribution preserves bounded true failure without fabricated scopes or accepted downgrade",
+                "result": "pass"
+              },
+              {
+                "title": "final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt",
+                "result": "pass"
+              },
+              {
+                "title": "final history: completed no-pin records retain byte-identical read-only coordinates",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ],
+        "note": "named test cases that did not pass: not found: 'placeholder' in src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts"
       }
     ]
   },

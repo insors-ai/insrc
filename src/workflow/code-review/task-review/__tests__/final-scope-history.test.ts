@@ -1,3 +1,5 @@
+import { attributionIdentity } from '../attribution-binding.js';
+import { ReviewSessionTimeoutError } from '../../../../agent/providers/cli-provider.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -47,7 +49,7 @@ test('final history: unmapped attribution preserves bounded true failure without
  const f=await fixture(true,2);try{
   const cp=f.checkpoint(),a=cp.attempts[0]!;
   assert.throws(()=>failAttribution(a,new Error('must not downgrade'),false),/downgraded/);
-  delete a.header.acceptedAttribution;delete a.header.taskScopeIdentities;delete a.header.attributionIdentity;a.header.attributionState='pending';
+  delete a.header.acceptedAttribution;delete a.header.taskScopeIdentities;delete a.header.attributionIdentity;a.header.attributionState='pending';a['review-response'].tasks=[];
   failAttribution(a,new Error('Provider rejected scope: '+ 'é'.repeat(10000)),false);
   assert.ok(Buffer.byteLength(a.header.attributionFailure!.summary)<=8192);
   a['review-response'].tasks=a.header.selectedTaskIds.map(id=>unmappedTaskFailure(id,false));
@@ -63,11 +65,11 @@ test('final history: fresh native and controller attribution failures publish al
  const {TaskReviewCoordinator}=await import('../coordinator.js');
  const {prepareReviewAdmission}=await import('../admission.js');
  const {channel,serve,provider}=await import('./controller-fixture.js');
- for(const route of ['daemon','controller']as const){
+ for(const route of ['daemon','daemon-timeout','controller']as const){
   const f=await fixture(true,2);let calls=0;
   try{
-   if(route==='daemon'){
-    const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async()=>{calls++;throw new Error('Provider scope failure');}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
+   if(route!=='controller'){
+    const c=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async()=>{calls++;if(route==='daemon-timeout')throw new ReviewSessionTimeoutError(300000);throw new Error('Provider scope failure');}),publish:(repo,id)=>publishTaskCheckpoint(repo,hash,id,f.deps)});
     await c.start(f.repo,'unmapped',1,f.packet);await c.settled(f.repo,'unmapped');assert.equal(calls,1);
    }else{
     f.build.meta.authoredBy='daemon';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
@@ -79,8 +81,8 @@ test('final history: fresh native and controller attribution failures publish al
    }
    const saved=f.read(checkpointPath(f.repo,'unmapped')),a=saved.attempts[0]!;
    assert.equal(a.header.attributionState,'failed');assert.equal(a['review-response'].crPublication,'complete');assert.equal(a['review-response'].tasks.length,2);
-   assert.ok(a['review-response'].tasks.every(t=>t.status==='failed'&&!t.findings.length));
-   const next=await prepareReviewAdmission(f.repo,'unmapped',2,f.packet,route,f.deps.sources);assert.equal(next.attempt.header.attributionState,'pending');assert.deepEqual(next.checkpoint.attempts[0],a);
+   assert.ok(a['review-response'].tasks.every(t=>t.status===(route==='daemon-timeout'?'incomplete':'failed')&&!t.findings.length));
+   const next=await prepareReviewAdmission(f.repo,'unmapped',2,f.packet,route==='controller'?'controller':'daemon',f.deps.sources);assert.equal(next.attempt.header.attributionState,'pending');assert.deepEqual(next.checkpoint.attempts[0],a);
   }finally{f.cleanup();}
  }
 });
@@ -94,5 +96,20 @@ test('final history: completed no-pin records retain byte-identical read-only co
   assert.equal(body.reviews[0]!.scope.finalScope,undefined);assert.equal(JSON.stringify(validateTaskBody(body)),bytes);
   const {prepareReviewAdmission}=await import('../admission.js');const saved=readFileSync(checkpointPath(f.repo,'publication'),'utf8');
   await prepareReviewAdmission(f.repo,'publication',1,undefined,'daemon',f.deps.sources,{operation:'resume'});assert.equal(readFileSync(checkpointPath(f.repo,'publication'),'utf8'),saved);
+  await assert.rejects(prepareReviewAdmission(f.repo,'fresh-unpinned',1,a.submitted,'daemon',f.deps.sources),/reviewRevision/);assert.equal(readFileSync(checkpointPath(f.repo,'publication'),'utf8'),saved);
+ }finally{f.cleanup();}
+});
+
+test('final history: replacement witness closure and graph are checked independently of recomputed digests',async()=>{
+ const f=await fixture(true,2);try{
+  f.put('source.js','export const total = 3;\n');f.git('add','source.js');f.git('commit','-qm','selected replacement');const revision=f.git('rev-parse','HEAD');
+  f.packet.reviewSet.push({commit:revision,parent:f.packet.reviewRevision!,files:[{path:'source.js',segments:[{after:[1,1]}]}]});f.packet.reviewRevision=revision;
+  await f.refreshBinding([{taskId:'t1',changeIndexes:[0,1],testIndexes:[0]},{taskId:'t2',changeIndexes:[1],testIndexes:[0]}]);await saveCheckpoint(checkpointPath(f.repo,'publication'),f.checkpoint());
+  const published=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps),body=f.readRecord(published.jsonPath).body;
+  assert.ok(body.reviews[0]!.scope.finalScope!.dispositions.some(d=>d.replacementWitnesses.length));
+  const resign=(b:typeof body)=>{const r=b.reviews[0]!,s=r.scope.finalScope!;const origins=r.scope.reviewSet.flatMap(p=>p.files.map(f=>({commit:p.commit,parent:p.parent,path:f.path,previousPath:f.previousPath??f.path,segments:f.segments})));r.finalScopeIdentity=s.identity=projectionIdentity(s.revision,origins,s.entries,s.dispositions);r.attributionIdentity=s.attributionIdentity=attributionIdentity('accepted',s.identity,s.selectedTaskIds,s.testCount,s.tasks);};
+  const omitted=structuredClone(body);omitted.reviews[0]!.scope.finalScope!.tasks[0]!.changeIndexes=[0];resign(omitted);assert.throws(()=>validateTaskBody(omitted),/omits replacement witness/);
+  const foreign=structuredClone(body);foreign.reviews[0]!.scope.finalScope!.dispositions.find(d=>d.kind==='superseded')!.replacementWitnesses=[{changeIndex:1,segmentIndex:99}];resign(foreign);assert.throws(()=>validateTaskBody(foreign),/Foreign replacement witness/);
+  const empty=structuredClone(body);empty.reviews[0]!.scope.finalScope!.dispositions.find(d=>d.kind==='superseded')!.replacementWitnesses=[];resign(empty);assert.throws(()=>validateTaskBody(empty),/Invalid disposition/);
  }finally{f.cleanup();}
 });

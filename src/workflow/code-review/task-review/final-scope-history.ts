@@ -47,7 +47,7 @@ export function validateFinalScope(review: CompletedReviewSummary): FinalScopeSn
   requireReview(d.kind!=='surviving'||'after'in d.sourcePart&&d.finalSegments.every(r=>'after'in r),'finalScope','Invalid surviving partition');
   requireReview(d.kind!=='deleted'||'deletionAt'in d.sourcePart&&d.finalSegments.every(r=>'deletionAt'in r),'finalScope','Invalid deleted partition');
   for(const r of d.finalSegments)if('after'in r)requireReview(r.after[0]<=r.after[1],'finalScope','Reversed final interval');
-  active.set(d.source.changeIndex,[...(active.get(d.source.changeIndex)??[]),...d.finalSegments]);
+  const spans=active.get(d.source.changeIndex)??[];for(const span of d.finalSegments)spans.push(span);active.set(d.source.changeIndex,spans);
   for(const w of d.replacementWitnesses){
    requireReview(origins[w.changeIndex]?.segments[w.segmentIndex]&&origins[w.changeIndex]!.commit!==origin!.commit&&s.entries[w.changeIndex]!.path===s.entries[d.source.changeIndex]!.path,'finalScope','Foreign replacement witness');
    const targets=edges.get(k)??new Set<string>();targets.add(key(w.changeIndex,w.segmentIndex));edges.set(k,targets);

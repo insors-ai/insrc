@@ -36,7 +36,10 @@ export function validateSavedAttribution(attempt: ReviewAttempt): void {
  if (h.attributionState !== 'accepted') {
   requireReview(h.acceptedAttribution === undefined && h.taskScopeIdentities === undefined, 'attribution', 'Unmapped phase cannot carry accepted task bindings');
   if (h.attributionState === 'pending') requireReview(h.attributionIdentity === undefined && h.attributionFailure === undefined, 'attribution', 'Pending attribution has terminal bindings');
-  else requireReview(h.attributionFailure && h.attributionIdentity === attributionIdentity('unmapped_failure', h.finalScopeIdentity, h.selectedTaskIds, attempt.submitted.tests.length, []), 'attribution', 'Invalid unmapped failure binding');
+  else {
+   requireReview(h.attributionFailure && Buffer.byteLength(h.attributionFailure.code)<=64 && Buffer.byteLength(h.attributionFailure.summary)<=8192 && h.attributionIdentity === attributionIdentity('unmapped_failure', h.finalScopeIdentity, h.selectedTaskIds, attempt.submitted.tests.length, []), 'attribution', 'Invalid unmapped failure binding');
+   requireReview(!attempt['review-response'].origins?.length && attempt['review-response'].tasks.every(t=>(t.status==='failed'||t.status==='incomplete')&&!t.findings.length&&t.testCoverage.assessment!=='verified'),'attribution','Unmapped checkpoint claims assessed scope');
+  }
   return;
  }
  requireReview(h.acceptedAttribution && h.taskScopeIdentities && h.attributionIdentity && h.attributionFailure === undefined, 'attribution', 'Incomplete accepted attribution');

@@ -61,8 +61,13 @@ for (const c of [
 		});
 		const text = (envelope.content[0] as { text: string }).text;
 		assert.equal(envelope.isError === true, false, text.slice(0, 300));
-		assert.match(text, c.file, 'the symbol lookup found the entity stored under the repository root');
 		const turn = (JSON.parse(text) as { userTurn: string }).userTurn;
+		// the symbol lookup's own output, not a file name that the module profile also lists
+		const located = /### e1 :: symbol\.locate[\s\S]*?```json\n([\s\S]*?)\n```/.exec(turn);
+		assert.ok(located, 'the symbol lookup ran and its output is in the synthesis turn');
+		const hits = (JSON.parse(located![1]!) as { hits: Array<{ name: string; file: string; entityId: string }> }).hits;
+		assert.deepEqual(hits.map(h => [h.name, h.entityId]), [[c.name, `e-${c.name}`]], 'the symbol lookup returned the entity stored under the repository root');
+		assert.match(hits[0]!.file, c.file);
 		assert.match(turn, /"entityCount": 1,/, 'the module profile counted the entity stored under the repository root');
 		assert.match(text, /module\.profile/, 'the module profile ran');
 	});

@@ -28,6 +28,7 @@ import { resolveRepoPath } from './resolve-repo.js';
 import { getLogger } from '../shared/logger.js';
 import { PATHS } from '../shared/paths.js';
 import type { StepClient, StepToolName } from '../shared/step-context.js';
+import type { DaemonStatus } from '../shared/types.js';
 
 const log = getLogger('mcp:forward-step');
 
@@ -170,7 +171,7 @@ function forwardStepNow(
         bootstrap?.signal.addEventListener('abort', expired, { once: true });
         // A call that carries a structured request first asks this connection's daemon what it can do:
         // an older daemon would silently drop the request, so it is refused here with a clear message.
-        const needsFeatures = !bootstrap && carriesRequest(tool, rawArgs);
+        const needsFeatures = carriesRequest(tool, rawArgs);
         let featureId: number | undefined;
         const begin = () => {
 			if (!needsFeatures) { sendStep(); return; }
@@ -213,7 +214,7 @@ function forwardStepNow(
                 }
 				if (featureId !== undefined && frame['id'] === featureId) {
 					featureId = undefined;
-					const features = (frame['result'] as { features?: unknown } | undefined)?.features;
+					const features = (frame['result'] as Pick<DaemonStatus, 'features'> | undefined)?.features;
 					if (!Array.isArray(features) || !features.includes(REQUEST_FEATURE)) {
 						failWith(new DaemonTooOldError(
 							`${tool}: the insrc daemon does not accept a structured analyze request (it does not advertise '${REQUEST_FEATURE}'). ` +

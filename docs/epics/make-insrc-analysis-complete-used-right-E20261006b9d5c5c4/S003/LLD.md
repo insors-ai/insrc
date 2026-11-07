@@ -8,7 +8,7 @@
 **HLD base run:** `wf-1791349476498-tih4l4`
 **HLD effective hash:** `faa0f59939ce...`
 
-This Story adds one shared helper that divides an answer-writing model call's input into ordered parts when the HLD's table from measured size to method says so, or when the rendered input is not admitted by a provable bound on what the model accepts (for a local model, the UTF-8 byte length of the input is held under the tokens available, because a token covers at least one byte). Each part is reasoned over serially, evidence and findings are assembled in code, and a staged combine writes only a bounded summary and always ends, falling back to the per-part results if it fails. Four callers use it: the lookup synthesis, the free-form lookup's final emit, the plan-tree aggregator and the step tool's answer turn. The handling report is typed, carried to the delivered answer on every path, shown in the answer's head, and a failure that carries data reuses the existing answer-step failure and its mappings so nothing found is lost.
+This Story adds one shared helper that divides an answer-writing model call's input into ordered parts when the HLD's table from measured size to method says so, or when the rendered input is not admitted by a provable bound on what the model accepts: a CLI provider's declared character budget, or, for a local model, a UTF-8 byte count held under the window minus the call's output tokens minus a template reserve (10,240 bytes with the checked-in configuration). The helper owns the schema-repair loop, calling the provider with one attempt and measuring every repair before it is sent. Each part is reasoned over serially, evidence and findings are assembled in code, and a staged combine writes only a bounded summary and always ends, falling back to the per-part results. Four callers use it, the handling report is typed and shown in the answer's head, and every failure keeps its true category and its data through the existing mappings, the plan walk and the orchestrator.
 
 ## Contents
 
@@ -56,14 +56,15 @@ synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>>
 **Returns:** `Promise<Omit<AnalyzeContextBundle, 'meta'>>` — The bundle: the one call made today when the size is XS or S and the input is admitted, else the assembled bundle of the parts.
 
 **Errors:**
-- `HandlingBudgetError` when No part is covered, or the fixed context leaves no room for a section; carries the lookup results and the report.
+- `HandlingBudgetError` when The fixed context leaves no room for a section, or a repair cannot be admitted; carries the lookup results and the report.
+- `ShaperAnswerStepFailedError` when Every part failed: reason 'model-failed' when the calls threw, 'invalid-answer' when replies stayed invalid; carries the lookup results and the report.
 - `SynthesizerPromptMissingError` when Existing: no prompt for the key.
 
 **Preconditions:**
 - The plan has been executed
 
 **Postconditions:**
-- Model calls are made one after another
+- Model calls are made one after another, each with one provider attempt
 - A failed combine returns the per-part results with the failure reported, it does not throw
 
 ### 2.2 `prepareSynthesize`
@@ -148,7 +149,26 @@ runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>
 **Postconditions:**
 - Findings of covered parts are concatenated in code by ordinal; the model writes only the summary
 
-### 2.6 `runFinalStructuredEmit`
+### 2.6 `executeLeafTask`
+
+```typescript
+executeLeafTask(task: PlanTask, intent: ClassifiedIntent, runId: string, outputs: ReadonlyMap<string, unknown>, absentInputs: readonly AbsentInput[], execution?: ConnectionExecutionContext): Promise<LeafTaskResult>
+```
+
+**Parameters:**
+- `task: PlanTask` — Existing.
+- `intent: ClassifiedIntent` — Existing.
+- `runId: string` — Existing.
+- `outputs: ReadonlyMap<string, unknown>` — Existing: the upstream outputs.
+- `absentInputs: readonly AbsentInput[]` — Existing.
+- `execution: ConnectionExecutionContext` _(optional)_ — Existing.
+
+**Returns:** `Promise<LeafTaskResult>` — As today; a failed task record gains an optional data field holding the typed failure's partial outputs and HandlingReport.
+
+**Postconditions:**
+- A HandlingBudgetError or an answer-step failure from the aggregate task is kept in the failed-task record's data and is not reduced to its message
+
+### 2.7 `runFinalStructuredEmit`
 
 ```typescript
 runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structuredOutputRetries: number, maxOutputTokens: number, onTrace?: (event: ShaperTraceEvent) => void, execution?: ConnectionExecutionContext, onHandling?: (h: HandlingReport) => void, size?: RequestSize): Promise<AnalyzeContextBundle>
@@ -157,12 +177,12 @@ runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structured
 **Parameters:**
 - `messages: LLMMessage[]` — The tool-loop conversation; when divided, its tool-result messages are the blocks.
 - `provider: LLMProvider` — Existing; its inputBudgetChars feeds the admission.
-- `structuredOutputRetries: number` — Existing.
-- `maxOutputTokens: number` — Existing; also the output reserve for a local model.
+- `structuredOutputRetries: number` — Existing; now the bound of the helper's own repair loop.
+- `maxOutputTokens: number` — Existing; the output tokens subtracted for a local model.
 - `onTrace: (event: ShaperTraceEvent) => void` _(optional)_ — Existing.
 - `execution: ConnectionExecutionContext` _(optional)_ — Existing.
 - `onHandling: (h: HandlingReport) => void` _(optional)_ — New: receives the HandlingReport; the tool loop returns it as a handling field and the free-form lookup copies it to its output.
-- `size: RequestSize` _(optional)_ — New: the request's size, which the free-form runner already obtains and now passes through the tool loop, so the table applies here too.
+- `size: RequestSize` _(optional)_ — New: the request's size, passed through the tool loop, so the table applies here too.
 
 **Returns:** `Promise<AnalyzeContextBundle>` — The bundle: the one call made today when the size is XS or S and the conversation is admitted, else the assembled bundle.
 
@@ -172,7 +192,7 @@ runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structured
 **Postconditions:**
 - An M, L or XL request whose conversation is admitted is still divided, by the table
 
-### 2.7 `failedOutput`
+### 2.8 `failedOutput`
 
 ```typescript
 failedOutput(exp: Exploration, err: unknown, execution?: ConnectionExecutionContext): FailedExplorationOutput
@@ -188,7 +208,7 @@ failedOutput(exp: Exploration, err: unknown, execution?: ConnectionExecutionCont
 **Postconditions:**
 - A HandlingBudgetError raised inside the free-form lookup has been turned into a LookupFailedError carrying its tool results and handling
 
-### 2.8 `extractSoleFreeformResult`
+### 2.9 `extractSoleFreeformResult`
 
 ```typescript
 extractSoleFreeformResult(executed: Awaited<ReturnType<typeof executePlan>>): { rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null
@@ -202,7 +222,7 @@ extractSoleFreeformResult(executed: Awaited<ReturnType<typeof executePlan>>): { 
 **Postconditions:**
 - A failed free-form output still returns null, so it reaches the answer-step failure with its report
 
-### 2.9 `collectPlanSources`
+### 2.10 `collectPlanSources`
 
 ```typescript
 collectPlanSources(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: string): ReportSource[]
@@ -218,7 +238,7 @@ collectPlanSources(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: st
 **Postconditions:**
 - The aggregate task is still not a source of its own completeness; only its handling is read
 
-### 2.10 `concludeRun`
+### 2.11 `concludeRun`
 
 ```typescript
 concludeRun(tree: PlanTreeNode, executed: ExecutorResult, contextReport: AnswerReport | undefined, measure?: RequestMeasure): { report: AnswerReport; finalReport: unknown }
@@ -235,7 +255,7 @@ concludeRun(tree: PlanTreeNode, executed: ExecutorResult, contextReport: AnswerR
 **Postconditions:**
 - A partially failed aggregation makes the run's completeness false
 
-### 2.11 `mergeAnswerReports`
+### 2.12 `mergeAnswerReports`
 
 ```typescript
 mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix?: string): AnswerReport
@@ -251,7 +271,7 @@ mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix?: string): 
 **Postconditions:**
 - The signature and the prefix behaviour are unchanged
 
-### 2.12 `renderReportHead`
+### 2.13 `renderReportHead`
 
 ```typescript
 renderReportHead(report: AnswerReport): string
@@ -270,10 +290,10 @@ renderReportHead(report: AnswerReport): string
 
 ### 3.1 `HandlingReport` — new
 
-The sc4 contract typed. method, parts, partitionedBy, notCovered[{part, reason}] as sketched, plus additive fields: combineStages (optional), inputChars, budgetChars, budgetSource ('provider' | 'context-window' | 'default'), budgetBasis ('declared' | 'bytes-bound' | 'default') and trigger (optional: 'size' | 'fit' | 'both'; absent on a single pass). partitionedBy gains 'mixed'. parseHandling accepts a record with or without trigger. Counting: parts is the number of first-level parts including failed ones; a single pass has parts 1. A part id is its ordinal and heading ('part 3: docs/a'); mergeHandling qualifies it with the plan path. Composition by mergeHandling(first, second, prefix): an absent side is ignored; method is 'partitioned' if either is; parts is the sum (a single pass counts 1); notCovered is the concatenation with the first side's part ids qualified by the prefix; inputChars is the maximum; budgetChars, budgetSource and budgetBasis are those of the side with the smaller budgetChars; combineStages is the sum when either has it; partitionedBy is the common value or 'mixed'; trigger is the union when either has one. So a single-pass root with a partitioned child reports 'partitioned' with parts one more than the child's.
+The sc4 contract typed. method, parts, partitionedBy, notCovered[{part, reason}] as sketched, plus additive fields: combineStages (optional), budgets (an array of {unit: 'chars' | 'bytes', limit, source: 'provider' | 'context-window' | 'default', basis: 'declared' | 'bytes-bound' | 'default', inputSize}, never mixing units) and trigger (optional: 'size' | 'fit' | 'both'; absent on a single pass). partitionedBy gains 'mixed'. parseHandling accepts a record with or without trigger. Counting: parts is the number of first-level parts including failed ones; a single pass has parts 1. A part id is its ordinal and heading ('part 3: docs/a'); mergeHandling qualifies it with the plan path. Composition by mergeHandling(first, second, prefix): an absent side is ignored; method is 'partitioned' if either is; parts is the sum (a single pass counts 1); notCovered is the concatenation with the first side's part ids qualified by the prefix; budgets is the concatenation de-duplicated on (unit, limit, source, basis), keeping the largest inputSize of identical entries, so a local 'bytes-bound' entry survives a merge with a CLI entry and units are never compared; combineStages is the sum when either has it; partitionedBy is the common value or 'mixed'; trigger is the union when either has one. So a single-pass root with a partitioned child reports 'partitioned' with parts one more than the child's.
 
 ```
-readonly combineStages?: number | undefined; readonly inputChars: number; readonly budgetChars: number; readonly budgetSource: 'provider' | 'context-window' | 'default'; readonly budgetBasis: 'declared' | 'bytes-bound' | 'default'; readonly trigger?: 'size' | 'fit' | 'both' | undefined; partitionedBy adds 'mixed'
+readonly combineStages?: number | undefined; readonly budgets: readonly { readonly unit: 'chars' | 'bytes'; readonly limit: number; readonly source: 'provider' | 'context-window' | 'default'; readonly basis: 'declared' | 'bytes-bound' | 'default'; readonly inputSize: number }[]; readonly trigger?: 'size' | 'fit' | 'both' | undefined; partitionedBy adds 'mixed'
 ```
 
 **Call sites:**
@@ -291,26 +311,27 @@ Type changes from unknown to HandlingReport | undefined. Current-behaviour invar
 
 ### 3.3 `HANDLING_TABLE and the admission rule` — new
 
-HANDLING_TABLE maps the sc3 size to the method: XS and S single pass, M, L and XL partitioned; an undetermined measure is XL. The size reaches every caller of the helper, the free-form final emit through the tool loop included. The admission rule decides whether a rendered input (messages, repeated context, absent-input section) may be sent: for a CLI provider, its declared inputBudgetChars minus a 16,000-character reserve (budgetBasis 'declared'); for a local model, the UTF-8 byte length of the rendered input must not exceed the window tokens (the figure ollamaContextWindow gives num_ctx) minus the output tokens minus the 16,000 reserve, because every token covers at least one byte, so the byte length is an upper bound on the token count and an admitted input cannot be truncated; template and special tokens are covered by the reserve, the assumption is recorded as budgetBasis 'bytes-bound' and the report states it; with no declared limit, 60,000 characters (source 'default', also used by the step tool, which has no provider). The rule is applied before every provider attempt, including each schema-repair retry with its actual repair note (capped at 8,000 characters of listed errors, the rest counted); a retry that would not be admitted divides the part further, up to three times. The input is divided when the table says partitioned OR the rule does not admit it (trigger 'size', 'fit' or 'both'). The bound is far below real token counts, so it divides earlier than needed: accuracy is protected at the price of more calls.
+HANDLING_TABLE maps the sc3 size to the method: XS and S single pass, M, L and XL partitioned; an undetermined measure is XL. The size reaches every caller of the helper, the free-form final emit through the tool loop included. The admission rule decides whether a rendered input (messages, repeated context, absent-input section) may be sent, in two units that are never mixed. For a CLI provider: characters, against the declared inputBudgetChars minus a 16,000-character reserve (basis 'declared'). For a local model: the UTF-8 byte length against the window tokens (the figure ollamaContextWindow gives num_ctx) minus the call's output tokens minus 2,048 for template and special tokens (basis 'bytes-bound'), because every token covers at least one byte, so the byte length bounds the token count and an admitted input cannot be truncated. Worked with the checked-in configuration (a 32,768-token window and ollamaNumPredict 20,480): 32,768 - 20,480 - 2,048 = 10,240 bytes; the fixed context plus the 4,000-byte minimum room must fit in it, else HandlingBudgetError names the configuration (raise the window or lower ollamaNumPredict). With no declared limit: 60,000 characters (source 'default', also used by the step tool, which has no provider). The helper owns the repair loop: it calls completeStructured with maxAttempts 1, so no provider (Ollama, Vibe or CLI) retries internally, and builds each repair prompt itself with the repair note capped at 8,000 characters of listed errors (the rest counted), applying the rule to every attempt before it is sent; a repair that is not admitted divides the part further, up to three times, then HandlingBudgetError. The input is divided when the table says partitioned OR the rule does not admit it.
 
 **Call sites:**
 - `src/shared/types.ts:199-203`
 - `src/analyze/context/shaper-provider.ts:205-250`
-- `src/agent/providers/structured-output.ts:150-175`
-- `src/agent/providers/ollama.ts:571-605`
+- `src/agent/providers/structured-output.ts:150-215`
+- `src/config/analyze.ts:40-60`
+- `src/config/analyze.ts:193`
 
 ### 3.4 `PartPlan, PartResult and the caller adapters` — new
 
-A PartPlan is the ordered blocks of the evidence with an ordinal separate from the block key, grouped by directory then file in stable order. A block larger than the room is cut into consecutive sections of exactly the room, with no overlap, so the last section of a block holds the remainder and may be shorter than 4,000 characters; the 4,000-character minimum applies to the room itself, and a room under 4,000 characters is a HandlingBudgetError. A PartResult holds the part's heading, its summary (capped at 2,000 characters by the schema) and its assembled content. The bundle adapter takes system, focus and summary from the final combine and concatenates structure, surface, artefacts and upstream of the covered parts by ordinal under part headings; the aggregate adapter takes the summary from the final combine and concatenates the findings of the covered parts by ordinal, each keeping its sources. A combine reply is never read for evidence or findings. Combine stages: N summaries become ceil(N/g) with g at least 2, so it ends in at most ceil(log2 N) stages. If fixed context plus two capped summaries is not admitted, or a combine fails, and at least one part is covered, the adapter's output is built from the per-part results with 'combine' in notCovered and nothing is thrown; HandlingBudgetError is raised only when no part is covered or the fixed context leaves no room for a section.
+A PartPlan is the ordered blocks of the evidence with an ordinal separate from the block key, grouped by directory then file in stable order. A block larger than the room is cut into consecutive sections of exactly the room, with no overlap, so the last section of a block holds the remainder and may be shorter than 4,000; the 4,000-unit minimum applies to the room itself, and a room under it is a HandlingBudgetError. A PartResult holds the part's heading, its summary (capped at 2,000 characters by the schema) and its assembled content. The bundle adapter takes system, focus and summary from the final combine and concatenates structure, surface, artefacts and upstream of the covered parts by ordinal under part headings; the aggregate adapter takes the summary from the final combine and concatenates the findings of the covered parts by ordinal, each keeping its sources. A combine reply is never read for evidence or findings. Combine stages: N summaries become ceil(N/g) with g at least 2, so it ends in at most ceil(log2 N) stages. If a combine fails or is not admitted and at least one part is covered, the adapter's output is built from the per-part results with 'combine' in notCovered and nothing is thrown.
 
 **Call sites:**
 - `src/analyze/context/synthesizer.ts:117-169`
 - `src/analyze/runtimes/shared/aggregator.ts:100-155`
 - `src/analyze/runtimes/shared/aggregate-types.ts:28-80`
 
-### 3.5 `HandlingBudgetError and LookupFailedError` — new
+### 3.5 `HandlingBudgetError, the every-part-failed case and LookupFailedError` — new
 
-HandlingBudgetError extends ShaperAnswerStepFailedError, with a new reason 'input-does-not-fit' added to AnswerStepFailureReason (additive; the class is declared by Story s1), so the daemon's mapping (analyze-rpc.ts) and the plan tree's mapping (orchestrator/driver.ts), which test instanceof ShaperAnswerStepFailedError, carry its found results and report with no new branch, and the driver passes it through unchanged. LookupFailedError (message, partial, cause) gains an optional handling field. The free-form lookup catches a HandlingBudgetError from the tool loop and throws a LookupFailedError carrying the tool results as partial and the handling, so executePlan keeps them in the failed output, and the pipeline then raises the answer-step failure with the report.
+HandlingBudgetError extends ShaperAnswerStepFailedError, with a new reason 'input-does-not-fit' added to AnswerStepFailureReason (additive; the class is declared by Story s1), and is used only when the fixed context leaves no room for a section or a repair cannot be admitted. When every part fails, the helper throws a ShaperAnswerStepFailedError with the existing reason 'model-failed' when the model calls threw and 'invalid-answer' when the replies stayed invalid, so the category is not misreported. The daemon's mapping (analyze-rpc.ts) and the plan tree's mapping (orchestrator/driver.ts), which test instanceof ShaperAnswerStepFailedError, carry the found results and report with no new branch, and the driver passes the error through unchanged. LookupFailedError (message, partial, cause) gains an optional handling field. The free-form lookup catches a HandlingBudgetError from the tool loop and throws a LookupFailedError carrying the tool results as partial and the handling, so executePlan keeps them in the failed output and the pipeline raises the answer-step failure with the report.
 
 **Call sites:**
 - `src/analyze/context/driver.ts:325-362`
@@ -320,7 +341,17 @@ HandlingBudgetError extends ShaperAnswerStepFailedError, with a new reason 'inpu
 - `src/analyze/explore/freeform-probe.ts:150-200`
 - `src/analyze/explore/executor.ts:690-715`
 
-### 3.6 `AnswerProgress and StepStatePayload` — field-add
+### 3.6 `Failed-task record data and RunFailure.data for the aggregate task` — field-add
+
+executeLeafTask currently catches an error from the aggregate task and records the failed task with its message only, and the orchestrator turns a failed aggregate task into the run failure with the code 'executor-aggregator-failed' and a message of task counts and failure strings. The failed-task record gains an optional data field holding the typed failure's found results or partial outputs and its HandlingReport, filled when the error is a ShaperAnswerStepFailedError (HandlingBudgetError included); the orchestrator copies it into RunFailure.data, which already exists as an optional field, under the unchanged code. The failed task's handling is also read by collectPlanSources so the run's report names the uncovered parts.
+
+**Call sites:**
+- `src/analyze/executor/walker.ts:205-262`
+- `src/analyze/orchestrator/driver.ts:515-530`
+- `src/analyze/orchestrator/types.ts:265-269`
+- `src/analyze/orchestrator/types.ts:307`
+
+### 3.7 `AnswerProgress and StepStatePayload` — field-add
 
 AnswerProgress is {mode: 'single' | 'partitioned', completed: PartResult[] by ordinal, pending: {kind 'part' | 'combine', ordinal or stage and group index}, stageOutputs, failures: {part, reason}[], retries}. startAnswerProgress(args, size) makes the initial value: prepareAnswerTurn calls it when the plan phase hands over, from the table and the admission of the rendered input, and the state carries it from then on; a state without progress is a legacy state and is read as single pass. The bundle handler persists progress by re-encoding the state token on every valid transition. An invalid reply increments retries, is persisted, and the current turn is re-emitted with the same prompt and a new state token and a retry note, as StepOutputEmitBundle, StepOutputEmitPart or StepOutputEmitCombine, which gain an optional retry field {attempt, reason}; it is not an error output. At the retry bound the part or the combine is recorded as failed and the flow continues; retries reset to zero when a turn advances; progress is released on terminal success and failure.
 
@@ -329,7 +360,7 @@ AnswerProgress is {mode: 'single' | 'partitioned', completed: PartResult[] by or
 - `src/daemon/steps/analyze-step/answer-turn.ts:37-62`
 - `src/daemon/steps/analyze-step/types.ts:56-157`
 
-### 3.7 `StepOutputEmitPart and StepOutputEmitCombine` — new
+### 3.8 `StepOutputEmitPart and StepOutputEmitCombine` — new
 
 Two outputs added to the StepOutput union beside StepOutputEmitBundle with the same fields plus the part ordinal and total, or the stage and group, and the optional retry field. A reply reuses the registered bundle argument of seven string layers (a part reply is a seven-layer bundle of that part with its summary within the cap; a combine reply fills system, focus and summary and leaves the four evidence layers empty), so the registered MCP schema and StepInputBundle are unchanged and the legacy emit_bundle turn is kept. A typed answer failure is returned as StepOutputError with the declared code and its data, not as an uncaught exception.
 
@@ -338,7 +369,7 @@ Two outputs added to the StepOutput union beside StepOutputEmitBundle with the s
 - `src/daemon/steps/analyze-step/types.ts:56-157`
 - `src/daemon/steps/analyze-step/handler.ts:118`
 
-### 3.8 `AggregateReport.metadata.handling` — field-add
+### 3.9 `AggregateReport.metadata.handling` — field-add
 
 Carries the HandlingReport of the aggregator call, validated by parseHandling on read. collectPlanSources reads it for the aggregate task of the root plan and of each nested plan, and concludeRun merges them with the run context's handling through mergeHandling, so uncovered parts make the run's completeness false.
 
@@ -354,38 +385,38 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc4` | implements | Types HandlingReport with additive fields (combineStages, inputChars, budgetChars, budgetSource, budgetBasis, optional trigger, and 'mixed' for partitionedBy), states the composition rules, and fills it on every answer of both paths. |
+| `sc4` | implements | Types HandlingReport with additive fields (combineStages, budgets in their own units, optional trigger, and 'mixed' for partitionedBy), states the composition rules, and fills it on every answer of both paths. |
 | `sc2` | consumes | Fills AnswerReport.handling; keeps the binary mergeAnswerReports(first, second, prefix); renders one handling line in renderReportHead; uncovered parts add source notes and make completeness false. |
 | `sc1` | consumes | A result whose part or combine failed is incomplete; plan-task completeness records are read as today and the aggregate's handling is added as sources. |
 | `sc3` | consumes | Reads RequestMeasure.size for HANDLING_TABLE (an undetermined measure is XL) on every path; measure.characters stays a hint. |
-| `sc6` | consumes | Uses the answer-step-failed code declared by sc6 and raised by Story s1 through the existing ShaperAnswerStepFailedError mappings; no new code. |
+| `sc6` | consumes | Uses the answer-step-failed code declared by sc6 and raised by Story s1 through the existing ShaperAnswerStepFailedError mappings and keeps the existing 'executor-aggregator-failed' code with data for the aggregate task; no new code. |
 
 ## 6. Error paths
 
 **Error cases**
 
-- **A part's model call fails, or its reply fails the schema after the bounded retries** (recoverable)
-  - Detection: The part call throws, or finalizeSynthesize raises SynthesizerSchemaUnrecoverable and progress.retries reaches the structured-output retry setting
+- **A part's model call fails, or its reply fails the schema after the helper's bounded repair attempts** (recoverable)
+  - Detection: The single-attempt call throws, or the reply fails validation and the helper's own repair count reaches the structured-output retry setting
   - Response: The part is recorded in failures and named in HandlingReport.notCovered with its qualified id and reason; the other parts are kept; completeness is false
   - User impact: The answer is delivered and names the part that was not covered and why
 - **Every part fails** (terminal)
-  - Detection: failures holds all parts and completed is empty
-  - Response: HandlingBudgetError (a ShaperAnswerStepFailedError with the reason 'input-does-not-fit') is raised with the lookup results and the report and is carried by the existing mappings
-  - User impact: A typed failure that keeps what the lookups found; no empty answer is written
-- **The combine call fails, its reply stays invalid after the retries, or the combine itself is not admitted** (recoverable)
-  - Detection: The combine call throws, or its reply fails the schema at the retry bound, or the admission rule does not admit fixed context plus two capped summaries, with at least one part covered
+  - Detection: failures holds all parts and completed is empty; the helper counts how many failures were thrown calls and how many were invalid replies
+  - Response: A ShaperAnswerStepFailedError is thrown with the reason 'model-failed' when the calls threw and 'invalid-answer' when the replies stayed invalid, carrying the lookup results and the report; the category is not reported as an input-size problem
+  - User impact: A typed failure of the right kind that keeps what the lookups found; no empty answer is written
+- **The combine call fails, its reply stays invalid, or the combine itself is not admitted** (recoverable)
+  - Detection: The combine call throws, or its reply fails validation at the repair bound, or the admission rule does not admit fixed context plus two capped summaries, with at least one part covered
   - Response: The output is built from the per-part results unchanged by the adapter, its summary layer being the part summaries concatenated by ordinal, and 'combine' is added to notCovered; nothing is thrown
   - User impact: The per-part results are returned with the combine failure reported
 - **A combine stage does not reduce the count of summaries** (recoverable)
   - Detection: The helper compares the count before and after the stage
   - Response: The stage is treated as a combine failure and the per-part fallback applies
   - User impact: The combine always ends
-- **The room for a section is under 4,000 characters, or no part is covered** (terminal)
-  - Detection: Fixed rendered input plus the 4,000-character minimum room is not admitted, or the covered set is empty
-  - Response: HandlingBudgetError with the results and the report; no partial answer is written
-  - User impact: A typed failure that says the context is larger than the model accepts
-- **A schema-repair retry would not be admitted** (recoverable)
-  - Detection: The admission rule is applied to the actual input of the retry (the part, the schema text and the repair note, capped at 8,000 characters with the rest counted) before the attempt
+- **The room for a section is under the 4,000-unit minimum** (terminal)
+  - Detection: Fixed rendered input plus the minimum room is not admitted; with the checked-in local configuration the available input is 10,240 bytes
+  - Response: HandlingBudgetError with the results and the report, whose message names the configuration to change (raise the window or lower ollamaNumPredict); no partial answer is written
+  - User impact: A typed failure that says the configured window and output size leave no room
+- **A schema-repair attempt would not be admitted** (recoverable)
+  - Detection: The helper builds each repair prompt itself, from the part, the schema text and the repair note capped at 8,000 characters of listed errors (the rest counted), and applies the admission rule before the attempt; it calls the provider with one attempt so the provider never retries on its own
   - Response: The part is divided into smaller consecutive sections up to three times, then recorded as not covered
   - User impact: A malformed reply with many errors cannot push a call over the limit unnoticed
 - **The provider refuses a part as too large** (recoverable)
@@ -393,18 +424,22 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
   - Response: The part is divided into smaller consecutive sections up to three times, and then recorded as not covered
   - User impact: The part is read in full or named; nothing is silently cut
 - **A local model's tokenizer produces more tokens than bytes** (terminal)
-  - Detection: Not possible under the stated assumption that a token covers at least one input byte; template and special tokens are covered by the 16,000-character reserve, and the assumption is recorded in the report as budgetBasis 'bytes-bound'
-  - Response: No separate response: the rule admits an input only if its byte length fits, so the model's window is not exceeded; a model whose special tokens exceed the reserve would have to raise the reserve, which is one constant
+  - Detection: Not possible under the stated assumption that a token covers at least one input byte; template and special tokens are covered by the 2,048 reserve, and the assumption is recorded in the report as basis 'bytes-bound'
+  - Response: No separate response: the rule admits an input only if its byte length fits, so the window is not exceeded; a model whose special tokens exceed the reserve would need the reserve raised, one constant
   - User impact: An admitted local input cannot be silently truncated; the cost is earlier division
 - **A typed answer failure is thrown from inside the free-form final emit** (terminal)
   - Detection: The free-form lookup catches HandlingBudgetError from the tool loop; executePlan would otherwise turn any error that is not a ConnectionExecutionError into a failed lookup with no data
   - Response: It throws a LookupFailedError carrying the tool results as partial and the HandlingReport; failedOutput keeps both; the pipeline raises the answer-step failure with the report and does not attempt a second synthesis
   - User impact: The caller receives the failure with what the search found and how far the handling got
 - **A typed answer failure is thrown from inside synthesize** (terminal)
-  - Detection: The driver's catch sees HandlingBudgetError, which is a ShaperAnswerStepFailedError
+  - Detection: The driver's catch sees HandlingBudgetError or ShaperAnswerStepFailedError
   - Response: The driver passes it through unchanged instead of mapping it to 'answer-invalid'; the daemon's and the plan tree's mappings, which test instanceof ShaperAnswerStepFailedError, carry its results and report; the step tool returns it as StepOutputError with the declared code and its data
   - User impact: The caller receives the error with the lookup results and the report
-- **An invalid reply for a part or combine turn** (recoverable)
+- **A typed answer failure is thrown from inside runAggregator** (terminal)
+  - Detection: executeLeafTask catches the aggregate task's error and sees a ShaperAnswerStepFailedError (HandlingBudgetError included)
+  - Response: The failed-task record keeps the error's data (found results or partial outputs and the HandlingReport) in its optional data field instead of only the message; the orchestrator copies it into RunFailure.data under the unchanged code 'executor-aggregator-failed'; collectPlanSources reads the handling so the report names the uncovered parts
+  - User impact: A failed aggregation keeps what it carried and the run says how far the handling got
+- **An invalid reply for a part or combine turn on the step tool** (recoverable)
   - Detection: finalizeSynthesize raises SynthesizerSchemaUnrecoverable for the current turn
   - Response: The bundle handler increments progress.retries, persists the progress with a new state token and re-emits the current turn with the same prompt and a retry note; the client is never stranded without a token; at the retry bound the part or the combine is recorded as failed
   - User impact: The client sees the same turn again with the reason, and the flow cannot loop for ever
@@ -425,13 +460,14 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 | A size of M or larger whose rendered input is admitted | The table divides it: partitioned with trigger 'size', on the lookup path, the aggregator and the free-form final emit alike. |
 | A size of S whose rendered input is not admitted | The rule divides it: partitioned with trigger 'fit'; both conditions give trigger 'both'. |
 | A measure that could not be determined | Size XL: partitioned by the table. |
-| A single-pass report | It has no trigger, parseHandling accepts it, and mergeHandling and the contract tests handle the absent field. |
-| Rendered input exactly at the admitted limit | It is admitted; one byte over is divided. |
+| The checked-in local configuration (32,768-token window, 20,480 output tokens) | The input limit is 10,240 bytes (32,768 - 20,480 - 2,048); a tiny request is admitted, and a larger one is divided into rooms of that size less the fixed context. |
+| A local configuration whose window minus output leaves less than the fixed context plus 4,000 bytes | HandlingBudgetError that names the configuration to change. |
+| A CLI provider with a declared character budget | Characters against the budget minus the 16,000 reserve, with budget basis 'declared'; the units are never compared with bytes. |
+| Rendered input exactly at the admitted limit | It is admitted; one unit over is divided. |
 | A local model and an input containing multi-byte characters | The byte length, not the character count, is compared with the limit. |
-| A model with no declared limit, and the step tool | The default of 60,000 characters is used and recorded with budgetSource 'default' and budgetBasis 'default'. |
-| A 6,000-character block with a room of 5,000 | It is cut into sections of 5,000 and 1,000 characters, consecutive and without overlap; only the last is shorter than 4,000. |
-| A room under 4,000 characters | HandlingBudgetError. |
-| A single-pass root report merged with a partitioned child | Merged method 'partitioned', parts the sum with the single pass counted as 1, budget taken from the side with the smaller budgetChars. |
+| A model with no declared limit, and the step tool | The default of 60,000 characters is used and recorded with source 'default' and basis 'default'. |
+| A 6,000-unit block with a room of 5,000 | It is cut into sections of 5,000 and 1,000, consecutive and without overlap; only the last is shorter than 4,000. |
+| A single-pass root report merged with a partitioned child on a CLI budget while the root used a local model | Merged method 'partitioned', parts the sum with the single pass counted as 1, and both budgets kept in their own units, so the 'bytes-bound' basis is not lost. |
 | Two nested plans that both have a part 1 | mergeHandling qualifies each part id with its plan path, so the two stay distinct. |
 | A free-form M request whose conversation is admitted | It is divided and combined by the table, and the handling is copied onto the report. |
 | A stored bundle with handling {} | It validates against the open schema and parseHandling reads it as absent. |
@@ -440,7 +476,7 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 **Invariants to preserve**
 
-- Model calls are made one after another, never in parallel, including part and combine calls [[c1]]
+- Model calls are made one after another, never in parallel, including part, combine and repair calls [[c1]]
 - A request of size XS or S whose input is admitted makes the same single model call as today [[c1]]
 - finalizeSynthesize keeps its existing execution parameter in second place, and the bundle handler keeps passing it [[c1]]
 - A failed free-form lookup does not take the free-form short-circuit and keeps the data it carries [[c2]]
@@ -448,7 +484,9 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 - The plan's aggregate task is not a source of its own completeness; only its handling is read [[c4]]
 - mergeAnswerReports keeps its binary signature and its prefix rule for the run context's sources [[c4]]
 - A report without handling renders the same head as today [[c4]]
+- completeStructured keeps its retry behaviour for every other caller; only the handling helper passes maxAttempts 1 [[c5]]
 - The step tool's registered bundle argument and legacy emit_bundle turn stay valid [[c6]]
+- The code 'executor-aggregator-failed' and RunFailure's shape are unchanged; only the optional data is filled [[c7]]
 
 ## 7. Test strategy
 
@@ -456,11 +494,11 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
 
 **Test levels**
 
-- **unit** — Prove the table, admission rule, division, assembly and combine without a model
-  - Subjects: `HANDLING_TABLE: XS and S single pass, M, L and XL partitioned, an undetermined measure is XL`, `decision: the table alone divides (trigger 'size'), the admission rule alone divides a small size ('fit'), both give 'both', a single pass has no trigger`, `admission for a local model compares the UTF-8 byte length (multi-byte text) with window tokens minus output tokens minus the 16,000 reserve: exactly at the limit is admitted, one byte over is divided; a CLI provider uses its declared budget minus the reserve; no declared limit uses 60,000`, `the rule is applied before every attempt including a repair retry with the actual repair note, the note capped at 8,000 characters with the rest counted, and a retry that is not admitted divides the part up to three times`, `sections are cut to the room with no overlap: a 6,000-character block with a room of 5,000 gives 5,000 and 1,000; a room under 4,000 is a HandlingBudgetError; ordinals separate from keys; none dropped`, `combine terminates: N summaries become ceil(N/g) per stage and a stage whose count does not fall is a combine failure`, `a combine failure, including a combine that is not admitted, with at least one part covered returns the per-part results with 'combine' in notCovered and throws nothing; with no part covered it raises HandlingBudgetError`, `the bundle adapter and the aggregate adapter keep evidence layers and findings exactly, in order, through several combine stages`, `parseHandling reads a stored {} and other malformed values as absent, and accepts a record with and without trigger`, `mergeHandling: absent side ignored; single-pass root with partitioned child gives 'partitioned' and summed parts; budget fields from the side with the smaller budgetChars; combineStages sum; partitionedBy 'mixed'; equal local part ordinals in two nested plans stay distinct by plan path`, `mergeAnswerReports keeps its binary signature and prefix behaviour`, `renderReportHead: a report without handling renders exactly as today; with handling it adds one line with method, parts, budget and each not-covered part with its reason`
-  - Fixtures: `a scripted provider that records each call, proves no two overlap, and can fail a chosen part, the combine or a repair attempt, refuse an input as too large, or return a reply with many validation errors`, `a lowered window so a small input divides`
+- **unit** — Prove the table, admission rule, repair loop, division, assembly and combine without a model
+  - Subjects: `HANDLING_TABLE: XS and S single pass, M, L and XL partitioned, an undetermined measure is XL`, `decision: the table alone divides (trigger 'size'), the admission rule alone divides a small size ('fit'), both give 'both', a single pass has no trigger`, `admission for a local model with the checked-in values (32,768 window, 20,480 output, 2,048 reserve) is 10,240 bytes: exactly 10,240 is admitted, one byte over is divided, multi-byte text is counted in bytes; a window that leaves less than fixed context plus 4,000 bytes gives HandlingBudgetError naming the configuration`, `a CLI provider is admitted in characters against its declared budget minus 16,000, and the two units are never compared`, `the helper calls the provider with one attempt and builds each repair prompt itself: the repair note is capped at 8,000 characters with the rest counted, every attempt is admitted before it is sent, a repair that is not admitted divides the part up to three times, and a fake provider that would retry internally is never allowed to`, `sections are cut to the room with no overlap: a 6,000-unit block with a room of 5,000 gives 5,000 and 1,000; ordinals separate from keys; none dropped`, `combine terminates: N summaries become ceil(N/g) per stage and a stage whose count does not fall is a combine failure`, `a combine failure, including a combine that is not admitted, with at least one part covered returns the per-part results with 'combine' in notCovered and throws nothing`, `every part failing throws a ShaperAnswerStepFailedError with 'model-failed' when the calls threw and 'invalid-answer' when the replies stayed invalid, never 'input-does-not-fit'`, `the bundle adapter and the aggregate adapter keep evidence layers and findings exactly, in order, through several combine stages`, `parseHandling reads a stored {} and other malformed values as absent, and accepts a record with and without trigger`, `mergeHandling: absent side ignored; single-pass root with partitioned child gives 'partitioned' and summed parts; budgets concatenated and de-duplicated in their own units keeping the largest inputSize, so a local 'bytes-bound' entry survives a merge with a CLI entry; combineStages sum; partitionedBy 'mixed'; equal local part ordinals in two nested plans stay distinct by plan path`, `mergeAnswerReports keeps its binary signature and prefix behaviour`, `renderReportHead: a report without handling renders exactly as today; with handling it adds one line with method, parts, each budget in its unit and each not-covered part with its reason`
+  - Fixtures: `a scripted provider that records each call and its attempt count, proves no two overlap, and can fail a chosen part, the combine or a repair attempt, refuse an input as too large, or return a reply with many validation errors`, `a configurable window so a small input divides`
 - **integration** — Prove the four callers, the failure routes and the bridge into the delivered answer, through real modules and a scripted provider
-  - Subjects: `synthesize: XS or S and admitted makes the one call of today; M or larger, or not admitted, divides, and a failed part is named`, `free-form lookup: the request size reaches runFinalStructuredEmit through the tool loop; a conversation that fits at size S returns directly with single-pass handling copied onto the report reportFromLookups derives; at size M it is divided although it fits; a HandlingBudgetError becomes a LookupFailedError carrying the tool results and the handling, survives executePlan, does not take the short-circuit and reaches the answer-step failure with the report`, `runAggregator with the absent-input section counted in every part and every combine call`, `collectPlanSources and concludeRun with a root and a nested aggregate that each have uncovered parts: the run is incomplete, the handling is merged and the visible head shows the handling line`, `the driver passes HandlingBudgetError through; the daemon's mapping in analyze-rpc and the plan tree's mapping in the orchestrator driver both return its results and report, tested through those mappings and not only through the driver`, `step tool through the real handler: prepareAnswerTurn creates the initial progress ('single' or 'partitioned') and a state without progress is read as single pass; finalizeSynthesize with a saved and with a session-memory execution, with and without progress; emit_part and emit_combine turns; replies through the registered bundle argument; progress persisted with token replacement; an invalid reply re-emits the current turn with a new token and a retry note, and the client can continue; repeated invalid replies across separate calls reach the retry bound; retries reset when a turn advances; progress released on terminal success and failure; a typed failure returned as StepOutputError with data`, `the legacy emit_bundle turn still passes for an input that fits`
+  - Subjects: `synthesize: XS or S and admitted makes the one call of today; M or larger, or not admitted, divides, and a failed part is named`, `free-form lookup: the request size reaches runFinalStructuredEmit through the tool loop; a conversation that fits at size S returns directly with single-pass handling copied onto the report reportFromLookups derives; at size M it is divided although it fits; a HandlingBudgetError becomes a LookupFailedError carrying the tool results and the handling, survives executePlan, does not take the short-circuit and reaches the answer-step failure with the report`, `runAggregator with the absent-input section counted in every part and every combine call`, `a HandlingBudgetError from runAggregator through the real walker and the orchestrator: executeLeafTask keeps the data in the failed-task record, the run failure has the code 'executor-aggregator-failed' with the data in RunFailure.data, and the report names the uncovered parts`, `collectPlanSources and concludeRun with a root and a nested aggregate that each have uncovered parts: the run is incomplete, the handling is merged and the visible head shows the handling line`, `the driver passes HandlingBudgetError through; the daemon's mapping in analyze-rpc and the plan tree's mapping in the orchestrator driver both return its results and report, tested through those mappings and not only through the driver`, `step tool through the real handler: prepareAnswerTurn creates the initial progress ('single' or 'partitioned') and a state without progress is read as single pass; finalizeSynthesize with a saved and with a session-memory execution, with and without progress; emit_part and emit_combine turns; replies through the registered bundle argument; progress persisted with token replacement; an invalid reply re-emits the current turn with a new token and a retry note, and the client can continue; repeated invalid replies across separate calls reach the retry bound; retries reset when a turn advances; progress released on terminal success and failure; a typed failure returned as StepOutputError with data`, `the legacy emit_bundle turn still passes for an input that fits`
   - Fixtures: `step tool state fixtures including one from before the change`, `a plan tree with a nested plan whose aggregate task records have handling`
 - **integration** — Prove the accepted exception of Story s7 is closed by a run, not only by a direct call to the aggregator
   - Subjects: `a broad docs analysis run through the real docs aggregate runtime and the plan walk, with an oversized terminal input and a nested aggregate: the run completes, the final report is delivered, and its head states the handling and the completeness`
@@ -469,47 +507,47 @@ Carries the HandlingReport of the aggregator call, validated by parseHandling on
   - Subjects: `the broad docs request on this repository that previously stopped at the aggregate step runs to a final report, and the recorded run (run id, handling line, parts, completeness) is kept as the regression record`
   - Fixtures: `a registered and indexed repository, a configured provider, INSRC_LIVE_TESTS=1`
 - **contract** — Prove the shape other Stories consume
-  - Subjects: `HandlingReport against the sc4 sketch plus the additive fields, with and without trigger`, `the bundle schema keeps its open handling object valid and AnswerReport.handling is typed`, `the registered MCP bundle argument is unchanged`
+  - Subjects: `HandlingReport against the sc4 sketch plus the additive fields, with and without trigger, budgets in their own units`, `the bundle schema keeps its open handling object valid and AnswerReport.handling is typed`, `the registered MCP bundle argument is unchanged`, `RunFailure's shape and the code 'executor-aggregator-failed' are unchanged`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `handling-table.test.ts: every size on every path takes the table, the free-form final emit included, and the admission rule divides what the table would not`, `handling-admission.test.ts: exact-boundary, multi-byte, repair-retry and unknown-limit cases`, `synthesize-handling.test.ts: single pass versus divided decision for the lookup path and the free-form lookup` |
+| `ac1` | `handling-table.test.ts: every size on every path takes the table, the free-form final emit included, and the admission rule divides what the table would not`, `handling-admission.test.ts: the checked-in local configuration (10,240 bytes), exact-boundary, multi-byte, CLI characters, repair-loop and unknown-limit cases`, `synthesize-handling.test.ts: single pass versus divided decision for the lookup path and the free-form lookup` |
 | `ac2` | `partition-combine.test.ts: every part is reasoned over serially and evidence and findings are kept exactly through several combine stages`, `partition-combine.test.ts: the combine terminates and a combine failure returns the per-part results` |
-| `ac3` | `handling-report.test.ts: parts and notCovered with plan-qualified ids appear in the answer report and in the rendered head`, `run-handling-report.test.ts: a root and a nested aggregate with uncovered parts make the run incomplete and the visible head shows the handling line` |
+| `ac3` | `handling-report.test.ts: parts, budgets in their units and notCovered with plan-qualified ids appear in the answer report and in the rendered head`, `run-handling-report.test.ts: a root and a nested aggregate with uncovered parts make the run incomplete and the visible head shows the handling line` |
 | `ac4` | `synthesize-handling.test.ts: a small size whose input is admitted makes the same single call`, `freeform-handling.test.ts: a small conversation that fits returns directly` |
-| `ac5` | `partition-combine.test.ts: a failed part is kept out, the others are kept, completeness is false`, `step-tool-parts.test.ts: the retry bound marks a part not covered across separate calls`, `freeform-handling.test.ts: a HandlingBudgetError keeps the tool results and the handling through executePlan`, `answer-failure-mapping.test.ts: HandlingBudgetError carries results and report through the daemon and plan tree mappings` |
+| `ac5` | `partition-combine.test.ts: a failed part is kept out, the others are kept, completeness is false, and all parts failing keeps its true category`, `step-tool-parts.test.ts: the retry bound marks a part not covered across separate calls`, `freeform-handling.test.ts: a HandlingBudgetError keeps the tool results and the handling through executePlan`, `answer-failure-mapping.test.ts: HandlingBudgetError carries results and report through the daemon and plan tree mappings`, `aggregate-failure.test.ts: the walker and the orchestrator keep the aggregate failure's data in RunFailure.data` |
 | `ac6` | `partition-combine.test.ts: one block larger than the room is read in consecutive sections with none dropped, the 6,000 over 5,000 case included` |
 | `ac7` | `docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker and delivers a final report with its handling`, `aggregator-handling.test.ts: the aggregator divides an oversized input and keeps the absent-input section in every call`, `docs-broad-live.test.ts: the recorded live run of the broad docs request returns a final report` |
 
 ## 8. Migration
 
-**State before:** synthesize and runAggregator render the whole of their inputs into one prompt and make one model call with no size check (src/analyze/context/synthesizer.ts:117-169, src/analyze/runtimes/shared/aggregator.ts:100-155). finalizeSynthesize(raw, execution?) is called by the bundle handler with the execution (src/analyze/context/synthesizer.ts:191-225, src/daemon/steps/analyze-step/phases/bundle.ts:90). The free-form lookup's final emit takes the whole conversation and the request's size is not passed to it, a non-ConnectionExecutionError from it becomes a failed lookup that keeps data only for a LookupFailedError, and the short-circuit copies only the seven layers (src/analyze/explore/freeform-probe.ts:150-200, src/analyze/explore/executor.ts:690-715, src/analyze/context/driver.ts:1004-1044, 1640-1690). The daemon and the plan tree map ShaperAnswerStepFailedError with its results and report (src/daemon/analyze-rpc.ts:1046, src/analyze/orchestrator/driver.ts:810). AnswerReport.handling is typed unknown (src/analyze/completeness.ts:206), mergeAnswerReports is binary with a prefix, renderReportHead shows no handling (src/analyze/completeness.ts:377-420), and collectPlanSources skips each plan's aggregate task (src/analyze/executor/plan-sources.ts:43-92). The step tool keeps no progress, and a bad reply returns a retryable error without a new token (src/daemon/steps/analyze-step/phases/bundle.ts:90).
+**State before:** synthesize and runAggregator render the whole of their inputs into one prompt and make one model call with no size check (src/analyze/context/synthesizer.ts:117-169, src/analyze/runtimes/shared/aggregator.ts:100-155). Structured calls retry inside the provider with an uncapped repair note appended after the caller's measurement (src/agent/providers/structured-output.ts:150-215). finalizeSynthesize(raw, execution?) is called by the bundle handler with the execution (src/analyze/context/synthesizer.ts:191-225, src/daemon/steps/analyze-step/phases/bundle.ts:90). The free-form lookup's final emit takes the whole conversation and the request's size is not passed to it, a non-ConnectionExecutionError from it becomes a failed lookup that keeps data only for a LookupFailedError, and the short-circuit copies only the seven layers (src/analyze/explore/freeform-probe.ts:150-200, src/analyze/explore/executor.ts:690-715, src/analyze/context/driver.ts:1004-1044, 1640-1690). The daemon and the plan tree map ShaperAnswerStepFailedError with its results and report (src/daemon/analyze-rpc.ts:1046, src/analyze/orchestrator/driver.ts:810), but a failure of the aggregate task is reduced to its message by executeLeafTask and the run failure 'executor-aggregator-failed' (src/analyze/executor/walker.ts:205-262, src/analyze/orchestrator/driver.ts:515-530). AnswerReport.handling is typed unknown (src/analyze/completeness.ts:206), mergeAnswerReports is binary with a prefix, renderReportHead shows no handling (src/analyze/completeness.ts:377-420), and collectPlanSources skips each plan's aggregate task (src/analyze/executor/plan-sources.ts:43-92). The step tool keeps no progress, and a bad reply returns a retryable error without a new token (src/daemon/steps/analyze-step/phases/bundle.ts:90).
 
-**State after:** The four callers use one shared helper that divides when the HLD's table says so or when the rendered input is not admitted by a provable bound (declared budget for a CLI provider, UTF-8 bytes against the available tokens for a local model), applied before every attempt. Evidence and findings are assembled in code, a staged combine writes only the summary and always ends, and a failed part or combine is named while the other results are kept. finalizeSynthesize keeps execution in second place and takes progress third. The request size reaches the free-form final emit. HandlingBudgetError is a ShaperAnswerStepFailedError, so the existing mappings carry its results and report; the free-form lookup carries its data through the executor. The handling reaches the delivered answer on every path, and renderReportHead shows it. The step tool creates an initial AnswerProgress when the plan phase hands over, persists it on every transition, and re-emits the current turn with a new token after an invalid reply.
+**State after:** The four callers use one shared helper that divides when the HLD's table says so or when the rendered input is not admitted by a provable bound, in characters for a CLI provider and in UTF-8 bytes for a local model (10,240 with the checked-in configuration), applied before every attempt. The helper owns the repair loop and calls the provider with one attempt. Evidence and findings are assembled in code, a staged combine writes only the summary and always ends, and a failed part or combine is named while the other results are kept; every-part-failed keeps its true category. finalizeSynthesize keeps execution in second place and takes progress third. The request size reaches the free-form final emit. HandlingBudgetError is a ShaperAnswerStepFailedError, the free-form lookup carries its data through the executor, and the aggregate failure keeps its data through the failed-task record and RunFailure.data. The handling, with budgets in their own units, reaches the delivered answer on every path, and renderReportHead shows it. The step tool creates an initial AnswerProgress, persists it on every transition and re-emits the current turn with a new token after an invalid reply.
 
 **Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Add HandlingReport (optional trigger), parseHandling, mergeHandling, HANDLING_TABLE and the admission rule with the single-pass decision only; nothing divides yet — ↩ rollbackable
+1. Add HandlingReport (budgets, optional trigger), parseHandling, mergeHandling, HANDLING_TABLE and the admission rule with the single-pass decision only; nothing divides yet — ↩ rollbackable
 2. Type AnswerReport.handling, merge handling in mergeAnswerReports with its unchanged signature, and render the handling line in renderReportHead — ↩ rollbackable
 3. Add HandlingBudgetError as a ShaperAnswerStepFailedError with the additive reason, and pass it through the driver — ↩ rollbackable
-4. Add division, assembly adapters and the staged combine with the per-part fallback, and move synthesize and runAggregator onto them so a small admitted request is unchanged — ↩ rollbackable
+4. Add the helper's own repair loop (one provider attempt, capped repair note, admission before every attempt), division, assembly adapters and the staged combine with the per-part fallback, and move synthesize and runAggregator onto them so a small admitted request is unchanged — ↩ rollbackable
 5. Pass the request size through the tool loop to runFinalStructuredEmit, move the free-form final emit onto the helper, add the handling callback and field, carry handling in LookupFailedError and failedOutput, and copy it in extractSoleFreeformResult onto the derived report — ↩ rollbackable
-6. Make collectPlanSources read each plan's aggregate handling and concludeRun merge it — ↩ rollbackable
+6. Keep a typed aggregate failure's data in the failed-task record in executeLeafTask, copy it into RunFailure.data in the orchestrator, make collectPlanSources read each plan's aggregate handling and concludeRun merge it — ↩ rollbackable
 7. Add the optional AnswerProgress to the step state, startAnswerProgress in prepareAnswerTurn, the third progress parameter of finalizeSynthesize, the emit_part and emit_combine outputs and the retry field, persisting progress on every transition — ↩ rollbackable
 
-**Backward compat:** All new state and report fields are optional or additive, and the one addition to an existing union value (partitionedBy 'mixed') is on a contract this Story owns; the added failure reason is additive on a class Story s1 declares. finalizeSynthesize keeps raw and execution in their positions and returns the bundle exactly as before when no progress is given, so the bundle handler's existing call is unchanged. A step state written before the change lacks the progress and is read as single pass. A stored bundle with an open handling object stays valid and a malformed value is read as absent; a handling record without a trigger is valid. A report without handling renders the same head. A request of size XS or S that is admitted makes the same calls as before. synthesize, runAggregator, runFinalStructuredEmit, mergeAnswerReports, collectPlanSources, concludeRun and renderReportHead keep their signatures with new parameters optional. The registered MCP bundle argument is unchanged and the legacy emit_bundle turn is kept.
+**Backward compat:** All new state and report fields are optional or additive, and the one addition to an existing union value (partitionedBy 'mixed') is on a contract this Story owns; the added failure reason is additive on a class Story s1 declares; the failed-task record gains an optional data field and RunFailure already has an optional data, with the code 'executor-aggregator-failed' unchanged. finalizeSynthesize keeps raw and execution in their positions and returns the bundle exactly as before when no progress is given, so the bundle handler's existing call is unchanged. completeStructured keeps its retry behaviour for every other caller; only the handling helper passes maxAttempts 1. A step state written before the change lacks the progress and is read as single pass. A stored bundle with an open handling object stays valid and a malformed value is read as absent; a handling record without a trigger is valid. A report without handling renders the same head. A request of size XS or S that is admitted makes the same calls as before. synthesize, runAggregator, runFinalStructuredEmit, mergeAnswerReports, collectPlanSources, concludeRun and renderReportHead keep their signatures with new parameters optional. The registered MCP bundle argument is unchanged and the legacy emit_bundle turn is kept.
 
 ## 9. Alternatives considered
 
-### 9.1 a1: Size table plus an enforced input-admission rule in one shared helper, with caller adapters, carried-data failures and a rendered handling line — **CHOSEN**
+### 9.1 a1: Size table plus an enforced input-admission rule in one shared helper that owns the repair loop, with caller adapters, carried-data failures and a rendered handling line — **CHOSEN**
 
-One helper divides an answer-writing call's input when the HLD's size table says so or when the rendered input is not admitted by a provable bound on what the model accepts, and it carries the handling report to the delivered answer on every path.
+One helper divides an answer-writing call's input when the HLD's size table says so or when the rendered input is not admitted by a provable bound, owns the schema-repair loop so every attempt is measured, and carries the handling report and any failure's data to the delivered answer on every path.
 
-(1) Decision: partition when EITHER the measured size (sc3) is M, L or XL (or undetermined, which is XL), OR the rendered input is not admitted. The size is passed to every caller of the helper, including the free-form final emit, so the table applies on all paths. (2) Admission, measured before every provider attempt, including each schema-repair retry with its actual repair note (capped at 8,000 characters of listed errors, the rest counted): for a CLI provider the declared inputBudgetChars minus a 16,000-character reserve; for a local model the UTF-8 byte length of the rendered input must not exceed window tokens minus output tokens minus the reserve, because every token covers at least one byte, so the byte length is an upper bound on the token count and an admitted input cannot be truncated (template and special tokens are covered by the reserve; the assumption is recorded as budgetBasis 'bytes-bound'); with no declared limit, a default of 60,000 characters. A retry that would not be admitted divides the part further, up to three times. This is deliberately conservative and costs more parts and calls, which accuracy-over-cost accepts. (3) Division: blocks by directory then file, sections cut to the room with no overlap, only the final section of a block may be shorter than 4,000 characters, and a room under 4,000 characters is a HandlingBudgetError; ordinals separate from keys; part replies capped at 2,000 characters of summary; evidence and findings assembled in code by ordinal; a staged combine of N summaries into ceil(N/g) with g at least 2 writing only the summary layers; a combine failure, including an admission failure of the combine when parts are covered, returns the per-part results with 'combine' in notCovered and throws nothing; HandlingBudgetError is raised only when no part is covered or the fixed context leaves no room. (4) Callers: synthesize, runAggregator, the free-form final emit (size passed through the tool loop) and the step tool. HandlingBudgetError extends ShaperAnswerStepFailedError, so the daemon's and the plan tree's existing mappings carry its results and report; a new reason for an input that does not fit is added. The free-form lookup turns it into a LookupFailedError carrying the tool results and the handling so the executor keeps them. (5) Reporting: HandlingReport with an optional trigger, mergeHandling, parseHandling, collectPlanSources reading aggregates, renderReportHead rendering a line. (6) Step tool: startAnswerProgress creates the initial AnswerProgress when the plan phase hands over; a state without progress is legacy and single pass; an invalid reply re-emits the current turn with a new state token and a retry note; retries reset when a turn advances.
+(1) Decision: partition when EITHER the measured size (sc3) is M, L or XL (an undetermined measure is XL), OR the rendered input is not admitted; the size is passed to every caller, the free-form final emit included. (2) Admission, in two units that are never mixed: for a CLI provider, the declared inputBudgetChars minus a 16,000-character reserve (characters); for a local model, the UTF-8 byte length of the rendered input must not exceed window tokens minus the call's output tokens minus 2,048 for template and special tokens (bytes), because every token covers at least one byte. Worked with the checked-in configuration: 32,768 minus 20,480 minus 2,048 is 10,240 bytes; the fixed context plus the 4,000-byte minimum room must fit inside it, else a HandlingBudgetError names the configuration (raise the window or lower ollamaNumPredict). No declared limit: 60,000 characters. (3) The helper owns the repair loop: it calls completeStructured with maxAttempts 1 and builds each repair prompt itself with the repair note capped at 8,000 characters of listed errors (the rest counted), admitting each attempt before it is sent, so no provider (Ollama, Vibe, CLI) adds unmeasured input by retrying; a repair that cannot be admitted divides the part further, up to three times. (4) Division: blocks by directory then file, sections cut to the room with no overlap and only the final section short, a room under 4,000 refused; part replies capped at 2,000 characters of summary; evidence and findings assembled in code by ordinal; a staged combine of N summaries into ceil(N/g) with g at least 2 writing only the summary layers; a combine failure (including a combine that is not admitted) with a covered part returns the per-part results with 'combine' in notCovered. Every-part-failed keeps its real category: 'model-failed' when the calls threw, 'invalid-answer' when replies stayed invalid, as a ShaperAnswerStepFailedError; HandlingBudgetError ('input-does-not-fit') only for fixed context with no room or a repair that cannot be admitted. (5) Callers and failure routes: synthesize, runAggregator, the free-form final emit (size through the tool loop) and the step tool. HandlingBudgetError extends ShaperAnswerStepFailedError so the daemon's and the plan tree's mappings carry its results and report; the free-form lookup turns it into a LookupFailedError with the tool results and the handling; for the aggregator, executeLeafTask keeps the typed failure's data in an optional data field of the failed-task record and the orchestrator puts it in RunFailure.data under the existing code 'executor-aggregator-failed'. (6) Reporting: HandlingReport with a budgets array of {unit, limit, source, basis, inputSize}, an optional trigger, mergeHandling that concatenates and de-duplicates budgets, parseHandling, collectPlanSources reading aggregates, renderReportHead rendering a line. (7) Step tool: startAnswerProgress, AnswerProgress persisted on every transition, an invalid reply re-emits the current turn with a new token and a retry note.
 
 ### 9.2 a2: Size table only, separate implementations per path
 
@@ -533,5 +571,6 @@ Catch the provider's size refusal in synthesize and runAggregator, split the inp
 - **[[c2]]** `code` `src/analyze/context/driver.ts:1640-1690`
 - **[[c3]]** `code` `src/analyze/context/driver.ts:325-362`
 - **[[c4]]** `code` `src/analyze/executor/plan-sources.ts:43-92`
-- **[[c5]]** `code` `src/analyze/context/shaper-provider.ts:205-250`
+- **[[c5]]** `code` `src/agent/providers/structured-output.ts:150-215`
 - **[[c6]]** `code` `src/daemon/steps/analyze-step/types.ts:56-157`
+- **[[c7]]** `code` `src/analyze/orchestrator/driver.ts:515-530`

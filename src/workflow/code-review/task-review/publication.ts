@@ -1,22 +1,25 @@
+import { requireCapacityBaseline } from './capacity.js';
+import type { CapacityBaseline } from './capacity.js';
+import { completedSummary } from './summary.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile, realpath } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import { artifactIdMarker, codeReviewArtifactId, codeReviewArtifactPaths, storyRecordFolderArgs, writeAtomic } from '../../storage.js';
 import { emptyLifecycle } from '../../artifact-core/decode.js';
 import type { RoundWriter } from '../../runners/build/round-writer.js';
-import { decodeReview, CheckpointSchema, requireReview, reviewPath } from './contracts.js';
-import type { ReviewCheckpoint, CompletedReviewSummary } from './contracts.js';
+import { decodeReview, CheckpointSchema, reviewJsonLimit, requireReview, reviewPath } from './contracts.js';
+import type { ReviewCheckpoint } from './contracts.js';
 import { canonicalReviewStory } from './admission.js';
 import { prepareReviewPacket } from './packet.js';
 import type { ReviewSources } from './sources.js';
-import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
+import { validateTaskResult, validateResultOrigins } from './results.js';
 import { checkpointPath, saveCheckpoint } from './checkpoint.js';
-import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody, taskAttemptSummary } from './record.js';
+import { mergeTaskSummary, renderTaskReview, resultReferences, validateTaskBody } from './record.js';
 
 import { restoreAcceptedAssignments, validateSavedAttribution } from './attribution-binding.js';
 import { captureFinalScope } from './final-scope-history.js';
 
-export interface PublicationDeps { readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly renderWrite?:typeof writeAtomic; }
+export interface PublicationDeps { readonly baseline?:CapacityBaseline; readonly sources:ReviewSources; readonly through:RoundWriter; readonly save?:typeof saveCheckpoint; readonly renderWrite?:typeof writeAtomic; }
 
 /** No reviewer invocation: project completed task feedback through the canonical queued store. */
 export async function publishTaskCheckpoint(project: string, epicHash:string, reviewId:string, deps:PublicationDeps):Promise<{ path:string; jsonPath:string; status:string }> {
@@ -53,20 +56,23 @@ export async function publishTaskCheckpoint(project: string, epicHash:string, re
   }
   validateTaskResult(result,{taskId:result.taskId,changes:finalScope?assignments?.find(a=>a.taskId===result.taskId)?.changes??[]:prepared.changes,evidenceReferences:refs});
  }
- const storyId=prepared.packet.storyId.replace(/^STORY-[a-f0-9]{16}-/,'');
- const summary:CompletedReviewSummary={ ...(attempt['review-response'].origins ? { origins:attempt['review-response'].origins } : {}), ...(attempt.header.reassessmentSummary ? { reassessmentSummary:attempt.header.reassessmentSummary } : {}), reviewId,attempt:attempt.header.attempt,storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),reviewer:attempt.header.reviewer,status:aggregateTaskStatus(attempt['review-response'].tasks),...(finalScope?{finalScopeIdentity:attempt.header.finalScopeIdentity!,attributionIdentity:attempt.header.attributionIdentity!,...(attempt.header.taskScopeIdentities?{taskScopeIdentities:attempt.header.taskScopeIdentities}:{})}:{}),scope:{...(finalScope?{reviewRevision:prepared.packet.reviewRevision!,finalScope}:{}),storyId:prepared.packet.storyId,...(prepared.packet.taskId?{taskId:prepared.packet.taskId}:{}),documents:prepared.packet.documents,reviewSet:prepared.packet.reviewSet},tasks:attempt['review-response'].tasks,summary:taskAttemptSummary(attempt),completedAt:attempt.header.completedAt,...(attempt.header.buildFingerprint?{buildFingerprint:attempt.header.buildFingerprint}:{}) };
+ const summary=completedSummary(prepared,attempt,reviewId),storyId=summary.storyId;
  const store=deps.through.store; requireReview(store,'publication','Canonical round-writer store is required');
  const id=codeReviewArtifactId(epicHash,storyId), folder=storyRecordFolderArgs(canonical,epicHash,storyId,{},{kind:'read'});
  const paths=codeReviewArtifactPaths(canonical,epicHash,storyId,folder.epicCreatedAt,folder.workItemKind,folder.epicSlug);
  try {
   await store.updateAndLog(id,deps.through.actor,async current=>{
    let priorExists = false;
+   let priorHead:Record<string,unknown>|undefined;
    try {
     const prior = JSON.parse(await readFile(paths.json, 'utf8')) as { meta?: { schemaVersion?: unknown } };
-    priorExists = true;
+    priorHead=prior as Record<string,unknown>;priorExists = true;
     requireReview(prior.meta?.schemaVersion === undefined || prior.meta.schemaVersion === 1 || prior.meta.schemaVersion === 2, 'CR', 'Unsupported prior CR version');
    } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+   if(deps.baseline)await requireCapacityBaseline(deps.baseline);
    const body=mergeTaskSummary(priorExists?current.payload.body:undefined,summary);
+   const envelope={...(priorHead??{meta:{workflow:'code-review',schemaVersion:2}}),body,citations:[]};
+   requireReview(Buffer.byteLength(JSON.stringify(envelope,null,2)+'\n')<=reviewJsonLimit(),'projection_limit','Merged CR envelope exceeds storage capacity');
    if(isDeepStrictEqual(body,current.payload.body)) return undefined;
    const {changeLog:_log,...head}=current;
    return {next:{...head,payload:{body:{...body},citations:[]}},options:{addresses:[],outcome:{result:summary.status,summary:`Task-based review ${reviewId}/${summary.attempt}: ${summary.status}`}}};

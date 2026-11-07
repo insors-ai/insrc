@@ -1,7 +1,8 @@
+import { qualifyReviewCapacity } from './capacity.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, requireReview } from './contracts.js';
+import { decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
 import type { ReviewAttempt } from './contracts.js';
 import { AcceptedTaskAttributionSchema, AcceptedDecisionSchema } from './final-scope-contracts.js';
 import type { AcceptedTaskAttribution } from './final-scope-contracts.js';
@@ -95,8 +96,10 @@ export async function bindTaskFinalIdentities(review: AdmittedReview, input: rea
  if (review.attempt.header.attributionState === 'accepted') {
   for (const key of Object.keys(candidate) as (keyof typeof candidate)[]) requireReview(isDeepStrictEqual(review.attempt.header[key], candidate[key]), 'attribution', 'Accepted mapping cannot change within an attempt');
  } else requireReview(review.attempt.header.attributionState === 'pending', 'attribution', 'Attribution phase cannot accept a mapping');
+ requireReview(Buffer.byteLength(JSON.stringify(candidate))<=reviewJsonLimit(),'projection_limit','Accepted attribution exceeds review storage capacity');
  validateSavedAttribution({ ...review.attempt, header: { ...review.attempt.header, ...candidate } });
  for (const a of assignments) if (a.reassessment?.action === 'reuse') requireReuseIdentity(review, a);
+ qualifyReviewCapacity({...review,checkpoint:{...review.checkpoint,attempts:review.checkpoint.attempts.map(a=>a===review.attempt?{...a,header:{...a.header,...candidate}}:a)},attempt:{...review.attempt,header:{...review.attempt.header,...candidate}}});
  Object.assign(review.attempt.header, candidate);
  return assignments;
 }

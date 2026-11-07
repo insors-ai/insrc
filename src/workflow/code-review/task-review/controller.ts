@@ -1,3 +1,4 @@
+import { capacityCheckedResult } from './capacity.js';
 import { failAttribution, unmappedTaskFailure, attributionTimedOut } from './attribution-failure.js';
 import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
@@ -94,7 +95,7 @@ export class ControllerTaskReview {
   requireReview(assignment,'taskId','Wrong or unassigned task');
   requireReview(this.current()?.id===raw.taskId,'taskId','Result is not for the current task');this.checkTime();
   const refs=await taskReferences(this.deps.sources,this.review.prepared,assignment);
-  const result=await assessTaskResult(this.deps.sources,assignment,raw,refs);
+  const result=capacityCheckedResult(this.review,await assessTaskResult(this.deps.sources,assignment,raw,refs));
   this.progress.phase('feedback_persistence');
   this.assertOwner(owner);
   const priorTasks=this.review.attempt['review-response'].tasks,priorDiagnostics=this.review.attempt['review-response'].failureDiagnostics,priorActive=this.review.attempt.header.activeTaskId;
@@ -176,7 +177,12 @@ export class ControllerTaskReview {
   if(!this.monitor){
    this.executionId=randomUUID();this.sequence=0;
    const prior=structuredClone(this.lastDurable),restored=this.assignments??await restoreAcceptedAssignments(this.review), direct=restored?undefined:directReviewAssignments(this.review);
-   const candidate=restored??(direct?await bindTaskFinalIdentities(this.review,assignmentsToRows(this.review,direct)):undefined);
+   let candidate:readonly TaskAssignment[]|undefined;
+   try{candidate=restored??(direct?await bindTaskFinalIdentities(this.review,assignmentsToRows(this.review,direct)):undefined);}
+   catch(error){
+    if(!direct||!(error instanceof TaskReviewInputError)||error.field!=='projection_limit')throw error;
+    failAttribution(this.review.attempt,error,false);return this.frame(owner);
+   }
    this.progress.task(task,this.selected.indexOf(task)+1,this.selected.length,this.review.attempt['review-response'].tasks.length);
    this.review.attempt.header.status='running';this.review.attempt.header.activeTaskId=task.id;
    if(direct)await this.accept(prior);else await this.persist();

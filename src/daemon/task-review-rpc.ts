@@ -57,7 +57,7 @@ export function coordinatorFor(repo: string): TaskReviewCoordinator {
  requireReview(isMainThread, 'reviewer', 'Task review ownership belongs to the main daemon; route through the existing request router');
  let coordinator = coordinators.get(repo);
  if (!coordinator) {
-  coordinator = new TaskReviewCoordinator({ sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review', requestId: 0, send: () => {} }), provider: () => { throw new Error('Review provider context missing'); }, publish: (project, id, hash) => publishTaskCheckpoint(project, hash, id, publicationDeps(project)) });
+  coordinator = new TaskReviewCoordinator({ sources: new RegistryReviewSources({ repoPath: repo, sessionId: 'task-review', requestId: 0, send: () => {} }), provider: () => { throw new Error('Review provider context missing'); }, publish: (project, id, hash, baseline) => publishTaskCheckpoint(project, hash, id, {...publicationDeps(project),...(baseline?{baseline}:{})}) });
   coordinators.set(repo, coordinator);
  }
  return coordinator;

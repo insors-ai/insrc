@@ -1,3 +1,4 @@
+import { reviewJsonLimit, requireReview } from '../code-review/task-review/contracts.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -307,6 +308,7 @@ export class ArtifactStore {
 		const completed = cascadeFrom === undefined ? reconciled : { ...reconciled, bytes: completedBytes(reconciled.bytes) };
 		const prepared = revisionFloor !== undefined && completed.revision < revisionFloor
 			? { ...completed, bytes: revisedBytes(completed.bytes, revisionFloor), revision: revisionFloor } : completed;
+		if(key.kind==='CR'&&a.payload.body['format']==='task-based')requireReview(Buffer.byteLength(prepared.bytes)<=reviewJsonLimit(),'projection_limit','Canonical CR envelope exceeds review storage capacity');
 		const stored = decodeArtifactHead(a.id, prepared.bytes).artifact.lifecycle;
 		const from = prior?.artifact.lifecycle.status;
 		if (from !== undefined && isLifecycleOperation(operation)) assertLegalStatusChange(from, stored.status, operation, options.cascade === true);

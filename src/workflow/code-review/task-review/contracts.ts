@@ -13,7 +13,10 @@ const cloneFields = <T extends Record<string, TSchema>>(fields: T): T => Object.
 const object = <T extends Record<string, TSchema>>(fields: T) => Type.Object(fields, { additionalProperties: false });
 const text = Type.String({ minLength: 1, maxLength: 65536 });
 const strings = Type.Array(text, { maxItems: 10000 });
-export const MAX_REVIEW_JSON_BYTES = 4 * 1024 * 1024;
+export { reviewJsonLimit } from '../../../config/review.js';
+import { reviewJsonLimit, DEFAULT_REVIEW_JSON_BYTES } from '../../../config/review.js';
+/** Default retained for consumers that display the shipped default. Runtime checks use reviewJsonLimit(). */
+export const MAX_REVIEW_JSON_BYTES = DEFAULT_REVIEW_JSON_BYTES;
 const oid = Type.String({ pattern: '^(?:[0-9a-f]{40}|[0-9a-f]{64})$' });
 const range = Type.Tuple([Type.Integer({ minimum: 1 }), Type.Integer({ minimum: 1 })]);
 export const DocumentSchema = object({ path: text, commit: oid });
@@ -61,7 +64,7 @@ export function requireReview(condition: unknown, field: string, message: string
 /** Snapshot untrusted input once; callers cannot mutate an admitted packet through their original object. */
 export function decodeReview<T extends TSchema>(schema: T, input: unknown): Static<T> {
  let value: unknown;
- try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= MAX_REVIEW_JSON_BYTES, 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
+ try { const bytes = JSON.stringify(input); requireReview(bytes && Buffer.byteLength(bytes) <= reviewJsonLimit(), 'input', 'JSON exceeds limit'); value = JSON.parse(bytes); }
  catch { throw new TaskReviewInputError('input', 'Expected bounded JSON'); }
  const errors = [...Value.Errors(schema, value)];
  requireReview(errors.length === 0, errors[0]?.path ?? 'input', errors[0]?.message ?? 'Invalid schema');

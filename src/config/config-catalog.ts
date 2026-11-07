@@ -27,6 +27,7 @@
  * default, then prunes retired paths.
  */
 
+import { DEFAULT_REVIEW_JSON_BYTES } from './review-defaults.js';
 import type { ModelDefinitionsFile } from '../daemon/model-catalog.js';
 import type { TierName } from './analyze.js';
 import { deriveModelDefaults, SHIPPED_DEFINITIONS } from './model-defaults.js';
@@ -114,6 +115,7 @@ export function buildConfigCatalog(defs: ModelDefinitionsFile): readonly ConfigO
 		// (see CONFIG_MIGRATIONS) and its residue (incl. the derived shaperProvider/
 		// shaperModel/summariser* keys) is stripped via RETIRED_PATHS on boot/update.
 		{ path: 'tools.commonApproval', type: 'enum',    default: 'auto',          desc: "whether a tool call that needs approval asks first: 'manual' and 'edit-auto' ask, 'auto' does not; a chat session's edits mode overrides it per call, and a destructive tool always asks", enumValues: ['manual', 'edit-auto', 'auto'], group: 'Workflow & review' },
+		{ path: 'review.maxJsonBytes', type: 'number', default: DEFAULT_REVIEW_JSON_BYTES, desc: 'maximum serialized bytes per code-review packet, checkpoint, final-scope snapshot and permanent CR envelope; positive safe integer; read live, raise to accommodate larger retained histories', group: 'Workflow & review' },
 		{ path: 'routing.mode',          type: 'string',  default: 'static',        desc: 'agent routing mode', group: 'Workflow & review' },
 		{ path: 'analyzer.useLocal',     type: 'boolean', default: false,           desc: 'force code/data analyzers to local Ollama instead of cloud', group: 'Analysis & memory' },
 		{ path: 'analyzer.dataSourceListingTimeoutMs', type: 'number', default: 120000, desc: 'max ms one live data source is given to be reached and listed when a request is measured; a source that does not answer is reported as a size that could not be determined', group: 'Analysis & memory' },

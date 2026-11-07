@@ -97,8 +97,9 @@ test('attempt schema compatibility: optional origins and old checkpoint/CR meani
   const record=f.readRecord(first.jsonPath);assert.equal(record.body.reviews[0]!.origins,undefined);
   const next=await prepareReviewAdmission(f.repo,'publication',2,f.packet,'daemon',f.deps.sources);
   const source=next.checkpoint.attempts[0]!,entry=next.attempt;
-  entry.header.completedAt=source.header.completedAt!;entry.header.reassessmentSummary='Selected task is unchanged';entry['review-response'].tasks=structuredClone(source['review-response'].tasks);
+  entry.header.completedAt=source.header.completedAt!;entry.header.reassessmentSummary='Selected task is unchanged';
   await bindTaskFinalIdentities(next,[{taskId:'t1',changeIndexes:[0],testIndexes:[0],decision:{action:'reuse',sourceAttempt:1,reason:'Same selected behavior and verified evidence'}}]);
+  entry['review-response'].tasks=structuredClone(source['review-response'].tasks);
   entry['review-response'].origins=[{taskId:'t1',sourceAttempt:1,reason:'Same selected behavior and verified evidence'}];
   await saveCheckpoint(path,next.checkpoint);const second=await publishTaskCheckpoint(f.repo,hash,'publication',f.deps);
   const saved=f.readRecord(second.jsonPath);assert.equal(saved.body.reviews.length,2);assert.deepEqual(saved.body.reviews[0],record.body.reviews[0]);assert.deepEqual(saved.body.reviews[1]!.origins,entry['review-response'].origins);

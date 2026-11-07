@@ -1,19 +1,20 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
-import { MAX_REVIEW_JSON_BYTES, requireReview } from './contracts.js';
+import { reviewJsonLimit, requireReview } from './contracts.js';
 import type { SelectedChange } from './packet.js';
 import type { ChangedRange, PinnedBlob, ReviewSources } from './sources.js';
 import type { OriginDisposition, OriginRef, ReviewProjection, ReviewedSegment } from './final-scope-contracts.js';
 import { projectFileIntervals } from './projection-intervals.js';
 
-const LIMITS = { reads: 10000, fragments: 100000, bytes: 64 * 1024 * 1024, snapshot: MAX_REVIEW_JSON_BYTES };
+const LIMITS = { reads: 10000, fragments: 100000, bytes: 64 * 1024 * 1024, snapshot: 0 };
 /** Reduction-only limits support exact boundary qualification, never wider admission. */
 export class ProjectionBudget {
  private readonly limits: typeof LIMITS;
  private reads = 0; private fragments = 0; private bytes = 0; private metadataBytes = 0;
  constructor(limits: Partial<typeof LIMITS> = {}) {
-  this.limits = { ...LIMITS, ...limits };
-  for (const key of Object.keys(LIMITS) as (keyof typeof LIMITS)[]) requireReview(Number.isSafeInteger(this.limits[key]) && this.limits[key] >= 0 && this.limits[key] <= LIMITS[key], 'projection_limit', 'Invalid projection budget');
+  const configured = { ...LIMITS, snapshot: reviewJsonLimit() };
+  this.limits = { ...configured, ...limits };
+  for (const key of Object.keys(LIMITS) as (keyof typeof LIMITS)[]) requireReview(Number.isSafeInteger(this.limits[key]) && this.limits[key] >= 0 && this.limits[key] <= configured[key], 'projection_limit', 'Invalid projection budget');
  }
  read(): void { requireReview(++this.reads <= this.limits.reads, 'projection_limit', 'Projection object/diff read limit'); }
  fragment(): void { requireReview(++this.fragments <= this.limits.fragments, 'projection_limit', 'Projection fragment limit'); }

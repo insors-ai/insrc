@@ -4,7 +4,7 @@ import { open, mkdir, rename, unlink } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { constants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
-import { CheckpointSchema, decodeReview, MAX_REVIEW_JSON_BYTES, requireReview } from './contracts.js';
+import { CheckpointSchema, decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
 import type { ReviewCheckpoint } from './contracts.js';
 import { validateSavedAttribution } from './attribution-binding.js';
 
@@ -21,11 +21,12 @@ export class CheckpointSaveError extends Error {
 }
 const defaultIO = { open, mkdir, rename, unlink };
 export type CheckpointIO = typeof defaultIO;
+export function checkpointBytes(checkpoint:ReviewCheckpoint):string{return JSON.stringify(decodeReview(CheckpointSchema,checkpoint),null,2)+'\n';}
 /** A poller always sees an entire file; a completed task is flushed before advancing. */
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
- const serialized = JSON.stringify(decodeReview(CheckpointSchema, checkpoint), null, 2) + '\n';
- requireReview(Buffer.byteLength(serialized) <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'JSON exceeds limit');
+ const serialized = checkpointBytes(checkpoint);
+ requireReview(Buffer.byteLength(serialized) <= reviewJsonLimit(), 'checkpoint', 'JSON exceeds limit');
  const temporary = `${path}.${randomUUID()}.tmp`;
  let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;
  const identity = async (): Promise<string | null | undefined> => {
@@ -70,7 +71,7 @@ export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | u
  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
  try {
   const stat = await file.stat();
-  requireReview(stat.isFile() && stat.size <= MAX_REVIEW_JSON_BYTES, 'checkpoint', 'Expected bounded checkpoint file');
+  requireReview(stat.isFile() && stat.size <= reviewJsonLimit(), 'checkpoint', 'Expected bounded checkpoint file');
   const checkpoint = decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
   for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
   return checkpoint;

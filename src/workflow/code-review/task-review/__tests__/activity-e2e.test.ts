@@ -26,7 +26,14 @@ test('native adapter plus real IPC persists feedback on both routes and CLIs, an
     client.close(); // Native execution is daemon-owned, independent of the caller.
     await eventually(()=>existsSync(ack.path)&&f.read(ack.path).attempts[0]!['review-response'].crPublication==='complete');
     assert.deepEqual(f.read(ack.path).attempts[0]!['review-response'].tasks,[f.result]);
-    client=await channel(host.path);const done=await client.call<ReviewAcknowledgement>('codeReview.task.start',{...base,operation:'resume'});assert.equal(done.status,'passed');assert.deepEqual(done.pendingTaskIds,[]);
+    client=await channel(host.path);
+    // Publication durability precedes the background owner's final release.
+    // Observe the public execution state before requesting another owner.
+    const deadline=Date.now()+10000;
+    while((await client.call<{executionState:string}>('codeReview.task.progress',base)).executionState!=='inactive'){
+     assert.ok(Date.now()<deadline,'published native execution must release its owner');await new Promise(resolve=>setTimeout(resolve,10));
+    }
+    const done=await client.call<ReviewAcknowledgement>('codeReview.task.start',{...base,operation:'resume'});assert.equal(done.status,'passed');assert.deepEqual(done.pendingTaskIds,[]);
    }else{
     const frame=await client.call<ControllerFrame>('codeReview.task.start',base);assert.equal(frame.kind,'task');let sequence=frame.nextSequence!;
     const common={repo:f.repo,reviewId:id,attempt:1,taskId:frame.taskId,executionId:frame.executionId};

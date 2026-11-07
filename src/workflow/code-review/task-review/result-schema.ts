@@ -1,7 +1,7 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { CloneType, Type } from '@sinclair/typebox';
 import type { TaskAssignment } from './packet.js';
-import { TaskResultSchema, MAX_REVIEW_JSON_BYTES, requireReview } from './contracts.js';
+import { TaskResultSchema, reviewJsonLimit, requireReview } from './contracts.js';
 
 /** Decimal interval without enumerating lines or introducing leading zeros. */
 function decimalRange(low: string, high: string): string {
@@ -44,6 +44,6 @@ export function assignmentResultSchema(assignment: TaskAssignment): typeof TaskR
  });
  if (locations.length) schema.properties.findings.items.properties.location = Type.String({ pattern: `^(?:${[...new Set(locations)].join('|')})$`, maxLength: 65536 });
  else schema.properties.findings.maxItems = 0;
- requireReview(Buffer.byteLength(JSON.stringify(schema)) <= MAX_REVIEW_JSON_BYTES, 'projection_limit', 'Final-scope response schema exceeds its bound');
+ requireReview(Buffer.byteLength(JSON.stringify(schema)) <= reviewJsonLimit(), 'projection_limit', 'Final-scope response schema exceeds its bound');
  return schema;
 }

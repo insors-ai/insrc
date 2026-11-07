@@ -1,6 +1,6 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { isDeepStrictEqual } from 'node:util';
-import { decodeReview, requireReview, reviewPath } from './contracts.js';
+import { decodeReview, reviewJsonLimit, requireReview, reviewPath } from './contracts.js';
 import type { CompletedReviewSummary, ReviewAttempt } from './contracts.js';
 import { FinalScopeSnapshotSchema } from './final-scope-contracts.js';
 import type { FinalScopeSnapshot, ReviewedSegment } from './final-scope-contracts.js';
@@ -14,13 +14,15 @@ export function captureFinalScope(prepared: PreparedReviewPacket, attempt: Revie
  validateSavedAttribution(attempt);
  const p = prepared.projection, h = attempt.header;
  requireReview(p && h.finalScopeIdentity === p.identity && h.attributionState !== 'pending', 'finalScope', 'Missing verified terminal final scope');
- return decodeReview(FinalScopeSnapshotSchema, {
+ const candidate = {
   revision:p.revision, identity:p.identity,
   entries:p.entries.map(e=>({originChangeIndex:e.originChangeIndex,path:e.path,blobOid:e.after?.oid??null,findingScope:e.findingScope,segments:e.segments})),
   dispositions:p.dispositions,selectedTaskIds:h.selectedTaskIds,testCount:prepared.packet.tests.length,attributionIdentity:h.attributionIdentity,
   ...(h.attributionState==='accepted'?{attributionState:'accepted',tasks:h.acceptedAttribution!.map(row=>({...row,identity:h.taskScopeIdentities!.find(b=>b.taskId===row.taskId)!.identity}))}:
    {attributionState:'unmapped_failure',tasks:[],attributionFailure:h.attributionFailure}),
- });
+ };
+ requireReview(Buffer.byteLength(JSON.stringify(candidate))<=reviewJsonLimit(),'projection_limit','Final snapshot exceeds storage capacity');
+ return decodeReview(FinalScopeSnapshotSchema,candidate);
 }
 
 /** Synchronous immutable-history validation. Never reads Git or invokes a reviewer. */

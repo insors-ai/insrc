@@ -85,8 +85,8 @@ test('the src/cli re-export is reference-identical to the src/config definition 
 	assert.equal(FROM_CLI, FROM_CONFIG);
 });
 
-test('the real CONFIG_CATALOG has 40 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows)', () => {
-	assert.equal(FROM_CONFIG.length, 40);
+test('the real CONFIG_CATALOG has 41 rows (the old review settings codeReview.*, review.chunkTokens and designReview.* are retired with the review engine; models.shaper.ollamaNumCtx and permissions.mode retired; + daemonUpdate.repoUrl, daemonUpdate.branch and tools.commonApproval; flat models.* surface; three models.tiers.*.effort rows; models.local.embeddingKeepAlive; analyzer.dataSourceListingTimeoutMs; daemon.threads.enabled; four daemon.maintenance.* rows)', () => {
+	assert.equal(FROM_CONFIG.length, 41);
 	const live = new Set(FROM_CONFIG.map(r => r.path));
 	// the derived + old-nested paths must NOT be live catalog rows
 	for (const p of [
@@ -192,7 +192,7 @@ test('the old review settings are retired with the review engine: no codeReview.
 });
 
 test("the catalog declares models.tiers.{core,mid,cheap}.effort as enum ['', 'low','medium','high','xhigh','max','ultra'] (the shipped efforts) with default '' (40 rows)", () => {
-	assert.equal(FROM_CONFIG.length, 40);
+	assert.equal(FROM_CONFIG.length, 41);
 	for (const tier of ['core', 'mid', 'cheap']) {
 		const row = FROM_CONFIG.find(r => r.path === `models.tiers.${tier}.effort`);
 		assert.ok(row, `models.tiers.${tier}.effort is declared`);

@@ -1,3 +1,4 @@
+import { readCapacityBaseline, qualifyReviewCapacity } from './capacity.js';
 import { captureFinalScope } from './final-scope-history.js';
 import { validateFailureDiagnostics } from './diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
@@ -28,6 +29,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  reviewer: ReviewerParty, sources: ReviewSources, context: { operation?: ReviewOperation | undefined; epicHash?: string | undefined } = {}): Promise<AdmittedReview> {
  const request = decodeReview(context.operation === 'resume' ? SavedReviewRequestSchema : ReviewRequestSchema, { reviewId, attempt, ...(input !== undefined ? { packet: input } : {}), ...(context.operation !== undefined ? { operation: context.operation } : {}) });
  const operation = request.operation ?? 'start';
+ const capacity=async(review:AdmittedReview):Promise<AdmittedReview>=>{if(review.prepared.projection&&review.attempt['review-response'].crPublication!=='complete'){review.capacity=await readCapacityBaseline(review.checkpoint.project,review.prepared.epicHash,review.checkpoint.storyId);qualifyReviewCapacity(review);}return review;};
  // Refuse invalid fresh selections before re-reading any saved source history.
  // Resume still decodes its immutable packet under historical rules below.
  if (operation === 'start' && request.packet !== undefined) parsePacket(request.packet);
@@ -83,7 +85,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   requireReview(request.packet === undefined || isDeepStrictEqual(request.packet, latest.submitted), 'packet', 'attempt-conflict: resume input is pinned');
   requireReview(!['pending', 'running'].includes(latest.header.status) || latest.submitted.reviewRevision !== undefined, 'reviewRevision', 'Interrupted unpinned history is read-only; submit a new pinned attempt');
   requireReview(!context.epicHash || context.epicHash === priorPrepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
-  return { path, checkpoint: saved, attempt: latest, prepared: priorPrepared };
+  return capacity({ path, checkpoint: saved, attempt: latest, prepared: priorPrepared });
  }
  requireReview(request.packet, 'packet', 'Start requires a committed packet');
  requireReview(saved ? attempt === saved.attempts.length + 1 : attempt === 1, 'attempt', saved ? 'attempt-conflict: expected next sequential attempt' : 'missing-checkpoint: first attempt must be 1');
@@ -103,5 +105,5 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  const checkpoint = saved ? { ...saved, attempts: [...saved.attempts, entry] } : { schemaVersion: 1 as const, reviewId, project: canonical, storyId: prepared.packet.storyId, ...(prepared.packet.taskId ? { taskId: prepared.packet.taskId } : {}), attempts: [entry] };
  // Include the appended input in the existing whole-checkpoint bound before any caller can save it.
  decodeReview(CheckpointSchema, checkpoint);
- return { path, checkpoint, attempt: entry, prepared };
+ return capacity({ path, checkpoint, attempt: entry, prepared });
 }

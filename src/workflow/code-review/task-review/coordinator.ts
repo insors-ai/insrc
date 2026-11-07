@@ -1,3 +1,4 @@
+import { qualifyReviewCapacity, capacityCheckedResult } from './capacity.js';
 import { failAttribution, unmappedTaskFailure, attributionTimedOut } from './attribution-failure.js';
 import { recordAttributionRejection, MAX_ATTRIBUTION_SUBMISSIONS } from './attribution-repair.js';
 import { persistFailureDiagnostic, resolveFailureDiagnostics } from './diagnostics.js';
@@ -33,7 +34,7 @@ export interface TaskReviewDeps {
  readonly provider: () => LLMProvider;
  readonly save?: typeof saveCheckpoint;
  readonly read?: typeof loadCheckpoint;
- readonly publish?: ((project: string, reviewId: string, epicHash: string) => Promise<unknown>) | undefined;
+ readonly publish?: ((project: string, reviewId: string, epicHash: string, baseline?: import('./capacity.js').CapacityBaseline) => Promise<unknown>) | undefined;
  readonly now?: () => number;
  readonly timer?: (callback: () => void, ms: number) => () => void;
 }
@@ -88,7 +89,7 @@ export class TaskReviewCoordinator {
   if (entry['review-response'].crPublication === 'complete') { this.release(path); return metadata(); }
   try {
    const done = new Promise<void>(resolve => setImmediate(() => {
-    void this.run(path, checkpoint, entry, prepared, providerForReview).catch(error => {
+    void this.run(admitted, providerForReview).catch(error => {
      // A persistence failure stops scheduling. Never overwrite the last durable task with a fabricated success.
      log.error({ reviewId, error: error instanceof Error ? error.message : String(error) }, 'Task review stopped; last durable checkpoint retained');
     }).finally(() => { this.release(path); resolve(); });
@@ -166,11 +167,12 @@ export class TaskReviewCoordinator {
  /** Used by shutdown/tests, never awaited by start or attached to a caller's cancellation. */
  isActive(project: string, reviewId: string): boolean { return this.active.has(checkpointPath(project, reviewId)); }
  async settled(project: string, reviewId: string): Promise<void> { await this.active.get(checkpointPath(project, reviewId))?.done; }
- private async run(path: string, checkpoint: ReviewCheckpoint, entry: ReviewAttempt, prepared: PreparedReviewPacket, resolveProvider: () => LLMProvider): Promise<void> {
-  const review:AdmittedReview={path,checkpoint,attempt:entry,prepared};
+ private async run(review:AdmittedReview, resolveProvider: () => LLMProvider): Promise<void> {
+  const {path,checkpoint,attempt:entry,prepared}=review;
   let lastDurable=structuredClone(checkpoint);
   const save:typeof saveCheckpoint=async(savedPath,state,io)=>{
    if(review.storageFailure)throw review.storageFailure;
+   if(entry['review-response'].crPublication!=='complete')qualifyReviewCapacity({...review,checkpoint:state,attempt:state.attempts.at(-1)!});
    const snapshot=structuredClone(state);await(this.deps.save??saveCheckpoint)(savedPath,snapshot,io);lastDurable=snapshot;
   };
   const tracker = new ReviewProgressTracker(this.deps.now ? {now:this.deps.now,wall:()=>new Date().toISOString()} : undefined);
@@ -195,6 +197,7 @@ export class TaskReviewCoordinator {
    },{...(this.deps.now?{now:this.deps.now}:{}),...(this.deps.timer?{timer:this.deps.timer}:{})});
    const check=()=>{if(inactive)throw inactive;};
    const commitResult=async(result:TaskReviewResult,origin?:TaskResultOrigin):Promise<void>=>{
+    if(!origin&&!durable)result=capacityCheckedResult(review,result);
     if(durable){requireReview(isDeepStrictEqual(durable,result),'result','Conflicting accepted submission replay');return;}
     tracker.phase('feedback_persistence');progress.boundary();
     const priorTasks=entry['review-response'].tasks,priorOrigins=entry['review-response'].origins,priorDiagnostics=entry['review-response'].failureDiagnostics;
@@ -298,7 +301,7 @@ export class TaskReviewCoordinator {
    }
   }
   tracker.phase('cr_publication',entry['review-response'].tasks.length);entry.progress=tracker.snapshot();
-  const final={path,checkpoint,attempt:entry,prepared};
+  const final:AdmittedReview={...review,path,checkpoint,attempt:entry,prepared};
   await completeReview(final,this.deps);
   tracker.phase(final.attempt['review-response'].crPublication==='complete' || !this.deps.publish ? 'complete' : 'error');tracker.stopped();
 

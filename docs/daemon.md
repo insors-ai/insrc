@@ -1925,3 +1925,20 @@ rm -rf /tmp/.insrc       # logs
 That fully removes the daemon and every trace of its data. Your
 indexed repos on disk are untouched — the daemon never wrote to
 them.
+
+### Code-review JSON storage limit
+
+`review.maxJsonBytes` in `~/.insrc/config.json` sets the maximum serialized size
+of a code-review packet, checkpoint, final-scope snapshot, response schema and
+permanent CR record. The default is 4194304 bytes (4 MiB). For example:
+
+```json
+{ "review": { "maxJsonBytes": 33554432 } }
+```
+
+The setting is a positive safe integer in bytes and is read live. Raising it
+allows larger retained review histories without rewriting or deleting earlier
+attempts. Lowering it can make existing larger records unreadable until the
+limit is raised again. Each new attempt still checks that its complete terminal
+records fit. This does not change model token limits, the Git diff read limit,
+source/projection work limits or the 32 KiB diagnostic-retention policy.

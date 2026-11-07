@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 17,
-        "contentHash": "b526520530d62098884bec99e7b990684bc6cb89398868a7dec3c13c7548975e",
-        "at": "2026-11-07T08:34:18.649Z",
+        "number": 18,
+        "contentHash": "cd953cc3f9ceafb1c9d782381f220f1dd66da6c9f6d65eae2ba239ddc8038447",
+        "at": "2026-11-07T08:39:55.627Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T08:34:18.498Z",
+    "updatedAt": "2026-11-07T08:39:55.471Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 17
+    "revision": 18
   },
   "body": {
     "tasks": [
@@ -1009,6 +1009,149 @@
               },
               {
                 "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "1a761053e",
+        "ranAt": "2026-11-07T08:39:55.471Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Every fresh in-repo producer and MCP submission schema requires explicit final pin with actionable validation errors and caller-selected change-set scope.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "title": "transition: every fresh producer and MCP schema explicitly supplies the final pin",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/task-review.test.ts",
+                "title": "MCP transition rejects missing final pins before dispatch on both independent reviewer routes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Historical reader and interrupted-unpinned recovery semantics remain route-correct; coordinated producer/daemon rollout documents drain/interruption, no activation flag and state-preserving rollback only.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "title": "transition: interrupted unpinned work is read-only on both reviewer routes without mutation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "title": "transition: coordinated rollout and adjacent ownership are explicit in shipped guidance",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+                "title": "final history: completed no-pin records retain byte-identical read-only coordinates",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Adjacent native diagnostics, rejected-result repair and coverage classification ownership remains separate with shared-module sequencing documented.",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+                "title": "transition: coordinated rollout and adjacent ownership are explicit in shipped guidance",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/task-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2904,
+            "titles": [
+              {
+                "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
+                "result": "pass"
+              },
+              {
+                "title": "Normal controller/daemon routes preserve coverage/status/diagnostic policy, after-only scope and schema/guide parity",
+                "result": "pass"
+              },
+              {
+                "title": "normal controller connections are isolated and session close requires explicit resume",
+                "result": "pass"
+              },
+              {
+                "title": "MCP transition rejects missing final pins before dispatch on both independent reviewer routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2557,
+            "titles": [
+              {
+                "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently",
+                "result": "pass"
+              },
+              {
+                "title": "final history: missing bindings partitions witnesses task subsets and foreign locations reject offline",
+                "result": "pass"
+              },
+              {
+                "title": "final history: unmapped attribution preserves bounded true failure without fabricated scopes or accepted downgrade",
+                "result": "pass"
+              },
+              {
+                "title": "final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt",
+                "result": "pass"
+              },
+              {
+                "title": "final history: completed no-pin records retain byte-identical read-only coordinates",
+                "result": "pass"
+              },
+              {
+                "title": "final history: replacement witness closure and graph are checked independently of recomputed digests",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 3314,
+            "titles": [
+              {
+                "title": "transition: every fresh producer and MCP schema explicitly supplies the final pin",
+                "result": "pass"
+              },
+              {
+                "title": "transition: interrupted unpinned work is read-only on both reviewer routes without mutation",
+                "result": "pass"
+              },
+              {
+                "title": "transition: coordinated rollout and adjacent ownership are explicit in shipped guidance",
                 "result": "pass"
               }
             ],

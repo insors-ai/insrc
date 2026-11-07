@@ -2,6 +2,7 @@ import { checkpointBytes } from './checkpoint.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { artifactJsonPath, codeReviewArtifactId } from '../../storage.js';
 import { TaskReviewInputError, reviewJsonLimit, requireReview } from './contracts.js';
 import type { ReviewCheckpoint, TaskReviewResult } from './contracts.js';
@@ -10,7 +11,7 @@ import { failAttribution, unmappedTaskFailure } from './attribution-failure.js';
 import { taskFailure } from './assessment.js';
 import { completedSummary } from './summary.js';
 import type { CompletedReviewSummary } from './contracts.js';
-import { latestReviewStatus, mergeTaskSummary } from './record.js';
+import { latestReviewStatus, mergeTaskSummary, validateTaskBody } from './record.js';
 import { MAX_ATTEMPT_DIAGNOSTIC_BYTES, validateFailureDiagnostics } from './diagnostics.js';
 
 export interface CapacityBaseline { readonly head?: Record<string,unknown>; readonly path:string; readonly identity:string|null; }
@@ -22,10 +23,22 @@ export async function readCapacityBaseline(project:string,epicHash:string,storyI
  try{const bytes=await readFile(path,'utf8');requireReview(Buffer.byteLength(bytes)<=reviewJsonLimit(),'projection_limit','Existing CR envelope exceeds review capacity');return{path,identity:hash(bytes),head:JSON.parse(bytes) as Record<string,unknown>};}
  catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return{path,identity:null};throw error;}
 }
+/** Called under the canonical store queue. An append by another review is
+ * expected concurrency; altered/deleted prior history or metadata is a conflict.
+ * The caller rechecks the actual merged envelope before its journalled write. */
 export async function requireCapacityBaseline(baseline:CapacityBaseline):Promise<void>{
- let identity:string|null=null;try{identity=hash(await readFile(baseline.path,'utf8'));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
- requireReview(identity===baseline.identity,'publication','CR capacity baseline changed externally; explicit recovery required');
+ let bytes:string|undefined;try{bytes=await readFile(baseline.path,'utf8');}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;}
+ if((bytes===undefined?null:hash(bytes))===baseline.identity)return;
+ requireReview(bytes!==undefined,'publication','CR capacity baseline disappeared; explicit recovery required');
+ const current=JSON.parse(bytes) as Record<string,unknown>,body=validateTaskBody(current['body']);
+ const prior=baseline.head?validateTaskBody(baseline.head['body']):undefined;
+ requireReview(body.reviews.length>(prior?.reviews.length??0)&&(prior?.reviews??[]).every((r,i)=>isDeepStrictEqual(r,body.reviews[i])),'publication','CR capacity baseline history changed; explicit recovery required');
+ if(baseline.head){
+  const stable=(head:Record<string,unknown>)=>{const meta={...(head['meta'] as Record<string,unknown>)};for(const key of ['lifecycle','revision','reviewedBy'])delete meta[key];return{...head,meta,body:undefined};};
+  requireReview(isDeepStrictEqual(stable(baseline.head),stable(current)),'publication','CR capacity baseline metadata changed; explicit recovery required');
+ }
 }
+
 export function capacityTaskFailure(taskId:string,timedOut:boolean):TaskReviewResult{return taskFailure(taskId,'Task could not complete within qualified storage capacity. See review diagnostics.',timedOut);}
 
 // Future diagnostic JSON is <=32 KiB INCLUDING escaping. At any diagnostic

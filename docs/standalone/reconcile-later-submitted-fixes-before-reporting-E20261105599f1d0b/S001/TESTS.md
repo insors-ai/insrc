@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 68 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -305,3 +305,36 @@ Run at 2026-11-07T08:34:18.498Z on commit `fa70c3e60`. Tests check: **passed**. 
 | :--- | :--- | :--- | :--- | :--- |
 | `src/config/__tests__/review.test.ts` | 0 | 2 | 1.4 s |  |
 | `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.4 s |  |
+
+## t9
+
+Run at 2026-11-07T08:39:55.471Z on commit `1a761053e`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: Every fresh in-repo producer and MCP submission schema requires explicit final pin with actionable validation errors and caller-selected change-set scope.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transition: every fresh producer and MCP schema explicitly supplies the final pin | `src/workflow/code-review/task-review/__tests__/transition.test.ts` |
+| pass | MCP transition rejects missing final pins before dispatch on both independent reviewer routes | `src/mcp/__tests__/task-review.test.ts` |
+
+**integration: Historical reader and interrupted-unpinned recovery semantics remain route-correct; coordinated producer/daemon rollout documents drain/interruption, no activation flag and state-preserving rollback only.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transition: interrupted unpinned work is read-only on both reviewer routes without mutation | `src/workflow/code-review/task-review/__tests__/transition.test.ts` |
+| pass | transition: coordinated rollout and adjacent ownership are explicit in shipped guidance | `src/workflow/code-review/task-review/__tests__/transition.test.ts` |
+| pass | final history: completed no-pin records retain byte-identical read-only coordinates | `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` |
+
+**integration: Adjacent native diagnostics, rejected-result repair and coverage classification ownership remains separate with shared-module sequencing documented.**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | transition: coordinated rollout and adjacent ownership are explicit in shipped guidance | `src/workflow/code-review/task-review/__tests__/transition.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.9 s |  |
+| `src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts` | 0 | 6 | 2.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/transition.test.ts` | 0 | 3 | 3.3 s |  |

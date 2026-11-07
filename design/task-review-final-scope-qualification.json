@@ -1,0 +1,562 @@
+{
+  "kind": "final-review-scope-qualification",
+  "story": "599f1d0bd42e0c37/s1",
+  "historicalEvidence": {
+    "immutableCommits": [
+      "f0d5da04756e1e96a5043c0063a8891dd2455c7e",
+      "76d3d899a5f144721e2a3328a9933e346be3b600"
+    ],
+    "durableCR": ".insrc/artifacts/CR-9b04adb36cac716d-s3.json",
+    "reproduction": "Labelled synthetic Git commits containing exact immutable source copies, not recovered raw checkpoint/attribution/timing."
+  },
+  "acceptance": {
+    "ac1": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      13,
+      17
+    ],
+    "ac2": [
+      5,
+      9,
+      21,
+      22,
+      25,
+      30
+    ],
+    "ac3": [
+      6,
+      7,
+      8,
+      9,
+      11,
+      13,
+      14,
+      15,
+      16,
+      17,
+      20,
+      24
+    ],
+    "ac4": [
+      10,
+      12,
+      14,
+      15,
+      16,
+      18,
+      19,
+      23,
+      26,
+      27,
+      28,
+      29,
+      31,
+      32,
+      33
+    ],
+    "ac5": [
+      21,
+      25,
+      26,
+      30,
+      34,
+      35
+    ]
+  },
+  "subjects": [
+    {
+      "subjectNumber": 1,
+      "lldSubject": "New packets require a full commit reviewRevision; reject missing/symbolic/unavailable/non-commit pins. Same-attempt replay rejects changed pin; historical completed no-pin records remain readable without granting model execution.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+          "title": "final pin schema requires the pin without mutating historical schemas"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+          "title": "final pin validates object type and ancestry with truthful source failures"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+          "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 2,
+      "lldSubject": "Origin selections retain existing parent/hunk/path validation; projected scope is host-derived and cannot be supplied or forged by the caller.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+          "title": "selected-change packet: commit pointers, exact ranges, committed documents and excluded same-commit changes"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/selected-code.test.ts",
+          "title": "selected code: exact pinned after blocks reach attribution and assessment without prior or surrounding source"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 3,
+      "lldSubject": "Schema-construction regression: missing reviewRevision is rejected by the actual PacketSchema/decodeReview path, PacketSchema.required includes it, and historical StoredPacketSchema still decodes no-pin records. Cloning/replacing an optional property without rebuilding required must not satisfy this test. [[c2]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/contracts.test.ts",
+          "title": "final pin schema requires the pin without mutating historical schemas"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+          "title": "transition: every fresh producer and MCP schema explicitly supplies the final pin"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 4,
+      "lldSubject": "Identity and shifted-line projection preserve only selected surviving text, excluding unrelated insertions and working-tree canaries.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+          "title": "all small single-edit intervals preserve exactly the selected surviving line identities"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+          "title": "committed projection uses identical-blob fast path and ignores HEAD/worktree changes"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 5,
+      "lldSubject": "Later selected fixes supersede earlier selected defects: final spans and replacement witnesses are used, original entries remain completely accounted for, and historical-only defect coordinates are not finding scope.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "selected later witnesses justify complete supersession and immutable origin accounting"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 6,
+      "lldSubject": "Partial supersession splits selected intervals correctly; overlapping final spans coalesce while preserving every origin index; ambiguous partial replacements fail explicitly.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+          "title": "interval projection partitions changed overlaps without granting replacement text"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 7,
+      "lldSubject": "Selected rename/deletion chains, empty-file line-zero boundaries, wholly superseded entries and deleted files never become unconstrained whole-file scope.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "selected rename chains compare exact blobs independently of rename similarity and reject unselected moves"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+          "title": "deletion anchors preserve empty-file zero and mark touched boundaries for witness verification"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 8,
+      "lldSubject": "Non-ancestor origins, out-of-set overwrites, conflicting merge resolution, unverified renames, binary/non-UTF8 mappings and truncated/budget-exceeded reads refuse preparation without model calls or dropped scope.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "unselected merge resolution rejects and explicit selected merge replacement supplies the witness"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection-intervals.test.ts",
+          "title": "projection refuses malformed or omitted changes, invalid UTF-8 and binary sources without invented partitions"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "projection budgets refuse before exceeding limits, preserve source fields and use serial reads"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 9,
+      "lldSubject": "Final-only finding locations and native schema agree; superseded-only entries allow no code findings while genuine final defects still block.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "native response schema bounds decimal intervals, gaps and deletion anchors"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "native and controller routes share final scope and reject historical findings without suppressing final defects"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 10,
+      "lldSubject": "Reuse requires identical final blobs/projected task scope/requirements/test inputs and same reviewer; changed relevant final code forces reassessment while historical feedback remains immutable.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "failed mixed-plan acceptance dispatches neither an immediate reuse nor a fresh assessment"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 11,
+      "lldSubject": "EffectiveTaskChange threading: prove final text reaches selectedCode/assignmentPrompt/native grants, the same final paths/spans reach assignmentResultSchema and validateTaskResult, superseded-only rows reject findings, and ProjectedEntry.segments equals the normalized union of its surviving/deleted dispositions. [[c3]] [[c5]] [[c16]] [[c17]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "final blobs, paths and spans reach prompts, native grants and strict result validation"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "renamed final paths alone authorize findings; previousPath remains provenance context"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 12,
+      "lldSubject": "Host reuse binding: both routes persist taskScopeIdentities after direct/model attribution even with no diagnostics; sourceAssessment and reuseAssessment reject a changed relevant final blob, scope, requirement or test input and missing identities. Identical task inputs across unrelated revision movement may reuse; conflicting same-attempt identity writes fail. [[c8]] [[c9]] [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 13,
+      "lldSubject": "New pinned zero-segment original selections reject field=scope_conflict before checkpoint replacement or provider dispatch; historical no-pin metadata records remain readable without granting new execution. Nonempty origins that become fully superseded still have complete dispositions and findingScope=none. [[c2]] [[c3]] [[c18]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+          "title": "zero-segment fresh admission rejects before history source work, checkpoint replacement or provider dispatch on both routes"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 14,
+      "lldSubject": "Permanent final-scope representation validates required pin/snapshot plus the state-specific accepted/unmapped attribution contract, origin-index partitions, witness closure, per-task subsets and canonical projection identity. Reject omitted, oversized, malformed or tampered pin/path/ranges/task rows/digests and findings in another task\u2019s scope; historical no-pin CR bodies remain readable and byte-identical. [[c10]] [[c11]] [[c12]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: missing bindings partitions witnesses task subsets and foreign locations reject offline"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: replacement witness closure and graph are checked independently of recomputed digests"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 15,
+      "lldSubject": "Durable accepted attribution: atomically persist canonical taskId/changeIndexes/testIndexes rows with state=accepted, taskScopeIdentities and attributionIdentity on native/controller/direct paths, even with no diagnostic repair. Reject bad indexes, duplicate tasks/row indexes, omitted changes/tests, missing witness closure and conflicting replacement; unsuccessful save acknowledgement dispatches no task assessment and follows the pre/post-replacement recovery contract. [[c3]] [[c8]] [[c9]] [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 16,
+      "lldSubject": "Offline attribution binding: mutate ONLY one accepted task changeIndexes/testIndexes list (including adding another task\u2019s valid entry) while preserving all existing digest strings. Recomputed final-attribution-v1 identity must reject the record. Test selectedTaskIds/testCount/state mutations, valid shared entries and empty task scopes, and retain full source-aware task-identity verification on resume/publication. [[c10]] [[c11]] [[c12]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 17,
+      "lldSubject": "Resource error fields: assert field=input for oversized decoded packet, field=changes for reused truncated Git diff, and field=projection_limit for projection-local read/byte/fragment/snapshot counters. Preserve source/commit/transport-integrity failures; assert no task dispatch and no partially accepted mapping at every budget boundary. [[c2]] [[c3]] [[c4]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "actual diff truncation stays changes while oversized JSON refuses input before source/provider work"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+          "title": "production projection budgets accept their exact ceilings and refuse the next unit"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 18,
+      "lldSubject": "Accepted reassessment persistence: qualify initial/reassess/reuse union rules, durable reason/sourceAttempt and reassessmentSummary, identity binding over decisions, strict absence of sourceAttempt on reassess, and rejection of source-party/ordinal/input mismatch. A planned reuse without a completed origin must remain reconstructible. [[c8]] [[c9]] [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-contracts.test.ts",
+          "title": "accepted attribution decision unions retain only permitted fields"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 19,
+      "lldSubject": "Save commit-point qualification: inject temporary open/write/file-sync/file-close and pre-rename failures, rename success followed by directory open/sync/close or cleanup failures, and uncertain/read-failed outcomes. Assert NO acknowledgement/dispatch on every unsuccessful save, correct not_replaced/replaced/uncertain classification, and no rollback overwrite. Exact candidate/prior reconciliation plus explicit successful re-acknowledgement determines recovery; do not assert unchanged pending bytes after successful rename. [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 20,
+      "lldSubject": "Terminal capacity qualification: use real checkpoint/CR serializers and runtime attribution-terminal result constructor for failed/incomplete branches. Exercise the 10000-task small-input case, exact just-fit/one-byte-over limits, long IDs, escaped/Unicode diagnostics at the existing 32 KiB aggregate cap, shared failure detail, preexisting checkpoint/CR history, completion metadata, accepted mapping decisions and remaining-outcome reserve. Reject oversized admission before any provider/save; do not trim tasks or diagnostics to fit. [[c2]] [[c10]] [[c11]] [[c21]] [[c22]] [[c23]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: unchanged 32 KiB Unicode escaped diagnostics retain reserved completion space"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: 10000-task small packet refuses both routes before save or provider dispatch"
+        }
+      ],
+      "clarification": "User-approved PLAN revision4/c24: review.maxJsonBytes replaces the fixed JSON bound; each attempt requalifies and a fitting next attempt may require raising the configured capacity. No history rewrite."
+    },
+    {
+      "subjectNumber": 21,
+      "lldSubject": "Whole-story task A introduces a defect and task B fixes it in the same submitted set: native and controller routes review the fixed final version without a stale blocker, while a separate unresolved final defect still blocks. Reproduce the actual S3 t3/t9 pair: the t3 first-report lookup is fixed by included commit 76d3d899a, and the final reviewed source must not retain its historical blocker. [[c1]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+          "title": "historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 22,
+      "lldSubject": "Attribution accounts for every original entry, including superseded entries, and every supplied test; cross-task final source is shared with origin references rather than obsolete embedded versions.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "effective attribution preserves all entries/tests and requires replacement witness closure"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 23,
+      "lldSubject": "Resume, new attempt, publication and BUILD freshness retain the pinned final revision; completed historical no-pin records stay unchanged and cannot be resumed or reused as final-version execution.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/admission.test.ts",
+          "title": "recovery admission: saved pins, latest-only resume, contiguous attempts and immutable prior sections"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: completed no-pin records retain byte-identical read-only coordinates"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+          "title": "transition: interrupted unpinned work is read-only on both reviewer routes without mutation"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 24,
+      "lldSubject": "A task assigned a fully or partly superseded origin must also cover its final replacement/deletion witness entries; omission is an attribution error, not a vacuous pass. Unknown/cyclic/backward-incompatible witness references are rejected.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/effective-scope.test.ts",
+          "title": "effective attribution preserves all entries/tests and requires replacement witness closure"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: replacement witness closure and graph are checked independently of recomputed digests"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 25,
+      "lldSubject": "Genuine current test-coverage/provenance defect non-regression: alongside a historical defect fixed later in the packet, deliberately omit a current provenance or requiredReferences test. The final review must still report that demonstrated coverage defect; final-version reconciliation must not suppress it or auto-pass it. [[c1]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+          "title": "historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 26,
+      "lldSubject": "Two independent native/controller reviews with different reviewIds and final pins can progress concurrently; changes, bindings, feedback, optional-execution disclosures and completion/cleanup of one never alter or unblock the other. Provider work remains serial within each review and the existing activity/retry policy is unchanged. [[c1]] [[c13]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+          "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+          "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
+          "title": "Cleanup defers for active admission/execution/publication and excludes concurrent starts under story fence"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 27,
+      "lldSubject": "Publish and reread a shifted and renamed final-coordinate finding through publishTaskCheckpoint -> mergeTaskSummary -> validateTaskBody -> renderTaskReview -> validateTaskBody, with source Git access only before publication. Final line 20 remains valid when origin line 10 was selected; old-coordinate and unassigned-task findings reject. A metadata snapshot is saved without blob text; duplicate publication is byte-idempotent and conflicting snapshots reject. [[c3]] [[c5]] [[c11]] [[c12]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 28,
+      "lldSubject": "Lose all reviewer memory after accepted attribution in a multi-task review with distinct assigned tests. A fresh publication service loads only the checkpoint and pinned source adapter, reconstructs saved mappings, recomputes task bindings, publishes/renders/rereads the correct final per-task scopes and supports exact resume without a new attribution/model call. [[c3]] [[c8]] [[c9]] [[c10]] [[c11]] [[c12]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+          "title": "CR publication: idempotent scoped summary and retained checkpoint on publication failure"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 29,
+      "lldSubject": "Both native/controller routes: attribution timeout, provider failure, exhausted invalid scope submissions and oversized unaccepted mapping publish an unmapped_failure pinned summary with actual diagnostics, no task identities/findings/reuse and no invented mapping. Verify publication completion and successful next-attempt admission; reject passing results, mapped findings, missing selected terminal outcomes and a false downgrade from accepted state. [[c9]] [[c10]] [[c11]] [[c12]] [[c21]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
+          "title": "final history: fresh native and controller attribution failures publish all tasks and allow only the next attempt"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: long task IDs and large accepted decisions are qualified before becoming visible"
+        }
+      ],
+      "clarification": "User-approved PLAN revision4/c24: review.maxJsonBytes replaces the fixed JSON bound; each attempt requalifies and a fitting next attempt may require raising the configured capacity. No history rewrite."
+    },
+    {
+      "subjectNumber": 30,
+      "lldSubject": "Historical reproduction evidence: construct a labelled synthetic explicit packet from durable CR review 1 t3/t9 scope and immutable commits f0d5da04756e1e96a5043c0063a8891dd2455c7e and 76d3d899a5f144721e2a3328a9933e346be3b600. Preserve the separate genuine provenance-coverage defect; make no assertion that the absent temporary packet/attribution/timing was recovered. [[c19]] [[c20]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
+          "title": "historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 31,
+      "lldSubject": "Both routes: accept a mixed reassess/reuse plan with distinct test assignments, interrupt before a reuse task executes, discard all reviewer memory, reload and restore EXACT action/reason/sourceAttempt/summary with unchanged hashes and source result. Continue without a new attribution call; copy the exact reused result and create its real origin only after completion. [[c3]] [[c8]] [[c9]] [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+          "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 32,
+      "lldSubject": "Both routes: acceptance save visibly replaces pending with accepted mapping but fails its final durability acknowledgement. Assert no task/provider/reuse dispatch and no successful attribution ACK; a fresh explicit resume validates/re-acknowledges that same mapping then restores it exactly. Repeat for pre-replacement pending recovery, another failed acknowledgement and unreadable/conflicting disk state; no automatic storage retry or accepted-plan replacement. [[c8]] [[c9]] [[c10]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "both routes fence failed acceptance, reconcile exact visible state and require successful explicit re-acknowledgement"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "later explicit resume rejects a valid conflicting checkpoint until the exact candidate is restored"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+          "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits"
+        }
+      ]
+    },
+    {
+      "subjectNumber": 33,
+      "lldSubject": "Both routes: a preflight-admitted unit at the terminal capacity boundary times out/fails/exhausts attribution, preserves all selected task outcomes and existing bounded diagnostics, publishes the unmapped snapshot and admits the next sequential attempt. Verify actual bytes for the complete checkpoint and merged CR envelope. An oversized 10000-task unit is refused before provider dispatch; later accepted results/mappings cannot consume the remaining terminal reserve. [[c9]] [[c10]] [[c11]] [[c12]] [[c21]] [[c22]] [[c23]]",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: boundary failures publish and raising configured capacity admits the next attempt on both routes"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+          "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes"
+        }
+      ],
+      "clarification": "User-approved PLAN revision4/c24: review.maxJsonBytes replaces the fixed JSON bound; each attempt requalifies and a fitting next attempt may require raising the configured capacity. No history rewrite."
+    },
+    {
+      "subjectNumber": 34,
+      "lldSubject": "Disposable compiled MCP/IPC review packet pins a final revision over a multi-commit story; task review inspects final blocks, preserves origin provenance, excludes unrelated HEAD/worktree changes and publishes the correct current result.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+          "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback"
+        }
+      ],
+      "compiledEvidence": {
+        "command": "node scripts/smoke-task-review.mjs",
+        "log": "/tmp/t10-final-smoke.log",
+        "claims": "Disposable compiled MCP/IPC, synthetic native output with final source assertions; no hosted model or installed daemon."
+      }
+    },
+    {
+      "subjectNumber": 35,
+      "lldSubject": "Production build and scoped task-review/MCP tests pass; no direct cloud REST, retired engine or installed-daemon activation is introduced.",
+      "cases": [
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/transition.test.ts",
+          "title": "transition: every fresh producer and MCP schema explicitly supplies the final pin"
+        },
+        {
+          "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
+          "title": "qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references"
+        }
+      ]
+    }
+  ],
+  "operationalLimits": [
+    "Final independent code review and human BUILD approval remain required.",
+    "No partial deployment or installed-daemon activation.",
+    "Full MCP sweep includes obsolete retired-stream expectations and unrelated process/schema/steering/workflow failures; no passing full-sweep claim. The import-graph failure is reproduced with identical four edges at pre-story commit3622c7780^ (/tmp/t10-preexisting-import-graph.log). The changed code-review golden description was corrected; focused current task-review/MCP suites qualify this change."
+  ]
+}

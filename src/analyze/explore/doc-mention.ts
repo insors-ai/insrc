@@ -22,6 +22,7 @@ import { getDb } from '../../db/client.js';
 import { getLogger } from '../../shared/logger.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import { docsAreaOf } from '../context/scope.js';
 import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
 	DocMentionHit,
@@ -104,12 +105,15 @@ export async function runDocMention(
 	const db = await getDb();
 
 	const limit = params.limit ?? DEFAULT_LIMIT;
+	const area = ctx.scope !== undefined ? docsAreaOf(ctx.scope) : undefined;
 	const report: DocsRetrievalReport = {};
 	const results = await retrieveDocSections({
 		db,
 		report,
 		query:        params.subject,
 		closureRepos: [ctx.repoPath],
+		// The area the request named, applied before ranking; none for a repository or workspace scope.
+		...(area !== undefined ? { area } : {}),
 		maxResults:   limit,
 		minScore:     params.minScore ?? 0,
 		previewChars: params.previewChars ?? DEFAULT_PREVIEW_CHARS,

@@ -35,6 +35,7 @@ import type {
 } from '../../shared/types.js';
 
 import { retrieveDocSections } from '../docs-retrieval.js';
+import { docsAreaOf } from '../context/scope.js';
 import type { DocsArea } from '../docs-retrieval.js';
 import type { DocsRetrievalReport } from '../docs-retrieval.js';
 import type {
@@ -350,6 +351,8 @@ export async function runDocConstraintEnumerate(
 		subject:    params.subject,
 		repoPath:   ctx.repoPath,
 		db,
+		// The area the request named, applied before ranking.
+		...(ctx.scope !== undefined && docsAreaOf(ctx.scope) !== undefined ? { area: docsAreaOf(ctx.scope)! } : {}),
 		...(params.maxSources !== undefined ? { maxSources: params.maxSources } : {}),
 		...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 		logContext: 'exploration',

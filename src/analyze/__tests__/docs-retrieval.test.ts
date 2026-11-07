@@ -22,7 +22,7 @@ import { upsertEntities } from '../../db/entities.js';
 import { addRepo } from '../../db/repos.js';
 import type { Entity, RegisteredRepo } from '../../shared/types.js';
 
-import { retrieveDocSections } from '../docs-retrieval.js';
+import { _setVectorPassForTest, retrieveDocSections } from '../docs-retrieval.js';
 
 const REPO = '/repo/alpha';
 const NOW = '2026-07-07T10:00:00.000Z';
@@ -412,4 +412,51 @@ test('previewChars=0 omits preview', async () => {
 		previewChars: 0,
 	});
 	assert.equal(noPreview[0]!.bodyPreview, undefined);
+});
+
+// ---------------------------------------------------------------------------
+// The area narrows the candidates before either pass (Story 65b643840a294422/s1, t11)
+// ---------------------------------------------------------------------------
+
+test('with a stubbed vector search an area passes only candidate ids inside the area, a stronger outside section never competes, and no candidates inside the area performs no embedding', async () => {
+	const inside = makeDoc(`${REPO}/docs/pay/one.md`, 'One', 'Settlement posting for payments.', 'section');
+	const insideToo = makeDoc(`${REPO}/docs/pay/two.md`, 'Two', 'Ledger entries are dated.', 'section');
+	// stronger by every measure: the query's words repeated, in a section outside the area
+	const outside = makeDoc(`${REPO}/docs/billing/b.md`, 'Billing', 'Settlement settlement settlement ledger ledger ledger rules rules.', 'section');
+	await upsertEntities(null, [inside, insideToo, outside]);
+
+	const asked: Array<{ filter: unknown }> = [];
+	let embedded = 0;
+	_setVectorPassForTest({
+		embedQuery: async () => { embedded += 1; return [0.1, 0.2]; },
+		searchEntityVecs: async (_vec, _repos, _limit, filter) => { asked.push({ filter }); return []; },
+	});
+	try {
+		const whole = await retrieveDocSections({ db: await (await import('../../db/client.js')).getDb(), query: 'settlement ledger rules', closureRepos: [REPO] });
+		assert.ok(whole.some(r => r.file.includes('/billing/')), 'without an area the stronger outside section is found');
+		const best = (needle: string): number => Math.max(...whole.filter(r => r.file.includes(needle)).map(r => r.score));
+		assert.ok(best('/billing/') > best('/docs/pay/'), 'the outside section scores above every section of the area');
+
+		const db = await (await import('../../db/client.js')).getDb();
+		const scoped = await retrieveDocSections({ db, query: 'settlement ledger rules', closureRepos: [REPO], area: { directory: `${REPO}/docs/pay` } });
+		assert.ok(scoped.length > 0);
+		assert.ok(scoped.every(r => r.file.startsWith(`${REPO}/docs/pay/`)), `only the area competes: ${scoped.map(r => r.file).join(', ')}`);
+		assert.equal(embedded > 0, true, 'the query was embedded for the area that has candidates');
+		const insideIds = new Set([inside.id, insideToo.id]);
+		const vectorFilter = asked.at(-1)?.filter as { ids?: Iterable<string> } | undefined;
+		if (vectorFilter?.ids !== undefined) assert.ok([...vectorFilter.ids].every(id => insideIds.has(id)), 'the vector search was offered only the area\'s ids');
+
+		const fileArea = await retrieveDocSections({ db, query: 'settlement ledger rules', closureRepos: [REPO], area: { file: `${REPO}/docs/pay/one.md` } });
+		assert.deepEqual([...new Set(fileArea.map(r => r.file))], [`${REPO}/docs/pay/one.md`]);
+
+		// an area with no candidate: nothing is embedded or searched
+		embedded = 0;
+		asked.length = 0;
+		const none = await retrieveDocSections({ db, query: 'settlement ledger rules', closureRepos: [REPO], area: { directory: `${REPO}/docs/none` } });
+		assert.deepEqual(none, []);
+		assert.equal(embedded, 0, 'no embedding when no candidate lies in the area');
+		assert.equal(asked.length, 0, 'no vector search either');
+	} finally {
+		_setVectorPassForTest(undefined);
+	}
 });

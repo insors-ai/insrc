@@ -31,7 +31,7 @@ import { runWithConnectionExecution, ConnectionExecutionError, requireConnection
 import { lookupRepoId } from '../../db/repos.js';
 import { completenessOf, readIndexState } from '../../db/index-state.js';
 import type { RepoCompleteness } from '../../shared/types.js';
-import type { ResolvedScope } from '../context/scope.js';
+import { docsAreaOf, type ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import { getCachedExploration, putCachedExploration } from '../../db/exploration-cache.js';
 import { attachDocRelations } from './doc-relations-attach.js';
@@ -356,10 +356,12 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 		async prepare(exp, ctx) {
 			const params = exp.params as Record<string, unknown>;
 			const topic = typeof params['topic'] === 'string' ? params['topic'] : '';
+			const area = ctx.scope !== undefined ? docsAreaOf(ctx.scope) : undefined;
 			return prepareDocDecisionTrace({
 				topic,
 				repoPath:  ctx.repoPath,
 				db:        await getDb(),
+				...(area !== undefined ? { area } : {}),
 				...(typeof params['maxSources'] === 'number' ? { maxSources: params['maxSources'] as number } : {}),
 				...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 				logContext: 'exploration',
@@ -379,10 +381,12 @@ const NARROW_RUNNERS: Partial<Record<ExplorationType, NarrowRunnerEntry>> = {
 		async prepare(exp, ctx) {
 			const params = exp.params as Record<string, unknown>;
 			const subject = typeof params['subject'] === 'string' ? params['subject'] : '';
+			const area = ctx.scope !== undefined ? docsAreaOf(ctx.scope) : undefined;
 			return prepareDocConstraintEnumerate({
 				subject,
 				repoPath:  ctx.repoPath,
 				db:        await getDb(),
+				...(area !== undefined ? { area } : {}),
 				...(typeof params['maxSources'] === 'number' ? { maxSources: params['maxSources'] as number } : {}),
 				...(ctx.runId !== undefined ? { runId: ctx.runId } : {}),
 				logContext: 'exploration',

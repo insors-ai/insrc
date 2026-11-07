@@ -674,7 +674,7 @@ test("chat shell: an informational line's done does not end a running turn, and 
   assert.deepEqual([prog.className, prompt.textContent], ['progress idle', '\u276f'], "the turn's error ends it");
 });
 
-test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded entries; selecting posts open-chat { chatId }', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }', () => {
   const s = runShell();
   // layout: the active chip precedes the .right (history) span in the chrome
   const chromeAt = s.html.indexOf('class="chrome"');
@@ -682,41 +682,45 @@ test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right hist
   const rightAt = s.html.indexOf('class="right"');
   const histAt = s.html.indexOf('id="insrc-history"');
   assert.ok(chromeAt !== -1 && actAt > chromeAt && actAt < rightAt && histAt > rightAt, 'active chip is left of .right; history stays right-aligned in .right');
-  // drive the select like a browser: options is a real array, appendChild feeds it
-  const act = s.el('insrc-active') as unknown as { options: unknown[] & { remove?: (i: number) => void }; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
-  const opts: unknown[] = [];
-  (act as { options: unknown[] }).options = opts;
-  act.remove = (i: number) => { opts.splice(i, 1); };
-  const origAppend = act.appendChild.bind(act);
-  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
+  const act = s.el('insrc-active');
+  const actMenu = s.el('insrc-actmenu');
+  const rowLabel = (r: BodyStub): string => r.querySelector('.lbl')!.textContent;
+  const rowDot = (r: BodyStub): string => r.querySelector('.sub')!.getAttribute('data-dot')!;
   s.msg({ type: 'active-list', chats: [
     { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 1 },
     { id: 'b', title: 'Chat B', status: 'working', lastActivityAt: 2 },
     { id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 },
   ] });
-  assert.equal(opts.length, 3, 'three entries');
-  assert.match(String((opts[0] as { textContent: string }).textContent), /^● Chat A/, 'dot + title');
-  assert.match(String((opts[1] as { textContent: string }).textContent), /^● Chat B/);
-  assert.match(String((opts[2] as { textContent: string }).textContent), /^● Chat C/);
+  // open the menu (the trigger's click handler renders + opens it)
+  fire(act, 'click');
+  const rows = actMenu.children;
+  assert.equal(rows.length, 3, 'three entries');
+  assert.equal(rowLabel(rows[0]!), 'Chat A', 'label is the title');
+  assert.equal(rows[0]!.querySelector('.sub')!.textContent, '●', 'the status-dot sub carries the ● glyph');
+  assert.equal(rowLabel(rows[1]!), 'Chat B');
+  assert.equal(rowLabel(rows[2]!), 'Chat C');
   // ac1: EACH entry carries its OWN indicator — waiting-input red, working yellow, done green —
-  // and the shell CSS consumes data-dot, so the popup paints every option in its status colour
-  assert.deepEqual((opts as { dataset: Record<string, string> }[]).map((o) => o.dataset.dot), ['red', 'yellow', 'green'], 'per-option data-dot: red/yellow/green by status');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="red"]{color:var(--red);}'), 'CSS consumes data-dot=red');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="yellow"]{color:var(--warn);}'), 'CSS consumes data-dot=yellow');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="green"]{color:var(--pass);}'), 'CSS consumes data-dot=green');
-  // the dot colour rides on the option's dataset in a real browser; here the chip glyph carries it
+  // and the shell CSS consumes data-dot, so the popup paints every row in its status colour
+  assert.deepEqual(rows.map(rowDot), ['red', 'yellow', 'green'], 'per-row data-dot: red/yellow/green by status');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="red"]{color:var(--red);}'), 'CSS consumes data-dot=red');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="yellow"]{color:var(--warn);}'), 'CSS consumes data-dot=yellow');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="green"]{color:var(--pass);}'), 'CSS consumes data-dot=green');
+  // the dot colour rides on the row's dataset; here the chip glyph carries the aggregate status
   const chip = s.el('insrc-actchip') as unknown as { dataset: Record<string, string> };
   assert.equal(chip.dataset.urgent, 'waiting-input', 'chip glyph shows the most urgent status (red)');
+  // activating a row posts the SAME open-chat { chatId } the history dropdown posts
+  const bRow = rows.find((r) => rowLabel(r) === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // a later active-list re-settles the chip; reopening the menu re-renders it (pickChat closed it).
   s.msg({ type: 'active-list', chats: [{ id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 }] });
   assert.equal(chip.dataset.urgent, 'done', 'with only a done chat left, the chip goes green');
-  assert.equal((opts.at(-1) as { dataset: Record<string, string> }).dataset.dot, 'green', 'the re-rendered entry carries data-dot=green');
-  // selecting an entry posts the SAME open-chat { chatId } the history dropdown posts
-  act.value = 'b';
-  fire(act as never, 'change');
-  assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  fire(act, 'click');
+  assert.equal(actMenu.children.length, 1, 'the menu re-renders to the one remaining chat');
+  assert.equal(rowDot(actMenu.children[0]!), 'green', 'the re-rendered row carries data-dot=green');
 });
 
-test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdown selection posts open-chat, the real host receives it, and answers session-restored for that chat', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat', () => {
   const posted: unknown[] = [];
   let onMsg: ((m: unknown) => void) | undefined;
   let html = '';
@@ -734,20 +738,17 @@ test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdo
   const b = store.create('claude' as never);
   store.save(a);
   store.save(b);
-  const act = s.el('insrc-active') as unknown as { options: unknown[]; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
-  const opts: unknown[] = [];
-  act.options = opts as never;
-  act.remove = (i: number) => { opts.splice(i, 1); };
-  const origAppend = act.appendChild.bind(act);
-  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
-  // the host posts the active list; the shell renders it (options wired first, like the browser)
+  const act = s.el('insrc-active');
+  const actMenu = s.el('insrc-actmenu');
+  // the host posts the active list; the shell caches it and renders the menu on open
   s.msg({ type: 'active-list', chats: [
     { id: a.id, title: 'Chat A', status: 'done', lastActivityAt: 1 },
     { id: b.id, title: 'Chat B', status: 'done', lastActivityAt: 2 },
   ] });
-  // select Chat B in the dropdown, like a browser change event
-  act.value = b.id;
-  fire(act as never, 'change');
+  // activate Chat B (open the menu, then invoke its row's click handler, like a browser click)
+  fire(act, 'click');
+  const bRow = actMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
   const last = s.sent.at(-1) as { type: string; chatId: string };
   assert.deepEqual(last, { type: 'open-chat', chatId: b.id }, 'the shell posted open-chat for the selected chat');
   // forward it through the channel to the REAL host (webview -> host)

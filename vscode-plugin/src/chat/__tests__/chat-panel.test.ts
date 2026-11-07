@@ -536,7 +536,7 @@ test('S005 shell: run-config controls (provider·model popup + effort gauge) + h
   assert.match(html, /<div id="insrc-effortpop" class="slider-pop"/, 'has the effort slider popup');
   assert.match(html, /<div id="insrc-catalog" hidden data-catalog="/, 'embeds the model catalog');
   assert.doesNotMatch(html, /<select id="insrc-provider"/, 'the old provider select is gone');
-  assert.match(html, /<select id="insrc-history"/, 'has a history-dropdown');
+  assert.match(html, /<button[^>]*id="insrc-history"[^>]*aria-haspopup="menu"/, 'has a history-dropdown');
   const scripts = html.match(/<script\b/g) ?? [];
   assert.equal(scripts.length, 1, 'still exactly one inline script');
   assert.match(html, /script-src 'nonce-FIXEDNONCE'/, 'strict CSP unchanged');
@@ -1734,15 +1734,14 @@ test('run-config popup bootstrap: catalog parse + button wiring posts new-chat /
   assert.match(html, /started&&f\.id!==s\.provider,pico\(f\.id\)\)\);/, 'each provider row passes its icon');
 });
 
-test('regression: the history dropdown still opens/new-chats, and session-restored still clears + replays', () => {
+test('regression: the history trigger still opens/new-chats, and session-restored still clears + replays', () => {
   const html = fidelityHtml();
-  // Picking a session posts open-chat; picking 'new…' posts new-chat with the provider taken
-  // from the run button's data-provider (the select is gone).
-  const hsAt = html.indexOf("hs.addEventListener('change',function(){");
-  assert.ok(hsAt >= 0, 'history change handler present');
-  const hsHandler = html.slice(hsAt, hsAt + 260);
-  assert.match(hsHandler, /type:'open-chat',chatId:hs\.value/, 'a picked session posts open-chat');
-  assert.match(hsHandler, /type:'new-chat',provider:\(rb\?rb\.getAttribute\('data-provider'\):''\)\|\|''/, "'new…' posts new-chat with the run button's provider");
+  // Picking a persisted session posts open-chat; picking 'new…' posts new-chat with the current
+  // provider (curProv). pickChat/newChatPick are the two message splits.
+  assert.match(html, /function pickChat\(id,trigger\)/, 'pickChat() exists (persisted row activation)');
+  assert.match(html, /type:'open-chat',chatId:id/, 'a picked session posts open-chat');
+  assert.match(html, /function newChatPick\(trigger\)/, "newChatPick() exists (the 'new…' row)");
+  assert.match(html, /type:'new-chat',provider:curProv\|\|''/, "'new…' posts new-chat with the current provider");
   // session-restored still clears, resets keys and replays.
   assert.match(html, /t\.textContent='';reg\.resetKeys\(\);var _rows=m\.transcript\|\|\[\]/, 'session-restored still clears, resets keys and replays the transcript');
   assert.match(html, /_rows\.forEach\(function\(x,i\)/, 'every posted row is replayed');
@@ -2007,12 +2006,14 @@ test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
   assert.doesNotMatch(html, /⌘↵ to send/, "the old '⌘↵ to send' placeholder is gone");
 });
 
-test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider + mode selects live in the footer status bar', () => {
+test('ISSUE-6ae99f6e: the header holds ONLY the chat triggers (active + session); the provider + mode selects live in the footer status bar', () => {
   const html = fidelityHtml();
   const chrome = html.slice(html.indexOf('<div class="chrome">'), html.indexOf('<div id="insrc-term"'));
   const statusbar = html.slice(html.indexOf('<div class="statusbar">'));
-  // Header: ONLY the session dropdown (right-aligned). No provider/mode selects, no duplicate session text.
-  assert.match(chrome, /<select id="insrc-history"/, 'the session dropdown is in the header');
+  // Header: the active-chats + session triggers (buttons), no provider/mode selects, no duplicate session text.
+  assert.match(chrome, /<button[^>]*id="insrc-history"[^>]*aria-haspopup="menu"/, 'the session trigger is in the header');
+  assert.match(chrome, /<button[^>]*id="insrc-active"[^>]*aria-haspopup="menu"/, 'the active-chats trigger is in the header');
+  assert.doesNotMatch(chrome, /<select /, 'no native selects remain in the header');
   assert.doesNotMatch(chrome, /<select id="insrc-provider"/, 'the provider select is NOT in the header');
   assert.doesNotMatch(chrome, /id="insrc-runbtn"|id="insrc-effortbtn"/, 'the run-config controls are NOT in the header');
   assert.doesNotMatch(chrome, /id="insrc-mode(seg)?"/, 'the mode select is NOT in the header');
@@ -2031,22 +2032,26 @@ test('ISSUE-6ae99f6e: the header holds ONLY the session dropdown; the provider +
   assert.doesNotMatch(statusbar, /✓ idle/, 'no ✓ idle marker (the progress bar conveys idle/busy)');
 });
 
-test('E202611031bd72813:S001 t4 UX: both chrome dropdowns paint the provider icon — history options drop the [provider] text for a data-URI icon, the active selection mirrors the current open chat', () => {
+test('E202611031bd72813:S001 t4 UX (now Story 546198e11c24c1e3/s1): both chrome dropdowns render the provider icon — rows carry the real SVG, the empty active trigger reads "no active work"', () => {
   const html = fidelityHtml();
-  // helpers that turn an inline SVG into a data-URI background (img-src data: is CSP-allowed) exist
-  assert.match(html, /function picoUrl\(p\)/, 'picoUrl() builds the data-URI icon background');
-  assert.match(html, /function paintOpt\(o,p\)/, 'paintOpt() paints an <option> icon');
-  assert.match(html, /function paintSel\(sel,p\)/, 'paintSel() paints the closed <select> icon');
-  // history-list: option text is the title only (the '[provider] ' name prefix is REPLACED by the icon)
-  assert.doesNotMatch(html, /'\['\+c\.provider\+'\] '/, 'the old [provider] text prefix is gone from history options');
-  assert.match(html, /o\.textContent=\(c\.title\|\|c\.id\);paintOpt\(o,c\.provider\)/, 'history options: title + provider icon background');
-  assert.match(html, /hs\.value=cur;var cp=curProv;.*paintSel\(hs,cp\)/, 'the closed history select paints the current chat’s icon');
-  // active-list: options keep the status dot and gain the icon; the selection mirrors the open chat
-  assert.match(html, /paintOpt\(o,c\.provider\);if\(o\.dataset\)o\.dataset\.dot=d;/, 'active options: dot + provider icon');
-  assert.match(html, /if\(cur&&inList\(cur\)\)act\.value=cur;/, 'the active dropdown selection shows the CURRENT open chat when it is active');
-  assert.match(html, /paintSel\(act,ap\)/, 'the closed active select paints the selected chat’s provider icon');
-  // run-config tracks the current provider and repaints both closed selects
-  assert.match(html, /curProv=m\.provider\|\|'';.*paintSel\(hs,curProv\);paintSel\(act,curProv\)/, 'run-config repaints both dropdown icons');
+  // The trigger + row render use pico() (the inline SVG map) — no data-URI background helpers remain.
+  assert.doesNotMatch(html, /function picoUrl\(p\)/, 'picoUrl() (data-URI background) is gone');
+  assert.doesNotMatch(html, /function paintOpt\(o,p\)/, 'paintOpt() is gone');
+  assert.doesNotMatch(html, /function paintSel\(sel,p\)/, 'paintSel() is gone');
+  assert.ok(html.includes('function chatTrig(e,label)'), 'chatTrig() renders the trigger from the selected entry');
+  assert.ok(html.includes("chatTrig(e,label){return '<span class=\"pico\">'+(e?pico(e.provider):'')"), 'chatTrig() leads with pico(e.provider)');
+  // history-list: entries are cached and both triggers reconcile against cur — no option text prefix.
+  assert.match(html, /else if\(m\.type==='history-list'\)\{histEntries=m\.chats\|\|\[\];reconcile\(\);\}/, 'history-list caches histEntries and reconciles');
+  assert.doesNotMatch(html, /'\['\+c\.provider\+'\] '/, 'the old [provider] text prefix is gone from history rows');
+  // active-list: entries are cached; each row renders the status dot + provider icon.
+  assert.match(html, /else if\(m\.type==='active-list'\)\{actEntries=m\.chats\|\|\[\]/, 'active-list caches actEntries');
+  assert.ok(html.includes("function activeRow(c){var d=mitem(c.id===actSel,c.title||c.id,'●',function(){pickChat(c.id,act);},undefined,false,pico(c.provider))"), 'active rows pass pico(c.provider) + the status dot');
+  assert.ok(html.includes('function historyRow(c){return mitem(c.id===histSel,c.title||c.id,undefined,function(){pickChat(c.id,hs);},undefined,false,pico(c.provider));}'), 'history rows pass pico(c.provider)');
+  // the empty active trigger renders the 'no active work' placeholder (not 'active…').
+  assert.ok(html.includes('no active work'), "the active trigger's empty placeholder reads 'no active work'");
+  assert.doesNotMatch(html, /active…/, "the old 'active…' placeholder is gone");
+  // run-config no longer repaints the chat triggers.
+  assert.doesNotMatch(html, /paintSel\(hs,curProv\)/, 'run-config no longer repaints the chat triggers');
 });
 
 test('UI: the #insrc-history session dropdown carries a leading history/clock glyph so its purpose reads', () => {
@@ -2055,7 +2060,7 @@ test('UI: the #insrc-history session dropdown carries a leading history/clock gl
   // clear it — so the dropdown is not just a bare down-arrow. Icon-only selects (provider/mode) keep the plain arrow.
   // Story E202610137fefc3fc:S001: the chip is a wrapper around the select, and the glyph is a mask
   // in the chip's ::before, filled with the current text colour so it follows the theme.
-  assert.match(html, /<span class="histchip"><select id="insrc-history" class="segsel [^"]*" aria-label="session"><option value="">new…<\/option><\/select><\/span>/, 'one wrapper holds the select');
+  assert.match(html, /<span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span>/, 'one wrapper holds the trigger button');
   const rule = html.slice(html.indexOf('.histchip{'));
   const decl = rule.slice(0, rule.indexOf('}') + 1);
   const icon = /\.histchip::before\{([^}]*)\}/.exec(html);
@@ -4267,7 +4272,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
   assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
-  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);paintSel\(hs,curProv\);paintSel\(act,curProv\);\}/, 'the run-config echo branch settles the buttons from the session and repaints both dropdown icons');
+  assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
 });
 
 test("the shell is still one nonce'd inline script, with no direct scrollTop write outside the pager, no innerHTML outside the guarded markdown path and no remote origin", () => {

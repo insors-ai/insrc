@@ -46,6 +46,7 @@ test('final blobs, paths and spans reach prompts, native grants and strict resul
   }
   assert.ok(codeTaskCommands(p).includes(`git show ${f.revision}:source.js`));
   const schema = assignmentResultSchema(assignment); assert.ok(Value.Check(schema, f.result));
+  for (const location of ['source.js:3', 'source.js', 'source.js:4-5']) assert.equal(Value.Check(schema, { ...f.result, findings: [{ ...f.result.findings[0]!, location }] }), false);
   const refs = await taskReferences(f.deps.sources, p, assignment);
   assert.equal((await assessTaskResult(f.deps.sources, assignment, f.result, refs)).status, 'changes_requested');
   await assert.rejects(assessTaskResult(f.deps.sources, assignment, { ...f.result, findings: [{ ...f.result.findings[0]!, location: 'source.js:3' }] }, refs), /outside the submitted/);
@@ -54,6 +55,50 @@ test('final blobs, paths and spans reach prompts, native grants and strict resul
   await assert.rejects(assessTaskResult(f.deps.sources, none, f.result, refs), /outside the submitted/);
   assert.equal((await assessTaskResult(f.deps.sources, assignment, { ...f.result, status: 'passed', findings: [], testCoverage: { ...f.result.testCoverage, assessment: 'unverified' } }, refs)).status, 'incomplete');
  } finally { f.cleanup(); }
+});
+
+test('native response schema bounds decimal intervals, gaps and deletion anchors', async () => {
+ const f = await shiftedFixture(); try {
+  const p = await prepareReviewPacket(f.packet, f.deps.sources), assignment = directAssignments(p)![0]!;
+  const current = p.changes[1]!; assert.ok('origin' in current);
+  const schema = assignmentResultSchema({ ...assignment, changes: [{ ...current, segments: [{ after: [12, 123] }, { after: [130, 132] }, { deletionAt: 0 }] }] });
+  const check = (location: string) => Value.Check(schema, { ...f.result, findings: [{ ...f.result.findings[0]!, location }] });
+  for (const line of [1, 12, 19, 20, 99, 100, 123, 130, 132]) assert.equal(check(`source.js:${line}`), true);
+  for (const location of ['source.js:0', 'source.js:01', 'source.js:11', 'source.js:124', 'source.js:129', 'source.js:133', 'source.js:12-130', 'source.js']) assert.equal(check(location), false, location);
+  assert.equal(check('source.js:12-123'), true); assert.equal(check('source.js:1-1'), true);
+ } finally { f.cleanup(); }
+});
+
+test('both reviewer routes reject invalid locations and preserve mandatory coverage omissions', async () => {
+ for (const party of ['daemon', 'controller'] as const) for (const variant of ['historical', 'unassigned', 'none', 'coverage'] as const) {
+  const f = await shiftedFixture();
+  try {
+   let result = f.result;
+   if (variant === 'none') {
+    f.git('mv', 'source.js', 'renamed.js'); f.put('renamed.js', 'UNSELECTED_CONTEXT\nstable-a\nstable-b\nrenamed-final-defect\n'); f.git('add', '.'); f.git('commit', '-qm', 'selected rename for none-scope finding'); const revision = f.git('rev-parse', 'HEAD');
+    f.packet.reviewRevision = revision; f.packet.reviewSet.push({ commit: revision, parent: f.revision, files: [{ path: 'renamed.js', previousPath: 'source.js', segments: [{ after: [4, 4] }] }] });
+    result = { ...result, findings: [{ ...result.findings[0]!, location: 'renamed.js:4', evidenceReferences: [`${revision}:renamed.js`] }], inspectedReferences: [`${revision}:renamed.js`] };
+   }
+   const bad = variant === 'coverage' ? { ...result, status: 'passed', findings: [], testCoverage: { ...result.testCoverage, assessment: 'unverified' } }
+    : { ...result, findings: [{ ...result.findings[0]!, location: variant === 'historical' ? 'source.js:3' : variant === 'unassigned' ? 'unassigned.js:4' : 'source.js:4' }] };
+   const coordinator = new TaskReviewCoordinator({ sources: f.deps.sources, provider: () => provider(async () => bad) });
+   if (party === 'daemon') {
+    const ack = await coordinator.start(f.repo, 'route-negative', 1, f.packet); await coordinator.settled(f.repo, 'route-negative');
+    const task = f.read(ack.path).attempts[0]!['review-response'].tasks[0]!;
+    assert.equal(task.status, variant === 'coverage' ? 'incomplete' : 'failed'); assert.deepEqual(task.findings, []);
+    if (variant === 'coverage') assert.ok(task.limitations.length > 0);
+   } else {
+    const owner = { id: 'controller', signal: new AbortController().signal }, frame = await coordinator.startController(f.repo, 'route-negative', 1, f.packet, owner);
+    const envelope = { taskId: frame.taskId, executionId: frame.executionId, sequence: frame.nextSequence };
+    if (variant === 'coverage') assert.equal((await coordinator.controllerResult(f.repo, 'route-negative', 1, bad, owner, envelope)).status, 'incomplete');
+    else {
+     await assert.rejects(coordinator.controllerResult(f.repo, 'route-negative', 1, bad, owner, envelope), /outside the submitted/);
+     assert.equal(f.read(frame.path).attempts[0]!['review-response'].tasks.length, 0);
+     assert.equal((await coordinator.controllerResult(f.repo, 'route-negative', 1, result, owner, envelope)).status, 'changes_requested');
+    }
+   }
+  } finally { f.cleanup(); }
+ }
 });
 test('native and controller routes share final scope and reject historical findings without suppressing final defects', async () => {
  for (const party of ['daemon', 'controller'] as const) {

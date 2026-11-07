@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 24,
-        "contentHash": "c6c4632784dfe70650c691d14c397b33567d717398134c530aad4cea5d6b2d7e",
-        "at": "2026-11-07T12:31:09.927Z",
+        "number": 25,
+        "contentHash": "74a05ca59263fcb7a70af8a8a55d700cc588f0ea0ed863afea0d658d31c07183",
+        "at": "2026-11-07T12:35:13.772Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T12:31:09.828Z",
+    "updatedAt": "2026-11-07T12:35:13.672Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 24
+    "revision": 25
   },
   "body": {
     "tasks": [
@@ -1226,9 +1226,9 @@
       },
       {
         "taskId": "t10",
-        "commit": "0b6204998",
-        "ranAt": "2026-11-07T12:31:09.828Z",
-        "testsPassed": false,
+        "commit": "02ca57144",
+        "ranAt": "2026-11-07T12:35:13.672Z",
+        "testsPassed": true,
         "tests": [
           {
             "name": "Both routes review immutable later-fixed code without stale blocker while retaining a demonstrated final provenance/requiredReferences coverage defect; synthetic reviewer responses assert received final code and test evidence.",
@@ -1307,7 +1307,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/t10-final-smoke.log; command HOME=<isolated /tmp HOME> PATH=<Node22 bin> node scripts/smoke-task-review.mjs. Output compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, explicitRestartResume:true, priorAttemptsPreserved:true, finalMultiCommitPin:eac01bf5f4d22c20fd8d50a1c411c09a360dee1b, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Synthetic native responses assert received final source; installed daemon untouched."
+              "evidence": "/tmp/599-round1-smoke-final.log; current committed runtime compiled by /tmp/599-round1-build-final.log. Isolated HOME, Node22, scripts/smoke-task-review.mjs. compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, nativeCalls:12, explicitRestartResume:true, priorAttemptsPreserved:true, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Installed daemon untouched."
             }
           },
           {
@@ -1328,7 +1328,7 @@
               {
                 "file": "src/mcp/__tests__/forward-step.test.ts",
                 "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
-                "result": "fail"
+                "result": "pass"
               }
             ],
             "files": []
@@ -1337,9 +1337,9 @@
         "files": [
           {
             "file": "src/mcp/__tests__/forward-step.test.ts",
-            "exitCode": 1,
+            "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2451,
+            "durationMs": 2204,
             "titles": [
               {
                 "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
@@ -1355,7 +1355,7 @@
               },
               {
                 "title": "MCP tool surface: the thirteen tools keep their names, descriptions and input schemas",
-                "result": "fail"
+                "result": "pass"
               },
               {
                 "title": "the MCP tool surface golden fixture lists insrc_present and the tool count is thirteen",
@@ -1372,7 +1372,7 @@
             "file": "src/mcp/__tests__/task-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2616,
+            "durationMs": 2484,
             "titles": [
               {
                 "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
@@ -1397,7 +1397,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3967,
+            "durationMs": 3648,
             "titles": [
               {
                 "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
@@ -1422,7 +1422,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 18281,
+            "durationMs": 18046,
             "titles": [
               {
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
@@ -1463,7 +1463,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4726,
+            "durationMs": 4792,
             "titles": [
               {
                 "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
@@ -1504,7 +1504,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2761,
+            "durationMs": 2775,
             "titles": [
               {
                 "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
@@ -1533,7 +1533,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2669,
+            "durationMs": 2855,
             "titles": [
               {
                 "title": "historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims",
@@ -1550,7 +1550,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3258,
+            "durationMs": 3337,
             "titles": [
               {
                 "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback",
@@ -1571,8 +1571,7 @@
             ],
             "otherFailures": []
           }
-        ],
-        "note": "named test cases that did not pass: fail: 'MCP tool surface: the thirteen tools keep their names, descriptions and input schemas' in src/mcp/__tests__/forward-step.test.ts"
+        ]
       }
     ]
   },

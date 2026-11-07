@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 83 pass, 1 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 84 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -346,9 +346,7 @@ Run at 2026-11-07T08:39:55.471Z on commit `1a761053e`. Tests check: **passed**. 
 
 ## t10
 
-Run at 2026-11-07T12:31:09.828Z on commit `0b6204998`. Tests check: **failed**. 11 pass, 1 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
-
-named test cases that did not pass: fail: 'MCP tool surface: the thirteen tools keep their names, descriptions and input schemas' in src/mcp/__tests__/forward-step.test.ts
+Run at 2026-11-07T12:35:13.672Z on commit `02ca57144`. Tests check: **passed**. 12 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: Both routes review immutable later-fixed code without stale blocker while retaining a demonstrated final provenance/requiredReferences coverage defect; synthetic reviewer responses assert received final code and test evidence.**
 
@@ -376,7 +374,7 @@ named test cases that did not pass: fail: 'MCP tool surface: the thirteen tools 
 
 **smoke: Disposable compiled MCP/IPC smoke pins final multi-commit scope, excludes unrelated HEAD/worktree changes and publishes truthful final results.**
 
-Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/t10-final-smoke.log; command HOME=<isolated /tmp HOME> PATH=<Node22 bin> node scripts/smoke-task-review.mjs. Output compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, explicitRestartResume:true, priorAttemptsPreserved:true, finalMultiCommitPin:eac01bf5f4d22c20fd8d50a1c411c09a360dee1b, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Synthetic native responses assert received final source; installed daemon untouched.
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/599-round1-smoke-final.log; current committed runtime compiled by /tmp/599-round1-build-final.log. Isolated HOME, Node22, scripts/smoke-task-review.mjs. compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, nativeCalls:12, explicitRestartResume:true, priorAttemptsPreserved:true, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Installed daemon untouched.
 
 **integration: Scoped task-review/MCP tests, production build and complete 35-subject ac1-ac5 traceability qualify coordinated rollout; no partial deployment or direct cloud/retired engine introduced.**
 
@@ -384,17 +382,17 @@ Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/t10-final
 | :--- | :--- | :--- |
 | pass | qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` |
 | pass | MCP transition rejects missing final pins before dispatch on both independent reviewer routes | `src/mcp/__tests__/task-review.test.ts` |
-| fail | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
+| pass | MCP tool surface: the thirteen tools keep their names, descriptions and input schemas | `src/mcp/__tests__/forward-step.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/forward-step.test.ts` | 1 | 6 | 2.5 s |  |
-| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.6 s |  |
-| `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 4 s |  |
-| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 8 | 18.3 s |  |
-| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 8 | 4.7 s |  |
+| `src/mcp/__tests__/forward-step.test.ts` | 0 | 6 | 2.2 s |  |
+| `src/mcp/__tests__/task-review.test.ts` | 0 | 4 | 2.5 s |  |
+| `src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts` | 0 | 4 | 3.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 8 | 18 s |  |
+| `src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts` | 0 | 8 | 4.8 s |  |
 | `src/workflow/code-review/task-review/__tests__/cleanup.test.ts` | 0 | 5 | 2.8 s |  |
-| `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` | 0 | 2 | 2.7 s |  |
+| `src/workflow/code-review/task-review/__tests__/historical-regression.test.ts` | 0 | 2 | 2.9 s |  |
 | `src/workflow/code-review/task-review/__tests__/qualification.test.ts` | 0 | 4 | 3.3 s |  |

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 51,
-        "contentHash": "4d56e7e280fdeed594073e525ba38e77b776262dd9e548faf5cfe05632e6fac0",
-        "at": "2026-11-07T11:19:33.383Z",
+        "number": 52,
+        "contentHash": "4897aa140008262f173ec91a02ab4c16df4d275edb886fda68411110108eb2f9",
+        "at": "2026-11-07T13:03:53.646Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "65b643840a294422",
     "storyId": "s1",
-    "revision": 51,
-    "updatedAt": "2026-11-07T11:18:41.020Z",
+    "revision": 52,
+    "updatedAt": "2026-11-07T13:02:45.751Z",
     "authoredBy": "controller",
     "standalone": true,
     "epicSlug": "take-structured-analyze-request-not-prompt"
@@ -123,773 +123,794 @@
           "file": "src/daemon/__tests__/analyze-rpc-intent.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/analyze-rpc.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/shared/analyze-types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/request.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/request.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/scope-area.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/shared/task-scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/scope-validate.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/invariants.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/driver.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-oneshot-handler.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/start-request.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-oneshot.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/narrow.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/plan.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/start.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/scope.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/run-shaper-wiring.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/orchestrator/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-oneshot-request.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/pipeline-outcome.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/prepare-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/plan-module-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/oneshot-module-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/resolve-repo-indexed.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/freeform-probe-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/concept-resolve-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/concept-resolve.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/request-end-to-end.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/prompts/analyze/decompose.system.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/prompts/analyze/synthesize.code.system.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/synthesizer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/capability-reuse-anchor.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/capability-reuse-check.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/__tests__/docs-retrieval.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/doc-area-forwarding.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-constraint-enumerate.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-decision-trace.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/doc-mention.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/executor.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/runtimes/docs/__tests__/docs-area-retrieval.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/cache-area-isolation.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/exploration-cache-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/removed-flags.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/exploration-cache-key.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/db/exploration-cache.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/completeness.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/schema.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/answer-report-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/answer-report.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-answer-prompt-missing.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-bundle-report.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/answer-turn.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/analyze-step/phases/bundle.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/analyze-step-failed-lookup.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/cache-key-scope.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/context-prompts.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/decomposer.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/daemon-status-features.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/status-store-failure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/status.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/shared/types.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/forward-step-features.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/forward-step.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/analyze-request-forward.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/fixtures/tool-surface.golden.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/server.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/__tests__/forward-step.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/steering-analyze-request.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/__tests__/steering-gated-refresh.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steering-inject.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/mcp/steering-template.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/prompts/steering-block.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/context/__tests__/lookup-measure.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/analyze/explore/__tests__/doc-relations-attach.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "src/daemon/steps/__tests__/step-host.test.ts"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/S001/T19-VERIFICATION.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-65b643840a294422.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/ISSUE-65b643840a294422.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/LLD-65b643840a294422-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-65b643840a294422-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/PLAN-65b643840a294422-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t10.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t11.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t12.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t13.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t14.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t15.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t16.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t17.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t18.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t19.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t2.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t3.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t4.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t5.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t6.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t7.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t8.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASK-65b643840a294422-s1-t9.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-65b643840a294422-s1.json"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": ".insrc/artifacts/TASKS-65b643840a294422-s1.log.jsonl"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/ISSUE.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
       },
       {
         "target": {
           "file": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/S001/PLAN.md"
         },
         "author": "insrc-build",
-        "timestamp": "2026-11-07T11:18:41.020Z"
+        "timestamp": "2026-11-07T13:02:45.751Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-65b643840a294422-s1.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T13:02:45.751Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/CR-65b643840a294422-s1.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T13:02:45.751Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/take-structured-analyze-request-not-prompt-E2026110665b64384/S001/CR.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T13:02:45.751Z"
       }
     ],
-    "commit": "3308ff579"
+    "commit": "366ac7b1c"
   },
   "citations": []
 }

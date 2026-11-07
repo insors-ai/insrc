@@ -389,7 +389,7 @@ Run at 2026-11-07T06:08:46.607Z on commit `e259494d2`. Tests check: **passed**. 
 
 ## t18
 
-Run at 2026-11-07T06:13:36.946Z on commit `c41518979`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T13:02:45.751Z on commit `366ac7b1c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: steering-analyze-request.test.ts: the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule**
 
@@ -407,7 +407,7 @@ Run at 2026-11-07T06:13:36.946Z on commit `c41518979`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/daemon/__tests__/steering-analyze-request.test.ts` | 0 | 1 | 0.9 s |  |
+| `src/daemon/__tests__/steering-analyze-request.test.ts` | 0 | 1 | 0.8 s |  |
 | `src/daemon/__tests__/steering-gated-refresh.test.ts` | 0 | 1 | 0.6 s |  |
 
 ## t19

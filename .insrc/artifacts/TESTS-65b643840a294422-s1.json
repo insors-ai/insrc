@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 51,
-        "contentHash": "905a4c6defb518a5e824ac2bb23a615d72640578ec6f85ff007d93d42d1426e7",
-        "at": "2026-11-07T11:18:41.072Z",
+        "number": 52,
+        "contentHash": "076d2978c623db7788c97a62eff5c9f73e4bec2731ef575ddaf01fdaf9e3370d",
+        "at": "2026-11-07T13:02:45.952Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "65b643840a294422",
     "storyId": "s1",
     "createdAt": "2026-11-06T19:48:13.986Z",
-    "updatedAt": "2026-11-07T11:18:41.020Z",
+    "updatedAt": "2026-11-07T13:02:45.751Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-06T14:30:38.353Z",
     "epicSlug": "take-structured-analyze-request-not-prompt",
-    "revision": 51
+    "revision": 52
   },
   "body": {
     "tasks": [
@@ -1741,8 +1741,8 @@
       },
       {
         "taskId": "t18",
-        "commit": "c41518979",
-        "ranAt": "2026-11-07T06:13:36.946Z",
+        "commit": "366ac7b1c",
+        "ranAt": "2026-11-07T13:02:45.751Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1777,7 +1777,7 @@
             "file": "src/daemon/__tests__/steering-analyze-request.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 896,
+            "durationMs": 801,
             "titles": [
               {
                 "title": "the injected skeleton from steering-block.md, the template and both tool descriptions tell agents to send the request object and keep the decision rule",
@@ -1790,7 +1790,7 @@
             "file": "src/daemon/__tests__/steering-gated-refresh.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 627,
+            "durationMs": 563,
             "titles": [
               {
                 "title": "the boot refresh does not publish the request guidance when the capability is absent and publishes it when present",

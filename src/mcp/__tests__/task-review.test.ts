@@ -81,3 +81,16 @@ test('normal controller connections are isolated and session close requires expl
   await h.client.close();await eventually(()=>f.read(owned.path).attempts[0]!.header.interrupted===true);
  }finally{manager.close();await h.close();f.cleanup();}
 });
+
+test('MCP transition rejects missing final pins before dispatch on both independent reviewer routes',async()=>{
+ for(const party of ['daemon','controller']as const){
+  const f=await fixture(true);let calls=0;f.build.meta.authoredBy=party==='controller'?'daemon':'controller';f.put(`.insrc/artifacts/BUILD-${hash}-s1.json`,f.build);
+  const h=await host(f,()=>{calls++;return provider(async()=>f.result);});
+  try{
+   const packet=structuredClone(f.packet);delete packet.reviewRevision;
+   const response=await h.client.callTool({name:'insrc_code_review_step',arguments:{phase:'start',repo:f.repo,epicHash:hash,reviewId:'missing-pin',attempt:1,packet}}).catch(error=>({isError:true,content:[{type:'text',text:String(error)}]}));
+   assert.equal(response.isError,true);assert.match(JSON.stringify(response),/reviewRevision/);assert.equal(calls,0);
+   const {existsSync}=await import('node:fs');assert.equal(existsSync(join(f.repo,'.insrc/tmp/code-review/missing-pin.json')),false);
+  }finally{await h.close();f.cleanup();}
+ }
+});

@@ -436,8 +436,13 @@ a checkpoint result alone is not an approval record.
 ## code-review — committed task review
 
 Use `insrc_schema({ tool: 'insrc_code_review_step', phase })` for exact fields.
-Create the commit packet FIRST. Selected after-version segments (or deletion anchors)
-are the finding scope; commits are lookup pointers. Pin exactly the documents the
+Create the commit packet FIRST. Every new packet requires `reviewRevision`, the explicit
+full Git commit OID of the final reviewed source. All selected origin commits must be
+ancestors of that pin; never infer it from HEAD or document pointers. Select only
+after-version segments (or deletion anchors) in each origin commit. The daemon verifies
+their surviving final spans and selected replacement/deletion witnesses at the pin;
+only that final projection authorizes findings. Original selections remain provenance,
+including superseded entries with no finding scope; commits are lookup pointers. Pin exactly the documents the
 Story's route produced, as committed canonical artifacts: a Story with a Plan pins its
 `lld` and `plan` (and its `story` definition when an epic DEF exists); a Story with only
 an LLD pins that `lld`; a bugfix with only an ISSUE pins that `issue`; a trivial change
@@ -474,6 +479,16 @@ fallback. A story with no valid independent whole-story review is withheld.
 6. Present BUILD and CR and ask for human approval; never auto-approve. Story BUILD
    approval cleanup is handled by the host when available; retained/errors mean retry
    cleanup explicitly without re-review. Design review uses its separate initial-attempt protocol; checkpoint feedback does not yet publish approval history.
+
+For rollout, finish qualification before deployment. Drain or explicitly interrupt active
+reviews, retain checkpoints, and coordinate the daemon restart with updated submitters
+and an MCP reconnect so discovery advertises the required pin. Restart does not promise
+in-flight completion; recover explicitly. There is no activation flag or automatic
+deployment. Completed historical no-pin records remain immutable/read-only; interrupted
+unpinned work requires a new pinned attempt. Once pinned records exist, retain an upgraded
+reader; never blind-downgrade or rewrite history. A state-preserving operator rollback
+must retain compatible readers. `review.maxJsonBytes` controls JSON capacity (default4MiB);
+every new attempt requalifies history, and raising the setting can admit a fitting attempt.
 
 All phases require repo (or resolved project), epicHash, reviewId, attempt.
 The schemas advertise reused bounded packet/results; host validates semantic scope,

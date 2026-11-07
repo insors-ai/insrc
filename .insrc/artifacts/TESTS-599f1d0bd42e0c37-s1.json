@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 16,
-        "contentHash": "b2d0cb2b9d081c7345297ccbc559f0039e435438625fe10ce9c3ef574df7e60b",
-        "at": "2026-11-07T08:28:43.942Z",
+        "number": 17,
+        "contentHash": "b526520530d62098884bec99e7b990684bc6cb89398868a7dec3c13c7548975e",
+        "at": "2026-11-07T08:34:18.649Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T08:28:43.788Z",
+    "updatedAt": "2026-11-07T08:34:18.498Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 16
+    "revision": 17
   },
   "body": {
     "tasks": [
@@ -885,12 +885,12 @@
       },
       {
         "taskId": "t8",
-        "commit": "e9117e1ff",
-        "ranAt": "2026-11-07T08:28:43.788Z",
+        "commit": "fa70c3e60",
+        "ranAt": "2026-11-07T08:34:18.498Z",
         "testsPassed": true,
         "tests": [
           {
-            "name": "Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.",
+            "name": "Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves against configurable review.maxJsonBytes (default4MiB), including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.",
             "level": "integration",
             "source": "mapping",
             "cases": [
@@ -936,7 +936,7 @@
             "files": []
           },
           {
-            "name": "Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; capacity-boundary attribution failure publishes all outcomes and permits next attempt; oversized work dispatches/saves nothing.",
+            "name": "Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; boundary failures publish all outcomes, next attempts requalify and can be admitted after raising configured capacity without rewriting history; oversized work dispatches/saves nothing.",
             "level": "integration",
             "source": "mapping",
             "cases": [
@@ -964,7 +964,7 @@
             "file": "src/config/__tests__/review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1481,
+            "durationMs": 1405,
             "titles": [
               {
                 "title": "review JSON limit is configurable discoverable live and rejects invalid values",
@@ -981,7 +981,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5879,
+            "durationMs": 5429,
             "titles": [
               {
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",

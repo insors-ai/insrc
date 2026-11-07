@@ -1,7 +1,11 @@
 # Task review execution and inactivity
 
 The explicit `codeReview.task.*` engine reviews the submitted committed change
-set. Commits are lookup pointers, not an alternative source of review scope.
+set at an explicit final `reviewRevision` (full Git commit OID). Commits are
+lookup pointers, not an alternative source of review scope. Origin selections are
+validated in their committed versions, then projected to the pinned final source.
+Findings use only surviving final spans/deletion anchors and submitted replacement
+witnesses. Superseded selections remain provenance and authorize no findings.
 The retired design and dimension/chunk engines remain unavailable with
 `PENDING REVIEW RE-IMPLEMENTATION`; there is no fallback or activation flag.
 Normal MCP entrypoint integration belongs to the review epic's S3.
@@ -327,3 +331,34 @@ Deployment: push the reviewed/approved implementation, update and restart the
 daemon, and restart/reconnect the MCP server so the advertised schema is refreshed.
 Then explicitly repeat approval of the already-approved S2 BUILD to retry its
 cleanup; inspect retained/errors rather than running another S2 model review.
+
+
+## Final-revision packet transition
+
+Every fresh producer, including `scripts/smoke-task-review.mjs`, supplies
+`packet.reviewRevision` explicitly before `start`. The MCP schema advertises it
+as required; a missing pin is an actionable `reviewRevision` validation error.
+All origin commits must be ancestors of the pin. After-block selections remain
+the only source of finding scope; a commit packet never means a generic diff
+against HEAD. Documents still follow Epic/standalone/ISSUE route requirements.
+Before-version blocks and caller-supplied final code text are rejected.
+
+After offline qualification, the operator must **drain or explicitly interrupt**
+active reviews, preserve checkpoints and coordinate the updated daemon restart,
+submitter update and MCP reconnect. There is no activation flag, automatic
+deployment or promise of in-flight completion across restart. Explicitly resume
+compatible pinned attempts. Interrupted unpinned work requires a new pinned
+attempt; completed historical no-pin records remain immutable and read-only.
+Once pinned records exist, retain an upgraded reader. Do not blind-downgrade or
+rewrite stored history; any operator rollback must preserve state and compatible
+readers. The storage setting `review.maxJsonBytes` defaults to4194304 bytes and is
+read live. Every next attempt requalifies retained history; raise the setting to
+admit a larger fitting history without discarding earlier attempts.
+
+This change does not implement the adjacent native diagnostics
+`ISSUE-2a3c21b73b79ef9c`, rejected-result repair `ISSUE-81e68ebf54745c75`, or coverage
+classification `ISSUE-860d6e82ab04d314` work. Build/merge order is final-scope
+reconciliation first, then native diagnostics, rejected-result repair, and coverage
+classification. Rebase/merge each later change onto its reviewed predecessors and
+rerun shared-module checks before reviewing it. The existing activity and retry
+policies, coverage meaning and optional-execution semantics stay with their owners.

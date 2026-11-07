@@ -273,9 +273,9 @@ Run at 2026-11-07T06:47:53.207Z on commit `b7b0e4a5e`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-07T08:28:43.788Z on commit `e9117e1ff`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-07T08:34:18.498Z on commit `fa70c3e60`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
-**integration: Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.**
+**integration: Actual pretty checkpoint and merged CR serializers qualify failed/incomplete terminal reserves against configurable review.maxJsonBytes (default4MiB), including all tasks, prior history, mapping/decisions, diagnostics and completion metadata before save/ACK/provider.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
@@ -291,7 +291,7 @@ Run at 2026-11-07T08:28:43.788Z on commit `e9117e1ff`. Tests check: **passed**. 
 | pass | review JSON limit is configurable discoverable live and rejects invalid values | `src/config/__tests__/review.test.ts` |
 | pass | configured review JSON limit reaches decoders checkpoint writers readers projection and CR store | `src/config/__tests__/review.test.ts` |
 
-**integration: Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; capacity-boundary attribution failure publishes all outcomes and permits next attempt; oversized work dispatches/saves nothing.**
+**integration: Both routes preserve terminal reserve through accepted mapping and later results/diagnostics; boundary failures publish all outcomes, next attempts requalify and can be admitted after raising configured capacity without rewriting history; oversized work dispatches/saves nothing.**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
@@ -303,5 +303,5 @@ Run at 2026-11-07T08:28:43.788Z on commit `e9117e1ff`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/config/__tests__/review.test.ts` | 0 | 2 | 1.5 s |  |
-| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.9 s |  |
+| `src/config/__tests__/review.test.ts` | 0 | 2 | 1.4 s |  |
+| `src/workflow/code-review/task-review/__tests__/capacity.test.ts` | 0 | 7 | 5.4 s |  |

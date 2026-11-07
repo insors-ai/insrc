@@ -35,7 +35,7 @@ export const StoredPacketSchema = object(cloneFields(storedPacketFields));
 const submissionFields = cloneFields(storedPacketFields);
 Reflect.deleteProperty(submissionFields.reviewSet.items.properties.files.items.properties.segments.items.properties, 'before');
 // Object construction computes required from the NEW non-optional field.
-export const PacketSchema = object({ ...submissionFields, reviewRevision: CloneType(oid) });
+export const PacketSchema = object({ ...submissionFields, reviewRevision: CloneType(oid,{description:'Required explicit full Git commit OID for the final reviewed source revision. All selected origin commits must be its ancestors. Never infer HEAD. Original commit selections remain provenance; only their verified final projections authorize findings.'}) });
 export const TaskResultSchema = object({ taskId: text,
  status: Type.Union((['passed', 'changes_requested', 'incomplete', 'failed'] as const).map(s => Type.Literal(s))), summary: text,
  findings: Type.Array(object({ severity: Type.Union((['HIGH', 'MED', 'LOW'] as const).map(s => Type.Literal(s))), location: text,

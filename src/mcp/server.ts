@@ -675,7 +675,7 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 	server.server.onclose = () => { reviews.close(); priorClose?.(); };
 	registerAndRecord('insrc_code_review_step', {
 	 title: 'Review committed task changes',
-	 description: 'Task-oriented code review by the party that did not write the code. Controller-authored code is reviewed by the daemon; daemon-authored code is reviewed by the live controller. No substitute self-review. Create a committed packet before start. Start acknowledges in the background; poll progress/checkpoint, explicitly resume interrupted attempts. Controller reviewers return scope/activity/result on the live owner connection. No HEAD-derived scope, auto retries or retired engine.',
+	 description: 'Task-oriented code review by the party that did not write the code. Controller-authored code is reviewed by the daemon; daemon-authored code is reviewed by the live controller. No substitute self-review. Create a committed packet before start, with an explicit full-OID reviewRevision pin for final source; selected after-blocks/deletion anchors alone define scope and commits are provenance pointers. Start acknowledges in the background; poll progress/checkpoint, explicitly resume interrupted attempts. Controller reviewers return scope/activity/result on the live owner connection. No HEAD-derived scope, auto retries or retired engine.',
 	 inputSchema: CODE_REVIEW_INPUT,
 	}, async (args, extra) => reviews.call(args, detectClient(server.server.getClientVersion()?.name), extra.signal));
 

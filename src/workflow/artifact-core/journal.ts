@@ -20,10 +20,10 @@ import { writeAtomic } from '../storage.js';
 import type { ChangeLogEntry } from './types.js';
 import { checkSidecarEntrySize, isDesignHistoryRecord, sidecarOuterLimit, designHistoryLimit, MAX_DESIGN_HISTORY_BYTES } from './sidecar.js';
 
-function journalBytes(id: string, op: StagedOperation): string {
+export function journalBytes(id: string, op: StagedOperation, designLimit: number = designHistoryLimit()): string {
  checkSidecarEntrySize({artifactId:id,entry:op.entry});
  const raw = JSON.stringify(op);
- const limit = isDesignHistoryRecord({artifactId:id,entry:op.entry}) ? designHistoryLimit() : MAX_DESIGN_HISTORY_BYTES * 2;
+ const limit = isDesignHistoryRecord({artifactId:id,entry:op.entry}) ? Math.min(designLimit,MAX_DESIGN_HISTORY_BYTES) : MAX_DESIGN_HISTORY_BYTES * 2;
  if (Buffer.byteLength(raw) > limit) throw new Error('Journal envelope exceeds bounded history capacity');
  return raw;
 }

@@ -7,7 +7,7 @@ import { designPreservationDigest, designWorkflowDigest } from '../../review/des
 import { checkSidecarEntrySize, MAX_SIDECAR_ENTRY_BYTES, sidecarOuterLimit, designHistoryLimit } from '../sidecar.js';
 import { FileSidecarStore } from '../sidecar-store.js';
 import { durableKit } from './durable-kit.js';
-import { createFileJournal } from '../journal.js';
+import { createFileJournal, journalBytes } from '../journal.js';
 import type { ChangeLogEntry } from '../types.js';
 import { artifact, alice, H } from './store-kit.js';
 
@@ -24,9 +24,18 @@ test('design history alone receives a bounded UTF-8 allowance in sync and async 
  const config=join(f.repo,'capacity-config.json'); writeFileSync(config,JSON.stringify({review:{maxJsonBytes:1024}}));
  assert.equal(designHistoryLimit(config),1024); assert.throws(()=>checkSidecarEntrySize(record,designHistoryLimit(config)));
  assert.throws(()=>checkSidecarEntrySize({...record,entry:{...record.entry,outcome:{...record.entry.outcome,data:{...data,kind:'unknown'}}}}));
+ assert.throws(()=>checkSidecarEntrySize({...record,entry:{...record.entry,outcome:{...record.entry.outcome,data:{...data,schemaVersion:2}}}}));
+ for (const kind of ['review','feedback']) {
+  const legacy={artifactId:f.id,entry:{kind,text:''}};
+  legacy.entry.text='x'.repeat(MAX_SIDECAR_ENTRY_BYTES-Buffer.byteLength(JSON.stringify(legacy)));
+  assert.equal(Buffer.byteLength(checkSidecarEntrySize(legacy)),MAX_SIDECAR_ENTRY_BYTES);
+  legacy.entry.text+='x'; assert.throws(()=>checkSidecarEntrySize(legacy));
+ }
  const store = new FileSidecarStore(f.repo); await store.appendRecord('log',record);
  assert.deepEqual(store.readRecordsSync('log',f.id),[record.entry]); assert.deepEqual(await store.readRecords('log',f.id),[record.entry]);
  const journal=createFileJournal(f.repo), operation={operationId:record.entry.id,priorRevision:0,priorHeadHash:'absent',bytes:'{}',entry:{...record.entry,actor:alice} as ChangeLogEntry};
+ const journalSize=Buffer.byteLength(JSON.stringify(operation)); assert.equal(Buffer.byteLength(journalBytes(f.id,operation,journalSize)),journalSize);
+ assert.throws(()=>journalBytes(f.id,operation,journalSize-1),/Journal envelope/);
  await journal.stage(f.id,operation); assert.deepEqual(await journal.pending(f.id),operation); await journal.clear(f.id,operation.operationId);
  await assert.rejects(journal.stage(f.id,{...operation,bytes:'\u0000'.repeat(Math.floor(sidecarOuterLimit()/5))}),/Journal envelope/);
  writeFileSync(join(f.repo,store.filesOf(f.id).log),`${sidecarOuterLimit()+1}\t{}\n`);
@@ -51,6 +60,7 @@ test('deterministic history id survives append and replace crashes and rejects c
   assert.equal((await restarted.store.readWithHistory(id)).changeLog.filter(e=>e.id===entryId).length,1);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:current,options:{...options,outcome:{result:'different',summary:'Conflict'}}})),/Conflicting/);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:{...current,description:'Different content'},options})),/Conflicting/);
+  await assert.rejects(restarted.store.updateAndLog(id,alice,current=>{current.payload.body['text']='in-place conflicting content';return {next:current,options};}),/Conflicting/);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:current,options:{...options,addresses:[]}})),/Conflicting/);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:{...current,references:[{entityId:'external-target',type:'url',relation:'related'}]},options})),/Conflicting/);
   const before=readFileSync(join(k.repo,`.insrc/artifacts/${id}.json`),'utf8');

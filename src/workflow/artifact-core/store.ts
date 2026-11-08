@@ -201,7 +201,7 @@ export class ArtifactStore {
 			try { head = await this.read(id); }
 			catch (error) { if (!(error instanceof ArtifactNotFoundError) || !create) throw error; head = create(); }
 			const current = { ...head, changeLog: await this.deps.history.log(id) };
-			const result = await mutate(current);
+			const result = await mutate(structuredClone(current));
 			if (result === undefined) return { wrote: false };
 			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
 			const resolved = { ...options, ...(result.options ?? {}) };
@@ -389,6 +389,7 @@ export class ArtifactStore {
 	private async completePending(id: string, path: string, resolving = false): Promise<void> {
 		const op = await this.deps.journal.pending(id);
 		if (op === undefined) return;
+  if (op.entry.targetHeadHash !== undefined && op.entry.targetHeadHash !== headHashOf(op.bytes)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Deterministic journal head does not match its history binding; journal retained');
 		try {
 			validateLogEntry(op.entry);
 			checkSidecarEntrySize({ artifactId: id, entry: op.entry });

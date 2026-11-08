@@ -197,6 +197,14 @@ test('all four adapters, output cap and Vibe single-pass prefix verified togethe
 	assert.ok(local instanceof ShaperAnswerStepFailedError);
 	assert.equal(local.reason, 'model-failed');
 	assert.equal(seen[0]?.['num_predict'], 8_192, 'a part call is capped at PART_MAX_OUTPUT_TOKENS');
+	// A malformed reply from the local adapter, on every part of a divided call, is the typed invalid-answer failure.
+	const garbled = new OllamaProvider('m', 'http://localhost', 32_768);
+	(garbled as unknown as { client: unknown }).client = {
+		chat: async () => (async function* () { yield { message: { content: '{"summary": tr' }, done: true }; })(),
+	};
+	const malformed = await runAggregator({ ...base, scope: 'L', provider: garbled }).then(() => undefined, (e: unknown) => e);
+	assert.ok(malformed instanceof ShaperAnswerStepFailedError, String(malformed));
+	assert.equal(malformed.reason, 'invalid-answer');
 	await runAggregator({ ...base, scope: 'S', provider: ollama }).then(() => undefined, () => undefined);
 	assert.equal(seen.at(-1)?.['num_predict'], loadAnalyzeConfig().shaper.ollamaNumPredict, 'a single pass keeps the configured output tokens');
 });

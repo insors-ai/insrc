@@ -67,7 +67,7 @@ test('XS or S admitted makes the one call of today; M or larger or not admitted 
 	}
 
 	// M divides although the input fits (trigger 'size'); a small size whose input is not admitted divides too ('fit').
-	const part = (prompt: string): unknown => ({ ...LAYERS, summary: `covers ${[...prompt.matchAll(/code(\d)/g)].map(m => m[1]).join(',')}` });
+	const part = (prompt: string): unknown => ({ ...LAYERS, summary: `covers ${[...prompt.matchAll(/code(\d)/g)].map(m => m[1]).join(',')}`, structure: [...new Set([...prompt.matchAll(/code(\d)/g)].map(m => m[1]))].map(n => `- site ${n}`).join('\n') });
 	const respond = (prompt: string, combine: boolean): unknown => (combine ? { system: 'S', focus: 'F', summary: 'combined' } : part(prompt));
 	const byTable = provider(respond);
 	const m = await synthesizeHandled({ runId: 'r', intent: intent('M'), executed: executed(2, 500), target: 'code', provider: byTable.provider });
@@ -80,7 +80,7 @@ test('XS or S admitted makes the one call of today; M or larger or not admitted 
 	assert.equal(big.handling.trigger, 'fit');
 	assert.ok(big.handling.parts >= 3);
 	assert.equal(big.layers.system, 'S');
-	for (let i = 0; i < 8; i++) assert.ok(big.layers.structure.includes(`code${i}`) || big.layers.summary.includes('combined'), `evidence ${i}`);
+	for (let i = 0; i < 8; i++) assert.ok(big.layers.structure.includes(`- site ${i}`), `evidence ${i} is in the assembled structure`);
 
 	// A part that never answers validly is named, and the others are kept.
 	const failing = provider((prompt, combine) => (combine ? { system: 'S', focus: 'F', summary: 'combined' } : prompt.includes('code3 ') ? new ModelResponseShapeError('reply failed validation', ['bad']) : part(prompt)), 20_000);

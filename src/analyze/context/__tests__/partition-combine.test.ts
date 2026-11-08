@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import { ModelCallFailedError, ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
 import { HandlingBudgetError, ShaperAnswerStepFailedError } from '../driver.js';
@@ -106,9 +107,10 @@ test('serial parts, division up to three times, repair exhaustion never discards
 
 	// A divisible part is divided at most MAX_DIVISIONS times, then recorded as not covered.
 	assert.equal(MAX_DIVISIONS, 3);
-	const huge = block('big', 60_000);
-	const stuck = scripted(() => new ModelResponseShapeError('reply failed validation', ['bad']));
-	const exhausted = await runDivided(args(stuck, [huge, block('small', 100)], 12_000, { maxAttempts: 1 })).then(() => undefined, (e: unknown) => e);
+	// The provider refuses every call as too large, so each half is halved again, by text, until the bound.
+	const huge = block('big', 200_000);
+	const stuck = scripted(() => new InputTooLargeError('too large', 'Prompt is too long', { maxChars: 1_000, actualChars: 2_000 }));
+	const exhausted = await runDivided(args(stuck, [huge, block('small', 100)], 250_000, { maxAttempts: 1 })).then(() => undefined, (e: unknown) => e);
 	assert.ok(exhausted instanceof ShaperAnswerStepFailedError);
 	const depths = (exhausted.partFailures ?? []).map(p => (p.part.match(/(?:\.\d+)+$/)?.[0].split('.').length ?? 1) - 1);
 	assert.equal(Math.max(...depths), MAX_DIVISIONS, 'a part is divided three times and no more');

@@ -15,6 +15,7 @@
 import type { AggregateFinding } from '../runtimes/shared/aggregate-types.js';
 import type { AnalyzeContextBundle } from './types.js';
 import { DEDUPE_KEYS } from './dependency.js';
+import type { RuleFacts } from './dependency.js';
 import type { CoveredPart } from './handling-parts.js';
 import type { SynthesizerPromptKey } from './synthesizer.js';
 
@@ -77,6 +78,7 @@ export function assembleBundle(
 	target: SynthesizerPromptKey,
 	covered: readonly CoveredPart<BundleLayers>[],
 	combine: BundleNarrative | undefined,
+	facts?: RuleFacts | undefined,
 ): BundleLayers {
 	const first = covered[0]?.reply;
 	const narrative: BundleNarrative = combine ?? {
@@ -90,7 +92,20 @@ export function assembleBundle(
 			.join('\n\n');
 		return [layer, dedupeLayer(joined, layer, target)];
 	})) as Record<(typeof EVIDENCE_LAYERS)[number], string>;
-	return { ...narrative, ...layers };
+	// The rule count and the rules themselves are counted from every lookup in code: a reply saw one round of the
+	// reference at most, so what it states of them may be partial.
+	const focus = target === 'adherence' && facts !== undefined && facts.count > 0
+		? `${narrative.focus}\n\n${renderRuleFacts(facts)}`
+		: narrative.focus;
+	return { ...narrative, focus, ...layers };
+}
+
+/** The rule sources and their verbatim text, as counted from the whole reference. */
+export function renderRuleFacts(facts: RuleFacts): string {
+	return [
+		`Rule sources checked (counted from every lookup): ${facts.count}`,
+		...facts.rules.map(r => `- ${r.text} (${r.file}${r.heading.length > 0 ? ` :: ${r.heading}` : ''})`),
+	].join('\n');
 }
 
 /** What an aggregate combine reply holds. */

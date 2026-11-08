@@ -11,10 +11,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
+import { synthesizeHandled } from '../synthesizer.js';
+import type { synthesize } from '../synthesizer.js';
 import { HandlingBudgetError } from '../answer-step-error.js';
 import { dedupeLayer } from '../handling-adapters.js';
-import { runHandled } from '../handling-parts.js';
+import { runDivided, runHandled } from '../handling-parts.js';
 import type { PartAdapter } from '../handling-parts.js';
 import { AGGREGATE_COMBINE_SCHEMA } from '../../runtimes/shared/aggregator.js';
 
@@ -51,4 +54,79 @@ test('distinct files whose names hold the kind separator are both kept; an ident
 	assert.ok(out.includes('- docs/A — Notes.md :: A'));
 	assert.ok(out.includes('- docs/B — Notes.md :: B'), 'the second file is kept');
 	assert.equal(out.includes('- docs/A — Notes.md :: A again'), false, 'the same file is listed once');
+});
+
+const ruleResult = (id: string, texts: string[]): unknown => ({
+	exploration: { id, type: 'doc.constraint.enumerate', purpose: 'p', params: {} },
+	output: {
+		type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: texts.length,
+		constraints: texts.map((t, i) => ({ constraint: t, kind: 'must', sourceEntityId: `ent-${i}`, file: `docs/rule${i}.md`, heading: `Rule ${i}`, rationale: 'why' })),
+		completeness: { complete: true, incomplete: [], failed: [] },
+	},
+	cached: false, elapsedMs: 1,
+});
+
+test('a delivered adherence answer states the rule count and rules from every lookup, whatever the replies said', async () => {
+	const executed = {
+		plan: { answerType: 'adherence-check', synthesisHint: 'h', explorations: [] },
+		results: [
+			ruleResult('e1', ['The daemon owns every handle.', 'Never use console.log.', 'Imports end in .js.']),
+			{ exploration: { id: 'e2', type: 'search.text', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+				output: { type: 'search.text', hits: [{ file: 'src/a.ts', line: 1, snippet: 'console.log(1)' }], completeness: { complete: true, incomplete: [], failed: [] } } },
+		],
+		totalMs: 1, totalCached: 0,
+	} as unknown as Parameters<typeof synthesize>[0]['executed'];
+	const lies = { system: 'sys', focus: 'Checked 1 rule.', summary: 'one rule only', structure: 's', surface: 'u', artefacts: 'a', upstream: '' };
+	const provider = { inputBudgetChars: 76_000, completeStructured: async () => lies } as unknown as LLMProvider;
+	const intent = { target: 'code', scope: 'M', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: '/tmp/r' }, reasoning: 'r' } as const;
+	const out = await synthesizeHandled({ intent, executed, runId: 'r', target: 'adherence', provider });
+	assert.equal(out.handling.method, 'partitioned');
+	assert.match(out.layers.focus, /Rule sources checked \(counted from every lookup\): 3/);
+	for (const rule of ['The daemon owns every handle.', 'Never use console.log.', 'Imports end in .js.']) assert.ok(out.layers.focus.includes(rule), rule);
+});
+
+test('a lone section refused for its size is halved by text and both halves are covered', async () => {
+	const text = 'x'.repeat(10_000);
+	const block = { key: 'big#1', envelope: { tool: 't', input: {} }, text };
+	const refused: number[] = [];
+	const provider = {
+		inputBudgetChars: 76_000,
+		completeStructured: async (messages: LLMMessage[]) => {
+			const size = String(messages[messages.length - 1]?.content).length;
+			refused.push(size);
+			if (size > 7_000) throw new InputTooLargeError('too large', 'Prompt is too long', { maxChars: 7_000, actualChars: size });
+			return { r: 'ok' };
+		},
+	} as unknown as LLMProvider;
+	const adapter = {
+		partSchema: { type: 'object' }, combineSchema: { type: 'object' },
+		renderPart: (part: { id: string; sections: { text: string }[] }) => [{ role: 'user', content: part.sections.map(x => x.text).join('') }],
+		renderCombine: () => [{ role: 'user', content: 'combine' }],
+		summaryOf: () => 'a summary of the part that is long enough', summaryOfCombine: () => 'c',
+	} as unknown as PartAdapter<unknown, unknown>;
+	const out = await runDivided({
+		provider, target: { kind: 'cli', inputBudgetChars: 76_000 }, adapter, blocks: [block], reference: [],
+		found: { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } }, maxAttempts: 1,
+	}).catch((e: unknown) => e);
+	assert.ok(!(out instanceof Error), String(out));
+	assert.equal((out as { handling: { notCovered: unknown[] } }).handling.notCovered.length, 0, 'every half was covered');
+});
+
+test('the part-id probe uses the longest key in the limit\'s own unit: a shorter key of wide characters can be the larger', async () => {
+	const wide = '漢'.repeat(50);
+	const ascii = 'a'.repeat(100);
+	const probes: string[] = [];
+	const adapter = {
+		partSchema: { type: 'object' }, combineSchema: { type: 'object' },
+		renderPart: (part: { id: string; sections: unknown[] }) => { if (part.sections.length === 0) probes.push(part.id); return [{ role: 'user', content: 'p' }]; },
+		renderCombine: () => [{ role: 'user', content: 'c' }],
+		summaryOf: () => 'a summary of the part that is long enough', summaryOfCombine: () => 'c',
+	} as unknown as PartAdapter<unknown, unknown>;
+	const provider = { completeStructured: async () => ({ r: 1 }) } as unknown as LLMProvider;
+	await runDivided({
+		provider, target: { kind: 'local', windowTokens: 40_000, singlePassOutputTokens: 20_480 }, adapter,
+		blocks: [{ key: ascii, envelope: { tool: 't', input: {} }, text: 'x' }, { key: wide, envelope: { tool: 't', input: {} }, text: 'y' }], reference: [],
+		found: { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } }, maxAttempts: 1,
+	});
+	assert.ok(probes.some(id => id.includes(wide)), `the probe carries the wide key: ${probes.join('|')}`);
 });

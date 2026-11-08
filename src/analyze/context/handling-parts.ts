@@ -124,7 +124,9 @@ function halve(part: PartInput, unit: InputLimit['unit']): [PartInput, PartInput
 	if (only === undefined) return undefined;
 	const size = measureInput(only.text, unit);
 	if (size < 2 * 4_000) return undefined;
-	const cut = sectionBlock({ key: only.blockKey, envelope: only.envelope, text: only.text }, Math.ceil(size / 2) + 4_000, unit);
+	// Each half holds about half the text next to its own section line and envelope, which are measured as rendered.
+	const overhead = measureInput(renderSection({ blockKey: only.blockKey, index: 2, count: 2, envelope: only.envelope, text: '' }), unit);
+	const cut = sectionBlock({ key: only.blockKey, envelope: only.envelope, text: only.text }, Math.ceil(size / 2) + overhead + 8, unit);
 	if (!cut.admissible || cut.sections.length < 2) return undefined;
 	const at = Math.ceil(cut.sections.length / 2);
 	return [
@@ -181,10 +183,14 @@ export async function runDivided<R, C>(args: DivideArgs<R, C>): Promise<DividedR
 	const unit = limit.unit;
 	const maxTokens = outputTokensFor(target, 'part');
 	// The probe carries the longest id a part can have, so the room it leaves is the room the real part has.
-	const probe: PartInput = { id: partIdFor(9_999, args.blocks.reduce((longest, b) => (b.key.length > longest.length ? b.key : longest), '')), sections: [] };
+	// The longest key is chosen in the unit the limit is measured in: a short key of wide characters can be the larger.
+	const longestKey = args.blocks.reduce((longest, b) => (measureInput(b.key, unit) > measureInput(longest, unit) ? b.key : longest), '');
+	const probe: PartInput = { id: partIdFor(9_999, longestKey), sections: [] };
 
 	// The reference context, in rounds when one record is larger than the room.
-	const promptSize = messagesSize(adapter.renderPart(probe, EMPTY_ROUND), unit);
+	// With a reference the prompt carries its wrapper, which an empty round leaves out: the probe round is not empty.
+	const probeRound: ReferenceRound = args.reference.length > 0 ? { ...EMPTY_ROUND, rendered: 'x' } : EMPTY_ROUND;
+	const promptSize = messagesSize(adapter.renderPart(probe, probeRound), unit);
 	const reference: ReferencePlan = planReference({ blocks: args.reference, limit, promptSize, found });
 	const evidenceRoom = Math.min(...reference.rounds.map(r => r.evidenceRoom));
 
@@ -343,7 +349,8 @@ export async function runHandled<R, C>(args: HandledArgs<R, C>): Promise<Handled
 	const decision = decideHandling({ size: args.size, target: args.target, input: args.singleMessages.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n') });
 	let trigger = decision.trigger;
 	// With no evidence to divide, dividing cannot shrink the prompt: it is sent as one pass, and if it does not fit that is a typed failure.
-	const nothingToDivide = args.blocks.length === 0 && args.reference.length === 0;
+	// The reference is repeated in every part, never a part of its own: with no evidence there is nothing to divide.
+	const nothingToDivide = args.blocks.length === 0;
 	if (decision.method === 'single-pass' || nothingToDivide) {
 		const limit = inputLimitFor(args.target, 'single');
 		const outcome = await callWithRepair<R>({

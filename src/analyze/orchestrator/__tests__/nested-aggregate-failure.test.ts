@@ -22,6 +22,8 @@ import type { PlanTreeNode } from '../../planner/recursive.js';
 import { aggregateReportCompleteness } from '../../runtimes/shared/aggregator.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
 import { concludeRun } from '../driver.js';
+import { HandlingBudgetError } from '../../context/answer-step-error.js';
+import { renderReportHead } from '../../completeness.js';
 
 const INTENT: ClassifiedIntent = {
 	target: 'code', scope: 'XS', focused: false, scopeRef: { kind: 'repo', value: '/r' }, reasoning: 'nested aggregate fixture',
@@ -80,5 +82,39 @@ test('a failed nested aggregate under a succeeding root makes the run incomplete
 		assert.match(report.completeness.failed.find(f => f.sourceId === 't02.t02')?.reason ?? '', /every part of the nested report failed/);
 		assert.ok(!failed.includes('t02.t01'), 'a nested task that ran is not named');
 		assert.match((finalReport as { summary: string }).summary.split('\n')[0]!, /^Incomplete: .*t02\.t02/);
+	} finally { purgeAllTaskOutputs(runId); }
+});
+
+test('a failed nested aggregate with typed handling keeps its budgets and uncovered parts in the delivered report', async () => {
+	_resetRuntimeRegistryForTests();
+	registerTemplateRuntime(leaf);
+	const handling: HandlingReport = {
+		method: 'partitioned', parts: 2, partitionedBy: 'section', trigger: 'size',
+		notCovered: [{ part: 'part 2', reason: 'the part did not fit' }],
+		budgets: [{ unit: 'chars', limit: 60_000, source: 'default', basis: 'default', inputSize: 90_000 }],
+	};
+	registerTemplateRuntime({
+		templateId: 'demo.aggregate-typed',
+		execute: async () => { throw new HandlingBudgetError('no part of the input fits a call', { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] }, handling } }, { partFailures: [{ part: 'part 2', kind: 'unadmittable', reason: 'the part did not fit' }] }); },
+	});
+	registerTemplateRuntime(reporting('demo.aggregate', undefined));
+	const child = node(plan([
+		task({ taskId: 't01', produces: ['files'] }),
+		task({ taskId: 't02', template: 'demo.aggregate-typed', produces: ['report'], consumes: ['files'] }),
+	]));
+	const root = node(plan([
+		task({ taskId: 't01', produces: ['items'] }),
+		task({ taskId: 't02', template: 'demo.subrun', kind: 'planner', produces: ['deep'] }),
+		task({ taskId: 't03', template: 'demo.aggregate', produces: ['report'], consumes: ['items'] }),
+	]), new Map([['t02', child]]));
+	const runId = uniqueRunId('nested-aggregate-typed');
+	try {
+		const executed = await runExecutor({ tree: root, intent: INTENT, runId });
+		const { report } = concludeRun(root, executed, CONTEXT_WHOLE);
+		assert.equal(report.completeness.complete, false);
+		assert.equal(report.handling?.method, 'partitioned');
+		assert.deepEqual(report.handling?.notCovered.map(n => n.part), ['t02 / part 2'], 'the uncovered part is named by the nested plan');
+		assert.equal(report.handling?.budgets[0]?.inputSize, 90_000, 'the budget survives');
+		assert.match(renderReportHead(report), /Handling: /, 'the head shows the handling line');
 	} finally { purgeAllTaskOutputs(runId); }
 });

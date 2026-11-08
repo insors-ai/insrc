@@ -21,7 +21,7 @@ import type { StructuredSchema } from '../../shared/types.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ExecutedPlan } from '../explore/types.js';
-import { evidenceBlocks, planReference, selectSharedContext } from './dependency.js';
+import { evidenceBlocks, planReference, ruleFacts, selectSharedContext } from './dependency.js';
 import type { ReferenceRound } from './dependency.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { HandlingBudgetError } from './answer-step-error.js';
@@ -107,11 +107,12 @@ const found = (executed: ExecutedPlan): AnswerStepFound =>
  * request is answered in one reply when the table says single pass and the rendered input is admitted; otherwise the
  * evidence is divided here, once, and the plan is kept.
  */
-export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undefined): AnswerProgress {
+export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undefined, forcePartition = false): AnswerProgress {
 	const promptContent = loadSynthesizePrompt(args.target);
 	const adapter = bundleAdapter(promptContent, args.intent, args.executed);
 	// The probe carries the longest id a part can have, so the room it leaves is the room the real part has.
-	const longestKey = evidenceBlocks(args.target, args.executed).reduce((longest, b) => (b.key.length > longest.length ? b.key : longest), '');
+	const partUnit = inputLimitFor({ kind: 'unknown' }, 'part').unit;
+	const longestKey = evidenceBlocks(args.target, args.executed).reduce((longest, b) => (measureInput(b.key, partUnit) > measureInput(longest, partUnit) ? b.key : longest), '');
 	const empty: PartInput = { id: partIdFor(9_999, longestKey), sections: [] };
 	const emptyRound: ReferenceRound = { sections: [], rendered: '', size: 0, evidenceRoom: 0 };
 	const target = { kind: 'unknown' } as const;
@@ -121,17 +122,19 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	const blocks = evidenceBlocks(args.target, args.executed);
 	const reference = selectSharedContext(args.target, args.executed);
 	const base = { target: args.target, budgets: [decision.budget], parts: [], rounds: [], groupSize: 2, sectioned: false, unadmittable: [], completed: [], roundReplies: [], failures: [], stageItems: [], stageOutputs: [], combineStages: 0, retries: 0 } as const;
-	if (decision.method === 'single-pass' || (blocks.length === 0 && reference.length === 0)) return { mode: 'single', ...base };
+	if (!forcePartition && (decision.method === 'single-pass' || (blocks.length === 0 && reference.length === 0))) return { mode: 'single', ...base };
 
 	const limit = inputLimitFor(target, 'part');
-	const promptSize = messagesSize(adapter.renderPart(empty, emptyRound), limit.unit);
+	// With a reference the prompt carries its wrapper, which an empty round leaves out: the probe round is not empty.
+	const probeRound: ReferenceRound = reference.length > 0 ? { ...emptyRound, rendered: 'x' } : emptyRound;
+	const promptSize = messagesSize(adapter.renderPart(empty, probeRound), limit.unit);
 	const refPlan = planReference({ blocks: reference, limit, promptSize, found: found(args.executed) });
 	const evidenceRoom = Math.min(...refPlan.rounds.map(r => r.evidenceRoom));
 	const packed = packParts(blocks, evidenceRoom, limit.unit);
 	const fixed = messagesSize(adapter.renderCombine([], refPlan.rounds[0] ?? emptyRound, refPlan.rounds.length - 1), limit.unit);
 	const perSummary = (limit.unit === 'bytes' ? 4 : 1) * 2_000 + 64;
 	const progress: AnswerProgress = {
-		...base, mode: 'partitioned', trigger: decision.trigger, limit,
+		...base, mode: 'partitioned', trigger: forcePartition ? 'fit' : decision.trigger, limit,
 		budgets: [{ ...limit, inputSize: measureInput(input, limit.unit) }],
 		parts: packed.parts, rounds: refPlan.rounds, sectioned: packed.sectioned, unadmittable: packed.unadmittable,
 		groupSize: Math.max(2, Math.floor((limit.limit - fixed) / perSummary)),
@@ -140,7 +143,7 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	if (packed.parts.length === 0) throw terminalFailure(progress.unadmittable, { found: found(args.executed) }, handlingOf(progress));
 	// One part with one round of reference is the whole input in one reply: dividing it changes nothing but the name of
 	// the turn, so the client is asked for the one reply it always was.
-	if (packed.parts.length === 1 && refPlan.rounds.length <= 1 && packed.unadmittable.length === 0) return { mode: 'single', ...base, budgets: progress.budgets };
+	if (!forcePartition && packed.parts.length === 1 && refPlan.rounds.length <= 1 && packed.unadmittable.length === 0) return { mode: 'single', ...base, budgets: progress.budgets };
 	return progress;
 }
 
@@ -292,9 +295,9 @@ function afterPart(progress: AnswerProgress, index: number, covered: CompletedPa
 	};
 }
 
-function finish(progress: AnswerProgress, _ctx: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn {
+function finish(progress: AnswerProgress, ctx: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn {
 	const covered = progress.completed.map(c => ({ id: c.id, ordinal: c.ordinal, reply: c.reply }));
-	const layers = assembleBundle(progress.target, covered, progress.narrative);
+	const layers = assembleBundle(progress.target, covered, progress.narrative, ruleFacts(ctx.executed));
 	return { kind: 'final', layers, handling: handlingOf({ ...progress, pending: undefined }) };
 }
 

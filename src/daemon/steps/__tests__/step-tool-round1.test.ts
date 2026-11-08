@@ -11,6 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
+import { prepareAnswerTurn } from '../analyze-step/answer-turn.js';
 import { admitTurn, applyReply, recordInvalid, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
 import type { AnswerProgress } from '../../../analyze/context/answer-progress.js';
 import { finalizeSynthesize } from '../../../analyze/context/synthesizer.js';
@@ -114,4 +115,38 @@ test('a reply is validated under the request\'s own connection execution: a temp
 	// The single-reply path takes the same execution.
 	const single = startAnswerProgress({ intent, executed: plan([search('e1', 10)]), target: 'code' }, 'S');
 	assert.throws(() => finalizeSynthesize(bad, execution, single), /Structured output did not match the schema\./);
+});
+
+test('a single-pass prompt that is too large as rendered (a long purpose) is answered in parts, not returned over the limit', () => {
+	const big = search('e1', 100);
+	(big.exploration as { purpose: string }).purpose = 'p'.repeat(70_000);
+	const executed = plan([big]);
+	const turn = prepareAnswerTurn({ intent, executed, target: 'code' });
+	assert.ok(turn.ok);
+	if (!turn.ok) return;
+	assert.equal(turn.progress.mode, 'partitioned');
+	assert.equal(turn.prepared.kind, 'part');
+});
+
+test('naturally sectioned evidence next to a reference fits every turn: no part is skipped for the reference wrapper', () => {
+	const rule = {
+		exploration: { id: 'e0', type: 'doc.constraint.enumerate', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: 1, completeness: WHOLE,
+			constraints: [{ constraint: 'The daemon owns every handle.', kind: 'must', sourceEntityId: 'ent-1', file: 'docs/r.md', heading: 'Rule', rationale: 'why' }] },
+	} as unknown as ExecutedExploration;
+	const executed = plan([rule, search('e1', 130_000)]);
+	const args = { intent, executed, target: 'adherence' } as const;
+	let progress = startAnswerProgress(args, 'XL');
+	assert.equal(progress.mode, 'partitioned');
+	assert.ok(progress.parts.length >= 3, 'the evidence is cut into several sections');
+	for (let i = 0; i < progress.parts.length; i++) {
+		const admitted = admitTurn(progress, args);
+		assert.equal(admitted.kind, 'turn');
+		if (admitted.kind !== 'turn') return;
+		assert.equal(admitted.progress.failures.length, 0, `part ${i + 1} was not skipped`);
+		const next = applyReply(admitted.progress, { ...LAYERS, summary: `covers part ${i + 1}` }, { executed });
+		if (next.kind === 'next') progress = next.progress;
+		else return;
+		if (progress.pending?.kind === 'combine') break;
+	}
 });

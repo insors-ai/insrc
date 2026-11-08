@@ -252,7 +252,7 @@ test('single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnr
 	const scope: ResolvedScope = { kind: 'repo', value: REPO, repoPath: REPO, lookupPath: REPO };
 	// A model that makes one tool call, then ends the loop; the final answer then fails.
 	for (const [failure, reason] of [
-		[new ModelCallFailedError('claude exited with 1.'), 'model-failed'],
+		[new ModelCallFailedError('claude exited with 1.', { cause: new Error('socket closed') }), 'model-failed'],
 		[new ModelResponseShapeError('reply failed validation', ['not JSON']), 'invalid-answer'],
 	] as const) {
 		let turns = 0;
@@ -272,6 +272,14 @@ test('single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnr
 		assert.equal(err.reason, reason);
 		assert.equal(err.toolResults.length, 1, 'the tool results gathered before the failed answer are kept');
 		assert.match(err.toolResults[0]?.source ?? '', /^insrc_no_such_tool\(/);
+		// The one part of a single pass is named with the provider's own error and what that carried.
+		assert.equal(err.partFailures?.length, 1);
+		assert.equal(err.partFailures?.[0]?.kind, reason === 'model-failed' ? 'call-failed' : 'invalid-reply');
+		if (reason === 'model-failed') {
+			const text = JSON.stringify(err.partFailures);
+			assert.ok(text.includes('claude exited with 1.'), 'the provider error is kept');
+			assert.ok(text.includes('socket closed'), 'and its nested cause');
+		}
 	}
 });
 

@@ -22,6 +22,7 @@ import { renderReportHead } from '../../../analyze/completeness.js';
 import { admitTurn, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
 import type { AnswerProgress, AnswerTurnPrompt } from '../../../analyze/context/answer-progress.js';
 import { ShaperAnswerStepFailedError } from '../../../analyze/context/driver.js';
+import { inputLimitFor, measureInput } from '../../../analyze/context/handling.js';
 import { prepareSynthesize, SynthesizerPromptMissingError } from '../../../analyze/context/synthesizer.js';
 import type { ReportScopeInput } from '../../../analyze/explore/answer-report.js';
 import { reportFromLookups } from '../../../analyze/explore/answer-report.js';
@@ -58,8 +59,15 @@ export function prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] 
 	const { measure, reportScope, ...prepare } = args;
 	try {
 		const answerArgs = { intent: prepare.intent, executed: args.executed, target: prepare.target };
-		const started = startAnswerProgress(answerArgs, prepare.intent.scope);
-		if (started.mode === 'single') return { ok: true, prepared: prepareSynthesize(prepare), progress: started, turn: undefined };
+		let started = startAnswerProgress(answerArgs, prepare.intent.scope);
+		if (started.mode === 'single') {
+			// The single prompt is measured as it is rendered (purposes, envelopes, escaped JSON); one that does not
+			// fit the call is answered in parts, and the plan is made again for them.
+			const prepared = prepareSynthesize(prepare);
+			const limit = inputLimitFor({ kind: 'unknown' }, 'single');
+			if (measureInput(`${prepared.systemPrompt}\n${prepared.userTurn}`, limit.unit) <= limit.limit) return { ok: true, prepared, progress: started, turn: undefined };
+			started = startAnswerProgress(answerArgs, prepare.intent.scope, true);
+		}
 		// The first turn is measured as rendered; a part that does not fit is skipped and the next is the first.
 		const admitted = admitTurn(started, answerArgs);
 		if (admitted.kind !== 'turn') throw new Error('the first turn of an answer cannot be its end');

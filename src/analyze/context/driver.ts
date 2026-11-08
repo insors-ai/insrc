@@ -1,4 +1,5 @@
 import type { AggregateInputRecord, PartFailure } from './failure-data.js';
+import { causeOf } from './failure-data.js';
 import { docRelationsRevision } from '../../indexer/doc-relations-read.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { assertConnectionProviderAdmission } from '../../shared/connection-provider.js';
@@ -966,8 +967,12 @@ export async function runShaperToolLoop(
 		if (err instanceof ShaperAnswerStepFailedError) {
 			throw new ShaperFinalEmitFailed(err.reason, gathered, err, parseHandling(err.found.report.handling), err.partFailures);
 		}
-		if (err instanceof ShaperLlmUnavailableError) throw new ShaperFinalEmitFailed('model-failed', gathered, err);
-		if (err instanceof ShaperSchemaUnrecoverable) throw new ShaperFinalEmitFailed('invalid-answer', gathered, err);
+		// A single pass has one part; its failure keeps the provider's error and what that carried.
+		const single = (kind: 'call-failed' | 'invalid-reply', e: Error): readonly PartFailure[] => [{
+			part: 'single', kind, reason: e.message, ...(e.cause !== undefined ? { cause: causeOf(e.cause) } : {}),
+		}];
+		if (err instanceof ShaperLlmUnavailableError) throw new ShaperFinalEmitFailed('model-failed', gathered, err, undefined, single('call-failed', err));
+		if (err instanceof ShaperSchemaUnrecoverable) throw new ShaperFinalEmitFailed('invalid-answer', gathered, err, undefined, single('invalid-reply', err));
 		throw err;
 	}
 	assertAnalysisConnectionExecution(execution);
@@ -1102,9 +1107,12 @@ async function runFinalStructuredEmit(
 				if (cause instanceof ConnectionExecutionError) throw cause;
 				if (outcome.kind === 'failed' && outcome.failure === 'call-failed') {
 					const errClass = classifyOllamaError(cause, 'final structured emit');
-					if (errClass instanceof ShaperLlmUnavailableError) throw errClass;
+					// The provider's own error stays the cause, so the failure that is kept can name it.
+					if (errClass instanceof ShaperLlmUnavailableError) { errClass.cause = cause; throw errClass; }
 				}
-				throw new ShaperSchemaUnrecoverable(structuredOutputRetries, [outcome.kind === 'failed' ? outcome.reason : 'the call failed']);
+				const unrecoverable = new ShaperSchemaUnrecoverable(structuredOutputRetries, [outcome.kind === 'failed' ? outcome.reason : 'the call failed']);
+				unrecoverable.cause = cause;
+				throw unrecoverable;
 			}
 			trigger = 'fit';
 		}

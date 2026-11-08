@@ -58,6 +58,13 @@ test('the broad docs request on this repository runs to a final report and the r
 	const handlingLine = head.find(l => l.startsWith('Handling: '));
 	assert.ok(handlingLine !== undefined, `the head states how the answer was handled:\n${head.join('\n')}`);
 	const handling = terminal.report?.handling;
+	// The record is evidence only if it is whole: refuse to write one with a field missing.
+	assert.ok(typeof terminal.runId === 'string' && terminal.runId.length > 0, 'the run id is recorded');
+	assert.ok(handling !== undefined, 'the report carries how it was handled');
+	assert.equal(handling.method, 'partitioned', 'a broad request is answered in parts');
+	assert.ok(Number.isInteger(handling.parts) && handling.parts >= 2, 'the parts are counted');
+	assert.ok(Array.isArray(handling.notCovered), 'what was not covered is listed');
+	assert.ok(terminal.report?.completeness !== undefined && typeof terminal.report.completeness.complete === 'boolean', 'completeness is recorded');
 	writeFileSync(RECORD, JSON.stringify({
 		recordedAt: new Date().toISOString(),
 		runId: terminal.runId,

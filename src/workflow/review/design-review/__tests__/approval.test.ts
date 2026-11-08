@@ -7,7 +7,7 @@ import { handleWorkflowApprove } from '../../../../daemon/workflow-approve.js';
 import { execFileSync } from 'node:child_process';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { appendFileSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync, mkdirSync, unlinkSync } from 'node:fs';
 import { impactFixture } from './impact-fixtures.js';
 import { recordDesignAdmission } from '../approval.js';
 import { publishDesignReview } from '../publication.js';
@@ -23,7 +23,7 @@ async function ready(t:Parameters<typeof impactFixture>[0],severity?:'MED'|'LOW'
   const original=JSON.parse(readFileSync(f.json,'utf8')),hash='aaaaaaaaaaaaaaaa',time=original.meta.createdAt;
   function put(kind:'DEF'|'HLD'|'LLD'|'ISSUE',approved:boolean){
    const id=`${kind}-${hash}${kind==='LLD'?'-s1':''}`,json=artifactJsonPath(f.repo,id),md=resolveArtifactMdPath(f.repo,{epicHash:hash,epicCreatedAt:time,...(kind==='LLD'?{story:'s1'}:{})},kind,route==='issue'?'standalone':'epic','fixture');
-   const raw={...original,meta:{...original.meta,standalone:route==='issue',...(kind==='ISSUE'?{issueHash:hash,magnitude:'sized'}:{}),...(approved?{lifecycle:{...emptyLifecycle(1),status:'approved'}}:{})},body:{...original.body,...(kind==='DEF'?{stories:[{id:'s1'}]}:{})}};
+   const raw={...original,meta:{...original.meta,standalone:route==='issue',...(route==='issue'?{sizeClass:'bugfix'}:{}),...(kind==='ISSUE'?{issueHash:hash,magnitude:'sized'}:{}),...(approved?{lifecycle:{...emptyLifecycle(1),status:'approved'}}:{})},body:{...original.body,...(kind==='DEF'?{stories:[{id:'s1'}]}:{})}};
    if(kind!=='LLD')delete raw.meta.storyId;
    mkdirSync(dirname(md),{recursive:true});writeFileSync(json,JSON.stringify(raw));writeFileSync(md,`<!-- insrc:artifact ${id} -->\n# ${kind}\nScope\n`);return{id,json,md};
   }
@@ -83,10 +83,33 @@ test('ordinary daemon and direct lifecycle approvals honor actual epic standalon
   const f=await ready(t,undefined,route);
   const result=await handleWorkflowApprove({repo:f.repo,artifactPath:f.json,actor},{lifecycleFor:()=>f.lc.service});
   assert.ok(!('error' in result));assert.equal(result.approved.length,1,JSON.stringify(result));assert.equal((await f.lc.service.inspect(f.id))!.status,'approved');
+  const direct=await ready(t,undefined,route);await direct.lc.service.apply(direct.id,'approve',actor);assert.equal((await direct.lc.service.inspect(direct.id))!.status,'approved');
  }
 });
 
 test('changed authorship and workflow provenance cannot reuse independent evidence',async t=>{
  const f=await ready(t);const raw=JSON.parse(readFileSync(f.json,'utf8'));raw.meta.authoredBy='daemon';writeFileSync(f.json,JSON.stringify(raw));await assert.rejects(f.lc.service.apply(f.id,'approve',actor),/independently bound/);
  const g=await ready(t);const other=JSON.parse(readFileSync(g.json,'utf8'));other.meta.seededFromSpec='bbbbbbbbbbbbbbbb';writeFileSync(g.json,JSON.stringify(other));await assert.rejects(g.lc.service.apply(g.id,'approve',actor));
+});
+
+test('both approval routes refuse missing or unapproved actual required ancestors',async t=>{
+ for(const route of ['HLD','LLD','issue'] as const)for(const missing of [false,true])for(const direct of [false,true]){
+  const f=await ready(t,undefined,route),ancestor=artifactJsonPath(f.repo,`${route==='issue'?'ISSUE':route==='LLD'?'HLD':'DEF'}-aaaaaaaaaaaaaaaa`);
+  if(missing)unlinkSync(ancestor);else{const raw=JSON.parse(readFileSync(ancestor,'utf8'));raw.meta.lifecycle.status='draft';writeFileSync(ancestor,JSON.stringify(raw));}
+  const before=readFileSync(f.json,'utf8');
+  if(direct)await assert.rejects(f.lc.service.apply(f.id,'approve',actor));
+  else{const result=await handleWorkflowApprove({repo:f.repo,artifactPath:f.json,actor},{lifecycleFor:()=>f.lc.service}).catch(error=>({error:String(error)}));assert.ok('error' in result||result.approved.length===0);}
+  assert.equal(readFileSync(f.json,'utf8'),before);
+ }
+});
+test('ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes',async t=>{
+ for(const kind of ['ISSUE','SPEC','PLAN'])for(const direct of [false,true]){
+  const f=impactFixture(t);execFileSync('git',['init','-q',f.repo]);const id=`${kind}-aaaaaaaaaaaaaaaa${kind==='PLAN'?'-s1':''}`,json=artifactJsonPath(f.repo,id);
+  const raw=JSON.parse(readFileSync(f.json,'utf8'));if(kind!=='PLAN')delete raw.meta.storyId;
+  raw.meta.workflow=kind==='ISSUE'?'issue':kind==='SPEC'?'brainstorm':'plan';if(kind==='ISSUE')raw.meta.issueHash='aaaaaaaaaaaaaaaa';if(kind==='SPEC')raw.meta.specHash='aaaaaaaaaaaaaaaa';writeFileSync(json,JSON.stringify(raw));
+  const lc=createRepoLifecycle(f.repo);
+  if(direct)await lc.service.apply(id,'approve',actor);
+  else{const result=await handleWorkflowApprove({repo:f.repo,artifactPath:json,actor},{lifecycleFor:()=>lc.service});assert.ok(!('error' in result));assert.equal(result.approved.length,1,JSON.stringify(result));}
+  const approved=(await lc.service.inspect(id))!;assert.equal(approved.status,'approved');assert.equal(approved.lifecycle.review,undefined);
+ }
 });

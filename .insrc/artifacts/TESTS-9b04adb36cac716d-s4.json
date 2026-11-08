@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 15,
-        "contentHash": "a09bbadcc3fa43c4b3628955f7b3ffa55684bbad43f9bb7a5c1bdd63089272fc",
-        "at": "2026-11-08T06:07:41.133Z",
+        "number": 16,
+        "contentHash": "64810060c4acc1b2901d7a2fd30fbc6c389501bf0f3a4cbe7e525d054b0d90bc",
+        "at": "2026-11-08T06:20:00.383Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:07:40.976Z",
+    "updatedAt": "2026-11-08T06:20:00.219Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 15
+    "revision": 16
   },
   "body": {
     "tasks": [
@@ -393,6 +393,104 @@
               },
               {
                 "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "ad48348e8",
+        "ranAt": "2026-11-08T06:20:00.219Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U4 approval applicability and truthful overrides",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "MED overrides retain the original blocked review and repeated normal approval remains idempotent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "document changes, missing evidence and a later failed review admission cannot approve an older pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "active reviewer ownership excludes approval and approval fence excludes new review ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "unfinished checkpoint states and missing referenced history fail closed without altering the head",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "changed authorship and workflow provenance cannot reuse independent evidence",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I3 ordinary/direct lifecycle gate and actual route prerequisites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1188,
+            "titles": [
+              {
+                "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
+                "result": "pass"
+              },
+              {
+                "title": "MED overrides retain the original blocked review and repeated normal approval remains idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "document changes, missing evidence and a later failed review admission cannot approve an older pass",
+                "result": "pass"
+              },
+              {
+                "title": "active reviewer ownership excludes approval and approval fence excludes new review ownership",
+                "result": "pass"
+              },
+              {
+                "title": "unfinished checkpoint states and missing referenced history fail closed without altering the head",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "changed authorship and workflow provenance cannot reuse independent evidence",
                 "result": "pass"
               }
             ],

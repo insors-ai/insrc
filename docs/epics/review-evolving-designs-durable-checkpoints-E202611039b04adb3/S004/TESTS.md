@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 30 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -123,3 +123,30 @@ Run at 2026-11-08T06:07:40.976Z on commit `d83eecf71`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 4 | 0.9 s |  |
+
+## t6
+
+Run at 2026-11-08T06:20:00.219Z on commit `ad48348e8`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: U4 approval applicability and truthful overrides**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | normal and direct design approval share permanent independent evidence and preserve idempotent approval | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | MED overrides retain the original blocked review and repeated normal approval remains idempotent | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | document changes, missing evidence and a later failed review admission cannot approve an older pass | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | active reviewer ownership excludes approval and approval fence excludes new review ownership | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | unfinished checkpoint states and missing referenced history fail closed without altering the head | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | changed authorship and workflow provenance cannot reuse independent evidence | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+
+**integration: I3 ordinary/direct lifecycle gate and actual route prerequisites**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review/design-review/__tests__/approval.test.ts` | 0 | 7 | 1.2 s |  |

@@ -1,0 +1,123 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The helper's single call through the real provider adapters
+ * (LLD-b9d5c5c40df5a574-s3, task t6): CliProvider for Claude, Codex and Vibe
+ * against a FAKE binary that records each run, and OllamaProvider against a
+ * stand-in client. Each makes exactly one attempt per call, an Ollama part
+ * request carries num_predict 8,192, malformed replies are 'invalid-reply' and
+ * transport failures are 'call-failed'. No model.
+ */
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { CliProvider } from '../../../agent/providers/cli-provider.js';
+import { OllamaProvider } from '../../../agent/providers/ollama.js';
+import { inputLimitFor, outputTokensFor } from '../handling.js';
+import type { AdmissionTarget } from '../handling.js';
+import { callWithRepair } from '../handling-call.js';
+import type { CallOutcome } from '../handling-call.js';
+
+const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
+
+/** A fake CLI: records each run, then fails by transport (exit 1) or answers with prose that is not JSON (exit 0). */
+const FAKE = `#!/usr/bin/env node
+import { appendFileSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+const here = dirname(fileURLToPath(import.meta.url));
+for await (const _ of process.stdin) { /* drain */ }
+appendFileSync(join(here, 'calls.jsonl'), 'run\\n');
+const mode = readFileSync(join(here, 'mode'), 'utf8').trim();
+if (mode === 'transport') { process.stderr.write('API Error: overloaded'); process.exit(1); }
+process.stdout.write('sure! here is some prose, not json');
+process.exit(0);
+`;
+
+function fakeCli(mode: 'transport' | 'malformed'): { bin: string; runs: () => number; cleanup: () => void } {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-failure-kinds-'));
+	const bin = join(dir, 'fake.mjs');
+	writeFileSync(bin, FAKE);
+	chmodSync(bin, 0o755);
+	writeFileSync(join(dir, 'mode'), mode);
+	const calls = join(dir, 'calls.jsonl');
+	return {
+		bin,
+		runs: () => (existsSync(calls) ? readFileSync(calls, 'utf8').trim().split('\n').length : 0),
+		cleanup: () => rmSync(dir, { recursive: true, force: true }),
+	};
+}
+
+const CLI_TARGET: AdmissionTarget = { kind: 'cli', inputBudgetChars: 100_000 };
+
+async function viaHelper(provider: CliProvider | OllamaProvider, target: AdmissionTarget, maxAttempts = 3): Promise<CallOutcome<unknown>> {
+	return callWithRepair({
+		provider, messages: [{ role: 'user', content: 'q' }], schema: SCHEMA,
+		limit: inputLimitFor(target, 'part'), maxTokens: outputTokensFor(target, 'part'), maxAttempts,
+	});
+}
+
+test('real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed', async () => {
+	for (const kind of ['claude', 'codex', 'vibe'] as const) {
+		// A transport failure: one run, 'call-failed' (the terminal 'model-failed' of a divided call).
+		const down = fakeCli('transport');
+		try {
+			const out = await viaHelper(new CliProvider({ kind, binPath: down.bin, timeoutMs: 20_000 }), CLI_TARGET);
+			assert.equal(out.kind, 'failed', kind);
+			assert.equal(out.kind === 'failed' ? out.failure : '', 'call-failed', `${kind} transport failure`);
+			assert.equal(down.runs(), 1, `${kind}: exactly one run on a transport failure`);
+		} finally { down.cleanup(); }
+
+		// A malformed reply on every attempt: the helper asks again up to its bound, each ask one run, and the
+		// failure is 'invalid-reply' (the terminal 'invalid-answer'), never 'call-failed'.
+		const bad = fakeCli('malformed');
+		try {
+			const out = await viaHelper(new CliProvider({ kind, binPath: bad.bin, timeoutMs: 20_000 }), CLI_TARGET, 2);
+			assert.equal(out.kind, 'failed', kind);
+			assert.equal(out.kind === 'failed' ? out.failure : '', 'invalid-reply', `${kind} malformed reply`);
+			assert.equal(bad.runs(), 2, `${kind}: one run per attempt, no provider-side retry`);
+		} finally { bad.cleanup(); }
+	}
+
+	// A CLI provider enforces no output cap, and the helper passes none.
+	assert.equal(outputTokensFor(CLI_TARGET, 'part'), undefined);
+
+	// OllamaProvider: a part request carries num_predict 8,192; a single pass carries the configured tokens.
+	const LOCAL: AdmissionTarget = { kind: 'local', windowTokens: 32_768, singlePassOutputTokens: 20_480 };
+	const seen: Array<Record<string, unknown>> = [];
+	const stub = (reply: string | Error): OllamaProvider => {
+		const p = new OllamaProvider();
+		(p as unknown as { client: unknown }).client = {
+			chat: async (req: { options: Record<string, unknown> }) => {
+				seen.push(req.options);
+				if (reply instanceof Error) throw reply;
+				return (async function* () { yield { message: { content: reply }, done: true }; })();
+			},
+		};
+		return p;
+	};
+	const cut = await callWithRepair({
+		provider: stub('{"ok": tr'), messages: [{ role: 'user', content: 'q' }], schema: SCHEMA,
+		limit: inputLimitFor(LOCAL, 'part'), maxTokens: outputTokensFor(LOCAL, 'part'), maxAttempts: 1,
+	});
+	assert.equal(seen[0]?.['num_predict'], 8_192, 'a part request is capped at PART_MAX_OUTPUT_TOKENS');
+	assert.equal(cut.kind === 'failed' ? cut.failure : cut.kind, 'invalid-reply', 'a reply cut at the cap is an invalid reply');
+	await callWithRepair({
+		provider: stub('{"ok": true}'), messages: [{ role: 'user', content: 'q' }], schema: SCHEMA,
+		limit: inputLimitFor(LOCAL, 'single'), maxTokens: outputTokensFor(LOCAL, 'single'), maxAttempts: 1,
+	});
+	assert.equal(seen[1]?.['num_predict'], 20_480, 'a single pass keeps the configured output tokens');
+	const dead = await callWithRepair({
+		provider: stub(new Error('connect ECONNREFUSED 127.0.0.1:11434')), messages: [{ role: 'user', content: 'q' }], schema: SCHEMA,
+		limit: inputLimitFor(LOCAL, 'part'), maxTokens: outputTokensFor(LOCAL, 'part'), maxAttempts: 3,
+	});
+	assert.equal(dead.kind === 'failed' ? dead.failure : dead.kind, 'call-failed');
+	assert.equal(seen.length, 3, 'a failed Ollama call is one request');
+});

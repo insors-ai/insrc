@@ -104,8 +104,8 @@ export function renderSection(section: BlockSection): string {
 export function sectionBlock(block: EvidenceBlock, room: number, unit: Unit = 'bytes'): SectionResult {
 	const whole: BlockSection = { blockKey: block.key, index: 1, count: 1, envelope: block.envelope, text: block.text };
 	if (measureInput(renderSection(whole), unit) <= room) return { admissible: true, sections: [whole] };
-	const fixed = measureInput(renderEnvelope(block.envelope), unit) + SECTION_HEADER_RESERVE + block.key.length;
-	const textRoom = room - fixed;
+	const fixed = measureInput(renderEnvelope(block.envelope), unit) + SECTION_HEADER_RESERVE + measureInput(block.key, unit);
+	let textRoom = room - fixed;
 	if (textRoom < MIN_SECTION_ROOM) {
 		return {
 			admissible: false,
@@ -113,11 +113,17 @@ export function sectionBlock(block: EvidenceBlock, room: number, unit: Unit = 'b
 				+ `leaving less than the ${MIN_SECTION_ROOM} ${unit} a section needs`,
 		};
 	}
-	const pieces = sectionText(block.text, textRoom, unit);
-	return {
-		admissible: true,
-		sections: pieces.map((text, i) => ({ blockKey: block.key, index: i + 1, count: pieces.length, envelope: block.envelope, text })),
-	};
+	// The reserve covers the section line; the rendered size is checked anyway, and the cut narrowed by any overshoot.
+	for (;;) {
+		const pieces = sectionText(block.text, textRoom, unit);
+		const sections = pieces.map((text, i): BlockSection => ({ blockKey: block.key, index: i + 1, count: pieces.length, envelope: block.envelope, text }));
+		const over = Math.max(...sections.map(sec => measureInput(renderSection(sec), unit))) - room;
+		if (over <= 0) return { admissible: true, sections };
+		textRoom -= over;
+		if (textRoom < MIN_SECTION_ROOM) {
+			return { admissible: false, reason: `the section line and envelope of block '${block.key}' leave less than the ${MIN_SECTION_ROOM} ${unit} a section needs` };
+		}
+	}
 }
 
 // ---------------------------------------------------------------------------

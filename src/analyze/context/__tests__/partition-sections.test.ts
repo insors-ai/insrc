@@ -11,7 +11,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { sectionText } from '../sections.js';
+import { renderSection, sectionBlock, sectionText } from '../sections.js';
 
 test('6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no overlap, none dropped; ordinals separate from keys', () => {
 	const ascii = 'a'.repeat(6_000);
@@ -46,7 +46,22 @@ test('6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no ove
 	assert.deepEqual(sectionText('', 5_000), ['']);
 	assert.throws(() => sectionText('x', 3), RangeError);
 
-	// Ordinals are separate from keys: sections of two blocks with the same text are told apart by key and index.
-	const a = sectionText('x'.repeat(10), 4).map((_, i) => i + 1);
-	assert.deepEqual(a, [1, 2, 3]);
+	// Ordinals are separate from keys: two blocks with the same text keep their own keys, and each counts its sections from 1.
+	const text = 'x'.repeat(9_000);
+	const results = ['same-text-a', 'same-text-b'].map(key => sectionBlock({ key, envelope: {}, text }, 5_000));
+	for (const [i, key] of ['same-text-a', 'same-text-b'].entries()) {
+		const r = results[i];
+		assert.equal(r?.admissible, true);
+		const cut = r?.admissible ? r.sections : [];
+		assert.deepEqual(cut.map(c => [c.blockKey, c.index, c.count]), [[key, 1, 2], [key, 2, 2]]);
+	}
+
+	// The key is budgeted in the call's unit: a key of 100 emoji takes 400 bytes and sections still fit the room.
+	const emojiKey = '😀'.repeat(100);
+	const r = sectionBlock({ key: emojiKey, envelope: { file: 'a.md' }, text: 'y'.repeat(30_000) }, 5_000);
+	assert.equal(r.admissible, true);
+	if (r.admissible) {
+		assert.ok(r.sections.length > 1);
+		for (const sec of r.sections) assert.ok(Buffer.byteLength(renderSection(sec)) <= 5_000);
+	}
 });

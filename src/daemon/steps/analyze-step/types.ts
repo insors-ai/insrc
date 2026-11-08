@@ -116,6 +116,47 @@ export interface StepOutputEmitBundle {
 	readonly userTurn: string;
 	readonly schema:   Record<string, unknown>;
 	readonly state:    string;
+	readonly retry?:   StepRetry | undefined;
+}
+
+/** A reply to the turn just asked was invalid and the same turn is asked again. */
+export interface StepRetry {
+	readonly attempt: number;
+	readonly reason:  string;
+}
+
+/**
+ * The answer is written in parts (the request is large, or its input is not admitted in one reply): the client emits
+ * the bundle of ONE part. The reply is the registered bundle argument, seven string layers, with a summary of at most
+ * 2,000 characters; the call is phase='bundle' as for emit_bundle.
+ */
+export interface StepOutputEmitPart {
+	readonly next:     'emit_part';
+	readonly guidance: string;
+	readonly prompt:   string;
+	readonly userTurn: string;
+	readonly schema:   Record<string, unknown>;
+	readonly state:    string;
+	readonly partId:   string;
+	readonly ordinal:  number;
+	readonly total:    number;
+	readonly retry?:   StepRetry | undefined;
+}
+
+/**
+ * The parts are written and their summaries are combined: the client emits the narrative of the whole answer (system,
+ * focus and summary; the four evidence layers are left empty, they are assembled from the parts).
+ */
+export interface StepOutputEmitCombine {
+	readonly next:     'emit_combine';
+	readonly guidance: string;
+	readonly prompt:   string;
+	readonly userTurn: string;
+	readonly schema:   Record<string, unknown>;
+	readonly state:    string;
+	readonly stage:    number;
+	readonly group:    number;
+	readonly retry?:   StepRetry | undefined;
 }
 
 /** Terminal result. Fires either on `start` cache-hit or after `bundle`. */
@@ -147,12 +188,16 @@ export interface StepOutputError {
 export interface StepErrorData {
 	readonly results: readonly ExecutedExploration[];
 	readonly report:  AnswerReport;
+	/** For an answer written in parts that no part covered: each failed part's kind and cause chain. */
+	readonly partFailures?: readonly unknown[] | undefined;
 }
 
 export type StepOutput =
 	| StepOutputEmitPlan
 	| StepOutputEmitNarrow
 	| StepOutputEmitBundle
+	| StepOutputEmitPart
+	| StepOutputEmitCombine
 	| StepOutputDone
 	| StepOutputError;
 

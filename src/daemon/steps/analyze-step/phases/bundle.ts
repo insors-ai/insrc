@@ -32,18 +32,30 @@ import {
 } from '../../../../analyze/context/synthesizer.js';
 import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
 import { getLogger } from '../../../../shared/logger.js';
+import { applyHandling } from '../../../../analyze/completeness.js';
+import type { HandlingReport } from '../../../../analyze/completeness.js';
+import { currentTurn, handlingOf, recordInvalid } from '../../../../analyze/context/answer-progress.js';
+import type { AnswerProgress, FinalizedAnswerTurn } from '../../../../analyze/context/answer-progress.js';
+import { ShaperAnswerStepFailedError } from '../../../../analyze/context/driver.js';
+import { loadAnalyzeConfig } from '../../../../config/analyze.js';
+import { ANSWER_STEP_FAILED, turnOutput } from '../answer-turn.js';
 
 import { renderBundleAsMarkdown } from '../../bundle-md.js';
 import {
 	assertStage,
 	decodeState,
+	reencodeState,
 	StepStateDecodeError,
 	type StepStatePayload,
 } from '../state.js';
 import { releaseState } from '../state-store.js';
 import type {
+	StepErrorData,
 	StepInputBundle,
 	StepOutputDone,
+	StepOutputEmitBundle,
+	StepOutputEmitCombine,
+	StepOutputEmitPart,
 	StepOutputError,
 } from '../types.js';
 import type {
@@ -66,7 +78,7 @@ const log = getLogger('mcp:analyze-step:bundle');
 export async function handleBundle(
 	input: StepInputBundle,
 	execution?: ConnectionExecutionContext,
-): Promise<StepOutputDone | StepOutputError> {
+): Promise<StepOutputDone | StepOutputError | StepOutputEmitBundle | StepOutputEmitPart | StepOutputEmitCombine> {
 	assertAnalysisAudience(execution);
 	await beginSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -84,10 +96,22 @@ export async function handleBundle(
 		throw err;
 	}
 
+	// (1a) An answer written in parts: the reply is for the pending part or combine. A state minted before parts
+	// existed carries no progress and is read as a single reply.
+	const answer = state.answer;
+	let handling: HandlingReport | undefined = answer !== undefined && answer.mode === 'single' ? handlingOf(answer) : undefined;
+	let preset: BundleLayers | undefined;
+	if (answer !== undefined && answer.mode === 'partitioned' && answer.pending !== undefined) {
+		const turned = await handlePartReply(input, state, answer, execution);
+		if ('output' in turned) return turned.output;
+		preset = turned.layers;
+		handling = turned.handling;
+	}
+
 	// (2) Validate the bundle layers.
 	let layers: BundleLayers;
 	try {
-		layers = finalizeSynthesize(input.bundle, execution);
+		layers = preset ?? finalizeSynthesize(input.bundle, execution);
 	} catch (err) {
 		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('bundle-schema', 'Temporary analysis bundle is invalid.', true); }
 		if (err instanceof SynthesizerSchemaUnrecoverable) {
@@ -122,7 +146,9 @@ export async function handleBundle(
 	// because the schema it was given has no such field.
 	// Its measure is taken from the same results, with the caller's stated size as the hint.
 	const results = state.executed?.results ?? [];
-	const report = reportFromLookups(results, measureLookupResults(results, state.sizeHint), { ref: state.intent.scopeRef, source: state.intent.scopeSource });
+	const derived = reportFromLookups(results, measureLookupResults(results, state.sizeHint), { ref: state.intent.scopeRef, source: state.intent.scopeSource });
+	// How the answer was written is added by code: the client's own account of it is never used.
+	const report = handling !== undefined ? applyHandling(derived, handling) : derived;
 	// (3b) The subsystems of the scope and of the files the bundle cites (Epic
 	// c2ba6fa6 s8), from the stored subsystem rows, as runShaper's bundles carry them.
 	const scopeRef = state.intent.scopeRef;
@@ -160,11 +186,51 @@ export async function handleBundle(
 // Helpers
 // ---------------------------------------------------------------------------
 
-function errorResult(code: string, message: string, retryable: boolean): StepOutputError {
+function errorResult(code: string, message: string, retryable: boolean, data?: StepErrorData): StepOutputError {
 	return {
 		next:  'error',
-		error: { code, message, retryable },
+		error: data !== undefined ? { code, message, retryable, data } : { code, message, retryable },
 	};
+}
+
+/**
+ * A reply to a part or a combine. Either the answer is finished (its layers and how it was handled), or the next turn is
+ * asked (a new state token, the next part or combine), or the same turn is asked again with a retry note after an invalid
+ * reply; a typed failure is returned as the error output with its data, and the state is released.
+ */
+async function handlePartReply(
+	input: StepInputBundle, state: StepStatePayload, answer: AnswerProgress, execution?: ConnectionExecutionContext,
+): Promise<{ readonly output: StepOutputError | StepOutputEmitBundle | StepOutputEmitPart | StepOutputEmitCombine } | { readonly layers: BundleLayers; readonly handling: HandlingReport }> {
+	const executed = state.executed;
+	if (executed === undefined) return { output: errorResult('state-decode', 'the stored state has no executed lookups.', false) };
+	const ctx = { executed };
+	const results = executed.results;
+	const intent = { ...state.intent, scope: measureLookupResults(results, state.sizeHint).size };
+	const args = { intent, executed, target: state.synthesizerKey };
+	const next = async (progress: AnswerProgress, retry?: { attempt: number; reason: string }) => {
+		const turn = currentTurn(progress, args);
+		const token = await reencodeState(input.state, { ...state, answer: progress }, execution);
+		return { output: turnOutput(turn, turn, token, retry) };
+	};
+	let outcome: FinalizedAnswerTurn | { readonly kind: 'retry'; readonly progress: AnswerProgress };
+	try {
+		try {
+			outcome = finalizeSynthesize(input.bundle, execution, answer, ctx);
+		} catch (err) {
+			if (!(err instanceof SynthesizerSchemaUnrecoverable)) throw err;
+			outcome = recordInvalid(answer, err.message, loadAnalyzeConfig().shaper.structuredOutputRetries, ctx);
+			if (outcome.kind === 'retry') return next(outcome.progress, { attempt: outcome.progress.retries, reason: err.message });
+		}
+	} catch (err) {
+		if (!(err instanceof ShaperAnswerStepFailedError)) throw err;
+		// Nothing was covered: the typed failure, with what the lookups found and each part's cause.
+		await releaseState(input.state, execution);
+		const data: StepErrorData = { results, report: err.found.report, ...(err.partFailures !== undefined ? { partFailures: err.partFailures } : {}) };
+		return { output: errorResult(ANSWER_STEP_FAILED, err.message, false, data) };
+	}
+	if (outcome.kind === 'next') return next(outcome.progress);
+	if (outcome.kind === 'final') return { layers: outcome.layers, handling: outcome.handling };
+	return { output: errorResult('internal', 'unexpected outcome of a reply to a part', false) };
 }
 
 function deriveShaperId(target: string): ShaperId {

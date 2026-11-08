@@ -97,7 +97,7 @@ export interface DivideArgs<R, C> {
 /** The most characters a part summary has (the schema caps it). */
 const SUMMARY_CAP = 2_000;
 
-interface Failure {
+export interface Failure {
 	readonly part:   string;
 	readonly kind:   CallFailureKind;
 	readonly reason: string;
@@ -134,6 +134,39 @@ function halve(part: PartInput, unit: InputLimit['unit']): [PartInput, PartInput
 }
 
 /**
+ * The blocks, in order, packed into parts that fit `evidenceRoom`; a block larger than the room is cut into sections
+ * first, and a block whose envelope leaves no room is returned as unadmittable and left out.
+ */
+export function packParts(blocks: readonly EvidenceBlock[], evidenceRoom: number, unit: InputLimit['unit']): {
+	readonly parts:        readonly PartInput[];
+	readonly unadmittable: readonly Failure[];
+	readonly sectioned:    boolean;
+} {
+	const unadmittable: Failure[] = [];
+	let sectioned = false;
+	const parts: PartInput[] = [];
+	let open: BlockSection[] = [];
+	const flush = (): void => {
+		if (open.length > 0) parts.push({ id: `part ${parts.length + 1}: ${open[0]?.blockKey ?? ''}`, sections: open });
+		open = [];
+	};
+	for (const block of blocks) {
+		const cut = sectionBlock(block, evidenceRoom, unit);
+		if (!cut.admissible) {
+			unadmittable.push({ part: `block ${block.key}`, kind: 'unadmittable', reason: cut.reason });
+			continue;
+		}
+		if (cut.sections.length > 1) sectioned = true;
+		for (const section of cut.sections) {
+			if (open.length > 0 && sectionsSize([...open, section], unit) > evidenceRoom) flush();
+			open.push(section);
+		}
+	}
+	flush();
+	return { parts, unadmittable, sectioned };
+}
+
+/**
  * Answers the evidence in parts and combines them. Never throws for a model
  * failure of some parts; throws the typed terminal failure when no part is covered.
  */
@@ -150,29 +183,11 @@ export async function runDivided<R, C>(args: DivideArgs<R, C>): Promise<DividedR
 	const evidenceRoom = Math.min(...reference.rounds.map(r => r.evidenceRoom));
 
 	// Pack the blocks, in order, into parts; a block larger than the room is cut into sections.
-	const failures: Failure[] = [];
-	const unadmittableBlocks: string[] = [];
-	let sectioned = false;
-	const parts: PartInput[] = [];
-	let open: BlockSection[] = [];
-	const flush = (): void => {
-		if (open.length > 0) parts.push({ id: `part ${parts.length + 1}: ${open[0]?.blockKey ?? ''}`, sections: open });
-		open = [];
-	};
-	for (const block of args.blocks) {
-		const cut = sectionBlock(block, evidenceRoom, unit);
-		if (!cut.admissible) {
-			unadmittableBlocks.push(block.key);
-			failures.push({ part: `block ${block.key}`, kind: 'unadmittable', reason: cut.reason });
-			continue;
-		}
-		if (cut.sections.length > 1) sectioned = true;
-		for (const section of cut.sections) {
-			if (open.length > 0 && sectionsSize([...open, section], unit) > evidenceRoom) flush();
-			open.push(section);
-		}
-	}
-	flush();
+	const packed = packParts(args.blocks, evidenceRoom, unit);
+	const parts = packed.parts;
+	const failures: Failure[] = [...packed.unadmittable];
+	const unadmittableBlocks = packed.unadmittable.map(f => f.part);
+	const sectioned = packed.sectioned;
 
 	const covered: CoveredPart<R>[] = [];
 	let ordinal = 0;
@@ -274,7 +289,7 @@ async function combine<R, C>(
 }
 
 /** The typed failure of a divided call in which no part is covered. */
-function terminalFailure<R, C>(failures: readonly Failure[], args: DivideArgs<R, C>, handling: HandlingReport): ShaperAnswerStepFailedError {
+export function terminalFailure(failures: readonly Failure[], args: { readonly found: AnswerStepFound; readonly upstream?: readonly AggregateInputRecord[] | undefined }, handling: HandlingReport): ShaperAnswerStepFailedError {
 	const partFailures: PartFailure[] = failures.map(f => ({
 		part: f.part, kind: f.kind, reason: f.reason,
 		...(f.cause !== undefined ? { cause: causeOf(f.cause) } : {}),

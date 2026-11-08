@@ -36,7 +36,7 @@ import {
 	finalizeDecompose,
 	DecomposerSchemaUnrecoverable,
 } from '../../../../analyze/context/decomposer.js';
-import { prepareAnswerTurn } from '../answer-turn.js';
+import { prepareAnswerTurn, turnOutput } from '../answer-turn.js';
 import { measureLookupResults } from '../../../../analyze/measure.js';
 import { stepPlan } from '../../../../analyze/explore/index.js';
 import { getLogger } from '../../../../shared/logger.js';
@@ -56,6 +56,8 @@ import type {
 	StepErrorData,
 	StepInputPlan,
 	StepOutputEmitBundle,
+	StepOutputEmitCombine,
+	StepOutputEmitPart,
 	StepOutputEmitNarrow,
 	StepOutputError,
 } from '../types.js';
@@ -69,7 +71,7 @@ const log = getLogger('mcp:analyze-step:plan');
 export async function handlePlan(
 	input: StepInputPlan,
 	execution?: ConnectionExecutionContext,
-): Promise<StepOutputEmitBundle | StepOutputEmitNarrow | StepOutputError> {
+): Promise<StepOutputEmitBundle | StepOutputEmitPart | StepOutputEmitCombine | StepOutputEmitNarrow | StepOutputError> {
 	assertAnalysisAudience(execution);
 	await beginSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -216,6 +218,7 @@ export async function handlePlan(
 		synthesizerKey,
 		plan:           validatedPlan,
 		executed,
+		answer:         turn.progress,
 		stage:          'awaiting_bundle',
 	};
 
@@ -228,17 +231,7 @@ export async function handlePlan(
 	}, 'insrc_analyze_step[plan]: executed; emitting synthesizer prompt']);
 
 	// (7) Return emit_bundle.
-	return {
-		next:     'emit_bundle',
-		guidance:
-			'Compose the AnalyzeContextBundle JSON matching the schema below, then ' +
-			'call insrc_analyze_step again with phase="bundle", bundle=<your JSON>, ' +
-			'state=<the state field verbatim>.',
-		prompt:   prepared.systemPrompt,
-		userTurn: prepared.userTurn,
-		schema:   prepared.schema as Record<string, unknown>,
-		state:    await reencodeState(input.state, nextState, execution),
-	};
+	return turnOutput(prepared, turn.turn, await reencodeState(input.state, nextState, execution));
 }
 
 // ---------------------------------------------------------------------------

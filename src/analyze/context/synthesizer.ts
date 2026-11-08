@@ -37,6 +37,8 @@ import { ShaperAnswerStepFailedError } from './driver.js';
 import type { AnswerStepFound } from './driver.js';
 import type { AdmissionTarget } from './handling.js';
 import { assembleBundle } from './handling-adapters.js';
+import { applyReply } from './answer-progress.js';
+import type { AnswerProgress, FinalizedAnswerTurn } from './answer-progress.js';
 import type { BundleLayers, BundleNarrative } from './handling-adapters.js';
 import { runHandled } from './handling-parts.js';
 import type { PartAdapter } from './handling-parts.js';
@@ -151,12 +153,12 @@ export function admissionTargetOf(provider: LLMProvider, singlePassOutputTokens:
 
 /** A part reply holds the seven layers and keeps its summary short; a combine reply holds the narrative layers. */
 const SUMMARY_CAP = 2_000;
-function partSchema(): StructuredSchema {
+export function partSchema(): StructuredSchema {
 	const schema = structuredClone(stripMetaFromSchema(ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>)) as { properties: Record<string, Record<string, unknown>> };
 	schema.properties['summary'] = { type: 'string', maxLength: SUMMARY_CAP };
 	return schema as unknown as StructuredSchema;
 }
-const COMBINE_SCHEMA: StructuredSchema = {
+export const COMBINE_SCHEMA: StructuredSchema = {
 	type: 'object', additionalProperties: false, required: ['system', 'focus', 'summary'],
 	properties: { system: { type: 'string' }, focus: { type: 'string' }, summary: { type: 'string', maxLength: SUMMARY_CAP } },
 };
@@ -171,7 +173,7 @@ function answerHeader(intent: ClassifiedIntent, executed: ExecutedPlan): string 
 }
 
 /** The adapter that turns parts into prompts for one answer. */
-function bundleAdapter(promptContent: string, intent: ClassifiedIntent, executed: ExecutedPlan): PartAdapter<BundleLayers & { summary: string }, BundleNarrative> {
+export function bundleAdapter(promptContent: string, intent: ClassifiedIntent, executed: ExecutedPlan): PartAdapter<BundleLayers & { summary: string }, BundleNarrative> {
 	const system = promptContent.trimEnd();
 	const header = answerHeader(intent, executed);
 	const reference = (round: { readonly rendered: string }, more: number): string => (round.rendered.length === 0 ? '' : (
@@ -290,7 +292,16 @@ export function prepareSynthesize(
  * Meta stamping is the caller's responsibility -- same shape as the
  * driver's meta-stamp path today.
  */
-export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'> {
+export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'>;
+/**
+ * With the stored progress of an answer written in parts: the reply is for the pending part or combine, and the result
+ * is the finished answer with how it was handled, or the progress for the next turn.
+ */
+export function finalizeSynthesize(raw: unknown, execution: ConnectionExecutionContext | undefined, progress: AnswerProgress, ctx?: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn;
+export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext, progress?: AnswerProgress, ctx?: { readonly executed: ExecutedPlan }): Omit<AnalyzeContextBundle, 'meta'> | FinalizedAnswerTurn {
+	if (progress !== undefined && progress.mode === 'partitioned') {
+		return applyReply(progress, raw, ctx ?? { executed: { plan: { answerType: '', synthesisHint: '', explorations: [] }, results: [], totalMs: 0, totalCached: 0 } as unknown as ExecutedPlan });
+	}
 	const strippedSchema = stripMetaFromSchema(
 		ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,
 	) as StructuredSchema;
@@ -427,6 +438,11 @@ const promptPathOverrides = new Map<SynthesizerPromptKey, string>();
 export function _setSynthesizerPromptPathForTest(target: SynthesizerPromptKey, path: string | undefined): void {
 	if (path === undefined) promptPathOverrides.delete(target);
 	else promptPathOverrides.set(target, path);
+}
+
+/** The answer prompt of a synthesize target, as loaded for a call. */
+export function loadSynthesizePrompt(target: SynthesizerPromptKey): string {
+	return loadPromptFile(target);
 }
 
 function loadPromptFile(target: keyof typeof PROMPT_PATHS): string {

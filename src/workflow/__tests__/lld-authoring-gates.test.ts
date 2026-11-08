@@ -150,7 +150,8 @@ test('stored: a stored LLD with no storyTitle renders byte-identically', () => {
 	const dir = 'docs/standalone/show-provider-icons-chat-dropdowns-relabel-E20261107546198e1/S001/LLD.md';
 	const artifact = JSON.parse(readFileSync(join(ROOT, '.insrc/artifacts/LLD-546198e11c24c1e3-s1.json'), 'utf8')) as LldArtifact;
 	assert.equal(artifact.meta.storyTitle, undefined, 'the fixture is an LLD written before the title existed');
-	assert.equal(renderLldMarkdown(artifact).trimEnd(), readFileSync(join(ROOT, dir), 'utf8').trimEnd());
+	// The stored document ends with one more newline than the renderer returns.
+	assert.equal(`${renderLldMarkdown(artifact)}\n`, readFileSync(join(ROOT, dir), 'utf8'));
 });
 
 // ---------------------------------------------------------------------------
@@ -308,6 +309,7 @@ test('citations: a root-level file name alongside prose is refused', () => {
 
 test('citations: a URL alongside prose is refused', () => {
 	assert.match(refused('read:source: https://example.com/source.ts explains the implementation')[0]!, /beside other text/);
+	assert.match(refused('read:source:https://example.com/source.ts?version=2 explains the implementation')[0]!, /beside other text/, 'a URL attached to a colon label');
 });
 
 test('citations: a text-only label, a well-formed path and a standalone URL all pass', () => {

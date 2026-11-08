@@ -257,7 +257,7 @@ const ROOT_FILE_RE = /^[\w@+~-][\w.@+~-]*\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|json
 /** Whether one whitespace-free token of a citation ref names a file. A heuristic: an unusual file name can be missed. */
 function isFileToken(raw: string): boolean {
 	const token = raw.replace(/^[('"`[<]+|[)'"`\],;.>]+$/g, '');
-	if (/^https?:\/\//.test(token)) return true;
+	if (/(?:^|:)https?:\/\//.test(token)) return true;
 	// A colon parts a label from a name as well as a name from its location, so each part is tried.
 	return token.replace(/#.*$/, '').split(':').some(name =>
 		name.includes('/') ? /\.[A-Za-z]\w*$/.test(name) || /^\/[^/]+\//.test(name) : ROOT_FILE_RE.test(name));

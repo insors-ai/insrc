@@ -60,5 +60,8 @@ test('deterministic history id survives append and replace crashes and rejects c
   await assert.rejects(restarted.store.finishPending(id),/different content/);
   assert.deepEqual(await restarted.journal.pending(id),staged);
   assert.equal(readFileSync(join(k.repo,`.insrc/artifacts/${id}.json`),'utf8'),before);
+  await restarted.journal.clear(id,entryId);
+  await restarted.store.updateAndLog(id,alice,current=>({next:{...current,description:'Intervening write B'}}));
+  await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:current,options})),/intervening head write/);
  }
 });

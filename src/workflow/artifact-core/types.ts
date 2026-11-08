@@ -56,6 +56,8 @@ export type Operation =
 
 /** One entry of an artifact's operation log. */
 export interface ChangeLogEntry {
+ /** Exact resulting head for a deterministic write; absent on ordinary/historical entries. */
+ readonly targetHeadHash?: string | undefined;
 	readonly id:         string;
 	readonly actor:      Actor;
 	readonly timestamp:  string;

@@ -209,6 +209,7 @@ export class ArtifactStore {
     if (!/^[a-f0-9]{32,64}$/.test(resolved.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
     const previous = current.changeLog.find(e => e.id === resolved.entryId);
     if (previous) {
+     if (previous.targetHeadHash !== headHashOf(readFileSync(artifactJsonPath(this.deps.repoPath,id),'utf8'))) throw new ArtifactShapeError('Conflicting deterministic history entry id after an intervening head write');
      if (JSON.stringify(previous.outcome) !== JSON.stringify(resolved.outcome) || previous.operation !== (resolved.operation ?? 'update') ||
       JSON.stringify(previous.actor) !== JSON.stringify(by) || JSON.stringify(previous.references) !== JSON.stringify(resolved.references) ||
       current.description !== result.next.description || JSON.stringify(current.payload) !== JSON.stringify(result.next.payload) ||
@@ -346,6 +347,7 @@ export class ArtifactStore {
 		const operationId = options.entryId ?? randomUUID().replace(/-/g, '');
 		const entry: ChangeLogEntry = {
 			id: operationId,
+   ...(options.entryId !== undefined ? { targetHeadHash: headHashOf(prepared.bytes) } : {}),
 			actor: by,
 			timestamp,
 			operation,

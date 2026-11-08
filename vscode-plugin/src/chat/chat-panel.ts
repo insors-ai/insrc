@@ -889,22 +889,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         deps.store.save(toSave);
         checkpointSaved = true;
       } catch { /* best-effort — pins are NOT released below if this failed; a takeover retries next pass */ }
-      // transitions: requests were ingested BEFORE any completion/death transition; done requires a
-      // real terminal, or VERIFIED process death (isAlive present and reporting the pid dead) WITH a
-      // caught-up observer; budget exhaustion and observation failures keep the last known status
-      const pidDead = pidDead0;
-      // the completion gate: caught up AND (a real terminal OR verified process death)
-      if (caughtUp && checkpointSaved && (pass.sawTerminal || pidDead)) {
+      // Terminal output is safe to checkpoint, but the writer may still own this segment.
+      let transitionSaved = false;
+      if (caughtUp && checkpointSaved && pidDead0) {
         // A newer turn may have started while this pass was ingesting: re-check the liveTurn identity
         // before clearing — never erase a new turn's cursor or mark it done from an old pass.
         const now = deps.store.get(s.id);
         const same = now?.liveTurn !== undefined && now.liveTurn.cursor.turnId === live.cursor.turnId && now.liveTurn.cursor.generation === live.cursor.generation && now.liveTurn.cursor.offset === live.cursor.offset && now.liveTurn.ownerHostPid === live.ownerHostPid;
         if (same) {
-          let transitionSaved = false;
           try {
-            // release the lifecycle's retention pin for this cursor too (the observer's own pin is
-            // released via heldPins above); the refcount makes a double-release a no-op
-            out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
             // ONE atomic write clears liveTurn AND sets the final status, on a COPY: the store's
             // get() returns its cached (mutable) record, so mutating it before save would leave the
             // cache showing no liveTurn even when the write fails — and every later pass skips such
@@ -922,11 +915,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (transitionSaved) postActive();
         }
       }
-      // retention ends only when there is nothing left to protect: a caught-up pass or a real
-      // terminal drops every pin this tick made; otherwise the unread generation stays archived
-      // Pins are released only when the pass caught up AND the checkpoint was durably saved —
-      // a failed save must not let the archive be deleted under a checkpoint that needs it.
-      if (caughtUp && checkpointSaved) {
+      if (transitionSaved) {
+        out.unregisterCursor({ sessionId: s.id, ...live.cursor }, readerId);
         for (const [key, cur] of [...heldPins]) {
           if (key.startsWith(`${s.id}:`)) {
             heldPins.delete(key);
@@ -2491,7 +2481,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
       `else{const mk=markerFor(ev);if(mk)reg.renderRow({kind:'fallback',text:mk.label,cssClass:mk.cssClass});}});` +
-      `if(ev&&(ev.kind==='done'||ev.kind==='error')&&!m.info){setRunning(false);setIdle();}}` +
+      `if(ev&&(ev.kind==='done'||(ev.kind==='error'&&!ev.observationFailure))&&!m.info){setRunning(false);setIdle();}}` +
       // ISSUE-6a811b8a: more requests queued behind the shown card — update its '1 of N' in place.
       `else if(m.type==='approval-position'){reg.approvalPosition(m.requestId,m.position,m.total);}` +
       // Story E20261013b2e8109f:S001: a row the host pushed outside the event path. A later version

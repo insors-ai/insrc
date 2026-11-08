@@ -1446,13 +1446,14 @@ test('resume with unknown identity retains output observation and cannot verify 
   const root = mkdtempSync(join(tmpdir(), 'chat-out-'));
   const ctl = new AbortController();
   let probes = 0;
+  let alive = true;
   const signals: string[] = [];
   const sessionOutput = createSessionOutput({ root, pollMs: 5 });
   const adapter = createProviderRegistry({
     spawn: makeFakeSpawner({ lines: [] }).spawn,
     isInstalled: () => true,
     sessionOutput,
-    isAlive: () => { probes++; return true; },
+    isAlive: () => { probes++; return alive; },
     processStartTime: () => undefined,
     killGroup: (_, signal) => { signals.push(signal); },
     livenessPollMs: 5,
@@ -1483,6 +1484,21 @@ test('resume with unknown identity retains output observation and cannot verify 
     await new Promise((resolve) => setTimeout(resolve, 25));
     assert.equal(probes, stoppedAt, 'aborting the follower disposes its process poll');
     assert.equal(exited, false, 'abort does not certify process departure');
+
+    const terminal = await sessionOutput.beginTurn('s2', 't2');
+    appendFileSync(terminal.outPath, '{"type":"result","subtype":"success","is_error":false}\n');
+    let finalized = false;
+    const completing = collect(adapter.resume({ cursor: terminal.cursor, pid: 700, startedAt: 5 }, {
+      waitForDeparture: true,
+    })).then((events) => {
+      finalized = true;
+      return events;
+    });
+    await tick(25);
+    assert.equal(finalized, false, 'logical terminal output does not certify departure');
+    alive = false;
+    await waitFor(() => finalized);
+    assert.deepEqual((await completing).map((event) => event.kind), ['done']);
   } finally {
     ctl.abort();
     await following;

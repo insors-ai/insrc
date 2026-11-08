@@ -1930,7 +1930,7 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
   assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
   assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
-  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, "a turn's done/error puts the widget idle (never hides it) + restores Send; the done that closes an informational line (info) does not");
+  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|\(ev\.kind==='error'&&!ev\.observationFailure\)\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, 'terminal events restore Send while informational and observation errors preserve progress');
 });
 
 test('S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)', async () => {
@@ -7453,8 +7453,8 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     };
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    // the CLI pid is ALIVE in both the adapter and the host — completion must come via the ingested terminal
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true }).get('claude');
+    let cliAlive = true;
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => cliAlive }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
       providers: registry({ claude: adapter }, ['claude']),
@@ -7464,7 +7464,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
       observerTimerMs: 20,
       observerTickBudgetMs: 1, // pass 1: reads frag1 + the terminal, then budget-aborts on frag2
       hostPid: 1,
-      isAlive: (pid) => pid !== 999, // owner host dead, the CLI pid ALIVE
+      isAlive: (pid) => pid === 1234 && cliAlive,
     });
     host.open();
     const s = store.create('claude' as never);
@@ -7481,7 +7481,10 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     const cur = store.get(s.id)!;
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
     store.save(cur);
-    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the retry pass drained under the caught-up gate and completed');
+    await waitFor(() => store.get(s.id)?.pendingRequests?.some((r) => r.kind === 'selection') === true, 8000);
+    assert.ok(store.get(s.id)?.liveTurn, 'drained output preserves the cursor while CLI departure is unverified');
+    cliAlive = false;
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'verified departure allows completion');
     assert.ok(tailCalls >= 3, `sustained budget exhaustion rewound once, then a later pass drained and completed (tail calls: ${tailCalls})`);
     const after = store.get(s.id)!;
     const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
@@ -7576,7 +7579,8 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     const root2 = mkdtempSync(pathJoin(tmpdir(), 'chat-obs8b-'));
     const out2 = createSessionOutput({ root: root2, pollMs: 5 });
     const store2 = createInMemoryChatSessionStore();
-    const adapterLive = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out2, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
+    let cliAlive = true;
+    const adapterLive = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out2, livenessPollMs: 5, isAlive: () => cliAlive, processStartTime: () => 1 }).get('claude');
     const host2 = createChatPanelHost({
       createPanel: () => fakeChannel().channel,
       providers: registry({ claude: adapterLive }, ['claude']),
@@ -7586,7 +7590,7 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
       observerTimerMs: 20,
       observerTickBudgetMs: 30,
       hostPid: 2,
-      isAlive: (pid) => pid !== 999, // owner dead, CLI pid alive
+      isAlive: (pid) => pid === 1234 && cliAlive,
     });
     host2.open();
     const s2 = store2.create('claude' as never);
@@ -7603,9 +7607,12 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     appendFileSync(seg2.outPath, '\n');
     await waitFor(() => (store2.get(s2.id)?.pendingRequests ?? []).some((r) => r.kind === 'selection'), 5000, 'once the writer completes the line, a later pass ingests the request');
     assert.ok(store2.get(s2.id)?.liveTurn !== undefined, 'live writer, no turn-end marker yet: still unreconciled');
-    // the writer ends the turn (turn-end marker): the next pass drains and completes
+    // A segment marker alone does not establish that the writer departed.
     await out2.endTurn(s2.id, 't-live', { code: 0, signal: null });
-    await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'turn-end marker: the turn completes (terminal already ingested)');
+    await new Promise((r) => setTimeout(r, 60));
+    assert.ok(store2.get(s2.id)?.liveTurn, 'a drained segment still retains its live writer');
+    cliAlive = false;
+    await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'verified departure completes the drained turn');
     assert.equal(store2.get(s2.id)?.status, 'waiting-input', 'the ingested request keeps waiting-input');
     host.dispose();
   } finally {

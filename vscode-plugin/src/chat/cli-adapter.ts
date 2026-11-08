@@ -158,6 +158,8 @@ export interface ResumeOptions {
    * false: resume ends at the first terminal event, as before.
    */
   readonly drain?: boolean | undefined;
+  /** Foreground lifecycle must retain its cursor until a terminal result can be safely finalized. */
+  readonly waitForDeparture?: boolean | undefined;
 }
 
 export interface RunOptions {
@@ -1500,6 +1502,26 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       return { exit, check, dispose: () => clearInterval(timer) };
     };
     const follower = watchExit();
+    const waitForDeparture = async (): Promise<boolean> => {
+      if (opts?.waitForDeparture !== true) return true;
+      if (follower.check()) return true;
+      const signal = opts.signal;
+      if (signal === undefined) {
+        await follower.exit;
+        return true;
+      }
+      if (signal.aborted) return false;
+      let onAbort!: () => void;
+      const interrupted = new Promise<false>((resolve) => {
+        onAbort = () => resolve(false);
+        signal.addEventListener('abort', onAbort, { once: true });
+      });
+      try {
+        return await Promise.race([follower.exit.then(() => true), interrupted]);
+      } finally {
+        signal.removeEventListener('abort', onAbort);
+      }
+    };
     const kill = (signal: 'SIGTERM' | 'SIGKILL'): void => {
       const observation = observe();
       if (pid !== undefined && observation.kind === 'present' && observation.startedAt === req.startedAt) {
@@ -1563,6 +1585,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
         if (aborted()) return;
         // The terminal line may have been checkpointed immediately before a reload.
         if (state.result !== undefined) {
+          if (!await waitForDeparture()) return;
           yield doneEvent(state.result.ok, state.result.message);
           return;
         }
@@ -1584,6 +1607,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           // A draining reader (the observer) keeps its cursor before the terminal until it has caught up, so
           // its rewind has a pre-terminal point (sync decision D8); any other follower checkpoints first.
           if ((ev.kind === 'done' || ev.kind === 'error') && opts?.drain !== true) {
+            if (!await waitForDeparture()) return;
             opts?.onDecoderState?.(decoderSnapshot(state));
             opts?.onProgress?.(cursor);
           }

@@ -73,6 +73,7 @@ function revisedBytes(bytes: string, number: number): string {
 
 /** What a caller can say about the change log entry of a write. */
 export interface WriteOptions {
+ readonly entryId?: string | undefined;
 	/** The log operation; create or update when absent. A lifecycle operation must match the status change it makes. */
 	readonly operation?:  Operation | undefined;
 	readonly outcome?:    ChangeLogEntry['outcome'] | undefined;
@@ -203,7 +204,19 @@ export class ArtifactStore {
 			const result = await mutate(current);
 			if (result === undefined) return { wrote: false };
 			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
-			const entry = await this.writeUnlocked(result.next, by, { ...options, ...(result.options ?? {}) });
+			const resolved = { ...options, ...(result.options ?? {}) };
+   if (resolved.entryId !== undefined) {
+    if (!/^[a-f0-9]{32,64}$/.test(resolved.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+    const previous = current.changeLog.find(e => e.id === resolved.entryId);
+    if (previous) {
+     if (JSON.stringify(previous.outcome) !== JSON.stringify(resolved.outcome) || previous.operation !== (resolved.operation ?? 'update') ||
+      JSON.stringify(previous.actor) !== JSON.stringify(by) || JSON.stringify(previous.references) !== JSON.stringify(resolved.references) ||
+      current.description !== result.next.description || JSON.stringify(current.payload) !== JSON.stringify(result.next.payload) ||
+      JSON.stringify(current.lifecycle) !== JSON.stringify(result.next.lifecycle)) throw new ArtifactShapeError('Conflicting deterministic history entry id');
+     return { wrote: false, entry: previous };
+    }
+   }
+			const entry = await this.writeUnlocked(result.next, by, resolved);
 			return { wrote: true, entry };
 		});
 	}
@@ -260,6 +273,11 @@ export class ArtifactStore {
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 
 		const operation = options.operation ?? (prior === undefined ? 'create' : 'update');
+  if (options.entryId !== undefined) {
+   if (!/^[a-f0-9]{32,64}$/.test(options.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+   const previous = (await this.deps.history.log(a.id)).find(e => e.id === options.entryId);
+   if (previous) throw new ArtifactShapeError('Deterministic entry replay must use updateAndLog to compare the current head');
+  }
 		if (options.operation !== undefined && options.operation !== 'create' && options.operation !== 'update' && !isLifecycleOperation(options.operation)) {
 			throw new ArtifactShapeError(`'${options.operation}' is a content operation that a write cannot log; use create, update or a lifecycle operation`);
 		}
@@ -321,7 +339,8 @@ export class ArtifactStore {
 		if (Array.isArray(addresses)) await this.checkAddresses(a.id, addresses);
 		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
 		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
-		const operationId = randomUUID().replace(/-/g, '');
+		if (options.entryId !== undefined && !/^[a-f0-9]{32,64}$/.test(options.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+		const operationId = options.entryId ?? randomUUID().replace(/-/g, '');
 		const entry: ChangeLogEntry = {
 			id: operationId,
 			actor: by,

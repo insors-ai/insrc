@@ -11,14 +11,14 @@
  * module; a TASK id shares the files of its Story's TASKS artifact.
  */
 
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, openSync, readSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { JOURNAL_DIR } from './journal.js';
-import { appendSidecarLine } from './sidecar.js';
+import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit } from './sidecar.js';
 import type { SidecarFile, SidecarIo } from './sidecar.js';
 import { HistoryReadError } from './types.js';
 import type { SidecarRecord } from './types.js';
@@ -40,10 +40,38 @@ export interface SidecarStore extends SidecarIo {
 
 const FRAME_RE = /^(\d+)\t(.*)$/s;
 
+/** Bound each frame while reading, before allocating its declared body or parsing JSON. */
+function boundedLines(path: string): string[] {
+ const fd = openSync(path, 'r'), chunk = Buffer.alloc(65536), lines: string[] = [];
+ let parts: Buffer[] = [], size = 0, prefix = '';
+ try {
+  for (;;) {
+   const n = readSync(fd, chunk, 0, chunk.length, null); if (!n) break;
+   let start = 0;
+   for (let i = 0; i < n; i++) {
+    if (chunk[i] !== 10) continue;
+    const part = Buffer.from(chunk.subarray(start, i)); parts.push(part); size += part.length;
+    if (size > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
+    lines.push(Buffer.concat(parts, size).toString('utf8')); parts = []; size = 0; prefix = ''; start = i + 1;
+   }
+   if (start < n) { const part = Buffer.from(chunk.subarray(start,n)); parts.push(part); size += part.length; }
+   if (size > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
+   if (size && !prefix.includes('\t')) {
+    prefix = Buffer.concat(parts, Math.min(size, 32)).subarray(0,32).toString('ascii');
+    const header = /^(\d+)\t/.exec(prefix);
+    if (header && (!Number.isSafeInteger(Number(header[1])) || Number(header[1]) > sidecarOuterLimit())) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
+   }
+  }
+  // Preserve the existing reader's abandoned-fragment convention.
+  lines.push(parts.length ? Buffer.concat(parts,size).toString('utf8') : ''); return lines;
+ } finally { closeSync(fd); }
+}
+
 /** One decoded complete frame, or undefined for an abandoned fragment. */
 function decodeFrame(line: string): string | undefined {
 	const m = FRAME_RE.exec(line);
 	if (m === null) return undefined;
+ if (!Number.isSafeInteger(Number(m[1])) || Number(m[1]) > sidecarOuterLimit()) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
 	const json = m[2] as string;
 	return Buffer.byteLength(json, 'utf8') === Number(m[1]) ? json : undefined;
 }
@@ -110,7 +138,7 @@ export class FileSidecarStore implements SidecarStore {
 		const rel = this.filesOf(artifactId)[file];
 		const path = join(this.repoPath, rel);
 		if (!existsSync(path)) return [];
-		const lines = readFileSync(path, 'utf8').split('\n');
+		const lines = boundedLines(path);
 		// The text after the last newline is an unterminated line: a fragment, never a record.
 		const unterminated = lines.pop() ?? '';
 		if (unterminated !== '') log.warn({ file: rel, line: lines.length + 1 }, 'skipping an unterminated sidecar line (abandoned fragment)');
@@ -128,6 +156,7 @@ export class FileSidecarStore implements SidecarStore {
 			if (typeof r !== 'object' || r === null || typeof r.artifactId !== 'string' || !('entry' in r)) {
 				throw new HistoryReadError(`${where} is not a sidecar record with an artifactId and an entry`);
 			}
+			checkSidecarEntrySize(r as SidecarRecord<unknown>);
 			if (r.artifactId !== artifactId) return;
 			const id = entryIdOf(r.entry);
 			const prior = seen.get(id);

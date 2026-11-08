@@ -15,9 +15,19 @@ import { dirname } from 'node:path';
 
 import { HistoryEntryError } from './types.js';
 import type { SidecarRecord } from './types.js';
+import { reviewJsonLimit } from '../../config/review.js';
+import { PermanentDesignReviewSchema } from '../review/design-review/history.js';
+import { Value } from '@sinclair/typebox/value';
 
 /** The largest serialised record, in bytes, that a line file or the journal accepts. */
 export const MAX_SIDECAR_ENTRY_BYTES = 256 * 1024;
+export const MAX_DESIGN_HISTORY_BYTES = 64 * 1024 * 1024;
+export const sidecarOuterLimit = (): number => Math.max(MAX_SIDECAR_ENTRY_BYTES, Math.min(reviewJsonLimit(), MAX_DESIGN_HISTORY_BYTES));
+export function isDesignHistoryRecord(record: SidecarRecord<unknown>): boolean {
+ const entry = record.entry as { operation?: unknown; outcome?: { data?: unknown } } | null;
+ return entry?.operation === 'review' && Value.Check(PermanentDesignReviewSchema, entry.outcome?.data) &&
+  (entry.outcome?.data as { artifactId: string }).artifactId === record.artifactId;
+}
 
 /** The two append-only line files of an artifact that History uses. */
 export type SidecarFile = 'log' | 'feedback';
@@ -30,11 +40,12 @@ export interface SidecarIo {
 }
 
 /** The serialised record, refused with HistoryEntryError when it is over {@link MAX_SIDECAR_ENTRY_BYTES}. Shared with the journal's size check. */
-export function checkSidecarEntrySize(record: SidecarRecord<unknown>): string {
+export function checkSidecarEntrySize(record: SidecarRecord<unknown>, designLimit: number = sidecarOuterLimit()): string {
 	const json = JSON.stringify(record);
 	const bytes = Buffer.byteLength(json, 'utf8');
-	if (bytes > MAX_SIDECAR_ENTRY_BYTES) {
-		throw new HistoryEntryError(`the entry of ${record.artifactId} is ${bytes} bytes, over the ${MAX_SIDECAR_ENTRY_BYTES} byte limit`);
+	const limit = isDesignHistoryRecord(record) ? Math.min(designLimit, MAX_DESIGN_HISTORY_BYTES) : MAX_SIDECAR_ENTRY_BYTES;
+	if (bytes > limit) {
+		throw new HistoryEntryError(`the entry of ${record.artifactId} is ${bytes} bytes, over the ${limit} byte limit`);
 	}
 	return json;
 }

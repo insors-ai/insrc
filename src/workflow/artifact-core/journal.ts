@@ -13,11 +13,20 @@
  */
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { writeAtomic } from '../storage.js';
 import type { ChangeLogEntry } from './types.js';
+import { checkSidecarEntrySize, isDesignHistoryRecord, sidecarOuterLimit, MAX_DESIGN_HISTORY_BYTES } from './sidecar.js';
+
+function journalBytes(id: string, op: StagedOperation): string {
+ checkSidecarEntrySize({artifactId:id,entry:op.entry});
+ const raw = JSON.stringify(op);
+ const limit = isDesignHistoryRecord({artifactId:id,entry:op.entry}) ? sidecarOuterLimit() : MAX_DESIGN_HISTORY_BYTES * 2;
+ if (Buffer.byteLength(raw) > limit) throw new Error('Journal envelope exceeds bounded history capacity');
+ return raw;
+}
 
 /** The repository-relative folder of the durable journal; listed in the ignore file. */
 export const JOURNAL_DIR = '.insrc/journal';
@@ -74,15 +83,17 @@ export function createFileJournal(repoPath: string): WriteJournal {
 	const read = (id: string): StagedOperation | undefined => {
 		const path = fileOf(id);
 		if (!existsSync(path)) return undefined;
+  if (statSync(path).size > MAX_DESIGN_HISTORY_BYTES * 2) throw new Error('Journal exceeds absolute capacity');
 		let parsed: unknown;
 		try { parsed = JSON.parse(readFileSync(path, 'utf8')); }
 		catch (err) { throw new Error(`the journal file ${path} is not valid JSON (${(err as Error).message})`); }
 		if (!isStagedOperation(parsed)) throw new Error(`the journal file ${path} is not a staged operation`);
+  journalBytes(id,parsed);
 		return parsed;
 	};
 	return {
 		stage: (id, op) => {
-			try { writeAtomic(fileOf(id), JSON.stringify(op)); return Promise.resolve(); }
+			try { writeAtomic(fileOf(id), journalBytes(id,op)); return Promise.resolve(); }
 			catch (err) { return Promise.reject(err instanceof Error ? err : new Error(String(err))); }
 		},
 		pending: id => {

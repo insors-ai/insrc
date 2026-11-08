@@ -1,0 +1,152 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "b012c780536290302313a37cc7909ee0691c66bcb74a5080db41e5b83bd0e708",
+        "at": "2026-11-08T04:54:16.734Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "createdAt": "2026-11-07T19:47:05.310Z",
+    "updatedAt": "2026-11-08T04:54:16.585Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5e7f04ef8",
+        "ranAt": "2026-11-07T19:47:05.310Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U1 permanent payload integrity and digest; aggregate schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent payload validates exact history, party, binding, digest and version",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "full and impact consolidation preserve 8194 limitations across checkpoint restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "impact consolidation carries more than 256 origins without weakening per-chunk findings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 865,
+            "titles": [
+              {
+                "title": "permanent payload validates exact history, party, binding, digest and version",
+                "result": "pass"
+              },
+              {
+                "title": "full and impact consolidation preserve 8194 limitations across checkpoint restart",
+                "result": "pass"
+              },
+              {
+                "title": "impact consolidation carries more than 256 origins without weakening per-chunk findings",
+                "result": "pass"
+              },
+              {
+                "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "202923d85",
+        "ranAt": "2026-11-08T04:54:16.585Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "capacity refusal is durable before provider construction and does not spend retries",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 907,
+            "titles": [
+              {
+                "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
+                "result": "pass"
+              },
+              {
+                "title": "capacity refusal is durable before provider construction and does not spend retries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

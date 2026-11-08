@@ -9,7 +9,8 @@ import { DesignReviewCoordinator } from '../coordinator.js';
 import { DESIGN_LIMITS, DesignReviewError } from '../contracts.js';
 import type { LLMProvider } from '../../../../shared/types.js';
 import { consolidateDesignReview } from '../results.js';
-import type { DesignChunkResult } from '../contracts.js';
+import type { DesignChunkResult, DesignReviewCheckpoint } from '../contracts.js';
+import type { ActivityReviewSessionOpts } from '../../../../shared/types.js';
 
 function maximalResult(result: DesignChunkResult): DesignChunkResult {
  const r = structuredClone(result); r.status = 'incomplete'; r.limitations = [];
@@ -90,4 +91,36 @@ test('automatic retry and explicit recovery reserve capacity before charging dis
  await assert.rejects(recovering.recover({phase:'recover',repo:r.repo,reviewId:'review-1',attempt:1,actionId:'refused-resume',operation:'resume'}),{code:'checkpoint_capacity'});
  const restored=(await loadDesignCheckpoint(r.repo,'review-1'))!.attempts[0]!;
  assert.equal(restored.failure!.code,'checkpoint_capacity');assert.equal(restored.unit,undefined);assert.equal(restored.actions,undefined);
+});
+test('coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over', async t => {
+ const f=impactFixture(t),current=structuredClone(f.baseline);current.number=5;current.status='pending';delete current.report;
+ current.completedChunks=current.completedChunks.slice(0,2).map(maximalResult);
+ const final=maximalResult(f.baseline.completedChunks[2]!);
+ const history=Array.from({length:4},(_,i)=>{const a=structuredClone(f.checkpoint.attempts[0]!);a.number=i+1;a.status='invalidated';a.completedChunks=[];return a;});
+ const initial:DesignReviewCheckpoint={...f.checkpoint,attempts:[...history,current]};
+ const request={phase:'recover',repo:f.repo,reviewId:'review-1',attempt:5,actionId:'boundary-resume',operation:'resume'};
+ let calls=0,max=0,memory=structuredClone(initial);
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async(_p:string,_s:unknown,opts:ActivityReviewSessionOpts)=>{calls++;await opts.onCandidate(final);return final;}} as unknown as LLMProvider;
+ const settle=async(c:DesignReviewCoordinator)=>{for(let i=0;i<1000;i++){const v=await c.progress(f.repo,'review-1',5);if(!['pending','running'].includes(v.status))return v;await pause(5);}throw Error('Fixture did not settle');};
+ // First measure the real coordinator's admission state; only observer fields differ later.
+ const dry=new DesignReviewCoordinator({load:async()=>memory,save:async(_p,cp)=>{memory=structuredClone(cp);},provider:()=>({provider,model:'fixture'}),capacity:cp=>{max=Math.max(max,designDispatchCapacity(cp));assertDesignDispatchCapacity(cp);}});
+ await dry.recover(request);assert.equal((await settle(dry)).status,'incomplete');assert.equal(calls,1);
+ let padding=DESIGN_LIMITS.checkpointBytes-max;
+ for(const a of history)for(const field of ['canonical','document'] as const){const n=Math.min(padding,DESIGN_LIMITS.subjectBytes-a.baseline.reviewedContent[field].length);a.baseline.reviewedContent[field]+='x'.repeat(n);padding-=n;}
+ assert.equal(padding,0);
+ await saveDesignCheckpoint(f.repo,initial);calls=0;let observed=0;
+ const actual=new DesignReviewCoordinator({provider:()=>({provider,model:'fixture'}),capacity:cp=>{observed=Math.max(observed,designDispatchCapacity(cp));assertDesignDispatchCapacity(cp);}});
+ await actual.recover(request);assert.equal((await settle(actual)).status,'incomplete');
+ assert.equal(observed,DESIGN_LIMITS.checkpointBytes);assert.equal(calls,1);
+ assert.equal((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[4]!.completedChunks[2]!.limitations.length,final.limitations.length);
+ // Fresh durable snapshot at the same public path: one extra historical byte,
+ // with no model construction and no retry charge. Use a distinct fixture file
+ // lifecycle by deleting only this test's completed checkpoint before reseeding.
+ const {unlink}=await import('node:fs/promises');await unlink(f.path);
+ const spare=initial.attempts.slice(0,4).find(a=>a.baseline.reviewedContent.document.length<DESIGN_LIMITS.subjectBytes)!;spare.baseline.reviewedContent.document+='x';await saveDesignCheckpoint(f.repo,initial);
+ calls=0;const over=new DesignReviewCoordinator({provider:()=>{calls++;throw Error('No dispatch');}});
+ await assert.rejects(over.recover(request),{code:'checkpoint_capacity'});assert.equal(calls,0);
+ const refused=(await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[4]!;
+ assert.equal(refused.failure!.code,'checkpoint_capacity');assert.equal(refused.unit,undefined);assert.equal(refused.actions,undefined);
+ const restarted=new DesignReviewCoordinator();assert.equal((await restarted.progress(f.repo,'review-1',5)).status,'failed');
 });

@@ -12,6 +12,7 @@ const diagnostic = { code: maxId, summary: maxText };
 // progress/recovery/failure state and model attribution. Existing metadata is already
 // counted below; this envelope bounds all fields which can grow before the next admission.
 const terminalEnvelope = {
+ status: maxText,
  model: maxText, failure: diagnostic, outcome: diagnostic,
  progress: { checkpointPath: 'x'.repeat(DESIGN_LIMITS.path), failedUnit: { unitId: maxId, phase: maxText, retriesUsed: maxNumber, ...diagnostic }, recovery: { reason: maxText, completedChunkIds: Array(DESIGN_LIMITS.chunks).fill(maxId) }, ...Object.fromEntries(Array.from({length:32},(_,i)=>['counter'+i,maxNumber])) },
  recovery: { failedUnit: diagnostic, completedChunkIds: Array(DESIGN_LIMITS.chunks).fill(maxId) },
@@ -28,13 +29,19 @@ const terminalEnvelope = {
  */
 export function designDispatchCapacity(checkpoint: DesignReviewCheckpoint): number {
  const attempt = checkpoint.attempts.at(-1)!;
+ // Current observer/dispatch fields are covered at their upper bounds below, not
+ // charged again at their variable instantaneous sizes. This makes an admission
+ // stable while progress, model attribution and the reserved generation are saved.
+ const { progress: _progress, current: _current, unit: _unit, model: _model,
+  status: _status, finishedAt: _finishedAt, failure: _failure, recovery: _recovery, ...stable } = attempt;
+ const admitted = {...checkpoint,attempts:[...checkpoint.attempts.slice(0,-1),stable]} as DesignReviewCheckpoint;
  const prefix = bytes(attempt.completedChunks);
  const historicalOrigins = checkpoint.attempts.flatMap(a => a.completedChunks.flatMap(r => r.findings.map(f => ({ attempt: a.number, chunkId: r.chunkId, findingId: f.id }))));
  const nextOrigins = Array(DESIGN_LIMITS.findings).fill({ attempt: DESIGN_LIMITS.attempts, chunkId: maxId, findingId: maxId });
  const reportEnvelope = { reviewId: maxId, artifactId: 'x'.repeat(DESIGN_LIMITS.path), attempt: maxNumber, status: maxText, counts: { HIGH: maxNumber, MED: maxNumber, LOW: maxNumber }, reviewedContentIdentity: 'x'.repeat(64), reviewer: maxText,
   impact: { baselineAttempt: maxNumber, mode: maxText, effectiveFindingOrigins: [...historicalOrigins, ...nextOrigins], coverageOrigins: Array(DESIGN_LIMITS.chunks).fill({ chunkId: maxId, kind: maxText, fromAttempt: maxNumber, fromChunkId: maxId, justification: maxText }) } };
  const response = attempt.plan ? DESIGN_LIMITS.resultBytes * 3 : DESIGN_LIMITS.requestBytes * 2;
- return Buffer.byteLength(serializeDesignCheckpoint(checkpoint)) + prefix * 2 + response + bytes(terminalEnvelope) + bytes(reportEnvelope);
+ return Buffer.byteLength(serializeDesignCheckpoint(admitted)) + prefix * 2 + response + bytes(terminalEnvelope) + bytes(reportEnvelope);
 }
 export function assertDesignDispatchCapacity(checkpoint: DesignReviewCheckpoint, limit: number = DESIGN_LIMITS.checkpointBytes): void {
  requireDesign(limit <= DESIGN_LIMITS.checkpointBytes && designDispatchCapacity(checkpoint) <= limit,

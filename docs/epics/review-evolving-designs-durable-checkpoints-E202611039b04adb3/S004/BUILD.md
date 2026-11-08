@@ -2,13 +2,13 @@
 
 # Build (plan-driven) — Story s4
 
-**Standalone:** no  ·  **Created:** 2026-11-07T19:47:05.310Z  ·  **Updated:** 2026-11-08T05:15:23.273Z
+**Standalone:** no  ·  **Created:** 2026-11-07T19:47:05.310Z  ·  **Updated:** 2026-11-08T05:18:49.098Z
 
-**Commit:** c37255397
+**Commit:** 83c343017
 
 ## Summary
 
-Under the human-approved amended plan, t2 proves checkpoint reservation and durable pre-dispatch refusal; publication-only persistence retry belongs to dependent t4. Added real 64MiB exact/one-over boundary with maximum byte-valid results, consolidation and checkpoint reload. All three tests pass.
+Fixed capacity admission ordering: prospective execution reservations are checked before their snapshot is saved. Failure diagnostics persist separately before retry reservation; a refused retry retains dispatches=1/retriesUsed=0 and only one provider call. Explicit recovery capacity refusal persists an error from the original snapshot without any new unit/action charge. All 97 design-review tests and TypeScript pass.
 
 ## Tasks validated
 
@@ -20,38 +20,38 @@ Under the human-approved amended plan, t2 proves checkpoint reservation and dura
 
 ## Changes
 
-- `.insrc/artifacts/LLD-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/LLD-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/PLAN-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t1.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t2.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t3.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t4.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t5.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t6.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t7.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t8.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t9.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASKS-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `.insrc/artifacts/TASKS-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/LLD.md` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/PLAN.md` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/sequence-diagram.html` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/__tests__/impact-contracts.test.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/checkpoint.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/contracts.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/history.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/provenance.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/results.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/__tests__/capacity.test.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/capacity.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/review/design-review/coordinator.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/journal.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/sidecar-store.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/sidecar.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/history.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
-- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-11-08T05:15:23.273Z)
+- `.insrc/artifacts/LLD-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/LLD-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/PLAN-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t1.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t2.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t3.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t4.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t5.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t6.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t7.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t8.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASK-9b04adb36cac716d-s4-t9.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASKS-9b04adb36cac716d-s4.json` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `.insrc/artifacts/TASKS-9b04adb36cac716d-s4.log.jsonl` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/LLD.md` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/PLAN.md` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/sequence-diagram.html` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/__tests__/impact-contracts.test.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/checkpoint.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/contracts.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/history.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/provenance.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/results.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/capacity.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/review/design-review/coordinator.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/journal.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/sidecar-store.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/sidecar.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/store.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/history.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)
+- `src/workflow/artifact-core/types.ts` — **insrc-build** (2026-11-08T05:18:49.098Z)

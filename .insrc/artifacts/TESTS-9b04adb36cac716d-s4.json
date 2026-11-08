@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 8,
-        "contentHash": "d4a6435ff6975485ad7e68dd3dc7f4a396fcd1bd08221e40f0f90683b00c5c29",
-        "at": "2026-11-08T05:15:23.427Z",
+        "number": 9,
+        "contentHash": "9958478ff8d67161b46e052b780dd6a722c52a01fc932e558741d130c9aa7d31",
+        "at": "2026-11-08T05:18:49.255Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:15:23.273Z",
+    "updatedAt": "2026-11-08T05:18:49.098Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 8
+    "revision": 9
   },
   "body": {
     "tasks": [
@@ -103,8 +103,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "c37255397",
-        "ranAt": "2026-11-08T05:15:23.273Z",
+        "commit": "83c343017",
+        "ranAt": "2026-11-08T05:18:49.098Z",
         "testsPassed": true,
         "tests": [
           {
@@ -126,6 +126,11 @@
                 "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
                 "title": "capacity refusal is durable before provider construction and does not spend retries",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "automatic retry and explicit recovery reserve capacity before charging dispatch counters",
+                "result": "pass"
               }
             ],
             "files": []
@@ -136,7 +141,7 @@
             "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3516,
+            "durationMs": 3646,
             "titles": [
               {
                 "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
@@ -148,6 +153,10 @@
               },
               {
                 "title": "capacity refusal is durable before provider construction and does not spend retries",
+                "result": "pass"
+              },
+              {
+                "title": "automatic retry and explicit recovery reserve capacity before charging dispatch counters",
                 "result": "pass"
               }
             ],

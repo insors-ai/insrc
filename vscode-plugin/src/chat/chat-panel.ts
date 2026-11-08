@@ -38,7 +38,7 @@ import type { TurnEvent } from './stream-events.js';
 import type { DeclaredOutcome, PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
 import type { ChatQueueWorker, QueueAction, QueuedCliIdentity, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
-import { projectOutbox } from './chat-outbox.js';
+import { projectOutbox, projectSessionOutbox, type OutboxContext } from './chat-outbox.js';
 import type { LinkOpener } from './link-opener.js';
 import { LINK_MARKUP_STYLE } from './link-markup.js';
 import {
@@ -996,13 +996,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    */
   let outboxRows: readonly QueuedMessage[] | undefined;
   const postOutbox = (note?: string): void => {
-    if (outboxRows === undefined || session === undefined) return;
-    const view = projectOutbox(outboxRows, session.id, {
+    if (session === undefined) return;
+    const ctx: OutboxContext = {
       titleOf: (id) => deps.store.get(id)?.title,
       here: (m) => runtimes.get(m.sessionId)?.queued?.message.seq === m.seq,
       ...(note !== undefined ? { note } : {}),
-    });
-    post({ type: 'outbox', view });
+    };
+    try {
+      const snapshot = worker?.eligibility?.();
+      if (snapshot !== undefined) post({ type: 'outbox', view: projectSessionOutbox(snapshot, session.id, ctx) });
+      else if (outboxRows !== undefined) post({ type: 'outbox', view: projectOutbox(outboxRows, session.id, ctx) });
+    } catch (err) {
+      log.warn(`[chat-queue] could not project the outbox: ${err instanceof Error ? err.message : String(err)}`);
+    }
   };
 
   // S003 (dev-chat ux polish): record a resolved permission decision. Mirrors the tool-result
@@ -2335,23 +2341,26 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         `var obCounts=[],obTimer=0;` +
         `function obTick(){var n=Date.now();obCounts.forEach(function(c){var s=Math.max(0,Math.ceil((c.at-n)/1000));c.el.textContent=s>0?'retrying in '+(s>=60?Math.floor(s/60)+'m '+(s%60)+'s':s+'s'):'retrying now';});` +
         `if(obCounts.length===0&&obTimer){clearInterval(obTimer);obTimer=0;}}` +
-        `function renderOutbox(v){if(!v||v.sessionId!==cur)return;obCounts=[];` +
+        `function renderOutbox(v){if(!v||v.sessionId!==cur)return;obCounts=[];var rows=v.rows||[];` +
         `var parts=[];var n=v.aheadFromOtherChats||0;if(n>0)parts.push(n+(n===1?' message':' messages')+' from other chats ahead');` +
         `if(v.runningChat)parts.push('running: \u201c'+String(v.runningChat.title)+'\u201d'+(v.runningChat.here?' (this window)':''));` +
         `if(v.blockedBy)parts.push('waiting for '+(v.blockedBy.reason==='selection'?'a choice':'an approval')+' in \u201c'+String(v.blockedBy.chatTitle)+'\u201d');` +
+        `if(v.capacity&&rows.some(function(r){return r.state==='queued'||r.state==='retrying'||r.state==='processing';})){parts.push(v.capacity.occupied+' of '+v.capacity.total+' running');}` +
+        `if(Array.isArray(v.activeTurns)&&rows.some(function(r){return r.waitReason==='capacity';})){parts.push(v.activeTurns.map(function(t){return t.title;}).join(', '));}` +
         `obSum.textContent=parts.join(' \u00b7 ');obSum.hidden=parts.length===0;` +
-        `obList.textContent='';var rows=v.rows||[];` +
+        `obList.textContent='';` +
         `rows.forEach(function(r){var row=document.createElement('div');row.className='outbox__row outbox__row--'+String(r.state);` +
         `var text=String(r.text||'');var first=text.split('\\n')[0];` +
         `row.appendChild(obSpan('outbox__place',typeof r.position==='number'?'#'+r.position:(r.state==='not-delivered'?'not sent':String(r.state))));` +
         `var t=obSpan('outbox__text',first||(r.attachments>0?'':'(empty)'));t.setAttribute('title',text);row.appendChild(t);` +
         `if(r.attachments>0)row.appendChild(obSpan('outbox__files','\ud83d\udcce'+r.attachments));` +
         `if(r.error){var er=obSpan('outbox__err',String(r.error));er.setAttribute('title',String(r.error));row.appendChild(er);}` +
+        `var reason=({'same-session':'waiting for this chat’s earlier message','origin-unavailable':'waiting for the sending window','capacity':'waiting for a free chat slot','approval':'waiting for approval','selection':'waiting for a choice'})[r.waitReason];if(reason)row.appendChild(obSpan('outbox__attempt',reason));` +
         `if(r.state==='retrying'){row.appendChild(obSpan('outbox__attempt','attempt '+String(r.attempt||1)+' of 3'));` +
         `var cd=obSpan('outbox__countdown','');row.appendChild(cd);if(typeof r.nextAttemptAt==='number')obCounts.push({el:cd,at:r.nextAttemptAt});` +
         `row.appendChild(obBtn('\u25b6','retry this message now','outbox-retry-now',r.seq));}` +
         `if(r.state==='queued'||r.state==='retrying'){row.appendChild(obBtn('\u2715','cancel this message','outbox-cancel',r.seq));}` +
-        `else{row.appendChild(obBtn('\u21bb','send this message again','outbox-resend',r.seq));row.appendChild(obBtn('\u2715','dismiss this message','outbox-dismiss',r.seq));}` +
+        `else if(r.state==='failed'||r.state==='not-delivered'){row.appendChild(obBtn('\u21bb','send this message again','outbox-resend',r.seq));row.appendChild(obBtn('\u2715','dismiss this message','outbox-dismiss',r.seq));}` +
         `obList.appendChild(row);});` +
         `obTick();if(obCounts.length>0&&!obTimer)obTimer=setInterval(obTick,1000);` +
         `if(v.note){obNote.textContent=String(v.note);obNote.hidden=false;}else{obNote.textContent='';obNote.hidden=true;}` +

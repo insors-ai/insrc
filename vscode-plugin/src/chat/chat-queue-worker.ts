@@ -21,7 +21,7 @@ import { observeProcess, processDeparted, type ProcessObservation } from './sess
 import {
   BUSY_NOTE, LEASE_HEARTBEAT_MS, LEASE_TAKEOVER_MS, PRESENCE_GRACE_MS, StoreBusy,
   type ChatQueueLeases, type ChatQueueStore, type EnqueueResult, type LeaseClaim, type QueuedMessage, type RepoLease, type TurnOutcome,
-  type LeaseToken, type ProcessExitProof, type SessionLease, type SessionQueueStore,
+  type LeaseToken, type ProcessExitProof, type SessionLease, type SessionQueueSnapshot, type SessionQueueStore,
 } from './chat-queue-store.js';
 
 /** How often the queue is checked while it has rows or this window holds the lease. */
@@ -87,6 +87,8 @@ export interface ChatQueueWorker {
   liveSessionIds(): ReadonlySet<string>;
   /** Whether this window is running a queued message now. */
   running(): boolean;
+  /** Consistent admission state for v3 outbox projection. */
+  eligibility?(): SessionQueueSnapshot;
   /**
    * Story S002 (AMD-3): an outbox action. cancel a queued or retrying message, dismiss a failed or
    * not-delivered one, or resend it at the back as this window's. The change is noticed at once; a
@@ -658,6 +660,7 @@ export function createSessionQueueWorker(deps: SessionQueueWorkerDeps): ChatQueu
   return {
     ...queueCommands(store, claim, deps.newTurnId ?? randomUUID, listeners, () => disposed, schedule, log),
     running: () => active.size > 0 || recovered.size > 0,
+    eligibility: () => store.snapshot(now()),
     dispose() {
       disposed = true;
       if (poll !== undefined) timers.clearTimeout(poll);

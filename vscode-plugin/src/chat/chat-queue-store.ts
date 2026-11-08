@@ -11,7 +11,7 @@
  * (node:sqlite's DatabaseSync in the extension), so tests use a temp file.
  */
 
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, rmSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dirname } from 'node:path';
 import type { AttachmentRef } from './attachment-store.js';
@@ -190,9 +190,29 @@ export interface TurnExitProof {
 
 export type FinishResult = { readonly kind: 'applied'; readonly row?: QueuedMessage | undefined } | { readonly kind: 'stale' };
 
+export type SessionQueueWait = 'same-session' | 'retry-delay' | 'origin-unavailable' | 'capacity';
+
+export interface SessionQueueSnapshot {
+  readonly at: number;
+  readonly rows: readonly QueuedMessage[];
+  readonly leases: readonly SessionLease[];
+  readonly presence: readonly WindowPresence[];
+}
+
+export function sessionQueueWait(row: QueuedMessage, snapshot: SessionQueueSnapshot): SessionQueueWait | undefined {
+  if (snapshot.leases.some((lease) => lease.sessionId === row.sessionId) ||
+      snapshot.rows.some((older) => older.sessionId === row.sessionId && older.seq < row.seq &&
+        (older.state === 'queued' || older.state === 'retrying' || older.state === 'processing'))) return 'same-session';
+  if (row.state === 'retrying' && (row.nextAttemptAt ?? 0) > snapshot.at) return 'retry-delay';
+  if (!snapshot.presence.some((p) => p.windowKey === row.windowKey && snapshot.at - p.heartbeatAt <= PRESENCE_GRACE_MS)) return 'origin-unavailable';
+  if (snapshot.leases.length >= REPO_TURN_CAPACITY) return 'capacity';
+  return undefined;
+}
+
 export interface SessionQueueStore extends Omit<ChatQueueStore, 'head' | 'acknowledge' | 'finish' | 'markWaiting' | 'markNotDeliveredIfHead'>,
   Pick<ChatQueueLeases, 'presence' | 'leave' | 'windowAlive' | 'presenceOf'> {
   readonly mode: 'session-leases';
+  snapshot(at: number): SessionQueueSnapshot;
   head(windowKey: string, at: number): QueuedMessage | undefined;
   acknowledge(seq: number, claim: LeaseClaim): LeaseToken | undefined;
   finish(token: LeaseToken, outcome: TurnOutcome): FinishResult;
@@ -216,6 +236,7 @@ export interface SqliteDatabase {
   exec(sql: string): void;
   prepare(sql: string): SqliteStatement;
   close(): void;
+  function?(name: string, fn: () => number): void;
 }
 export type SqlValue = string | number | bigint | null;
 
@@ -230,6 +251,8 @@ export interface ChatQueueStoreDeps {
 export interface SessionQueueStoreDeps extends ChatQueueStoreDeps {
   readonly mode: 'session-leases';
   readonly observe?: ((pid: number) => ProcessObservation) | undefined;
+  /** Production cutover also backs up the legacy file and fences older SQLite connections. */
+  readonly protectLegacyWriters?: boolean | undefined;
 }
 
 /** The store cannot be used: the database could not be opened, or another plugin made a newer schema. */
@@ -387,6 +410,8 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
     if (!Number.isSafeInteger(version) || version < 1) throw new StoreUnavailable('the chat queue schema version is invalid');
     return version;
   };
+  const hasTable = (name: string): boolean =>
+    db.prepare("SELECT 1 FROM sqlite_schema WHERE type = 'table' AND name = ?").get(name) !== undefined;
 
   /** One write: BEGIN IMMEDIATE ... COMMIT, rolled back on a throw; a busy wait past the timeout is StoreBusy. */
   function write<T>(fn: () => T): T {
@@ -415,16 +440,27 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
     }
   }
 
-  function upgradeSessionLeases(): void {
+  function verifyLegacyWriters(): void {
     const observe = sessionConfig?.observe ?? observeProcess;
     const verifyWriter = (pid: number, startedAt: number | undefined): void => {
       if (!processDeparted(observe(pid), startedAt)) {
         throw new StoreUnavailable('the chat queue upgrade needs all older VS Code windows to close and their writers to exit');
       }
     };
-    for (const presence of db.prepare('SELECT pid, pid_started_at FROM presence').all()) {
-      verifyWriter(num(presence['pid']) ?? 0, num(presence['pid_started_at']));
+    if (hasTable('presence')) {
+      for (const presence of db.prepare('SELECT pid, pid_started_at FROM presence').all()) {
+        verifyWriter(num(presence['pid']) ?? 0, num(presence['pid_started_at']));
+      }
     }
+    const legacyRow = hasTable('lease') ? db.prepare('SELECT * FROM lease WHERE id = 1').get() : undefined;
+    if (legacyRow !== undefined) {
+      const legacy = rowToLease(legacyRow);
+      verifyWriter(legacy.pid, legacy.pidStartedAt);
+    }
+  }
+
+  function upgradeSessionLeases(): void {
+    verifyLegacyWriters();
     const legacyRow = db.prepare('SELECT * FROM lease WHERE id = 1').get();
     const legacy = legacyRow === undefined ? undefined : rowToLease(legacyRow);
     const processing = db.prepare("SELECT seq, session_id, window_key FROM messages WHERE state = 'processing'").all();
@@ -433,7 +469,6 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
         row?.['seq'] !== legacy.seq || row['window_key'] !== legacy.windowKey) {
       throw new StoreUnavailable('the legacy chat queue has inconsistent processing ownership');
     }
-    if (legacy !== undefined) verifyWriter(legacy.pid, legacy.pidStartedAt);
     db.exec(SESSION_LEASE_SCHEMA);
     db.exec('CREATE INDEX messages_session_state_seq ON messages (session_id, state, seq)');
     if (legacy !== undefined && row !== undefined) {
@@ -447,17 +482,52 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
     db.exec('DROP TABLE lease');
   }
 
+  /** A legacy connection has no registered function and cannot mutate the new queue. */
+  function protectWrites(): void {
+    for (const table of ['messages', 'presence', 'meta', 'session_leases']) {
+      for (const op of ['INSERT', 'UPDATE', 'DELETE']) {
+        db.exec(`CREATE TRIGGER IF NOT EXISTS queue_v3_${table}_${op.toLowerCase()}
+          BEFORE ${op} ON ${table} BEGIN SELECT insrc_queue_v3_writer(); END`);
+      }
+    }
+  }
+
+  const protectedCutover = sessionConfig?.protectLegacyWriters === true;
+  let backupPath: string | undefined;
+  let backedUpVersion: number | undefined;
   try {
     db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA synchronous = NORMAL');
+    if (sessionConfig !== undefined) {
+      if (protectedCutover && db.function === undefined) throw new StoreUnavailable('this VS Code SQLite runtime cannot safely upgrade the chat queue');
+      db.function?.('insrc_queue_v3_writer', () => 1);
+    }
+    if (protectedCutover && hasTable('meta')) {
+      const version = schemaVersion();
+      if (version !== undefined && version < SESSION_LEASE_SCHEMA_VERSION) {
+        verifyLegacyWriters();
+        backedUpVersion = num(db.prepare('PRAGMA data_version').get()?.['data_version']);
+        backupPath = `${deps.path}.pre-v3-${randomUUID()}.sqlite`;
+        db.prepare('VACUUM INTO ?').run(backupPath);
+      }
+    }
     write(() => {
+      if (backedUpVersion !== undefined && num(db.prepare('PRAGMA data_version').get()?.['data_version']) !== backedUpVersion) {
+        throw new StoreUnavailable('the chat queue changed during its backup; close other VS Code windows and reload');
+      }
       db.exec(SCHEMA[0]!);
       const version = schemaVersion();
       if (version !== undefined && version > expectedSchema) {
         throw new StoreUnavailable(`the chat queue was made by a newer plugin (schema ${version}); reload or update this window`);
       }
-      if (version === SESSION_LEASE_SCHEMA_VERSION) return;
+      if (version === SESSION_LEASE_SCHEMA_VERSION) {
+        if (protectedCutover) protectWrites();
+        return;
+      }
+      if (protectedCutover && version !== undefined && backupPath === undefined) {
+        throw new StoreUnavailable('the chat queue changed before its backup; close other VS Code windows and reload');
+      }
       for (const sql of SCHEMA.slice(1)) db.exec(sql);
       if (version === undefined) {
         db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('created_by', ?)`).run(deps.pluginVersion);
@@ -467,6 +537,7 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
       }
       if (sessionConfig !== undefined) upgradeSessionLeases();
       db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`).run(String(expectedSchema));
+      if (protectedCutover) protectWrites();
     });
     initialized = true;
   } catch (err) {
@@ -474,6 +545,9 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
       db.close();
     } catch {
       /* ignore */
+    }
+    if (backupPath !== undefined) {
+      try { rmSync(backupPath, { force: true }); } catch { /* best-effort backup cleanup */ }
     }
     if (err instanceof StoreUnavailable) throw err;
     throw new StoreUnavailable(`the chat queue could not be prepared: ${err instanceof Error ? err.message : String(err)}`);
@@ -759,11 +833,20 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
   };
   const matchesToken = (lease: SessionLease | undefined, token: LeaseToken): lease is SessionLease =>
     lease !== undefined && lease.seq === token.seq && lease.epoch === token.epoch;
-  const readHead = (windowKey: string, at: number): QueuedMessage | undefined => {
-    const row = db.prepare(`${SESSION_HEAD} AND m.window_key = ?
-      AND (m.state = 'queued' OR COALESCE(m.next_attempt_at, 0) <= ?) ORDER BY m.seq LIMIT 1`).get(windowKey, at);
-    return row === undefined ? undefined : rowToMessage(row);
-  };
+  const readSnapshot = (at: number): SessionQueueSnapshot => ({
+    at,
+    rows: legacy.list(),
+    leases: db.prepare('SELECT * FROM session_leases ORDER BY seq').all().map(rowToSessionLease),
+    presence: db.prepare('SELECT window_key, pid, pid_started_at, heartbeat_at FROM presence').all().map((row) => ({
+      windowKey: String(row['window_key']),
+      pid: num(row['pid']) ?? 0,
+      pidStartedAt: num(row['pid_started_at']),
+      heartbeatAt: num(row['heartbeat_at']) ?? 0,
+    })),
+  });
+  const eligibleHead = (windowKey: string, snapshot: SessionQueueSnapshot): QueuedMessage | undefined =>
+    snapshot.rows.find((row) => row.windowKey === windowKey && (row.state === 'queued' || row.state === 'retrying') &&
+      sessionQueueWait(row, snapshot) === undefined);
   const tokenOf = (sessionId: string, seq: number): LeaseToken => Object.freeze({ sessionId, seq, epoch: randomUUID() });
   const fence = 'session_id = ? AND seq = ? AND epoch = ?';
   const tokenParams = (token: LeaseToken): [string, number, string] => [token.sessionId, token.seq, token.epoch];
@@ -779,15 +862,25 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStor
   const store: SessionQueueStore = {
     ...legacy,
     mode: 'session-leases',
+    snapshot(at) {
+      db.exec('BEGIN');
+      try {
+        const snapshot = readSnapshot(at);
+        db.exec('COMMIT');
+        return snapshot;
+      } catch (err) {
+        db.exec('ROLLBACK');
+        throw err;
+      }
+    },
     head(windowKey, at) {
-      const occupied = num(db.prepare('SELECT COUNT(*) AS n FROM session_leases').get()?.['n']) ?? 0;
-      return occupied < REPO_TURN_CAPACITY ? readHead(windowKey, at) : undefined;
+      return eligibleHead(windowKey, store.snapshot(at));
     },
     acknowledge(seq, claim) {
       return write(() => {
         const at = now();
         if (!claimsWindow(claim, at)) return undefined;
-        const head = store.head(claim.windowKey, at);
+        const head = eligibleHead(claim.windowKey, readSnapshot(at));
         if (head?.seq !== seq) return undefined;
         const token = tokenOf(head.sessionId, seq);
         db.prepare(`INSERT INTO session_leases (session_id, seq, epoch, window_key, pid, pid_started_at, heartbeat_at)

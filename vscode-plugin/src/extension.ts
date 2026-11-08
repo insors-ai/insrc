@@ -719,6 +719,7 @@ export function activate(context: vscode.ExtensionContext): void {
     // the chat in this window (with a notice) instead of failing the extension. Story S005: there is
     // no direct path; everything below that turns the chat on is gated on the queue existing.
     const chatQueue = createQueueFactory({
+      mode: 'session-leases',
       path: queuePathOf(PATHS.insrc, repoKeyOf(chatCwd(), {
         gitTopLevel: (cwd) => execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }),
         realpath: (p) => realpathSync(p),

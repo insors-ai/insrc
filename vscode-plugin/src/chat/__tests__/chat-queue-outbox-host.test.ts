@@ -1,7 +1,7 @@
 // Epic E20261014613abdb3 Story S002 t4 — the chat host posts the outbox and handles its actions.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
@@ -11,6 +11,7 @@ import type { ProviderId, ProviderRegistry, RunOptions, StreamAdapter, TurnReque
 import type { TurnEvent } from '../stream-events.js';
 import { BUSY_NOTE, FULL_NOTE, QUEUE_RECORD_BOUND, createChatQueueStore, type ChatQueueLeases, type ChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { ACTION_NOTES, createChatQueueWorker } from '../chat-queue-worker.js';
+import { createQueueFactory } from '../chat-queue-setup.js';
 import type { OutboxView } from '../chat-outbox.js';
 import { fakeLiveProc, waitFor, type FakeLiveProc } from './fixtures.js';
 
@@ -101,6 +102,67 @@ function repo() {
 }
 const doneEv = (turnId: string): TurnEvent => ({ kind: 'done', turnId, ok: true, sessionId: 'native-1' });
 const rowsOf = (v: OutboxView | undefined): Array<[string, number | undefined, string]> => (v?.rows ?? []).map((r) => [r.text, r.position, r.state]);
+
+test('compatible v3 cutover and idle drafts with no unrelated blocker', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-chat-cutover-'));
+  const path = join(dir, 'queue.sqlite');
+  const deps = { path, openDatabase: (p: string) => new DatabaseSync(p) as unknown as SqliteDatabase,
+    now: () => Date.now(), pluginVersion: 'test' };
+  const old = createChatQueueStore(deps);
+  const oldWriter = new DatabaseSync(path);
+  const store = createInMemoryChatSessionStore();
+  const a = store.create('claude');
+  const oldClaim = { windowKey: 'window', pid: 11, pidStartedAt: 9 };
+  const notices: string[] = [];
+  const factoryDeps = {
+    ...deps, mode: 'session-leases', claim: { windowKey: 'window', pid: 22, pidStartedAt: 10 },
+    isAlive: () => true, log: { warn: () => {}, error: () => {} }, notify: (m: string) => { notices.push(m); },
+  } as const;
+  let host: ReturnType<typeof createChatPanelHost> | undefined;
+  try {
+    old.presence(oldClaim);
+    assert.ok(old.enqueue({ key: 'first', sessionId: a.id, turnId: 'first', windowKey: 'window', origin: 'typed', text: 'first', attachments: [] }).ok);
+    assert.equal(createQueueFactory({ ...factoryDeps, observe: () => ({ kind: 'unknown' }) }), undefined);
+    assert.match(notices[0]!, /older VS Code windows to close/);
+    assert.equal(readdirSync(dir).some((name) => name.includes('pre-v3')), false);
+    const queue = createQueueFactory({ ...factoryDeps, observe: () => ({ kind: 'absent' }) });
+    assert.ok(queue);
+    assert.throws(() => createChatQueueStore(deps), /newer plugin/);
+    assert.throws(() => oldWriter.exec("UPDATE messages SET text = 'legacy write'"), /insrc_queue_v3_writer/);
+    const backupName = readdirSync(dir).find((name) => name.includes('pre-v3') && name.endsWith('.sqlite'));
+    assert.ok(backupName);
+    const backup = new DatabaseSync(join(dir, backupName), { readOnly: true });
+    try {
+      assert.equal(backup.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get()?.['value'], '2');
+      assert.equal(backup.prepare('SELECT text FROM messages').get()?.['text'], 'first');
+    } finally {
+      backup.close();
+    }
+
+    const fc = fakeChannel();
+    const { adapter, runs } = spawningAdapter([]);
+    host = createChatPanelHost({ createPanel: () => fc.channel, providers: { available: ['claude'], get: () => adapter }, store, cwd: () => '/repo', queue });
+    host.open();
+    fc.send('ready');
+    await waitFor(() => runs.length === 1);
+    const outbox = (): OutboxView | undefined => fc.posted.filter((p) => p.payload.type === 'outbox').at(-1)?.payload['view'] as OutboxView | undefined;
+    await waitFor(() => {
+      const view = outbox();
+      return view !== undefined && 'capacity' in view && view.capacity.occupied === 1;
+    });
+    const draft = outbox()!;
+    assert.notEqual(draft.sessionId, a.id);
+    assert.deepEqual(draft.rows, []);
+    assert.equal('blockedBy' in draft || 'aheadFromOtherChats' in draft, false);
+    runs[0]!.feed(doneEv('t1'));
+    runs[0]!.proc.exitNow();
+  } finally {
+    host?.dispose();
+    old.close();
+    oldWriter.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 /** Another chat's message, from a window that is not running here (it never runs in these tests). */
 const elsewhere = (q: QStore, text: string, sessionId = 'other-chat') =>
   q.enqueue({ key: `${sessionId}::${text}`, sessionId, turnId: text, windowKey: 'w-elsewhere', origin: 'typed', text, attachments: [] });

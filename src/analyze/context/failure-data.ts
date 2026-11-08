@@ -14,8 +14,9 @@
 
 import { parseHandling } from '../completeness.js';
 import type { HandlingReport } from '../completeness.js';
-import { ShaperAnswerStepFailedError } from './driver.js';
-import type { AnswerStepFailureReason, AnswerStepFound } from './driver.js';
+import { ShaperAnswerStepFailedError } from './answer-step-error.js';
+import type { AnswerStepFailureReason } from './answer-step-error.js';
+import type { AnswerStepFound } from './driver.js';
 
 /** An error and what caused it, to a bounded depth, with no Error object in it. */
 export interface FailureCause {

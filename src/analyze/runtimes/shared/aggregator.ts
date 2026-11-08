@@ -39,7 +39,7 @@ import type {
 } from '../../../shared/analyze-types.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import type { HandlingReport } from '../../completeness.js';
-import { ShaperAnswerStepFailedError } from '../../context/driver.js';
+import { ShaperAnswerStepFailedError } from '../../context/answer-step-error.js';
 import type { AnswerStepFound } from '../../context/driver.js';
 import type { AggregateInputRecord } from '../../context/failure-data.js';
 import { assembleAggregate } from '../../context/handling-adapters.js';

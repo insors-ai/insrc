@@ -25,7 +25,7 @@ import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import { planReference, pairPartsWithReference } from './dependency.js';
 import type { ReferencePlan, ReferenceRound } from './dependency.js';
-import { HandlingBudgetError, ShaperAnswerStepFailedError } from './driver.js';
+import { HandlingBudgetError, ShaperAnswerStepFailedError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import { causeOf } from './failure-data.js';
 import type { AggregateInputRecord, PartFailure } from './failure-data.js';

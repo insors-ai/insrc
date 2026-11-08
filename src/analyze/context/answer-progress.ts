@@ -22,7 +22,7 @@ import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ExecutedPlan } from '../explore/types.js';
 import { evidenceBlocks, planReference, selectSharedContext } from './dependency.js';
 import type { ReferenceRound } from './dependency.js';
-import { HandlingBudgetError } from './driver.js';
+import { HandlingBudgetError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import type { PartFailure } from './failure-data.js';
 import { causeOf } from './failure-data.js';

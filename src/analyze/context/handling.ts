@@ -18,7 +18,7 @@
 
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
-import { HandlingBudgetError } from './driver.js';
+import { HandlingBudgetError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 
 export type HandlingMethod = HandlingReport['method'];

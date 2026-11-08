@@ -18,7 +18,7 @@
  */
 
 import type { ExecutedExploration, ExecutedPlan } from '../explore/types.js';
-import { HandlingBudgetError } from './driver.js';
+import { HandlingBudgetError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import { MIN_SECTION_ROOM, measureInput } from './handling.js';
 import type { InputLimit } from './handling.js';

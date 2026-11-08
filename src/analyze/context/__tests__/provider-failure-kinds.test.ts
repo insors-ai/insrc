@@ -27,6 +27,8 @@ import { ShaperAnswerStepFailedError } from '../driver.js';
 import { runDivided } from '../handling-parts.js';
 import type { PartAdapter } from '../handling-parts.js';
 import { renderSection } from '../sections.js';
+import { runAggregator } from '../../runtimes/shared/aggregator.js';
+import { loadAnalyzeConfig } from '../../../config/analyze.js';
 import type { CallOutcome } from '../handling-call.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
@@ -154,5 +156,48 @@ test('Vibe outage on every part of a divided call gives typed model-failed with 
 			assert.equal(vibe.runs(), err.partFailures?.length, 'one run per part, none retried');
 		} finally { vibe.cleanup(); }
 	}
+});
+
+test('all four adapters, output cap and Vibe single-pass prefix verified together after every caller is moved', async () => {
+	const upstream = new Map([['inventory', [{ taskId: 't01', template: 'docs.discovery.inventory', params: {}, value: { files: ['docs/a.md'], text: 'body' } }]]]);
+	const base = { promptRelPath: 'prompts/analyze/docs.aggregate.system.md', target: 'docs', runId: 'r', upstreamOutputs: upstream } as const;
+
+	// The three CLI adapters, through the real aggregator: a transport failure of a single pass keeps the legacy prefix with the
+	// original error as the cause (Vibe now takes 'aggregator-llm-unavailable:' like Claude and Codex), and of a divided call
+	// ends in the typed 'model-failed' with no prefix; a malformed reply ends the divided call as 'invalid-answer'.
+	for (const kind of ['claude', 'codex', 'vibe'] as const) {
+		const down = fakeCli('transport');
+		try {
+			const provider = new CliProvider({ kind, binPath: down.bin, timeoutMs: 20_000, inputBudgetChars: 76_000 });
+			const single = await runAggregator({ ...base, scope: 'S', provider }).then(() => undefined, (e: unknown) => e);
+			assert.ok(single instanceof Error && !(single instanceof ShaperAnswerStepFailedError), kind);
+			assert.match(single.message, /^aggregator-llm-unavailable: /, `${kind}: a single-pass outage keeps the prefix`);
+			assert.ok(single.cause instanceof Error, `${kind}: the original is the cause`);
+			const divided = await runAggregator({ ...base, scope: 'L', provider }).then(() => undefined, (e: unknown) => e);
+			assert.ok(divided instanceof ShaperAnswerStepFailedError, kind);
+			assert.equal(divided.reason, 'model-failed', kind);
+			assert.ok(!/aggregator-/.test(divided.message), `${kind}: no aggregator prefix on a divided call`);
+		} finally { down.cleanup(); }
+		const bad = fakeCli('malformed');
+		try {
+			const provider = new CliProvider({ kind, binPath: bad.bin, timeoutMs: 20_000, inputBudgetChars: 76_000 });
+			const divided = await runAggregator({ ...base, scope: 'L', provider }).then(() => undefined, (e: unknown) => e);
+			assert.ok(divided instanceof ShaperAnswerStepFailedError, kind);
+			assert.equal(divided.reason, 'invalid-answer', kind);
+		} finally { bad.cleanup(); }
+	}
+
+	// The local adapter: a divided aggregate call is capped at the part limit and a single pass keeps the configured tokens.
+	const seen: Array<Record<string, unknown>> = [];
+	const ollama = new OllamaProvider('m', 'http://localhost', 32_768);
+	(ollama as unknown as { client: unknown }).client = {
+		chat: async (req: { options: Record<string, unknown> }) => { seen.push(req.options); throw new Error('connect ECONNREFUSED 127.0.0.1:11434'); },
+	};
+	const local = await runAggregator({ ...base, scope: 'L', provider: ollama }).then(() => undefined, (e: unknown) => e);
+	assert.ok(local instanceof ShaperAnswerStepFailedError);
+	assert.equal(local.reason, 'model-failed');
+	assert.equal(seen[0]?.['num_predict'], 8_192, 'a part call is capped at PART_MAX_OUTPUT_TOKENS');
+	await runAggregator({ ...base, scope: 'S', provider: ollama }).then(() => undefined, () => undefined);
+	assert.equal(seen.at(-1)?.['num_predict'], loadAnalyzeConfig().shaper.ollamaNumPredict, 'a single pass keeps the configured output tokens');
 });
 

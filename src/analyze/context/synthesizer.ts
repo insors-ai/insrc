@@ -33,7 +33,7 @@ import { fileURLToPath } from 'node:url';
 import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
 import type { HandlingReport } from '../completeness.js';
 import { evidenceBlocks, selectSharedContext } from './dependency.js';
-import { ShaperAnswerStepFailedError } from './driver.js';
+import { ShaperAnswerStepFailedError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import type { AdmissionTarget } from './handling.js';
 import { assembleBundle } from './handling-adapters.js';

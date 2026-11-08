@@ -100,3 +100,17 @@ test('an envelope leaving less than 4,000 units marks only that block unadmittab
 	// The same fat block is admissible in a larger room: it is the room that is short, not the block malformed.
 	assert.equal(sectionBlock(fat, 12_000).admissible, true);
 });
+
+test('the section line is measured as rendered: a block is admitted when its rendered header leaves the minimum room', () => {
+	// Key 'k', no envelope, room 4,030: the two-section line is about 21 bytes, so 4,009 bytes remain for text.
+	const block: EvidenceBlock = { key: 'k', envelope: {}, text: 'z'.repeat(6_000) };
+	const r = sectionBlock(block, 4_030);
+	assert.equal(r.admissible, true);
+	if (!r.admissible) return;
+	assert.equal(r.sections.map(x => x.text).join(''), block.text);
+	for (const sec of r.sections) assert.ok(measureInput(renderSection(sec), 'bytes') <= 4_030);
+	// The first section is the largest prefix that fits: no more than the digits' slack is left unused.
+	assert.ok(4_030 - measureInput(renderSection(r.sections[0] as BlockSection), 'bytes') <= 1);
+	// One unit less than the minimum room is refused, for this block only.
+	assert.equal(sectionBlock(block, 4_000).admissible, false);
+});

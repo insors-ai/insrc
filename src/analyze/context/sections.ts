@@ -46,9 +46,6 @@ export type SectionResult =
 	| { readonly admissible: true;  readonly sections: readonly BlockSection[] }
 	| { readonly admissible: false; readonly reason: string };
 
-/** Units kept for the line that says which section this is. */
-const SECTION_HEADER_RESERVE = 48;
-
 /** The size one code point takes in `unit`: its UTF-8 bytes, or its UTF-16 code units. */
 function cost(codePoint: number, unit: Unit): number {
 	if (unit === 'chars') return codePoint > 0xffff ? 2 : 1;
@@ -104,26 +101,28 @@ export function renderSection(section: BlockSection): string {
 export function sectionBlock(block: EvidenceBlock, room: number, unit: Unit = 'bytes'): SectionResult {
 	const whole: BlockSection = { blockKey: block.key, index: 1, count: 1, envelope: block.envelope, text: block.text };
 	if (measureInput(renderSection(whole), unit) <= room) return { admissible: true, sections: [whole] };
-	const fixed = measureInput(renderEnvelope(block.envelope), unit) + SECTION_HEADER_RESERVE + measureInput(block.key, unit);
-	let textRoom = room - fixed;
-	if (textRoom < MIN_SECTION_ROOM) {
-		return {
-			admissible: false,
-			reason: `the envelope of block '${block.key}' takes ${fixed} ${unit} of the ${room} ${unit} a call may hold, `
-				+ `leaving less than the ${MIN_SECTION_ROOM} ${unit} a section needs`,
-		};
-	}
-	// The reserve covers the section line; the rendered size is checked anyway, and the cut narrowed by any overshoot.
-	for (;;) {
-		const pieces = sectionText(block.text, textRoom, unit);
-		const sections = pieces.map((text, i): BlockSection => ({ blockKey: block.key, index: i + 1, count: pieces.length, envelope: block.envelope, text }));
-		const over = Math.max(...sections.map(sec => measureInput(renderSection(sec), unit))) - room;
-		if (over <= 0) return { admissible: true, sections };
-		textRoom -= over;
+	// The section line, the key and the envelope are measured as rendered. The line's numbers have as many digits as the
+	// section count, so the count is tried from one digit up until the cut gives a count that has no more digits.
+	for (let digits = 1; digits <= 9; digits++) {
+		const widest = 10 ** digits - 1;
+		const probe: BlockSection = { blockKey: block.key, index: widest, count: widest, envelope: block.envelope, text: '' };
+		const textRoom = room - measureInput(renderSection(probe), unit);
 		if (textRoom < MIN_SECTION_ROOM) {
-			return { admissible: false, reason: `the section line and envelope of block '${block.key}' leave less than the ${MIN_SECTION_ROOM} ${unit} a section needs` };
+			return {
+				admissible: false,
+				reason: `the envelope of block '${block.key}' takes ${room - textRoom} ${unit} of the ${room} ${unit} a call may hold, `
+					+ `leaving less than the ${MIN_SECTION_ROOM} ${unit} a section needs`,
+			};
+		}
+		const pieces = sectionText(block.text, textRoom, unit);
+		if (String(pieces.length).length <= digits) {
+			return {
+				admissible: true,
+				sections: pieces.map((text, i): BlockSection => ({ blockKey: block.key, index: i + 1, count: pieces.length, envelope: block.envelope, text })),
+			};
 		}
 	}
+	return { admissible: false, reason: `block '${block.key}' would need more than 999999999 sections` };
 }
 
 // ---------------------------------------------------------------------------

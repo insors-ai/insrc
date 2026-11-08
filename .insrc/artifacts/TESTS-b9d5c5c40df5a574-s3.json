@@ -1,0 +1,1493 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 30,
+        "contentHash": "888f669521472192c78673ed3ec8c3ac836d225cf75eb30d84f90df03e6fc08a",
+        "at": "2026-11-08T12:11:24.258Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "createdAt": "2026-11-08T07:25:11.022Z",
+    "updatedAt": "2026-11-08T12:11:24.206Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "epicSlug": "make-insrc-analysis-complete-used-right",
+    "revision": 30
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "9737da057",
+        "ranAt": "2026-11-08T07:27:38.942Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "handling-report.test.ts: parseHandling reads {} and malformed values as absent and accepts a record with and without trigger",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/handling-report.test.ts",
+                "title": "parseHandling reads {} and malformed values as absent and accepts a record with and without trigger",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-report.test.ts: mergeHandling keeps units apart, de-duplicates budgets, sums combineStages, gives 'mixed' and keeps plan-qualified part ids distinct",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/handling-report.test.ts",
+                "title": "mergeHandling keeps units apart, de-duplicates budgets, sums combineStages, gives 'mixed' and keeps plan-qualified part ids distinct",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-report.test.ts: applyHandling sets complete false, adds one 'answer step / <part id>' note per uncovered part and does not mutate its input",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/handling-report.test.ts",
+                "title": "applyHandling sets complete false, adds one 'answer step / <part id>' note per uncovered part and does not mutate its input",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-report.test.ts: renderReportHead is unchanged without handling and adds one line with it; mergeAnswerReports keeps its binary signature",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/handling-report.test.ts",
+                "title": "renderReportHead is unchanged without handling and adds one line with it; mergeAnswerReports keeps its binary signature",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-contract.test.ts: HandlingReport against the sc4 sketch plus additive fields, bundle schema open handling object still valid",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/__tests__/handling-contract.test.ts",
+                "title": "HandlingReport against the sc4 sketch plus additive fields, bundle schema open handling object still valid",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/__tests__/handling-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 451,
+            "titles": [
+              {
+                "title": "HandlingReport against the sc4 sketch plus additive fields, bundle schema open handling object still valid",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/__tests__/handling-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 415,
+            "titles": [
+              {
+                "title": "parseHandling reads {} and malformed values as absent and accepts a record with and without trigger",
+                "result": "pass"
+              },
+              {
+                "title": "mergeHandling keeps units apart, de-duplicates budgets, sums combineStages, gives 'mixed' and keeps plan-qualified part ids distinct",
+                "result": "pass"
+              },
+              {
+                "title": "applyHandling sets complete false, adds one 'answer step / <part id>' note per uncovered part and does not mutate its input",
+                "result": "pass"
+              },
+              {
+                "title": "renderReportHead is unchanged without handling and adds one line with it; mergeAnswerReports keeps its binary signature",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "4f878032e",
+        "ranAt": "2026-11-08T07:30:54.523Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "failure-data.test.ts: typed and plain shapes, 3-level cause bound, non-Error cause as string, JSON round trip, upstream and partFailures kept in order",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/failure-data.test.ts",
+                "title": "typed and plain shapes, 3-level cause bound, non-Error cause as string, JSON round trip, upstream and partFailures kept in order",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "model-failure.test.ts: isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "failure-contract.test.ts: RunFailure shape and code 'executor-aggregator-failed' unchanged; TaskExecutionRecord, LookupFailedError and ShaperAnswerStepFailedError gain only optional JSON-safe fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/failure-contract.test.ts",
+                "title": "RunFailure shape and code 'executor-aggregator-failed' unchanged; TaskExecutionRecord, LookupFailedError and ShaperAnswerStepFailedError gain only optional JSON-safe fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/failure-contract.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 751,
+            "titles": [
+              {
+                "title": "RunFailure shape and code 'executor-aggregator-failed' unchanged; TaskExecutionRecord, LookupFailedError and ShaperAnswerStepFailedError gain only optional JSON-safe fields",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/failure-data.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 705,
+            "titles": [
+              {
+                "title": "typed and plain shapes, 3-level cause bound, non-Error cause as string, JSON round trip, upstream and partFailures kept in order",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/model-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 737,
+            "titles": [
+              {
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: CLI call failures and ModelCallFailedError are failures; shape failures are not",
+                "result": "pass"
+              },
+              {
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              },
+              {
+                "title": "modelCallFailureDetail returns the failure's own words",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure",
+                "result": "pass"
+              },
+              {
+                "title": "a shape failure stays a schema error for both calls",
+                "result": "pass"
+              },
+              {
+                "title": "model-unavailable messages are provider-neutral and carry the underlying message in a field",
+                "result": "pass"
+              },
+              {
+                "title": "the two prompt-missing errors carry the prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "212188e17",
+        "ranAt": "2026-11-08T07:34:09.787Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "handling-table.test.ts: XS and S single pass, M, L and XL partitioned, undetermined is XL, trigger size/fit/both and no trigger for single pass",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/handling-table.test.ts",
+                "title": "XS and S single pass, M, L and XL partitioned, undetermined is XL, trigger size/fit/both and no trigger for single pass",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-admission.test.ts: checked-in local values give 10,240 bytes, exact boundary, one byte over, multi-byte, 22,528 for parts, window too small gives HandlingBudgetError naming the configuration",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/handling-admission.test.ts",
+                "title": "checked-in local values give 10,240 bytes, exact boundary, one byte over, multi-byte, 22,528 for parts, window too small gives HandlingBudgetError naming the configuration",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-admission.test.ts: real code, adherence and docs prompt sizes, CLI characters minus 16,000, units never compared, local code and adherence handled in parts with trigger 'fit'",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/handling-admission.test.ts",
+                "title": "real code, adherence and docs prompt sizes, CLI characters minus 16,000, units never compared, local code and adherence handled in parts with trigger 'fit'",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "part-output-cap.test.ts: PART_MAX_OUTPUT_TOKENS 8,192 for local part and combine calls, configured tokens for single pass, no enforced cap for CLI",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/part-output-cap.test.ts",
+                "title": "PART_MAX_OUTPUT_TOKENS 8,192 for local part and combine calls, configured tokens for single pass, no enforced cap for CLI",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/handling-admission.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 725,
+            "titles": [
+              {
+                "title": "checked-in local values give 10,240 bytes, exact boundary, one byte over, multi-byte, 22,528 for parts, window too small gives HandlingBudgetError naming the configuration",
+                "result": "pass"
+              },
+              {
+                "title": "real code, adherence and docs prompt sizes, CLI characters minus 16,000, units never compared, local code and adherence handled in parts with trigger 'fit'",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/handling-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 705,
+            "titles": [
+              {
+                "title": "XS and S single pass, M, L and XL partitioned, undetermined is XL, trigger size/fit/both and no trigger for single pass",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/part-output-cap.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 698,
+            "titles": [
+              {
+                "title": "PART_MAX_OUTPUT_TOKENS 8,192 for local part and combine calls, configured tokens for single pass, no enforced cap for CLI",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "34ecc8199",
+        "ranAt": "2026-11-08T07:41:26.980Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partition-sections.test.ts: 6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no overlap, none dropped; ordinals separate from keys",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-sections.test.ts",
+                "title": "6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no overlap, none dropped; ordinals separate from keys",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "section-envelope.test.ts: oversized real-shaped doc.constraint.enumerate record keeps sourceEntityId, file, heading and kind in every section and reconstructs the original",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/section-envelope.test.ts",
+                "title": "oversized real-shaped doc.constraint.enumerate record keeps sourceEntityId, file, heading and kind in every section and reconstructs the original",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "section-envelope.test.ts: oversized aggregate upstream value with nested records repeats each nested record's citation fields plus taskId, template and params in every section",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/section-envelope.test.ts",
+                "title": "oversized aggregate upstream value with nested records repeats each nested record's citation fields plus taskId, template and params in every section",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "section-envelope.test.ts: an envelope leaving less than 4,000 units marks only that block unadmittable and the other blocks stay admissible",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/section-envelope.test.ts",
+                "title": "an envelope leaving less than 4,000 units marks only that block unadmittable and the other blocks stay admissible",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/partition-sections.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no overlap, none dropped; ordinals separate from keys",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/section-envelope.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 737,
+            "titles": [
+              {
+                "title": "oversized real-shaped doc.constraint.enumerate record keeps sourceEntityId, file, heading and kind in every section and reconstructs the original",
+                "result": "pass"
+              },
+              {
+                "title": "oversized aggregate upstream value with nested records repeats each nested record's citation fields plus taskId, template and params in every section",
+                "result": "pass"
+              },
+              {
+                "title": "an envelope leaving less than 4,000 units marks only that block unadmittable and the other blocks stay admissible",
+                "result": "pass"
+              },
+              {
+                "title": "the section line is measured as rendered: a block is admitted when its rendered header leaves the minimum room",
+                "result": "pass"
+              },
+              {
+                "title": "a section is the largest prefix that fits next to its own line, across a change in the digits of the count",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "b981ce8c0",
+        "ranAt": "2026-11-08T08:03:35.516Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "shared-context.test.ts: selectSharedContext per target, blocks removed from partition blocks, rule-source count and restatement match the reference",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/shared-context.test.ts",
+                "title": "selectSharedContext per target, blocks removed from partition blocks, rule-source count and restatement match the reference",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dependency-table.test.ts: dedupeByKey first ordinal wins and order kept; audit fails when a synthesize prompt key has no entry",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/dependency-table.test.ts",
+                "title": "dedupeByKey first ordinal wins and order kept; audit fails when a synthesize prompt key has no entry",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-context.test.ts: reference context in the admission rule, unfittable reference names the reference context, fitting reference leaves the stated section room",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/shared-context.test.ts",
+                "title": "reference context in the admission rule, unfittable reference names the reference context, fitting reference leaves the stated section room",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-context.test.ts: an oversized single rule record is cut into sections, each part sees every section in sequence, rule-source count from the whole reference, no HandlingBudgetError",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/shared-context.test.ts",
+                "title": "an oversized single rule record is cut into sections, each part sees every section in sequence, rule-source count from the whole reference, no HandlingBudgetError",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/dependency-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 741,
+            "titles": [
+              {
+                "title": "dedupeByKey first ordinal wins and order kept; audit fails when a synthesize prompt key has no entry",
+                "result": "pass"
+              },
+              {
+                "title": "capability and code regressions with forced partitions and deduped Related modules, Related docs and surface",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/shared-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 731,
+            "titles": [
+              {
+                "title": "selectSharedContext per target, blocks removed from partition blocks, rule-source count and restatement match the reference",
+                "result": "pass"
+              },
+              {
+                "title": "reference context in the admission rule, unfittable reference names the reference context, fitting reference leaves the stated section room",
+                "result": "pass"
+              },
+              {
+                "title": "an oversized single rule record is cut into sections, each part sees every section in sequence, rule-source count from the whole reference, no HandlingBudgetError",
+                "result": "pass"
+              },
+              {
+                "title": "adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "9d1729343",
+        "ranAt": "2026-11-08T07:51:47.849Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "handling-call.test.ts: provider called with {maxAttempts:1, internalRetry:false}, repair note capped at 8,000 characters, every attempt admitted before it is sent, no internal retry allowed",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/handling-call.test.ts",
+                "title": "provider called with {maxAttempts:1, internalRetry:false}, repair note capped at 8,000 characters, every attempt admitted before it is sent, no internal retry allowed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "handling-call.test.ts: failure classification by cause: schema-invalid is invalid-reply, transport and Vibe exit are call-failed, size refusal divided before classification",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/handling-call.test.ts",
+                "title": "failure classification by cause: schema-invalid is invalid-reply, transport and Vibe exit are call-failed, size refusal divided before classification",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "provider-failure-kinds.test.ts: real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+                "title": "real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/handling-call.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 746,
+            "titles": [
+              {
+                "title": "provider called with {maxAttempts:1, internalRetry:false}, repair note capped at 8,000 characters, every attempt admitted before it is sent, no internal retry allowed",
+                "result": "pass"
+              },
+              {
+                "title": "failure classification by cause: schema-invalid is invalid-reply, transport and Vibe exit are call-failed, size refusal divided before classification",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 991,
+            "titles": [
+              {
+                "title": "real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "b981ce8c0",
+        "ranAt": "2026-11-08T08:02:09.753Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "partition-combine.test.ts: serial parts, division up to three times, repair exhaustion never discards a successful part, combine terminates and a combine failure returns per-part results with 'combine' in notCovered",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+                "title": "serial parts, division up to three times, repair exhaustion never discards a successful part, combine terminates and a combine failure returns per-part results with 'combine' in notCovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "partition-combine.test.ts: terminal precedence by cause (unadmittable, invalid-reply, call-failed) with partFailures kinds and cause chains",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+                "title": "terminal precedence by cause (unadmittable, invalid-reply, call-failed) with partFailures kinds and cause chains",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "partition-combine.test.ts: bundle and aggregate adapters keep evidence layers and findings exactly through several combine stages",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+                "title": "bundle and aggregate adapters keep evidence layers and findings exactly through several combine stages",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "partition-combine.test.ts: mixed oversized-envelope and admissible blocks return the covered parts with the oversized block in notCovered",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+                "title": "mixed oversized-envelope and admissible blocks return the covered parts with the oversized block in notCovered",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "shared-context.test.ts: adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/shared-context.test.ts",
+                "title": "adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "dependency-table.test.ts: capability and code regressions with forced partitions and deduped Related modules, Related docs and surface",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/dependency-table.test.ts",
+                "title": "capability and code regressions with forced partitions and deduped Related modules, Related docs and surface",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "provider-failure-kinds.test.ts: Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+                "title": "Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/dependency-table.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 778,
+            "titles": [
+              {
+                "title": "dedupeByKey first ordinal wins and order kept; audit fails when a synthesize prompt key has no entry",
+                "result": "pass"
+              },
+              {
+                "title": "capability and code regressions with forced partitions and deduped Related modules, Related docs and surface",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/partition-combine.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 847,
+            "titles": [
+              {
+                "title": "serial parts, division up to three times, repair exhaustion never discards a successful part, combine terminates and a combine failure returns per-part results with 'combine' in notCovered",
+                "result": "pass"
+              },
+              {
+                "title": "terminal precedence by cause (unadmittable, invalid-reply, call-failed) with partFailures kinds and cause chains",
+                "result": "pass"
+              },
+              {
+                "title": "bundle and aggregate adapters keep evidence layers and findings exactly through several combine stages",
+                "result": "pass"
+              },
+              {
+                "title": "mixed oversized-envelope and admissible blocks return the covered parts with the oversized block in notCovered",
+                "result": "pass"
+              },
+              {
+                "title": "a single pass keeps the legacy route: the original error is thrown as it is, and a size refusal of an admitted pass divides",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1161,
+            "titles": [
+              {
+                "title": "real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/shared-context.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 748,
+            "titles": [
+              {
+                "title": "selectSharedContext per target, blocks removed from partition blocks, rule-source count and restatement match the reference",
+                "result": "pass"
+              },
+              {
+                "title": "reference context in the admission rule, unfittable reference names the reference context, fitting reference leaves the stated section room",
+                "result": "pass"
+              },
+              {
+                "title": "an oversized single rule record is cut into sections, each part sees every section in sequence, rule-source count from the whole reference, no HandlingBudgetError",
+                "result": "pass"
+              },
+              {
+                "title": "adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "fa162a41d",
+        "ranAt": "2026-11-08T08:28:49.199Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "synthesize-handling.test.ts: XS or S admitted makes the one call of today; M or larger or not admitted divides and a failed part is named",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/synthesize-handling.test.ts",
+                "title": "XS or S admitted makes the one call of today; M or larger or not admitted divides and a failed part is named",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "synthesize-driver-handling.test.ts: through the real context driver a partitioned success, a failed part and the combine fallback deliver the report with handling, uncovered parts and complete false; single pass keeps lookup completeness; the model's own report is never used",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/synthesize-driver-handling.test.ts",
+                "title": "through the real context driver a partitioned success, a failed part and the combine fallback deliver the report with handling, uncovered parts and complete false; single pass keeps lookup completeness; the model's own report is never used",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/synthesize-driver-handling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 802,
+            "titles": [
+              {
+                "title": "through the real context driver a partitioned success, a failed part and the combine fallback deliver the report with handling, uncovered parts and complete false; single pass keeps lookup completeness; the model's own report is never used",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/context/__tests__/synthesize-handling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 792,
+            "titles": [
+              {
+                "title": "XS or S admitted makes the one call of today; M or larger or not admitted divides and a failed part is named",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "3ab99723e",
+        "ranAt": "2026-11-08T08:50:36.765Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "freeform-handling.test.ts: size reaches runFinalStructuredEmit; fits at S returns directly with single-pass handling; at M divided although it fits",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/freeform-handling.test.ts",
+                "title": "size reaches runFinalStructuredEmit; fits at S returns directly with single-pass handling; at M divided although it fits",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "freeform-handling.test.ts: HandlingBudgetError, model-failed and invalid-answer become LookupFailedError with tool results, handling and answerStepReason, errorCode 'answer-step:<reason>', through executePlan with no second synthesis",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/freeform-handling.test.ts",
+                "title": "HandlingBudgetError, model-failed and invalid-answer become LookupFailedError with tool results, handling and answerStepReason, errorCode 'answer-step:<reason>', through executePlan with no second synthesis",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "freeform-handling.test.ts: single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) is normalised into the bridge and keeps findings",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/freeform-handling.test.ts",
+                "title": "single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) is normalised into the bridge and keeps findings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/freeform-handling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1054,
+            "titles": [
+              {
+                "title": "size reaches runFinalStructuredEmit; fits at S returns directly with single-pass handling; at M divided although it fits",
+                "result": "pass"
+              },
+              {
+                "title": "HandlingBudgetError, model-failed and invalid-answer become LookupFailedError with tool results, handling and answerStepReason, errorCode 'answer-step:<reason>', through executePlan with no second synthesis",
+                "result": "pass"
+              },
+              {
+                "title": "a temporary (session-memory) request keeps only the reason of a failed final answer, and the request still ends without a second synthesis",
+                "result": "pass"
+              },
+              {
+                "title": "single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) is normalised into the bridge and keeps findings",
+                "result": "pass"
+              },
+              {
+                "title": "an admitted single-pass conversation whose final answer fails ends the request in the matching failure, with the findings and no second synthesis",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t10",
+        "commit": "79331bbb7",
+        "ranAt": "2026-11-08T08:59:40.226Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "model-failure.test.ts: classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/model-failure.test.ts",
+                "title": "classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "aggregator-handling.test.ts: aggregator divides an oversized input and keeps the absent-input section in every part and combine call",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregator-handling.test.ts",
+                "title": "aggregator divides an oversized input and keeps the absent-input section in every part and combine call",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "aggregate-failure.test.ts: real aggregator, walker and stored task record keep failureData, original cause, upstream values with producer identities and each failed part's cause chain",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/aggregate-failure.test.ts",
+                "title": "real aggregator, walker and stored task record keep failureData, original cause, upstream values with producer identities and each failed part's cause chain",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker with a final report and its handling",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/runtimes/__tests__/docs-aggregate-run.test.ts",
+                "title": "a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker with a final report and its handling",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/model-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 890,
+            "titles": [
+              {
+                "title": "isModelCallFailure: a validation message quoting 'ECONNREFUSED' / 'Model not found' / 'EPIPE' / 'fetch failed' without ' text=' is not a failed call; a ModelCallFailedError from the local provider, bare and behind the retry helper's prefix, is",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: a plain 'structured-output: ... attempts: Model call failed: ...' message is a failed call",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure: CLI call failures and ModelCallFailedError are failures; shape failures are not",
+                "result": "pass"
+              },
+              {
+                "title": "what the model WROTE is not evidence about the call: a quoted answer is never matched",
+                "result": "pass"
+              },
+              {
+                "title": "modelCallFailureDetail returns the failure's own words",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a CLI call failure",
+                "result": "pass"
+              },
+              {
+                "title": "planning and answer-writing classifiers raise their model-unavailable error for a typed sampling failure",
+                "result": "pass"
+              },
+              {
+                "title": "a shape failure stays a schema error for both calls",
+                "result": "pass"
+              },
+              {
+                "title": "model-unavailable messages are provider-neutral and carry the underlying message in a field",
+                "result": "pass"
+              },
+              {
+                "title": "the two prompt-missing errors carry the prompt path",
+                "result": "pass"
+              },
+              {
+                "title": "each consumer family of isModelCallFailure (the classifier, the planner, the summariser, the aggregator, the synthesizer and the decomposer) on a stand-in Ollama socket failure still reports the model as unavailable, not a shape failure",
+                "result": "pass"
+              },
+              {
+                "title": "isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregate-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 871,
+            "titles": [
+              {
+                "title": "real aggregator, walker and stored task record keep failureData, original cause, upstream values with producer identities and each failed part's cause chain",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/aggregator-handling.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 814,
+            "titles": [
+              {
+                "title": "aggregator divides an oversized input and keeps the absent-input section in every part and combine call",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/runtimes/__tests__/docs-aggregate-run.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 869,
+            "titles": [
+              {
+                "title": "a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker with a final report and its handling",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t11",
+        "commit": "8f79bd61a",
+        "ranAt": "2026-11-08T09:08:42.304Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "aggregate-failure.test.ts: failure data including partFailures and upstream reaches RunFailure.data under 'executor-aggregator-failed' through the orchestrator",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/aggregate-failure.test.ts",
+                "title": "failure data including partFailures and upstream reaches RunFailure.data under 'executor-aggregator-failed' through the orchestrator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "nested-aggregate-failure.test.ts: a failed nested aggregate under a succeeding root makes the run incomplete and names it, with no run failure raised",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/nested-aggregate-failure.test.ts",
+                "title": "a failed nested aggregate under a succeeding root makes the run incomplete and names it, with no run failure raised",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "run-handling-report.test.ts: root and nested aggregates with uncovered parts make the run incomplete, handling merged and the head shows the handling line",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/run-handling-report.test.ts",
+                "title": "root and nested aggregates with uncovered parts make the run incomplete, handling merged and the head shows the handling line",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "docs-aggregate-run.test.ts: the broad docs run completes through the orchestrator with a final report",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/orchestrator/__tests__/docs-aggregate-run.test.ts",
+                "title": "the broad docs run completes through the orchestrator with a final report",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/orchestrator/__tests__/aggregate-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1080,
+            "titles": [
+              {
+                "title": "failure data including partFailures and upstream reaches RunFailure.data under 'executor-aggregator-failed' through the orchestrator",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/docs-aggregate-run.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 879,
+            "titles": [
+              {
+                "title": "the broad docs run completes through the orchestrator with a final report",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/nested-aggregate-failure.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 756,
+            "titles": [
+              {
+                "title": "a failed nested aggregate under a succeeding root makes the run incomplete and names it, with no run failure raised",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/run-handling-report.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 752,
+            "titles": [
+              {
+                "title": "root and nested aggregates with uncovered parts make the run incomplete, handling merged and the head shows the handling line",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t12",
+        "commit": "2cbe51e0c",
+        "ranAt": "2026-11-08T09:12:58.287Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "answer-failure-mapping.test.ts: HandlingBudgetError carries results and report through the daemon and plan-tree mappings",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/answer-failure-mapping.test.ts",
+                "title": "HandlingBudgetError carries results and report through the daemon and plan-tree mappings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "answer-failure-mapping.test.ts: both mappings carry partFailures with distinct outer and inner cause messages through a JSON round trip, and a failure without partFailures maps as before",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/answer-failure-mapping.test.ts",
+                "title": "both mappings carry partFailures with distinct outer and inner cause messages through a JSON round trip, and a failure without partFailures maps as before",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/answer-failure-mapping.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 796,
+            "titles": [
+              {
+                "title": "HandlingBudgetError carries results and report through the daemon and plan-tree mappings",
+                "result": "pass"
+              },
+              {
+                "title": "both mappings carry partFailures with distinct outer and inner cause messages through a JSON round trip, and a failure without partFailures maps as before",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t13",
+        "commit": "25b2b0143",
+        "ranAt": "2026-11-08T10:28:13.197Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "step-tool-overload.test.ts: compile-time check that finalizeSynthesize(input.bundle, execution) resolves to the first overload and the progress call to the second",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-tool-overload.test.ts",
+                "title": "compile-time check that finalizeSynthesize(input.bundle, execution) resolves to the first overload and the progress call to the second",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "step-tool-parts.test.ts: prepareAnswerTurn creates progress, state without progress reads as single pass, emit_part and emit_combine carry reference context, progress persisted with token replacement and released on terminal success and failure",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-tool-parts.test.ts",
+                "title": "prepareAnswerTurn creates progress, state without progress reads as single pass, emit_part and emit_combine carry reference context, progress persisted with token replacement and released on terminal success and failure",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "step-tool-parts.test.ts: invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-tool-parts.test.ts",
+                "title": "invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "step-tool-parts.test.ts: the legacy emit_bundle turn still passes for an input that fits and the registered MCP bundle argument is unchanged",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/steps/__tests__/step-tool-parts.test.ts",
+                "title": "the legacy emit_bundle turn still passes for an input that fits and the registered MCP bundle argument is unchanged",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/__tests__/step-tool-overload.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 7539,
+            "titles": [
+              {
+                "title": "compile-time check that finalizeSynthesize(input.bundle, execution) resolves to the first overload and the progress call to the second",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/__tests__/step-tool-parts.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1093,
+            "titles": [
+              {
+                "title": "prepareAnswerTurn creates progress, state without progress reads as single pass, emit_part and emit_combine carry reference context, progress persisted with token replacement and released on terminal success and failure",
+                "result": "pass"
+              },
+              {
+                "title": "invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data",
+                "result": "pass"
+              },
+              {
+                "title": "the legacy emit_bundle turn still passes for an input that fits and the registered MCP bundle argument is unchanged",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t14",
+        "commit": "93d763774",
+        "ranAt": "2026-11-08T12:11:24.206Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "docs-broad-live.test.ts: the broad docs request on this repository runs to a final report and the run id, handling line, parts and completeness are recorded as the regression record",
+            "level": "live",
+            "source": "prefix",
+            "cases": [],
+            "files": [
+              "src/analyze/orchestrator/__tests__/docs-broad-live.test.ts"
+            ]
+          },
+          {
+            "name": "provider-failure-kinds.test.ts: all four adapters, output cap and Vibe single-pass prefix verified together after every caller is moved",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+                "title": "all four adapters, output cap and Vibe single-pass prefix verified together after every caller is moved",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1486,
+            "titles": [
+              {
+                "title": "real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed",
+                "result": "pass"
+              },
+              {
+                "title": "Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer",
+                "result": "pass"
+              },
+              {
+                "title": "all four adapters, output cap and Vibe single-pass prefix verified together after every caller is moved",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/docs-broad-live.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 386,
+            "titles": [
+              {
+                "title": "the broad docs request on this repository runs to a final report and the run id, handling line, parts and completeness are recorded as the regression record",
+                "result": "skipped"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

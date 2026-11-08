@@ -81,6 +81,25 @@ function provider(respond: (prompt: string, combine: boolean) => unknown, limitC
 }
 
 const execution = () => savedAnalysisExecution(REPO);
+const SCOPE = (): ResolvedScope => ({ kind: 'repo', value: REPO, repoPath: REPO, lookupPath: REPO });
+const LOOP_INPUTS = { intent: { target: 'code', scope: 'S', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: '/x' }, reasoning: 'r' } } as never;
+
+/** A model that makes one tool call (an unknown tool, so the input is what is gathered), then ends the loop; its answers come from `respond`. */
+function loopProvider(respond: (prompt: string, combine: boolean) => unknown, call: { input: Record<string, unknown> }, limitChars = 12_000): LLMProvider {
+	let turns = 0;
+	return {
+		supportsTools: true, inputBudgetChars: 16_000 + limitChars,
+		complete: async () => (++turns === 1
+			? { text: '', stopReason: 'tool_use', toolCalls: [{ id: 'c1', name: 'insrc_no_such_tool', input: call.input }] }
+			: { text: 'done', stopReason: 'end_turn', toolCalls: [] }),
+		completeStructured: async (messages: LLMMessage[], schema: { required?: string[] }) => {
+			const last = messages[messages.length - 1];
+			const out = respond(typeof last?.content === 'string' ? last.content : JSON.stringify(last?.content), (schema.required ?? []).length === 3);
+			if (out instanceof Error) throw out;
+			return out;
+		},
+	} as unknown as LLMProvider;
+}
 
 test('size reaches runFinalStructuredEmit; fits at S returns directly with single-pass handling; at M divided although it fits', async () => {
 	const part = (prompt: string): unknown => ({ ...LAYERS, summary: `covers ${[...prompt.matchAll(/result(\d)/g)].map(m => m[1]).join(',')}` });
@@ -115,28 +134,49 @@ test('size reaches runFinalStructuredEmit; fits at S returns directly with singl
 	const legacy = provider(() => LAYERS);
 	await emit(legacy.provider, conversation(8, 4_500), 3, 20_480, undefined, execution());
 	assert.equal(legacy.calls.length, 1);
+
+	// The size travels from the tool loop's arguments to the final emit: the same loop answers at once at S and in parts at M.
+	registerBuiltinTools();
+	for (const [size, method] of [['S', 'single-pass'], ['M', 'partitioned']] as const) {
+		const loop = await runShaperToolLoop({
+			connectionExecution: execution(), runId: 'r', shaperId: 'code', invocationMode: 'run', inputs: LOOP_INPUTS, scope: SCOPE(),
+			promptPath: 'prompts/analyze/code.system.md', provider: loopProvider(respond, { input: { q: 'charge' } }), size,
+		});
+		assert.equal(loop.handling?.method, method, `size ${size}`);
+		assert.equal(loop.handling?.trigger, size === 'M' ? 'size' : undefined);
+	}
 });
 
 const freeform: Exploration = { id: 'e1', type: 'freeform.probe', purpose: 'find charge', params: { purpose: 'find charge', shaperId: 'code' } };
-const GATHERED = [{ source: 'search_grep(pattern=charge)', content: 'src/pay/charge.ts:1: charge' }, { source: 'file_read(path=src/pay/charge.ts)', content: 'export function charge() {}' }];
 const HANDLING: HandlingReport = { method: 'partitioned', parts: 2, partitionedBy: 'section', notCovered: [{ part: 'part 2', reason: 'bad' }], budgets: [] };
 const originals = new Map<string, unknown>();
 test.afterEach(() => { for (const [type, runner] of originals) _overrideRunnerForTest(type as never, runner as never); originals.clear(); });
 
 test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedError with tool results, handling and answerStepReason, errorCode \'answer-step:<reason>\', through executePlan with no second synthesis', async () => {
-	for (const reason of ['input-does-not-fit', 'model-failed', 'invalid-answer'] as const) {
-		// The loop reports that its final answer could not be written; the lookup carries everything.
-		const loop = (async () => { throw new ShaperFinalEmitFailed(reason, GATHERED, new Error(`cause of ${reason}`), HANDLING); }) as unknown as Parameters<typeof runFreeformProbe>[2];
+	registerBuiltinTools();
+	// Each reason is raised by a real failure of the divided final answer, in the real tool loop:
+	//  - a tool call whose own arguments (the block's envelope) leave no room for any evidence: nothing can be admitted;
+	//  - every part's call failing at the transport; every part's reply staying invalid.
+	const cases = [
+		{ reason: 'input-does-not-fit', input: { q: 'p'.repeat(10_000) }, respond: () => LAYERS },
+		{ reason: 'model-failed', input: { q: 'charge' }, respond: () => new ModelCallFailedError('claude exited with 1.', { cause: new Error('socket closed') }) },
+		{ reason: 'invalid-answer', input: { q: 'charge' }, respond: () => new ModelResponseShapeError('reply failed validation', ['not JSON']) },
+	] as const;
+	for (const { reason, input, respond } of cases) {
+		const loop = ((a: Parameters<typeof runShaperToolLoop>[0]) => runShaperToolLoop({ ...a, provider: loopProvider(respond, { input }) })) as unknown as Parameters<typeof runFreeformProbe>[2];
 		const thrown = await runFreeformProbe(freeform, { connectionExecution: execution(), runId: 'r', repoPath: REPO, closureRepos: [REPO], readDep: () => undefined, requestSize: 'M' } as never, loop)
 			.then(() => undefined, (e: unknown) => e);
-		assert.ok(thrown instanceof LookupFailedError, reason);
-		assert.deepEqual(thrown.partial, GATHERED);
+		assert.ok(thrown instanceof LookupFailedError, `${reason}: ${String(thrown)}`);
 		assert.equal(thrown.answerStepReason, reason);
-		assert.deepEqual(thrown.handling, HANDLING);
-		assert.equal((thrown.cause as Error).message, `cause of ${reason}`);
-		assert.deepEqual(failedOutput(freeform, thrown), {
-			type: 'failed', requested: 'freeform.probe', errorCode: `answer-step:${reason}`, message: thrown.message, partial: GATHERED, handling: HANDLING,
-		});
+		assert.equal(thrown.partial.length, 1, 'the tool results are kept');
+		assert.match(thrown.partial[0]?.source ?? '', /^insrc_no_such_tool\(/);
+		assert.equal(thrown.handling?.method, 'partitioned');
+		assert.ok((thrown.handling?.notCovered.length ?? 0) >= 1, 'what was not covered is named');
+		assert.ok(thrown.cause instanceof ShaperAnswerStepFailedError, 'the original typed failure is the cause');
+		assert.equal(thrown.cause instanceof HandlingBudgetError, reason === 'input-does-not-fit');
+		const out = failedOutput(freeform, thrown);
+		assert.equal(out.errorCode, `answer-step:${reason}`);
+		assert.deepEqual(out.handling, thrown.handling);
 
 		// Through the real executor: the failure survives as a failed output; then the real context driver ends the request in the
 		// matching answer-step failure, with the tool results and the report, and the answer is not synthesized again.
@@ -144,7 +184,6 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 		_overrideRunnerForTest('freeform.probe', (e, c) => runFreeformProbe(e, c, loop));
 		let synthesized = 0;
 		const plan: ExplorationPlan = { answerType: 'how-does-it-work', synthesisHint: 'h', explorations: [freeform] } as unknown as ExplorationPlan;
-		const scope: ResolvedScope = { kind: 'repo', value: REPO, repoPath: REPO, lookupPath: REPO };
 		const steps: PipelineSteps = {
 			decompose: async () => plan,
 			executePlan: a => executePlan({ ...a, requestSize: 'M' }),
@@ -155,7 +194,7 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 			measureArea: async () => ({ source: 'named-area', items: 600, files: 100, characters: null, size: 'M', determined: true }) as RequestMeasure,
 		};
 		const err = await pipeline({
-			connectionExecution: execution(), invocationMode: 'run', shaperId: 'code', runId: 'r1', scope,
+			connectionExecution: execution(), invocationMode: 'run', shaperId: 'code', runId: 'r1', scope: SCOPE(),
 			inputs: { intent: { target: 'code', scope: 'M', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: REPO }, reasoning: 'r' } } as never,
 		}, steps).then(() => undefined, (e: unknown) => e);
 		assert.ok(err instanceof ShaperAnswerStepFailedError, `${reason}: ${String(err)}`);
@@ -164,8 +203,8 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 		assert.equal(synthesized, 0, 'no second synthesis attempt');
 		assert.equal(err.found.results.length, 1);
 		const failed = err.found.results[0]?.output;
-		assert.equal(failed?.type === 'failed' ? failed.partial?.length : 0, 2, 'the tool results are kept');
-		assert.deepEqual(err.found.report.handling?.notCovered, HANDLING.notCovered, 'the report carries how the answer was handled');
+		assert.equal(failed?.type === 'failed' ? failed.partial?.length : 0, 1, 'the tool results are kept');
+		assert.deepEqual(err.found.report.handling?.notCovered.map(n => n.part), thrown.handling?.notCovered.map(n => n.part), 'the report carries how the answer was handled');
 		assert.equal(err.found.report.completeness.complete, false);
 	}
 });

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -71,3 +71,30 @@ Run at 2026-11-08T05:11:22.727Z on commit `6d3865ff9`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` | 0 | 2 | 0.8 s |  |
+
+## t4
+
+Run at 2026-11-08T05:34:43.056Z on commit `fc5fd0e45`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: I1 publication receipt fault recovery and zero model reruns**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | journalled publication and lost-receipt recovery preserve one exact full history without model calls | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | publication capacity stays pending and a raised history allowance retries persistence only | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | native review waits for durable publication and recovers failed receipt persistence without rerunning models | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | publication append and head-replace crashes replay the same complete history entry | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+
+**integration: I2 immutable baseline, exact owned delta and source mutation**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | publication refuses changed subject before write and additional edits after its exact owned delta | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | journalled publication and lost-receipt recovery preserve one exact full history without model calls | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 6 | 1.3 s |  |

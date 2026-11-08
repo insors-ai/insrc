@@ -111,3 +111,18 @@ test('known permanent-history minimum refuses before model work and explicitly r
  const cp=(await loadDesignCheckpoint(f.repo,'review-1'))!;
  assert.equal(cp.attempts[0]!.actions!.find(a=>a.actionId==='raised-preflight')!.outcome!.code,'publication_capacity');
 });
+test('canonical edits during journal staging or log append are preserved and refuse publication',async t=>{
+ for(const phase of ['stage','append']){
+  const f=await fixture(t),files=new FileSidecarStore(f.repo),base=createFileJournal(f.repo),before=readFileSync(f.json,'utf8');let edited=false;
+  const edit=()=>{if(!edited){edited=true;appendFileSync(f.json,' ');}};
+  const history=new History({readRecords:(file,id)=>files.readRecords(file,id),appendRecord:async(file,record)=>{await files.appendRecord(file,record);if(phase==='append')edit();}});
+  const journal={...base,stage:async(id:Parameters<typeof base.stage>[0],op:Parameters<typeof base.stage>[1])=>{await base.stage(id,op);if(phase==='stage')edit();}};
+  const store=new ArtifactStore({repoPath:f.repo,history,journal});
+  await assert.rejects(publishDesignReview(f.checkpoint,{store}),{code:'artifact_changed'});
+  assert.equal(readFileSync(f.json,'utf8'),before+' ');
+  assert.ok(await base.pending(f.id));assert.deepEqual((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!.baseline,f.baseline.baseline);
+  const c=new DesignReviewCoordinator({publish:cp=>publishDesignReview(cp,{store})});
+  assert.equal((await c.recover({phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,actionId:'changed-in-flight',operation:'retry_publication'})).status,'invalidated');
+  assert.equal(readFileSync(f.json,'utf8'),before+' ');
+ }
+});

@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { createRepoLifecycle } from '../../artifact-core/repo-lifecycle.js';
 import type { ArtifactStore } from '../../artifact-core/store.js';
 import type { Actor, ChangeLogEntry } from '../../artifact-core/types.js';
+import { LifecycleConflictError } from '../../artifact-core/types.js';
 import { checkHeadIntegrity, nextLifecycle, contentHash } from '../../artifact-core/lifecycle.js';
 import { checkSidecarEntrySize, designHistoryLimit } from '../../artifact-core/sidecar.js';
 import { reviewReference } from '../report-log.js';
@@ -11,7 +12,7 @@ import { readDesignFile, assertDesignSubjectUnchanged } from './subject.js';
 import { designCheckpointPath } from './checkpoint.js';
 import { designPreservationDigest, designWorkflowDigest, validatePermanentDesignReview } from './history.js';
 import type { PermanentDesignReview } from './history.js';
-import { requireDesign } from './contracts.js';
+import { requireDesign, DesignReviewError } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignPublication } from './contracts.js';
 
 const sha=(raw:string)=>createHash('sha256').update(raw).digest('hex');
@@ -67,7 +68,10 @@ export async function publishDesignReview(cp:DesignReviewCheckpoint,deps:DesignP
   const outcome={result:verdict,summary:`Design review ${cp.reviewId} attempt ${attempt.number}`,data:record};
   checkSidecarEntrySize({artifactId:cp.artifactId,entry:{id,actor,timestamp:at,operation:'review',outcome}},(deps.historyLimit??designHistoryLimit)());
   return {next:{...current,lifecycle},options:{entryId:id,expectedHeadHash:attempt.baseline.subjectFingerprints.canonical,operation:'review',outcome}};
- }).then(result=>{published??=result.entry;});
+ }).then(result=>{published??=result.entry;}).catch(error=>{
+  if(error instanceof LifecycleConflictError&&error.reason==='head-changed-after-stage')throw new DesignReviewError('artifact_changed',error.message);
+  throw error;
+ });
  requireDesign(published?.targetHeadHash,'publication_incomplete','Publication has no durable head receipt');
  // Read back the journal-completed entry and exact owned post-state, never refresh the baseline.
  const entry=(await store.history.log(cp.artifactId)).find(e=>e.id===id);

@@ -367,7 +367,10 @@ export class ArtifactStore {
 
 		await this.deps.journal.stage(a.id, op);
 		await this.deps.history.appendLog(a.id, entry);
-		try { (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes); }
+		try {
+   if (options.expectedHeadHash !== undefined && headHashOf(existsSync(path)?readFileSync(path,'utf8'):undefined) !== options.expectedHeadHash) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed during journal/log awaits; pending publication retained');
+   (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes);
+  }
 		catch (err) {
 			log.warn({ id: a.id, operationId, err: (err as Error).message }, 'the head replace failed; the staged operation is finished by the next write');
 			throw err;
@@ -417,7 +420,11 @@ export class ArtifactStore {
   const existing = entries.find(e => e.id === op.entry.id);
   if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Staged history id already exists with different content; journal retained');
 		if (!existing) await this.deps.history.appendLog(id, op.entry);
-		if (replace) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+		if (replace) {
+   const latest=existsSync(path)?readFileSync(path,'utf8'):undefined;
+   if(latest!==op.bytes&&headHashOf(latest)!==op.priorHeadHash)throw new LifecycleConflictError(id,'head-changed-after-stage','Head changed during journal recovery; pending operation retained');
+   if(latest!==op.bytes)(this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+  }
 		await this.clearQuietly(id, op.operationId);
 	}
 

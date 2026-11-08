@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 10,
-        "contentHash": "369691cdc83b71e4f7a010638f9d479663a96fb2048d32540c7c9917cfb7fd5f",
-        "at": "2026-11-08T05:23:36.789Z",
+        "number": 11,
+        "contentHash": "40aa037ba7d2c1bd6f9e08ffcf394326debcced16e12e7b0b34ed9050b145dbe",
+        "at": "2026-11-08T05:34:43.222Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:23:36.631Z",
+    "updatedAt": "2026-11-08T05:34:43.056Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 10
+    "revision": 11
   },
   "body": {
     "tasks": [
@@ -219,6 +219,100 @@
               },
               {
                 "title": "deterministic history id survives append and replace crashes and rejects conflicting replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "fc5fd0e45",
+        "ranAt": "2026-11-08T05:34:43.056Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I1 publication receipt fault recovery and zero model reruns",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I2 immutable baseline, exact owned delta and source mutation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1305,
+            "titles": [
+              {
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
                 "result": "pass"
               }
             ],

@@ -713,6 +713,8 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active c
   const bRow = rows.find((r) => rowLabel(r) === 'Chat B')!;
   (bRow as unknown as { onclick: () => void }).onclick();
   assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // selecting a differently-ranked row (working) must NOT override the aggregate chip glyph
+  assert.equal(chip.dataset.urgent, 'waiting-input', 'the chip keeps the most urgent status, not the selected row');
   // a later active-list re-settles the chip; reopening the menu re-renders it (pickChat closed it).
   s.msg({ type: 'active-list', chats: [{ id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 }] });
   assert.equal(chip.dataset.urgent, 'done', 'with only a done chat left, the chip goes green');
@@ -1047,4 +1049,28 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restore
   assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger settles on the restored chat once the active list arrives');
   assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with its provider icon');
   assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger settles on the restored chat once the history list arrives');
+});
+
+test("E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex", () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('codex') });
+  const act = v.el('insrc-active');
+  fire(act, 'click');
+  const actMenu = v.el('insrc-actmenu');
+  assert.equal(actMenu.children.length, 2, 'two active rows (codex/vibe)');
+  assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.vibe), 'row B inlines the Vibe SVG');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-config provider set, the history new… row posts new-chat carrying that provider', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const hs = v.el('insrc-history');
+  v.msg({ type: 'run-config', provider: 'codex', model: '', effort: '' });
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  const newRow = histMenu.children.at(-1)!;
+  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
+  (newRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: 'codex' });
 });

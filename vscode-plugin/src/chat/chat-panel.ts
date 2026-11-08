@@ -2201,7 +2201,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chatbtn:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `.chatbtn .chatlbl{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}` +
       `.chatbtn .chev{opacity:.6;font-size:10px;}` +
-      `.chatmenu{bottom:auto;right:auto;top:calc(100% + 6px);left:0;width:auto;min-width:220px;max-width:min(360px,calc(100vw - 28px));max-height:min(300px,50vh);overflow:auto;}` +
+      `.chatmenu{bottom:auto;right:auto;top:calc(100% + 6px);left:0;width:auto;min-width:min(220px,calc(100vw - 28px));max-width:min(360px,calc(100vw - 28px));max-height:min(300px,50vh);overflow:auto;}` +
       // The history chip is RIGHT-aligned: its menu must anchor to the chip's right edge and open
       // leftward, or the left-anchored .chatmenu default pushes it past the right viewport edge.
       `#insrc-histmenu{left:auto;right:0;}` +

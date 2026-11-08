@@ -103,6 +103,17 @@ test('t1: an Image renders a LABELLED PLACEHOLDER carrying url and altText, and 
 	assert.doesNotMatch(html, /src=/, 'nothing is given a src');
 });
 
+test('t1: a data:image/* Image renders a REAL <img> — inline, so the no-network invariant holds', () => {
+	const html = render({ type: 'Image', url: 'data:image/svg+xml;base64,PHN2Zz48cGF0aC8+PC9zdmc+', altText: 'Claude', description: 'the Claude provider mark' });
+	assert.match(html, /class="ux-image__img"/, 'a real img element is emitted');
+	assert.match(html, /src="data:image\/svg\+xml;base64,PHN2Zz48cGF0aC8\+PC9zdmc\+"/, 'the inline data URI becomes the src');
+	assert.match(html, /alt="Claude"/, 'the altText stays as the accessible name');
+	assert.doesNotMatch(cardRegion(html), /ux-image__url/, 'no url caption is dumped beside an inline image');
+	// The invariant is about the NETWORK, not about <img>: a data URI never leaves
+	// the document, so an inline image is allowed to be a real element.
+	assert.doesNotMatch(html, /https?:\/\//, 'still no remote origin anywhere');
+});
+
 test('t1: a Container renders a visibly grouped region CONTAINING its children', () => {
 	const html = render({
 		type: 'Container',
@@ -153,8 +164,12 @@ test('t1: source-scan — the element switch is EXHAUSTIVE over UxElement, so a 
 	const fn = src.slice(src.indexOf('function elementHtml'));
 	// The guarantee must live in THIS function, not be borrowed from labelFor /
 	// roleOf on the now-dead IR path — those are the code most likely to be
-	// deleted once the companion stops using the graph lowering.
-	assert.match(fn.slice(0, 4000), /const unhandled: never = el;/,
+	// deleted once the companion stops using the graph lowering. Scope the scan to
+	// elementHtml's own body (up to the next function), not a fixed char window that
+	// a legitimate new arm would silently overrun.
+	const nextFn = fn.indexOf('\nfunction ');
+	const elementHtmlBody = nextFn === -1 ? fn : fn.slice(0, nextFn);
+	assert.match(elementHtmlBody, /const unhandled: never = el;/,
 		'elementHtml asserts exhaustiveness itself via a never-assignment');
 	for (const variant of ['TextBlock', 'Container', 'ColumnSet', 'Column', 'Image', 'Input.Text', 'Input.ChoiceSet', 'ActionSet']) {
 		assert.ok(fn.includes(`case '${variant}'`), `the switch handles ${variant}`);

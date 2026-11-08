@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-70842cb3-f316-4c07-a546-0680c0c8850e",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:26.002Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Forward worker keystore calls to the main thread",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4dd49d21da0d3f9dacb7a5f1e9cb3538f826130500ad41de5862f6743846f728",
+        "at": "2026-11-08T16:48:26.002Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:26.004Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Forward worker keystore calls to the main thread",
+    "summary": "Serve the vault to workers through a hub operation and install the forwarder in worker-entry, preserving the owner's KeystoreInputError and mapping only availability and transport failures to KeystoreUnavailableError.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Workers on two threads share one Keychain read",
+      "A worker never calls the backend directly",
+      "A closed hub channel does not fall back to the Keychain",
+      "A save on one worker is visible on another",
+      "A malformed request from a worker reports KeystoreInputError, the same as on the main thread"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "threads: workers on two threads share one Keychain read"
+      },
+      {
+        "level": "integration",
+        "name": "threads: a worker never calls the backend directly"
+      },
+      {
+        "level": "integration",
+        "name": "threads: a closed hub channel does not fall back to the Keychain"
+      },
+      {
+        "level": "integration",
+        "name": "threads: a save on one worker is visible on another"
+      },
+      {
+        "level": "integration",
+        "name": "threads: a malformed request from a worker reports KeystoreInputError"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

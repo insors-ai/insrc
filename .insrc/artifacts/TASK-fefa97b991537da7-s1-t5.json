@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b5c6ebc-134a-4e18-ace1-793e879196b5",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:26.006Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Guard the vault across the maintenance tool and a daemon",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "8c6b8b623db938a09742caac861a63f9725fc2a7b8f21dcb2703f1c13de6ff9e",
+        "at": "2026-11-08T16:48:26.006Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:26.009Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Guard the vault across the maintenance tool and a daemon",
+    "summary": "Have the offline maintenance binary take the run-file guard before its pid and socket check and hold it until exit, and have a daemon's vault load fail without touching the Keychain while the guard is held.",
+    "size": "S",
+    "order": 5,
+    "acceptanceChecks": [
+      "A daemon fails requests needing a secret while maintenance holds the guard and succeeds after release",
+      "Maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+      "The offline tool reads the vault once"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release"
+      },
+      {
+        "level": "integration",
+        "name": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it"
+      },
+      {
+        "level": "integration",
+        "name": "maintenance: the offline tool reads the vault once"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

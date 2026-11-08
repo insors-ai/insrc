@@ -1,0 +1,111 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-46ecba63-bf54-4a25-b831-d83f71081214",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:25.998Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Migrate legacy secrets on first use",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "884b6d0ffd05a00bc94dc3c77e3cda973fc609dc75d305102e1ae1dfa3ae622d",
+        "at": "2026-11-08T16:48:25.998Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:26.000Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Migrate legacy secrets on first use",
+    "summary": "For a name absent from the vault, not retired and with no reusable run result, read the legacy item single-flight per name and copy a found value through the mutation queue after re-checking the current state, with per-name run states for a cached value, an absence and a refused read.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "A legacy secret is copied once and read from the vault afterwards",
+      "Concurrent misses of one name share one legacy read and one copy",
+      "A save or delete during a legacy read wins and the copy is discarded",
+      "A failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+      "An absent name causes no write and no second lookup in the run",
+      "A refused legacy read fails at once for five minutes for that name only and then retries",
+      "A retired name does not read its legacy item"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "migration: a legacy secret is copied once and read from the vault afterwards"
+      },
+      {
+        "level": "unit",
+        "name": "migration: concurrent misses of one name share one legacy read and one copy"
+      },
+      {
+        "level": "unit",
+        "name": "migration: a save during a legacy read wins and the copy is discarded"
+      },
+      {
+        "level": "unit",
+        "name": "migration: a delete during a legacy read wins and the copy is discarded"
+      },
+      {
+        "level": "unit",
+        "name": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run"
+      },
+      {
+        "level": "unit",
+        "name": "migration: an absent name causes no write and no second lookup in the run"
+      },
+      {
+        "level": "unit",
+        "name": "migration: a refused legacy read fails at once for five minutes for that name only and then retries"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a retired name does not fall back to its legacy item"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

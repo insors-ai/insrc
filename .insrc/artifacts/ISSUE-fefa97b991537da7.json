@@ -24,7 +24,37 @@
     "authoredBy": "controller",
     "approvedAt": "2026-11-04T19:35:03.102Z",
     "parentRef": {
-      "slug": "open-saved-connections-demand-read-all"
+      "epicHash": "fefa97b991537da7",
+      "storyId": "s1",
+      "slug": "STORY-fefa97b991537da7-s1"
+    },
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 0,
+        "contentHash": "2a566d573fcf7f4a6be5a67cb6656de868f271f6342c8e5a847f039464583a33",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 0,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T12:27:02.359Z"
+      }
     }
   },
   "body": {

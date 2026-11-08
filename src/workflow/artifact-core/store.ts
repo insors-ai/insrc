@@ -104,6 +104,7 @@ export function createNonDurableStore(deps: Omit<ArtifactStoreDeps, 'journal'>):
 
 export class ArtifactStore {
 	constructor(private readonly deps: ArtifactStoreDeps) {}
+ get repoPath():string{return this.deps.repoPath;}
 
 	/** The history this store writes its log entries through, for a writer that appends a revision-less entry of its own under {@link exclusive}. */
 	get history(): History { return this.deps.history; }

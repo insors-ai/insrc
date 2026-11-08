@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 14,
-        "contentHash": "a1ba56355556448e52b30393b65d3dcffae6d48bfff16f14545669ff3e6bac96",
-        "at": "2026-11-08T06:02:46.763Z",
+        "number": 15,
+        "contentHash": "a09bbadcc3fa43c4b3628955f7b3ffa55684bbad43f9bb7a5c1bdd63089272fc",
+        "at": "2026-11-08T06:07:41.133Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:02:46.596Z",
+    "updatedAt": "2026-11-08T06:07:40.976Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 14
+    "revision": 15
   },
   "body": {
     "tasks": [
@@ -331,8 +331,8 @@
       },
       {
         "taskId": "t5",
-        "commit": "a4df89db2",
-        "ranAt": "2026-11-08T06:02:46.596Z",
+        "commit": "d83eecf71",
+        "ranAt": "2026-11-08T06:07:40.976Z",
         "testsPassed": true,
         "tests": [
           {
@@ -343,6 +343,16 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
                 "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
                 "result": "pass"
               }
             ],
@@ -367,7 +377,7 @@
             "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 892,
+            "durationMs": 852,
             "titles": [
               {
                 "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
@@ -375,6 +385,14 @@
               },
               {
                 "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              },
+              {
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
                 "result": "pass"
               }
             ],

@@ -1,3 +1,4 @@
+import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -37,6 +38,7 @@ export interface DesignProvider { readonly provider:LLMProvider; readonly model:
 export interface DesignCoordinatorDeps {
  /** The daemon supplies the durable publisher; isolated execution fixtures may omit this store port. */
  readonly publish?:typeof publishDesignReview;
+ readonly admit?:(cp:DesignReviewCheckpoint)=>Promise<void>;
  readonly preflight?:(cp:DesignReviewCheckpoint)=>void;
  readonly capacity?:typeof assertDesignDispatchCapacity;
  readonly provider?:(subject:DesignReviewSubject)=>DesignProvider;
@@ -127,7 +129,7 @@ export class DesignReviewCoordinator {
   if(prior){requireDesign(prior.signature===signature,'review_conflict','Conflicting publication action replay');return this.ack(cp,false);}
   requireDesign(actions.length<DESIGN_LIMITS.actions,'input_too_large','Publication action limit reached');
   a.publication={...a.publication,state:'pending',actions:[...actions,{actionId:request.actionId,signature}]};
-  const subjectKey=this.subjectKey(cp.subject);this.subjects.set(subjectKey,key);
+  const subjectKey=this.subjectKey(cp.subject);claimDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);this.subjects.set(subjectKey,key);
   try{
    await(this.deps.save??saveDesignCheckpoint)(request.repo,cp);
    try{const receipt=await this.deps.publish(cp);a.publication={...receipt,actions:[...actions,{actionId:request.actionId,signature}]};}
@@ -137,7 +139,7 @@ export class DesignReviewCoordinator {
     if(code==='artifact_changed'){a.status='invalidated';a.failure={code,summary};a.recovery={attempt:a.number,status:'invalidated',reason:'artifact_changed',completedChunkIds:a.completedChunks.map(c=>c.chunkId),requiresUserInput:true};a.progress={...a.progress,status:'invalidated',phase:'complete',requiresUserInput:true};}
    }
    await(this.deps.save??saveDesignCheckpoint)(request.repo,cp);return this.ack(cp,false);
-  }finally{if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);}
+  }finally{if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);}
  }
  private async admitRecovery(request:DesignRecoveryRequest,signature:string,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
   if(request.operation==='retry_publication')return this.retryPublication(request,signature);
@@ -206,11 +208,12 @@ export class DesignReviewCoordinator {
    old.finishedAt=new Date().toISOString();old.progress={...old.progress,status:'failed',phase:'complete',requiresUserInput:true};delete old.current;delete old.recovery;
    await(this.deps.save??saveDesignCheckpoint)(request.repo,refused);throw error;
   }
-  const subjectKey=this.subjectKey(checkpoint.subject);this.subjects.set(subjectKey,key);
+  const subjectKey=this.subjectKey(checkpoint.subject);claimDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);this.subjects.set(subjectKey,key);
   try{
+   await this.deps.admit?.(checkpoint);
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    this.launch(checkpoint,tracker,context,reservedExecutionId);return this.ack(checkpoint,true);
-  }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
+  }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
  }
  private async admit(request:DesignReviewStart,context:DesignStartContext):Promise<DesignReviewAcknowledgement>{
   const key=this.key(request.repo,request.reviewId),active=this.jobs.get(key);
@@ -230,29 +233,31 @@ export class DesignReviewCoordinator {
    const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
    requireDesign(prepared.subject.artifactId===saved.artifactId&&prepared.subject.project===saved.project,'foreign_checkpoint','Correction resolved another artifact');
    if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
-   const subjectKey=this.subjectKey(prepared.subject);this.subjects.set(subjectKey,key);
+   const subjectKey=this.subjectKey(prepared.subject);claimDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);this.subjects.set(subjectKey,key);
    try{
     const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
     const checkpoint:DesignReviewCheckpoint={...structuredClone(saved),subject:prepared.subject};
     checkpoint.attempts.push({number:request.attempt,status:'pending',preparationKind:'impact',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer});
+    await this.deps.admit?.(checkpoint);
     await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
     this.launch(checkpoint,tracker,context);return this.ack(checkpoint,true);
-   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
+   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
   }
   requireDesign(request.attempt===1,'review_conflict','Initial review requires attempt 1');
   const prepared=(this.deps.prepare??prepareDesignSubject)(request.repo,request.artifactPath);
   if(prepared.subject.reviewer==='controller')requireDesign(context.owner&&!context.owner.signal.aborted,'wrong_owner','A live trusted reviewer connection is required');
   const subjectKey=this.subjectKey(prepared.subject);
   if(this.subjects.has(subjectKey))throw new DesignReviewConflictError('Subject already has an active review');
-  this.subjects.set(subjectKey,key);
+  claimDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);this.subjects.set(subjectKey,key);
   try{
    const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId));
    const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:request.reviewId,project:request.repo,artifactId:prepared.subject.artifactId,subject:prepared.subject,
     submitted:{artifactPath:request.artifactPath,attempt:1},attempts:[{number:1,status:'pending',preparationKind:'planning',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:new Date().toISOString(),reviewer:prepared.subject.reviewer}]};
+   await this.deps.admit?.(checkpoint);
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
    this.launch(checkpoint,tracker,context);
    return this.ack(checkpoint,true);
-  }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
+  }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);releaseDesignArtifact(request.repo,subjectKey.split("\0")[1]!,key);throw error;}
  }
  async progress(project:string,reviewId:string,attempt:number,options:{includeResult?:boolean|undefined;afterCompletedChunk?:number|undefined;artifactPath?:string|undefined}={}):Promise<DesignObservation>{
   project=await realpath(project);const key=this.key(project,reviewId),job=this.jobs.get(key);
@@ -473,7 +478,7 @@ export class DesignReviewCoordinator {
   }finally{
    job.closed=true;job.controller?.monitor.stop();job.subjectMonitor?.stop();this.stopProgress(job);await job.serial.catch(()=>{});
    if(job.owner&&job.disconnect)job.owner.signal.removeEventListener('abort',job.disconnect);
-   this.jobs.delete(key);if(this.subjects.get(this.subjectKey(job.checkpoint.subject))===key)this.subjects.delete(this.subjectKey(job.checkpoint.subject));
+   releaseDesignArtifact(job.checkpoint.project,job.checkpoint.artifactId,key);this.jobs.delete(key);if(this.subjects.get(this.subjectKey(job.checkpoint.subject))===key)this.subjects.delete(this.subjectKey(job.checkpoint.subject));
   }
  }
 }

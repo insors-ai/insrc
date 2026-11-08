@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 21 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 23 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -102,13 +102,15 @@ Run at 2026-11-08T05:38:31.971Z on commit `6a661d6bf`. Tests check: **passed**. 
 
 ## t5
 
-Run at 2026-11-08T06:02:46.596Z on commit `a4df89db2`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T06:07:40.976Z on commit `d83eecf71`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: U3 versioned readers and current IDE common fields**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | versioned readers preserve legacy shape and expose real chunk feedback through current common fields | `src/workflow/review/design-review/__tests__/readers.test.ts` |
+| pass | legacy display stays unchanged and read-only across artifact content delivery and CLI | `src/workflow/review/design-review/__tests__/readers.test.ts` |
+| pass | shared current IDE wire fixture preserves common fields and versioned chunk data | `src/workflow/review/design-review/__tests__/readers.test.ts` |
 
 **integration: I6 permanent retrieval after cleanup/restart and missing locator**
 
@@ -120,4 +122,4 @@ Run at 2026-11-08T06:02:46.596Z on commit `a4df89db2`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 2 | 0.9 s |  |
+| `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 4 | 0.9 s |  |

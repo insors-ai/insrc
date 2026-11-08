@@ -1,0 +1,391 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794167867692-ets35x",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T20:00:01.326Z",
+    "epicCreatedAt": "2026-11-08T20:00:01.326Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 133195,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d15a24eb41e0771c",
+    "epicSlug": "send-chat-prompts-enter-add-jump",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794167867692-ets35x",
+    "hldEffectiveHash": "d15a24eb41e0771cf9bc25b2e48b3ea79c4d0ebebb3b7e1797f399dc21410b90",
+    "hldAmendmentsApplied": [],
+    "storyTitle": "Send chat prompts with Enter and add a jump-to-latest button",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "One module, two source files and their tests, with no storage, IPC or contract change. The submit key is one keydown listener at chat-panel.ts:2622 plus the placeholders at chat-panel.ts:263-264. The transcript pager already exposes atBottom and has toBottom; no jump-to-latest control exists, so a small one is added on top of them. It is more than trivial because there are small behaviour choices (how Ctrl+Enter inserts a line, IME composition, when the button shows while new output arrives) and a new visible control.",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "271da6d379bd76494661f8edda71a25d9c06c72355c2a37b396af55cbc30ce10",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 1,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-08T20:04:48.692Z",
+        "report": {
+          "entityId": "LLD-d15a24eb41e0771c-s1",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "b6b250c8f047659f177259406ec71d30944c5c2fa5d42a143c3774ab42592c0e"
+        }
+      },
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T20:20:35.584Z",
+        "override": {
+          "reason": "User decision 2026-11-09 after review round 1 (status incomplete, no findings). Limits accepted: the originating request and the ac1/ac2 wording were not in the records, so traceability could not be checked, and there was no rendering of the jump button, so it was not visually verified. The build carries the reviewer's advice and a screenshot check of the real panel."
+        }
+      }
+    },
+    "rangeBase": "7b6bcce279ea859aa4a75c3c726d23a817bd3e1c"
+  },
+  "body": {
+    "summary": {
+      "prose": "In the VS Code dev chat, pressing Enter now sends the prompt, and Ctrl+Enter starts a new line instead. Cmd+Enter behaves like Ctrl+Enter, and Shift+Enter keeps inserting a line. When you scroll up in the transcript, a small floating button appears over its lower edge; clicking it takes you to the latest output and it disappears once you are following the end again.",
+      "audience": "product"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Send chat prompts with Enter and add a jump-to-latest button"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "doSubmit",
+          "signature": "function doSubmit(): void",
+          "parameters": [],
+          "returns": {
+            "type": "void",
+            "meaning": "Unchanged: posts submit-turn for a non-empty box. Only what triggers it changes."
+          },
+          "errors": [],
+          "preconditions": [
+            "The keydown is on the insrc-input textarea, and its key is Enter with no Ctrl, Cmd, Shift or Alt held, and it is not part of an IME composition."
+          ],
+          "postconditions": [
+            "The keydown's default is prevented, so a plain Enter never leaves a line break in the box, even when the box is empty and nothing is sent.",
+            "Ctrl+Enter and Cmd+Enter insert one line break at the caret, replacing any selection, and do not submit.",
+            "Shift+Enter and Alt+Enter keep the browser's behaviour and do not submit.",
+            "An Enter that confirms an IME composition is left alone and does not submit.",
+            "The '>' prompt control and its own Enter and Space handling are unchanged.",
+            "IDLE_PLACEHOLDER and QUEUE_PLACEHOLDER state the new keys."
+          ]
+        },
+        {
+          "name": "transcriptPagerWebviewSource",
+          "signature": "function transcriptPagerWebviewSource(): string /* source of (term: HTMLElement, o?: { bar?: HTMLElement; jump?: HTMLElement; post?: (m: unknown) => void; setTimeout?: Function; clearTimeout?: Function }) => Pager */",
+          "parameters": [
+            {
+              "name": "o.jump",
+              "type": "HTMLElement",
+              "purpose": "The floating jump-to-latest button. The pager shows and hides it and handles its click.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "The pager factory's source. The returned pager's surface is unchanged."
+          },
+          "errors": [],
+          "preconditions": [
+            "The jump element is not a child of the transcript element."
+          ],
+          "postconditions": [
+            "The jump element is shown exactly while the pager's following state is false, and is hidden otherwise.",
+            "Its state is recomputed on scroll and after append, track, prepend and reset, so new output arriving with no scroll event still leaves it correct.",
+            "A click moves the view to the end through toBottom, so following resumes and the button hides.",
+            "Without a jump element the pager behaves as before."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Chat shell DOM",
+        "change": "invariant-change",
+        "details": "A new positioned wrapper, insrc-termwrap, takes the flex:1 place of insrc-term in the shell column and holds insrc-term and the new insrc-jump button. The button is a native button with an aria-label, hidden until the pager shows it. insrc-term stays the panel's single scroll region and every child of it stays a transcript row. Nothing is stored or sent to the host.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts:2102",
+          "vscode-plugin/src/chat/chat-panel.ts:2420",
+          "vscode-plugin/src/chat/chat-panel.ts:2660"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [],
+      "edgeCases": [
+        {
+          "input": "Enter in an empty box, or a box of only spaces, with no attachments",
+          "expected": "Nothing is sent and no line break is added."
+        },
+        {
+          "input": "Enter in an empty box with attachments shown",
+          "expected": "Sent, as doSubmit already allows."
+        },
+        {
+          "input": "Enter while a turn is running",
+          "expected": "The same as today's submit shortcut: doSubmit runs, and with the queue on the message waits."
+        },
+        {
+          "input": "Enter pressed to confirm an IME composition (isComposing true, or keyCode 229)",
+          "expected": "The composition is confirmed and nothing is sent."
+        },
+        {
+          "input": "Ctrl+Enter with text selected",
+          "expected": "The selection is replaced by one line break and the caret sits after it."
+        },
+        {
+          "input": "A long multi-line message",
+          "expected": "The box keeps its fixed two-line height and scrolls its own content; the transcript stays the panel's only scroll region."
+        },
+        {
+          "input": "A transcript too short to scroll",
+          "expected": "The view is at the end, so the button stays hidden."
+        },
+        {
+          "input": "The reader scrolls up while output is streaming",
+          "expected": "The button appears and stays, the view does not move, and new rows do not hide it."
+        },
+        {
+          "input": "A row is appended empty and filled while the view is following",
+          "expected": "The button stays hidden, because following is true throughout."
+        },
+        {
+          "input": "The reader scrolls back down to the end by hand",
+          "expected": "Following resumes and the button hides."
+        },
+        {
+          "input": "A page of older rows loads while the reader is near the top",
+          "expected": "The view keeps its place and the button stays shown."
+        },
+        {
+          "input": "The chat switches to another session",
+          "expected": "Reset moves the view to the end and the button hides."
+        },
+        {
+          "input": "The button is clicked",
+          "expected": "The view moves at once to the end, without an animation, the button hides, and keyboard focus returns to the prompt box."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "A reader who has scrolled up is left where they are when new rows arrive.",
+          "source": "c1"
+        },
+        {
+          "text": "Every child of the transcript element is a row the pager stamps and trims, and it stays the panel's single scroll region.",
+          "source": "c2"
+        },
+        {
+          "text": "Submit converges on the one doSubmit path, shared with the '>' prompt control.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test with the plugin's fake DOM, run under the default node",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "The pager's jump button against the pager's scroll stub.",
+          "subjects": [
+            "jump: hidden while following and at the end",
+            "jump: shown when the reader scrolls up and stays shown as new rows arrive",
+            "jump: stays hidden while a row is appended empty and then filled",
+            "jump: a click moves to the end, resumes following and hides the button",
+            "jump: hides when the reader scrolls back to the end",
+            "jump: hidden after a session reset"
+          ],
+          "fixturesNeeded": [
+            "The makeView stub in transcript-pager.test.ts, given a jump element"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "The real shell script's key handling and button wiring on the shared fake DOM.",
+          "subjects": [
+            "composer: Enter submits and prevents the line break",
+            "composer: Enter on an empty box sends nothing and adds no line break",
+            "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+            "composer: Cmd+Enter inserts a line and does not submit",
+            "composer: Shift+Enter does not submit and leaves the browser's line break",
+            "composer: an Enter confirming an IME composition does not submit",
+            "composer: the placeholders state the new keys",
+            "shell: the jump button sits outside the transcript and a click returns focus to the prompt"
+          ],
+          "fixturesNeeded": [
+            "The shell harness in chat-shell.test.ts"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "See the floating button on the real rendered shell.",
+          "subjects": [
+            "visual: the jump button floats over the transcript's lower edge in light and dark themes"
+          ],
+          "fixturesNeeded": [
+            "The fidelityHtml render with headless Chrome"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "composer: Enter submits and prevents the line break",
+            "composer: Ctrl+Enter inserts a line at the caret and does not submit",
+            "composer: the placeholders state the new keys"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "jump: shown when the reader scrolls up and stays shown as new rows arrive",
+            "jump: hidden while following and at the end",
+            "jump: a click moves to the end, resumes following and hides the button"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "Cmd/Ctrl+Enter submits and a plain Enter inserts a line (vscode-plugin/src/chat/chat-panel.ts:2622). The placeholders state the old shortcut. The transcript has no control to return to the end.",
+      "stateAfter": "Enter submits, and Ctrl/Cmd+Enter inserts a line. The placeholders state this. A floating button returns to the end while the reader has scrolled up.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Ship the changed keys, placeholders and button in a new VS Code plugin build; there is no stored state to move.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Muscle memory changes: Cmd/Ctrl+Enter no longer sends, and a plain Enter no longer adds a line. Nothing else changes: no setting, message or stored format.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Button state owned by the pager",
+        "oneLineSummary": "The transcript pager takes an optional jump element and shows it whenever the view has stopped following the end.",
+        "approach": "The composer's keydown listener handles Enter directly. The pager gains an optional `jump` element in its options, next to the existing `bar`. It recomputes the element's visibility wherever it already decides following (scroll, append, track, prepend, reset), and a click calls its existing toBottom. The shell wraps the transcript in a positioned element so the button can float over it without being a transcript row.",
+        "pros": [
+          "Uses the pager's remembered following state, so the button does not flicker while a row is appended empty and then filled",
+          "Same optional-element pattern as the load-earlier bar",
+          "Testable with the pager's existing stub"
+        ],
+        "cons": [
+          "Adds one wrapper element around the transcript"
+        ],
+        "costEstimate": "S"
+      },
+      {
+        "id": "a2",
+        "name": "Button state owned by the shell",
+        "oneLineSummary": "The shell script listens to the transcript's scroll event and shows the button from the pager's atBottom.",
+        "approach": "The composer change is as in a1. The shell adds its own scroll listener and shows the button when atBottom is false, and exports toBottom from the pager for the click.",
+        "pros": [
+          "The pager changes only by exporting toBottom"
+        ],
+        "cons": [
+          "atBottom is briefly false while the last row is being filled, so the button flickers during streaming",
+          "A new row does not raise a scroll event when the reader is scrolled up, so state must also be polled or hooked elsewhere"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Keeps the pager smaller but duplicates a decision the pager already makes, and duplicates it less accurately."
+      },
+      {
+        "id": "a3",
+        "name": "Sticky transcript child",
+        "oneLineSummary": "The button is a sticky-positioned last child of the transcript, needing no wrapper.",
+        "approach": "The button is placed inside the transcript element with position sticky and moved after each append so it stays last.",
+        "pros": [
+          "No wrapper element"
+        ],
+        "cons": [
+          "Every child of the transcript is a row the pager stamps, counts and trims, so a control there breaks those rules",
+          "Has to be moved on every append"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Removes the wrapper but puts a non-row among the rows."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": []
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/transcript-pager.ts:58-62"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2102"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts:2622"
+    }
+  ]
+}

@@ -150,7 +150,7 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
 }
 
 export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer {
-  return async (selected: string | undefined): Promise<string> => {
+  return async (selected, publishLoading): Promise<string> => {
     const repos = await deps.registeredRepos();
     if (repos.length === 0) {
       return `<p class="placeholder">No repos are registered with the daemon.</p>`;
@@ -186,31 +186,35 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
     const floorSection = `<div class="section"><div class="section-head">Core floor</div><div class="floor-row">${floor}</div></div>`;
 
-    // The Providers section: per-provider MCP registration state from the
-    // daemon's mcp.status read — already-registered providers render as
-    // non-checkable; only unregistered, available ones are checkboxes.
-    let providers: string;
-    try {
-      providers = renderProvidersSection(await deps.mcpRegistration(active));
-    } catch (err) {
-      // An old daemon answers 'unknown method: mcp.status' — say so and point at the update.
-      const msg = err instanceof Error ? err.message : String(err);
-      providers = /unknown method/.test(msg)
-        ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
-        : `<p class="hint">Provider registration state is unavailable right now.</p>`;
-    }
-
-    return (
+    const form = (tracker: string, providers: string): string => (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
       groups +
       floorSection +
-      await renderTrackerSection(deps, active) +
+      tracker +
       `<h3>Providers</h3>${providers}` +
       `</section>`
     );
+    publishLoading?.(form('<section id="insrc-tracker"><h3>Tracker</h3><p role="status">Loading Tracker settings…</p></section>',
+      '<p role="status">Loading provider status…</p>'));
+    const [tracker, providers] = await Promise.all([
+      renderTrackerSection(deps, active),
+      loadProvidersSection(deps, active),
+    ]);
+    return form(tracker, providers);
   };
+}
+
+async function loadProvidersSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
+  try {
+    return renderProvidersSection(await deps.mcpRegistration(repoPath));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return /unknown method/.test(msg)
+      ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
+      : `<p class="hint">Provider registration state is unavailable right now.</p>`;
+  }
 }
 
 interface RepoTrackerWriteDeps extends Pick<RepoConfigWriteDeps, 'registeredRepos' | 'consent' | 'status' | 'logger' | 'refresh'> {

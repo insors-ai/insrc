@@ -347,7 +347,7 @@ export function activate(context: vscode.ExtensionContext): void {
     error: (message: string): void => console.error(`[insrc] ${message}`),
   };
   const daemonData = createDaemonDataGateway({
-    rpc: (method, params) => client.rpc(method, params),
+    rpc: (method, params, opts) => client.rpc(method, params, opts),
     artifactsRoot: () => {
       const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       return root === undefined ? undefined : join(root, '.insrc', 'artifacts');
@@ -435,6 +435,7 @@ export function activate(context: vscode.ExtensionContext): void {
   // (here) and registerDeliveryBoard()'s call, ~500 lines below — the closure
   // below reads this by reference, so it resolves correctly once assigned.
   let deliveryBoardOpen: (() => void) | undefined;
+  const repoConfigReadTimeoutMs = 15_000;
   const panelHost = createWebviewPanelHost({
     panels: ({ viewType, title }): PanelHandle => {
       // S005: enableScripts:true so the Detailed Status tab strip + Refresh can
@@ -489,13 +490,13 @@ export function activate(context: vscode.ExtensionContext): void {
     // from the sc9 registeredRepos read) + the selected repo's per-repo model-tiering
     // form read from the sc8 gateway's rawConfig (config.show).
     repoRenderer: renderRepoConfig({
-      registeredRepos: () => daemonData.registeredRepos(),
-      rawConfig: () => configGateway.rawConfig(),
-      repoFields: async () => (await configGateway.catalog()).repoFields,
-      repoSettings: (repoPath) => configGateway.repoSettings(repoPath),
+      registeredRepos: () => daemonData.registeredRepos(repoConfigReadTimeoutMs),
+      rawConfig: () => configGateway.rawConfig(repoConfigReadTimeoutMs),
+      repoFields: async () => (await configGateway.catalog(repoConfigReadTimeoutMs)).repoFields,
+      repoSettings: (repoPath) => configGateway.repoSettings(repoPath, repoConfigReadTimeoutMs),
       // Forward the selected repo so mcp.status also probes the repo's own
       // project-layer .vibe/config.toml for vibe (vibe merges layers by name).
-      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath),
+      mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath, repoConfigReadTimeoutMs),
     }),
     // S007: the consent-gated per-repo write sink. Reuses the sc8 writeKeyPath ARRAY
     // form (config.write) — no new daemon capability (k3); gated by sc4 (k4); the

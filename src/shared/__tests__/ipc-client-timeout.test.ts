@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
 import type { Socket } from 'node:net';
 
-import { rpc } from '../ipc-client.js';
+import { createIpcClient, rpc } from '../ipc-client.js';
 
 class FakeSocket extends EventEmitter {
   public written: string[] = [];
@@ -20,6 +20,16 @@ class FakeSocket extends EventEmitter {
 }
 
 const reply = (id: number, result: unknown): string => JSON.stringify({ id, result }) + '\n';
+
+test('IpcClient.rpc forwards an opt-in deadline to the socket request', async (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const socket = new FakeSocket();
+  const result = createIpcClient(() => socket.asSocket()).rpc('config.show', undefined, { timeoutMs: 100 });
+  socket.emit('connect');
+  t.mock.timers.tick(100);
+  await assert.rejects(result, /did not reply within 100 ms/);
+  assert.equal(socket.destroyed, 1);
+});
 
 test('rpc without opts is unchanged for a reply, an error and a split reply', async () => {
   // A reply: resolves, ends the socket, adds only the UTF-8 decoder's end listener and never destroys.

@@ -9,6 +9,9 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { createWebviewPanelHost } from '../webview-host.js';
+import { renderRepoConfig } from '../repo-config.js';
+import { REPO_TRACKER_FIELDS } from '../../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../../src/daemon/repo-settings.js';
 import {
   GatewayReadError,
   type DaemonDataGateway,
@@ -718,6 +721,37 @@ test('a delayed repo render never replaces the current selection', async () => {
   await tick();
   assert.match(panel.html, /<p>\/current<\/p>/);
   assert.doesNotMatch(panel.html, /stale render/);
+});
+
+test('Repo Configuration paints model controls while Tracker and Providers are still loading', async () => {
+  const repo = '/repo/a';
+  const tracker = Promise.withResolvers<SettingsResult>();
+  const providers = Promise.withResolvers<[]>();
+  const started: string[] = [];
+  const { host, created } = makeHost({
+    repoRenderer: renderRepoConfig({
+      registeredRepos: async () => [{ path: repo, name: 'a' }],
+      rawConfig: async () => ({}),
+      repoFields: async () => REPO_TRACKER_FIELDS,
+      repoSettings: () => { started.push('tracker'); return tracker.promise; },
+      mcpRegistration: () => { started.push('providers'); return providers.promise; },
+    }),
+  });
+  host.openRepoConfiguration();
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: repo });
+  await tick();
+  assert.match(panel.html, /Core floor/);
+  assert.match(panel.html, /Loading Tracker settings/);
+  assert.match(panel.html, /Loading provider status/);
+  assert.deepEqual(started.sort(), ['providers', 'tracker']);
+
+  tracker.reject(new Error('timeout'));
+  providers.resolve([]);
+  await tick();
+  assert.match(panel.html, /Core floor/);
+  assert.match(panel.html, /Tracker settings are unavailable/);
+  assert.doesNotMatch(panel.html, /Loading Tracker settings/);
 });
 
 test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {

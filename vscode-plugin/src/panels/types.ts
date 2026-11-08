@@ -20,6 +20,7 @@ import type { DocRelationsStatus, RegisteredRepo, RepoCompleteness } from '../..
 import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
 import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
 import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
+import type { IpcClient } from '../../../src/shared/ipc-client.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -60,8 +61,8 @@ export interface DaemonDataGateway {
   mcpClients(): Promise<readonly McpClientView[]>;
   /** Per-provider MCP registration state (the daemon's `mcp.status` read): what is
    *  already registered, so a settings UI can offer only the rest. */
-  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
-  registeredRepos(): Promise<readonly RepoRef[]>;
+  mcpRegistration(repoPath?: string, timeoutMs?: number): Promise<readonly McpRegistrationView[]>;
+  registeredRepos(timeoutMs?: number): Promise<readonly RepoRef[]>;
   scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
 
@@ -191,7 +192,7 @@ export interface TabController {
  * dispatcher that reads no config. A read rejection PROPAGATES so the host degrades
  * the panel. extension.ts supplies the concrete renderer (renderRepoConfig).
  */
-export type RepoConfigRenderer = (selected: string | undefined) => Promise<string>;
+export type RepoConfigRenderer = (selected: string | undefined, publishLoading?: (body: string) => void) => Promise<string>;
 
 /** The narrow injected boundary the Repo Configuration renderer reads through. */
 export interface RepoConfigRendererDeps {
@@ -345,7 +346,7 @@ export interface WebviewPanelHostDeps {
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */
 export interface DaemonDataGatewayDeps {
   /** The shared sc1 client — the only daemon path (daemon.status/repo.list/daemon.debug-status). */
-  readonly rpc: <T = unknown>(method: string, params?: unknown) => Promise<T>;
+  readonly rpc: IpcClient['rpc'];
   /** Resolves the `.insrc/artifacts` root for the workflow-chain read (or undefined). */
   readonly artifactsRoot: () => string | undefined;
   /** The local process-table scan (mirrors the JetBrains OrphanProcessSeam). */

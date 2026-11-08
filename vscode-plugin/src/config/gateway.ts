@@ -49,8 +49,8 @@ function writeResult(answer: DaemonWriteAnswer | undefined): ConfigWriteResult {
  */
 export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
   return {
-    async catalog(): Promise<ConfigCatalogSnapshot> {
-      const payload = await client.rpc<CatalogPayload>('config.catalog');
+    async catalog(timeoutMs?: number): Promise<ConfigCatalogSnapshot> {
+      const payload = await client.rpc<CatalogPayload>('config.catalog', undefined, { timeoutMs });
       const values = new Map<string, unknown>(Object.entries(payload?.values ?? {}));
       return { values, repoFields: payload?.repoFields ?? [] };
     },
@@ -65,15 +65,15 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
       return writeResult(await client.rpc<DaemonWriteAnswer>('config.write', { path: segments, value }));
     },
 
-    async rawConfig(): Promise<Record<string, unknown>> {
+    async rawConfig(timeoutMs?: number): Promise<Record<string, unknown>> {
       // The existing config.show read: the raw parsed ~/.insrc/config.json (or {}),
       // the source of dynamic per-role overrides the config.catalog snapshot omits.
-      const raw = await client.rpc<Record<string, unknown>>('config.show');
+      const raw = await client.rpc<Record<string, unknown>>('config.show', undefined, { timeoutMs });
       return raw ?? {};
     },
 
-    async repoSettings(repoPath: string): Promise<SettingsResult> {
-      return await client.rpc<SettingsResult>('repo.settings.get', { repo: repoPath });
+    async repoSettings(repoPath: string, timeoutMs?: number): Promise<SettingsResult> {
+      return await client.rpc<SettingsResult>('repo.settings.get', { repo: repoPath }, { timeoutMs });
     },
 
     async writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult> {

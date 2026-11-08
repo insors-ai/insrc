@@ -328,13 +328,18 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
    */
   const renderRepoPanel = async (panel: PanelHandle): Promise<void> => {
     const renderId = String(++repoRenderGeneration);
+    const paint = (body: string, scripted: boolean): void => {
+      if (repoPanel !== panel || renderId !== String(repoRenderGeneration)) return;
+      const content = `<div id="insrc-tracker-document" data-render-id="${renderId}">${body}</div>`;
+      panel.setHtml(shellHtml('Repo Configuration', content, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+    };
     try {
       let body: string;
       let scripted = false;
       const renderer = deps.repoRenderer;
       if (renderer !== undefined) {
         try {
-          body = await renderer(repoSelectedRepo);
+          body = await renderer(repoSelectedRepo, loading => paint(loading, true));
           scripted = true; // the rendered body carries the picker/field controls.
         } catch (err) {
           logger.warn(`insrc: could not render the Repo Configuration view — ${errText(err)}`);
@@ -343,9 +348,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       } else {
         body = REPO_PLACEHOLDER; // S004 fallback (no repoRenderer wired).
       }
-      if (repoPanel !== panel || renderId !== String(repoRenderGeneration)) return;
-      const content = `<div id="insrc-tracker-document" data-render-id="${renderId}">${body}</div>`;
-      panel.setHtml(shellHtml('Repo Configuration', content, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+      paint(body, scripted);
     } catch (err) {
       logger.warn(`insrc: could not render the Repo Configuration panel — ${errText(err)}`);
     }

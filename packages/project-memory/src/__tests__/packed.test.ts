@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { after } from 'node:test';
 import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, writeFile, rm, lstat, rename, cp, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
@@ -24,13 +25,26 @@ function packed() {
     env['NPM_CONFIG_GLOBALCONFIG'] = join(dir, 'global.npmrc');
     await writeFile(env['NPM_CONFIG_USERCONFIG']!, ''); await writeFile(env['NPM_CONFIG_GLOBALCONFIG']!, '');
     const npm = (args: string[], cwd = dir) => execFileSync('npm', args, { cwd, env, encoding: 'utf8', timeout: 120_000, maxBuffer: 4_000_000 });
-    const result = JSON.parse(npm(['run', '--silent', 'pack:release', '--', dir], root)) as { filename: string; files: { path: string }[] }[];
-    const artifact = result[0]!;
+    const supplied = process.env.INSRC_MEMORY_RELEASE_TARBALL;
+    let tarballPath: string;
+    let packedFiles: string[];
+    if (supplied) {
+      tarballPath = supplied;
+      packedFiles = execFileSync('tar', ['-tzf', tarballPath], { encoding: 'utf8' })
+        .trim().split('\n').filter(path => !path.endsWith('/')).map(path => path.replace(/^package\//, ''));
+    } else {
+      const result = JSON.parse(npm(['run', '--silent', 'pack:release', '--', dir], root)) as { filename: string; files: { path: string }[] }[];
+      const artifact = result[0]!;
+      tarballPath = join(dir, artifact.filename);
+      packedFiles = artifact.files.map(file => file.path);
+    }
     await writeFile(join(dir, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
-    npm(['install', '--no-audit', '--no-fund', join(dir, artifact.filename), 'typescript@5.9.3', '@types/node@22.20.5']);
+    npm(['install', '--no-audit', '--no-fund', tarballPath, 'typescript@5.9.3', '@types/node@22.20.5']);
     const installed = join(dir, 'node_modules/@insrc/project-memory');
     assert.equal((await lstat(installed)).isSymbolicLink(), false);
     assert.equal(env['NODE_PATH'], undefined);
+    const dependencyEvidence = process.env.INSRC_MEMORY_DEPENDENCY_EVIDENCE;
+    if (dependencyEvidence) await cp(join(dir, 'package-lock.json'), dependencyEvidence);
     const output = process.env['INSRC_MEMORY_PACKAGE_EVIDENCE'];
     if (output) {
       const native = '@lancedb/lancedb-' + process.platform + '-' + process.arch + (process.platform === 'linux' ? '-gnu' : '');
@@ -43,11 +57,11 @@ function packed() {
         for (const file of entries.filter(name => /license|copying|\.node$/i.test(name))) files.push({ file, sha256: createHash('sha256').update(await readFile(join(path, file))).digest('hex') });
         dependencies.push({ name, version: manifest.version, license: manifest.license ?? null, entries, files, diskKiB: Number(execFileSync('du', ['-sk', path], { encoding: 'utf8' }).split(/\s/)[0]) });
       }
-      const tarball = await readFile(join(dir, artifact.filename));
-      await writeFile(output, JSON.stringify({ node: process.versions.node, abi: process.versions.modules, platform: process.platform, arch: process.arch, tarballBytes: tarball.length, tarballSha256: createHash('sha256').update(tarball).digest('hex'), files: artifact.files, dependencies,
+      const tarball = await readFile(tarballPath);
+      await writeFile(output, JSON.stringify({ node: process.versions.node, abi: process.versions.modules, platform: process.platform, arch: process.arch, tarballBytes: tarball.length, tarballSha256: createHash('sha256').update(tarball).digest('hex'), files: packedFiles, dependencies,
         limitations: ['Per-package installed disk sizes; transitive dependency totals and production SLOs are not inferred.', 'External test app includes TypeScript/Node types for public contract compilation.'] }, null, 2) + '\n');
     }
-    return { dir, env, files: artifact.files.map(f => f.path) };
+    return { dir, env, files: packedFiles };
   })();
 }
 const consumer = `import assert from 'node:assert/strict';
@@ -212,3 +226,33 @@ const owner = await acquireOwnership(options); await owner.close();
 const s = await MemoryFactory.open({ dataDirectory: ${JSON.stringify(join(dir, 'missing-lance-data'))}, models: { embeddingModel: 'x', embeddingDimension: 1, async complete() {}, async embed() {} }, policy: { async bind() {}, async admit() {} }, logger: { write() {} }, limits: { maxEventBytes: 1024, segmentBytes: 4096, maxPendingBytes: 8192, modelTimeoutMs: 1000 } }); await s.close();`);
   execFileSync(node22(), ['restored-lance.mjs'], { cwd: dir, env, timeout: 10_000, stdio: 'pipe' });
 });
+
+const previousTarball = process.env.INSRC_MEMORY_PREVIOUS_TARBALL ?? join(root, 'node_modules/.cache/insrc-memory-previous.tgz');
+if (existsSync(previousTarball)) {
+  nativeTest(import.meta.url, 'packed upgrade reopens baseline rows vectors queue and receipts and old release restores backup', async () => {
+    const { dir, env } = await packed();
+    const previous = join(dir, 'previous-release');
+    await mkdir(previous);
+    await writeFile(join(previous, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
+    execFileSync('npm', ['install', '--no-audit', '--no-fund', previousTarball], {
+      cwd: previous, env, timeout: 120_000, stdio: 'pipe',
+    });
+    const fixture = new URL('./fixtures/packed-store-consumer.mjs', import.meta.url);
+    await cp(fixture, join(previous, 'store-consumer.mjs'));
+    await cp(fixture, join(dir, 'store-consumer.mjs'));
+    const data = join(dir, 'pre-upgrade-store');
+    const proof = join(dir, 'baseline-receipts.json');
+    const backup = join(dir, 'pre-upgrade-backup');
+    const restored = join(dir, 'restored-store');
+    const check = (cwd: string, store: string, mode: string) => {
+      execFileSync(node22(), ['store-consumer.mjs', store, mode, proof], {
+        cwd, env, timeout: 20_000, stdio: 'pipe',
+      });
+    };
+    check(previous, data, 'seed');
+    await cp(data, backup, { recursive: true });
+    check(dir, data, 'verify');
+    await cp(backup, restored, { recursive: true });
+    check(previous, restored, 'verify');
+  }, 180_000);
+}

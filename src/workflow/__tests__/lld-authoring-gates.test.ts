@@ -11,14 +11,14 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { finalizeArtifact } from '../orchestrator.js';
 import { markApprovedSync } from './lifecycle-fixtures.js';
-import { renderLldMarkdown, type LldArtifact, type LldBody } from '../artifacts/lld.js';
+import { isLldBody, renderLldMarkdown, type LldArtifact, type LldBody } from '../artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../storage.js';
 import type { WorkflowIntent } from '../types.js';
 
@@ -149,4 +149,115 @@ test('stored: a stored LLD with no storyTitle renders byte-identically', () => {
 	const artifact = JSON.parse(readFileSync(join(ROOT, '.insrc/artifacts/LLD-546198e11c24c1e3-s1.json'), 'utf8')) as LldArtifact;
 	assert.equal(artifact.meta.storyTitle, undefined, 'the fixture is an LLD written before the title existed');
 	assert.equal(renderLldMarkdown(artifact).trimEnd(), readFileSync(join(ROOT, dir), 'utf8').trimEnd());
+});
+
+// ---------------------------------------------------------------------------
+// t2 — alternatives come from the alternatives step
+// ---------------------------------------------------------------------------
+
+const S2_RECORDS = [
+	{ id: 'a1', name: 'step first', oneLineSummary: 'step one', approach: 'the step approach one', pros: ['sp1'], cons: ['sc1'], costEstimate: 'S' },
+	{ id: 'a2', name: 'step second', oneLineSummary: 'step two', approach: 'the step approach two', pros: ['sp2'], cons: ['sc2'], costEstimate: 'M' },
+];
+
+function emitWith(alternativesConsidered: unknown): Record<string, unknown> {
+	return { body: { ...body(), alternativesConsidered }, citations: CITATIONS };
+}
+
+async function finalizeAlternatives(alternatives: unknown, stepOutputs: Record<string, unknown>) {
+	const repo = mkdtempSync(join(tmpdir(), 'lld-alts-'));
+	try {
+		return await finalizeArtifact(standaloneIntent(repo, TITLE), stepOutputs, 'wf', 5, emitWith(alternatives), 'client');
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+}
+
+/** The refusal's retryability and message; a success fails the test. */
+function refusal(r: Awaited<ReturnType<typeof finalizeArtifact>>): { retryable: boolean | undefined; message: string; kind: string } {
+	assert.equal(r.ok, false, 'the submission must be refused');
+	if (r.ok || r.failure.ok) throw new Error('unreachable');
+	return { retryable: r.failure.retryable, message: r.failure.message, kind: r.failure.kind };
+}
+
+function storedAlternatives(r: Awaited<ReturnType<typeof finalizeArtifact>>): unknown {
+	assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.failure));
+	return (r.finalized.artifact as LldArtifact).body.alternativesConsidered;
+}
+
+test('overlay: a submission with only ids and reasonRejected stores every s2 field', async () => {
+	const r = await finalizeAlternatives([{ id: 'a1' }, { id: 'a2', reasonRejected: 'lost' }], { s2: { alternatives: S2_RECORDS } });
+	assert.deepEqual(storedAlternatives(r), [S2_RECORDS[0], { ...S2_RECORDS[1], reasonRejected: 'lost' }]);
+});
+
+test("overlay: a submission that alters s2's content stores s2's values", async () => {
+	const altered = [
+		{ id: 'a1', name: 'rewritten', oneLineSummary: 'rewritten', approach: 'rewritten', pros: [], cons: [], costEstimate: 'L', chosen: true },
+		{ id: 'a2', name: 'rewritten', reasonRejected: 'lost' },
+	];
+	const r = await finalizeAlternatives(altered, { s2: { alternatives: S2_RECORDS } });
+	assert.deepEqual(storedAlternatives(r), [S2_RECORDS[0], { ...S2_RECORDS[1], reasonRejected: 'lost' }], 'content is s2\'s and the extra field is gone');
+});
+
+test('finalize: duplicate submitted ids are refused as retryable', async () => {
+	const f = refusal(await finalizeAlternatives([{ id: 'a1' }, { id: 'a1' }, { id: 'a2' }], { s2: { alternatives: S2_RECORDS } }));
+	assert.notEqual(f.retryable, false);
+	assert.match(f.message, /duplicated: a1/);
+});
+
+test('finalize: an id absent from s2 is refused as retryable', async () => {
+	const f = refusal(await finalizeAlternatives([{ id: 'a1' }, { id: 'a2' }, { id: 'a9' }], { s2: { alternatives: S2_RECORDS } }));
+	assert.notEqual(f.retryable, false);
+	assert.match(f.message, /not in the alternatives step: a9/);
+});
+
+test('finalize: an s2 alternative missing from the submission is refused as retryable', async () => {
+	const f = refusal(await finalizeAlternatives([{ id: 'a1' }], { s2: { alternatives: S2_RECORDS } }));
+	assert.notEqual(f.retryable, false);
+	assert.match(f.message, /missing: a2/);
+});
+
+test('finalize: duplicate s2 ids are refused as non-retryable', async () => {
+	const f = refusal(await finalizeAlternatives([{ id: 'a1' }], { s2: { alternatives: [S2_RECORDS[0], S2_RECORDS[0]] } }));
+	assert.equal(f.retryable, false);
+	assert.match(f.message, /Restart design\.story/);
+});
+
+test('fallback: a run with no s2 output accepts complete submitted alternatives', async () => {
+	const r = await finalizeAlternatives(body().alternativesConsidered, {});
+	assert.deepEqual(storedAlternatives(r), body().alternativesConsidered);
+});
+
+test('fallback: a run with no s2 output refuses an id-only submission', async () => {
+	const f = refusal(await finalizeAlternatives([{ id: 'a1' }, { id: 'a2' }], {}));
+	assert.notEqual(f.retryable, false);
+	assert.match(f.message, /a1, a2 are incomplete/);
+});
+
+test('finalize: both the Epic and the standalone path apply the overlay', async () => {
+	const steps = { s2: { alternatives: S2_RECORDS } };
+	const emit = emitWith([{ id: 'a1' }, { id: 'a2', reasonRejected: 'lost' }]);
+	const expected = [S2_RECORDS[0], { ...S2_RECORDS[1], reasonRejected: 'lost' }];
+	await inRepo('lld-overlay-standalone-', async repo => {
+		assert.deepEqual(storedAlternatives(await finalizeArtifact(standaloneIntent(repo, TITLE), steps, 'wf', 5, emit, 'client')), expected);
+	});
+	await inRepo('lld-overlay-epic-', async repo => {
+		seedEpic(repo);
+		assert.deepEqual(storedAlternatives(await finalizeArtifact(epicIntent(repo), steps, 'wf', 5, emit, 'client')), expected);
+	});
+});
+
+test('finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing', async () => {
+	await inRepo('lld-malformed-s2-', async repo => {
+		const { approach: _dropped, ...incomplete } = S2_RECORDS[0]!;
+		const emit = { body: { ...body(), alternativesConsidered: [{ id: 'a1' }], sequenceDefinition: { participants: [{ id: 'A' }, { id: 'B' }], messages: [{ from: 'A', to: 'B', label: 'x' }] } }, citations: CITATIONS };
+		const f = refusal(await finalizeArtifact(standaloneIntent(repo, TITLE), { s2: { alternatives: [incomplete] } }, 'wf', 5, emit, 'client'));
+		assert.equal(f.retryable, false);
+		assert.match(f.message, /Restart design\.story/);
+		assert.deepEqual(readdirSync(repo), [], 'no companion or other file was written');
+	});
+});
+
+test('stored: isLldBody still accepts a stored LLD with partial alternatives', () => {
+	const artifact = JSON.parse(readFileSync(join(ROOT, '.insrc/artifacts/LLD-546198e11c24c1e3-s1.json'), 'utf8')) as LldArtifact;
+	assert.equal((artifact.body.alternativesConsidered[0] as { approach?: unknown }).approach, undefined, 'the fixture really is partial');
+	assert.equal(isLldBody(artifact.body), true);
 });

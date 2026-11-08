@@ -280,3 +280,19 @@ test('each consumer family of isModelCallFailure (the classifier, the planner, t
 	const answer = await caught(() => synthesize({ intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
 	assert.ok(answer instanceof SynthesizerLlmUnavailableError, `synthesizer: ${(answer as Error).name}: ${(answer as Error).message}`);
 });
+
+test("isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies", () => {
+	const exit = 'vibe exited with 1.';
+	assert.equal(isModelCallFailure(new Error(exit)), true);
+	assert.equal(isModelCallFailure(new Error(`structured-output: validation failed after 2 attempts: ${exit}`)), true);
+	// A model's quoted answer is not evidence about the call.
+	assert.equal(isModelCallFailure(new Error(`reply did not parse text="vibe exited with 1."`)), false);
+	assert.equal(isModelCallFailure(new Error('the answer says vibe exited with 1.')), false);
+	// A size refusal and a schema-invalid reply are not failed calls.
+	assert.equal(isModelCallFailure(new Error('Input is too large for the model: 70000 characters')), false);
+	assert.equal(isModelCallFailure(new ModelResponseShapeError('codex', 'reply was not JSON')), false);
+	// The wordings it had are unchanged.
+	for (const text of ['claude --print failed: x', 'claude exited with 2.', 'codex emitted error event: x', 'codex exited with 1.']) {
+		assert.equal(isModelCallFailure(new Error(text)), true, text);
+	}
+});

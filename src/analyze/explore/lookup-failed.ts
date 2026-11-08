@@ -15,15 +15,30 @@
  * output's `partial`, so what was found is not lost with the failure.
  */
 
-import type { PartialFinding } from '../completeness.js';
+import type { HandlingReport, PartialFinding } from '../completeness.js';
+import type { AnswerStepFailureReason } from '../context/driver.js';
 
 export class LookupFailedError extends Error {
 	readonly partial: readonly PartialFinding[];
+	/** How the answer step that failed was handled, for a failure of the answer-writing step (Story s3). */
+	readonly handling?: HandlingReport | undefined;
+	/** The answer-step reason the failure carried, when the failure is that of the answer-writing step. */
+	readonly answerStepReason?: AnswerStepFailureReason | undefined;
 
-	constructor(message: string, partial: readonly PartialFinding[] = [], options?: { readonly cause?: unknown }) {
-		super(message, options);
+	constructor(
+		message: string,
+		partial: readonly PartialFinding[] = [],
+		options?: {
+			readonly cause?:            unknown;
+			readonly handling?:         HandlingReport | undefined;
+			readonly answerStepReason?: AnswerStepFailureReason | undefined;
+		},
+	) {
+		super(message, options?.cause !== undefined ? { cause: options.cause } : undefined);
 		this.name = 'LookupFailedError';
 		this.partial = partial;
+		this.handling = options?.handling;
+		this.answerStepReason = options?.answerStepReason;
 	}
 }
 

@@ -2220,7 +2220,7 @@ async function finalizeDesignStory(
 	// validate against. Skip the HLD cross-artifact checks + amendment back-flow
 	// and stamp the triage provenance instead. See `docs/plans/feature-triage-router.md`.
 	if (intent.params['standalone'] === true) {
-		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model);
+		return await finalizeStandaloneLld(intent, runId, elapsedMs, body, citations, model, attribution);
 	}
 
 	// Cross-artifact invariants — LLD must fit approved Epic + HLD.

@@ -16,12 +16,13 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { clientAttribution, modelSummary } from '../attribution.js';
 import { finalizeArtifact } from '../orchestrator.js';
 import { checkNonPathCitationRefs, checkPathForms } from '../synthesizer.js';
 import { markApprovedSync } from './lifecycle-fixtures.js';
 import { isLldBody, renderLldMarkdown, type LldArtifact, type LldBody } from '../artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../storage.js';
-import type { Citation, WorkflowIntent } from '../types.js';
+import type { ArtifactModelAttribution, Citation, WorkflowIntent } from '../types.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const EPIC_HASH = 'b4e1c7d2a9f03e65';
@@ -343,4 +344,48 @@ test('citations: other artifact kinds are unaffected', async () => {
 test('stored: checkPathForms behaviour for other artifact kinds is unchanged', () => {
 	assert.deepEqual(checkPathForms([bundle('read:thing: the store (src/store.ts:12)')], [], '/repo'), { ok: true }, 'a non-path kind is still not examined');
 	assert.equal(checkPathForms([{ id: 'c1', kind: 'code', ref: './src/x.ts' }], [], '/repo').ok, false, 'a code citation still is');
+});
+
+// ---------------------------------------------------------------------------
+// t4 — the real client and reported model on client-authored artifacts
+// ---------------------------------------------------------------------------
+
+test('attribution: absent, blank and multiline authorModel stamp unknown', () => {
+	for (const authorModel of [undefined, '', '   \t', 'first\nsecond', 'first\r\nsecond']) {
+		assert.equal(clientAttribution('cli-claude', authorModel).outputs[0]!.model, 'unknown', JSON.stringify(authorModel));
+	}
+	assert.equal(clientAttribution('cli-claude', '  deepseek-v4\n').outputs[0]!.model, 'deepseek-v4', 'a single line is trimmed and kept');
+});
+
+test('attribution: a client with no family stamps runner unknown', () => {
+	assert.deepEqual(clientAttribution(undefined, 'deepseek-v4'), {
+		outputs: [{ role: '(client)', tier: 'core', runner: 'unknown', model: 'deepseek-v4' }],
+	});
+});
+
+test('attribution: modelSummary prints an unknown stamp', () => {
+	assert.equal(modelSummary(stored({ attribution: clientAttribution(undefined, undefined) }).meta), 'unknown:unknown');
+	assert.equal(modelSummary(stored({ attribution: clientAttribution(undefined, 'deepseek-v4') }).meta), 'unknown:deepseek-v4');
+	assert.equal(modelSummary(stored({ attribution: clientAttribution('cli-codex', undefined) }).meta), 'cli-codex:unknown');
+});
+
+test('attribution: a supplied multi-output attribution stays unchanged on both finalize paths', async () => {
+	const supplied: ArtifactModelAttribution = {
+		outputs: [
+			{ role: 'synthesize', tier: 'core', runner: 'cli-claude', model: 'model-a' },
+			{ role: 'design.contract.detail', tier: 'mid', runner: 'cli-codex', model: 'model-b' },
+		],
+	};
+	const written = (r: Awaited<ReturnType<typeof finalizeArtifact>>): unknown => {
+		assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.failure));
+		return (r.finalized.artifact as LldArtifact).meta.attribution;
+	};
+	const emit = emitWith(body().alternativesConsidered);
+	await inRepo('lld-attribution-standalone-', async repo => {
+		assert.deepEqual(written(await finalizeArtifact(standaloneIntent(repo, TITLE), {}, 'wf', 5, emit, 'client', supplied)), supplied);
+	});
+	await inRepo('lld-attribution-epic-', async repo => {
+		seedEpic(repo);
+		assert.deepEqual(written(await finalizeArtifact(epicIntent(repo), {}, 'wf', 5, emit, 'client', supplied)), supplied);
+	});
 });

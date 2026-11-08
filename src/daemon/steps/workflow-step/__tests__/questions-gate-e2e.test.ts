@@ -32,6 +32,7 @@ import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { handleWorkflowStep } from '../handler.js';
+import { runInStepContext } from '../../../../shared/step-context.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
 import { _setQuestionProviderForTests } from '../../../../workflow/questions.js';
@@ -274,6 +275,23 @@ test('synthesize `done` omits openQuestions when the artifact carries none', asy
 		const done = payload(await handleWorkflowStep({ phase: 'synthesize', state, artifact: lldArtifact([]) }));
 		assert.equal(done['next'], 'done');
 		assert.equal(done['openQuestions'], undefined);
+	} finally { rmSync(repo, { recursive: true, force: true }); }
+});
+
+test('attribution: a Codex client with a reported model stamps cli-codex and that model', async () => {
+	await _clearWorkflowStateStoreForTests();
+	registerWorkflowRunners();
+	const repo = mkRepo();
+	try {
+		seed(repo, []);
+		const state = await walkLldToSynthesize(repo);
+		const done = payload(await runInStepContext({ cwd: repo, client: 'codex' }, () => handleWorkflowStep({
+			phase: 'synthesize', state, artifact: lldArtifact([]), authorModel: 'gpt-6.1-sol',
+		})));
+		assert.equal(done['next'], 'done', JSON.stringify(done));
+		assert.deepEqual((done['artifact'] as { meta: { attribution: unknown } }).meta.attribution, {
+			outputs: [{ role: '(client)', tier: 'core', runner: 'cli-codex', model: 'gpt-6.1-sol' }],
+		});
 	} finally { rmSync(repo, { recursive: true, force: true }); }
 });
 

@@ -17,7 +17,11 @@ import { fileURLToPath } from 'node:url';
 import type { ExecutedExploration, ExecutedPlan } from '../../explore/types.js';
 import { HandlingBudgetError } from '../driver.js';
 import { MIN_SECTION_ROOM, inputLimitFor } from '../handling.js';
-import { pairPartsWithReference, partitionResults, planReference, ruleFacts, selectSharedContext } from '../dependency.js';
+import { EVIDENCE_RESERVE, evidenceBlocks, pairPartsWithReference, partitionResults, planReference, ruleFacts, selectSharedContext } from '../dependency.js';
+import { ShaperAnswerStepFailedError } from '../driver.js';
+import { runDivided } from '../handling-parts.js';
+import type { PartAdapter } from '../handling-parts.js';
+import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
 import { renderSection } from '../sections.js';
 
 const LOCAL = { kind: 'local', windowTokens: 32_768, singlePassOutputTokens: 20_480 } as const;
@@ -128,7 +132,7 @@ test('an oversized single rule record is cut into sections, each part sees every
 
 	const reference = planReference({ blocks, limit: PART, promptSize, found: FOUND });
 	assert.ok(reference.rounds.length > 1, 'cut into rounds');
-	const roundBudget = PART.limit - promptSize - MIN_SECTION_ROOM;
+	const roundBudget = PART.limit - promptSize - EVIDENCE_RESERVE;
 	for (const r of reference.rounds) {
 		assert.ok(r.size <= roundBudget, 'a round fits next to the prompt and the minimum room');
 		assert.ok(r.evidenceRoom >= MIN_SECTION_ROOM);
@@ -163,3 +167,75 @@ test('an oversized single rule record is cut into sections, each part sees every
 	assert.equal(ruleFacts(executed).count, 1);
 	assert.equal(ruleFacts(executed).rules[0]?.text, longRule);
 });
+
+// ---------------------------------------------------------------------------
+// The adherence regression: the rule and the code sites in different parts
+// ---------------------------------------------------------------------------
+
+interface SiteReply { summary: string; sites: string[] }
+const siteAdapter: PartAdapter<SiteReply, { summary: string }> = {
+	partSchema: { kind: 'part' }, combineSchema: { kind: 'combine' },
+	renderPart: (part, round) => [{ role: 'user', content: `PART ${part.id}\nRULE:\n${round.rendered}\nSITES:\n${part.sections.map(renderSection).join('\n\n')}` }],
+	renderCombine: (summaries, round) => [{ role: 'user', content: `COMBINE\nRULE:\n${round.rendered}\n${summaries.map(x => x.summary).join('\n')}` }],
+	summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+	mergeRounds: rs => ({ summary: rs.map(r => r.summary).join(' '), sites: rs.flatMap(r => r.sites) }),
+};
+
+function siteProvider(rule: string): { provider: LLMProvider; prompts: string[] } {
+	const prompts: string[] = [];
+	const provider = {
+		completeStructured: async (messages: LLMMessage[], schema: unknown) => {
+			const prompt = String(messages[0]?.content);
+			prompts.push(prompt);
+			if ((schema as { kind: string }).kind === 'combine') return { summary: 'combined' };
+			// A part classifies each site it was given against the rule text it was given.
+			const sites = [...prompt.matchAll(/file: (src\/site\d+\.ts)/g)].map(m => m[1] as string);
+			const sawRule = /RULE:\n\[/.test(prompt) && rule.length > 0;
+			return { summary: `classified ${sites.length}`, sites: sawRule ? sites.map(f => `${f}: drift`) : [] };
+		},
+	} as unknown as LLMProvider;
+	return { provider, prompts };
+}
+
+test('adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context', async () => {
+	const sites = Array.from({ length: 8 }, (_, i) => exec(`s${i}`, { type: 'search.text', hits: [{ file: `src/site${i}.ts`, line: i + 1, snippet: `code ${'c'.repeat(4_500)}` }] }));
+	const target = { kind: 'cli', inputBudgetChars: 16_000 + 12_000 } as const;
+	const run = async (rule: string): Promise<{ result: Awaited<ReturnType<typeof runDivided<SiteReply, { summary: string }>>>; prompts: string[]; blocks: ReturnType<typeof evidenceBlocks> }> => {
+		const executed = plan(enumerate('e2', constraint(rule, 1)), ...sites);
+		const blocks = evidenceBlocks('adherence', executed);
+		const reference = selectSharedContext('adherence', executed);
+		const { provider, prompts } = siteProvider(rule);
+		const result = await runDivided({ provider, target, adapter: siteAdapter, blocks, reference, found: FOUND, maxAttempts: 2 });
+		return { result, prompts, blocks };
+	};
+
+	// A rule that fits next to every part: the rule text is in every part prompt and every combine call.
+	const rule = 'The daemon owns every database handle and no other process may open one.';
+	const { result, prompts, blocks } = await run(rule);
+	assert.ok(result.covered.length >= 3, 'the sites are in several parts, apart from the rule');
+	assert.ok(blocks.every(b => !b.text.includes(rule)), 'no partition block repeats the rule as evidence');
+	for (const p of prompts) assert.ok(p.includes(rule), `the rule is in every call: ${p.slice(0, 20)}`);
+	assert.ok(prompts.some(p => p.startsWith('COMBINE')));
+	// Every site is classified, none dropped; the rule-source count is the number of rule outputs.
+	const classified = result.covered.flatMap(c => c.reply.sites).sort();
+	assert.deepEqual(classified, sites.map((_, i) => `src/site${i}.ts: drift`).sort());
+	assert.equal(ruleFacts(plan(enumerate('e2', constraint(rule, 1)))).count, 1);
+
+	// A rule larger than the room is read in rounds, each part against every round: the sites are still all classified.
+	const longRule = 'A long rule that no single call can hold. '.repeat(800);
+	const big = await run(longRule);
+	assert.ok(big.result.covered.length >= 3);
+	const partCalls = big.prompts.filter(p => p.startsWith('PART')).length;
+	const rounds = partCalls / big.result.covered.length;
+	assert.ok(Number.isInteger(rounds) && rounds > 1, `each part is called once per round (${rounds})`);
+	assert.equal(big.result.covered.flatMap(c => c.reply.sites).length, 8 * rounds, 'each round classifies each site');
+	assert.equal(new Set(big.result.covered.flatMap(c => c.reply.sites)).size, 8);
+
+	// A reference whose own envelope cannot fit: the error names the reference context.
+	const fat = { key: 'e2', envelope: { params: { blob: 'p'.repeat(20_000) } }, text: 'rule' };
+	await assert.rejects(
+		runDivided({ provider: siteProvider(rule).provider, target, adapter: siteAdapter, blocks, reference: [fat], found: FOUND, maxAttempts: 1 }),
+		(err: unknown) => err instanceof ShaperAnswerStepFailedError && err.reason === 'input-does-not-fit' && /reference context/.test(err.message),
+	);
+});
+

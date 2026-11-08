@@ -23,6 +23,10 @@ import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import { inputLimitFor, outputTokensFor } from '../handling.js';
 import type { AdmissionTarget } from '../handling.js';
 import { callWithRepair, terminalReasonOf } from '../handling-call.js';
+import { ShaperAnswerStepFailedError } from '../driver.js';
+import { runDivided } from '../handling-parts.js';
+import type { PartAdapter } from '../handling-parts.js';
+import { renderSection } from '../sections.js';
 import type { CallOutcome } from '../handling-call.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
@@ -123,3 +127,32 @@ test('real Vibe, Claude and Codex adapters make exactly one attempt on a failing
 	assert.equal(dead.kind === 'failed' ? dead.failure : dead.kind, 'call-failed');
 	assert.equal(seen.length, 3, 'a failed Ollama call is one request');
 });
+
+test('Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer', async () => {
+	const adapter: PartAdapter<{ summary: string }, { summary: string }> = {
+		partSchema: SCHEMA, combineSchema: SCHEMA,
+		renderPart: part => [{ role: 'user', content: part.sections.map(renderSection).join('\n') }],
+		renderCombine: s => [{ role: 'user', content: s.map(x => x.summary).join('\n') }],
+		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+	};
+	const blocks = ['one', 'two', 'three'].map(key => ({ key, envelope: { file: `${key}.md` }, text: 'x'.repeat(7_000) }));
+	const found = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
+	for (const [mode, reason] of [['transport', 'model-failed'], ['malformed', 'invalid-answer']] as const) {
+		const vibe = fakeCli(mode);
+		try {
+			const provider = new CliProvider({ kind: 'vibe', binPath: vibe.bin, timeoutMs: 20_000 });
+			const err = await runDivided({
+				provider, target: { kind: 'cli', inputBudgetChars: 16_000 + 12_000 }, adapter, blocks, reference: [], found, maxAttempts: 1,
+			}).then(() => undefined, (e: unknown) => e);
+			assert.ok(err instanceof ShaperAnswerStepFailedError, mode);
+			assert.equal(err.reason, reason, mode);
+			// Typed, so it bypasses classifyError and carries no aggregator prefix.
+			assert.ok(!/aggregator-/.test(err.message), `no aggregator prefix: ${err.message}`);
+			assert.ok((err.partFailures?.length ?? 0) >= 2, 'one entry per failed part');
+			assert.ok(err.partFailures?.every(p => p.kind === (mode === 'transport' ? 'call-failed' : 'invalid-reply')));
+			if (mode === 'transport') assert.match(err.partFailures?.[0]?.cause?.message ?? '', /vibe exited with 1/);
+			assert.equal(vibe.runs(), err.partFailures?.length, 'one run per part, none retried');
+		} finally { vibe.cleanup(); }
+	}
+});
+

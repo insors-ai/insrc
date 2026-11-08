@@ -138,6 +138,11 @@ export function partitionResults(target: SynthesizerPromptKey, executed: Execute
 	return executed.results.filter(r => !isReference(target, r));
 }
 
+/** The evidence to divide for a target: every result that is not reference, as blocks, in plan order. */
+export function evidenceBlocks(target: SynthesizerPromptKey, executed: ExecutedPlan): readonly EvidenceBlock[] {
+	return partitionResults(target, executed).flatMap(blocksOf);
+}
+
 /** What an adherence answer states about its rule sources, counted in code from the reference outputs. */
 export interface RuleFacts {
 	/** constraints + decisions across the rule outputs. */
@@ -157,6 +162,12 @@ export function ruleFacts(executed: ExecutedPlan): RuleFacts {
 	}
 	return { count: rules.length, rules };
 }
+
+/**
+ * What a call keeps for the evidence next to the reference: the minimum room for a
+ * section plus an allowance for the section's own envelope and line.
+ */
+export const EVIDENCE_RESERVE = MIN_SECTION_ROOM + 1_000;
 
 /** One round of reference: the sections every part is judged against in one call, rendered. */
 export interface ReferenceRound {
@@ -190,7 +201,7 @@ export function planReference(args: {
 }): ReferencePlan {
 	const { blocks, limit, promptSize, found } = args;
 	const unit: Unit = limit.unit;
-	const roundBudget = limit.limit - promptSize - MIN_SECTION_ROOM;
+	const roundBudget = limit.limit - promptSize - EVIDENCE_RESERVE;
 	const room = (size: number): number => limit.limit - promptSize - size;
 	const make = (sections: readonly BlockSection[]): ReferenceRound => {
 		const rendered = sections.map(renderSection).join('\n\n');
@@ -206,7 +217,7 @@ export function planReference(args: {
 	if (roundBudget < MIN_SECTION_ROOM) {
 		throw new HandlingBudgetError(
 			`the prompt takes ${promptSize} ${unit} of the ${limit.limit} ${unit} a part call may hold, leaving ${Math.max(0, roundBudget)} ${unit} for the reference context `
-			+ `and the ${MIN_SECTION_ROOM} ${unit} for evidence; raise the model's context window or lower PART_MAX_OUTPUT_TOKENS`,
+			+ `after the ${EVIDENCE_RESERVE} ${unit} kept for evidence; raise the model's context window or lower PART_MAX_OUTPUT_TOKENS`,
 			found,
 		);
 	}

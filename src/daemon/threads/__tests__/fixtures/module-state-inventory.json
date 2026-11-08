@@ -1078,6 +1078,11 @@
     "owner": "main",
     "reason": "The Keychain backend below the vault, replaced only by a unit test; production always uses keytar on the main thread that owns the vault."
   },
+  "src/shared/keystore.ts#legacyRuns": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "What this run knows about names not yet in the vault; it lives with the vault on the main thread, because workers forward every keystore call there."
+  },
   "src/shared/keystore.ts#loadFailure": {
     "class": "one-owner",
     "owner": "main",

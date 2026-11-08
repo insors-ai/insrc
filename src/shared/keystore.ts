@@ -5,6 +5,9 @@
  * many secrets it uses. The item sits under its own service, so no secret name can address it. Its value
  * is JSON: `{ version: 1, secrets: { name: value }, retired: [names] }`.
  *
+ * A secret from before the vault stays in its own legacy item under the old service until it is first
+ * used, when it is copied in. Copying never deletes the legacy item: only an explicit delete does.
+ *
  * Entries are held in a Map, so a name such as `__proto__` is an ordinary key. Decrypted values are never
  * written to disk or logged, and an error never quotes the payload.
  */
@@ -49,11 +52,20 @@ interface Vault {
   readonly retired: Set<string>;
 }
 
+type LegacyRun =
+  | { readonly state: 'reading'; readonly result: Promise<string | null> }
+  /** The copy failed: served from memory for this run and copied on the next. */
+  | { readonly state: 'cached'; readonly value: string }
+  | { readonly state: 'absent' }
+  | { readonly state: 'failed'; readonly cause: unknown; readonly at: number };
+
 let backend: KeychainBackend = keytar;
 let vault: Vault | undefined;
 let loading: Promise<Vault> | undefined;
 let loadFailure: { readonly cause: unknown; readonly at: number } | undefined;
 let mutations: Promise<unknown> = Promise.resolve();
+/** For the run only: what is known about a name held in neither the vault nor the retired list. */
+const legacyRuns = new Map<string, LegacyRun>();
 
 /** Test-only: replace the Keychain below the vault and forget everything held for the previous one. */
 export function setKeychainBackendForTest(replacement: KeychainBackend | undefined): void {
@@ -62,6 +74,7 @@ export function setKeychainBackendForTest(replacement: KeychainBackend | undefin
   loading = undefined;
   loadFailure = undefined;
   mutations = Promise.resolve();
+  legacyRuns.clear();
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -117,11 +130,11 @@ function loadVault(): Promise<Vault> {
 }
 
 /** One queue for every change: the Keychain item is written first and memory only after that succeeds. */
-function mutate(change: (draft: Vault) => void): Promise<void> {
+function mutate(change: (draft: Vault) => boolean | void): Promise<void> {
   const run = mutations.then(async () => {
     const current = await loadVault();
     const draft: Vault = { secrets: new Map(current.secrets), retired: new Set(current.retired) };
-    change(draft);
+    if (change(draft) === false) return;
     const candidate = serializeVault(draft);
     try {
       parseVault(candidate);
@@ -139,10 +152,67 @@ function assertName(name: unknown): asserts name is string {
   if (typeof name !== 'string' || name.length === 0) throw new KeystoreInputError('name');
 }
 
-/** Retrieve a secret, or null when it does not exist. */
+/** A found legacy value enters the vault unless a save or delete got there first. */
+async function readLegacy(name: string, settle: (next: LegacyRun | undefined) => void): Promise<string | null> {
+  let value: string | null;
+  try {
+    value = await backend.getPassword(LEGACY_SERVICE, name);
+  } catch (cause) {
+    settle({ state: 'failed', cause, at: Date.now() });
+    throw new KeystoreUnavailableError({ cause });
+  }
+  if (value === null) {
+    settle({ state: 'absent' });
+    return (await loadVault()).secrets.get(name) ?? null;
+  }
+  const found = value;
+  try {
+    await mutate(draft => {
+      if (draft.secrets.has(name) || draft.retired.has(name)) return false;
+      draft.secrets.set(name, found);
+      return true;
+    });
+    settle(undefined);
+  } catch {
+    // Migration never deletes the legacy item, so the next run can copy it again.
+    settle({ state: 'cached', value: found });
+    return found;
+  }
+  const current = await loadVault();
+  return current.retired.has(name) ? null : current.secrets.get(name) ?? found;
+}
+
+/** One lookup per name at a time, and at most one successful legacy read per run. */
+function legacyLookup(name: string): Promise<string | null> {
+  const known = legacyRuns.get(name);
+  switch (known?.state) {
+    case 'reading': return known.result;
+    case 'cached': return Promise.resolve(known.value);
+    case 'absent': return Promise.resolve(null);
+    case 'failed':
+      if (Date.now() - known.at < LOAD_FAILURE_MEMORY_MS) return Promise.reject(new KeystoreUnavailableError({ cause: known.cause }));
+      legacyRuns.delete(name);
+  }
+  let reading: LegacyRun | undefined;
+  // A save or delete clears the entry, so a read that outlives it records nothing.
+  const settle = (next: LegacyRun | undefined): void => {
+    if (legacyRuns.get(name) !== reading) return;
+    if (next === undefined) legacyRuns.delete(name); else legacyRuns.set(name, next);
+  };
+  // Starts on a later tick, so `reading` is recorded before the read can settle.
+  const result = Promise.resolve().then(() => readLegacy(name, settle));
+  reading = { state: 'reading', result };
+  legacyRuns.set(name, reading);
+  return result;
+}
+
+/** Retrieve a secret, or null when it does not exist. A secret not yet in the vault is copied in on first use. */
 export async function getKey(name: string): Promise<string | null> {
   assertName(name);
-  return (await loadVault()).secrets.get(name) ?? null;
+  const current = await loadVault();
+  const held = current.secrets.get(name);
+  if (held !== undefined) return held;
+  return current.retired.has(name) ? null : legacyLookup(name);
 }
 
 /** Store a secret. An empty string is a valid value. */
@@ -153,6 +223,7 @@ export async function setKey(name: string, value: string): Promise<void> {
     draft.secrets.set(name, value);
     draft.retired.delete(name);
   });
+  legacyRuns.delete(name);
 }
 
 /** Remove a secret and record it as retired, so a leftover legacy item cannot bring it back. */
@@ -162,6 +233,7 @@ export async function deleteKey(name: string): Promise<void> {
     draft.secrets.delete(name);
     draft.retired.add(name);
   });
+  legacyRuns.delete(name);
   try {
     await backend.deletePassword(LEGACY_SERVICE, name);
   } catch {

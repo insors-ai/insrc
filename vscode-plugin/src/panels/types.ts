@@ -18,6 +18,9 @@
 import type { DisposableLike } from '../surfaces/types.js';
 import type { DocRelationsStatus, RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
 import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
+import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
+import type { DaemonRead } from '../config/types.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -58,8 +61,8 @@ export interface DaemonDataGateway {
   mcpClients(): Promise<readonly McpClientView[]>;
   /** Per-provider MCP registration state (the daemon's `mcp.status` read): what is
    *  already registered, so a settings UI can offer only the rest. */
-  mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
-  registeredRepos(): Promise<readonly RepoRef[]>;
+  mcpRegistration(repoPath?: string, timeoutMs?: number): Promise<readonly McpRegistrationView[]>;
+  registeredRepos(timeoutMs?: number): Promise<readonly RepoRef[]>;
   scanOrphans(): Promise<readonly OrphanProcess[]>;
 }
 
@@ -189,7 +192,7 @@ export interface TabController {
  * dispatcher that reads no config. A read rejection PROPAGATES so the host degrades
  * the panel. extension.ts supplies the concrete renderer (renderRepoConfig).
  */
-export type RepoConfigRenderer = (selected: string | undefined) => Promise<string>;
+export type RepoConfigRenderer = (selected: string | undefined, publishLoading?: (body: string) => void) => Promise<string>;
 
 /** The narrow injected boundary the Repo Configuration renderer reads through. */
 export interface RepoConfigRendererDeps {
@@ -199,6 +202,14 @@ export interface RepoConfigRendererDeps {
   rawConfig(): Promise<Record<string, unknown>>;
   /** Per-provider MCP registration state (mcp.status) — the Providers section source. */
   mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
+  repoFields?(): Promise<readonly RepoFieldDef[]>;
+  repoSettings?(repoPath: string): Promise<SettingsResult>;
+}
+
+export interface RepoTrackerWrite {
+  readonly repoPath: string;
+  readonly key: string;
+  readonly value: string | boolean | null;
 }
 
 /**
@@ -292,6 +303,7 @@ export interface WebviewPanelHostDeps {
    * config.write, k4); the host performs no write itself.
    */
   readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
+  readonly onRepoTrackerWrite?: ((write: RepoTrackerWrite, isCurrent: () => boolean) => void) | undefined;
   /**
    * OPTIONAL sink for a provider registration (the repo form's Providers section).
    * The form posts {type:'repoRegisterProviders', repoPath, clients}; the host
@@ -334,7 +346,7 @@ export interface WebviewPanelHostDeps {
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */
 export interface DaemonDataGatewayDeps {
   /** The shared sc1 client — the only daemon path (daemon.status/repo.list/daemon.debug-status). */
-  readonly rpc: <T = unknown>(method: string, params?: unknown) => Promise<T>;
+  readonly rpc: DaemonRead;
   /** Resolves the `.insrc/artifacts` root for the workflow-chain read (or undefined). */
   readonly artifactsRoot: () => string | undefined;
   /** The local process-table scan (mirrors the JetBrains OrphanProcessSeam). */

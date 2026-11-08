@@ -1,0 +1,117 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a1ecf88f-b7a6-4196-9a67-7f255744faa0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:47:07.244Z",
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "36cbeeac485c0af7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Rebuild alternatives from the alternatives step at finalize",
+      "parent": {
+        "entityId": "STORY-36cbeeac485c0af7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-36cbeeac485c0af7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "dd0097b1bf241ceb4dfcd1f2e50e6fa33a932658240a9c506311db9caf1d2478",
+        "at": "2026-11-08T07:47:07.244Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:47:07.245Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Rebuild alternatives from the alternatives step at finalize",
+    "summary": "Export isAlternative, add the overlay before the standalone branch with unique one-to-one ids, non-retryable handling of a malformed s2 and the no-s2 fallback, relax the synthesis schema and prompt, and update fixtures that submit incomplete alternatives.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Stored alternatives equal s2's records, keeping only the submitted reasonRejected",
+      "A submission whose content differs from s2 is accepted and s2's values are stored",
+      "Mismatched or duplicate submitted ids are refused as retryable",
+      "A malformed s2 is refused as non-retryable, naming a restart, and writes nothing",
+      "A run with no s2 output accepts complete alternatives and refuses incomplete ones",
+      "isLldBody is unchanged, so stored LLDs still read"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "overlay: a submission with only ids and reasonRejected stores every s2 field"
+      },
+      {
+        "level": "unit",
+        "name": "overlay: a submission that alters s2's content stores s2's values"
+      },
+      {
+        "level": "unit",
+        "name": "finalize: duplicate submitted ids are refused as retryable"
+      },
+      {
+        "level": "unit",
+        "name": "finalize: an id absent from s2 is refused as retryable"
+      },
+      {
+        "level": "unit",
+        "name": "finalize: an s2 alternative missing from the submission is refused as retryable"
+      },
+      {
+        "level": "unit",
+        "name": "finalize: duplicate s2 ids are refused as non-retryable"
+      },
+      {
+        "level": "unit",
+        "name": "fallback: a run with no s2 output accepts complete submitted alternatives"
+      },
+      {
+        "level": "unit",
+        "name": "fallback: a run with no s2 output refuses an id-only submission"
+      },
+      {
+        "level": "integration",
+        "name": "finalize: both the Epic and the standalone path apply the overlay"
+      },
+      {
+        "level": "integration",
+        "name": "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing"
+      },
+      {
+        "level": "integration",
+        "name": "stored: isLldBody still accepts a stored LLD with partial alternatives"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

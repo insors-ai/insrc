@@ -76,10 +76,10 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       }
     },
 
-    async registeredRepos(): Promise<readonly RepoRef[]> {
+    async registeredRepos(timeoutMs?: number): Promise<readonly RepoRef[]> {
       let rows: RegisteredRepo[];
       try {
-        rows = await rpc<RegisteredRepo[]>('repo.list');
+        rows = await rpc<RegisteredRepo[]>('repo.list', undefined, timeoutMs);
       } catch (err) {
         throw asReadError('repo.list failed', err);
       }
@@ -104,12 +104,12 @@ export function createDaemonDataGateway(deps: DaemonDataGatewayDeps): DaemonData
       return (payload?.clients ?? []).map((c) => ({ host: c.label, wired: true }));
     },
 
-    async mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]> {
+    async mcpRegistration(repoPath?: string, timeoutMs?: number): Promise<readonly McpRegistrationView[]> {
       let payload: McpStatusPayload;
       try {
         // The repo path lets the daemon also probe the repo's own project-layer
         // .vibe/config.toml for vibe (vibe merges config layers by server name).
-        payload = await rpc<McpStatusPayload>('mcp.status', repoPath !== undefined && repoPath !== '' ? { path: repoPath } : {});
+        payload = await rpc<McpStatusPayload>('mcp.status', repoPath !== undefined && repoPath !== '' ? { path: repoPath } : {}, timeoutMs);
       } catch (err) {
         throw asReadError('mcp.status failed', err);
       }

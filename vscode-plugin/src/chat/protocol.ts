@@ -14,7 +14,7 @@ import type { OutboxAction, OutboxView } from './chat-outbox.js';
 import type { TurnEvent } from './stream-events.js';
 import type { TerminalTheme } from './design-tokens.js';
 import type { ProviderId } from './cli-adapter.js';
-import type { TranscriptEntry, ChatSummary, ChatStatus } from './session-store.js';
+import type { TranscriptEntry, ChatSummary, ChatStatus, SessionProgress } from './session-store.js';
 import type { AttachmentRef } from './attachment-store.js';
 import type { SectionIndex } from './docs-sections.js';
 // S002 sc1: the docs-content variant types its functional record by INDEXING off
@@ -89,6 +89,20 @@ export interface ActiveChatEntry {
   readonly lastActivityAt: number | undefined;
 }
 
+export interface SessionProjectionTarget {
+  readonly sessionId: string;
+  readonly turnId?: string | undefined;
+  readonly viewGeneration: number;
+}
+
+export interface SessionActionTarget extends SessionProjectionTarget {
+  readonly turnId: string;
+}
+
+export interface PendingDecisionTarget extends SessionActionTarget {
+  readonly requestId: string;
+}
+
 export type HostToWebview =
   // Run-config echo: the active session's provider/model/effort ('' = CLI default), posted
   // on open/switch/restore and after a set-run-config, so the bottom-right buttons follow.
@@ -97,13 +111,17 @@ export type HostToWebview =
   // this event wrote; absent on an event that writes no row (status, approval-request).
   // ISSUE-160fa1bb7a8604ad (additive): `info` marks the done that closes an informational line the host posts under its
   // own turn id; the page does not read it as the end of the running turn.
-  | { readonly type: 'turn-event'; readonly event: TurnEvent; readonly rowIndex?: number | undefined; readonly info?: boolean | undefined }
+  | { readonly type: 'turn-event'; readonly event: TurnEvent; readonly rowIndex?: number | undefined; readonly info?: boolean | undefined; readonly target?: SessionProjectionTarget | undefined }
+  | { readonly type: 'turn-progress'; readonly target: SessionActionTarget; readonly progress: SessionProgress | null }
   // Story E20261012ddc4ede1:S001 (additive): `transcript` is a window of the session's rows, not
   // necessarily all of them. `firstIndex` is the absolute index of transcript[0] (absent = 0) and
   // `total` the number of rows in the whole transcript.
   | {
       readonly type: 'session-restored';
       readonly sessionId: string;
+      readonly viewGeneration?: number | undefined;
+      readonly progress?: SessionProgress | undefined;
+      readonly pendingTurnId?: string | undefined;
       readonly transcript: TranscriptEntry[];
       readonly mode?: PermissionMode;
       readonly firstIndex?: number | undefined;
@@ -128,9 +146,9 @@ export type HostToWebview =
    * `replaces` redraws the widget of that section; any other row is drawn as the same row is drawn
    * on restore.
    */
-  | { readonly type: 'transcript-row'; readonly rowIndex: number; readonly row: TranscriptEntry }
+  | { readonly type: 'transcript-row'; readonly rowIndex: number; readonly row: TranscriptEntry; readonly target?: SessionProjectionTarget | undefined }
   // ISSUE-6a811b8a: the shown approval card's place in the queue changed ('1 of N'); update it in place.
-  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number }
+  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number; readonly target?: SessionProjectionTarget | undefined }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
   // S007: one pending artifact's rendered body for the docs-review pane (additive).
   // `commentable` (optional; default true) hides request-changes for artifact kinds the
@@ -232,11 +250,12 @@ export type HostToWebview =
   // Story E2026101259da3204:S001 (additive): `attachments` is the files the message carries.
   // Epic E20261014613abdb3 Story S001: a queued message's turn began for this session, so the webview
   // shows the turn as running (and offers Stop) though no submit was clicked for it.
-  | { readonly type: 'turn-running'; readonly sessionId: string }
+  | { readonly type: 'turn-running'; readonly sessionId: string; readonly target?: SessionProjectionTarget | undefined; readonly pendingTurnId?: string | undefined }
   // Epic E20261014613abdb3 Story S002: the shown chat's outbox, posted after every queue change.
   | { readonly type: 'outbox'; readonly view: OutboxView }
   | {
       readonly type: 'user-row';
+      readonly target?: SessionProjectionTarget | undefined;
       readonly text: string;
       readonly key: string;
       readonly rowIndex?: number | undefined;
@@ -275,7 +294,7 @@ export type WebviewToHost =
   | { readonly type: 'set-run-config'; readonly model?: string | undefined; readonly effort?: string | undefined }
   | { readonly type: 'open-chat'; readonly chatId: string }
   | { readonly type: 'set-edit-mode'; readonly mode: 'auto' | 'review' }
-  | { readonly type: 'edit-decision'; readonly path: string; readonly accept: boolean }
+  | { readonly type: 'edit-decision'; readonly path: string; readonly accept: boolean; readonly target?: SessionActionTarget | undefined }
   // Story E202610138d4b90c9:S001: the button the reviewer pressed in the review pane, with
   // every comment written since the last send (replaces the earlier accept/note shape).
   | { readonly type: 'docs-decision'; readonly artifactId: string; readonly decision: ReviewDecision; readonly comments: readonly ReviewDecisionComment[] }
@@ -286,7 +305,7 @@ export type WebviewToHost =
   | { readonly type: 'open-doc'; readonly artifactId: string }
   // S002 (additive): the Stop control's intent — cancel the in-flight turn. The host
   // routes it to the existing cancelActive() reap; a no-op when no turn is active.
-  | { readonly type: 'cancel-turn' }
+  | { readonly type: 'cancel-turn'; readonly target?: SessionActionTarget | undefined }
   // S004 sc2 (additive): the approve/deny click on an in-chat permission card. `requestId`
   // correlates back to the ApprovalRequestEvent so the adapter answers the RIGHT request.
   // `scope` is accepted-but-inert this Story ('once' behaviour); a later story honours
@@ -296,6 +315,7 @@ export type WebviewToHost =
       readonly requestId: string;
       readonly decision: 'approve' | 'deny';
       readonly scope?: 'once' | 'session';
+      readonly target?: PendingDecisionTarget | undefined;
     }
   // S004 sc2 (additive): the status-bar auto/review toggle. The host stores it per-session
   // and applies it to the NEXT turn's buildArgs (never the in-flight spawn).
@@ -304,13 +324,13 @@ export type WebviewToHost =
   // `requestId` correlates back to the SelectionRequestEvent; `selected` is the chosen option
   // ids (>=1 — the confirm is disabled until at least one is picked). The host maps the ids to
   // labels, records the resolved outcome, and continues the run conveying the choice.
-  | { readonly type: 'selection-decision'; readonly requestId: string; readonly selected: readonly string[] }
+  | { readonly type: 'selection-decision'; readonly requestId: string; readonly selected: readonly string[]; readonly target?: PendingDecisionTarget | undefined }
   // S001 (bugfix) (additive): the webview→host readiness handshake. Posted once the webview's
   // message listener is attached — on the INITIAL load AND on every VS-Code webview reload
   // (show-after-hide / restore, since the panel has no retainContextWhenHidden). The host
   // (re)sends theme + active session + history in response, so a reloaded webview is always
   // populated instead of racing the not-yet-attached listener with a post-after-setHtml.
-  | { readonly type: 'ready' }
+  | { readonly type: 'ready'; readonly targetedActions?: boolean | undefined }
   // Story E20261012ddc4ede1:S001: the webview asks for the page of rows that ends just before
   // absolute transcript index `before` (its first held row). Answered with 'transcript-page'.
   | { readonly type: 'load-older'; readonly sessionId: string; readonly before: number }
@@ -341,6 +361,7 @@ export interface PendingAttachmentView {
 /** The discriminant values of each direction (exported so consumers/tests can assert exhaustiveness). */
 export const HOST_TO_WEBVIEW_TYPES = [
   'turn-event',
+  'turn-progress',
   'session-restored',
   'history-list',
   'active-list',

@@ -61,6 +61,36 @@ export function approvalDetails(r: ApprovalRequest): string {
 	}, null, 2);
 }
 
+type ApprovalAction = 'Approve' | 'Decline' | 'Show details';
+
+export function createApprovalNotifier(ui: {
+	ask(text: string): PromiseLike<ApprovalAction | undefined>;
+	openDetails(json: string): PromiseLike<void>;
+	notice(text: string): void;
+}): ApprovalNotifier {
+	return {
+		notice: text => ui.notice(text),
+		show(text, request) {
+			let active = true;
+			const choice = (async (): Promise<ApprovalChoice | undefined> => {
+				while (active) {
+					const action = await ui.ask(text);
+					if (!active || action === undefined) return undefined;
+					if (action === 'Approve') return 'approve';
+					if (action === 'Decline') return 'decline';
+					try {
+						await ui.openDetails(approvalDetails(request));
+					} catch {
+						if (active) ui.notice('Could not open the approval details.');
+					}
+				}
+				return undefined;
+			})();
+			return { choice, close: () => { active = false; } };
+		},
+	};
+}
+
 export function createApprovalPrompter(opts: {
 	readonly client: IpcClient;
 	readonly notifier: ApprovalNotifier;

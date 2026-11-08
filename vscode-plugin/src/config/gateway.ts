@@ -16,7 +16,7 @@
 import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
 import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 import type { IpcClient } from '../../../src/shared/ipc-client.js';
-import type { ConfigCatalogSnapshot, ConfigGateway, ConfigWriteResult } from './types.js';
+import type { ConfigCatalogSnapshot, ConfigGateway, ConfigWriteResult, DaemonRead } from './types.js';
 
 /** The subset of the `config.catalog` payload sc8's pull consumes (S001: values only). */
 interface CatalogPayload {
@@ -47,10 +47,13 @@ function writeResult(answer: DaemonWriteAnswer | undefined): ConfigWriteResult {
  * the daemon's reason and detail ('refused' when an older daemon gives no reason), and a socket
  * rejection propagates so applyChanges can treat it as an aborted write.
  */
-export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
+export function createDaemonConfigGateway(
+  client: IpcClient,
+  rpc: DaemonRead = (method, params) => client.rpc(method, params),
+): ConfigGateway {
   return {
-    async catalog(): Promise<ConfigCatalogSnapshot> {
-      const payload = await client.rpc<CatalogPayload>('config.catalog');
+    async catalog(timeoutMs?: number): Promise<ConfigCatalogSnapshot> {
+      const payload = await rpc<CatalogPayload>('config.catalog', undefined, timeoutMs);
       const values = new Map<string, unknown>(Object.entries(payload?.values ?? {}));
       return { values, repoFields: payload?.repoFields ?? [] };
     },
@@ -65,15 +68,15 @@ export function createDaemonConfigGateway(client: IpcClient): ConfigGateway {
       return writeResult(await client.rpc<DaemonWriteAnswer>('config.write', { path: segments, value }));
     },
 
-    async rawConfig(): Promise<Record<string, unknown>> {
+    async rawConfig(timeoutMs?: number): Promise<Record<string, unknown>> {
       // The existing config.show read: the raw parsed ~/.insrc/config.json (or {}),
       // the source of dynamic per-role overrides the config.catalog snapshot omits.
-      const raw = await client.rpc<Record<string, unknown>>('config.show');
+      const raw = await rpc<Record<string, unknown>>('config.show', undefined, timeoutMs);
       return raw ?? {};
     },
 
-    async repoSettings(repoPath: string): Promise<SettingsResult> {
-      return await client.rpc<SettingsResult>('repo.settings.get', { repo: repoPath });
+    async repoSettings(repoPath: string, timeoutMs?: number): Promise<SettingsResult> {
+      return await rpc<SettingsResult>('repo.settings.get', { repo: repoPath }, timeoutMs);
     },
 
     async writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult> {

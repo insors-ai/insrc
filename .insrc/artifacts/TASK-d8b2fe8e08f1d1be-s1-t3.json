@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7aefe25-4d0c-4aee-a589-2b700224fdcb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.318Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Separate per-session execution and action ownership",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "4168ca49f3819279be04a5cfed047df94f3abfa7206c9bf1f699940a4abb1b29",
+        "at": "2026-11-08T06:58:01.318Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.319Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Separate per-session execution and action ownership",
+    "summary": "Move queued run, follow state, pending decisions and diff ownership into session runtimes. Wire the targeted actions and progress snapshots to the current view without ending the previous runtime.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Switch A → B → A without a new provider event and restore A’s phase and time. Late A terminal or transcript output cannot affect B.",
+      "Stop, approval, choice and edit decisions validate session, turn, view generation and relevant request/path. An ended turn’s pending continuation remains actionable only for its original request.",
+      "Reject automated rollback when overlapping changes invalidate proof of exclusive ownership.",
+      "Delayed Stop and decisions with repeated request IDs cannot act on another session. A valid pending continuation remains actionable after its originating provider turn ended."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts: A to B to A restores progress and rejects cross-session terminal and stale actions"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts: ended requests and duplicate IDs resolve only their originating continuation"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts: concurrent edits invalidate unsafe rollback baselines"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

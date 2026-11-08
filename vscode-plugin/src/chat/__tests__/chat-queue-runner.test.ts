@@ -55,14 +55,14 @@ function spawningAdapter(opts: { pipe?: boolean } = {}): { adapter: StreamAdapte
 function registry(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude' as ProviderId], get: () => adapter };
 }
-function harness(opts: { pipe?: boolean; logs?: string[] } = {}) {
+function harness(opts: { pipe?: boolean; logs?: string[]; continuationWaitMs?: number } = {}) {
   const fc = fakeChannel();
   const { adapter, runs } = spawningAdapter(opts);
   const store = createInMemoryChatSessionStore();
   let panels = 0;
   const host = createChatPanelHost({
     createPanel: () => { panels += 1; return fc.channel; },
-    providers: registry(adapter), store, cwd: () => '/repo', continuationWaitMs: 60,
+    providers: registry(adapter), store, cwd: () => '/repo', continuationWaitMs: opts.continuationWaitMs ?? 60,
     ...(opts.logs !== undefined ? { logger: { warn: (m: string) => void opts.logs!.push(`warn: ${m}`), error: (m: string) => void opts.logs!.push(`error: ${m}`) } } : {}),
   });
   return { fc, runs, store, host, panels: () => panels };
@@ -76,7 +76,7 @@ const done = (turnId: string): TurnEvent => ({ kind: 'done', turnId, ok: true, s
 const types = (fc: { posted: Posted[] }): string[] => fc.posted.map((p) => p.payload.type);
 const settle = <T>(p: Promise<T>, ms = 300): Promise<T | 'pending'> => Promise.race([p, new Promise<'pending'>((r) => setTimeout(() => r('pending'), ms))]);
 
-test("chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the turn is dropped before it starts (a chat switch during the session-lease wait), and fails a message whose chat no longer exists", async () => {
+test("chat host: the queued turn runner shows the message's chat (opening the panel when it is closed), resolves only after a grant re-run continuation ends, resolves stopped when a waiting card gets no answer within the wait, resolves detached-ended only after a detached CLI exits and stopped for a pipe turn, resolves stopped when the panel closes during the session-lease wait, and fails a message whose chat no longer exists", async () => {
   // THE PANEL IS CLOSED and another chat would be shown: it is opened on the message's chat.
   {
     const h = harness();
@@ -111,6 +111,7 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'run the tests'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-1', title: 'Permission: Bash', detail: 'Bash needs your permission', toolName: 'Bash', command: 'npm test', resolution: 'turn-ended' } as TurnEvent);
@@ -134,6 +135,7 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'do it'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-2', title: 'Permission: Write', detail: 'Write needs your permission', toolName: 'Write', resolution: 'turn-ended' } as TurnEvent);
@@ -142,53 +144,50 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
     assert.deepEqual(await out, { kind: 'stopped', reason: 'no answer to the approval' });
   }
 
-  // A DETACHED SESSION-FILE TURN: a chat switch leaves its CLI running; the message ends when it exits.
+  // A DETACHED SESSION-FILE TURN: closing the panel leaves its CLI running; the message ends when it exits.
   {
     const h = harness();
     h.host.open();
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
-    const other = h.store.create('claude');
-    h.store.save(other);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'long job'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'working' });
     await new Promise((r) => setTimeout(r, 20));
-    h.fc.send('open-chat', { chatId: other.id });
+    h.fc.close();
     assert.equal(await settle(out, 60), 'pending', 'held while the detached CLI runs');
     h.runs[0]!.proc.exitNow();
     assert.deepEqual(await out, { kind: 'detached-ended' });
   }
 
-  // A PIPE TURN (no session output): the chat switch stops it; the message ends stopped.
+  // A PIPE TURN (no session output): closing the panel stops it; the message ends stopped.
   {
     const h = harness({ pipe: true });
     h.host.open();
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
-    const other = h.store.create('claude');
-    h.store.save(other);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'pipe job'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'assistant-delta', turnId: 't1', text: 'working' });
     await new Promise((r) => setTimeout(r, 20));
-    h.fc.send('open-chat', { chatId: other.id });
+    h.fc.close();
     const o = await out;
     assert.equal(o.kind, 'stopped');
     assert.ok(h.runs[0]!.proc.signals.length > 0 || h.runs[0]!.proc.exited(), 'the pipe turn was stopped');
   }
 
-  // DROPPED BEFORE IT STARTS: the session's previous CLI still holds the lease; a chat switch during the wait.
+  // DROPPED BEFORE IT STARTS: the session's previous CLI still holds the lease; the panel closes during the wait.
   {
     const h = harness();
     h.host.open();
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
-    const other = h.store.create('claude');
-    h.store.save(other);
+    h.fc.send('open-chat', { chatId: s.id });
     const first = h.host.queueRunner.run(message(s.id, 'first'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed(done('t1')); // answered; its CLI keeps running and holds the session lease
@@ -197,7 +196,7 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
     await waitFor(() => types(h.fc).filter((t) => t === 'turn-running').length === 2);
     await new Promise((r) => setTimeout(r, 20));
     assert.equal(h.runs.length, 1, 'waiting for the lease');
-    h.fc.send('open-chat', { chatId: other.id });
+    h.fc.close();
     const o: TurnOutcome = await second;
     assert.deepEqual(o, { kind: 'stopped', reason: 'the turn was dropped before it started' });
     assert.equal(h.runs.length, 1, 'it never spawned');
@@ -216,6 +215,50 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
 });
 
 // Epic E20261014613abdb3 Story S004 t3 — a done with ok:false is a failed turn, not a finished one.
+test('ended requests and duplicate IDs resolve only their originating continuation', async () => {
+  const h = harness({ continuationWaitMs: 2_000 });
+  const a = h.store.create('claude');
+  const b = h.store.create('claude');
+  const shownGeneration = () => h.fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!.payload['viewGeneration'];
+  const request = (turnId: string, command: string): TurnEvent => ({
+    kind: 'approval-request', turnId, requestId: 'same', title: 'Run', detail: 'needs permission',
+    command, toolName: 'Bash', resolution: 'turn-ended',
+  });
+  h.host.open();
+  h.fc.send('ready');
+  h.fc.send('open-chat', { chatId: a.id });
+  const outA = h.host.queueRunner.run(message(a.id, 'A'), () => {});
+  await waitFor(() => h.runs.length === 1);
+  h.runs[0]!.feed(request('t1', 'command-A'));
+  h.runs[0]!.feed(done('t1'));
+  h.runs[0]!.proc.exitNow();
+  await waitFor(() => h.store.get(a.id)?.liveTurn === undefined);
+  const oldTarget = { sessionId: a.id, turnId: 't1', requestId: 'same', viewGeneration: shownGeneration() };
+  h.fc.send('open-chat', { chatId: b.id });
+  const outB = h.host.queueRunner.run(message(b.id, 'B'), () => {});
+  await waitFor(() => h.runs.length === 2);
+  h.runs[1]!.feed(request('t2', 'command-B'));
+  h.runs[1]!.feed(done('t2'));
+  h.runs[1]!.proc.exitNow();
+  await waitFor(() => h.store.get(b.id)?.liveTurn === undefined);
+  h.fc.send('permission-decision', { requestId: 'same', decision: 'approve', target: oldTarget });
+  assert.equal(h.runs.length, 2);
+  h.fc.send('open-chat', { chatId: a.id });
+  const target = { ...oldTarget, viewGeneration: shownGeneration() };
+  h.fc.send('permission-decision', { requestId: 'same', decision: 'approve', target });
+  await waitFor(() => h.runs.length === 3);
+  assert.match(h.runs[2]!.req.prompt, /command-A/);
+  assert.equal(h.store.get(b.id)?.pendingRequests?.[0]?.resolved, false);
+  h.runs[2]!.feed(done('t3'));
+  h.runs[2]!.proc.exitNow();
+  assert.deepEqual(await outA, { kind: 'done' });
+  h.fc.send('open-chat', { chatId: b.id });
+  h.fc.send('permission-decision', { requestId: 'same', decision: 'deny',
+    target: { sessionId: b.id, turnId: 't2', requestId: 'same', viewGeneration: shownGeneration() } });
+  assert.deepEqual(await outB, { kind: 'done' });
+  h.host.dispose();
+});
+
 test('a queued turn that ends with done ok:false resolves failed with the text, not done', async () => {
   // The provider's text rides on the done event (claude and codex report an overload as an is_error result).
   {
@@ -224,6 +267,7 @@ test('a queued turn that ends with done ok:false resolves failed with the text, 
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'done', turnId: 't1', ok: false, message: 'API Error: 529 overloaded' });
@@ -239,6 +283,7 @@ test('a queued turn that ends with done ok:false resolves failed with the text, 
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed({ kind: 'done', turnId: 't1', ok: false });
@@ -254,6 +299,7 @@ test('a queued turn that ends with done ok:false resolves failed with the text, 
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'finish fine'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed(done('t1'));
@@ -274,6 +320,7 @@ async function runWith(events: TurnEvent[], logs?: string[]): Promise<TurnOutcom
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(message(s.id, 'do the thing'), () => {});
   await waitFor(() => h.runs.length === 1);
   for (const ev of events) h.runs[0]!.feed(ev);
@@ -318,6 +365,7 @@ test('a turn that emitted a tool-call, file-edit or tool-result before its error
     h.fc.send('ready');
     const s = h.store.create('claude');
     h.store.save(s);
+    h.fc.send('open-chat', { chatId: s.id });
     const out = h.host.queueRunner.run(message(s.id, 'run the tests'), () => {});
     await waitFor(() => h.runs.length === 1);
     h.runs[0]!.feed(toolCall('t1'));
@@ -399,6 +447,7 @@ test('a retried message is started with skipUserRow, so the stored transcript ha
 
 test('a retry stores and posts one retrying line, still in the stored transcript after a reload, and a turn that streamed only text before an infrastructure failure is retried and keeps its partial text', async () => {
   const { h, s, retried } = retriedHarness();
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(retried, () => {});
   await waitFor(() => h.runs.length === 1);
   h.runs[0]!.feed(done('t1'));
@@ -426,6 +475,7 @@ test('an auth failure stores and posts a sign-in line in the chat', async () => 
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(message(s.id, 'hello'), () => {});
   await waitFor(() => h.runs.length === 1);
   h.runs[0]!.feed(errorEv('t1', 'claude is not authenticated — run its login command, then retry'));
@@ -446,6 +496,7 @@ test('a normal turn still pushes and echoes its user row exactly as before', asy
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(message(s.id, 'first words'), () => {});
   await waitFor(() => h.runs.length === 1);
   h.runs[0]!.feed(done('t1'));
@@ -465,6 +516,7 @@ test('the worker give-up note is shown live and is not stored in the transcript'
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const before = h.store.get(s.id)!.transcript.length;
   const out = h.host.queueRunner.run(message(s.id, 'x'), () => {});
   await waitFor(() => h.runs.length === 1);
@@ -488,6 +540,7 @@ test('a chat page rebuilt while a turn runs is told the turn is running, and one
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(message(s.id, 'a long answer'), () => {});
   await waitFor(() => h.runs.length === 1);
   assert.equal(runningPosts(h), 1, 'told once, when the message started');
@@ -513,6 +566,7 @@ test('E202611031bd72813:S001 t2: an unanswered card timing out re-evaluates the 
   h.fc.send('ready');
   const s = h.store.create('claude');
   h.store.save(s);
+  h.fc.send('open-chat', { chatId: s.id });
   const out = h.host.queueRunner.run(message(s.id, 'do it'), () => {});
   await waitFor(() => h.runs.length === 1);
   h.runs[0]!.feed({ kind: 'approval-request', turnId: 't1', requestId: 'perm-t2', title: 'T', detail: 'd', resolution: 'turn-ended' } as TurnEvent);

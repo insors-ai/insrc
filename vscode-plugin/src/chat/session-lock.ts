@@ -289,13 +289,47 @@ export interface FileSessionLocksDeps extends MemorySessionLocksDeps {
   readonly now?: (() => number) | undefined;
 }
 
-export function defaultIsAlive(pid: number): boolean {
+export type ProcessObservation =
+  | { readonly kind: 'present'; readonly startedAt: number }
+  | { readonly kind: 'absent' }
+  | { readonly kind: 'unknown' };
+
+/** Only ESRCH establishes absence. Permission and probe failures retain ownership. */
+export function processPresence(pid: number): 'present' | 'absent' | 'unknown' {
+  if (!Number.isSafeInteger(pid) || pid <= 0) return 'unknown';
   try {
     process.kill(pid, 0);
-    return true;
+    return 'present';
   } catch (e) {
-    return (e as NodeJS.ErrnoException).code === 'EPERM';
+    return (e as NodeJS.ErrnoException).code === 'ESRCH' ? 'absent' : 'unknown';
   }
+}
+
+export function defaultIsAlive(pid: number): boolean {
+  return processPresence(pid) !== 'absent';
+}
+
+export function observeProcess(
+  pid: number | undefined,
+  isAlive: (pid: number) => boolean = defaultIsAlive,
+  startTime: (pid: number) => number | undefined = defaultProcessStartTime,
+): ProcessObservation {
+  if (pid === undefined || !Number.isSafeInteger(pid) || pid <= 0) return { kind: 'unknown' };
+  try {
+    const presence = isAlive === defaultIsAlive ? processPresence(pid) : isAlive(pid) ? 'present' : 'absent';
+    if (presence !== 'present') return { kind: presence };
+    const startedAt = startTime(pid);
+    return startedAt !== undefined && Number.isFinite(startedAt)
+      ? { kind: 'present', startedAt }
+      : { kind: 'unknown' };
+  } catch {
+    return { kind: 'unknown' };
+  }
+}
+
+export function processDeparted(observation: ProcessObservation, recordedStart?: number | null): boolean {
+  return observation.kind === 'absent' ||
+    (observation.kind === 'present' && recordedStart != null && observation.startedAt !== recordedStart);
 }
 
 /** Signals the process group `pid` leads; false when there is no such group (or no groups, on Windows). */

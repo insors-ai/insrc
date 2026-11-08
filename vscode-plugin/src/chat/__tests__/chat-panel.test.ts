@@ -27,6 +27,7 @@ import type { TranscriptEntry } from '../session-store.js';
 import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } from '../review-presenter.js';
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { createQueueFactory } from '../chat-queue-setup.js';
 import { DatabaseSync } from 'node:sqlite';
 import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -714,7 +715,7 @@ test('S005 ac3 native resume: turn 2 carries resume from turn 1 done.sessionId; 
   assert.equal(r2.prompt, 'second', 'turn 2 sends only the new prompt — no prior-transcript replay (lc1)');
 });
 
-test('S005 switching chat mid-stream cancels the in-flight turn (single-in-flight preserved)', async () => {
+test('switching a chat mid-stream keeps its in-flight turn', async () => {
   const fc = fakeChannel();
   let cancelled = false;
   const adapter = scriptedAdapter([{ kind: 'status', turnId: 't1', phase: 'thinking' }], { hang: true, onCancel: () => { cancelled = true; } });
@@ -728,8 +729,9 @@ test('S005 switching chat mid-stream cancels the in-flight turn (single-in-fligh
   fc.send(env('submit-turn', { text: 'go' }));
   await waitFor(() => turnEvents(fc).length >= 1); // streamed the status event, now hanging
   fc.send(env('new-chat', { provider: 'claude' }));
-  await waitFor(() => cancelled);
-  assert.ok(cancelled, 'the in-flight turn was cancelled when switching to a new chat');
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(cancelled, false, 'switching leaves the running chat intact');
+  host.dispose();
 });
 
 test('S005 a first-turn error still refreshes the history dropdown (title label)', async () => {
@@ -750,6 +752,144 @@ test('S005 a first-turn error still refreshes the history dropdown (title label)
   assert.ok(historyLists(fc).length > hlBefore, 'the first-turn error path re-posted history-list');
   const s = store.get(store.list()[0]!.id);
   assert.equal(s?.title, 'do a thing', 'title was set from the first prompt despite the error');
+});
+
+test('A to B to A restores progress and rejects cross-session terminal and stale actions', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const stopped: string[] = [];
+  const aProc = fakeLiveProc(7001);
+  const bProc = fakeLiveProc(7002);
+  let finishA!: () => void;
+  const endingA = new Promise<void>((resolve) => { finishA = resolve; });
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: () => ({ delivered: false }),
+    cancel: (id) => { stopped.push(id); },
+    async *run(req, opts) {
+      const proc = req.prompt === 'A' ? aProc : bProc;
+      const turnId = 'turn-' + req.prompt;
+      opts?.onSpawn?.({ ...proc, cursor: { sessionId: opts.sessionId!, turnId, generation: 1, offset: 0 } });
+      yield { kind: 'status', turnId, phase: 'tool' };
+      await (req.prompt === 'A' ? endingA : proc.exit);
+      yield { kind: 'done', turnId, ok: true };
+    },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo' });
+  try {
+    host.open();
+    fc.send(env('ready', { targetedActions: true }));
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => turnEvents(fc).some((ev) => ev.turnId === 'turn-A'));
+    const a = store.list()[0]!.id;
+    const original = store.get(a)?.progress;
+    assert.ok(original?.startedAt);
+    const generationA = posted(fc, 'session-restored').at(-1)!['viewGeneration'];
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => turnEvents(fc).some((ev) => ev.turnId === 'turn-B'));
+    const b = store.list().find((c) => c.id !== a)!.id;
+    fc.send(env('open-chat', { chatId: a }));
+    const restored = posted(fc, 'session-restored').at(-1)!;
+    assert.equal(restored['sessionId'], a);
+    assert.deepEqual(restored['progress'], original);
+    fc.send(env('cancel-turn'));
+    fc.send(env('cancel-turn', { target: { sessionId: a, turnId: 'turn-A', viewGeneration: generationA } }));
+    fc.send(env('open-chat', { chatId: b }));
+    fc.send(env('cancel-turn', { target: { sessionId: a, turnId: 'turn-A', viewGeneration: restored['viewGeneration'] } }));
+    assert.deepEqual(stopped, []);
+    finishA();
+    await waitFor(() => store.get(a)?.liveTurn === undefined);
+    assert.equal(turnEvents(fc).some((ev) => ev.kind === 'done' && ev.turnId === 'turn-A'), false);
+    assert.equal(store.get(b)?.progress?.turnId, 'turn-B');
+  } finally {
+    finishA?.();
+    aProc.exitNow();
+    bProc.exitNow();
+    host.dispose();
+  }
+});
+
+test('two same-repo turns retain separate progress, decisions and verified Stop', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'insrc-concurrent-e2e-'));
+  const claim = { windowKey: 'one-window', pid: process.pid };
+  const db = { path: pathJoin(root, 'repo.sqlite'), openDatabase: (p: string) => new DatabaseSync(p) as unknown as SqliteDatabase,
+    now: Date.now, pluginVersion: 'test', mode: 'session-leases' } as const;
+  const queue = createQueueFactory({ ...db, claim, isAlive: () => true, observe: () => ({ kind: 'unknown' }),
+    log: { warn: () => {}, error: () => {} }, notify: (message) => assert.fail(message) });
+  assert.ok(queue);
+  const inspection = createChatQueueStore(db);
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const procs = { A: fakeLiveProc(7201), B: fakeLiveProc(7202) };
+  const decisions: Array<[string, string]> = [];
+  const allowBToFinish = Promise.withResolvers<void>();
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: (turn, request) => {
+      decisions.push([turn, request]);
+      return { delivered: true };
+    },
+    cancel: () => {},
+    async *run(req, opts) {
+      const name = req.prompt === 'A' ? 'A' : 'B';
+      const proc = procs[name];
+      const turnId = `turn-${name}`;
+      opts?.onSpawn?.({
+        ...proc,
+        cursor: { sessionId: opts.sessionId!, turnId, generation: 1, offset: 0 },
+        stopVerified: async () => { await proc.stop(); return proc.exited(); },
+      });
+      yield { kind: 'status', turnId, phase: 'tool' };
+      yield { kind: 'approval-request', turnId, requestId: 'shared-id', title: name, detail: 'Approve this chat', resolution: 'in-turn' };
+      if (name === 'A') await proc.exit;
+      else {
+        await allowBToFinish.promise;
+        yield { kind: 'assistant-delta', turnId, text: 'B completed independently' };
+        proc.exitNow();
+      }
+      yield { kind: 'done', turnId, ok: true };
+    },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', queue });
+  const restored = () => posted(fc, 'session-restored').at(-1)!;
+  const target = (turnId: string) => ({ sessionId: restored()['sessionId'], viewGeneration: restored()['viewGeneration'], turnId });
+  try {
+    host.open();
+    fc.send(env('ready', { targetedActions: true }));
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => turnEvents(fc).some((event) => event.kind === 'approval-request' && event.turnId === 'turn-A'), 3_000);
+    const idA = String(restored()['sessionId']);
+    const progressA = store.get(idA)?.progress;
+    const oldA = { ...target('turn-A'), requestId: 'shared-id' };
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => turnEvents(fc).some((event) => event.kind === 'approval-request' && event.turnId === 'turn-B'), 3_000);
+    const idB = String(restored()['sessionId']);
+    assert.equal(inspection.leases().length, 2);
+    fc.send(env('permission-decision', { requestId: 'shared-id', decision: 'approve', target: oldA }));
+    assert.deepEqual(decisions, []);
+    fc.send(env('permission-decision', { requestId: 'shared-id', decision: 'approve', target: { ...target('turn-B'), requestId: 'shared-id' } }));
+    assert.deepEqual(decisions, [['turn-B', 'shared-id']]);
+    fc.send(env('open-chat', { chatId: idA }));
+    assert.deepEqual(restored()['progress'], progressA);
+    fc.send(env('cancel-turn', { target: target('turn-A') }));
+    await waitFor(() => inspection.lease(idA) === undefined, 3_000);
+    assert.deepEqual(procs.A.signals, ['SIGTERM']);
+    assert.deepEqual(procs.B.signals, []);
+    assert.ok(inspection.lease(idB));
+    fc.send(env('open-chat', { chatId: idB }));
+    allowBToFinish.resolve();
+    await waitFor(() => inspection.lease(idB) === undefined, 3_000);
+    assert.ok(turnEvents(fc).some((event) => event.kind === 'assistant-delta' && event.text === 'B completed independently'));
+  } finally {
+    allowBToFinish.resolve();
+    procs.A.exitNow();
+    procs.B.exitNow();
+    host.dispose();
+    inspection.close();
+    await rmrf(root);
+  }
 });
 
 // ---- S008: restored markers keep their glyph + tone (sc1 cssClass persisted + replayed) ----
@@ -920,6 +1060,96 @@ const toolResult = (output = 'ok'): TurnEvent => ({ kind: 'tool-result', turnId:
 const fileEdit = (path: string): TurnEvent => ({ kind: 'file-edit', turnId: 't1', path, diff: { path, hunks: [] } });
 const DONE: TurnEvent = { kind: 'done', turnId: 't1', ok: true };
 const settleDiff = (): Promise<void> => new Promise((r) => setTimeout(r, 25));
+
+test('a pre-spawn Stop requires the selected pending run identity', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const gov = fakeGovernance();
+  const setup: Array<() => void> = [];
+  const prompts: string[] = [];
+  const adapter: StreamAdapter = {
+    ...scriptedAdapter([]),
+    async *run(req) {
+      prompts.push(req.prompt);
+      yield { kind: 'done', turnId: req.prompt, ok: true };
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo',
+    editGovernance: {
+      ...gov.deps,
+      baseline: { ...gov.deps.baseline, available: async () => {
+        await new Promise<void>((resolve) => setup.push(resolve));
+        return false;
+      } },
+    },
+  });
+  const runningTarget = () => {
+    const frame = posted(fc, 'turn-running').at(-1)!;
+    return { ...frame['target'] as object, turnId: frame['pendingTurnId'] };
+  };
+  try {
+    host.open();
+    fc.send(env('ready', { targetedActions: true }));
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => setup.length === 1);
+    const a = runningTarget();
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => setup.length === 2);
+    const b = runningTarget();
+    assert.notEqual(a.turnId, b.turnId);
+    fc.send(env('cancel-turn'));
+    fc.send(env('cancel-turn', { target: a }));
+    setup[1]!();
+    await waitFor(() => prompts.length === 1);
+    assert.deepEqual(prompts, ['B']);
+    fc.send(env('open-chat', { chatId: store.list().find((item) => item.title === 'A')!.id }));
+    const restored = posted(fc, 'session-restored').at(-1)!;
+    assert.equal(restored['pendingTurnId'], a.turnId);
+    fc.send(env('cancel-turn', { target: { sessionId: restored['sessionId'], viewGeneration: restored['viewGeneration'], turnId: a.turnId } }));
+    setup[0]!();
+    await settleDiff();
+    assert.deepEqual(prompts, ['B'], 'the selected pending run can still be stopped');
+  } finally {
+    for (const release of setup) release();
+    host.dispose();
+  }
+});
+
+test('concurrent edits invalidate unsafe rollback baselines', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const gov = fakeGovernance();
+  gov.setDiffView('editor');
+  const rendered: Array<() => boolean> = [];
+  const a = fedAdapter();
+  const b = fedAdapter();
+  const adapter = { ...a.adapter, run: (req: TurnRequest, opts?: RunOptions) => (req.prompt === 'A' ? a.adapter : b.adapter).run(req, opts) };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo',
+    editGovernance: { ...gov.deps, editorDiff: async (_path, _baseline, opts) => { if (opts.canRevert) rendered.push(opts.canRevert); } },
+  });
+  try {
+    host.open();
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => a.runs() === 1);
+    a.feed(fileEdit('src/shared.ts'));
+    await waitFor(() => rendered.length === 1);
+    assert.equal(rendered[0]!(), true);
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => b.runs() === 1);
+    b.feed(fileEdit('src/shared.ts'));
+    await waitFor(() => rendered.length === 2);
+    assert.equal(rendered[0]!(), false);
+    assert.equal(rendered[1]!(), false);
+  } finally {
+    a.feed(DONE);
+    b.feed(DONE);
+    host.dispose();
+  }
+});
 
 test('diff sections: an added section is pushed as a diff row with a sid and posted as transcript-row with its row index; an update and a withdraw are pushed as rows that name that sid, and no earlier row is changed', async () => {
   const fc = fakeChannel();
@@ -1310,7 +1540,7 @@ test('diff sections: an edit whose path has no section after its check gets its 
   assert.equal(gov.released.count, 1);
 });
 
-test("diff sections: a chat switch in mid-turn settles the held paths, saves, abandons the governor's turn before the detach, and a check in flight then pushes and posts nothing", async () => {
+test("diff sections: a background check writes only to its originating chat", async () => {
   const fake = fakeSessionFs();
   const store = createFileChatSessionStore({ root: '/sessions', fs: fake.fs });
   const diskRows = (id: string): TranscriptEntry[] =>
@@ -1337,28 +1567,17 @@ test("diff sections: a chat switch in mid-turn settles the held paths, saves, ab
   assert.equal(transcriptRows(fc).length, 0);
 
   fc.send(env('new-chat', { provider: 'claude' }));
-  // At once: the held path's line is pushed and posted before the new chat is shown.
-  const rows = transcriptRows(fc);
-  assert.equal(rows.length, 1);
-  assert.equal((rows[0]!.row as { text: string }).text, pathLabel('src/held.ts'));
-  const markerAt = fc.posted.findIndex((m) => m.payload.type === 'transcript-row');
-  const restoredAt = fc.posted.map((m) => m.payload.type).lastIndexOf('session-restored');
-  assert.ok(markerAt < restoredAt, 'posted while its session was still the one shown');
-  await waitFor(() => gov.released.count === 1);
-  await waitFor(() => order.includes('cancel'));
-  assert.deepEqual(order.slice(0, 2), ['release', 'cancel'], "the governor's turn is abandoned before the detach");
+  assert.deepEqual(order, [], 'changing selection leaves the baseline and CLI attached');
   const id = store.list()[0]!.id;
-  assert.ok(markerTexts(diskRows(id)).includes(pathLabel('src/held.ts')), 'saved');
-
-  // The check in flight answers now: nothing is pushed or posted.
-  const before = JSON.stringify(store.get(id)!.transcript);
-  open(patchOf(['src/held.ts', 1, 'late'], ['src/other.ts', 1, 'late']));
+  const changes = patchOf(['src/held.ts', 1, 'late'], ['src/other.ts', 1, 'late']);
+  gov.patch.next = changes;
+  open(changes);
   await settleDiff();
-  assert.equal(transcriptRows(fc).length, 1);
-  assert.equal(JSON.stringify(store.get(id)!.transcript), before);
-  assert.equal(diffRowsOf(store.get(id)!.transcript).length, 0);
-  assert.equal(gov.checks.count, 2, 'no last check');
-  assert.equal(gov.released.count, 1);
+  assert.equal(transcriptRows(fc).length, 0, 'A’s late diff rows do not render in B');
+  fed.feed(DONE);
+  await waitFor(() => gov.released.count === 1 && diffRowsOf(diskRows(id)).length === 2);
+  assert.equal(diffRowsOf(diskRows(id)).length, 2, 'A keeps its own diff rows');
+  host.dispose();
 });
 
 test('diff sections: the Stop control, a newer turn\'s start, a sink error and closing the panel each end the open diff state and settle its held paths', async () => {
@@ -1693,8 +1912,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /const sendBtn=document\.getElementById\('insrc-prompt'\);/, 'the send/stop control is the leading #insrc-prompt');
   assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the prompt glyph/class');
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
-  // t2: click reuses the EXISTING doSubmit / cancel-turn body verbatim (byte-identical send intent).
-  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);setIdle\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
+  assert.match(html, /if\(target\|\|viewGen===0\)vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn',target:target\}\}\)/, 'the prompt sends Stop with a target on the current protocol');
   assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;started=true;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty, marks the chat started, then posts submit-turn');
   // t2: role=button span is keyboard-activatable (Enter/Space -> click).
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
@@ -1929,8 +2147,8 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputbar"'), 'progress is above the input');
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
   assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
-  assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
-  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|ev\.kind==='error'\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, "a turn's done/error puts the widget idle (never hides it) + restores Send; the done that closes an informational line (info) does not");
+  assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label,/, 'status drives the progress widget (gated on running), not a row');
+  assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|\(ev\.kind==='error'&&!ev\.observationFailure\)\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, 'terminal events restore Send while informational and observation errors preserve progress');
 });
 
 test('S002 ac3/lc1: status events are never persisted to the durable transcript (host skip unchanged)', async () => {
@@ -2378,7 +2596,7 @@ test('S001 the webview posts a ready handshake AFTER attaching its message liste
   host.open();
   const html = fc.html();
   const listenerAt = html.indexOf(`addEventListener('message'`);
-  const readyAt = html.indexOf(`payload:{type:'ready'}`);
+  const readyAt = html.indexOf(`payload:{type:'ready',targetedActions:true}`);
   assert.ok(listenerAt !== -1, 'the webview attaches a message listener');
   assert.ok(readyAt !== -1, 'the webview emits a ready handshake');
   assert.ok(readyAt > listenerAt, 'ready is posted only AFTER the listener is attached (no self-race)');
@@ -3236,7 +3454,7 @@ test("a second live window that is not the cursor's owner does not follow it; on
   await waitFor(() => store.get(id)?.liveTurn === undefined);
 });
 
-test('switching chat or closing the panel stops following a turn writing to the session file without stopping its process, and showing the session again resumes it; a turn without one is still stopped', async () => {
+test('switching chats keeps the session-file reader and stores output in its own chat', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   let release!: () => void;
@@ -3269,26 +3487,17 @@ test('switching chat or closing the panel stops following a turn writing to the 
   await waitFor(() => turnEvents(fc).some((e) => e.kind === 'assistant-delta'));
   const id = store.list()[0]!.id;
 
-  // Switch to a new chat mid-turn: the process keeps running, the cursor stays saved.
   fc.send(env('new-chat', { provider: 'claude' }));
   release();
-  await new Promise((r) => setTimeout(r, 30));
-  assert.deepEqual(proc.signals, [], 'the session-file turn was not stopped');
-  assert.equal(proc.exited(), false);
-  assert.equal(store.get(id)?.liveTurn?.cursor.offset, 50, 'its cursor is kept');
-  const texts = () => store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
-  assert.deepEqual(texts(), ['part one'], 'nothing past the cursor was taken while detached');
-
-  // Showing the session again resumes it from the cursor.
-  fc.send(env('open-chat', { chatId: id }));
-  await waitFor(() => resumes.length === 1);
-  assert.equal(resumes[0]!.cursor.offset, 50);
   await waitFor(() => store.get(id)?.liveTurn === undefined);
-  assert.deepEqual(texts(), ['part one', 'part two']);
-
-  // Closing the panel does not stop a session-file turn either.
-  host.dispose();
   assert.deepEqual(proc.signals, []);
+  assert.equal(proc.exited(), false);
+  const texts = store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
+  assert.deepEqual(texts, ['part one', 'part two (read again on resume)']);
+  assert.equal(turnEvents(fc).filter((e) => e.kind === 'assistant-delta').length, 1, 'B does not render the later output');
+  fc.send(env('open-chat', { chatId: id }));
+  assert.equal(resumes.length, 0, 'A was already observed to completion');
+  host.dispose();
   proc.exitNow();
 });
 
@@ -4187,7 +4396,7 @@ test('write-then-post order: when each live row is posted, the transcript alread
 // user switches away the follow delivers nothing more (posts nothing, writes nothing: the rest is
 // read again on the next resume); and in the code the write stays outside the "is it shown" guard,
 // so it never depends on that guard.
-test('a followed turn writes each row before posting it; after a chat switch the follow stops, posting and writing nothing more; the write is outside the shown-session guard', async () => {
+test('a followed turn keeps writing to its chat after a switch and only posts rows while shown', async () => {
   const { store, id } = storeWithLiveTurn(1);
   const fc = fakeChannel();
   let switched = false;
@@ -4220,15 +4429,8 @@ test('a followed turn writes each row before posting it; after a chat switch the
   assert.deepEqual(deltas.map((m) => [(m['event'] as { text: string }).text, m['rowIndex']]), [['while shown', 2]], 'the row posted while shown carries its index; nothing is posted after the switch');
   assert.deepEqual(lengthAtPost, [3], 'the row was already written when it was posted');
   const texts = store.get(id)!.transcript.filter((r) => r.role === 'assistant').map((r) => (r as { text: string }).text);
-  assert.deepEqual(texts, ['started', 'while shown'], 'the stopped follow writes nothing more; the rest is left for the next resume');
-  assert.ok(store.get(id)!.liveTurn !== undefined, 'the cursor is kept, so the turn can be followed again');
-
-  // Structure: in the followed-turn sink the write comes first and is not inside the guard.
-  const src = readFileSync(new URL('../chat-panel.ts', import.meta.url), 'utf8');
-  const sink = src.slice(src.indexOf('turns.follow(s, {'), src.indexOf('onEnd: () => {', src.indexOf('turns.follow(s, {')));
-  const write = sink.indexOf('const rowIndex = appendEvent(s, ev);');
-  const guard = sink.indexOf('if (!disposed && session === s) {');
-  assert.ok(write !== -1 && guard !== -1 && write < guard, 'appendEvent runs before, and outside, the shown-session guard');
+  assert.deepEqual(texts, ['started', 'while shown', 'after the switch']);
+  host.dispose();
 });
 
 test('load-older for the active session answers one transcript-page whose rows end just before `before`; repeated requests walk back to index 0', async () => {
@@ -4875,7 +5077,7 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   const stored = h.sessions.get(sid)!.transcript[0]!;
   assert.deepEqual({ ...stored, at: 'x' }, { role: 'user', text: 'look at these', at: 'x', attachments: refs });
   // The live echo carries the same attachments, under the row's key.
-  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
+  assert.deepEqual(userRows(h.fc), [{ type: 'user-row', target: { sessionId: sid, viewGeneration: 1 }, text: 'look at these', key: 'r0', rowIndex: 0, attachments: refs }]);
   // The files stay on disk: the message refers to them.
   assert.deepEqual(attFiles(h), [`${dir}/1-shot.png`, `${dir}/2-mynotes.txt`]);
 
@@ -4887,7 +5089,7 @@ test("host: a submit stores the user's text with the attachments on the row, ech
   assert.equal(h.runs[1]!.prompt, 'and again');
   const row = h.sessions.get(sid)!.transcript.filter((r) => r.role === 'user')[1]!;
   assert.deepEqual(Object.keys(row), ['role', 'text', 'at']);
-  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'text', 'key', 'rowIndex']);
+  assert.deepEqual(Object.keys(userRows(h.fc)[1]!), ['type', 'target', 'text', 'key', 'rowIndex']);
   assert.equal(h.pendings().length, pendingPosts, 'a message without attachments posts no pending list');
 });
 
@@ -6536,9 +6738,15 @@ test('E202611031bd72813:S001 t6: switching chats persists the unresolved request
     { kind: 'approval-request', turnId: 't1', requestId: 'perm-1', title: 'Run Edit', detail: 'edit file', toolName: 'Edit' },
     { kind: 'done', turnId: 't1', ok: true },
   ];
-  const adapter = scriptedAdapter(evs, {
-    onRun: () => { runCount += 1; },
-  });
+  const first = scriptedAdapter(evs);
+  const second = scriptedAdapter([{ kind: 'done', turnId: 'follow-up', ok: true }]);
+  const adapter: StreamAdapter = {
+    ...first,
+    run(req, opts) {
+      runCount += 1;
+      return (runCount === 1 ? first : second).run(req, opts);
+    },
+  };
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
     providers: registry({ claude: adapter }, ['claude']),
@@ -6565,6 +6773,7 @@ test('E202611031bd72813:S001 t6: switching chats persists the unresolved request
   // decide it: the turn is no longer live -> the batch completes -> ONE follow-up run carries the decision
   fc.send(env('permission-decision', { requestId: 'perm-1', decision: 'approve' }));
   await waitFor(() => runCount >= 2, 5000, 'the decision started a follow-up runTurn carrying the decision');
+  await waitFor(() => store.get(firstId)?.pendingRequests?.[0]?.resolved === true);
   const after = store.get(firstId)!;
   assert.equal(after.pendingRequests![0]!.resolved, true, 'the persisted request is resolved');
   assert.equal(after.pendingRequests![0]!.outcome, 'approved');
@@ -7167,6 +7376,7 @@ test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exis
   const store = createInMemoryChatSessionStore();
   const runs: { resume: unknown; prompt: string }[] = [];
   let failedCb: ((turnId: string, requestId: string, decision: 'approve' | 'deny') => void) | undefined;
+  let aDone = false;
   let bDone = false;
   const procA = fakeLiveProc(4521);
   const procB = fakeLiveProc(4522);
@@ -7184,7 +7394,8 @@ test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exis
       if (runs.length === 1) {
         opts?.onSpawn?.({ ...procA, cursor: { sessionId: 'x', turnId: 'origA', generation: 1, offset: 0 } });
         yield { kind: 'approval-request', turnId: 'origA', requestId: 'reqA2', title: 'act', detail: 'd', command: 'cmd-A2', resolution: 'in-turn' };
-        for (;;) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+        while (!aDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'origA', text: 'parked' }; }
+        yield { kind: 'done', turnId: 'origA', ok: true };
       } else if (runs.length === 2) {
         opts?.onSpawn?.({ ...procB, cursor: { sessionId: 'x', turnId: 'turnB', generation: 1, offset: 0 } });
         while (!bDone) { await new Promise((r) => setTimeout(r, 5)); yield { kind: 'token', turnId: 'turnB', text: 'working' }; }
@@ -7218,6 +7429,9 @@ test('E202611031bd72813:S001 t6/MR3-R5 fail-closed: when no per-turn handle exis
   fc.send(env('new-chat', { provider: 'claude' }));
   fc.send(env('submit-turn', { text: 'go B' }));
   await waitFor(() => runs.length === 2, 5000, 'chat B’s turn is running');
+  aDone = true;
+  await waitFor(() => store.get(idA)?.liveTurn === undefined);
+  store.get(idA)!.liveTurn = { cursor: { turnId: 'origA', generation: 1, offset: 0 }, ownerHostPid: 0, pid: 4521, startedAt: 1 };
   failedCb?.('origA', 'reqA2', 'approve');
   await waitFor(() => store.get(idA)?.pendingRequests?.find((r) => r.requestId === 'reqA2')?.outcome === 'delivery-failed', 5000, 'no per-turn handle -> fail closed as delivery-failed');
   await new Promise((r) => setTimeout(r, 200));
@@ -7453,8 +7667,8 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     };
     const fc = fakeChannel();
     const store = createInMemoryChatSessionStore();
-    // the CLI pid is ALIVE in both the adapter and the host — completion must come via the ingested terminal
-    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => true }).get('claude');
+    let cliAlive = true;
+    const adapter = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out, livenessPollMs: 5, isAlive: () => cliAlive }).get('claude');
     const host = createChatPanelHost({
       createPanel: () => fc.channel,
       providers: registry({ claude: adapter }, ['claude']),
@@ -7464,7 +7678,7 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
       observerTimerMs: 20,
       observerTickBudgetMs: 1, // pass 1: reads frag1 + the terminal, then budget-aborts on frag2
       hostPid: 1,
-      isAlive: (pid) => pid !== 999, // owner host dead, the CLI pid ALIVE
+      isAlive: (pid) => pid === 1234 && cliAlive,
     });
     host.open();
     const s = store.create('claude' as never);
@@ -7481,7 +7695,10 @@ test('E202611031bd72813:S001 t5: a terminal seen in a budget-limited pass rewind
     const cur = store.get(s.id)!;
     cur.liveTurn = { cursor: { turnId: 't-obs', generation: seg.cursor.generation, offset: 0 }, ownerHostPid: 999, pid: 1234, startedAt: 1 };
     store.save(cur);
-    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'the retry pass drained under the caught-up gate and completed');
+    await waitFor(() => store.get(s.id)?.pendingRequests?.some((r) => r.kind === 'selection') === true, 8000);
+    assert.ok(store.get(s.id)?.liveTurn, 'drained output preserves the cursor while CLI departure is unverified');
+    cliAlive = false;
+    await waitFor(() => store.get(s.id)?.liveTurn === undefined, 8000, 'verified departure allows completion');
     assert.ok(tailCalls >= 3, `sustained budget exhaustion rewound once, then a later pass drained and completed (tail calls: ${tailCalls})`);
     const after = store.get(s.id)!;
     const sels = (after.pendingRequests ?? []).filter((r) => r.kind === 'selection');
@@ -7576,7 +7793,8 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     const root2 = mkdtempSync(pathJoin(tmpdir(), 'chat-obs8b-'));
     const out2 = createSessionOutput({ root: root2, pollMs: 5 });
     const store2 = createInMemoryChatSessionStore();
-    const adapterLive = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out2, livenessPollMs: 5, isAlive: () => true, processStartTime: () => 1 }).get('claude');
+    let cliAlive = true;
+    const adapterLive = createProviderRegistry({ spawn: (() => { throw new Error('no spawn'); }) as never, isInstalled: () => true, sessionOutput: out2, livenessPollMs: 5, isAlive: () => cliAlive, processStartTime: () => 1 }).get('claude');
     const host2 = createChatPanelHost({
       createPanel: () => fakeChannel().channel,
       providers: registry({ claude: adapterLive }, ['claude']),
@@ -7586,7 +7804,7 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
       observerTimerMs: 20,
       observerTickBudgetMs: 30,
       hostPid: 2,
-      isAlive: (pid) => pid !== 999, // owner dead, CLI pid alive
+      isAlive: (pid) => pid === 1234 && cliAlive,
     });
     host2.open();
     const s2 = store2.create('claude' as never);
@@ -7603,9 +7821,12 @@ test('E202611031bd72813:S001 t5: an unterminated trailing line after the termina
     appendFileSync(seg2.outPath, '\n');
     await waitFor(() => (store2.get(s2.id)?.pendingRequests ?? []).some((r) => r.kind === 'selection'), 5000, 'once the writer completes the line, a later pass ingests the request');
     assert.ok(store2.get(s2.id)?.liveTurn !== undefined, 'live writer, no turn-end marker yet: still unreconciled');
-    // the writer ends the turn (turn-end marker): the next pass drains and completes
+    // A segment marker alone does not establish that the writer departed.
     await out2.endTurn(s2.id, 't-live', { code: 0, signal: null });
-    await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'turn-end marker: the turn completes (terminal already ingested)');
+    await new Promise((r) => setTimeout(r, 60));
+    assert.ok(store2.get(s2.id)?.liveTurn, 'a drained segment still retains its live writer');
+    cliAlive = false;
+    await waitFor(() => store2.get(s2.id)?.liveTurn === undefined, 5000, 'verified departure completes the drained turn');
     assert.equal(store2.get(s2.id)?.status, 'waiting-input', 'the ingested request keeps waiting-input');
     host.dispose();
   } finally {

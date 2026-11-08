@@ -1,0 +1,90 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b6bf7e20-444f-4148-9772-03a2501055c4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T10:23:47.974Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc557863fa52ecf5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Repair drifted regression assertions",
+      "parent": {
+        "entityId": "STORY-dc557863fa52ecf5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dc557863fa52ecf5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "01934e5dba7329c2bf79ecdbe488286a7e3f3fffbce11d85ac29b654681b6bf4",
+        "at": "2026-11-08T10:23:47.974Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T10:23:47.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Repair drifted regression assertions",
+    "summary": "Update only coverage that drifted from current fixture identities, taxonomy, settings activation, or provider routing.",
+    "size": "S",
+    "order": 3,
+    "acceptanceChecks": [
+      "Resolve all four UX fixtures and keep rendering and truncation checks. Derive model role groups and counts from taxonomy and verify Core floor separately.",
+      "Verify settings pull and migration ordering. Check live Claude/Codex/Vibe registry membership independently of Claude-to-Ollama routing. Repair the six remaining targeted cases.",
+      "Use LLD-85e6a58693579b6d-s1.json and LLD-7c219c7471d79496-s1.json. Report any missing fixture by ID."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/__tests__/activation.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/panels/__tests__/repo-config.test.ts"
+      },
+      {
+        "level": "unit",
+        "name": "vscode-plugin/src/chat/__tests__/ollama-routing.test.ts"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

@@ -561,6 +561,9 @@ export function buildInsrcMcpServerWithRegistry(options: { review?: ConstructorP
 				artifact: z.record(z.string(), z.unknown())
 					.describe('Only for phase=synthesize. The artifact JSON matching the emit_synthesize schema.')
 					.optional(),
+				authorModel: z.string()
+					.describe('Only for phase=synthesize. The model authoring this artifact (e.g. the model id you are running as). Omit when not known; never guess.')
+					.optional(),
 				state: z.string()
 					.describe('Opaque continuation token from the prior response. Required after phase=start.')
 					.optional(),

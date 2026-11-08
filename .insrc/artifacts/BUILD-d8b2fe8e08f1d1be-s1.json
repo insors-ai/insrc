@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 9,
+        "contentHash": "6bb594b4a12f2e86a5713b6123de7849d7be86ffb2e6be850978cc1da59e31e0",
+        "at": "2026-11-08T08:08:52.992Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-15444c98-34aa-4a53-9f00-a7700b05c21f",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:05:40.423Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "revision": 9,
+    "updatedAt": "2026-11-08T08:08:26.928Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "epicSlug": "allow-independent-turns-concurrent-vs-code"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": false
+      }
+    ],
+    "summary": "End-to-end concurrent chat and extension TypeScript checks passed. The full sweep had 1,671 passes, 19 failures, and 9 skips. Sixteen failures reproduced before the story, two isolated checks passed after rerun, and the session-lock timing failure passed in isolation. Manual VS Code verification is pending and its checklist is in VS-CODE-SMOKE.md.",
+    "testRecord": {
+      "md": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-setup.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/cli-adapter.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/turn-lifecycle.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-setup.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/cli-adapter.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-lock.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/turn-lifecycle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/protocol.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/protocol.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-runner.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/render-registry.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/extension.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-queue-worker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-outbox.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/VS-CODE-SMOKE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T08:08:26.928Z"
+      }
+    ],
+    "commit": "179db4aad"
+  },
+  "citations": []
+}

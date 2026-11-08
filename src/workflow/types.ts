@@ -283,7 +283,8 @@ export interface OutputModelStamp {
 	 *  `design.contract.detail`), or `(legacy)` on a shim-synthesized stamp. */
 	readonly role:   string;
 	readonly tier:   'core' | 'mid' | 'cheap';
-	readonly runner: FamilyId;
+	/** `'unknown'` when the client that authored the artifact maps to no family. */
+	readonly runner: FamilyId | 'unknown';
 	readonly model:  string;
 }
 

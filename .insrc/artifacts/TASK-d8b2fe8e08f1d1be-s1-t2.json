@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-64a4d748-e3f6-4b83-be4a-c40ff941a97d",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.316Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add session progress snapshots and targeted webview frames",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "70d8bece2098508088d6dfa0e87bffce5f96e09d05ed19a8bea14276f4c86a62",
+        "at": "2026-11-08T06:58:01.316Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.317Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add session progress snapshots and targeted webview frames",
+    "summary": "Add optional turn progress to stored session heads with ownership-aware merges. Define restore, update and action payloads carrying session, turn and view generation. Keep protocol and both ends compatible at each step.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "Restore carries current progress with the transcript and uses the original start timestamp. A legacy live turn without a known start omits elapsed time.",
+      "Old generation, session or turn updates cannot clear the selected view. Status changes do not become transcript rows."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts: session progress persists and a stale checkpoint cannot overwrite a newer turn"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/protocol.test.ts: restore and targeted action frames preserve session, turn and generation identity"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts: session restore uses stored phase and elapsed time without another provider event"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

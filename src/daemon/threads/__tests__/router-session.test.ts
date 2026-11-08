@@ -14,6 +14,8 @@ import assert from 'node:assert/strict';
 import { MessageChannel, threadId as mainThreadId } from 'node:worker_threads';
 
 import { RequestLifetime } from '../../request-context.js';
+import { createApprovalRpc } from '../../approval.js';
+import { ApprovalBroker } from '../../approval-broker.js';
 import { directDispatch } from '../../server.js';
 import type { DeliverEnvelope, RpcHandlers, StreamHandlers } from '../../server.js';
 import { methodClasses } from '../method-class.js';
@@ -69,37 +71,56 @@ function harness(): Harness {
 	};
 	const router = new Router({ classOf, registry, routed: new Set<MethodClass>(['session']), local: directDispatch(local), sessions: undefined as never });
 	let nextThread = 500;
-	const handlers = (name: string): { rpc: RpcHandlers; stream: StreamHandlers } => ({
-		rpc: {
-			'x.order': async p => { const tag = (p as { tag: string }).tag; log.push(`${name} start ${tag}`); await gates.get(tag).wait; log.push(`${name} end ${tag}`); return tag; },
-			'workflow.run.poll': async () => { log.push(`${name} workflow.run.poll`); return { status: 'running' }; },
-			'chat.cancel': async () => { log.push(`${name} chat.cancel`); return { ok: true }; },
-			'chat.list': async () => { log.push(`${name} chat.list`); return []; },
-			'workflow.run.abort': async () => { log.push(`${name} workflow.run.abort`); return { ok: true }; },
-			// Story 5d393a4b: families moved to the shared-state worker.
-			'models.check': async () => { log.push(`${name} models.check`); return { checkId: 'c1' }; },
-			'models.approve': async () => { log.push(`${name} models.approve`); return { ok: true }; },
-			'codeReview.run': async () => { log.push(`${name} codeReview.run`); return { ok: true }; },
-			'step.call': async p => { log.push(`${name} step.call ${(p as { tool: string }).tool}`); return { ok: true }; },
-			// Replies at once; work it registers keeps its completion message (the ack) back until the test opens 'drain <tag>'.
-			'x.drain': async (p, ctx) => {
-				const tag = (p as { tag: string }).tag;
-				log.push(`${name} start ${tag}`);
-				ctx?.registerDrain?.(gates.get(`drain ${tag}`).wait.then(() => { log.push(`${name} drained ${tag}`); }));
-				return tag;
+	const handlers = (name: string): { rpc: RpcHandlers; stream: StreamHandlers } => {
+		const broker = new ApprovalBroker();
+		const approval = createApprovalRpc(broker);
+		return {
+			rpc: {
+				'approval.answer': approval.answer,
+				'repo.settings.get': async () => ({ ok: true }),
+				'x.approval.ask': async () => broker.ask({
+					requestId: 'test-approval',
+					repoPath: '/test/repo',
+					toolId: 'fixture',
+					approvalClass: 'destructive',
+					arguments: {},
+					reason: 'router fixture',
+					expiresAt: new Date(Date.now() + 5_000).toISOString(),
+				}),
+				'x.order': async p => { const tag = (p as { tag: string }).tag; log.push(`${name} start ${tag}`); await gates.get(tag).wait; log.push(`${name} end ${tag}`); return tag; },
+				'workflow.run.poll': async () => { log.push(`${name} workflow.run.poll`); return { status: 'running' }; },
+				'chat.cancel': async () => { log.push(`${name} chat.cancel`); return { ok: true }; },
+				'chat.list': async () => { log.push(`${name} chat.list`); return []; },
+				'workflow.run.abort': async () => { log.push(`${name} workflow.run.abort`); return { ok: true }; },
+				// Story 5d393a4b: families moved to the shared-state worker.
+				'models.check': async () => { log.push(`${name} models.check`); return { checkId: 'c1' }; },
+				'models.approve': async () => { log.push(`${name} models.approve`); return { ok: true }; },
+				'codeReview.run': async () => { log.push(`${name} codeReview.run`); return { ok: true }; },
+				'step.call': async p => { log.push(`${name} step.call ${(p as { tool: string }).tool}`); return { ok: true }; },
+				// Replies at once; work it registers keeps its completion message (the ack) back until the test opens 'drain <tag>'.
+				'x.drain': async (p, ctx) => {
+					const tag = (p as { tag: string }).tag;
+					log.push(`${name} start ${tag}`);
+					ctx?.registerDrain?.(gates.get(`drain ${tag}`).wait.then(() => { log.push(`${name} drained ${tag}`); }));
+					return tag;
+				},
 			},
-		},
-		stream: {
-			'x.stream': async (p, send) => {
-				const tag = (p as { tag: string }).tag;
-				log.push(`${name} start ${tag}`);
-				send({ id: 0, stream: 'delta', data: 'partial' });
-				await gates.get(tag).wait;
-				log.push(`${name} end ${tag}`);
-				send({ id: 0, stream: 'done', data: tag });
+			stream: {
+				'approval.subscribe': (params, send, signal) => {
+					log.push(`${name} subscribed to approvals`);
+					return approval.subscribe(params, send, signal);
+				},
+				'x.stream': async (p, send) => {
+					const tag = (p as { tag: string }).tag;
+					log.push(`${name} start ${tag}`);
+					send({ id: 0, stream: 'delta', data: 'partial' });
+					await gates.get(tag).wait;
+					log.push(`${name} end ${tag}`);
+					send({ id: 0, stream: 'done', data: tag });
+				},
 			},
-		},
-	});
+		};
+	};
 	const startWorker = (name: string): number => {
 		const channel = new MessageChannel();
 		ports.push(channel);
@@ -157,6 +178,28 @@ function harness(): Harness {
 }
 
 const A: SessionId = { label: 'mcp', pid: 1001 };
+
+test('router: approval subscriptions leave Tracker reads unblocked and answers can finish a pending request', { timeout: 6_000 }, async () => {
+	const h = harness();
+	const subscription = h.ask('sub', 'approval.subscribe', {}, { session: A, stream: true });
+	try {
+		await until(() => h.log.includes('mcp:1001 subscribed to approvals'), 'the approval subscription opens');
+		const settings = h.ask('read', 'repo.settings.get', { repo: '/test/repo' }, { session: A });
+		await settings.done;
+		assert.deepEqual(settings.replies, [{ kind: 'reply', requestId: 'read', result: { ok: true } }]);
+
+		const waiting = h.ask('pending', 'x.approval.ask', {}, { session: A });
+		await until(() => subscription.replies.length === 1, 'the open subscription receives the gate');
+		const answer = h.ask('answer', 'approval.answer', { requestId: 'test-approval', decision: 'decline' }, { session: A });
+		await answer.done;
+		await waiting.done;
+		assert.deepEqual(answer.replies, [{ kind: 'reply', requestId: 'answer', result: { accepted: true } }]);
+		assert.deepEqual(waiting.replies, [{ kind: 'reply', requestId: 'pending', result: 'declined' }]);
+	} finally {
+		subscription.cancel();
+		h.close();
+	}
+});
 
 test("router: one session's three requests reach its worker in arrival order; a stream ends at its done/error frame", { timeout: 10_000 }, async () => {
 	const h = harness();

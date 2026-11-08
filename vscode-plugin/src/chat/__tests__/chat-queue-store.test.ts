@@ -22,6 +22,93 @@ const msg = (session: string, turn: string, text = `${session}/${turn}`, windowK
 const A = { windowKey: 'w-A', pid: 101 };
 const B = { windowKey: 'w-B', pid: 202 };
 
+test('two connections enforce session FIFO, two slots and immutable lease fencing', () => {
+  const t = temp();
+  const deps = { path: t.path, openDatabase: open, now: () => 100, pluginVersion: 'test', mode: 'session-leases' } as const;
+  const a = createChatQueueStore(deps);
+  const b = createChatQueueStore(deps);
+  try {
+    a.presence(A);
+    b.presence(B);
+    const a1 = a.enqueue(msg('A', 'first'));
+    const a2 = b.enqueue(msg('A', 'second', 'second', B.windowKey));
+    const b1 = b.enqueue(msg('B', 'first', 'B', B.windowKey));
+    const c1 = b.enqueue(msg('C', 'first', 'C', B.windowKey));
+    assert.ok(a1.ok && a2.ok && b1.ok && c1.ok);
+    assert.equal(b.acknowledge(a1.message.seq, B), undefined);
+    const original = a.acknowledge(a1.message.seq, A);
+    assert.ok(original);
+    assert.equal(Object.isFrozen(original), true);
+    assert.equal(b.head(B.windowKey, 100)?.seq, b1.message.seq, 'an older message in A does not block B');
+    const second = b.acknowledge(b1.message.seq, B);
+    assert.ok(second);
+    assert.equal(b.acknowledge(c1.message.seq, B), undefined);
+    assert.equal(a.leases().length, 2);
+    assert.equal(a.attachCli(original, { pid: 888, startedAt: 3 }), true);
+
+    const newA = { ...A, pid: 303 };
+    a.presence(newA);
+    assert.equal(a.reclaim(original, newA, { pid: A.pid, observation: { kind: 'unknown' } }), undefined);
+    const fresh = a.reclaim(original, newA, { pid: A.pid, observation: { kind: 'absent' } });
+    assert.ok(fresh);
+    assert.notEqual(original.epoch, fresh.epoch);
+    assert.equal(b.lease('A')?.cliPid, 888);
+    assert.equal(b.heartbeat(original), false);
+    assert.equal(b.attachCli(original, { pid: 999 }), false);
+    assert.equal(b.markWaiting(original, 'approval'), false);
+    assert.deepEqual(b.finish(original, { kind: 'done' }), { kind: 'stale' });
+    assert.equal(a.lease('A')?.epoch, fresh.epoch);
+    assert.equal(a.list()[0]?.state, 'processing');
+    assert.deepEqual(a.finish(fresh, { kind: 'done' }), { kind: 'applied' });
+    assert.equal(b.lease('A'), undefined);
+    assert.equal(b.list().some((m) => m.seq === a1.message.seq), false);
+    assert.equal(b.head(B.windowKey, 100)?.seq, a2.message.seq);
+  } finally {
+    a.close();
+    b.close();
+    t.done();
+  }
+});
+
+test('initial claim preserves attempts and all three retry delays', () => {
+  const t = temp();
+  let clock = 1_000;
+  const store = createChatQueueStore({ path: t.path, openDatabase: open, now: () => clock, pluginVersion: 'test', mode: 'session-leases' });
+  try {
+    const enqueued = store.enqueue(msg('A', 'first'));
+    const younger = store.enqueue(msg('A', 'second'));
+    const independent = store.enqueue(msg('B', 'first'));
+    assert.ok(enqueued.ok && younger.ok && independent.ok);
+    const seq = enqueued.message.seq;
+    const fail = { kind: 'failed', error: 'overloaded', acted: false, cause: 'overloaded' } as const;
+    for (const [attempts, delay] of [10_000, 60_000, 300_000].entries()) {
+      store.presence(A);
+      const token = store.acknowledge(seq, A);
+      assert.ok(token);
+      assert.equal(store.list()[0]?.attempts, attempts);
+      const result = store.finish(token, fail);
+      assert.equal(result.kind, 'applied');
+      assert.equal(result.row?.attempts, attempts + 1);
+      assert.equal(result.row?.nextAttemptAt, clock + delay);
+      assert.equal(store.head(A.windowKey, clock)?.seq, independent.message.seq);
+      clock += delay - 1;
+      assert.equal(store.acknowledge(seq, A), undefined);
+      clock += 1;
+    }
+    store.presence(A);
+    const final = store.acknowledge(seq, A);
+    assert.ok(final);
+    assert.equal(store.list()[0]?.attempts, 3);
+    const result = store.finish(final, fail);
+    assert.equal(result.kind, 'applied');
+    assert.equal(result.row?.state, 'failed');
+    assert.equal(store.head(A.windowKey, clock)?.seq, younger.message.seq);
+  } finally {
+    store.close();
+    t.done();
+  }
+});
+
 test("chat queue store: enqueue, head, acknowledge and finish keep seq order, acknowledge a message at most once and only with the lease free, delete a done message, turn a stopped one into failed with a resend, and refuse an enqueue with a note at 500 live rows", () => {
   const t = temp();
   let clock = 1_000;

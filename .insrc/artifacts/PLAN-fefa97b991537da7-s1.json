@@ -1,0 +1,580 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "wf-1794156358296-bmiwr4",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:10.882Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "standalone": true,
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "claude-opus-5-5"
+        }
+      ]
+    },
+    "elapsedMs": 132226,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "epicSlug": "open-saved-connections-demand-read-all",
+    "storyId": "s1",
+    "lldRunId": "wf-1794155046486-rhpg48",
+    "lldEffectiveHash": "675d6e30fa2d8cdec33594860b5e18044827435d94375c35c958226946de86de",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "322400032e99f4fba616dd3483c80e1b502eb3a645b4b08522aca2009b957717",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:24.307Z"
+      }
+    },
+    "rangeBase": "b02b03bcab052baf5c6c784d2b71900e94c89fd8"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "The build first stops the daemon reading the Keychain at start, then adds the single-item vault and the first-use copy of old secrets. Worker threads are pointed at the one main-thread owner, and the offline maintenance tool is kept from running alongside a daemon. The last task moves the remaining keystore users across and carries the conditions recorded when the LLD was approved with an override."
+    },
+    "tasks": [
+      {
+        "id": "t1",
+        "title": "Open saved connections on demand instead of at boot",
+        "summary": "Remove the boot loop, make the main-thread management handlers open a repository on first use, have fresh initialization take its ticket key before its first disk write, and carry a keystore failure's cause to managementRejection.",
+        "size": "M",
+        "order": 1,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "A daemon start reads nothing from the Keychain and opens its socket",
+          "The first management request opens a repository and a later one does not reopen it",
+          "A refused Keychain read reports secret-unavailable and the next request retries",
+          "A refused first-time set-up leaves nothing on disk",
+          "A plain listing of an unmanaged repository creates no state and reads no secret",
+          "Shutdown still closes every root opened on demand"
+        ],
+        "derivedFrom": [
+          "c1"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "boot: a daemon start reads nothing from the Keychain and opens its socket"
+          },
+          {
+            "level": "integration",
+            "name": "on-demand: the first management request opens the repository and a later one does not reopen it"
+          },
+          {
+            "level": "integration",
+            "name": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries"
+          },
+          {
+            "level": "integration",
+            "name": "on-demand: a refused first-time set-up leaves nothing on disk"
+          },
+          {
+            "level": "integration",
+            "name": "on-demand: a plain listing of an unmanaged repository touches nothing"
+          },
+          {
+            "level": "integration",
+            "name": "on-demand: shutdown closes every root opened on demand"
+          }
+        ]
+      },
+      {
+        "id": "t2",
+        "title": "Add the single-item vault with validation and a mutation queue",
+        "summary": "Back getKey, setKey, deleteKey and listKeys with one Keychain item under service insrc-vault: single-flight load with a five-minute memory of a failed load, runtime validation of names and values, whole-payload validation on load and before every write, one mutation queue writing the Keychain first and memory after, retirement on delete, and a test-only backend setter below the vault.",
+        "size": "L",
+        "order": 2,
+        "dependsOn": [],
+        "acceptanceChecks": [
+          "Concurrent reads perform one Keychain read",
+          "A refused load fails at once for five minutes and then retries",
+          "An invalid stored payload fails closed and is never rewritten",
+          "A malformed name or value leaves memory and the stored item unchanged",
+          "A name such as __proto__ is an ordinary key",
+          "A failed write leaves memory unchanged and concurrent saves lose no update",
+          "A deleted name is recorded as retired",
+          "A retired name saved again is readable",
+          "listKeys never calls findCredentials"
+        ],
+        "derivedFrom": [
+          "c2"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "vault: concurrent reads perform one Keychain read"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a refused load fails at once for five minutes and then retries"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a malformed name or value leaves memory and the stored item unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a name such as __proto__ is stored and read as an ordinary key"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a failed write leaves memory unchanged"
+          },
+          {
+            "level": "unit",
+            "name": "vault: concurrent saves lose no update"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a deleted name is recorded as retired"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a retired name saved again is readable"
+          },
+          {
+            "level": "unit",
+            "name": "keystore: listKeys never calls findCredentials"
+          }
+        ]
+      },
+      {
+        "id": "t3",
+        "title": "Migrate legacy secrets on first use",
+        "summary": "For a name absent from the vault, not retired and with no reusable run result, read the legacy item single-flight per name and copy a found value through the mutation queue after re-checking the current state, with per-name run states for a cached value, an absence and a refused read.",
+        "size": "M",
+        "order": 3,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A legacy secret is copied once and read from the vault afterwards",
+          "Concurrent misses of one name share one legacy read and one copy",
+          "A save or delete during a legacy read wins and the copy is discarded",
+          "A failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+          "An absent name causes no write and no second lookup in the run",
+          "A refused legacy read fails at once for five minutes for that name only and then retries",
+          "A retired name does not read its legacy item"
+        ],
+        "derivedFrom": [
+          "c3"
+        ],
+        "tests": [
+          {
+            "level": "unit",
+            "name": "migration: a legacy secret is copied once and read from the vault afterwards"
+          },
+          {
+            "level": "unit",
+            "name": "migration: concurrent misses of one name share one legacy read and one copy"
+          },
+          {
+            "level": "unit",
+            "name": "migration: a save during a legacy read wins and the copy is discarded"
+          },
+          {
+            "level": "unit",
+            "name": "migration: a delete during a legacy read wins and the copy is discarded"
+          },
+          {
+            "level": "unit",
+            "name": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run"
+          },
+          {
+            "level": "unit",
+            "name": "migration: an absent name causes no write and no second lookup in the run"
+          },
+          {
+            "level": "unit",
+            "name": "migration: a refused legacy read fails at once for five minutes for that name only and then retries"
+          },
+          {
+            "level": "unit",
+            "name": "vault: a retired name does not fall back to its legacy item"
+          }
+        ]
+      },
+      {
+        "id": "t4",
+        "title": "Forward worker keystore calls to the main thread",
+        "summary": "Serve the vault to workers through a hub operation and install the forwarder in worker-entry, preserving the owner's KeystoreInputError and mapping only availability and transport failures to KeystoreUnavailableError.",
+        "size": "M",
+        "order": 4,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "Workers on two threads share one Keychain read",
+          "A worker never calls the backend directly",
+          "A closed hub channel does not fall back to the Keychain",
+          "A save on one worker is visible on another",
+          "A malformed request from a worker reports KeystoreInputError, the same as on the main thread"
+        ],
+        "derivedFrom": [
+          "c4",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "threads: workers on two threads share one Keychain read"
+          },
+          {
+            "level": "integration",
+            "name": "threads: a worker never calls the backend directly"
+          },
+          {
+            "level": "integration",
+            "name": "threads: a closed hub channel does not fall back to the Keychain"
+          },
+          {
+            "level": "integration",
+            "name": "threads: a save on one worker is visible on another"
+          },
+          {
+            "level": "integration",
+            "name": "threads: a malformed request from a worker reports KeystoreInputError"
+          }
+        ]
+      },
+      {
+        "id": "t5",
+        "title": "Guard the vault across the maintenance tool and a daemon",
+        "summary": "Have the offline maintenance binary take the run-file guard before its pid and socket check and hold it until exit, and have a daemon's vault load fail without touching the Keychain while the guard is held.",
+        "size": "S",
+        "order": 5,
+        "dependsOn": [
+          "t2"
+        ],
+        "acceptanceChecks": [
+          "A daemon fails requests needing a secret while maintenance holds the guard and succeeds after release",
+          "Maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+          "The offline tool reads the vault once"
+        ],
+        "derivedFrom": [
+          "c5"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release"
+          },
+          {
+            "level": "integration",
+            "name": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it"
+          },
+          {
+            "level": "integration",
+            "name": "maintenance: the offline tool reads the vault once"
+          }
+        ]
+      },
+      {
+        "id": "t6",
+        "title": "Move the keys handlers and other users onto the vault",
+        "summary": "Make keys.list read through the vault, make keys.get use a null check so an empty saved secret exists, confirm notify, web and tool configuration read through the vault, document in the vault module that a remembered refusal applies during the five-minute cooldown and that legacy items are retained after copying, and refresh the pinned inventory.",
+        "size": "S",
+        "order": 6,
+        "dependsOn": [
+          "t2",
+          "t3",
+          "t4"
+        ],
+        "acceptanceChecks": [
+          "Notify, web and keys handlers read through the vault",
+          "keys.get reports exists:true for an empty saved secret",
+          "keys.set with a non-string value is refused and other secrets stay readable after a restart",
+          "The vault module documents the cooldown and the retention of legacy items",
+          "The connection-management inventory matches the changed sources"
+        ],
+        "derivedFrom": [
+          "c6",
+          "c7"
+        ],
+        "tests": [
+          {
+            "level": "integration",
+            "name": "consumers: notify, web and keys handlers read through the vault"
+          },
+          {
+            "level": "integration",
+            "name": "ipc: keys.get reports exists:true for an empty saved secret"
+          },
+          {
+            "level": "integration",
+            "name": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart"
+          },
+          {
+            "level": "live",
+            "name": "live: after a node upgrade one dialog appears across several connections and threads once migration is complete"
+          }
+        ]
+      }
+    ],
+    "testStrategyCoverage": [
+      {
+        "lldStrategyItem": "vault: concurrent reads perform one Keychain read",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a refused load fails at once for five minutes and then retries",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a malformed name or value leaves memory and the stored item unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a name such as __proto__ is stored and read as an ordinary key",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a failed write leaves memory unchanged",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: concurrent saves lose no update",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a retired name does not fall back to its legacy item",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "vault: a retired name saved again is readable",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: a legacy secret is copied once and read from the vault afterwards",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: concurrent misses of one name share one legacy read and one copy",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: a save during a legacy read wins and the copy is discarded",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: a delete during a legacy read wins and the copy is discarded",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: a failed copy serves later reads from memory, keeps the legacy item and reads it again on the next run",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: an absent name causes no write and no second lookup in the run",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "migration: a refused legacy read fails at once for five minutes for that name only and then retries",
+        "coveredByTaskIds": [
+          "t3"
+        ]
+      },
+      {
+        "lldStrategyItem": "keystore: listKeys never calls findCredentials",
+        "coveredByTaskIds": [
+          "t2"
+        ]
+      },
+      {
+        "lldStrategyItem": "threads: workers on two threads share one Keychain read",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "threads: a worker never calls the backend directly",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "threads: a closed hub channel does not fall back to the Keychain",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "threads: a save on one worker is visible on another",
+        "coveredByTaskIds": [
+          "t4"
+        ]
+      },
+      {
+        "lldStrategyItem": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "guard: a daemon holding no vault fails requests while maintenance holds the guard and succeeds after release",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "guard: maintenance refuses and releases the guard when the daemon socket exists after acquiring it",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "boot: a daemon start reads nothing from the Keychain and opens its socket",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "on-demand: the first management request opens the repository and a later one does not reopen it",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "on-demand: a refused Keychain read reports secret-unavailable and the next request retries",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "on-demand: a refused first-time set-up leaves nothing on disk",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "on-demand: a plain listing of an unmanaged repository touches nothing",
+        "coveredByTaskIds": [
+          "t1"
+        ]
+      },
+      {
+        "lldStrategyItem": "consumers: notify, web and keys handlers read through the vault",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      },
+      {
+        "lldStrategyItem": "maintenance: the offline tool reads the vault once",
+        "coveredByTaskIds": [
+          "t5"
+        ]
+      },
+      {
+        "lldStrategyItem": "live: after a node upgrade one dialog appears across several connections and threads once migration is complete",
+        "coveredByTaskIds": [
+          "t6"
+        ]
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 ensureDefaultManagedRoot and Daemon boot"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 SecretVaultItem and In-memory vault"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Per-name run state and Legacy per-item secrets"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Worker keystore forwarding"
+    },
+    {
+      "id": "c5",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 Vault run-file guard"
+    },
+    {
+      "id": "c6",
+      "kind": "prior-artifact",
+      "ref": "LLD s1 keys.list handler and keystore consumers"
+    },
+    {
+      "id": "c7",
+      "kind": "stakeholder",
+      "ref": "Approval override on LLD s1, 2026-11-08",
+      "quotedText": "Workers preserve KeystoreInputError; keys.get uses a null check; the sequence notes are corrected for the cooldown and the retention of legacy items."
+    }
+  ]
+}

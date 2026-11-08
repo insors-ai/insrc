@@ -11,6 +11,24 @@ import {
   CHAT_DISABLED_NEWER_PLUGIN_NOTICE, CHAT_DISABLED_NO_SQLITE_NOTICE, chatDisabledOtherNotice, chatIsOffered, classifyOpenFailure, createQueueFactory, processAliveCheck, queuePathOf, repoKeyOf, WINDOW_KEY_STATE, windowKeyOf,
 } from '../chat-queue-setup.js';
 import type { SqliteDatabase } from '../chat-queue-store.js';
+import { observeProcess, processDeparted } from '../session-lock.js';
+
+test('process observation distinguishes absence, reuse and unknown identity', () => {
+  const observe = (pid?: number) => observeProcess(pid, (p) => {
+    if (p === 4) throw Object.assign(new Error('permission denied'), { code: 'EPERM' });
+    return p !== 1;
+  }, (p) => p === 2 ? 42 : undefined);
+  assert.deepEqual(observe(1), { kind: 'absent' });
+  assert.deepEqual(observe(2), { kind: 'present', startedAt: 42 });
+  assert.equal(processDeparted(observe(2), 41), true);
+  assert.equal(processDeparted(observe(2), 42), false);
+  assert.equal(processDeparted(observe(2)), false);
+  for (const pid of [undefined, 3, 4]) {
+    assert.deepEqual(observe(pid), { kind: 'unknown' });
+    assert.equal(processDeparted(observe(pid), 41), false);
+  }
+  assert.equal(processAliveCheck(() => true, () => undefined)(3, 41), true);
+});
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const read = (...p: string[]): string => readFileSync(join(here, ...p), 'utf8');

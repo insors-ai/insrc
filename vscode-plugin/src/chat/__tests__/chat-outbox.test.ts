@@ -1,8 +1,8 @@
 // Epic E20261014613abdb3 Story S002 t3 — the outbox projection.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { projectOutbox } from '../chat-outbox.js';
-import type { QueuedMessage } from '../chat-queue-store.js';
+import { projectOutbox, projectSessionOutbox } from '../chat-outbox.js';
+import { sessionQueueWait, type QueuedMessage, type SessionQueueSnapshot } from '../chat-queue-store.js';
 
 let next = 0;
 const row = (sessionId: string, state: QueuedMessage['state'], text: string, extra: Partial<QueuedMessage> = {}): QueuedMessage => {
@@ -11,6 +11,32 @@ const row = (sessionId: string, state: QueuedMessage['state'], text: string, ext
 };
 const titles: Record<string, string> = { mine: 'my chat', other: 'board search', third: 'docs' };
 const titleOf = (id: string): string | undefined => titles[id];
+
+test('wait reason uses shared eligibility for FIFO, retries, origin and capacity', () => {
+  const activeA = row('A', 'processing', 'waiting for approval', { waitingOn: 'approval' });
+  const youngerA = row('A', 'retrying', 'later A', { nextAttemptAt: 300, windowKey: 'unavailable' });
+  const retryB = row('B', 'retrying', 'retry B', { nextAttemptAt: 300, windowKey: 'unavailable' });
+  const missingC = row('C', 'queued', 'closed origin', { windowKey: 'unavailable' });
+  const freeD = row('D', 'queued', 'eligible');
+  const activeE = row('E', 'processing', 'second active');
+  const lease = (message: QueuedMessage) => ({ sessionId: message.sessionId, seq: message.seq, epoch: message.key,
+    pid: 1, windowKey: message.windowKey, heartbeatAt: 200 });
+  const snapshot: SessionQueueSnapshot = {
+    at: 200, rows: [activeA, youngerA, retryB, missingC, freeD],
+    leases: [lease(activeA)], presence: [{ pid: 1, windowKey: 'w-A', heartbeatAt: 200 }],
+  };
+  const projected = (s: SessionQueueSnapshot, m: QueuedMessage) => projectSessionOutbox(s, m.sessionId, { titleOf })
+    .rows.find((entry) => entry.seq === m.seq)?.waitReason;
+  for (const [message, reason] of [[youngerA, 'same-session'], [retryB, 'retry-delay'], [missingC, 'origin-unavailable'], [freeD, undefined]] as const) {
+    assert.equal(sessionQueueWait(message, snapshot), reason);
+    assert.equal(projected(snapshot, message), reason);
+  }
+  assert.equal(projected(snapshot, activeA), 'approval');
+  const full = { ...snapshot, rows: [...snapshot.rows, activeE], leases: [lease(activeA), lease(activeE)] };
+  assert.equal(projected(full, freeD), 'capacity');
+  assert.deepEqual(projectSessionOutbox(full, 'D', { titleOf }).capacity, { occupied: 2, total: 2 });
+  assert.deepEqual(projectSessionOutbox(full, 'idle-draft', { titleOf }).rows, []);
+});
 
 test("outbox projection: with a turn running, the chat's two waiting messages show places 2 and 3, one message from another chat is ahead, and the running chat is named", () => {
   const rows = [

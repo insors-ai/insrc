@@ -51,6 +51,8 @@ export interface WorkflowStepInputSynthesize {
 	readonly phase:    'synthesize';
 	readonly artifact: Record<string, unknown>;
 	readonly state:    string;
+	/** The model the client says authored this artifact; omitted when not known. */
+	readonly authorModel?: string | undefined;
 }
 
 /** Record ONE answer to an upstream-artifact open question. Pre-run gate:

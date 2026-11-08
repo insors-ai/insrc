@@ -114,3 +114,19 @@ test('the section line is measured as rendered: a block is admitted when its ren
 	// One unit less than the minimum room is refused, for this block only.
 	assert.equal(sectionBlock(block, 4_000).admissible, false);
 });
+
+test('a section is the largest prefix that fits next to its own line, across a change in the digits of the count', () => {
+	const block: EvidenceBlock = { key: 'k', envelope: {}, text: 'q'.repeat(50_000) };
+	const r = sectionBlock(block, 5_000);
+	assert.equal(r.admissible, true);
+	if (!r.admissible) return;
+	assert.equal(r.sections.map(x => x.text).join(''), block.text);
+	assert.equal(r.sections.length, 11);
+	for (const sec of r.sections.slice(0, -1)) {
+		const used = measureInput(renderSection(sec), 'bytes');
+		assert.ok(used <= 5_000);
+		assert.equal(used, 5_000, `section ${sec.index} of ${sec.count} fills the room exactly`);
+	}
+	assert.ok((r.sections[0] as BlockSection).text.length >= 4_978);
+});
+

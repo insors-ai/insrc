@@ -52,6 +52,20 @@ function cost(codePoint: number, unit: Unit): number {
 	return codePoint < 0x80 ? 1 : codePoint < 0x800 ? 2 : codePoint < 0x10000 ? 3 : 4;
 }
 
+/** The end of the largest whole code-point prefix of `text` from `start` that fits `room`. */
+function prefixEnd(text: string, start: number, room: number, unit: Unit): number {
+	let used = 0;
+	let at = start;
+	while (at < text.length) {
+		const cp = text.codePointAt(at) as number;
+		const c = cost(cp, unit);
+		if (used + c > room) break;
+		used += c;
+		at += cp > 0xffff ? 2 : 1;
+	}
+	return at;
+}
+
 /**
  * `text` in consecutive pieces, each the largest whole code-point prefix of
  * what remains that fits `room`. No code point is split, the pieces do not
@@ -105,16 +119,23 @@ export function sectionBlock(block: EvidenceBlock, room: number, unit: Unit = 'b
 	// section count, so the count is tried from one digit up until the cut gives a count that has no more digits.
 	for (let digits = 1; digits <= 9; digits++) {
 		const widest = 10 ** digits - 1;
-		const probe: BlockSection = { blockKey: block.key, index: widest, count: widest, envelope: block.envelope, text: '' };
-		const textRoom = room - measureInput(renderSection(probe), unit);
-		if (textRoom < MIN_SECTION_ROOM) {
+		const overhead = (index: number): number =>
+			measureInput(renderSection({ blockKey: block.key, index, count: widest, envelope: block.envelope, text: '' }), unit);
+		if (room - overhead(widest) < MIN_SECTION_ROOM) {
 			return {
 				admissible: false,
-				reason: `the envelope of block '${block.key}' takes ${room - textRoom} ${unit} of the ${room} ${unit} a call may hold, `
+				reason: `the envelope of block '${block.key}' takes ${overhead(widest)} ${unit} of the ${room} ${unit} a call may hold, `
 					+ `leaving less than the ${MIN_SECTION_ROOM} ${unit} a section needs`,
 			};
 		}
-		const pieces = sectionText(block.text, textRoom, unit);
+		// Each section is the largest prefix that fits next to its own line, whose index has as many digits as it has.
+		const pieces: string[] = [];
+		let start = 0;
+		do {
+			const end = prefixEnd(block.text, start, room - overhead(pieces.length + 1), unit);
+			pieces.push(block.text.slice(start, end));
+			start = end;
+		} while (start < block.text.length);
 		if (String(pieces.length).length <= digits) {
 			return {
 				admissible: true,

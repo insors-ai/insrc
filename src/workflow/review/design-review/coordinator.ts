@@ -164,6 +164,13 @@ export class DesignReviewCoordinator {
   const tracker=new DesignProgressTracker(designCheckpointPath(request.repo,request.reviewId),undefined,attempt.progress);
   tracker.phase('persisting',attempt.completedChunks.length,attempt.plan?.chunks.length??0);
   attempt.status='pending';delete attempt.recovery;delete attempt.failure;delete attempt.finishedAt;tracker.coverage(attempt);attempt.progress=tracker.snapshot();
+  try { if(work)(this.deps.capacity??assertDesignDispatchCapacity)(checkpoint); }
+  catch(error) {
+   const refused=structuredClone(saved),old=currentDesignAttempt(refused);
+   old.status='failed';old.failure={code:'checkpoint_capacity',summary:error instanceof Error?error.message:'Checkpoint capacity refused'};
+   old.finishedAt=new Date().toISOString();old.progress={...old.progress,status:'failed',phase:'complete',requiresUserInput:true};delete old.current;delete old.recovery;
+   await(this.deps.save??saveDesignCheckpoint)(request.repo,refused);throw error;
+  }
   const subjectKey=this.subjectKey(checkpoint.subject);this.subjects.set(subjectKey,key);
   try{
    await(this.deps.save??saveDesignCheckpoint)(request.repo,checkpoint);
@@ -236,6 +243,7 @@ export class DesignReviewCoordinator {
   const work=job.serial.catch(()=>{}).then(async()=>{
    if(kind==='execution'){if(job.storageError)throw job.storageError;if(job.abort.signal.aborted)throw job.abort.signal.reason;try{assertDesignSubjectUnchanged(job.checkpoint.subject,currentDesignAttempt(job.checkpoint).baseline);}catch(error){this.invalidate(job,error);throw error;}}
    const next=structuredClone(job.checkpoint),attempt=currentDesignAttempt(next);mutate(attempt);job.tracker.coverage(attempt);attempt.progress=job.tracker.snapshot();
+   if(kind==='execution'&&attempt.current?.executionId!==currentDesignAttempt(job.checkpoint).current?.executionId&&attempt.current)(this.deps.capacity??assertDesignDispatchCapacity)(next);
    try{await(this.deps.save??saveDesignCheckpoint)(next.project,next);}catch(error){if(error instanceof DesignReviewError)throw error;throw new DesignReviewPersistenceError(error instanceof Error?error.message:'Checkpoint save failed');}
    job.checkpoint=next;
    if(kind==='execution'){
@@ -267,10 +275,10 @@ export class DesignReviewCoordinator {
     try{await this.commit(job,a=>{
      recordDesignFailure(a,failure);
      if(exhausted){const unit=a.unit!;a.status='paused';a.failure={code:'technical_retry_exhausted',summary:failure.summary};a.finishedAt=new Date().toISOString();a.recovery={attempt:a.number,status:'paused',reason:'technical_retry_exhausted',failedUnit:{unitId:unit.unitId,phase:unit.phase,...failure,retriesUsed:unit.retriesUsed},completedChunkIds:a.completedChunks.map(c=>c.chunkId),requiresUserInput:true};delete a.current;}
-     else reserved=reserveDesignUnit(a,chunk,false,false,a.preparationKind??'planning');
     });}catch(saveError){controller?.fail(saveError);throw saveError;}
     controller?.accept();job.controller=undefined;
     if(exhausted)throw new DesignReviewError('technical_retry_exhausted',failure.summary);
+    await this.commit(job,a=>{reserved=reserveDesignUnit(a,chunk,false,false,a.preparationKind??'planning');});
     job.reservedExecutionId=reserved;
    }
   }

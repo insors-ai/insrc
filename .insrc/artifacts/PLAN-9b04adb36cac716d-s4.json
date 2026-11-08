@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794080031623-lqrta7",
+    "runId": "wf-1794114752427-b1s4ba",
     "repoPath": "/home/subho/work/dev/insors/insrc",
-    "createdAt": "2026-11-07T19:36:01.416Z",
+    "createdAt": "2026-11-08T05:13:48.199Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "attribution": {
       "outputs": [
@@ -15,7 +15,7 @@
         }
       ]
     },
-    "elapsedMs": 123389,
+    "elapsedMs": 70733,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "9b04adb36cac716d",
@@ -24,17 +24,17 @@
     "lldRunId": "wf-1794078672057-4c4sto",
     "lldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
     "authoredBy": "controller",
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
+    "revision": 2,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "ebfe6a93c8df516e50599631acb6791aa42ad016295ad30a02fe0d51d2be3dbc",
+        "number": 2,
+        "contentHash": "599fe2fd2106043a88f2ebe6e4045eff7ad490cb0b9191ce9ed1b0226578355f",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -44,16 +44,16 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-07T19:42:17.700Z"
+        "at": "2026-11-08T05:14:55.896Z"
       }
     },
-    "rangeBase": "1883465e677dea9588ab662c8c4b4b4ea0161f8a"
+    "rangeBase": "c372553974c364435e13706318722cd440cc0e1b"
   },
   "body": {
     "summary": {
@@ -97,7 +97,7 @@
         "order": 2,
         "acceptanceChecks": [
           "Exact-bound maximum valid responses persist and consolidate across restart; one-over refuses durably with zero provider calls.",
-          "Bound host-added diagnostics and all reservation fields; distinguish checkpoint refusal from publication-only capacity retry."
+          "Bound host-added diagnostics and all reservation fields. A checkpoint-capacity refusal is a durable pre-dispatch failure with no model/retry expenditure; end-to-end publication-only capacity retry is implemented and proven by t4, not a prerequisite for t2."
         ],
         "derivedFrom": [
           "c2"
@@ -149,7 +149,8 @@
         "order": 4,
         "acceptanceChecks": [
           "Publication ACK follows durable history and receipt; failures keep recoverable checkpoint and pending error.",
-          "Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable."
+          "Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable.",
+          "Publication-only history/frame/journal capacity overflow retains the full checkpoint and pending publication; raising the allowed history limit enables explicit persistence-only retry with zero model calls. This is distinct from t2's fixed checkpoint ceiling, which cannot be repaired by raising the history limit."
         ],
         "derivedFrom": [
           "c4"

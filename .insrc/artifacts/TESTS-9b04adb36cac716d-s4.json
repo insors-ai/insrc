@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 7,
-        "contentHash": "e320eb48af4fc7a89aaf06c13b4bd4f2d9e7186d447051d5d3b7d57f952b9631",
-        "at": "2026-11-08T05:11:22.872Z",
+        "number": 8,
+        "contentHash": "d4a6435ff6975485ad7e68dd3dc7f4a396fcd1bd08221e40f0f90683b00c5c29",
+        "at": "2026-11-08T05:15:23.427Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:11:22.727Z",
+    "updatedAt": "2026-11-08T05:15:23.273Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 7
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -103,8 +103,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "202923d85",
-        "ranAt": "2026-11-08T04:54:16.585Z",
+        "commit": "c37255397",
+        "ranAt": "2026-11-08T05:15:23.273Z",
         "testsPassed": true,
         "tests": [
           {
@@ -112,6 +112,11 @@
             "level": "integration",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
+                "result": "pass"
+              },
               {
                 "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
                 "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
@@ -131,8 +136,12 @@
             "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 907,
+            "durationMs": 3516,
             "titles": [
+              {
+                "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
+                "result": "pass"
+              },
               {
                 "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
                 "result": "pass"

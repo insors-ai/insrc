@@ -6,7 +6,8 @@ import { impactFixture } from './impact-fixtures.js';
 import { assertDesignDispatchCapacity, designDispatchCapacity, serializeDesignCheckpoint } from '../capacity.js';
 import { saveDesignCheckpoint, loadDesignCheckpoint } from '../checkpoint.js';
 import { DesignReviewCoordinator } from '../coordinator.js';
-import { DESIGN_LIMITS } from '../contracts.js';
+import { DESIGN_LIMITS, DesignReviewError } from '../contracts.js';
+import type { LLMProvider } from '../../../../shared/types.js';
 import { consolidateDesignReview } from '../results.js';
 import type { DesignChunkResult } from '../contracts.js';
 
@@ -74,4 +75,19 @@ test('capacity refusal is durable before provider construction and does not spen
  assert.equal(stored.attempts[0]!.unit, undefined);
  const restarted = new DesignReviewCoordinator();
  assert.equal((await restarted.progress(f.repo,'review-1',1)).status, 'failed');
+});
+test('automatic retry and explicit recovery reserve capacity before charging dispatch counters', async t => {
+ const f=designFixture(t); let calls=0;
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{calls++;throw new DesignReviewError('invalid_output','Synthetic invalid output');}} as unknown as LLMProvider;
+ const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fixture'}),capacity:cp=>assertDesignDispatchCapacity(cp,cp.attempts.at(-1)!.unit?.retriesUsed?1:DESIGN_LIMITS.checkpointBytes)});
+ await c.start({phase:'start',repo:f.repo,reviewId:'review-1',attempt:1,artifactPath:f.json});
+ for(let i=0;i<200;i++){const p=await c.progress(f.repo,'review-1',1);if(p.status==='failed')break;await pause(5);}
+ const failed=(await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!;
+ assert.equal(failed.failure!.code,'checkpoint_capacity');assert.equal(calls,1);
+ assert.equal(failed.unit!.dispatches,1);assert.equal(failed.unit!.retriesUsed,0);assert.equal(failed.unit!.diagnostics.length,1);
+ const r=designFixture(t);await saveDesignCheckpoint(r.repo,r.checkpoint);
+ const recovering=new DesignReviewCoordinator({capacity:cp=>assertDesignDispatchCapacity(cp,1),provider:()=>{throw Error('No provider');}});
+ await assert.rejects(recovering.recover({phase:'recover',repo:r.repo,reviewId:'review-1',attempt:1,actionId:'refused-resume',operation:'resume'}),{code:'checkpoint_capacity'});
+ const restored=(await loadDesignCheckpoint(r.repo,'review-1'))!.attempts[0]!;
+ assert.equal(restored.failure!.code,'checkpoint_capacity');assert.equal(restored.unit,undefined);assert.equal(restored.actions,undefined);
 });

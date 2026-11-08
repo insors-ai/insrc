@@ -20,15 +20,15 @@ Connect completed design reviews to permanent artifact history and ordinary appr
 
 | # | Task | Size | Status | Depends on | Tests | Derived from |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| 1 | **`t1`** Define permanent review records and lossless aggregate schemas | M | — | — | unit: U1 permanent payload integrity and digest; aggregate schemas; integration: I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics | [[c1]] |
-| 2 | **`t2`** Reserve checkpoint capacity before provider dispatch | L | — | `t1` | integration: I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart | [[c2]] |
-| 3 | **`t3`** Support bounded design history and deterministic journal replay | L | — | `t1` | unit: U2 UTF-8 frame/journal boundaries and unknown-kind limits; integration: I1 deterministic-id journal crash replay | [[c3]] |
-| 4 | **`t4`** Publish completed design attempts through artifact history | L | — | `t1`, `t2`, `t3` | integration: I1 publication receipt fault recovery and zero model reruns; integration: I2 immutable baseline, exact owned delta and source mutation | [[c4]] |
-| 5 | **`t5`** Expose version-aware permanent review readers | M | — | `t4` | unit: U3 versioned readers and current IDE common fields; integration: I6 permanent retrieval after cleanup/restart and missing locator | [[c5]] |
-| 6 | **`t6`** Enforce approval evidence at the shared lifecycle gate | L | — | `t4`, `t5` | unit: U4 approval applicability and truthful overrides; integration: I3 ordinary/direct lifecycle gate and actual route prerequisites | [[c6]] |
-| 7 | **`t7`** Implement claimed-file checkpoint cleanup and recovery | L | — | `t4`, `t6` | integration: I4 private claims, replacement races, full-history preservation and restart; integration: I5 cleanup concurrency, fixed lock order and foreign-scope exclusion | [[c7]] |
-| 8 | **`t8`** Qualify compiled routes, recovery and client contracts | L | — | `t2`, `t3`, `t4`, `t5`, `t6`, `t7` | integration: I7 both-party recovery/impact/provenance fixture parity; smoke: S1 compiled normal routes and code-review regression | [[c8]] |
-| 9 | **`t9`** Record narrow installed-daemon live qualification | M | — | `t8` | live: L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup | [[c9]] |
+| 1 | **`t1`** Define permanent review records and lossless aggregate schemas | M | approved r1 | — | unit: U1 permanent payload integrity and digest; aggregate schemas; integration: I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics | [[c1]] |
+| 2 | **`t2`** Reserve checkpoint capacity before provider dispatch | L | approved r1 | `t1` | integration: I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart | [[c2]] |
+| 3 | **`t3`** Support bounded design history and deterministic journal replay | L | approved r1 | `t1` | unit: U2 UTF-8 frame/journal boundaries and unknown-kind limits; integration: I1 deterministic-id journal crash replay | [[c3]] |
+| 4 | **`t4`** Publish completed design attempts through artifact history | L | approved r1 | `t1`, `t2`, `t3` | integration: I1 publication receipt fault recovery and zero model reruns; integration: I2 immutable baseline, exact owned delta and source mutation | [[c4]] |
+| 5 | **`t5`** Expose version-aware permanent review readers | M | approved r1 | `t4` | unit: U3 versioned readers and current IDE common fields; integration: I6 permanent retrieval after cleanup/restart and missing locator | [[c5]] |
+| 6 | **`t6`** Enforce approval evidence at the shared lifecycle gate | L | approved r1 | `t4`, `t5` | unit: U4 approval applicability and truthful overrides; integration: I3 ordinary/direct lifecycle gate and actual route prerequisites | [[c6]] |
+| 7 | **`t7`** Implement claimed-file checkpoint cleanup and recovery | L | approved r1 | `t4`, `t6` | integration: I4 private claims, replacement races, full-history preservation and restart; integration: I5 cleanup concurrency, fixed lock order and foreign-scope exclusion | [[c7]] |
+| 8 | **`t8`** Qualify compiled routes, recovery and client contracts | L | approved r1 | `t2`, `t3`, `t4`, `t5`, `t6`, `t7` | integration: I7 both-party recovery/impact/provenance fixture parity; smoke: S1 compiled normal routes and code-review regression | [[c8]] |
+| 9 | **`t9`** Record narrow installed-daemon live qualification | M | approved r1 | `t8` | live: L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup | [[c9]] |
 
 ### 1.1 TASK-9b04adb36cac716d-s4-t1 — Define permanent review records and lossless aggregate schemas
 
@@ -44,7 +44,7 @@ Add shared serializer-based bounded reservations before planning, impact, chunk 
 
 **Acceptance checks:**
 - Exact-bound maximum valid responses persist and consolidate across restart; one-over refuses durably with zero provider calls.
-- Bound host-added diagnostics and all reservation fields; distinguish checkpoint refusal from publication-only capacity retry.
+- Bound host-added diagnostics and all reservation fields. A checkpoint-capacity refusal is a durable pre-dispatch failure with no model/retry expenditure; end-to-end publication-only capacity retry is implemented and proven by t4, not a prerequisite for t2.
 
 ### 1.3 TASK-9b04adb36cac716d-s4-t3 — Support bounded design history and deterministic journal replay
 
@@ -61,6 +61,7 @@ Implement proposed history.ts/publication.ts and coordinator integration: save f
 **Acceptance checks:**
 - Publication ACK follows durable history and receipt; failures keep recoverable checkpoint and pending error.
 - Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable.
+- Publication-only history/frame/journal capacity overflow retains the full checkpoint and pending publication; raising the allowed history limit enables explicit persistence-only retry with zero model calls. This is distinct from t2's fixed checkpoint ceiling, which cannot be repaired by raising the history limit.
 
 ### 1.5 TASK-9b04adb36cac716d-s4-t5 — Expose version-aware permanent review readers
 

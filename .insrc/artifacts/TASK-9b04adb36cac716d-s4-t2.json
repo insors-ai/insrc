@@ -22,7 +22,7 @@
           "entityId": "PLAN-9b04adb36cac716d-s4",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-9b04adb36cac716d-s4-t1",
@@ -33,11 +33,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "6ebf90be12db4a7a0a444b6466d7d7f06e71226ec93b2b62c961db66464a3aca",
-        "at": "2026-11-07T19:42:18.106Z",
+        "number": 2,
+        "contentHash": "7d1eb957b667c13c17c0ab1991765aeb542e3dde2615f86f4bfd9c93022cf0ce",
+        "at": "2026-11-08T05:14:56.751Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -55,7 +55,7 @@
         "at": "2026-11-07T19:42:18.106Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Reserve checkpoint capacity before provider dispatch",
@@ -64,7 +64,7 @@
     "order": 2,
     "acceptanceChecks": [
       "Exact-bound maximum valid responses persist and consolidate across restart; one-over refuses durably with zero provider calls.",
-      "Bound host-added diagnostics and all reservation fields; distinguish checkpoint refusal from publication-only capacity retry."
+      "Bound host-added diagnostics and all reservation fields. A checkpoint-capacity refusal is a durable pre-dispatch failure with no model/retry expenditure; end-to-end publication-only capacity retry is implemented and proven by t4, not a prerequisite for t2."
     ],
     "tests": [
       {

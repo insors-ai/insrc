@@ -22,7 +22,7 @@
           "entityId": "PLAN-9b04adb36cac716d-s4",
           "type": "PLAN",
           "relation": "derived-from",
-          "fragment": "revision 1"
+          "fragment": "revision 2"
         },
         {
           "entityId": "TASK-9b04adb36cac716d-s4-t1",
@@ -43,11 +43,11 @@
       "attachments": []
     },
     "lifecycle": {
-      "status": "approved",
+      "status": "draft",
       "revision": {
-        "number": 1,
-        "contentHash": "b5ebf2e78780ab96a82b66d5623817fde28604351c313f2331a3d76e42e0181c",
-        "at": "2026-11-07T19:42:18.109Z",
+        "number": 2,
+        "contentHash": "7b082cada4fe91df1d8e390a0cfe1d4454948dd67637a230c21c6f8db3fa3941",
+        "at": "2026-11-08T05:14:56.753Z",
         "by": {
           "id": "insrc:approval",
           "kind": "system",
@@ -65,7 +65,7 @@
         "at": "2026-11-07T19:42:18.109Z"
       }
     },
-    "revision": 1
+    "revision": 2
   },
   "body": {
     "title": "Publish completed design attempts through artifact history",
@@ -74,7 +74,8 @@
     "order": 4,
     "acceptanceChecks": [
       "Publication ACK follows durable history and receipt; failures keep recoverable checkpoint and pending error.",
-      "Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable."
+      "Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable.",
+      "Publication-only history/frame/journal capacity overflow retains the full checkpoint and pending publication; raising the allowed history limit enables explicit persistence-only retry with zero model calls. This is distinct from t2's fixed checkpoint ceiling, which cannot be repaired by raising the history limit."
     ],
     "tests": [
       {

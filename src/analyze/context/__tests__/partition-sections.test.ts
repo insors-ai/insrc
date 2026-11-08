@@ -47,8 +47,8 @@ test('6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no ove
 	assert.throws(() => sectionText('x', 3), RangeError);
 
 	// Ordinals are separate from keys: two blocks with the same text keep their own keys, and each counts its sections from 1.
-	const text = 'x'.repeat(9_000);
-	const results = ['same-text-a', 'same-text-b'].map(key => sectionBlock({ key, envelope: {}, text }, 5_000));
+	const shared = 'x'.repeat(9_000);
+	const results = ['same-text-a', 'same-text-b'].map(key => sectionBlock({ key, envelope: {}, text: shared }, 5_000));
 	for (const [i, key] of ['same-text-a', 'same-text-b'].entries()) {
 		const r = results[i];
 		assert.equal(r?.admissible, true);

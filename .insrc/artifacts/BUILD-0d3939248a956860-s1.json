@@ -1,0 +1,123 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "f03c5ff5f1ed9f2b4bea64a71f1e9090107f3d92b860d89117e51cd87720cc8b",
+        "at": "2026-11-08T06:33:20.560Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:57:39.335Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-7d980086-babe-4b20-8840-4895d95936cb",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:07:53.336Z",
+    "epicCreatedAt": "2026-11-08T06:00:28.231Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "0d3939248a956860",
+    "storyId": "s1",
+    "revision": 3,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "triageRationale": "bugfix/small routed issue -> build; one module (vscode-plugin/src/chat/chat-panel.ts, possibly the session stores' list()).",
+    "epicSlug": "chat-history-menu-opens-oldest-empty",
+    "updatedAt": "2026-11-08T06:32:29.634Z"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-0d3939248a956860: (a) the chat history menu opens showing the most recent chats first whatever row is selected (incl. an unsaved draft), keyboard navigation intact; (b) no save path persists an untouched draft chat; (c) chats with no messages are excluded from the history-list feed (not deleted); (d) tests cover the opened menu's visible ordering/scroll intent and the no-empty-draft rule, including a check the fake DOM alone cannot satisfy.",
+    "producesLld": false,
+    "commit": "6be43781d",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": false
+      }
+    ],
+    "summary": "Opening a chat menu now shows its top and focuses the selected row without scrolling to it, so a fresh chat's history menu shows the most recent chats instead of the oldest empty ones. Changing model/effort or edit mode on a draft no longer saves it, and the history feed leaves out chats with no message (via a new ChatSessionStore.hasMessages). The real-browser check (history-menu-browser.live.test.ts) is gated on INSRC_LIVE_TESTS=1 like the repo's other browser tests, so the gate's run skips it; it was run by the builder with INSRC_LIVE_TESTS=1 and passed (pass 1, skipped 0; log /tmp/zzh/live-final.out), and it failed with the fix reverted (menu scrollTop 727, expected 0). Scope: this Story's change is exactly commit 6be43781d (8 files under vscode-plugin/src/chat). The other working-tree modifications (vscode-plugin/package.json insrc.review.maxJsonBytes, docs/vscode-plugin-screen-recording-script.html, .insrc/artifacts/BUILD-1bd72813bfa795f4-S001.json) were already uncommitted before this Story started (present in the session-start git status) and belong to other work in this shared tree; they are deliberately not part of this build.",
+    "testRecord": {
+      "md": "docs/standalone/chat-history-menu-opens-oldest-empty-E202611080d393924/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/history-menu-browser.live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-file-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/session-store.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-file-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/session-store.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T06:32:29.634Z"
+      }
+    ]
+  },
+  "citations": []
+}

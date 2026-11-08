@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
 import { HandlingBudgetError } from '../answer-step-error.js';
+import { dedupeLayer } from '../handling-adapters.js';
 import { runHandled } from '../handling-parts.js';
 import type { PartAdapter } from '../handling-parts.js';
 import { AGGREGATE_COMBINE_SCHEMA } from '../../runtimes/shared/aggregator.js';
@@ -37,4 +38,17 @@ test('a prompt that alone does not fit, with nothing to divide, is a typed budge
 test('the aggregator combine schema caps a summary like a part summary', () => {
 	const schema = AGGREGATE_COMBINE_SCHEMA as unknown as { properties: { summary: { maxLength?: number } } };
 	assert.equal(schema.properties.summary.maxLength, 2_000);
+});
+
+test('distinct files whose names hold the kind separator are both kept; an identical line is still dropped', () => {
+	const text = [
+		'## Related docs',
+		'- docs/A — Notes.md :: A',
+		'- docs/B — Notes.md :: B',
+		'- docs/A — Notes.md :: A again',
+	].join('\n');
+	const out = dedupeLayer(text, 'structure', 'docs').split('\n');
+	assert.ok(out.includes('- docs/A — Notes.md :: A'));
+	assert.ok(out.includes('- docs/B — Notes.md :: B'), 'the second file is kept');
+	assert.equal(out.includes('- docs/A — Notes.md :: A again'), false, 'the same file is listed once');
 });

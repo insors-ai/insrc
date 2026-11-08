@@ -33,7 +33,7 @@ import type { HandlingTrigger, InputLimit } from './handling.js';
 import { messagesSize } from './handling-call.js';
 import { assembleBundle } from './handling-adapters.js';
 import type { BundleLayers, BundleNarrative } from './handling-adapters.js';
-import { packParts, terminalFailure } from './handling-parts.js';
+import { packParts, partIdFor, terminalFailure } from './handling-parts.js';
 import type { Failure, PartInput } from './handling-parts.js';
 import { bundleAdapter, loadSynthesizePrompt, partSchema } from './synthesizer.js';
 import type { SynthesizerPromptKey } from './synthesizer.js';
@@ -110,7 +110,9 @@ const found = (executed: ExecutedPlan): AnswerStepFound =>
 export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undefined): AnswerProgress {
 	const promptContent = loadSynthesizePrompt(args.target);
 	const adapter = bundleAdapter(promptContent, args.intent, args.executed);
-	const empty: PartInput = { id: 'probe', sections: [] };
+	// The probe carries the longest id a part can have, so the room it leaves is the room the real part has.
+	const longestKey = evidenceBlocks(args.target, args.executed).reduce((longest, b) => (b.key.length > longest.length ? b.key : longest), '');
+	const empty: PartInput = { id: partIdFor(9_999, longestKey), sections: [] };
 	const emptyRound: ReferenceRound = { sections: [], rendered: '', size: 0, evidenceRoom: 0 };
 	const target = { kind: 'unknown' } as const;
 	const single = adapter.renderPart({ id: 'single', sections: [] }, emptyRound);
@@ -142,20 +144,44 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	return progress;
 }
 
-/**
- * The prompt of the pending turn. The turn is measured as it is rendered (envelopes, reference wrapper, its real id)
- * against the limit it was planned for, so a turn that does not fit is a typed failure, not a call the client's model
- * would refuse.
- */
+/** The prompt of the pending turn, as it is rendered. */
 export function currentTurn(progress: AnswerProgress, args: AnswerArgs): AnswerTurnPrompt {
-	const turn = renderTurn(progress, args);
-	const limit = progress.mode === 'single' || progress.pending === undefined || progress.limit === undefined ? inputLimitFor({ kind: 'unknown' }, 'single') : progress.limit;
-	const size = measureInput(`${turn.systemPrompt}\n${turn.userTurn}`, limit.unit);
-	if (size > limit.limit) {
+	return renderTurn(progress, args);
+}
+
+/** The turn to ask next, or the finished answer when the turns that did not fit left nothing more to ask. */
+export type AdmittedTurn =
+	| { readonly kind: 'turn'; readonly progress: AnswerProgress; readonly turn: AnswerTurnPrompt }
+	| { readonly kind: 'final'; readonly layers: BundleLayers; readonly handling: HandlingReport };
+
+/**
+ * The pending turn, measured as it is rendered (envelopes, reference wrapper, its real id) against the limit it was
+ * planned for. A part that does not fit is recorded as not covered and the answer goes on to the next part; a combine
+ * that does not fit falls back to the per-part findings with 'combine' not covered. What the completed parts found is
+ * kept. Only when no part is covered is it the typed failure.
+ */
+export function admitTurn(progress: AnswerProgress, args: AnswerArgs): AdmittedTurn {
+	const ctx = { executed: args.executed };
+	let current = progress;
+	// Each pass either returns or moves the answer on by one part or to its end, so the loop is bounded by the parts.
+	for (let pass = 0; pass <= progress.parts.length + 1; pass++) {
+		const turn = renderTurn(current, args);
+		const limit = current.mode === 'single' || current.pending === undefined || current.limit === undefined ? inputLimitFor({ kind: 'unknown' }, 'single') : current.limit;
+		const size = measureInput(`${turn.systemPrompt}\n${turn.userTurn}`, limit.unit);
+		if (size <= limit.limit) return { kind: 'turn', progress: current, turn };
 		const detail = `the ${turn.kind} turn is ${size} ${limit.unit} and the limit is ${limit.limit}`;
-		throw new HandlingBudgetError(`no turn of the answer fits: ${detail}`, found(args.executed), { partFailures: [{ part: turn.id ?? turn.kind, kind: 'unadmittable', reason: detail }] });
+		const pending = current.pending;
+		if (current.mode === 'single' || pending === undefined) {
+			throw new HandlingBudgetError(`no turn of the answer fits: ${detail}`, found(args.executed), { partFailures: [{ part: turn.id ?? turn.kind, kind: 'unadmittable', reason: detail }] });
+		}
+		const outcome = pending.kind === 'part'
+			? afterPart(current, pending.index, undefined, { part: turn.id ?? `part ${pending.index + 1}`, kind: 'unadmittable', reason: detail } as Failure, ctx)
+			: finish({ ...current, combineFailed: detail, retries: 0, pending: undefined }, ctx);
+		if (outcome.kind === 'final') return outcome;
+		if (outcome.kind !== 'next') break;
+		current = outcome.progress;
 	}
-	return turn;
+	throw new Error('admitTurn: the answer did not reach a turn that fits or an end');
 }
 
 function renderTurn(progress: AnswerProgress, args: AnswerArgs): AnswerTurnPrompt {

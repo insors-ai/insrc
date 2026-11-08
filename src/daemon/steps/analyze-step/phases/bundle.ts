@@ -35,7 +35,7 @@ import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
 import { getLogger } from '../../../../shared/logger.js';
 import { applyHandling } from '../../../../analyze/completeness.js';
 import type { HandlingReport } from '../../../../analyze/completeness.js';
-import { currentTurn, handlingOf, recordInvalid } from '../../../../analyze/context/answer-progress.js';
+import { admitTurn, handlingOf, recordInvalid } from '../../../../analyze/context/answer-progress.js';
 import type { AnswerProgress, FinalizedAnswerTurn } from '../../../../analyze/context/answer-progress.js';
 import { ShaperAnswerStepFailedError } from '../../../../analyze/context/driver.js';
 import { loadAnalyzeConfig } from '../../../../config/analyze.js';
@@ -229,10 +229,22 @@ async function handlePartReply(
 	const results = executed.results;
 	const intent = { ...state.intent, scope: measureLookupResults(results, state.sizeHint).size };
 	const args = { intent, executed, target: state.synthesizerKey };
+	// Nothing was covered: the typed failure, with what the lookups found and each part's cause.
+	const failed = async (err: ShaperAnswerStepFailedError) => {
+		await releaseState(input.state, execution);
+		const data: StepErrorData = { results, report: err.found.report, ...(err.partFailures !== undefined ? { partFailures: err.partFailures } : {}) };
+		return { output: errorResult(ANSWER_STEP_FAILED, err.message, false, data) };
+	};
 	const next = async (progress: AnswerProgress, retry?: { attempt: number; reason: string }) => {
-		const turn = currentTurn(progress, args);
-		const token = await reencodeState(input.state, { ...state, answer: progress }, execution);
-		return { output: turnOutput(turn, turn, token, retry) };
+		// The turn is measured as rendered: a part that does not fit is not covered and the answer goes on.
+		let admitted: ReturnType<typeof admitTurn>;
+		try { admitted = admitTurn(progress, args); } catch (err) {
+			if (!(err instanceof ShaperAnswerStepFailedError)) throw err;
+			return failed(err);
+		}
+		if (admitted.kind === 'final') return { layers: admitted.layers, handling: admitted.handling };
+		const token = await reencodeState(input.state, { ...state, answer: admitted.progress }, execution);
+		return { output: turnOutput(admitted.turn, admitted.turn, token, retry) };
 	};
 	let outcome: FinalizedAnswerTurn | { readonly kind: 'retry'; readonly progress: AnswerProgress };
 	try {
@@ -247,10 +259,7 @@ async function handlePartReply(
 		}
 	} catch (err) {
 		if (!(err instanceof ShaperAnswerStepFailedError)) throw err;
-		// Nothing was covered: the typed failure, with what the lookups found and each part's cause.
-		await releaseState(input.state, execution);
-		const data: StepErrorData = { results, report: err.found.report, ...(err.partFailures !== undefined ? { partFailures: err.partFailures } : {}) };
-		return { output: errorResult(ANSWER_STEP_FAILED, err.message, false, data) };
+		return failed(err);
 	}
 	if (outcome.kind === 'next') return next(outcome.progress);
 	if (outcome.kind === 'final') return { layers: outcome.layers, handling: outcome.handling };

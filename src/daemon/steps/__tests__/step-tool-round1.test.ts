@@ -11,10 +11,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { currentTurn, recordInvalid, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
+import { admitTurn, applyReply, recordInvalid, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
 import type { AnswerProgress } from '../../../analyze/context/answer-progress.js';
 import { finalizeSynthesize } from '../../../analyze/context/synthesizer.js';
 import { HandlingBudgetError, ShaperAnswerStepFailedError } from '../../../analyze/context/answer-step-error.js';
+import { RequestLifetime } from '../../request-context.js';
+import { sessionConnectionExecution } from '../../../shared/step-context.js';
 import { buildCompleteness } from '../../../analyze/completeness.js';
 import type { ExecutedExploration, ExecutedPlan } from '../../../analyze/explore/types.js';
 import type { ClassifiedIntent } from '../../../shared/analyze-types.js';
@@ -68,12 +70,48 @@ test('the failure of a divided answer keeps the report derived from the lookups,
 	assert.ok(thrown.partFailures?.length === progress.parts.length, 'every part is named');
 });
 
-test('a turn that does not fit as rendered is a typed failure, not a call the client would refuse', () => {
-	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+test('a turn that does not fit as rendered is not covered and the answer goes on with what was completed', () => {
+	const executed = plan([search('e1', 40_000), search('e2', 40_000), search('e3', 40_000)]);
 	const progress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
 	assert.equal(progress.mode, 'partitioned');
 	assert.ok(progress.limit !== undefined);
-	assert.equal(currentTurn(progress, { intent, executed, target: 'code' }).kind, 'part', 'the planned turn is admitted');
-	const squeezed: AnswerProgress = { ...progress, limit: { ...progress.limit, limit: 100 } };
-	assert.throws(() => currentTurn(squeezed, { intent, executed, target: 'code' }), HandlingBudgetError);
+	const args = { intent, executed, target: 'code' } as const;
+	const first = admitTurn(progress, args);
+	assert.equal(first.kind, 'turn');
+	assert.equal(first.kind === 'turn' ? first.turn.kind : '', 'part', 'the planned turn is admitted');
+
+	// The first part is answered; the limit then shrinks so the next part cannot be rendered into a turn that fits.
+	const second = applyReply(progress, { ...LAYERS, summary: 'covers the first part' }, { executed });
+	assert.equal(second.kind, 'next');
+	if (second.kind !== 'next' || second.progress.limit === undefined) return;
+	assert.equal(second.progress.completed.length, 1);
+	const squeezed: AnswerProgress = { ...second.progress, limit: { ...second.progress.limit, limit: 100 } };
+	const after = admitTurn(squeezed, args);
+	// Every later part is skipped; the first part's findings are the answer, with the rest named as not covered.
+	assert.equal(after.kind, 'final');
+	if (after.kind !== 'final') return;
+	assert.equal(after.handling.method, 'partitioned');
+	assert.ok(after.handling.notCovered.length >= 1, 'the parts that did not fit are named');
+	assert.ok(after.layers.structure.length > 0 || after.layers.summary.length > 0, 'the completed part is kept');
+
+	// With nothing completed, a turn that does not fit is the typed failure.
+	assert.throws(() => admitTurn({ ...progress, limit: { ...progress.limit!, limit: 100 } }, args), ShaperAnswerStepFailedError);
+});
+
+test('a reply is validated under the request\'s own connection execution: a temporary request is told only that the reply is invalid', () => {
+	const execution = sessionConnectionExecution(
+		Object.freeze({ sessionHandle: 'h', lookupRoot: '/work/app', daemonEpoch: 'e' }) as never,
+		{ bindingId: 'b', audience: 'analysis' as never, controlGeneration: 1, lifetime: new RequestLifetime(), assertActive: () => {} },
+	);
+	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+	const progress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(progress.mode, 'partitioned');
+	const bad = { ...LAYERS, structure: 42 };
+	assert.throws(() => applyReply(progress, bad, { executed }, execution), /Structured output did not match the schema\./);
+	assert.equal(applyReply(progress, LAYERS, { executed }, execution).kind, 'next');
+	// A forged execution is refused: the validation really runs under the one it is given.
+	assert.throws(() => applyReply(progress, LAYERS, { executed }, { mode: 'session-memory' } as never), /session-expired|expired/i);
+	// The single-reply path takes the same execution.
+	const single = startAnswerProgress({ intent, executed: plan([search('e1', 10)]), target: 'code' }, 'S');
+	assert.throws(() => finalizeSynthesize(bad, execution, single), /Structured output did not match the schema\./);
 });

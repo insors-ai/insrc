@@ -19,7 +19,7 @@ import type { ConnectionExecutionContext } from '../../../shared/step-context.js
  */
 
 import { renderReportHead } from '../../../analyze/completeness.js';
-import { currentTurn, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
+import { admitTurn, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
 import type { AnswerProgress, AnswerTurnPrompt } from '../../../analyze/context/answer-progress.js';
 import { ShaperAnswerStepFailedError } from '../../../analyze/context/driver.js';
 import { prepareSynthesize, SynthesizerPromptMissingError } from '../../../analyze/context/synthesizer.js';
@@ -58,9 +58,12 @@ export function prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] 
 	const { measure, reportScope, ...prepare } = args;
 	try {
 		const answerArgs = { intent: prepare.intent, executed: args.executed, target: prepare.target };
-		const progress = startAnswerProgress(answerArgs, prepare.intent.scope);
-		if (progress.mode === 'single') return { ok: true, prepared: prepareSynthesize(prepare), progress, turn: undefined };
-		const turn = currentTurn(progress, answerArgs);
+		const started = startAnswerProgress(answerArgs, prepare.intent.scope);
+		if (started.mode === 'single') return { ok: true, prepared: prepareSynthesize(prepare), progress: started, turn: undefined };
+		// The first turn is measured as rendered; a part that does not fit is skipped and the next is the first.
+		const admitted = admitTurn(started, answerArgs);
+		if (admitted.kind !== 'turn') throw new Error('the first turn of an answer cannot be its end');
+		const { turn, progress } = admitted;
 		return { ok: true, prepared: { systemPrompt: turn.systemPrompt, userTurn: turn.userTurn, schema: turn.schema, kind: turn.kind }, progress, turn };
 	} catch (err) {
 		// The input cannot be answered in any number of parts: the answer-step failure, with what the lookups found.

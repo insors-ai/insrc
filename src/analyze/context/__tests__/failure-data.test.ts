@@ -105,3 +105,18 @@ test('an object reached by two routes is kept in both places; only an object tha
 	assert.equal(v['at'], '2026-01-01T00:00:00.000Z');
 });
 
+
+test('toJSON is applied once per position and an own __proto__ key survives, as with JSON.stringify', () => {
+	const selfReturning = { label: 'kept', toJSON() { return this; } };
+	const parsed = JSON.parse('{"__proto__": {"admin": true}, "n": 1}') as Record<string, unknown>;
+	const data = failureData(new ShaperAnswerStepFailedError('model-failed', 'd', found, { upstream: [
+		{ taskId: 't1', template: 'a', params: {}, value: selfReturning },
+		{ taskId: 't2', template: 'b', params: {}, value: parsed },
+	] }));
+	assert.equal(data.kind, 'answer-step');
+	if (data.kind !== 'answer-step') return;
+	assert.equal((data.upstream[0]?.value as { label: string }).label, 'kept');
+	const copy = data.upstream[1]?.value as Record<string, unknown>;
+	assert.equal(Object.getOwnPropertyNames(copy).includes('__proto__'), true, 'the own key is kept');
+	assert.deepEqual(JSON.parse(JSON.stringify(copy)), JSON.parse(JSON.stringify(parsed)));
+});

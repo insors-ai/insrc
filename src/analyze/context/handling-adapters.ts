@@ -37,9 +37,11 @@ const EVIDENCE_LAYERS = ['structure', 'surface', 'artefacts', 'upstream'] as con
 function lineKey(line: string): string | undefined {
 	const entry = line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim();
 	if (entry.length === 0) return undefined;
-	const head = entry.includes(' :: ') ? entry.slice(0, entry.indexOf(' :: ')) : entry;
-	const tail = head.includes(' — ') ? head.slice(head.lastIndexOf(' — ') + 3) : head;
-	return tail.replace(/^`|`$/g, '').trim() || undefined;
+	// A `<file> :: <heading>` entry names its whole file, whatever characters the file holds. Only an entry without
+	// that separator can start with a short kind word (`<kind> — <path>`), and the path after it is kept whole.
+	if (entry.includes(' :: ')) return entry.slice(0, entry.indexOf(' :: ')).replace(/^`|`$/g, '').trim() || undefined;
+	const kind = /^[A-Za-z][A-Za-z0-9_ -]{0,30} — (.+)$/.exec(entry);
+	return (kind?.[1] ?? entry).replace(/^`|`$/g, '').trim() || undefined;
 }
 
 /**

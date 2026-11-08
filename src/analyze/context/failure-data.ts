@@ -77,21 +77,23 @@ export function causeOf(err: unknown, depth = MAX_CAUSE_DEPTH): FailureCause | u
  */
 function jsonSafe<T>(value: T): T {
 	const ancestors: object[] = [];
-	const walk = (v: unknown): unknown => {
+	const walk = (v: unknown, converted = false): unknown => {
 		if (typeof v === 'bigint') return v.toString();
 		if (typeof v === 'function' || typeof v === 'symbol' || v === undefined) return undefined;
 		if (v === null || typeof v !== 'object') return v;
 		if (ancestors.includes(v)) return '[circular]';
 		if (v instanceof Error) return { name: v.name, message: v.message };
 		const toJSON = (v as { toJSON?: unknown }).toJSON;
-		if (typeof toJSON === 'function') return walk((toJSON as () => unknown).call(v));
+		// toJSON is applied once at a position, as JSON.stringify does; what it returns is walked as it is.
+		if (!converted && typeof toJSON === 'function') return walk((toJSON as () => unknown).call(v), true);
 		ancestors.push(v);
 		try {
 			if (Array.isArray(v)) return v.map(item => walk(item) ?? null);
 			const out: Record<string, unknown> = {};
 			for (const [k, item] of Object.entries(v)) {
 				const copy = walk(item);
-				if (copy !== undefined) out[k] = copy;
+				// An own data property, so a key like `__proto__` stays a key and never reaches the prototype setter.
+				if (copy !== undefined) Object.defineProperty(out, k, { value: copy, enumerable: true, writable: true, configurable: true });
 			}
 			return out;
 		} finally { ancestors.pop(); }

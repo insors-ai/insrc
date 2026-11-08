@@ -133,6 +133,11 @@ function halve(part: PartInput, unit: InputLimit['unit']): [PartInput, PartInput
 	];
 }
 
+/** The id of the n-th part, which starts at `blockKey`. */
+export function partIdFor(n: number, blockKey: string): string {
+	return `part ${n}: ${blockKey}`;
+}
+
 /**
  * The blocks, in order, packed into parts that fit `evidenceRoom`; a block larger than the room is cut into sections
  * first, and a block whose envelope leaves no room is returned as unadmittable and left out.
@@ -147,7 +152,7 @@ export function packParts(blocks: readonly EvidenceBlock[], evidenceRoom: number
 	const parts: PartInput[] = [];
 	let open: BlockSection[] = [];
 	const flush = (): void => {
-		if (open.length > 0) parts.push({ id: `part ${parts.length + 1}: ${open[0]?.blockKey ?? ''}`, sections: open });
+		if (open.length > 0) parts.push({ id: partIdFor(parts.length + 1, open[0]?.blockKey ?? ''), sections: open });
 		open = [];
 	};
 	for (const block of blocks) {
@@ -175,7 +180,8 @@ export async function runDivided<R, C>(args: DivideArgs<R, C>): Promise<DividedR
 	const limit = inputLimitFor(target, 'part');
 	const unit = limit.unit;
 	const maxTokens = outputTokensFor(target, 'part');
-	const probe: PartInput = { id: 'probe', sections: [] };
+	// The probe carries the longest id a part can have, so the room it leaves is the room the real part has.
+	const probe: PartInput = { id: partIdFor(9_999, args.blocks.reduce((longest, b) => (b.key.length > longest.length ? b.key : longest), '')), sections: [] };
 
 	// The reference context, in rounds when one record is larger than the room.
 	const promptSize = messagesSize(adapter.renderPart(probe, EMPTY_ROUND), unit);

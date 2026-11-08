@@ -209,6 +209,18 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 	}
 });
 
+test('a temporary (session-memory) request keeps only the reason of a failed final answer, and the request still ends without a second synthesis', () => {
+	const sessionMemory = { mode: 'session-memory' } as never;
+	for (const reason of ['input-does-not-fit', 'model-failed', 'invalid-answer'] as const) {
+		const err = new LookupFailedError('secret detail of the repository', [{ source: 's', content: 'private' }], { handling: HANDLING, answerStepReason: reason });
+		const out = failedOutput(freeform, err, sessionMemory);
+		assert.deepEqual(out, { type: 'failed', requested: 'freeform.probe', errorCode: `answer-step:${reason}`, message: 'Temporary exploration failed.' });
+		assert.equal(JSON.stringify(out).includes('private'), false);
+		assert.equal(JSON.stringify(out).includes('secret'), false);
+	}
+	assert.equal(failedOutput(freeform, new Error('boom'), sessionMemory).errorCode, 'temporary-failure');
+});
+
 test('single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) is normalised into the bridge and keeps findings', async () => {
 	registerBuiltinTools();
 	const scope: ResolvedScope = { kind: 'repo', value: REPO, repoPath: REPO, lookupPath: REPO };
@@ -236,3 +248,37 @@ test('single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnr
 		assert.match(err.toolResults[0]?.source ?? '', /^insrc_no_such_tool\(/);
 	}
 });
+
+test('an admitted single-pass conversation whose final answer fails ends the request in the matching failure, with the findings and no second synthesis', async () => {
+	registerBuiltinTools();
+	for (const [failure, reason] of [
+		[new ModelCallFailedError('claude exited with 1.'), 'model-failed'],
+		[new ModelResponseShapeError('reply failed validation', ['not JSON']), 'invalid-answer'],
+	] as const) {
+		const loop = ((a: Parameters<typeof runShaperToolLoop>[0]) => runShaperToolLoop({ ...a, provider: loopProvider(() => failure, { input: { q: 'charge' } }, 60_000) })) as unknown as Parameters<typeof runFreeformProbe>[2];
+		if (!originals.has('freeform.probe')) originals.set('freeform.probe', _getRunnersForTest()['freeform.probe']);
+		_overrideRunnerForTest('freeform.probe', (e, c) => runFreeformProbe(e, c, loop));
+		let synthesized = 0;
+		const plan: ExplorationPlan = { answerType: 'how-does-it-work', synthesisHint: 'h', explorations: [freeform] } as unknown as ExplorationPlan;
+		const steps: PipelineSteps = {
+			decompose: async () => plan,
+			executePlan: a => executePlan({ ...a, requestSize: 'S' }),
+			synthesize: async () => { synthesized++; return LAYERS; },
+			synthesizeHandled: async () => { synthesized++; return { layers: LAYERS, handling: HANDLING }; },
+			fallbackFreeformPlan: _fallbackFreeformPlanForTest,
+			lastIndexedAt: async () => 1_700_000_000_000,
+			measureArea: async () => ({ source: 'named-area', items: 5, files: 2, characters: null, size: 'S', determined: true }) as RequestMeasure,
+		};
+		const err = await pipeline({
+			connectionExecution: execution(), invocationMode: 'run', shaperId: 'code', runId: 'r1', scope: SCOPE(),
+			inputs: { intent: { target: 'code', scope: 'S', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: REPO }, reasoning: 'r' } } as never,
+		}, steps).then(() => undefined, (e: unknown) => e);
+		assert.ok(err instanceof ShaperAnswerStepFailedError, `${reason}: ${String(err)}`);
+		assert.equal(err.reason, reason);
+		assert.equal(synthesized, 0, 'no second synthesis attempt');
+		const failed = err.found.results[0]?.output;
+		assert.equal(failed?.type === 'failed' ? failed.partial?.length : 0, 1, 'the tool results are kept');
+		assert.equal(err.found.report.completeness.complete, false);
+	}
+});
+

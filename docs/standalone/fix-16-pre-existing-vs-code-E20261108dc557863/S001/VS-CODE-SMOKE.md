@@ -1,6 +1,6 @@
 # VS Code verification for issue #103
 
-The automated sweep ran on Node 26.5.1 at source revision `9cc343348`.
+The automated sweep ran on Node 26.5.1 at revision `f3d6caeb0fe9ac7ca4308c0c001c079d1a32ca7f`. It started at 12:55:21 UTC and finished at 12:56:58 UTC on 2026-11-08, after the daemon recorded passing verdicts for tasks t1 through t3.
 
 ```sh
 node --import tsx --test --test-concurrency=1 --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'

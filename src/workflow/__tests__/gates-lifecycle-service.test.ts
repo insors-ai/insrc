@@ -106,7 +106,7 @@ test('a service built over the repository files approves through the lifecycle, 
 	} finally { k.done(); }
 });
 
-test('with a service, an approval the service refuses leaves the head as it was, and a review bound to the revision lets it through', async () => {
+test('with a service, an approval the service refuses leaves the head as it was, and a compact-only historical review still needs an explicit override', async () => {
 	const k = kit();
 	try {
 		await k.store.write(artifact(`DEF-${H}`), alice);
@@ -124,9 +124,10 @@ test('with a service, an approval the service refuses leaves the head as it was,
 		assert.equal(readFileSync(path, 'utf8'), before, 'the head is as it was');
 		assert.equal((await k.store.read(lld)).lifecycle.status, 'draft');
 
-		// the other party reviews it: the review is bound to the revision and the approval goes through
+		// A compact-only historical review cannot stand in for preserved new-format evidence.
 		await svc.apply(lld, 'review', bob, { review: { reviewer: bob, party: 'daemon', verdict: 'pass', counts: { high: 0, med: 0, low: 0 } } });
-		const ok = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob }, { enforce: false });
+		const stillRefused=await approveWorkflowTarget({repoPath:k.repo,artifactPath:path,lifecycle:svc,actor:bob},{enforce:false});assert.equal(stillRefused.approved.length,0);
+		const ok = await approveWorkflowTarget({ repoPath: k.repo, artifactPath: path, lifecycle: svc, actor: bob,overrideReview:'Explicit historical fixture override' }, { enforce: false });
 		assert.equal(ok.skipped.length, 0, JSON.stringify(ok.skipped));
 		const approved = await k.store.read(lld);
 		assert.equal(approved.lifecycle.status, 'approved');

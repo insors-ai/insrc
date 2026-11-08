@@ -1,3 +1,5 @@
+import { isStoredDesignReview } from './review/report-log.js';
+import { renderPermanentDesignReview } from './review/design-review/read.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -223,7 +225,7 @@ async function reviewStep(ops: IssueOps, ref: string, jsonPath: string, unit: Un
 	const review = readReview(jsonPath);
 	if (review === undefined) return [];
 	const marker = await postMarker(unit, 'reviewComment');
-	return [{ name: 'reviewComment', marker, run: async () => await ops.comment(ref, `${marker}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) }];
+	return [{ name: 'reviewComment', marker, run: async () => await ops.comment(ref, `${marker}\n<!-- insrc:review -->\n${(typeof review==='string'?review:renderReviewReport(review))}`) }];
 }
 
 /** The unit's comment lister for runUnitExtras: the issue's comments, or a failure when the tracker cannot list them. */
@@ -348,7 +350,7 @@ async function pushTasks(planJsonPath: string, meta: MetaShape, deps: AutoPushDe
 	const review = readReview(planJsonPath);
 	const ops = port.issueOps;
 	const out = await runUnitExtras(storyUnit, (review === undefined ? [] : [
-		{ name: 'planComment', marker: await postMarker(storyUnit, 'planComment'), run: async () => await ops.comment(story.value.issue, `${await postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${renderReviewReport(review)}`) },
+		{ name: 'planComment', marker: await postMarker(storyUnit, 'planComment'), run: async () => await ops.comment(story.value.issue, `${await postMarker(storyUnit, 'planComment')}\n<!-- insrc:review -->\n${(typeof review==='string'?review:renderReviewReport(review))}`) },
 	] as ExtraStep[]).map(guarded), { comments: commentsOf(port, story.value.issue) });
 	// each Task's issue, from its binding
 	const taskRefs: Record<string, string> = {};
@@ -383,7 +385,7 @@ function withResolvedTail(
 }
 
 /** The report of the artifact's lifecycle review, read from its review log entry, or undefined if there is none. */
-function readReview(jsonPath: string): ReviewReport | undefined {
-	return readReviewRecordOf(jsonPath)?.report;
+function readReview(jsonPath: string): ReviewReport | string | undefined {
+	const record=readReviewRecordOf(jsonPath);return record?(isStoredDesignReview(record)?renderPermanentDesignReview(record.history):record.report):undefined;
 }
 

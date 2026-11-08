@@ -3,6 +3,7 @@ import { promises as fs, constants } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { consolidateDesignReview } from './results.js';
+import { serializeDesignCheckpoint } from './capacity.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import { artifactJsonPath } from '../../storage.js';
 import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewPersistenceError, decodeDesign, requireDesign } from './contracts.js';
@@ -102,7 +103,7 @@ async function checkDirectories(project: string, create: boolean): Promise<boole
  }
  return true;
 }
-function checkIdentity(project: string, id: string, checkpoint: DesignReviewCheckpoint): void {
+export function validateDesignCheckpointIdentity(project: string, id: string, checkpoint: DesignReviewCheckpoint): void {
  const key=ArtifactIds.parse(checkpoint.artifactId);
  requireDesign(checkpoint.reviewId===id&&checkpoint.project===project&&checkpoint.subject.project===project&&checkpoint.subject.artifactId===checkpoint.artifactId,'foreign_checkpoint','Checkpoint identity does not match request');
  requireDesign(key&&['DEF','HLD','LLD'].includes(key.kind)&&key.kind===checkpoint.subject.kind,'foreign_checkpoint','Invalid checkpoint subject');
@@ -145,20 +146,20 @@ export async function loadDesignCheckpoint(project: string, reviewId: string): P
   let parsed:unknown;
   try{parsed=JSON.parse(bytes.subarray(0,size).toString('utf8'));}catch{throw new DesignReviewError('invalid_checkpoint','Checkpoint is not valid JSON');}
   const checkpoint=decodeDesign(DesignCheckpointSchema,parsed);
-  checkIdentity(project,reviewId,checkpoint);return checkpoint;
+  validateDesignCheckpointIdentity(project,reviewId,checkpoint);return checkpoint;
  } finally {await file.close();}
 }
 /** A failed pre-rename write leaves the previous accepted snapshot intact. No advance may follow a rejected save. */
 export async function saveDesignCheckpoint(project: string, input: DesignReviewCheckpoint): Promise<void> {
  try{
  const checkpoint=decodeDesign(DesignCheckpointSchema,input),path=designCheckpointPath(project,checkpoint.reviewId);
- checkIdentity(project,checkpoint.reviewId,checkpoint);
+ validateDesignCheckpointIdentity(project,checkpoint.reviewId,checkpoint);
  await checkDirectories(project,true);
  // Refuse corrupt/foreign existing state instead of destroying it on a new write.
  const previous=await loadDesignCheckpoint(project,checkpoint.reviewId);
  requireDesign(!previous||previous.artifactId===checkpoint.artifactId,'foreign_checkpoint','Cannot replace another subject');
  if(previous)checkEvolution(previous,checkpoint);
- const raw=JSON.stringify(checkpoint,null,2)+'\n';
+ const raw=serializeDesignCheckpoint(checkpoint);
  requireDesign(Buffer.byteLength(raw)<=DESIGN_LIMITS.checkpointBytes,'checkpoint_too_large','Checkpoint exceeds limit');
  const temporary=`${path}.${randomUUID()}.tmp`;
  let created=false;

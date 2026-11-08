@@ -87,5 +87,5 @@ test('recovery refuses missing checkpoints stale attempts and unavailable public
  const f=designFixture(t),c=new DesignReviewCoordinator({provider:()=>{throw new Error('Must not construct provider');}});
  await assert.rejects(c.recover(recover(f)),/not found/);await saveDesignCheckpoint(f.repo,f.checkpoint);
  await assert.rejects(c.recover({...recover(f),attempt:2}),/current attempt/);
- await assert.rejects(c.recover({...recover(f),operation:'retry_publication'}),/S4/);
+ await assert.rejects(c.recover({...recover(f),operation:'retry_publication'}),/publisher not provided/);
 });

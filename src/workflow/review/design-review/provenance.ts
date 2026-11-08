@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { DESIGN_LIMITS, DesignResultSchema, decodeDesign, requireDesign } from './contracts.js';
+import { DESIGN_AGGREGATE_LIMITS, DESIGN_LIMITS, DesignResultSchema, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignAttempt, DesignChunk, DesignChunkResult, DesignImpactAssessment, DesignFindingOrigin } from './contracts.js';
 
 export const designFindingKey=(origin:DesignFindingOrigin):string=>JSON.stringify([origin.attempt,origin.chunkId,origin.findingId]);
@@ -9,7 +9,7 @@ export function effectiveDesignFindingOrigins(history:readonly DesignAttempt[],b
  requireDesign(baseline?.report,'invalid_checkpoint','Comparison attempt has no accepted report');
  requireDesign(!baseline.impact||baseline.report.impact,'invalid_checkpoint','Impact report lacks effective finding provenance');
  const origins=baseline.report.impact?.effectiveFindingOrigins??baseline.completedChunks.flatMap(r=>r.findings.map(f=>({attempt:baselineAttempt,chunkId:r.chunkId,findingId:f.id})));
- requireDesign(origins.length<=DESIGN_LIMITS.findings&&new Set(origins.map(designFindingKey)).size===origins.length,'invalid_checkpoint','Effective findings exceed bounds or contain duplicate origins');
+ requireDesign(origins.length<=DESIGN_AGGREGATE_LIMITS.findings&&new Set(origins.map(designFindingKey)).size===origins.length,'invalid_checkpoint','Effective findings exceed bounds or contain duplicate origins');
  for(const origin of origins){
   const a=history[origin.attempt-1];
   requireDesign(origin.attempt>0&&origin.attempt<=baselineAttempt&&a?.completedChunks.some(r=>r.chunkId===origin.chunkId&&r.findings.some(f=>f.id===origin.findingId)),'invalid_checkpoint','Effective finding origin does not resolve to accepted feedback');

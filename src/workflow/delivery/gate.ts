@@ -1,3 +1,4 @@
+import { isStoredDesignReview } from '../review/report-log.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -108,6 +109,15 @@ function designReview(record: ArtifactRecord): Omit<Review, 'blocking'> | null {
 	const bound = asVerdict(review['verdict']);
 	if (bound === null) return null;
 	const loaded = record.reviewReport;
+ if(loaded&&isStoredDesignReview(loaded)){
+  const verdict=loaded.report.status==='passed'?'pass':'block';
+  const resolved=loaded.report.impact?.findingDecisions.filter(d=>{
+   if(d.action==='carry')return false;
+   const severity=loaded.history.attempts[d.source.attempt-1]!.completedChunks.find(c=>c.chunkId===d.source.chunkId)!.findings.find(f=>f.id===d.source.findingId)!.severity;
+   return severity==='HIGH'||severity==='MED';
+  }).length??0;
+  return {verdict,effectiveVerdict:verdict,reviewedAt:typeof review['at']==='string'?review['at']:'',reviewedBy:loaded.report.reviewer,counts:{high:loaded.report.counts.HIGH,med:loaded.report.counts.MED,low:loaded.report.counts.LOW},override:overrideOf(record.meta),resolvedFindings:resolved};
+ }
 	const verdict = (loaded === undefined ? null : asVerdict(loaded.report.verdict)) ?? bound;
 	const resolutions = loaded?.resolutions ?? null;
 	const findings = loaded === undefined ? null : wellFormedFindings(loaded.report.findings);

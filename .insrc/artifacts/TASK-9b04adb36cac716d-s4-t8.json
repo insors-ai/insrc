@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-fbb7816a-bc95-4685-a593-12a8cb69a21c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.114Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Qualify compiled routes, recovery and client contracts",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "637b754806ab751f200f248678f06a5f487dcc57e8f501649df6c1ab73dc88e5",
+        "at": "2026-11-07T19:42:18.114Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.115Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify compiled routes, recovery and client contracts",
+    "summary": "Add integrated fixture tests and compiled MCP/daemon qualification for both reviewer parties, DEF/HLD/LLD routes, recovery/retry/mutation/impact/publication/approval/cleanup/restart; run production build and existing code-review smoke.",
+    "size": "L",
+    "order": 8,
+    "acceptanceChecks": [
+      "Fault injection verifies one permanent publication, no model reruns for persistence and no cross-session/foreign cleanup interference.",
+      "Fixtures explicitly labelled; current IDE parsers checked; no legacy execution, activation subsystem or raw approval IPC; record focused tests and build outcomes."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "I7 both-party recovery/impact/provenance fixture parity"
+      },
+      {
+        "level": "smoke",
+        "name": "S1 compiled normal routes and code-review regression"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

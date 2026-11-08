@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c540b82d-75a6-4329-8715-99621411cbdc",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.110Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Expose version-aware permanent review readers",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "7f6db9b929a55cf1b00bc8e14023bdc62f388951f89f5d3ab7a2851ea437eef6",
+        "at": "2026-11-07T19:42:18.110Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.110Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Expose version-aware permanent review readers",
+    "summary": "Update report-log/report-file and artifact-content/delivery/CLI readers for discriminated legacy historical versus new design reports. Add exact artifact locator for post-cleanup progress and normal daemon/MCP routing.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "After fresh daemon restart, permanent results are retrievable without checkpoint, project scan or model; missing locator errors explicitly.",
+      "Legacy historical display remains read-only; new chunk reports never manufacture legacy claims; current VS Code/JetBrains common wire fields remain aligned."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "U3 versioned readers and current IDE common fields"
+      },
+      {
+        "level": "integration",
+        "name": "I6 permanent retrieval after cleanup/restart and missing locator"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

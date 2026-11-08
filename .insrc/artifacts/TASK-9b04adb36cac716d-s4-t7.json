@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-716d51b9-f058-4db6-86bd-7445e01f287c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.112Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Implement claimed-file checkpoint cleanup and recovery",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "084437e5bd63d1076e105d56fd4eeac9d45600df6008d7ffec173a570965e79f",
+        "at": "2026-11-07T19:42:18.112Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.113Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement claimed-file checkpoint cleanup and recovery",
+    "summary": "Add proposed cleanup.ts and post-approval hook outside store queue. Filter exact project/artifact, verify every preserved attempt and inactive ownership, then privately claim same-filesystem file before verification/deletion; quarantine mismatches and restore only without clobber.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "Never unlink public pathname: replacements before/after claim remain safe; unverified bytes retained with path/reason, crashes recover claims safely.",
+      "Retain active, foreign, corrupt, symlink, unpreserved and unfinished overridden state; release replay state only after actual deletion and no new public checkpoint; independent artifacts continue."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "I4 private claims, replacement races, full-history preservation and restart"
+      },
+      {
+        "level": "integration",
+        "name": "I5 cleanup concurrency, fixed lock order and foreign-scope exclusion"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

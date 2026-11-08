@@ -1,0 +1,892 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794078672057-4c4sto",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:12:09.560Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 52607,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicHash": "9b04adb36cac716d",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "storyId": "s4",
+    "hldBaseRunId": "wf-1793694252789-heyhey",
+    "hldEffectiveHash": "20a9ee7f3bdf0a3d5ff760bcc42c84f716bca5691af91096835630c350611466",
+    "hldAmendmentsApplied": [],
+    "authoredBy": "controller",
+    "revision": 3,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 3,
+        "contentHash": "ab18bbd854eaf4ee5cda1e6df7a92e7a31daf8e6451ad97768cccfb5341d0502",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 3,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:12:30.658Z",
+        "override": {
+          "reason": "User explicitly authorized fixing the remaining aggregate-schema MED and approving with override, ignoring diagram rendering. LLD revised with lossless aggregate cardinality bounds for full/impact reports, host diagnostics and effective finding origins, serializer reservations, and regression tests including 4097+4097 limitations. Prior capacity and cleanup fixes remain. Two independent rounds completed; the final design correction has not undergone a further independent review. Diagram source inspected; actual rendering unverified and explicitly waived. Preserve original review findings and incomplete verdict; this is human override, not a review pass."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "S4 connects the existing design-review coordinator to ordinary artifact approval. Complete review history is published once through the artifact store, while the head keeps a compact revision-bound reference. Approval checks the current subject and independent review, and safe artifact-scoped cleanup removes only permanently preserved inactive checkpoints. [[c20]]"
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Choose a1: a small, design-specific background coordinator; reuse the existing LLMProvider activity-mode review session, role routing, IPC/session routing and artifact store/history. Do not generalize or migrate the working task-review coordinator. New production code belongs under a dedicated design-review subdirectory of the existing src/workflow/review boundary (proposed location, not an existing module claim). Normal insrc_review_step and daemon design-review routes delegate to it; removed claim/judge/autofix execution stays removed. [[c1]] [[c2]]\n\nA review has one canonical subject and sequential attempts. Each attempt owns its baseline, semantic chunk plan, accepted completed results and terminal summary. Current review prompts contain policy, subject/related document paths, chunk assignment and output schema, never the artifact body. Prior feedback and impact baselines are accessible by checkpoint/history references rather than repeated full input. Read-only reviewers inspect live artifact paths and any necessary code; the daemon validates structure and completeness without inventing semantic judgments. Shared substantive policy assesses correctness against requirements/upstream designs, functional completeness, contracts and ownership/cardinality, errors/test coverage where relevant, consistency, applicable conventions, and necessary linked diagrams/UX artifacts. Report unavailable verification honestly; optional advice does not become a false blocking or unverified finding.",
+      "ownedContracts": [
+        {
+          "id": "sc5",
+          "name": "Permanent review publication and approval cleanup",
+          "purpose": "Bind complete independent feedback to artifact approval and preserve all history before removing temporary state.",
+          "ownedByStory": "s4",
+          "consumedByStories": [],
+          "interfaceSketch": "interface PermanentDesignReview { readonly kind: 'design-chunk-review'; readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly reviewer: 'daemon' | 'controller'; readonly attempts: readonly DesignAttempt[]; readonly applicableAttempt: number; readonly status: DesignReviewStatus; readonly impact?: DesignImpactAssessment | undefined; }\ninterface DesignPublication { readonly reviewId: string; readonly attempt: number; readonly state: 'pending' | 'complete'; readonly artifactHistoryEntryId?: string | undefined; readonly reportReference?: string | undefined; }\ninterface DesignCleanupResult { readonly deleted: readonly string[]; readonly retained: readonly { readonly path: string; readonly reason: string; }[]; }",
+          "assumptions": []
+        }
+      ],
+      "consumedContracts": [
+        {
+          "id": "sc1",
+          "name": "Design review subject, policy and semantic chunk contract",
+          "purpose": "One minimal subject request, common substantive policy and coherent chunk plans for both reviewer parties.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignArtifactKind = 'DEF' | 'HLD' | 'LLD';\ninterface DesignReviewRequest { readonly repo: string; readonly artifactPath: string; readonly reviewId: string; readonly attempt: number; }\ninterface DesignReviewSubject { readonly artifactId: string; readonly kind: DesignArtifactKind; readonly documentPath: string; readonly canonicalPath: string; readonly reviewer: 'daemon' | 'controller'; }\ninterface DesignChunk { readonly id: string; readonly title: string; readonly selectors: readonly string[]; readonly concerns: readonly string[]; readonly dependsOn: readonly string[]; readonly purpose: 'substantive' | 'consistency'; }\ninterface DesignChunkPlan { readonly chunks: readonly DesignChunk[]; readonly coverageExplanation: string; readonly finalConsistencyChunkId: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc2",
+          "name": "Durable review attempts, feedback and progress",
+          "purpose": "Persist one source of review state and expose completed feedback without a long-lived request.",
+          "ownedByStory": "s1",
+          "consumedByStories": [
+            "s2",
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "type DesignReviewStatus = 'pending' | 'running' | 'interrupted' | 'paused' | 'invalidated' | 'passed' | 'changes_requested' | 'incomplete' | 'failed';\ninterface DesignBaseline { readonly subjectFingerprints: Readonly<Record<string,string>>; readonly reviewedContent: unknown; readonly capturedAt: string; }\ninterface DesignFinding { readonly id: string; readonly severity: 'HIGH' | 'MED' | 'LOW'; readonly location: string; readonly message: string; readonly evidenceReferences: readonly string[]; }\ninterface DesignChunkResult { readonly chunkId: string; readonly status: 'passed' | 'changes_requested' | 'incomplete'; readonly summary: string; readonly findings: readonly DesignFinding[]; readonly inspectedReferences: readonly string[]; readonly limitations: readonly string[]; readonly advice: readonly string[]; }\ninterface DesignAttempt { readonly number: number; readonly status: DesignReviewStatus; readonly baseline: DesignBaseline; readonly plan?: DesignChunkPlan | undefined; readonly completedChunks: readonly DesignChunkResult[]; readonly summary?: string | undefined; }\ninterface DesignReviewCheckpoint { readonly schemaVersion: 1; readonly reviewId: string; readonly artifactId: string; readonly attempts: readonly DesignAttempt[]; }\ninterface DesignReviewProgress { readonly status: DesignReviewStatus; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'tool_running' | 'persisting' | 'publishing' | 'complete'; readonly activeChunkId?: string | undefined; readonly completedChunks: number; readonly totalChunks: number; readonly lastMeaningfulActivityAt: string | null; readonly activeToolCount: number; readonly requiresUserInput: boolean; readonly checkpointPath: string; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc3",
+          "name": "Change invalidation and bounded technical recovery",
+          "purpose": "Keep mutation, interruption, technical retries and user decisions distinct without losing completed work.",
+          "ownedByStory": "s2",
+          "consumedByStories": [
+            "s3",
+            "s4"
+          ],
+          "interfaceSketch": "interface DesignFailure { readonly unitId: string; readonly phase: 'planning' | 'impact' | 'chunk_review' | 'publication'; readonly code: string; readonly summary: string; readonly retriesUsed: number; }\ninterface DesignRecoveryState { readonly attempt: number; readonly status: 'interrupted' | 'paused' | 'invalidated'; readonly reason: 'connection_lost' | 'daemon_restarted' | 'technical_retry_exhausted' | 'artifact_changed'; readonly failedUnit?: DesignFailure | undefined; readonly completedChunkIds: readonly string[]; readonly requiresUserInput: boolean; }\ninterface DesignRecoveryAction { readonly operation: 'resume' | 'restart_full' | 'retry_publication'; readonly reviewId: string; readonly attempt: number; readonly userDecision?: { readonly action: string; readonly reason: string; readonly recordedAt: string; } | undefined; }",
+          "assumptions": []
+        },
+        {
+          "id": "sc4",
+          "name": "Impact-selected attempt and retained coverage",
+          "purpose": "Make selective re-review defensible and preserve unresolved feedback and coverage provenance.",
+          "ownedByStory": "s3",
+          "consumedByStories": [
+            "s4"
+          ],
+          "interfaceSketch": "interface DesignImpactAssessment { readonly baselineAttempt: number; readonly mode: 'affected_chunks' | 'full'; readonly changes: readonly string[]; readonly directChunkIds: readonly string[]; readonly indirectChunkIds: readonly string[]; readonly rationale: string; readonly uncertainReason?: string | undefined; readonly chunkMapping: readonly { readonly priorIds: readonly string[]; readonly currentIds: readonly string[]; readonly explanation: string; }[]; readonly retainedCoverage: readonly { readonly chunkId: string; readonly fromAttempt: number; readonly fromChunkId: string; readonly justification: string; }[]; readonly carriedFindingIds: readonly string[]; readonly consistencyChunkIds: readonly string[]; }",
+          "assumptions": []
+        }
+      ],
+      "boundary": {
+        "storyId": "s4",
+        "owns": [
+          "sc5"
+        ],
+        "depends": [
+          "sc1",
+          "sc2",
+          "sc3",
+          "sc4"
+        ],
+        "internal": "Own lifecycle version-aware record publication/readers, normal approval integration, history-preserving cleanup, multi-session routing qualification and final compiled/live verification. Keep cleanup fence and publication retries internal. No new review dashboard, activation state or legacy compatibility execution."
+      },
+      "adjacentBoundaries": [
+        {
+          "storyId": "s1",
+          "owns": [
+            "sc1",
+            "sc2"
+          ],
+          "depends": [],
+          "internal": "Deliver the first useful normal-entrypoint review: latest-subject resolution, opposite-party execution, shared artifact-specific policy, reviewer chunk planning, sequential inspection, durable completed results, visible progress and a retrievable consolidated report. Keep prompt construction, native/controller exchange and checkpoint IO private; no shared-engine migration. Produce real narrow hosted-review evidence as well as deterministic fixtures."
+        },
+        {
+          "storyId": "s2",
+          "owns": [
+            "sc3"
+          ],
+          "depends": [
+            "sc1",
+            "sc2"
+          ],
+          "internal": "Own interruption/recovery transitions, reviewed-subject monitoring, cancellation/late-response rejection, the single retry budget and user-decision pause. Native activity integration is private; callers consume recovery state/actions, not process internals. Preserve sc1/sc2 semantics and no external-file invalidation."
+        },
+        {
+          "storyId": "s3",
+          "owns": [
+            "sc4"
+          ],
+          "depends": [
+            "sc1",
+            "sc2",
+            "sc3"
+          ],
+          "internal": "Own reviewer-led direct/indirect impact assessment, old/new plan mapping, conservative full-review fallback, retained coverage and finding reconciliation. Its document comparison/selection implementation stays private; expose only auditable scope reasoning and provenance, not a generic dependency engine."
+        }
+      ],
+      "rolloutPhase": "D — approval and closeout",
+      "nonFunctional": {
+        "performance": "Initial acknowledgement and progress are model-independent short operations; target <=2 seconds on an idle local daemon, measured separately from filesystem/model time. Review calls remain sequential per review; independent subjects may run concurrently. Bound checkpoint size and payloads explicitly in LLD; reject exceeded limits without silent truncation or loss of coverage. Persist completed chunks before advancing and coalesce activity-only progress writes.",
+        "security": "Daemon owns state/store access. Canonical registered repo and artifact identity, no-follow bounded checkpoint reads, literal review IDs and private file modes follow existing patterns. Native review uses read-only grants with no code-task command grant. Opposite reviewer party derives from trusted host/session context and artifact metadata, not request claims. No cloud REST, trust-key service or raw reasoning/prompt archive.",
+        "observability": "Expose review/attempt/chunk identity, phase, elapsed times, accepted completed feedback, current technical retry count, paused reason, user-input requirement, activity/tool state and publication state. Polling observes only. Separate optional advice from findings and unavailable evidence. Controller reports progress but does not edit or resolve intermediate findings.",
+        "durability": "Atomic validated checkpoint snapshots and completed-chunk flushes; immutable prior attempts and idempotent history publication. Reviewer disconnect, daemon restart, publication interruption and approval cleanup have explicit recovery cases. Permanent history retains baselines/impact/feedback and technical attempt summaries, not native transcripts. Never delete a checkpoint until every attempt is preserved and approval succeeded."
+      }
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "PermanentDesignReview",
+          "signature": "interface PermanentDesignReview { readonly kind:'design-chunk-review'; readonly schemaVersion:1; readonly reviewId:string; readonly artifactId:string; readonly reviewer:'daemon'|'controller'; readonly attempts:readonly DesignAttempt[]; readonly applicableAttempt:number; readonly status:DesignReviewStatus; readonly impact?:DesignImpactAssessment; }",
+          "parameters": [],
+          "returns": {
+            "type": "PermanentDesignReview",
+            "meaning": "sc5 permanent outcome; publication metadata adds source revision/hash, document identity, content identity and preservation digest."
+          },
+          "errors": [],
+          "preconditions": [
+            "Canonical subject and all saved attempts validate through sc1-sc4; no missing mandatory coverage is converted into a pass."
+          ],
+          "postconditions": [
+            "Append-only history retains baselines, plans, accepted feedback, retained origins/finding decisions, model/party where known, technical summaries/actions and failure states. No raw transcript or fake legacy claims.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        },
+        {
+          "name": "DesignReviewCoordinator",
+          "signature": "interface DesignReviewCoordinator { recover(input:unknown,context?:DesignStartContext):Promise<DesignReviewAcknowledgement>; progress(project:string,reviewId:string,attempt:number,options?:{includeResult?:boolean;afterCompletedChunk?:number;artifactPath?:string}):Promise<DesignObservation>; }",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "unknown",
+              "purpose": "Existing transport request decoded by parseDesignRequest.",
+              "optional": false
+            },
+            {
+              "name": "context",
+              "type": "DesignStartContext",
+              "purpose": "Existing trusted host context; publication resolves no provider.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<DesignReviewAcknowledgement|DesignObservation>",
+            "meaning": "Normal start/recover/progress route; proposed internal publication and cleanup operations remain owned by this coordinator."
+          },
+          "errors": [
+            {
+              "type": "DesignReviewError",
+              "condition": "Unknown identity, conflicting replay, changed subject or invalid saved evidence; publication error retains checkpoint/results and never restarts models."
+            }
+          ],
+          "preconditions": [
+            "Main-daemon registry owns review and artifact exclusion; controller/native trust and subject route remain S1 contracts.",
+            "The existing unknown input is a transport trust boundary decoded with parseDesignRequest; it is not an untyped application value."
+          ],
+          "postconditions": [
+            "Save the consolidated checkpoint before background publication. Expose DesignPublication pending/complete and durable history reference. retry_publication is explicit and model-free. After cleanup progress/result resolves from permanent history by canonical artifact/review identity without recreating a checkpoint.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        },
+        {
+          "name": "ArtifactStore.updateAndLog",
+          "signature": "type ArtifactMutation=(current:Artifact<HeadPayload>&{changeLog:ChangeLogEntry[]})=>UpdateResult|undefined|Promise<UpdateResult|undefined>; updateAndLog(id:string,by:Actor,mutate:ArtifactMutation,options?:WriteOptions,create?:()=>Artifact<HeadPayload>):Promise<{wrote:boolean;entry?:ChangeLogEntry}>;",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "Exact DEF/HLD/LLD id.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "Trusted publication actor.",
+              "optional": false
+            },
+            {
+              "name": "mutate",
+              "type": "ArtifactMutation",
+              "purpose": "Validate current head/history and build a single review lifecycle update.",
+              "optional": false
+            },
+            {
+              "name": "options",
+              "type": "WriteOptions",
+              "purpose": "Proposed additive validated entryId for deterministic journalled publication.",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<{wrote:boolean;entry?:ChangeLogEntry}>",
+            "meaning": "Reuse the existing queue and journal for full review outcome plus compact head binding in one recoverable write."
+          },
+          "errors": [
+            {
+              "type": "LifecycleConflictError",
+              "condition": "Source/integrity/entry id conflicts; no approval is authorized."
+            },
+            {
+              "type": "HistoryEntryError",
+              "condition": "Framed, journal or configured publication capacity exceeded; saved results remain recoverable."
+            }
+          ],
+          "preconditions": [
+            "No nested call to update/apply inside exclusive/updateAndLog for the same artifact.",
+            "Proposed entryId is deterministic from project/artifact/review/attempt, checked for exact payload equality before append; ordinary writers retain existing ids."
+          ],
+          "postconditions": [
+            "Under the artifact queue recover the journal, verify integrity and current source binding, compare any existing id, then journal outcome and head reference together. Existing equal receipt returns idempotently; conflicting payload refuses. History durability precedes a complete publication ACK.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        },
+        {
+          "name": "LifecycleService.apply",
+          "signature": "apply(id:string,op:Operation,by:Actor,detail?:TransitionDetail,ctx?:EvidenceContext):Promise<ApplyResult>",
+          "parameters": [
+            {
+              "name": "id",
+              "type": "string",
+              "purpose": "Canonical artifact id.",
+              "optional": false
+            },
+            {
+              "name": "op",
+              "type": "Operation",
+              "purpose": "Existing review/approve lifecycle operation.",
+              "optional": false
+            },
+            {
+              "name": "by",
+              "type": "Actor",
+              "purpose": "Existing trusted approval/reviewer actor.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ApplyResult>",
+            "meaning": "Keep the final design-review applicability check inside the existing artifact update queue, including direct lifecycle approval callers."
+          },
+          "errors": [],
+          "preconditions": [
+            "For DEF/HLD/LLD normal approval, the new-format history entry must resolve, be complete, belong to the exact artifact, match current revision/content/document/context and trusted opposite party.",
+            "A human-authorized nonempty override follows existing integrity and authorization rules and records its reason; it does not manufacture passed review data."
+          ],
+          "postconditions": [
+            "HIGH/MED, incomplete/paused/invalidated/missing/malformed/foreign/same-party or stale evidence blocks ordinary approval. Fully reviewed LOW-only or clear reports map to pass; advice is not a warning blocker. Only a successful approval schedules cleanup outside the store queue.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        },
+        {
+          "name": "approveArtifactByJsonPath",
+          "signature": "approveArtifactByJsonPath(jsonPath:string,opts:ApproveOptions):Promise<ApprovalResult>",
+          "parameters": [
+            {
+              "name": "jsonPath",
+              "type": "string",
+              "purpose": "Canonical artifact head, resolved through existing path/identity helpers.",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "ApproveOptions",
+              "purpose": "Existing human authorization/override plus a proposed optional daemon-owned design cleanup hook.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<ApprovalResult>",
+            "meaning": "Central workflow/IDE/TUI approval uses the same lifecycle gate and reports scoped cleanup results."
+          },
+          "errors": [],
+          "preconditions": [
+            "Use the actual artifact kind: review required for DEF/HLD/LLD; ISSUE/SPEC/PLAN remain human-only gates. An issue's LLD still requires design review.",
+            "No invented HLD/DEF requirements for standalone or issue routes."
+          ],
+          "postconditions": [
+            "Preserve BUILD/code-review behavior. After successful design-artifact approval invoke artifact-specific cleanup; failed approval does not clean. Reapproval preserves the original approval and may retry cleanup. Cleanup failure is explicit and does not roll back approval.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        },
+        {
+          "name": "reviewRecordOf",
+          "signature": "reviewRecordOf(log:readonly ChangeLogEntry[],artifactId:string,review:Pick<Review,'report'>):StoredReviewRecord|undefined",
+          "parameters": [
+            {
+              "name": "log",
+              "type": "readonly ChangeLogEntry[]",
+              "purpose": "Existing append-only artifact history.",
+              "optional": false
+            },
+            {
+              "name": "artifactId",
+              "type": "string",
+              "purpose": "Exact owner.",
+              "optional": false
+            },
+            {
+              "name": "review",
+              "type": "Pick<Review,'report'>",
+              "purpose": "Existing change-log-entry reference.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "StoredReviewRecord|undefined",
+            "meaning": "Proposed discriminated read-only union distinguishes legacy report/resolutions from design-chunk-review v1."
+          },
+          "errors": [],
+          "preconditions": [
+            "Unknown/new malformed versions and missing referenced data fail closed for normal approval; never fall back to compact pass metadata."
+          ],
+          "postconditions": [
+            "Existing legacy history still renders as legacy, without execution or synthesized claims. New-format readers expose chunk reports directly through existing artifact-content, delivery and CLI paths; preserve common IPC fields/methods and qualify both current IDE clients. Old approvals remain historical; new normal design approvals require applicable new-format evidence or explicit override.",
+            "Grounded on the current S4 context and owned sc5 contract. [[c20]] [[c21]]"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "PermanentDesignReview and publication binding",
+        "change": "new",
+        "details": "One artifact owns 0..many immutable review log entries; each entry owns exactly one review-id/applicable-attempt and a complete ordered prefix of attempts. Each applicable attempt has one baseline, one accepted plan when planned, 0..many results, and explicit sc4 retained origins. The compact lifecycle Review points to at most one current entry through the existing change-log-entry/reviews Reference. Proposed new record module: src/workflow/review/design-review/history.ts; proposed publisher: src/workflow/review/design-review/publication.ts. Records include sourceRevision {number,contentHash}, reviewedContentIdentity, document digest, workflow-context/author binding and a canonical preservation digest. Stored attempts retain meaningful S1-S3 state; volatile progress/current owner/publication receipt are excluded only from the documented comparison digest, never from accepted feedback, baseline, scope or failure history. Native model is recorded when known; historical/controller unknown attribution stays explicitly unknown, not invented. [[c20]] [[c21]]",
+        "callSites": [
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/review/report-log.ts"
+        ]
+      },
+      {
+        "entity": "DesignPublication",
+        "change": "new",
+        "details": "sc5 state pending|complete, deterministic historyEntryId/reportReference and optional pointed publication error; optional metadata on a saved attempt/observation, not a new execution ledger. Save the report first, publish in background, then ACK complete only after journal recovery and exact readback. A crash after publication before checkpoint ACK finds the same entry and completes without a model call. Original baseline/report identities remain immutable. Publication changes only known lifecycle/render metadata; canonical Markdown is not rewritten to append a report. Existing artifact-content rendering supplies the review view. Record the exact allowed pre/post publication head fingerprints; suppress self-invalidation only for that owned metadata write and detect any additional subject delta. No blind baseline refresh. After checkpoint deletion, progress accepts an additive optional artifactPath; it is required when no local mapping exists, resolves through sc1, and reads the exact artifact's history. Missing locator returns an explicit artifact-reference-required error; never scan all projects or recreate a checkpoint. [[c20]] [[c21]]",
+        "callSites": [
+          "src/workflow/review/design-review/contracts.ts",
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/workflow/review/design-review/subject.ts",
+          "src/daemon/design-review-rpc.ts"
+        ]
+      },
+      {
+        "entity": "Bounded design-history framing",
+        "change": "invariant-change",
+        "details": "Grounding correction: src/workflow/artifact-core/sidecar.ts currently caps every framed record at 256 KiB. The winning shape therefore requires a narrowly format-scoped size policy for design-chunk-review v1, using the existing review.maxJsonBytes setting and the existing 64 MiB design-checkpoint ceiling as an absolute design-history bound. All legacy/feedback/ordinary records retain 256 KiB. The framed reader first bounds declared length by the permitted outer maximum, then parses and applies the exact kind-specific bound; unknown kinds never acquire the larger allowance. Sync/async readers, writer and journal share this policy. Count actual UTF-8 framed JSON and journal escaping, not characters. Preflight the current baseline/prior attempts before dispatch and recheck accepted results and publication. Oversize data is never trimmed: preserve it in the bounded checkpoint, report publication capacity pending, and allow explicit model-free retry after a sufficient configured limit is available. The existing checkpoint limit is not silently expanded. [[c20]] [[c21]] [[c22]] Before every provider dispatch (planning, impact, chunk or retry), compute an encoded-byte upper bound for the post-response checkpoint, including the maximum schema-valid response at that boundary, JSON escaping/envelopes, any duplicated consolidated report, complete prior attempts and a bounded reserve for terminal error, recovery and publication metadata. Bound every otherwise unbounded field/collection contributing to that reserve in the host input/output validators. The bound must use the serializer and limits shared with saveDesignCheckpoint, not a heuristic percentage. Reserve consolidation capacity before the final result is requested; refuse dispatch with a durable capacity error if the complete worst-case snapshot exceeds 64 MiB. Never accept a result that the admitted reservation cannot durably save. Capacity refusal happens before spending model work; preserve the preceding snapshot and recover only after a permitted operation can fit, without discarding prior feedback or silently expanding the ceiling. A configured permanent-history limit may be raised for publication retry, but cannot repair checkpoint overflow and is not offered as its remedy. Aggregate-schema compatibility is part of the same reservation contract, not a separate after-the-fact validation. Keep per-chunk model limits unchanged. Give consolidated limitations its own lossless bound derived from maximum planned chunks times the accepted per-chunk limitation bound (128 × 8192 for model-supplied limitations), plus separately bounded host-generated missing-reference and reconciliation diagnostics. Validators must explicitly bound and account for host additions before acceptance. Do not reuse a per-chunk array limit for a concatenated report. Likewise derive aggregate finding/provenance limits from the admitted current plan and immutable prior history; a valid set of accepted per-chunk findings must not fail the current 256-effective-origin cap at consolidation. The finite absolute bound is attempts × chunks × per-chunk findings, with actual admissibility constrained by the pre-dispatch serialized checkpoint reservation. Use the same derived limits for full and impact consolidation, checkpoint validation, permanent publication and report readers. Preserve order, origin and every entry; do not truncate, deduplicate semantically distinct diagnostics, or relabel findings to fit a bound. Include duplicated aggregate arrays and host-added diagnostics in reserved bytes. Consolidation of an admitted complete result set must satisfy both cardinality and byte bounds without another model call.",
+        "callSites": [
+          "src/workflow/artifact-core/store.ts",
+          "src/workflow/artifact-core/history.ts",
+          "src/workflow/artifact-core/types.ts"
+        ]
+      },
+      {
+        "entity": "Revision-bound approval evidence",
+        "change": "invariant-change",
+        "details": "The lifecycle review stores only party, pass/block, counts, revision and report reference. Current applicability requires the exact canonical artifact id, store-verified authored revision/hash, current Markdown digest, workflow context and opposite party to match the permanent entry. Recompute this under LifecycleService.apply's approval queue so direct callers cannot bypass a pre-read gate. Report completeness comes from sc1-sc4 consolidation, not severity alone; a new unfinished/invalidated current attempt cannot be hidden behind an older pass. Capture state under the coordinator's per-artifact fence with fixed lock order coordinator fence -> artifact queue; never await providers or a second queued lifecycle write while holding that queue. Raw subject edits observed before/after publication or immediately before approval refuse/invalidate; external unrelated-file edits remain ignored. [[c20]] [[c21]]",
+        "callSites": [
+          "src/workflow/artifact-core/lifecycle-service.ts",
+          "src/workflow/gates.ts",
+          "src/workflow/review/report-file.ts",
+          "src/workflow/review/design-review/subject.ts"
+        ]
+      },
+      {
+        "entity": "DesignCleanupResult and ownership",
+        "change": "new",
+        "details": "Proposed cleanup module: src/workflow/review/design-review/cleanup.ts. The main coordinator owns a short per-project/per-artifact fence excluding start, correction, publication and cleanup for that artifact. Cleanup runs outside the approval store transaction and never waits for model work: active ownership returns retained(reason). Filter bounded no-follow checkpoint identity by exact project and artifact id before any deep validation; same s1 or same slug is insufficient and no unrelated Git history is replayed. For each matching inactive file verify stored approval, known-format permanent coverage and exact preservation digest of every attempt, including interrupted/invalidated/failed attempts. Never discard unfinished state merely because an override approved the artifact: retain it with the unpublished/unfinished reason. No extra archival execution job is introduced; a later completed publication can preserve the full prior prefix.  Replace pathname check-then-unlink with a claim protocol. Under the artifact fence, atomically rename the candidate into a uniquely created private mode-0700 cleanup directory on the same filesystem, without overwriting any existing destination. Read/validate the claimed object with no-follow bounded I/O and compare its identity, exact bytes and full preservation digest with the verified candidate and permanent history. Delete only the verified claimed object inside that private namespace; never unlink the original public checkpoint pathname, which may now name a replacement. If the claimed object is foreign, changed, active, corrupt or unpreserved, retain it in quarantine with an explicit path/reason and restore it only with no-clobber semantics when the original pathname is absent. Never overwrite a replacement to restore. A crash leaves discoverable claim metadata; recovery verifies ownership, preservation and identity before completing deletion or retaining quarantine. A new checkpoint at the public pathname remains untouched and prevents releasing its replay state. This protects public-path replacement by external writers; it does not claim protection against an actor with the same OS credentials modifying the private namespace itself. Registry replay state is released only after actual deletion. Repeated cleanup and absent files are safe. [[c20]] [[c21]]",
+        "callSites": [
+          "src/workflow/review/design-review/checkpoint.ts",
+          "src/workflow/review/design-review/coordinator.ts",
+          "src/daemon/design-review-rpc.ts",
+          "src/workflow/gates.ts"
+        ]
+      },
+      {
+        "entity": "Route and reader compatibility",
+        "change": "invariant-change",
+        "details": "Use sc1's canonical subject.workflow, requiredReferences and notApplicableRoles. Epic DEF has no fabricated upstream HLD; epic HLD/LLD use only route-produced references. Standalone LLD and sized-issue LLD use their actual SPEC/ISSUE/design references, not an assumed DEF/HLD chain. ISSUE/SPEC/PLAN themselves gain no mandatory design review. Findings retain stable design finding ids and retained provenance; user resolutions cannot silently turn incomplete/invalidated coverage into complete. New-format gate/render paths do not call legacy ReviewReport claim extraction or retired engines. Existing approved legacy artifacts remain readable and idempotent; no mass backfill, fallback flag, dashboard or activation proof system is introduced. [[c20]] [[c21]]",
+        "callSites": [
+          "src/workflow/review/design-review/subject.ts",
+          "src/workflow/review/report-log.ts",
+          "src/workflow/artifact-content.ts",
+          "src/workflow/delivery/load.ts",
+          "src/cli/services/workflow.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [
+      {
+        "contractId": "sc5",
+        "role": "implements",
+        "howDetails": "Own versioned history publication, normal gate integration, guarded cleanup and final deterministic/compiled/live qualification. Proposed helper modules are internal to this contract. [[c20]]"
+      },
+      {
+        "contractId": "sc1",
+        "role": "consumes",
+        "howDetails": "Reuse canonical route/subject, trusted reviewer and common policy; no new scope or prompt engine. [[c20]]"
+      },
+      {
+        "contractId": "sc2",
+        "role": "consumes",
+        "howDetails": "Reuse atomic checkpoints, accepted chunk feedback, report and progress; add only publication receipts/archival projection needed by sc5. [[c20]]"
+      },
+      {
+        "contractId": "sc3",
+        "role": "consumes",
+        "howDetails": "Preserve invalidation, retry counts and directed recovery. Publication retry is persistence-only; no extra model execution or counter reset. [[c20]]"
+      },
+      {
+        "contractId": "sc4",
+        "role": "consumes",
+        "howDetails": "Persist and validate the accepted impact plan, finding decisions and retained-coverage closure exactly. Never re-judge relevance during publication/cleanup. [[c20]]"
+      }
+    ],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Subject changed during publication or between review lookup and approval",
+          "detection": "Re-read canonical artifact integrity/revision/hash, document digest, route/author binding and observed fingerprints inside the coordinator fence and artifact queue, with a final post-write identity check.",
+          "response": "Refuse normal approval and invalidate active work through sc3. A known owned lifecycle-only publication delta is accepted by its exact receipt; any extra delta is not. Keep feedback/checkpoint. [[c20]] [[c21]]",
+          "userImpact": "User must authorize a fresh full attempt when the reviewed artifact changed; external unrelated files remain ignored.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Missing, corrupt, foreign, unresolved or unknown-version permanent record",
+          "detection": "Discriminated record validator checks exact owner/reference/key, contiguous history, accepted plan/coverage, sc4 provenance and payload digest; current head integrity is verified.",
+          "response": "Fail closed for ordinary approval; no fallback from an unreadable record to compact pass metadata. Preserve existing history for repair or a new authorized review. [[c20]] [[c21]]",
+          "userImpact": "Explicit error identifies the unavailable evidence; an authorized override still follows existing integrity policy.",
+          "recoverable": true
+        },
+        {
+          "scenario": "HIGH/MED findings or mandatory incomplete coverage, paused/latest active work or same-party review",
+          "detection": "Check consolidated status, counts, limitations, latest checkpoint/coordinator state and current trusted author/opposite reviewer under the same artifact fence.",
+          "response": "Block normal approval; preserve original outcome. Existing explicit nonempty human override is recorded, never translated into a passed review. [[c20]] [[c21]]",
+          "userImpact": "Findings or gaps remain visible after override.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Crash or I/O failure around log append, head replacement or publication receipt save",
+          "detection": "Existing journal recovery and exact deterministic entry-id/payload comparison identify whether the publication exists and whether its head binding agrees.",
+          "response": "Keep publication pending unless durable evidence is proved. Explicit retry_publication recovers/reconciles the same journal/key without providers or repeated chunks. Conflicting bytes reject. [[c20]] [[c21]]",
+          "userImpact": "No lost accepted feedback or wasted model rerun.",
+          "recoverable": true
+        },
+        {
+          "scenario": "History/frame/journal capacity exceeded",
+          "detection": "Before every dispatch calculate serializer-based worst-case checkpoint bytes for the bounded response, consolidation duplication and bounded terminal metadata, including a capacity-refusal snapshot; separately enforce actual frame/journal publication limits.",
+          "response": "Reject dispatch durably before model work when its reservation cannot fit the fixed checkpoint ceiling. Never trim accepted feedback. Publication-only overflow keeps the fully saved checkpoint pending and permits explicit model-free retry after a sufficient allowed history setting. Raising that setting never repairs checkpoint overflow. [[c20]] [[c21]]",
+          "userImpact": "No false publication or cleanup; a limit reached after review does not require rerunning models.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Cleanup collides with review start, correction, publication or another cleanup",
+          "detection": "The main-daemon per-artifact registry fence reports an owner, including admission and queued publication.",
+          "response": "Return retained(reason=active) promptly; do not queue indefinitely, cancel another owner or hold the artifact store queue over cleanup. Idempotent approval/cleanup retry is explicit. [[c20]] [[c21]]",
+          "userImpact": "Approval stands while temporary state remains safely recoverable.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Unsafe, foreign, changed or unpreserved checkpoint at cleanup",
+          "detection": "Filter exact bounded identity, atomically claim into a private same-filesystem cleanup directory, then verify the claimed object's bytes and full preservation against permanent history.",
+          "response": "Never unlink the public checkpoint pathname. Delete only the verified private claim; retain mismatched claims in quarantine with an explicit path/reason and restore only without clobbering a replacement. Crash recovery repeats verification; unfinished override state remains retained. [[c20]] [[c21]]",
+          "userImpact": "Only proved matching inactive checkpoints are removed; other work remains intact.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Caller reads a result after checkpoint cleanup with no artifact locator",
+          "detection": "No checkpoint/registry mapping exists and progress lacks the proposed optional artifactPath.",
+          "response": "Return artifact-reference-required; with the locator resolve the canonical subject and exact history entry. No global search, model call or checkpoint recreation. [[c20]] [[c21]]",
+          "userImpact": "Saved report remains accessible through its permanent reference or an explicit artifact path.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Complete LOW-only review, or optional execution/visual rendering unavailable but required design evidence otherwise adequate",
+          "expected": "LOW-only passes; optional advice never becomes a false incomplete/block. Genuine missing mandatory coverage remains incomplete. [[c20]]"
+        },
+        {
+          "input": "Idempotent publish and repeated approval after a previously completed cleanup",
+          "expected": "Same payload/key is reused; approval time/reason remain unchanged, missing checkpoint is success and result reads from permanent history. [[c20]]"
+        },
+        {
+          "input": "Epic DEF, epic HLD/LLD, standalone LLD and sized-issue LLD",
+          "expected": "Resolve actual route references; require no unproduced artifacts. ISSUE/SPEC/PLAN remain outside mandatory design review. [[c20]]"
+        },
+        {
+          "input": "Latest complete publication contains older interrupted, invalidated or technically failed attempts",
+          "expected": "Preserve those attempts and their exact meaningful provenance, counters/actions and baselines; none are relabelled as passed. Cleanup can proceed only when the full prefix is represented. [[c20]]"
+        },
+        {
+          "input": "Legacy approved artifact/report alongside a new-format design review",
+          "expected": "Historical readers remain version-aware and read-only. New normal approvals require new-format evidence or explicit override; no legacy execution or automatic migration. [[c20]]"
+        },
+        {
+          "input": "Review metadata publication changes canonical JSON, but authored content and Markdown remain unchanged",
+          "expected": "Preserve original reviewed baseline and revision; recognize only the publisher's exact lifecycle delta. Do not append mutable review text to the canonical Markdown. [[c20]]"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "sc1-sc4 remain authoritative for subject, trust, retries, mutation and impact; S4 adds publication/approval/cleanup only.",
+          "source": "c20"
+        },
+        {
+          "text": "Full review results live in artifact history, with a compact lifecycle reference and no head event arrays or raw native transcripts.",
+          "source": "c25"
+        },
+        {
+          "text": "Daemon owns state and registry fences; use CliProvider for any hosted qualification and retain existing code-review behavior.",
+          "source": "c7"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Existing Node.js node:test and node:assert/strict TypeScript tests, executed with Node22 + tsx; source inspection of the analyzer-located design-review fixtures confirms these imports. Deterministic fixtures use temporary repositories and fake activity providers; hosted evidence is separately labelled. [[c21]]",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pure schemas, applicability, versioned read paths and framing policy.",
+          "subjects": [
+            "U1: Versioned permanent payload validates every attempt, baseline, plan, accepted result, retained finding/coverage origin, model/party, failure/action history and exact preservation digest; missing/foreign/duplicate/tampered data rejects.",
+            "U2: UTF-8 frame/journal size policy accepts exact boundaries and rejects one byte over, malformed declared lengths, unsupported versions and oversized unknown/legacy/feedback kinds; only known design records receive the configured allowance within the existing design ceiling.",
+            "U3: Version-aware log, artifact-content, delivery and CLI readers preserve legacy display and expose new chunk findings without fabricated claims; current VS Code and JetBrains wire contracts retain existing common fields.",
+            "U4: Normal approval requires current complete opposite-party new-format evidence; HIGH/MED, stale body/document/context, same-party, incomplete, invalidated, paused/latest active and missing referenced records block; LOW-only/advice passes; explicit override remains truthful."
+          ],
+          "fixturesNeeded": [
+            "S1-S3 typed checkpoints and reports plus legacy immutable history fixtures.",
+            "Exact-size ASCII/Unicode framed records; unknown-kind and corrupt-header fixtures."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Prove journal/queue/gate/cleanup behavior through normal boundaries without hosted calls.",
+          "subjects": [
+            "I1: Crash/fault injection at journal stage, history append, head replace and checkpoint publication ACK recovers one identical entry/reference with zero model reruns; conflicting replay never overwrites history.",
+            "I2: Queued and direct subject changes before/during publication and immediately before approval refuse stale evidence; only exact owned lifecycle metadata is exempt, unrelated source changes are ignored and canonical Markdown is not rewritten.",
+            "I3: DEF/HLD/LLD normal MCP/daemon approval and direct LifecycleService approval share the same gate; epic, standalone and issue-linked routes require only their actual documents, while ISSUE/SPEC/PLAN remain human-only gates.",
+            "I4: Successful artifact approval cleans only matching inactive fully preserved checkpoints; verify every attempt including older failures, and retain latest unpublished work after override, foreign same-s1/slug records, corrupt/symlink and file-replacement races. Inject replacement immediately before claim, after claim verification and at the old public-path unlink boundary: no public pathname is unlinked, unverified claimed bytes survive in quarantine, and new public bytes remain intact. Inject crashes after claim and before deletion, and exercise no-clobber restore with a replacement present.",
+            "I5: Cleanup/start/correction/publication contention on one artifact returns retained promptly, while independent artifacts progress; fixed lock order avoids recursive store queues and no provider or unrelated Git-history replay runs under cleanup.",
+            "I6: After cleanup and a fresh daemon instance, exact artifactPath/history reference retrieves the permanent result without a checkpoint or model; missing locator rejects rather than scanning projects.",
+            "I7: Both reviewer parties publish S1-S3 fixture outcomes for interruption/recovery, technical retry pause, mutation invalidation, selective retained coverage and final consistency with unchanged semantic results and real provenance.",
+            "I8: Before planning/impact/chunk/retry dispatch, checkpoint-ceiling tests at exact and one-byte-over serializer bounds reserve maximum response, consolidation duplication and bounded error/publication metadata. Refused dispatch makes zero model calls and durably records refusal. At the admitted boundary, maximum valid feedback survives save, consolidation and restart without a rerun. Independently exercise permanent-history capacity pending, then model-free retry after raising the allowed history limit; it never repairs checkpoint overflow. Reproduce two individually valid chunks with 4097 limitations each and verify all 8194 survive full and impact consolidation, checkpoint restart, permanent publication and reading. Test derived aggregate maxima and one-over boundaries, bounded host-added diagnostics, and multiple chunks whose combined findings exceed 256 (including carried origins); admitted complete results must consolidate losslessly or dispatch must have been refused before provider work."
+          ],
+          "fixturesNeeded": [
+            "Real artifact store/history/journal and canonical DEF/HLD/LLD documents for epic, standalone and issue contexts.",
+            "Injectable write/rename/unlink and checkpoint-ACK failures; two owner connections and restart reconstruction.",
+            "Provider spies assert zero calls during publication, gate and cleanup; guarded foreign-checkpoint spies prove no deep replay."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Compiled normal-entrypoint qualification and working code-review regression.",
+          "subjects": [
+            "S1: Built MCP/IPC and daemon paths exercise DEF/HLD/LLD lifecycle publication, current-subject invalidation, recovery/retry pause, selective correction, approval override/refusal, scoped cleanup and permanent result lookup across restart using labelled fake native CLI responses. Existing compiled code-review smoke stays passing; no legacy flags, raw approval IPC or activation subsystem."
+          ],
+          "fixturesNeeded": [
+            "Disposable registered repos, compiled Node22 output, isolated HOME and deterministic native CLI stand-in.",
+            "Current backend/VS Code/JetBrains contract checks where their existing parsers validate review views."
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Demonstrate a useful real independent review and record limits honestly.",
+          "subjects": [
+            "L1: After coordinated daemon update, run a narrow real DEF/HLD/LLD design scenario through insrc_review_step with live progress and permanent result retrieval, then normal registered approval/cleanup after explicit human consent. Record chosen provider/model, measured ACK/progress timings, actual findings/result/history reference and checkpoint disposition; separate hosted calls from fixtures and retain current code-review smoke evidence. A failure is recorded and investigated, not substituted with a fake pass."
+          ],
+          "fixturesNeeded": [
+            "One disposable or explicitly approved real artifact with the opposite reviewer; installed authenticated CLI through CliProvider.",
+            "Recorded existing DEF/HLD/LLD live evidence may be reused only with exact provenance; uncovered artifact kinds remain explicitly unverified."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "U1",
+            "U3",
+            "U4",
+            "I2",
+            "I3",
+            "I7"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "U1",
+            "U2",
+            "I1",
+            "I4",
+            "I5",
+            "I6",
+            "I8"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "I3",
+            "I5",
+            "I7",
+            "S1"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "I1",
+            "I2",
+            "I3",
+            "I4",
+            "I5",
+            "I6",
+            "I7",
+            "I8",
+            "S1"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "U3",
+            "S1",
+            "L1"
+          ]
+        }
+      ]
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Versioned review outcome in the existing artifact log",
+        "oneLineSummary": "Keep complete design-review history in append-only artifact log entries and one compact lifecycle reference.",
+        "approach": "Represent sc5 with a validated design-chunk-review v1 payload on the existing review operation. Preserve full attempts and final consolidated report, and atomically journal the outcome with the revision-bound lifecycle reference through the existing artifact queue. A version-aware record reader distinguishes old read-only report data from new chunk data. Canonical subject identity controls approval and targeted cleanup. [[c20]]",
+        "pros": [
+          "Reuses existing artifact history, journal, lifecycle reference and per-artifact queue.",
+          "Keeps the artifact head compact and maintains original chunk/provenance semantics.",
+          "Provides one authoritative permanent record without a parallel store."
+        ],
+        "cons": [
+          "Requires a discriminated reader across existing report consumers.",
+          "Needs a narrowly scoped atomic review-publication service seam for deterministic idempotency and stale-subject checks."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Separate baseline and result entries in the same artifact history",
+        "oneLineSummary": "Publish an immutable record per attempt and a manifest referencing those entries.",
+        "approach": "Use the existing artifact history for individual attempt/baseline records and publish a versioned manifest selecting the applicable attempt. Compact lifecycle metadata references the manifest; approval and cleanup resolve the manifest and its full referenced closure. No separate database or event arrays in the head. [[c20]]",
+        "pros": [
+          "Avoids repeating earlier attempts in each later cumulative record.",
+          "Every attempt remains independently addressable within existing storage."
+        ],
+        "cons": [
+          "Adds manifest/reference validation and multi-entry recovery complexity beyond the single-record sc5 sketch.",
+          "Cleanup and readers must resolve a larger publication closure, increasing partial-write cases."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Meets functional goals, but partial sc5 alignment and extra closure/recovery states are unnecessary for this bounded Story."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "s4-publication-approval-cleanup",
+      "narrative": "Publication precedes approval and safe cleanup; failures retain recoverable checkpoints. [[c20]] [[c21]]",
+      "participants": [
+        {
+          "id": "controller",
+          "label": "Controller",
+          "description": "Submits review and later requests approval only after human consent."
+        },
+        {
+          "id": "coordinator",
+          "label": "Review coordinator",
+          "description": "Owns review publication and artifact-scoped cleanup fences."
+        },
+        {
+          "id": "history",
+          "label": "Artifact store and history",
+          "description": "Serializes durable journalled history and lifecycle writes."
+        },
+        {
+          "id": "checkpoint",
+          "label": "Checkpoint store",
+          "description": "Retains recoverable attempts until permanent preservation is verified."
+        }
+      ],
+      "messages": [
+        {
+          "from": "coordinator",
+          "to": "checkpoint",
+          "label": "Persist terminal review and complete attempt history",
+          "description": "Checkpoint remains recoverable before publication."
+        },
+        {
+          "from": "coordinator",
+          "to": "history",
+          "label": "Compare subject; journal full history and compact reference",
+          "description": "Atomic queued publication is idempotent and capacity checked."
+        },
+        {
+          "from": "history",
+          "to": "coordinator",
+          "label": "Return durable publication receipt",
+          "description": "Acknowledgement follows durable history publication."
+        },
+        {
+          "from": "coordinator",
+          "to": "checkpoint",
+          "label": "Persist publication receipt",
+          "description": "Publication recovery never reruns the model."
+        },
+        {
+          "from": "controller",
+          "to": "coordinator",
+          "label": "Request approval after explicit human consent",
+          "description": "Review completion alone does not approve the design."
+        },
+        {
+          "from": "coordinator",
+          "to": "history",
+          "label": "Validate current evidence and commit approval",
+          "description": "Check independence, complete coverage, revision and blocking findings within the artifact queue."
+        },
+        {
+          "from": "coordinator",
+          "to": "checkpoint",
+          "label": "Claim, verify and delete only preserved private checkpoint object",
+          "description": "Atomic same-filesystem claim precedes verification; public-path replacements are never unlinked. Unverified claims remain quarantined with explicit disposition; cleanup runs outside the artifact store queue under the coordinator fence."
+        },
+        {
+          "from": "controller",
+          "to": "history",
+          "label": "Retrieve results using exact artifact locator after cleanup",
+          "description": "Permanent report readers need no checkpoint or model execution."
+        }
+      ]
+    },
+    "adherence": {
+      "dimensions": [
+        "diagram-sequence",
+        "functional-coverage"
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "/tmp/s4-analysis-bundle.json"
+    },
+    {
+      "id": "c3",
+      "kind": "doc",
+      "ref": "/tmp/s4-integration-analysis-bundle.json"
+    },
+    {
+      "id": "c4",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/review-evolving-designs-durable-checkpoints-E2026110316f49beb/SPEC.md"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/shared/types.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/store.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c20",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/HLD.md"
+    },
+    {
+      "id": "c21",
+      "kind": "doc",
+      "ref": "/tmp/s4-context-output.json"
+    },
+    {
+      "id": "c22",
+      "kind": "code",
+      "ref": "src/workflow/artifact-core/sidecar.ts"
+    },
+    {
+      "id": "c25",
+      "kind": "code",
+      "ref": "src/workflow/review/report-log.ts"
+    }
+  ]
+}

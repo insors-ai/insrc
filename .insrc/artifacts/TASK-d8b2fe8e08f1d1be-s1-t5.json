@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-eccc8bb5-664c-4e90-8dfe-b546ac5309ca",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.325Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Schedule independent session heads and recover each owner",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "787e581ecfd441e1d6fba33ed003e2cf4fa959d7e919d80515276ebc7200cf98",
+        "at": "2026-11-08T06:58:01.325Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.326Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Schedule independent session heads and recover each owner",
+    "summary": "Wire the new worker scheduling path to fenced leases and session runtimes. Exercise it with two SQLite connections and distinct window owners. Keep production admission on the existing path until the outbox and cutover task.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "A waiting on approval or a future retry does not block eligible B when a slot is free. C waits when two slots are occupied.",
+      "Window ownership, retry time, same-session FIFO and repository capacity are revalidated in the claim transaction.",
+      "Reload, detached turns, missing CLI identity and stale callbacks preserve or release only the appropriate slot. Repeated recovery cannot duplicate the CLI."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-worker.test.ts: two window owners schedule eligible session heads and recover only the matching lease"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-routing.test.ts: waiting approval or retry in A allows B and full capacity queues C"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

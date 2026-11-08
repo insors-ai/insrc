@@ -11,14 +11,14 @@
  * module; a TASK id shares the files of its Story's TASKS artifact.
  */
 
-import { appendFileSync, existsSync, readFileSync } from 'node:fs';
+import { appendFileSync, existsSync, readFileSync, openSync, readSync, closeSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { JOURNAL_DIR } from './journal.js';
-import { appendSidecarLine } from './sidecar.js';
+import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit, designHistoryLimit, isDesignHistoryRecord, MAX_SIDECAR_ENTRY_BYTES } from './sidecar.js';
 import type { SidecarFile, SidecarIo } from './sidecar.js';
 import { HistoryReadError } from './types.js';
 import type { SidecarRecord } from './types.js';
@@ -40,10 +40,44 @@ export interface SidecarStore extends SidecarIo {
 
 const FRAME_RE = /^(\d+)\t(.*)$/s;
 
+/** Bound each frame while reading, before allocating its declared body or parsing JSON. */
+function boundedLines(path: string): string[] {
+ const fd = openSync(path, 'r'), chunk = Buffer.alloc(65536), lines: string[] = [];
+ let parts: Buffer[] = [], size = 0, header = '', checked = false;
+ const accept = (part: Buffer): void => {
+  // Inspect the ASCII header before copying any body into accumulated frame storage.
+  if (!checked) for (const byte of part) {
+   if (byte === 9) {
+    if (/^\d+$/.test(header) && (!Number.isSafeInteger(Number(header)) || Number(header) > sidecarOuterLimit())) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
+    checked = true; break;
+   }
+   if (byte < 48 || byte > 57) { checked = true; break; }
+   header += String.fromCharCode(byte);
+   if (header.length > 20) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
+  }
+  if (size + part.length > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
+  parts.push(Buffer.from(part)); size += part.length;
+ };
+ try {
+  for (;;) {
+   const n = readSync(fd, chunk, 0, chunk.length, null); if (!n) break;
+   let start = 0;
+   for (let i = 0; i < n; i++) {
+    if (chunk[i] !== 10) continue;
+    accept(chunk.subarray(start,i)); lines.push(Buffer.concat(parts,size).toString('utf8'));
+    parts = []; size = 0; header = ''; checked = false; start = i + 1;
+   }
+   if (start < n) accept(chunk.subarray(start,n));
+  }
+  lines.push(parts.length ? Buffer.concat(parts,size).toString('utf8') : ''); return lines;
+ } finally { closeSync(fd); }
+}
+
 /** One decoded complete frame, or undefined for an abandoned fragment. */
 function decodeFrame(line: string): string | undefined {
 	const m = FRAME_RE.exec(line);
 	if (m === null) return undefined;
+ if (!Number.isSafeInteger(Number(m[1])) || Number(m[1]) > sidecarOuterLimit()) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
 	const json = m[2] as string;
 	return Buffer.byteLength(json, 'utf8') === Number(m[1]) ? json : undefined;
 }
@@ -110,7 +144,7 @@ export class FileSidecarStore implements SidecarStore {
 		const rel = this.filesOf(artifactId)[file];
 		const path = join(this.repoPath, rel);
 		if (!existsSync(path)) return [];
-		const lines = readFileSync(path, 'utf8').split('\n');
+		const lines = boundedLines(path);
 		// The text after the last newline is an unterminated line: a fragment, never a record.
 		const unterminated = lines.pop() ?? '';
 		if (unterminated !== '') log.warn({ file: rel, line: lines.length + 1 }, 'skipping an unterminated sidecar line (abandoned fragment)');
@@ -128,6 +162,9 @@ export class FileSidecarStore implements SidecarStore {
 			if (typeof r !== 'object' || r === null || typeof r.artifactId !== 'string' || !('entry' in r)) {
 				throw new HistoryReadError(`${where} is not a sidecar record with an artifactId and an entry`);
 			}
+			checkSidecarEntrySize(r as SidecarRecord<unknown>);
+   const physicalLimit = isDesignHistoryRecord(r as SidecarRecord<unknown>) ? designHistoryLimit() : MAX_SIDECAR_ENTRY_BYTES;
+   if (Buffer.byteLength(json,'utf8') > physicalLimit) throw new HistoryReadError(`${where} exceeds its actual encoded byte limit`);
 			if (r.artifactId !== artifactId) return;
 			const id = entryIdOf(r.entry);
 			const prior = seen.get(id);

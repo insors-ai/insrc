@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d6d515ab-25e9-462a-b174-70b3173f5153",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.111Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Enforce approval evidence at the shared lifecycle gate",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d17ca920eaf3314125e4fb931f4853dccd69afabf6e8748a5b8ccd89df2e24f2",
+        "at": "2026-11-07T19:42:18.111Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.112Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Enforce approval evidence at the shared lifecycle gate",
+    "summary": "Wire ordinary MCP/daemon and direct lifecycle approval into current independent complete permanent evidence checks under coordinator fence then artifact queue, with truthful explicit override and idempotent reapproval.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "HIGH/MED, incomplete/latest unfinished, stale revision/document/context, same-party or missing history block; LOW-only passes.",
+      "Exercise epic DEF/HLD/LLD, standalone and sized-issue LLD actual ancestor rules; ISSUE/SPEC/PLAN gain no mandatory review. No providers or nested queued writes under gate."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "U4 approval applicability and truthful overrides"
+      },
+      {
+        "level": "integration",
+        "name": "I3 ordinary/direct lifecycle gate and actual route prerequisites"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

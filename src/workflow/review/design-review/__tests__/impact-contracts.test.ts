@@ -15,7 +15,8 @@ test('strict impact/disposition/projection schemas reject extras, wrong branches
  const projection={baselineAttempt:1,mode:'affected_chunks',coverageOrigins:[{chunkId:'edited',kind:'fresh'},{chunkId:'keep',kind:'retained',fromAttempt:1,fromChunkId:'keep',justification:'Unchanged concern'}],findingDecisions:[],effectiveFindingOrigins:[source]};
  assert.deepEqual(decodeDesign(DesignReportImpactSchema,projection),projection);
  for(const key of Object.keys(projection)){const missing={...projection} as Record<string,unknown>;delete missing[key];assert.throws(()=>decodeDesign(DesignReportImpactSchema,missing));}
- assert.throws(()=>decodeDesign(DesignReportImpactSchema,{...projection,effectiveFindingOrigins:Array.from({length:257},()=>source)}));
+ assert.equal(decodeDesign(DesignReportImpactSchema,{...projection,effectiveFindingOrigins:Array.from({length:257},(_,i)=>({...source,findingId:'f'+i}))}).effectiveFindingOrigins.length,257);
+ assert.throws(()=>decodeDesign(DesignReportImpactSchema,{...projection,effectiveFindingOrigins:[{...source,attempt:129}]}));
  assert.throws(()=>decodeDesign(DesignReportImpactSchema,{...projection,coverageOrigins:[{chunkId:'keep',kind:'retained',fromAttempt:1,fromChunkId:'keep',justification:'safe',body:{}}]}));
  assert.deepEqual(decodeDesign(DesignImpactOutputSchema,{plan,impact:value}),{plan,impact:value});
  assert.equal(parseDesignRequest({phase:'impact',repo:'/project',reviewId:'r1',attempt:2,executionId:'e1',sequence:1,plan,impact:value}).phase,'impact');

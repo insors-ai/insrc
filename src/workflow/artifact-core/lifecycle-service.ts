@@ -1,3 +1,5 @@
+import { cleanupDesignArtifact } from '../review/design-review/cleanup.js';
+import type { CleanupResult } from '../code-review/task-review/cleanup.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -21,6 +23,8 @@ import {
 } from './types.js';
 import type { Actor, ChangeLogEntry, Lifecycle, Operation, Reference, Status } from './types.js';
 import { emptyLifecycle } from './decode.js';
+import { withDesignArtifactFence } from '../review/design-review/fence.js';
+import { requireCurrentDesignApproval } from '../review/design-review/approval.js';
 
 const log = getLogger('lifecycle-service');
 
@@ -55,6 +59,7 @@ export interface ContentWriteOptions {
 }
 
 export interface ApplyResult {
+ readonly cleanup?: CleanupResult;
 	readonly lifecycle: Lifecycle;
 	readonly entry:     ChangeLogEntry;
 	/** False when the operation was `complete` and a complete entry already stands. */
@@ -85,6 +90,14 @@ export class LifecycleService {
 
 	/** Apply one lifecycle operation. Writes and logs nothing when it throws before the write. */
 	async apply(id: string, op: Operation, by: Actor, detail: TransitionDetail = {}, ctx: EvidenceContext = {}): Promise<ApplyResult> {
+  const kind=ArtifactIds.parse(id)?.kind;
+  if(op==='approve'&&kind&&['DEF','HLD','LLD'].includes(kind)){
+   const result=await withDesignArtifactFence(this.deps.store.repoPath,id,()=>this.applyInQueue(id,op,by,detail,ctx));
+   const cleanup=await cleanupDesignArtifact(this.deps.store.repoPath,id,{store:this.deps.store});return {...result,cleanup};
+  }
+  return this.applyInQueue(id,op,by,detail,ctx);
+ }
+ private async applyInQueue(id:string,op:Operation,by:Actor,detail:TransitionDetail,ctx:EvidenceContext):Promise<ApplyResult>{
 		const evidence = this.evidenceFor(ctx);
 		if (!isLifecycleOperation(op)) throw new IllegalTransitionError(`'${op}' is a content operation, not a lifecycle operation`);
 		const store = this.deps.store;
@@ -114,6 +127,14 @@ export class LifecycleService {
 				}
 			}
 			if (op === 'reopen' && isUnit) await this.checkParentOpen(id);
+   let approvalProof:Pick<WriteOptions,'expectedHeadHash'|'expectedDocument'>|undefined;
+   if(op==='approve'&&key&&['DEF','HLD','LLD'].includes(key.kind)){
+    if(['approved','in-signoff','signed-off','completed'].includes(head.lifecycle.status)&&head.lifecycle.approval?.revision===head.lifecycle.revision.number){
+     const prior=[...changeLog].reverse().find(e=>e.operation==='approve'&&e.revision?.number===head.lifecycle.revision.number);
+     if(prior){standing={lifecycle:head.lifecycle,entry:prior};return undefined;}
+    }
+    approvalProof=await requireCurrentDesignApproval(store.repoPath,head,changeLog,detail.override?.reason);
+   }
 
 			// The unit's own transition is validated before any member is touched, so a refusal leaves everything as it was.
 			// A unit is completed by its roll-up, which stands in for the approval a record needs, so it may start from any open status.
@@ -146,6 +167,7 @@ export class LifecycleService {
 				next: { ...head, lifecycle },
 				options: {
 					operation: op,
+     ...approvalProof,
 					...(cascade ? { cascade } : {}),
 					...(outcome !== undefined ? { outcome } : {}),
 					...(detail.request !== undefined ? { references: [detail.request] } : {}),

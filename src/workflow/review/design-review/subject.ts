@@ -162,8 +162,8 @@ export function designInventory(head: Head, markdown: string): DesignReviewInven
  return decodeDesign(DesignInventorySchema,{units});
 }
 /** Filesystem-only preparation; the daemon RPC owns repo registration and all DB access. */
-export function prepareDesignSubject(repo: string, artifactPath: string): PreparedDesignSubject {
- try {
+/** Resolve only the supplied artifact identity. Historical reads need no ancestor discovery. */
+export function designArtifactLocator(repo:string,artifactPath:string) {
   const project=realpathSync(repo), supplied=resolve(project,artifactPath);
   let id: string | undefined, suppliedDocument: string | undefined;
   if(supplied.endsWith('.md')) {
@@ -174,6 +174,11 @@ export function prepareDesignSubject(repo: string, artifactPath: string): Prepar
   const key=ArtifactIds.parse(id);context(key,'Invalid design artifact id');
   requireDesign(['DEF','HLD','LLD'].includes(key.kind),'design_review_not_applicable','Design review applies only to an existing DEF, HLD or LLD');
   const loaded=headAt(project,id);context(suppliedDocument!==undefined||supplied===loaded.path,'Noncanonical artifact JSON path');
+  return {project,id,key,loaded,suppliedDocument};
+}
+export function prepareDesignSubject(repo: string, artifactPath: string): PreparedDesignSubject {
+ try {
+  const {project,id,key,loaded,suppliedDocument}=designArtifactLocator(repo,artifactPath);
   const workflow=workflowFor(project,id,loaded.head), documentPath=documentFor(project,id,loaded.head);
   context(!suppliedDocument||suppliedDocument===documentPath,'Document is not the canonical representation of this subject');
   const document=readDesignFile(project,documentPath), author=authorPartyOf(loaded.head.meta);
@@ -188,10 +193,11 @@ export function prepareDesignSubject(repo: string, artifactPath: string): Prepar
   throw new DesignReviewContextError(error instanceof Error?error.message:'Unable to resolve design context');
  }
 }
-export function assertDesignSubjectUnchanged(subject: DesignReviewSubject, baseline: DesignBaseline): void {
+export function assertDesignSubjectUnchanged(subject: DesignReviewSubject, baseline: DesignBaseline, owned?: {canonicalBefore?:string|undefined;canonicalAfter?:string|undefined}): void {
  try {
   const current={canonical:sha(readDesignFile(subject.project,subject.canonicalPath)),document:sha(readDesignFile(subject.project,subject.documentPath))};
-  requireDesign(current.canonical===baseline.subjectFingerprints.canonical&&current.document===baseline.subjectFingerprints.document,'artifact_changed','Reviewed artifact changed; a user-approved full restart is required');
+  const own=owned?.canonicalBefore===baseline.subjectFingerprints.canonical&&owned?.canonicalAfter===current.canonical;
+  requireDesign((current.canonical===baseline.subjectFingerprints.canonical||own)&&current.document===baseline.subjectFingerprints.document,'artifact_changed','Reviewed artifact changed; a user-approved full restart is required');
  } catch(error) {
   if(error instanceof DesignReviewError&&error.code==='artifact_changed')throw error;
   throw new DesignReviewError('artifact_changed','Reviewed artifact is no longer readable or canonical');

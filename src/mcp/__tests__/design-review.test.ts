@@ -22,6 +22,7 @@ import { impactFixture } from '../../workflow/review/design-review/__tests__/imp
 import { appendFileSync } from 'node:fs';
 import { designFixture } from '../../workflow/review/design-review/__tests__/fixtures.js';
 import { loadDesignCheckpoint,saveDesignCheckpoint,designCheckpointPath } from '../../workflow/review/design-review/checkpoint.js';
+import { publishDesignReview } from '../../workflow/review/design-review/publication.js';
 import { prepareDesignSubject } from '../../workflow/review/design-review/subject.js';
 import { artifactJsonPath } from '../../workflow/storage.js';
 import { resolveArtifactMdPath } from '../../workflow/path-scheme.js';
@@ -33,15 +34,23 @@ const reviewResult=(f:Subject,id:string)=>({chunkId:id,status:'passed',summary:'
 async function reviewCall(client:Client,args:Record<string,unknown>){const response=await client.callTool({name:'insrc_review_step',arguments:args});assert.ok(!response.isError,JSON.stringify(response));return decode(response);}
 async function reviewAssignment(client:Client,base:Record<string,unknown>){let assignment:Record<string,unknown>|undefined;await until(async()=>{assignment=(await reviewCall(client,{phase:'assignment',...base})).assignment;return!!assignment;});return assignment!;}
 async function until(fn:()=>boolean|Promise<boolean>){for(let i=0;i<500;i++){if(await fn())return;await pause(10);}throw new Error('Fixture did not settle');}
-async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider){
+async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,compiled=false){
+ const {stepToolTable,createStepCallHandler}=await import(compiled?resolve('out/daemon/steps/host.js'):'../../daemon/steps/host.js');
+ const {Router}=await import(compiled?resolve('out/daemon/threads/router.js'):'../../daemon/threads/router.js');
+ const {TargetRegistry}=await import(compiled?resolve('out/daemon/threads/registry.js'):'../../daemon/threads/registry.js');
+ const {IpcServer,directDispatch}=await import(compiled?resolve('out/daemon/server.js'):'../../daemon/server.js');
+ const {designReviewOperation}=await import(compiled?resolve('out/daemon/design-review-rpc.js'):'../../daemon/design-review-rpc.js');
+ const {handleDesignReviewStep}=await import(compiled?resolve('out/daemon/steps/design-review-step.js'):'../../daemon/steps/design-review-step.js');
+ const {handleWorkflowApprove}=await import(compiled?resolve('out/daemon/workflow-approve.js'):'../../daemon/workflow-approve.js');
+
  writeFileSync(join(f.repo,'.insrc/schema.json'),JSON.stringify({version:2}));const path=join(f.repo,'design.sock');
  const table=stepToolTable({tools:{insrc_review_step:(args,_signal,_progress,_execution,trusted)=>handleDesignReviewStep(args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})}});
- const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch(Object.fromEntries(DESIGN_REVIEW_PHASES.map(phase=>[`designReview.${phase}`,(args:unknown,trusted:Parameters<typeof designReviewOperation>[2])=>designReviewOperation(phase,args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})])), {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
+ const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch({...Object.fromEntries(DESIGN_REVIEW_PHASES.map(phase=>[`designReview.${phase}`,(args:unknown,trusted:Parameters<typeof designReviewOperation>[2])=>designReviewOperation(phase,args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})])), 'workflow.approve':(args:unknown)=>handleWorkflowApprove(args)}, {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
  const ipc=new IpcServer(router.forward,Date.now,path);await ipc.listen();return{ipc,path};
 }
-async function stdio(path:string,repo:string){
+async function stdio(path:string,repo:string,compiled=false){
  const client=new Client({name:'codex',version:'test'});
- const transport=new StdioClientTransport({command:process.execPath,args:['--import','tsx',resolve('src/mcp/__tests__/helpers/design-review-stdio.ts')],env:{...process.env as Record<string,string>,DESIGN_TEST_SOCKET:path,DESIGN_TEST_REPO:repo,INSRC_MODE:'mcp'},stderr:'pipe'});
+ const transport=new StdioClientTransport({command:process.execPath,args:['--import','tsx',resolve('src/mcp/__tests__/helpers/design-review-stdio.ts')],env:{...process.env as Record<string,string>,DESIGN_TEST_SOCKET:path,DESIGN_TEST_REPO:repo,DESIGN_TEST_COMPILED:compiled?'1':'0',INSRC_MODE:'mcp'},stderr:'pipe'});
  await client.connect(transport);return client;
 }
 test('normal stdio MCP and Unix IPC preserve native background work and controller connection authority',async t=>{
@@ -137,7 +146,8 @@ test('normal stdio controller failure and explicit recovery retain actual connec
 
 
 test('normal impact schema and IPC routing preserve authority and fresh-only coverage progress',async t=>{
- const f=impactFixture(t,'daemon');f.checkpoint.attempts=[f.baseline];await saveDesignCheckpoint(f.repo,f.checkpoint);appendFileSync(f.md,'\nCorrected contract');
+ const f=impactFixture(t,'daemon');f.checkpoint.attempts=[f.baseline];await saveDesignCheckpoint(f.repo,f.checkpoint);
+ f.baseline.publication=await publishDesignReview(f.checkpoint);await saveDesignCheckpoint(f.repo,f.checkpoint);appendFileSync(f.md,'\nCorrected contract');
  const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{throw Error('Controller route must not construct native work');}} as unknown as LLMProvider;
  const h=await host(f,provider),client=await stdio(h.path,f.repo),observer=await stdio(h.path,f.repo),base={repo:f.repo,reviewId:'review-1',attempt:2};
  try{
@@ -153,4 +163,36 @@ test('normal impact schema and IPC routing preserve authority and fresh-only cov
   await until(async()=>(await reviewCall(client,{phase:'progress',...base})).status==='passed');
   const saved=await loadDesignCheckpoint(f.repo,'review-1');assert.equal(saved!.attempts[1]!.progress.totalChunks,2);assert.equal(saved!.attempts[1]!.progress.coverageProgress!.retainedChunks,1);assert.deepEqual(saved!.attempts[1]!.report!.chunks.map(r=>r.chunkId),['edit','final']);
  }finally{await client.close();await observer.close();await h.ipc.close();}
+});
+
+test('compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart',async t=>{
+ // Deterministic provider fixtures over compiled production modules, not hosted-model evidence.
+ const {emptyLifecycle}=await import('../../workflow/artifact-core/decode.js');
+ const {designArtifactActive}=await import(resolve('out/workflow/review/design-review/fence.js'));
+ const {DesignReviewCoordinator:CompiledCoordinator}=await import(resolve('out/workflow/review/design-review/coordinator.js'));
+ const {execFileSync}=await import('node:child_process');
+ for(const author of ['controller','daemon'] as const)for(const kind of ['DEF','HLD','LLD'] as const){
+  const f=designFixture(t,author);execFileSync('git',['init','-q',f.repo]);const original=JSON.parse(readFileSync(f.json,'utf8')),time=original.meta.createdAt,hash=original.meta.epicHash;
+  function put(k:'DEF'|'HLD'|'LLD',approved:boolean){
+   const id=`${k}-${hash}${k==='LLD'?'-s1':''}`,json=artifactJsonPath(f.repo,id),md=resolveArtifactMdPath(f.repo,{epicHash:hash,epicCreatedAt:time,...(k==='LLD'?{story:'s1'}:{})},k,'epic','fixture');
+   const raw={...original,meta:{...original.meta,standalone:false,...(approved?{lifecycle:{...emptyLifecycle(1),status:'approved'}}:{})},body:{...original.body,...(k==='DEF'?{stories:[{id:'s1'}]}:{})}};if(k!=='LLD')delete raw.meta.storyId;
+   mkdirSync(dirname(md),{recursive:true});writeFileSync(json,JSON.stringify(raw));writeFileSync(md,`<!-- insrc:artifact ${id} -->\n# ${k}\nScope\n`);return{id,json,md};
+  }
+  if(kind!=='DEF')put('DEF',true);if(kind==='LLD')put('HLD',true);Object.assign(f,put(kind,false));f.prepared=prepareDesignSubject(f.repo,f.json);
+  let calls=0;const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
+   calls++;const chunk=prompt.match(/Chunk assignment: (.+)\n/)?.[1];const value=chunk?reviewResult(f,JSON.parse(chunk).id):reviewPlan(f);assert.equal((await opts.onCandidate(value)).accepted,true);return value;
+  }} as unknown as LLMProvider;
+  const h=await host(f,provider,true),client=await stdio(h.path,f.repo,true),base={repo:f.repo,reviewId:'review-1',attempt:1},markdown=readFileSync(f.md,'utf8');
+  try{
+   await reviewCall(client,{phase:'start',...base,artifactPath:f.json});
+   if(author==='daemon')for(const unit of ['planning','content','final']){
+    const a=await reviewAssignment(client,base);await reviewCall(client,{phase:unit==='planning'?'plan':'result',...base,executionId:a.executionId,sequence:Number(a.sequence)+1,...(unit==='planning'?{plan:reviewPlan(f)}:{result:reviewResult(f,unit)})});
+   }
+   await until(async()=>!!(await reviewCall(client,{phase:'progress',...base})).report&&!designArtifactActive(f.repo,f.id));
+   assert.equal(calls,author==='controller'?3:0);
+   const approved=await client.callTool({name:'insrc_workflow_approve',arguments:{repo:f.repo,artifactPath:f.json}});assert.ok(!approved.isError,JSON.stringify(approved));const result=decode(approved);assert.equal(result.approved.length,1,JSON.stringify(result));assert.deepEqual(result.approved[0].result.cleanup.deleted,[f.path]);
+   assert.equal(readFileSync(f.md,'utf8'),markdown);const restarted=new CompiledCoordinator({provider:()=>{throw Error('History lookup must not invoke a model');}});
+   const historical=await restarted.progress(f.repo,'review-1',1,{artifactPath:f.json,includeResult:true});assert.equal(historical.source,'history');assert.equal(historical.status,'passed');assert.equal(historical.completedResults.length,1);
+  }finally{await client.close();await h.ipc.close();}
+ }
 });

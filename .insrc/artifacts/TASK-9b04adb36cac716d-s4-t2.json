@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cb467f67-f3c5-453f-b8cc-936e92a4e8da",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.106Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Reserve checkpoint capacity before provider dispatch",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "7d1eb957b667c13c17c0ab1991765aeb542e3dde2615f86f4bfd9c93022cf0ce",
+        "at": "2026-11-08T05:14:56.751Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.106Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Reserve checkpoint capacity before provider dispatch",
+    "summary": "Add shared serializer-based bounded reservations before planning, impact, chunk and retry dispatch. Include accepted response, report duplication, aggregate arrays, history and bounded terminal metadata; preserve the fixed checkpoint ceiling.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Exact-bound maximum valid responses persist and consolidate across restart; one-over refuses durably with zero provider calls.",
+      "Bound host-added diagnostics and all reservation fields. A checkpoint-capacity refusal is a durable pre-dispatch failure with no model/retry expenditure; end-to-end publication-only capacity retry is implemented and proven by t4, not a prerequisite for t2."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

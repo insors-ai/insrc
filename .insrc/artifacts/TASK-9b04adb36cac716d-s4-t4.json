@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4186acba-a6cf-44c1-b4e1-c1526712e6ab",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.108Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Publish completed design attempts through artifact history",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "7b082cada4fe91df1d8e390a0cfe1d4454948dd67637a230c21c6f8db3fa3941",
+        "at": "2026-11-08T05:14:56.753Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.109Z"
+      }
+    },
+    "revision": 2
+  },
+  "body": {
+    "title": "Publish completed design attempts through artifact history",
+    "summary": "Implement proposed history.ts/publication.ts and coordinator integration: save full report first, journal current-subject-bound history plus compact head reference, verify durable readback and checkpoint receipt; explicit retry_publication makes no model calls.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Publication ACK follows durable history and receipt; failures keep recoverable checkpoint and pending error.",
+      "Exact owned lifecycle delta avoids self-invalidation without masking subject edits; original baseline/Markdown remain immutable.",
+      "Publication-only history/frame/journal capacity overflow retains the full checkpoint and pending publication; raising the allowed history limit enables explicit persistence-only retry with zero model calls. This is distinct from t2's fixed checkpoint ceiling, which cannot be repaired by raising the history limit."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "I1 publication receipt fault recovery and zero model reruns"
+      },
+      {
+        "level": "integration",
+        "name": "I2 immutable baseline, exact owned delta and source mutation"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

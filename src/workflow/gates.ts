@@ -1,3 +1,5 @@
+import { cleanupDesignArtifact } from './review/design-review/cleanup.js';
+import { isStoredDesignReview } from './review/report-log.js';
 import { rpc } from '../shared/ipc-client.js';
 import type { CleanupResult } from './code-review/task-review/cleanup.js';
 /*---------------------------------------------------------------------------------------------
@@ -644,14 +646,16 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const overridden = override !== undefined && override.length > 0;
 	const stored = readReviewRecordOf(jsonPath);
 	const lifecycleVerdict = seen?.lifecycle.review?.verdict;
-	const effective = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) : lifecycleVerdict;
-	if (effective === 'block') {
+	const effective = stored !== undefined ? (isStoredDesignReview(stored)?(stored.report.status==='passed'?'pass':'block'):effectiveReviewVerdict(stored.report,stored.resolutions)) : lifecycleVerdict;
+	const standingApproval=seen!==undefined&&APPROVED_OR_BEYOND.includes(seen.status)&&seen.lifecycle.approval?.revision===seen.lifecycle.revision.number;
+	if (!standingApproval&&effective === 'block') {
 		if (!overridden) {
-			const res = stored?.resolutions ?? {};
-			const pending = (stored?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
+			const legacy=stored&&!isStoredDesignReview(stored)?stored:undefined;
+   const res = legacy?.resolutions ?? {};
+			const pending = (legacy?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
 			const highs = pending.filter(f => f.severity === 'HIGH').length;
 			const meds = pending.filter(f => f.severity === 'MED').length;
-			const summary = stored !== undefined ? `${highs} HIGH · ${meds} MED unresolved` : 'the review verdict is block';
+			const summary = stored !== undefined ? (isStoredDesignReview(stored)?`design review ${stored.report.status} (${stored.report.counts.HIGH} HIGH · ${stored.report.counts.MED} MED)`:`${highs} HIGH · ${meds} MED unresolved`) : 'the review verdict is block';
 			throw new ReviewBlockedError(
 				`Review blocks approval (${summary}). Resolve findings ('insrc workflow resolve <path> <id> <action>') or approve with an override reason.`,
 				summary,
@@ -663,7 +667,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	// done by the party that authored the work. An override reason approves past
 	// each and is recorded like any other override.
 	const missing = otherPartyReviewGap(jsonPath, artifact.meta, seen?.lifecycle.review);
-	if (missing !== undefined) {
+	if (!standingApproval&&missing !== undefined) {
 		if (!overridden) throw new ReviewBlockedError(`${missing.message} Or approve with an override reason.`, missing.summary);
 	}
 
@@ -682,14 +686,16 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		? priorBase
 		: stampsRangeBase(artifact.meta) ? (await headFullSha(dirname(jsonPath))) : undefined;
 
+	let designCleanup:CleanupResult|undefined;
 	let approvedAt: string;
 	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {
+		if(reviewRequiredFor(jsonPath)==='design')designCleanup=await cleanupDesignArtifact(lifecycle.store.repoPath,id,{store:lifecycle.store});
 		approvedAt = seen.lifecycle.approval?.at ?? new Date().toISOString();   // approved already: it stays as it is
 	} else {
 		if (seen !== undefined && seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
-		await bindEffectiveReview(lifecycle, id, seen, stored, effective);
 		// an override the caller gave is recorded on the approval, whether or not this artifact needed it
 		const done = await lifecycle.apply(id, 'approve', actor, overridden ? { override: { reason: override as string } } : {}, { overrideReview: overridden ? override : undefined });
+		designCleanup=done.cleanup;
 		approvedAt = done.lifecycle.approval?.at ?? new Date().toISOString();
 	}
 	if (rangeBase !== undefined && priorBase !== rangeBase) {
@@ -697,7 +703,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(jsonPath, { ...current, meta: { ...current.meta, [RANGE_BASE_KEY]: rangeBase } }, 'meta-only');
 	}
-	let cleanup: CleanupResult | undefined;
+	let cleanup: CleanupResult | undefined=designCleanup;
 	const buildMeta = artifact.meta as ApprovableArtifactMeta & { epicHash?: unknown; storyId?: unknown };
 	if (buildMeta.workflow === 'build' && typeof buildMeta.epicHash === 'string' && typeof buildMeta.storyId === 'string') {
 	 const project = dirname(dirname(dirname(jsonPath)));
@@ -706,27 +712,6 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	 } catch (error) { cleanup = { deleted: [], retained: [join(project, '.insrc/tmp/code-review')], errors: [error instanceof Error ? error.message : String(error)] }; }
 	}
 	return { workflow: artifact.meta.workflow ?? 'unknown', path: jsonPath, approvedAt, ...(cleanup ? { cleanup } : {}) };
-}
-
-/**
- * A design artifact is approved by the lifecycle only against a review bound to its revision whose verdict does not block. The
- * review is recorded with the verdict the reviewer gave; the user's resolutions came after, as entries of the log. So when the
- * resolutions lift a block, the review is bound again at the effective verdict (the same reviewer, counts and report) before the
- * approval. Nothing is written when the lifecycle already says what the effective verdict says.
- */
-async function bindEffectiveReview(
-	lifecycle: LifecycleService, id: string,
-	seen: Awaited<ReturnType<LifecycleService['inspect']>>,
-	stored: ReturnType<typeof readReviewRecordOf>,
-	effective: ReviewVerdict | undefined,
-): Promise<void> {
-	const review = seen?.lifecycle.review;
-	if (seen === undefined || review === undefined || stored === undefined || effective === undefined) return;
-	if (!REVIEWED_KINDS.includes(ArtifactIds.parse(id)?.kind ?? '')) return;
-	if (review.revision !== seen.lifecycle.revision.number || review.verdict === effective) return;
-	await lifecycle.apply(id, 'review', review.reviewer, {
-		review: { reviewer: review.reviewer, party: review.party, verdict: effective, counts: review.counts, ...(review.report !== undefined ? { report: review.report } : {}) },
-	});
 }
 
 /** The artifact kinds whose approval requires a review, read from the

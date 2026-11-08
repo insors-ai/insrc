@@ -26,6 +26,23 @@ import org.junit.jupiter.api.Test
  */
 class ArtifactContentTest {
 
+    @Test
+    fun `shared design review wire fixture preserves common fields and real chunk feedback`() {
+        val json = java.io.File("../src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json").readText()
+        val result = DaemonGatewayImpl(WireRpc("{\"id\":1,\"result\":$json}")).artifactReviewView("/project", "docs/LLD.md")
+        val view = assertInstanceOf(ArtifactContentResult.Loaded::class.java, result).view
+        assertEquals("LLD-aaaaaaaaaaaaaaaa-s1", view.artifactId)
+        assertEquals("LLD", view.kind)
+        assertEquals("# Wire fixture\n", view.renderedMarkdown)
+        assertFalse(view.approvable)
+        assertTrue(view.openQuestions.isEmpty())
+        assertEquals("changes_requested", view.designReview?.get("status"))
+        assertEquals("Design review changes_requested: 0 HIGH, 1 MED", view.blockReason)
+        val finding = view.designFindings?.single()?.get("finding") as? Map<*, *>
+        assertEquals("Wire concern", finding?.get("message"))
+        assertFalse(view.designReview.orEmpty().containsKey("claims"))
+    }
+
     private class FakeDaemonRpc(private val handler: (String, Map<String, Any?>) -> DaemonResult) : DaemonRpc {
         override fun call(method: String, params: Map<String, Any?>): DaemonResult = handler(method, params)
     }

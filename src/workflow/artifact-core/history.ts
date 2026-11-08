@@ -45,6 +45,7 @@ function validateCommon(e: Record<string, unknown>, what: string): void {
 }
 
 export function validateLogEntry(e: ChangeLogEntry): void {
+ if (e.targetHeadHash !== undefined && !/^[a-f0-9]{64}$/.test(e.targetHeadHash)) throw new HistoryEntryError('Malformed deterministic target head hash');
 	validateCommon(e as unknown as Record<string, unknown>, 'change log entry');
 	if (!(OPERATIONS as readonly unknown[]).includes(e.operation)) {
 		throw new HistoryEntryError(`change log entry ${e.id} names an unknown operation '${String(e.operation)}'`);

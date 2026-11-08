@@ -8,20 +8,20 @@
 **HLD base run:** `wf-1791349476498-tih4l4`
 **HLD effective hash:** `faa0f59939ce...`
 
-When the material an analyzer must reason over is larger than the answering model can take in one call, the analyzer now divides it into parts along file and directory boundaries (and one oversized item into consecutive sections), has the model reason over each part in turn, and combines the per-part results into one answer, naming any part it could not cover. A request that fits is answered in one pass exactly as before. The same rule serves the lookup pipeline's answer step, the plan tree's final report and the step tool's answer turn, and the answer reports how it was handled.
+This Story adds one shared helper that divides an answer-writing model call's input into ordered parts when the HLD's table from measured size to method says so, or when the rendered input is not admitted by a provable bound: a CLI provider's declared character budget, or, for a local model, a UTF-8 byte count held under the window minus the call's output tokens minus a template reserve. A single pass keeps the configured output tokens (10,240 bytes with the checked-in configuration); part and combine calls on a local model use a stated lower output cap of 8,192 tokens, enforced by the local provider as its generation limit (22,528 bytes), so the largest existing prompt plus the minimum room fits; a CLI provider enforces no output cap and needs none, because a part reply never enters a later call. On the checked-in local configuration code and adherence requests are always handled in parts, which departs from the wording of ac4 and was accepted by the user on 2026-11-08. The prompts compare some outputs with others, so the helper keeps the cross-output meaning of an answer when it divides the input: a dependency table, built by reading each synthesizer prompt, names the evidence the other evidence is judged against (the rule an adherence check classifies against, the reuse-check candidates a capability answer excludes from related modules, the anchor a code answer centres on), which is repeated in every part and counted in the admission, and the list entries a prompt dedupes by file or path are deduped in code across parts. A long record that has to be cut keeps its citation fields at the head of every section of it. The helper owns the schema-repair loop with one provider attempt and provider retries off, measures every repair before it is sent, and classifies each failure by cause (call failed, invalid reply, unadmittable), recognising a Vibe call failure as well as the Claude and Codex ones. Each part is reasoned over serially, sections never split a code point, evidence and findings are assembled in code, and a staged combine writes only a bounded summary and always ends, falling back to the per-part results; a successful part is never discarded. Four callers use it; on the ordinary success path the handling and the uncovered parts are applied to the report that is stamped on the delivered bundle; the handling report is typed and shown in the answer's head; and every failure keeps its true reason, cause and data, in a JSON-safe form, including the bounded cause chain of each failed part and the actual inputs of a failed aggregator, through the existing mappings, the free-form executor, the aggregator boundary, the plan walk (nested plans included), the stored task record and the orchestrator.
 
 ## Contents
 
 1. [HLD context](#1-hld-context)
 2. [Contract details](#2-contract-details)
 3. [Data model changes](#3-data-model-changes)
-4. [Interaction with shared contracts](#4-interaction-with-shared-contracts)
-5. [Error paths](#5-error-paths)
-6. [Test strategy](#6-test-strategy)
-7. [Migration](#7-migration)
-8. [Alternatives considered](#8-alternatives-considered)
-9. [References](#9-references)
-10. [Open questions](#10-open-questions)
+4. [Diagrams](#4-diagrams)
+5. [Interaction with shared contracts](#5-interaction-with-shared-contracts)
+6. [Error paths](#6-error-paths)
+7. [Test strategy](#7-test-strategy)
+8. [Migration](#8-migration)
+9. [Alternatives considered](#9-alternatives-considered)
+10. [References](#10-references)
 
 ## 1. HLD context
 
@@ -42,7 +42,7 @@ When the material an analyzer must reason over is larger than the answering mode
 
 ## 2. Contract details
 
-**Surface level:** public
+**Surface level:** internal-shared
 
 ### 2.1 `synthesize`
 
@@ -51,366 +51,832 @@ synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>>
 ```
 
 **Parameters:**
-- `args: SynthesizeArgs` — As today, plus the optional field onHandling.
-- `args.onHandling: ((handling: HandlingReport) => void) | undefined` _(optional)_ — Called once with how the answer was written, so the driver can put it into the answer report; omitted by callers that do not need it.
+- `args: SynthesizeArgs` — The existing arguments, plus the measured size used by the table.
 
-**Returns:** `Promise<Omit<AnalyzeContextBundle, 'meta'>>` — Unchanged: the bundle written in one pass, or the bundle combined from the per-part bundles.
+**Returns:** `Promise<Omit<AnalyzeContextBundle, 'meta'>>` — The bundle layers, as today: the one call made today when the size is XS or S and the input is admitted, else the assembled bundle of the parts. A wrapper over synthesizeHandled that drops the handling.
 
 **Errors:**
-- `ShaperAnswerStepFailedError (src/analyze/context/driver.ts), code 'answer-step-failed' declared by sc6` when The combine step fails, or every part fails; its data carries the executed results and the report with handling filled.
-- `SynthesizerPromptMissingError` when Unchanged: the prompt file for the target is missing.
+- `HandlingBudgetError` when No part can be covered and every uncovered part is unadmittable, or the fixed context (including the reference context and a block's envelope) leaves no room for a section; carries the lookup results and the report.
+- `ShaperAnswerStepFailedError` when A divided call in which no part is covered and at least one uncovered part was admitted: reason 'model-failed' if any part's failure kind is 'call-failed' (isModelCallFailure), else 'invalid-answer' (a reply that stayed invalid, including a schema-invalid reply thrown by completeStructured); every part's own reason is in notCovered and its bounded cause chain in partFailures; carries the lookup results and the report.
+- `SynthesizerPromptMissingError` when Existing: no prompt for the key.
 
 **Preconditions:**
-- args.executed holds the results of the lookups that ran.
+- The plan has been executed
 
 **Postconditions:**
-- When the rendered input fits the model's budget the model is called once with the same prompt as before and handling.method is 'single-pass'.
-- Otherwise the model is called once per part, serially, then to combine, and handling.method is 'partitioned' with parts equal to the number of parts.
-- Every citation line of a part's artefacts is present in the combined artefacts.
+- Model calls are made one after another, each with one provider attempt and provider retries off
+- A part that cannot be admitted after division is recorded as not covered while any other part is or can be covered; a covered part is never discarded
+- A failed combine returns the per-part results with the failure reported, it does not throw
+- Each part failure is recorded with a kind chosen by cause: 'call-failed' when isModelCallFailure(err) (whose wording list now includes 'vibe exited with', so a Vibe non-zero exit is a failed call), 'invalid-reply' for ModelResponseShapeError, SynthesizerSchemaUnrecoverable or any other validation failure thrown by completeStructured, 'unadmittable' when the rendered input is not admitted; a size refusal (InputTooLargeError) is handled by the division rule before classification and is never 'call-failed'
+- On a local provider part and combine calls are given PART_MAX_OUTPUT_TOKENS (8,192) as maxTokens, which OllamaProvider enforces as num_predict; a CLI provider is given no enforced output cap; a single pass keeps the configured output tokens
+- The reference context of the target is present in the rendered input of every part and every combine call, and the sub-sections a prompt dedupes by file or path are deduped across parts in code
 
-### 2.2 `prepareSynthesize`
+### 2.2 `synthesizeHandled`
 
 ```typescript
-prepareSynthesize(args: Omit<SynthesizeArgs, 'runId' | 'provider'>, completed?: readonly PartResult[]): SynthesizePrepared
+synthesizeHandled(args: SynthesizeArgs): Promise<{ readonly layers: Omit<AnalyzeContextBundle, 'meta'>; readonly handling: HandlingReport }>
 ```
 
 **Parameters:**
-- `args: Omit<SynthesizeArgs, 'runId' | 'provider'>` — As today.
-- `completed: readonly PartResult[] | undefined` _(optional)_ — The per-part bundles the agent's model has already written on the step tool; absent on the first call.
+- `args: SynthesizeArgs` — The same arguments as synthesize.
 
-**Returns:** `SynthesizePrepared` — The next turn for the agent's model: the whole answer prompt when it fits (unchanged), else the prompt for the next unwritten part, else the combine prompt when all parts are written. The returned value carries turn: 'answer' | 'part' | 'combine', partIndex, partCount and the handling report so far.
+**Returns:** `Promise<{ layers: Omit<AnalyzeContextBundle, 'meta'>; handling: HandlingReport }>` — The bundle layers and the HandlingReport of the call (single pass: method 'single-pass', parts 1).
 
 **Errors:**
-- `SynthesizerPromptMissingError` when Unchanged.
+- `HandlingBudgetError` when As for synthesize.
+- `ShaperAnswerStepFailedError` when A divided call with no part covered, as for synthesize.
+- `SynthesizerPromptMissingError` when Existing: no prompt for the key.
 
 **Preconditions:**
-- completed, when given, lists the parts of this same division in order, each with a bundle that passed the bundle schema or a failure reason.
+- The plan has been executed
 
 **Postconditions:**
-- With completed absent and an input that fits, the result is identical to today's SynthesizePrepared with turn 'answer'.
-- The division is a function of args alone, so repeating the call gives the same parts.
+- synthesize(args) returns exactly (await synthesizeHandled(args)).layers, so its signature and behaviour for existing callers are unchanged
+- The context driver uses this function so the handling reaches found.report
 
-### 2.3 `finalizeSynthesize`
+### 2.3 `selectSharedContext`
 
 ```typescript
-finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'>
+selectSharedContext(target: 'code' | 'docs' | 'adherence' | 'capability' | 'data' | 'infra', executed: ExecutedPlan): readonly EvidenceBlock[]
 ```
 
 **Parameters:**
-- `raw: unknown` — The bundle JSON the agent's model wrote for the answer turn, a part turn or the combine turn; all three use the bundle schema.
-- `execution: ConnectionExecutionContext | undefined` _(optional)_ — As today.
+- `target: 'code' | 'docs' | 'adherence' | 'capability' | 'data' | 'infra'` — The synthesize target whose prompt judges some evidence against other evidence.
+- `executed: ExecutedPlan` — The executed plan whose outputs are searched.
 
-**Returns:** `Omit<AnalyzeContextBundle, 'meta'>` — Unchanged.
+**Returns:** `readonly EvidenceBlock[]` — The reference blocks, in plan order, taken from the DEPENDENCY table: for 'adherence' the outputs of doc.constraint.enumerate and doc.decision.trace (the rule text, verbatim, with its citations); for 'capability' the outputs of capability.reuse-check (the candidates concept.resolve hits are excluded against); for 'code' the anchor record of concept.resolve (anchor.source, the anchor identity and, when ranked, hits[0]), a small structural extract made in code; empty for 'docs', 'data' and 'infra', whose table entries record why.
 
-**Errors:**
-- `SynthesizerSchemaUnrecoverable` when Unchanged: raw does not match the bundle schema.
+**Preconditions:**
+- Every synthesize prompt key has an entry in the DEPENDENCY table
 
 **Postconditions:**
-- Unchanged.
+- The returned blocks are removed from the partition blocks, so they are not duplicated as evidence
+- They are rendered in every part and every combine call, never sectioned, and counted in the fixed context of the admission rule
+- The 'Rule sources retrieved' count and the rule restatement are computed in code from them, not from part replies
 
-### 2.4 `runAggregator`
+### 2.4 `dedupeByKey`
+
+```typescript
+dedupeByKey(entries: readonly SubSectionEntry[], key: 'file' | 'path'): readonly SubSectionEntry[]
+```
+
+**Parameters:**
+- `entries: readonly SubSectionEntry[]` — The entries of one deduped sub-section, concatenated from the parts in ordinal order.
+- `key: 'file' | 'path'` — The key the prompt dedupes that sub-section by (DEDUPE_KEYS: Related docs by file, Related modules by path, surface by file).
+
+**Returns:** `readonly SubSectionEntry[]` — The entries with each key once, the first occurrence by part ordinal winning, order otherwise kept.
+
+**Postconditions:**
+- An entry that appears in several parts is listed once
+- Used by both assembly adapters wherever the prompt dedupes a sub-section
+
+### 2.5 `sectionBlock`
+
+```typescript
+sectionBlock(block: EvidenceBlock, room: number): readonly BlockSection[]
+```
+
+**Parameters:**
+- `block: EvidenceBlock` — A block larger than the room.
+- `room: number` — The room of a part in the unit of the budget.
+
+**Returns:** `readonly BlockSection[]` — Consecutive sections of the block's sectionable text field, each preceded by the block's envelope, so the room of a section is the room minus the envelope; each cut is the largest whole code-point prefix that fits.
+
+**Errors:**
+- `HandlingBudgetError` when The envelope leaves less than the 4,000-unit minimum room; names the envelope.
+
+**Postconditions:**
+- The envelope (doc outputs: sourceEntityId, file, heading, kind; code and search hits: file and line; aggregate upstream outputs: taskId, template, params) is repeated at the head of every section
+- The concatenation of the sections' cut fields equals the original field, with no overlap and nothing dropped
+
+### 2.6 `applyHandling`
+
+```typescript
+applyHandling(report: AnswerReport, handling: HandlingReport): AnswerReport
+```
+
+**Parameters:**
+- `report: AnswerReport` — The report derived from the lookups before the answer was written.
+- `handling: HandlingReport` — The handling of the answer step.
+
+**Returns:** `AnswerReport` — A new report with handling set by mergeHandling, one incomplete SourceNote per not-covered part (sourceKind 'lookup', sourceId 'answer step / <part id>', reason the part's reason), and completeness.complete false when any part is not covered; the report is otherwise unchanged.
+
+**Postconditions:**
+- A report with a single-pass handling and no uncovered part keeps complete as it was
+- The input report is not mutated
+
+### 2.7 `prepareSynthesize`
+
+```typescript
+prepareSynthesize(args: Omit<SynthesizeArgs, 'runId' | 'provider'>, progress?: AnswerProgress): SynthesizePrepared
+```
+
+**Parameters:**
+- `args: Omit<SynthesizeArgs, 'runId' | 'provider'>` — The existing arguments.
+- `progress: AnswerProgress` _(optional)_ — The stored step progress; absent on a legacy state, read as single pass.
+
+**Returns:** `SynthesizePrepared` — The existing prompt, user turn and schema, now with a turn field naming 'answer', 'part' or 'combine' and its identity.
+
+**Errors:**
+- `SynthesizerPromptMissingError` when Existing: no prompt for the key.
+- `HandlingBudgetError` when As for synthesize.
+
+**Preconditions:**
+- progress comes from the stored step state
+
+**Postconditions:**
+- The rendered input of the turn is admitted
+
+### 2.8 `prepareAnswerTurn`
+
+```typescript
+prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] & { executed: ExecutedPlan; measure?: RequestMeasure; reportScope?: ReportScopeInput }, execution?: ConnectionExecutionContext): AnswerTurn
+```
+
+**Parameters:**
+- `args: Parameters<typeof prepareSynthesize>[0] & { executed: ExecutedPlan; measure?: RequestMeasure; reportScope?: ReportScopeInput }` — The existing turn arguments plus the measure.
+- `execution: ConnectionExecutionContext` _(optional)_ — The existing connection context.
+
+**Returns:** `AnswerTurn` — As today, and on the first call when the plan phase hands over, the prepared turn carries the initial AnswerProgress made by startAnswerProgress from the measure's size and the admission of the rendered input: mode 'single' or 'partitioned'.
+
+**Errors:**
+- `SynthesizerPromptMissingError` when Mapped as today to the declared error with its data.
+- `HandlingBudgetError` when Returned as the answer-step failure with its data.
+
+**Postconditions:**
+- A new state always carries progress after this call; a state without progress is a legacy state and is read as single pass
+
+### 2.9 `startAnswerProgress`
+
+```typescript
+startAnswerProgress(args: Parameters<typeof prepareSynthesize>[0], size: RequestSize | undefined): AnswerProgress
+```
+
+**Parameters:**
+- `args: Parameters<typeof prepareSynthesize>[0]` — The turn arguments whose evidence is divided.
+- `size: RequestSize | undefined` — The sc3 size; undefined or undetermined is XL.
+
+**Returns:** `AnswerProgress` — The initial progress: the partition plan (ordered blocks with ordinals, envelopes and section cuts, and the reference blocks), the handling decision (mode and trigger) and the measured budgets, with no part completed.
+
+**Errors:**
+- `HandlingBudgetError` when The fixed context, including the reference context and the envelopes, leaves no room for a section.
+
+**Postconditions:**
+- The progress holds everything the progress overload of finalizeSynthesize needs to decide whether another part remains and to return the HandlingReport
+
+### 2.10 `finalizeSynthesize`
+
+```typescript
+function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext): Omit<AnalyzeContextBundle, 'meta'>; function finalizeSynthesize(raw: unknown, execution: ConnectionExecutionContext | undefined, progress: AnswerProgress): FinalizedAnswerTurn
+```
+
+**Parameters:**
+- `raw: unknown` — The reply to validate.
+- `execution: ConnectionExecutionContext | undefined` — The existing connection context.
+- `progress: AnswerProgress` — The stored progress, second overload only.
+
+**Returns:** `Omit<AnalyzeContextBundle, 'meta'> | FinalizedAnswerTurn` — Two overloads. A call without progress returns the bundle layers exactly as today, so the bundle handler's assignment to BundleLayers still type-checks. A call with progress returns {kind:'final', layers, handling} or {kind:'next', progress}.
+
+**Errors:**
+- `SynthesizerSchemaUnrecoverable` when Existing: the reply fails the schema; the bundle handler counts it in progress.retries.
+
+**Postconditions:**
+- Evidence layers are assembled in code and never taken from a combine reply
+- A compile-time test proves the existing handler call and its assignment are unchanged
+
+### 2.11 `runAggregator`
 
 ```typescript
 runAggregator(args: RunAggregatorArgs): Promise<AggregateReport>
 ```
 
 **Parameters:**
-- `args: RunAggregatorArgs` — As today.
+- `args: RunAggregatorArgs` — The existing arguments.
 
-**Returns:** `Promise<AggregateReport>` — The report written in one pass when the rendered upstream section fits the model's budget; otherwise the report combined from per-part reports, with metadata.handling filled.
+**Returns:** `Promise<AggregateReport>` — The report; metadata gains the optional handling field.
 
 **Errors:**
-- `Error whose message starts 'aggregator-llm-unavailable:' (src/analyze/runtimes/shared/aggregator.ts classifyError)` when Unchanged: a call fails because the model is unavailable. In the partitioned case this fails only that part, which is kept out and named in metadata.handling.notCovered.
-- `Error whose message starts 'aggregator-schema-unrecoverable:' (classifyError)` when Unchanged: a call's structured output cannot be repaired. In the partitioned case this fails only that part.
-- `Error whose message starts 'aggregator-parts-failed:' (new, same family as the two above)` when Every part failed, the combining of the summaries failed, or the budget is not larger than the fixed part of the prompt. The executor records the aggregate task as failed with this reason by its existing runtime-threw path; no new error code is declared.
+- `HandlingBudgetError` when As for synthesize; found.results is [] (no lookup ran), found.report is built from the failure alone, upstream holds the upstream outputs the call was given and partFailures the failed parts.
+- `ShaperAnswerStepFailedError` when A divided call with no part covered, as for synthesize; carries found, upstream and partFailures as for HandlingBudgetError.
+- `Error` when With the existing aggregator prefixes: a single-pass call (one call, not divided) fails; the original error is its cause.
 
 **Preconditions:**
-- args.upstreamOutputs holds the outputs the plan produced; args.absentInputs names the ones it did not.
+- The absent-input section is rendered in every part and every combine call and counted in the admission
 
 **Postconditions:**
-- findings is the concatenation of the parts' findings in plan order: none is dropped by the combining; only the summary is written by a model from the per-part summaries.
-- The absent-inputs section is part of every part and of the combine input, so no part states anything about an absent input.
+- Findings of covered parts are concatenated in code by ordinal; the model writes only the summary
+- A typed failure from the aggregator carries every upstream output it was given, with taskId, template, params and value, and the cause chain of every failed part
 
-### 2.5 `prepareAnswerTurn`
+### 2.12 `classifyError`
 
 ```typescript
-prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] & { executed: ExecutedPlan; measure?: RequestMeasure; reportScope?: ReportScopeInput; completed?: readonly PartResult[] }, execution?: ConnectionExecutionContext): AnswerTurn
+classifyError(err: unknown): Error
 ```
 
 **Parameters:**
-- `args.completed: readonly PartResult[] | undefined` _(optional)_ — Passed through to prepareSynthesize: the parts written so far.
+- `err: unknown` — The error thrown by the aggregator's single-pass model call.
 
-**Returns:** `AnswerTurn` — As today, with prepared now one of the three turns above.
-
-**Errors:**
-- `ANSWER_PROMPT_MISSING` when Unchanged.
-
-**Preconditions:**
-- The lookups ran.
+**Returns:** `Error` — The prefixed Error as today ('aggregator-internal:', 'aggregator-llm-unavailable:' or 'aggregator-schema-unrecoverable:'), now carrying the original error as its cause.
 
 **Postconditions:**
-- The report carried by a failed turn has handling filled when the division was made.
+- Prefixes and messages are unchanged
+- It applies only to a single-pass call; the typed terminal failures of a divided call (HandlingBudgetError and the every-part-failed ShaperAnswerStepFailedError) are not passed to classifyError and reach executeLeafTask unwrapped
+- A single-pass Vibe non-zero exit ('vibe exited with ...', with or without the retry prefix) takes the 'aggregator-llm-unavailable:' prefix instead of 'aggregator-schema-unrecoverable:', because isModelCallFailure recognises it; this is a deliberate behaviour change
+
+### 2.13 `isModelCallFailure`
+
+```typescript
+isModelCallFailure(err: unknown): boolean
+```
+
+**Parameters:**
+- `err: unknown` — The error a provider call threw.
+
+**Returns:** `boolean` — True for a ModelCallFailedError or for an Error whose own message (after the retry prefix is stripped, without quoted answer text) starts with a wording in MODEL_CALL_FAILURE_TEXTS.
+
+**Postconditions:**
+- CLI_FAILURE_TEXTS gains the entry 'vibe exited with' beside 'claude --print failed', 'claude exited with', 'codex emitted error event' and 'codex exited with'
+- The retry prefix is still stripped before matching, so a Vibe failure wrapped by completeStructuredVibe is recognised
+- A schema-invalid reply and a size refusal are not recognised as call failures
+
+### 2.14 `failureData`
+
+```typescript
+failureData(err: unknown): AggregateFailureData
+```
+
+**Parameters:**
+- `err: unknown` — The error an aggregate task threw.
+
+**Returns:** `AggregateFailureData` — A JSON-safe value: { kind:'answer-step', reason, found, upstream, partFailures, handling } for a ShaperAnswerStepFailedError (HandlingBudgetError included), else { kind:'error', name, message, cause? } where cause is a FailureCause nested at most 3 levels.
+
+**Postconditions:**
+- The value contains no Error object, function or cyclic reference, so it survives JSON.stringify in the task and run records
+- The original cause's message is present in the value, for a plain error and for every failed part of a typed error
+- upstream keeps taskId, template, params and value of every upstream output the failed call was given
+
+### 2.15 `executeLeafTask`
+
+```typescript
+executeLeafTask(task: PlannedTask, intent: ClassifiedIntent, runId: string, outputs: ReadonlyMap<string, readonly UpstreamOutput[]>, absentInputs?: readonly AbsentInput[], execution?: ConnectionExecutionContext): Promise<TaskExecutionRecord>
+```
+
+**Parameters:**
+- `task: PlannedTask` — The leaf task to run.
+- `intent: ClassifiedIntent` — The classified intent.
+- `runId: string` — The run id.
+- `outputs: ReadonlyMap<string, readonly UpstreamOutput[]>` — Upstream outputs by task id.
+- `absentInputs: readonly AbsentInput[]` _(optional)_ — Inputs that were absent.
+- `execution: ConnectionExecutionContext` _(optional)_ — The connection context.
+
+**Returns:** `Promise<TaskExecutionRecord>` — As today; a failed record of an aggregate task gains an optional data field holding failureData(err).
+
+**Postconditions:**
+- For an aggregate task, the failure is kept in TaskExecutionRecord.data as failureData(err) for any aggregate failure: a ShaperAnswerStepFailedError or HandlingBudgetError gives its found results, its upstream inputs, its part failures with their cause chains and its HandlingReport, a plain prefixed Error gives its name, message and cause; the failure is never reduced to its message alone
+- TaskExecutionRecord.data survives the JSON write of the task record and the run record
+
+### 2.16 `executePlannerTask`
+
+```typescript
+executePlannerTask(task: PlannedTask, parent: PlanTreeNode, intent: ClassifiedIntent, runId: string, opts: WalkOpts): Promise<PlannerTaskResult>
+```
+
+**Parameters:**
+- `task: PlannedTask` — The planner task.
+- `parent: PlanTreeNode` — The parent node.
+- `intent: ClassifiedIntent` — The classified intent.
+- `runId: string` — The run id.
+- `opts: WalkOpts` — The walk options.
+
+**Returns:** `Promise<PlannerTaskResult>` — As today: a child with no final report gives a failed record and the childResult it kept; the Story relies on that kept childResult and does not change this function.
+
+**Postconditions:**
+- childResult stays on the result of a failed planner task so the child's aggregate failure remains readable
+
+### 2.17 `runFinalStructuredEmit`
+
+```typescript
+runFinalStructuredEmit(provider: LLMProvider, messages: LLMMessage[], structuredOutputRetries: number, maxOutputTokens: number, onTrace?: (event: ShaperTraceEvent) => void, execution?: ConnectionExecutionContext, onHandling?: (h: HandlingReport) => void, size?: RequestSize): Promise<AnalyzeContextBundle>
+```
+
+**Parameters:**
+- `provider: LLMProvider` — The provider.
+- `messages: LLMMessage[]` — The tool loop's conversation.
+- `structuredOutputRetries: number` — The existing retry count, now spent inside the helper's repair loop.
+- `maxOutputTokens: number` — The single-pass output tokens.
+- `onTrace: (event: ShaperTraceEvent) => void` _(optional)_ — Trace sink.
+- `execution: ConnectionExecutionContext` _(optional)_ — Connection context.
+- `onHandling: (h: HandlingReport) => void` _(optional)_ — Receives the handling report.
+- `size: RequestSize` _(optional)_ — The sc3 size for the table.
+
+**Returns:** `Promise<AnalyzeContextBundle>` — The bundle: the one call made today when the size is XS or S and the conversation is admitted, else the assembled bundle.
+
+**Errors:**
+- `HandlingBudgetError` when As for synthesize.
+- `ShaperAnswerStepFailedError` when A divided call with no part covered, as for synthesize.
+
+**Postconditions:**
+- An M, L or XL request whose conversation is admitted is still divided, by the table
+
+### 2.18 `failedOutput`
+
+```typescript
+failedOutput(exp: Exploration, err: unknown, execution?: ConnectionExecutionContext): FailedExplorationOutput
+```
+
+**Parameters:**
+- `exp: Exploration` — The exploration that failed.
+- `err: unknown` — The error.
+- `execution: ConnectionExecutionContext` _(optional)_ — The connection context.
+
+**Returns:** `FailedExplorationOutput` — The failed output with partial findings as today, and the handling report when the error carried one.
+
+**Postconditions:**
+- Any ShaperAnswerStepFailedError raised inside the free-form lookup has been turned into a LookupFailedError carrying its tool results, handling and original reason (answerStepReason)
+- For such an error the failed output's errorCode is 'answer-step:<reason>' and its cause is kept; the pipeline rebuilds the ShaperAnswerStepFailedError from that reason and the found results, so 'input-does-not-fit', 'model-failed' and 'invalid-answer' are told apart
+
+### 2.19 `extractSoleFreeformResult`
+
+```typescript
+extractSoleFreeformResult(executed: Awaited<ReturnType<typeof executePlan>>): { rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null
+```
+
+**Parameters:**
+- `executed: Awaited<ReturnType<typeof executePlan>>` — The executed plan.
+
+**Returns:** `{ rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null` — As today, plus the free-form output's handling, which the pipeline puts on the report that reportFromLookups derives.
+
+**Postconditions:**
+- A failed free-form output still returns null, so it reaches the answer-step failure with its report and no second synthesis is tried
+
+### 2.20 `collectPlanSources`
+
+```typescript
+collectPlanSources(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: string): ReportSource[]
+```
+
+**Parameters:**
+- `tree: PlanTreeNode` — The plan tree.
+- `executed: ExecutorResult` — The executed result.
+- `parentPath: string` _(optional)_ — The path prefix.
+
+**Returns:** `ReportSource[]` — The sources as today, plus one source per not-covered part of each plan's aggregate task, named by the aggregate task's path and the part id. For a failed planner-kind task that has a kept child result, it still reads the child's records, so the child's aggregate failure and handling become sources.
+
+**Postconditions:**
+- The aggregate task is still not a source of its own completeness; only its handling is read
+- The check of a task's failure status no longer stops the read of a failed planner task's child
+
+### 2.21 `concludeRun`
+
+```typescript
+concludeRun(tree: PlanTreeNode, executed: ExecutorResult, contextReport: AnswerReport | undefined, measure?: RequestMeasure): { report: AnswerReport; finalReport: unknown }
+```
+
+**Parameters:**
+- `tree: PlanTreeNode` — The plan tree.
+- `executed: ExecutorResult` — The executed result.
+- `contextReport: AnswerReport | undefined` — The run context's report.
+- `measure: RequestMeasure` _(optional)_ — The measure.
+
+**Returns:** `{ report: AnswerReport; finalReport: unknown }` — The report carries handling merged from the run context and from the root and every nested aggregate, including a nested failure under a root aggregate that succeeded from sibling outputs, and its visible head shows it.
+
+**Postconditions:**
+- A partially failed aggregation, at any depth, makes the run's completeness false
+- A failed root aggregate is copied to RunFailure.data under the unchanged code 'executor-aggregator-failed' from TaskExecutionRecord.data
+
+### 2.22 `mergeAnswerReports`
+
+```typescript
+mergeAnswerReports(first: AnswerReport, second: AnswerReport, prefix?: string): AnswerReport
+```
+
+**Parameters:**
+- `first: AnswerReport` — First report.
+- `second: AnswerReport` — Second report.
+- `prefix: string` _(optional)_ — Prefix for the first side's sources.
+
+**Returns:** `AnswerReport` — The merge as today, plus handling merged by mergeHandling with the same prefix rule.
+
+**Postconditions:**
+- The signature and the prefix behaviour are unchanged
+
+### 2.23 `renderReportHead`
+
+```typescript
+renderReportHead(report: AnswerReport): string
+```
+
+**Parameters:**
+- `report: AnswerReport` — The report.
+
+**Returns:** `string` — The head as today, plus one handling line after the measure line when the report has handling.
+
+**Postconditions:**
+- Both paths show the line
+- A report without handling renders as today
 
 ## 3. Data model changes
 
 ### 3.1 `HandlingReport` — new
 
-Contract sc4, owned by this Story. method 'single-pass' | 'partitioned'; parts: number; partitionedBy?: 'directory' | 'file' | 'section'; notCovered: { part: string; reason: string }[]. Extended with three optional fields so that the answer can say how much was done: combineStages?: number (the levels of combining, 0 when one combine call sufficed, absent for single-pass), inputChars?: number (the characters of the rendered input), budgetChars?: number (the budget the decision used). Consumed by Story s4 as the contract states; adding optional fields is not a breaking change.
+The sc4 contract typed. method, parts, partitionedBy, notCovered[{part, reason}] as sketched, plus additive fields: combineStages (optional), budgets (an array of {unit: 'chars' | 'bytes', limit, source: 'provider' | 'context-window' | 'default', basis: 'declared' | 'bytes-bound' | 'default', inputSize}, never mixing units) and trigger (optional: 'size' | 'fit' | 'both'; absent on a single pass). partitionedBy gains 'mixed'. parseHandling accepts a record with or without trigger. Counting: parts is the number of first-level parts including failed ones; a single pass has parts 1. A part id is its ordinal and heading ('part 3: docs/a'); mergeHandling qualifies it with the plan path. Composition by mergeHandling(first, second, prefix): an absent side is ignored; method is 'partitioned' if either is; parts is the sum (a single pass counts 1); notCovered is the concatenation with the first side's part ids qualified by the prefix; budgets is the concatenation de-duplicated on (unit, limit, source, basis), keeping the largest inputSize of identical entries, so a local 'bytes-bound' entry survives a merge with a CLI entry and units are never compared; combineStages is the sum when either has it; partitionedBy is the common value or 'mixed'; trigger is the union when either has one. So a single-pass root with a partitioned child reports 'partitioned' with parts one more than the child's.
 
 ```
-interface HandlingReport {
-  readonly method: 'single-pass' | 'partitioned';
-  readonly parts: number;
-  readonly partitionedBy?: 'directory' | 'file' | 'section' | undefined;
-  readonly notCovered: readonly { readonly part: string; readonly reason: string }[];
-  readonly combineStages?: number | undefined;
-  readonly inputChars?: number | undefined;
-  readonly budgetChars?: number | undefined;
-}
+readonly combineStages?: number | undefined; readonly budgets: readonly { readonly unit: 'chars' | 'bytes'; readonly limit: number; readonly source: 'provider' | 'context-window' | 'default'; readonly basis: 'declared' | 'bytes-bound' | 'default'; readonly inputSize: number }[]; readonly trigger?: 'size' | 'fit' | 'both' | undefined; partitionedBy adds 'mixed'
 ```
 
 **Call sites:**
 - `src/analyze/completeness.ts:206`
-- `src/analyze/context/schema.ts:194`
-- `src/analyze/measure.ts:189`
+- `src/analyze/completeness.ts:404-420`
 
-### 3.2 `AnswerReport` — field-modify
+### 3.2 `AnswerReport.handling` — field-modify
 
-The field handling changes from unknown ("Typed by Story s3") to HandlingReport | undefined. renderReportHead gains one line, after the measure line, stating the method, the number of parts and every part not covered with its reason; the line is absent for single-pass so a small request's answer head is unchanged. The bundle schema's open handling object (src/analyze/context/schema.ts:194) is kept out of the schema given to a model, as the report is. Invariants to preserve: a small request's answer head is unchanged (c3) and a reduction is always reported (c5).
-
-```
-- readonly handling?: unknown;
-+ readonly handling?: HandlingReport | undefined;
-```
+Type changes from unknown to HandlingReport | undefined. Current-behaviour invariant it might break: the bundle schema declares handling as an open object, so a stored value such as {} is valid today, and isAnswerReport does not validate it. A read-boundary guard parseHandling(value: unknown): HandlingReport | undefined accepts only a value with the required fields and treats anything else as absent; mergeHandling, renderReportHead and isAnswerReport use it, and a stored {} is read as no handling.
 
 **Call sites:**
 - `src/analyze/completeness.ts:206`
-- `src/analyze/context/schema.ts:194`
-- `src/daemon/steps/analyze-step/answer-turn.ts`
+- `src/analyze/completeness.ts:377-382`
+- `src/analyze/completeness.ts:404-420`
 
-### 3.3 `HANDLING_TABLE and answerInputBudget` — new
+### 3.3 `The report on the ordinary success path (found.report)` — field-modify
 
-The one place the method for each size is stated. HANDLING_TABLE maps XS, S and M to 'single-pass unless the characters exceed the budget' and L and XL to 'partitioned unless they fit'; the rule that decides a request is: partitioned when inputChars is greater than budgetChars, whatever the size, because files and items do not bound characters. answerInputBudget(model) returns budgetChars: the model's declared inputLimit converted to characters (a tokens limit by a stated ratio of 3 characters per token, a chars limit as declared), less the characters of the system prompt, the schema and a stated reserve for the model's output; for a model with no declared limit (the Ollama family reads its num_ctx, the agent's in-session model on the step tool declares nothing) a stated default in code. Both are constants and a function next to SIZE_THRESHOLDS in the measure module, not configuration, so no knob that truncates is added.
+In the lookup pipeline the driver derives found.report from the lookups before any answer is written and settlePipelineOutcome passes that report to the stamp callback, which builds the delivered bundle as { ...raw, report, meta } (src/analyze/context/driver.ts around 577 and 1476); the model's own report is never used. Because synthesize returns only the seven layers, a handling report produced while synthesizing would have no path to the delivered bundle, and a successful partial answer would keep complete=true from the lookups. The transition: the driver calls synthesizeHandled, builds found' = { ...found, report: applyHandling(found.report, handling) } and returns it in the 'bundle' outcome; settlePipelineOutcome then hands the updated report to the stamp callback. applyHandling sets handling by mergeHandling, adds one incomplete source note per not-covered part (sourceKind 'lookup', sourceId 'answer step / <part id>') and sets complete false when a part is not covered, including a combine fallback ('combine' in notCovered). A single pass adds the single-pass handling and leaves completeness as it was. The free-form short-circuit applies the same function to the report that reportFromLookups derives, using the handling extractSoleFreeformResult returns. On a thrown answer-step failure the error already carries found, whose report is built from the error's handling by the same function.
+
+**Call sites:**
+- `src/analyze/context/driver.ts:577`
+- `src/analyze/context/driver.ts:1476`
+- `src/analyze/context/driver.ts:1664`
+- `src/analyze/context/driver.ts:1715`
+- `src/analyze/completeness.ts:377-420`
+
+### 3.4 `HANDLING_TABLE, the admission rule and the output caps` — new
+
+HANDLING_TABLE maps the sc3 size to the method: XS and S single pass, M, L and XL partitioned; an undetermined measure is XL. The size reaches every caller of the helper, the free-form final emit through the tool loop included. The admission rule decides whether a rendered input (messages, repeated context, the reference context, the absent-input section) may be sent, in two units that are never mixed. For a CLI provider: characters, against the declared inputBudgetChars minus a 16,000-character reserve (basis 'declared'). For a local model: the UTF-8 byte length against the window tokens (the figure ollamaContextWindow gives num_ctx) minus the call's output tokens minus 2,048 for template and special tokens (basis 'bytes-bound'), because every token covers at least one byte, so the byte length bounds the token count and an admitted input cannot be truncated. Output tokens are per call kind and apply to a local model only: a single pass keeps the configured ollamaNumPredict; part and combine calls use the constant PART_MAX_OUTPUT_TOKENS = 8,192, enough for a seven-layer reply with a summary capped at 2,000 characters, and OllamaProvider enforces it as num_predict (a reply cut at the cap ends mid-JSON and fails validation as an invalid reply). A CLI provider enforces no output cap: CliProvider.modelArgs ignores the completion options and the Vibe path forwards no limit. None is needed for the admission bound: a CLI provider's admission is input characters only, and a part reply's size never enters a later model call, because the combine reads only the part summaries (capped at 2,000 characters by the schema) and the evidence layers are assembled in code from the replies into the delivered answer. Worked with the checked-in configuration (a 32,768-token window and ollamaNumPredict 20,480): single pass 32,768 - 20,480 - 2,048 = 10,240 bytes; part and combine 32,768 - 8,192 - 2,048 = 22,528 bytes. The existing prompts alone are 10,652 bytes (code), 11,040 (adherence) and 6,324 (docs), so a local code or adherence request is never admitted single pass and is always handled in parts (trigger 'fit'), and a docs request is admitted single pass only if its evidence fits in 3,916 bytes. For a part the largest prompt plus the 4,000-byte minimum room is 15,040 bytes, within 22,528 with 7,488 spare; the reference context and the envelope of a sectioned block are counted in the fixed context, so the room left for a section is 22,528 minus the prompt minus the reference context minus the envelope. This departs from the wording of ac4 for local code and adherence requests; the user accepted it on 2026-11-08 (accuracy over cost), and ac4 still guarantees that a small request whose input is admitted is returned whole. If the fixed context plus the minimum room does not fit the part budget, HandlingBudgetError names the configuration (raise the window or lower PART_MAX_OUTPUT_TOKENS) and, when the reference context or an envelope is what does not fit, that. On a local model a part reply that outgrows the cap is cut by the provider, fails validation and is handled by the repair and division rules. With no declared limit: 60,000 characters (source 'default', also used by the step tool, which has no provider). The helper owns the repair loop: it calls completeStructured with {maxAttempts: 1, internalRetry: false} (internalRetry is an existing completion option), because maxAttempts alone is ignored by CliProvider's Vibe path and the Claude and Codex paths keep transient retries; with both set no provider retries on its own. It builds each repair prompt itself with the repair note capped at 8,000 characters of listed errors (the rest counted) and applies the rule to every attempt before it is sent. Repair exhaustion has one rule everywhere: a repair that is not admitted divides the part further, up to three times; after that the part is recorded as not covered and processing continues, so a successful part is never discarded. The input is divided when the table says partitioned OR the rule does not admit it.
+
+**Call sites:**
+- `src/shared/types.ts:199-203`
+- `src/shared/types.ts:263`
+- `src/analyze/context/shaper-provider.ts:205-250`
+- `src/agent/providers/structured-output.ts:150-215`
+- `src/daemon/tools/convert-text.ts:144`
+- `src/config/analyze.ts:40-60`
+- `src/config/analyze.ts:193`
+- `src/agent/providers/ollama.ts:673`
+- `src/agent/providers/cli-provider.ts:707-721`
+
+### 3.5 `PartPlan, the dependency table, section envelopes and the caller adapters` — new
+
+A PartPlan is the ordered blocks of the evidence with an ordinal separate from the block key, grouped by directory then file in stable order, plus the reference blocks. The DEPENDENCY table, keyed by synthesize target, was built by reading each prompt in src/prompts/analyze/synthesize.*.system.md and has two mechanisms. Reference context: the outputs that other outputs are judged against are removed from the partition blocks and rendered in every part and every combine call in the position of the absent-input section, never sectioned, and counted in the fixed context of the admission rule: 'adherence' = the outputs of doc.constraint.enumerate and doc.decision.trace (the prompt classifies each code site against that rule text and drops a site it cannot classify); 'capability' = the outputs of capability.reuse-check (the prompt lists concept.resolve hits as related modules only when they are absent from the candidates, so each part holding concept.resolve hits sees the candidates); 'code' = the anchor record of concept.resolve, a small structural extract made in code (anchor.source, the anchor identity and, when ranked, hits[0]), because the bundle is centred on the anchor even when a child hit ranks higher; 'docs', 'data' and 'infra' = none, each with its reason recorded in the table (no comparison between outputs is stated). The rule-source count and the rule restatement of an adherence answer are computed in code from the reference blocks, not from part replies. Dedupe keys: DEDUPE_KEYS names the sub-sections a prompt dedupes (Related docs by file, Related modules by path, surface by file); the adapters apply dedupeByKey to the concatenation of the parts in ordinal order, so an entry that appears in several parts is listed once, the first occurrence winning. If the fixed prompt plus the reference context plus the 4,000-unit minimum room is not admitted, the helper throws HandlingBudgetError naming the reference context, because the evidence is never summarised down. An audit test fails when a synthesize prompt key has no table entry, so a new prompt cannot be added without stating its cross-output clauses. Sections: only a block's sectionable text field (a doc output's constraint or decision text and its rationale, a section body, a stringified aggregate value) is cut, into consecutive sections each the largest whole UTF-8 code-point prefix of the remainder that fits the room, so no code point is split and a section may leave up to three unused bytes; sections do not overlap; a section is short only if it is the final one or ends at a code-point boundary before the room is full. The block's envelope, its identifying and citation fields (doc outputs: sourceEntityId, file, heading, kind; code and search hits: file and line; aggregate upstream outputs: taskId, template, params), is repeated at the head of every section and counted in the admission, so a section never separates text from its citation; an envelope that leaves less than the 4,000-unit minimum gives HandlingBudgetError naming the envelope. A PartResult holds the part's heading, its summary (capped at 2,000 characters by the schema) and its assembled content. The bundle adapter takes system, focus and summary from the final combine and concatenates structure, surface, artefacts and upstream of the covered parts by ordinal under part headings, deduping the keyed sub-sections; the aggregate adapter takes the summary from the final combine and concatenates the findings of the covered parts by ordinal, each keeping its sources. A combine reply is never read for evidence or findings. Combine stages: N summaries become ceil(N/g) with g at least 2, so it ends in at most ceil(log2 N) stages. If a combine fails or is not admitted and at least one part is covered, the adapter's output is built from the per-part results with 'combine' in notCovered and nothing is thrown.
+
+**Call sites:**
+- `src/analyze/context/synthesizer.ts:117-169`
+- `src/analyze/context/synthesizer.ts:100-106`
+- `src/prompts/analyze/synthesize.adherence.system.md`
+- `src/prompts/analyze/synthesize.capability.system.md:63`
+- `src/prompts/analyze/synthesize.code.system.md:132`
+- `src/prompts/analyze/synthesize.docs.system.md:68`
+- `src/analyze/runtimes/shared/aggregator.ts:100-155`
+- `src/analyze/runtimes/shared/aggregate-types.ts:28-80`
+
+### 3.6 `HandlingBudgetError, the every-part-failed case and LookupFailedError` — new
+
+HandlingBudgetError extends ShaperAnswerStepFailedError, with a new reason 'input-does-not-fit' added to AnswerStepFailureReason (additive; the class is declared by Story s1). ShaperAnswerStepFailedError gains two optional readonly fields (additive; absent on the lookup path's single-pass failures): upstream: readonly AggregateInputRecord[], AggregateInputRecord being { taskId, template, params, value } as in UpstreamOutput, because found is AnswerStepFound whose results are lookup results (ExecutedExploration[]) and cannot hold the aggregator's inputs; and partFailures: readonly { part, kind, reason, cause? }[] for every failed part, kind being 'call-failed', 'invalid-reply' or 'unadmittable' and cause a FailureCause { name, message, cause? } built by the same bounded builder as failureData (at most 3 levels, JSON-safe, no Error objects), so the original cause chains of several failed parts survive the typed terminal failure; HandlingReport.notCovered keeps only part and reason text. An aggregator failure sets found.results to [] because no lookup ran, builds found.report from the failure alone with the helper the lookup path uses for an empty result list, and sets upstream to the upstream outputs it was given, so nothing is invented and nothing is dropped. Every part failure is classified by cause when it happens, not by whether the call threw: 'call-failed' when isModelCallFailure(err) (src/analyze/context/model-failure.ts, the test runAggregator's classifyError already uses; its list of CLI wordings gains 'vibe exited with', because cli-provider.ts builds every CLI non-zero exit as `${cli} exited with ${code}.` and completeStructuredVibe wraps it in the retry prefix that isModelCallFailure strips, so without the entry an all-parts Vibe outage would fall through to 'invalid-answer'; a size refusal, InputTooLargeError, is handled by the division rule before classification and is never 'call-failed'), 'invalid-reply' for ModelResponseShapeError, SynthesizerSchemaUnrecoverable or any other validation failure that completeStructured throws (the Ollama and Vibe providers throw after a single attempt when validation fails, and Codex throws ModelResponseShapeError), and 'unadmittable' when the rendered input is not admitted. Terminal precedence when no part is covered: HandlingBudgetError only when every uncovered part is unadmittable (or the fixed context leaves no room for a section); otherwise a ShaperAnswerStepFailedError with reason 'model-failed' if any part is 'call-failed', else 'invalid-answer', with every part's own reason in notCovered. Typed versus legacy: a call that was divided into parts ends in these typed terminal failures, which bypass classifyError; a single-pass call that fails keeps today's route, so in runAggregator classifyError gives the prefixed Error with the original as cause, and a single-pass Vibe exit takes the 'aggregator-llm-unavailable:' prefix while an all-parts Vibe outage on a divided input gets the typed 'model-failed' with no prefix. The daemon's mapping (analyze-rpc.ts) and the plan tree's mapping (orchestrator/driver.ts), which test instanceof ShaperAnswerStepFailedError, carry the found results and report with no new branch, and the driver passes the error through unchanged. LookupFailedError (message, partial, cause) gains two optional fields: handling and answerStepReason (the original reason). The free-form lookup catches every ShaperAnswerStepFailedError from the tool loop and throws a LookupFailedError carrying the tool results as partial, the handling and the reason; failedOutput copies the reason into the failed output's errorCode as 'answer-step:<reason>' and keeps the cause, and the pipeline rebuilds the ShaperAnswerStepFailedError from that reason and the found results, so the three reasons are told apart and executePlan keeps the partial results and the report instead of attempting a second synthesis.
 
 ```
-export const HANDLING_TABLE: Readonly<Record<AnalyzeScope, 'single-pass-unless-over-budget' | 'partitioned-unless-fits'>>;
-export function answerInputBudget(model: ResolvedModel | undefined, fixedChars: number): number;
+AnswerStepFailureReason adds 'input-does-not-fit'; ShaperAnswerStepFailedError adds readonly upstream?: readonly AggregateInputRecord[] | undefined and readonly partFailures?: readonly PartFailure[] | undefined, with AggregateInputRecord = { readonly taskId: string; readonly template: string; readonly params: Readonly<Record<string, unknown>>; readonly value: unknown }, PartFailure = { readonly part: string; readonly kind: 'call-failed' | 'invalid-reply' | 'unadmittable'; readonly reason: string; readonly cause?: FailureCause | undefined } and FailureCause = { readonly name: string; readonly message: string; readonly cause?: FailureCause | undefined }; LookupFailedError adds readonly handling?: HandlingReport | undefined and readonly answerStepReason?: AnswerStepFailureReason | undefined; CLI_FAILURE_TEXTS adds 'vibe exited with'
 ```
 
 **Call sites:**
-- `src/analyze/measure.ts:85`
-- `src/analyze/context/shaper-provider.ts:234`
-- `src/assets/models/cloud-model-catalog.json`
+- `src/analyze/context/driver.ts:325-362`
+- `src/analyze/context/driver.ts:1364-1367`
+- `src/analyze/executor/types.ts:56-61`
+- `src/daemon/analyze-rpc.ts:1046`
+- `src/analyze/orchestrator/driver.ts:810`
+- `src/analyze/explore/lookup-failed.ts:20-34`
+- `src/analyze/explore/freeform-probe.ts:150-200`
+- `src/analyze/explore/executor.ts:690-715`
+- `src/analyze/context/model-failure.ts:25-90`
+- `src/agent/providers/model-call-error.ts:1-40`
+- `src/agent/providers/cli-provider.ts:972-989`
+- `src/agent/providers/cli-provider.ts:1068-1095`
 
-### 3.4 `Block, PartPlan and PartResult (the shared partition-and-combine helper)` — new
+### 3.7 `TaskExecutionRecord.data, RunFailure.data and the failed nested plan` — field-add
 
-One module under src/analyze used by synthesize, runAggregator and prepareSynthesize. Block { key: string (the file path, the document section id or the task path the block belongs to); text: string (already rendered) }. partition(blocks, budgetChars) returns PartPlan { partitionedBy; parts: { key: string; blocks: Block[] }[] }: blocks are sorted by key so a part holds neighbouring files and directories, whole blocks are placed in order until the next would exceed the budget, and a block that alone exceeds the budget is cut into consecutive sections on line boundaries (partitionedBy 'section'), each section a block of its own with key '<key>#<n>/<of>'. PartResult { key: string; bundle?: Omit<AnalyzeContextBundle,'meta'> (or AggregateLLMOutput for the aggregator); failure?: string }. combine(results, budgetChars) joins in stages: when the rendered per-part results exceed the budget they are grouped in order and combined group by group until one remains, combineStages counting the levels. A non-block part of an exploration output (its headers and completeness) is repeated in every part that holds a list element of that output, so each part is understood alone.
-
-**Call sites:**
-- `src/analyze/context/synthesizer.ts:129`
-- `src/analyze/runtimes/shared/aggregator.ts:103`
-- `src/daemon/steps/analyze-step/answer-turn.ts`
-
-### 3.5 `AggregateReport.metadata` — field-add
-
-metadata gains handling?: HandlingReport, set by runAggregator and copied by the plan tree's driver into AnswerReport.handling. Reports stored before the change have no handling and are read as single-pass.
-
-```
-+ readonly handling?: HandlingReport | undefined;
-```
-
-**Call sites:**
-- `src/analyze/runtimes/shared/aggregator.ts:103`
-- `src/analyze/runtimes/docs/aggregate-report.ts`
-- `src/analyze/orchestrator/driver.ts`
-
-### 3.6 `StepStatePayload` — field-modify
-
-The step tool carries the division in its opaque state token so that a repeated call gives the same parts. stage gains 'awaiting_part' and 'awaiting_combine'; a new optional field completedParts: PartResult[] holds the parts written so far. The existing phase 'bundle' accepts a part or the combine bundle when the stage says so (the same bundle schema), so the phase set of the tool, and its schema, do not change; the response's next value gains 'emit_part' and 'emit_combine' beside 'emit_bundle', which the tool description and the steering text name. Invariants to preserve: a request that fits is unchanged (c3) and no result is reduced without saying so (c5).
+executeLeafTask(task: PlannedTask, intent, runId, outputs: ReadonlyMap<string, readonly UpstreamOutput[]>, absentInputs?, execution?) currently catches an error from the aggregate task and records the failed task with its message only, and the orchestrator turns a failed aggregate task into the run failure with the code 'executor-aggregator-failed' and a message of task counts and failure strings. TaskExecutionRecord gains an optional data field kept for any aggregate failure, built by failureData(err) as a JSON-safe value, because task and run records are written with JSON.stringify (atomicWriteJson in executor/cache.ts and orchestrator/persistence.ts), which turns an Error object into {}: for a ShaperAnswerStepFailedError (HandlingBudgetError included) { kind:'answer-step', reason, found, upstream, partFailures, handling }, where upstream keeps taskId, template, params and value of each upstream output (plain task outputs that are already stored in task records, so the same JSON rule applies) and partFailures keeps the kind, reason and bounded cause chain of every failed part; for a plain Error { kind:'error', name, message, cause? } with the cause nested at most 3 levels and no Error objects, functions or cycles. The original error is preserved at the classification boundary: runAggregator's classifyError builds the same prefixed Error as today but with the original error as its cause (it discarded it before), and a typed answer-step error thrown by the helper for a divided call is not passed through classifyError, so executeLeafTask receives the original in both cases. The orchestrator copies it into RunFailure.data under the unchanged code when the root aggregate fails. For a nested plan, executePlannerTask marks the parent planner task failed when its child has no final report and keeps childResult, and collectPlanSources checks failure status before recursing, so a failed nested aggregate was unreachable and a root aggregate that succeeds from sibling outputs raised no run failure. The design makes collectPlanSources read the kept child records of a failed planner-kind task and add sources for the child's aggregate failure and uncovered parts, and concludeRun merge the nested handling with the root's, so the run is incomplete and names the nested failure whether or not the root aggregate succeeded.
 
 ```
-- stage: 'awaiting_plan' | 'awaiting_narrow' | 'awaiting_bundle'
-+ stage: 'awaiting_plan' | 'awaiting_narrow' | 'awaiting_bundle' | 'awaiting_part' | 'awaiting_combine'
-+ readonly completedParts?: readonly PartResult[] | undefined;
+TaskExecutionRecord adds readonly data?: unknown (JSON-safe: AggregateFailureData)
 ```
 
 **Call sites:**
-- `src/daemon/steps/analyze-step/state.ts`
-- `src/daemon/steps/analyze-step/phases/plan.ts`
-- `src/daemon/steps/analyze-step/phases/narrow.ts`
-- `src/daemon/steps/analyze-step/phases/bundle.ts`
+- `src/analyze/executor/walker.ts:205-275`
+- `src/analyze/executor/walker.ts:338-390`
+- `src/analyze/executor/plan-sources.ts:43-92`
+- `src/analyze/executor/types.ts:184-205`
+- `src/analyze/executor/types.ts:56-61`
+- `src/analyze/orchestrator/driver.ts:515-530`
+- `src/analyze/orchestrator/driver.ts:605-632`
+- `src/analyze/orchestrator/types.ts:265-269`
+- `src/analyze/orchestrator/types.ts:307`
+- `src/analyze/runtimes/shared/aggregator.ts:145`
+- `src/analyze/runtimes/shared/aggregator.ts:355`
+- `src/analyze/executor/cache.ts:126`
+- `src/analyze/orchestrator/persistence.ts:183`
 
-## 4. Interaction with shared contracts
+### 3.8 `AnswerProgress and StepStatePayload` — field-add
+
+AnswerProgress is {mode: 'single' | 'partitioned', trigger?: 'size' | 'fit' | 'both', plan: PartPlan (the blocks with ordinals, envelopes and section cuts, and the reference blocks), budgets: HandlingReport['budgets'], completed: PartResult[] by ordinal, pending: {kind 'part' | 'combine', ordinal or stage and group index}, stageOutputs, failures: PartFailure[], retries}. Carrying the plan, the decision and the budgets lets the progress overload of finalizeSynthesize decide whether another part remains and return the HandlingReport without recomputing from the evidence. startAnswerProgress(args, size) makes the initial value: prepareAnswerTurn calls it when the plan phase hands over, from the table and the admission of the rendered input, and the state carries it from then on; a state without progress is a legacy state and is read as single pass. The bundle handler persists progress by re-encoding the state token on every valid transition. An invalid reply increments retries, is persisted, and the current turn is re-emitted with the same prompt and a new state token and a retry note, as StepOutputEmitBundle, StepOutputEmitPart or StepOutputEmitCombine, which gain an optional retry field {attempt, reason}; it is not an error output. At the retry bound the part or the combine is recorded as failed and the flow continues; retries reset to zero when a turn advances; progress is released on terminal success and failure.
+
+**Call sites:**
+- `src/daemon/steps/analyze-step/phases/bundle.ts:90`
+- `src/daemon/steps/analyze-step/answer-turn.ts:37-62`
+- `src/daemon/steps/analyze-step/types.ts:56-157`
+
+### 3.9 `StepOutputEmitPart and StepOutputEmitCombine` — new
+
+Two outputs added to the StepOutput union beside StepOutputEmitBundle with the same fields plus the part ordinal and total, or the stage and group, and the optional retry field. A reply reuses the registered bundle argument of seven string layers (a part reply is a seven-layer bundle of that part with its summary within the cap; a combine reply fills system, focus and summary and leaves the four evidence layers empty), so the registered MCP schema and StepInputBundle are unchanged and the legacy emit_bundle turn is kept. A typed answer failure is returned as StepOutputError with the declared code and its data, not as an uncaught exception.
+
+**Call sites:**
+- `src/mcp/server.ts:408-425`
+- `src/daemon/steps/analyze-step/types.ts:56-157`
+- `src/daemon/steps/analyze-step/handler.ts:118`
+
+### 3.10 `AggregateReport.metadata.handling` — field-add
+
+Carries the HandlingReport of the aggregator call, validated by parseHandling on read. collectPlanSources reads it for the aggregate task of the root plan and of each nested plan, and concludeRun merges them with the run context's handling through mergeHandling, so uncovered parts make the run's completeness false.
+
+**Call sites:**
+- `src/analyze/executor/plan-sources.ts:43-92`
+- `src/analyze/orchestrator/driver.ts:605-632`
+
+## 4. Diagrams
+
+- [Sequence diagram](docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S003/sequence-diagram.html)
+
+## 5. Interaction with shared contracts
 
 | Contract | Role | How |
 | :--- | :--- | :--- |
-| `sc4` | implements | This Story owns the Handling report. It produces HandlingReport at three places (synthesize, runAggregator and the step tool's turns) from one helper, fills method, parts, partitionedBy and notCovered as the HLD sketches, and adds three optional fields. Story s4 reads it to confirm that results that were limited before are now handled in parts. |
-| `sc1` | consumes | A part is built from lookup results and plan-task outputs that each carry a completeness record; the record is kept with every block of its output. The answer report's completeness is derived from the records as before. A part that fails is reported in notCovered and is never counted as a lookup that found nothing. |
-| `sc2` | consumes | Fills the handling field of the answer report that Story s1 owns and renders it in the head of the answer through renderReportHead; the completeness and measure lines are unchanged. |
-| `sc3` | consumes | Reads RequestMeasure.size to state which row of HANDLING_TABLE applied and RequestMeasure.characters (recorded by Story s2 'for the handling of large results') as inputChars when the lookup pipeline decides; the plan tree's aggregator measures the characters of its own rendered upstream section because it has no lookup measure. |
-| `sc6` | consumes | On the lookup pipeline, a failure of the combine step, of every part, or a budget that leaves no room is raised as the typed ShaperAnswerStepFailedError (src/analyze/context/driver.ts), whose code 'answer-step-failed' Story s1 added to the list Story s6 owns; it carries the executed results and the report with handling filled. On the plan tree the aggregate task fails with an 'aggregator-parts-failed:' Error through the executor's existing path. No new error code is declared. |
+| `sc4` | implements | Types HandlingReport with additive fields (combineStages, budgets in their own units, optional trigger, and 'mixed' for partitionedBy), states the composition rules, and fills it on every answer of both paths. |
+| `sc2` | consumes | Fills AnswerReport.handling through applyHandling (which also adds the uncovered parts as incomplete source notes and sets complete false); keeps the binary mergeAnswerReports(first, second, prefix); renders one handling line in renderReportHead; the driver passes the updated report to the stamp callback that sets the delivered bundle's report. |
+| `sc1` | consumes | A result whose part or combine failed is incomplete; plan-task completeness records are read as today and the aggregate's handling, at any depth, is added as sources. |
+| `sc3` | consumes | Reads RequestMeasure.size for HANDLING_TABLE (an undetermined measure is XL) on every path; measure.characters stays a hint. |
+| `sc6` | consumes | Uses the answer-step-failed code declared by sc6 and raised by Story s1 through the existing ShaperAnswerStepFailedError mappings and keeps the existing 'executor-aggregator-failed' code with data for the aggregate task; no new code. |
 
-## 5. Error paths
+## 6. Error paths
 
 **Error cases**
 
-- **A part is refused as too large although the division said it fits (the characters-per-token ratio or the reserve was wrong for this model).** (recoverable)
-  - Detection: The per-part call throws InputTooLargeError (src/agent/providers/cli-provider.ts) or the local model's equivalent refusal; the error carries the sizes it was refused at.
-  - Response: The part is divided once more into two halves on block boundaries (a block that alone is the whole part is cut into sections) and both halves are run; the division is recorded in the report. If a half is refused again at one block of one section the part is recorded in notCovered with the refusal as its reason and the rest continues.
-  - User impact: The answer still arrives; the report names what could not be covered and why.
-- **A part's model call fails for another reason (the model is unavailable, the structured output cannot be repaired).** (recoverable)
-  - Detection: The per-part call throws; the existing classifyError of the synthesizer or the aggregator classifies it.
-  - Response: The part is kept out of the combination and recorded in HandlingReport.notCovered with the classified reason; the other parts are combined. The failure is not retried beyond the existing structured-output attempts.
-  - User impact: A combined answer that says it does not cover that part.
-- **Every part fails, or the combine step fails.** (terminal)
-  - Detection: No PartResult has a bundle, or the combine call throws after its existing attempts.
-  - Response: On the lookup pipeline raise the typed ShaperAnswerStepFailedError (code 'answer-step-failed', declared by Story s6, raised by Story s1) with the executed results and the report whose handling is filled; the request is not passed to another way of answering. In the aggregator throw an Error starting 'aggregator-parts-failed:' so that the aggregate task is recorded as failed with its reason.
-  - User impact: A clear error that carries what the lookups found, as Story s1 requires.
-- **The combine input is itself larger than the budget.** (recoverable)
-  - Detection: The rendered per-part results exceed budgetChars before the combine call.
-  - Response: Combine in stages: group the per-part results in order into groups that fit, combine each group, and repeat on the results until one remains; combineStages in the report counts the levels. A group of one result is passed through and not re-written.
-  - User impact: None beyond time; the report states the number of stages.
-- **The combining drops a finding or a citation that a part had.** (recoverable)
-  - Detection: After combining, a deterministic check compares the cite lines of every part's artefacts, and for the aggregator the findings of every part, with the combined result.
-  - Response: Missing cite lines are appended to the combined artefacts; the aggregator never relies on the model for findings (they are concatenated in plan order), only for the summary.
-  - User impact: No finding or citation is lost by the combining.
-- **The budget is not larger than the fixed part of the prompt (the system prompt, the schema and the reserve).** (terminal)
-  - Detection: answerInputBudget returns a value of zero or less for the model.
-  - Response: Refuse to divide, since no division could fit: raise ShaperAnswerStepFailedError (lookup pipeline) or an 'aggregator-parts-failed:' Error (aggregator) with a message that names the model, its declared limit and the fixed characters, so a misconfigured model is seen at once and not as a loop.
-  - User impact: An error that names the cause.
-- **On the step tool, the agent's model returns a part or combine bundle that fails the bundle schema.** (recoverable)
-  - Detection: finalizeSynthesize throws SynthesizerSchemaUnrecoverable in the 'bundle' phase while the state's stage is 'awaiting_part' or 'awaiting_combine'.
-  - Response: Return the same turn again with the error message, without advancing the state, as the step tool does for an invalid bundle today; after the existing retry count the part is recorded in notCovered.
-  - User impact: The agent is told what was wrong and asked for that part again.
-- **On the step tool, the state token's completedParts does not belong to the division now computed (the lookups or the budget changed between calls).** (recoverable)
-  - Detection: The state carries a division key (a hash of the part keys and the budget) that differs from the one recomputed from the executed results.
-  - Response: Refuse with the existing state-mismatch error and ask the agent to start the request again from 'start'; no part is trusted across a different division.
-  - User impact: A restart of that request.
-- **The agent stops answering part turns (the call sequence is abandoned) on the step tool.** (recoverable)
-  - Detection: The state token expires or is never presented again.
-  - Response: Nothing is persisted beyond the token's existing life; the next 'start' begins afresh.
-  - User impact: None; no half answer is stored.
+- **A part's model call fails, or its reply fails the schema after the helper's bounded repair attempts** (recoverable)
+  - Detection: The single-attempt call (internalRetry false) throws, or the reply fails validation and the helper's own repair count reaches the structured-output retry setting
+  - Response: The part is recorded in failures and named in HandlingReport.notCovered with its qualified id and reason; the other parts are kept; completeness is false
+  - User impact: The answer is delivered and names the part that was not covered and why
+- **A provider retries on its own despite maxAttempts 1** (terminal)
+  - Detection: Prevented by passing internalRetry false with maxAttempts 1; a test with the real CliProvider adapters (Vibe, Claude, Codex) counts provider attempts and fails if any makes more than one
+  - Response: No separate response: the helper is the only code that retries, and it measures every attempt
+  - User impact: No unmeasured repair note can enter a call
+- **No part is covered (mixed terminal failures)** (terminal)
+  - Detection: failures holds every part and completed is empty; the helper records for each part a failure kind chosen by cause when it happened: 'call-failed' (isModelCallFailure(err), whose wording list includes the Claude, Codex and Vibe exits), 'invalid-reply' (ModelResponseShapeError, SynthesizerSchemaUnrecoverable or any other validation failure thrown by completeStructured, which the Ollama, Vibe and Codex adapters throw for a schema-invalid reply) or 'unadmittable'; it applies one precedence rule
+  - Response: HandlingBudgetError ('input-does-not-fit') only when every uncovered part is 'unadmittable', or the fixed context leaves no room for a section; otherwise a ShaperAnswerStepFailedError with reason 'model-failed' if any part is 'call-failed', else 'invalid-answer'. Either way every part's own reason is in notCovered, its kind and bounded cause chain are in partFailures, and the lookup results and the report are carried
+  - User impact: A typed failure of the right kind that keeps what the lookups found and names what happened to each part, with the original cause of each; malformed replies are reported as 'invalid-answer' and not as a failed model call even though the adapter threw; a mix of unadmittable and failed parts is reported as the failure of the call, not as a budget problem; no empty answer is written
+- **Several parts fail with different causes (for example distinct outer and inner provider messages)** (terminal)
+  - Detection: The helper builds a FailureCause for each failed part with the same bounded builder failureData uses: name, message and cause at most 3 levels, JSON-safe, no Error objects
+  - Response: partFailures holds one entry per failed part with its kind, reason and cause chain; failureData serialises them with the typed error, so the stored task record and RunFailure.data keep every part's outer and inner messages
+  - User impact: A reader of the stored failure can tell why each part failed, not only that the call failed
+- **Every part fails with a Vibe non-zero exit (an API or runtime outage) on a divided call** (terminal)
+  - Detection: completeStructuredVibe wraps the CliExitError ('vibe exited with <code>. ...') in the 'structured-output: validation failed after N attempts: ' prefix; isModelCallFailure strips the prefix and, with 'vibe exited with' in CLI_FAILURE_TEXTS, recognises it; a size refusal (InputTooLargeError) is excluded because the division rule handles it first
+  - Response: Each part is recorded as 'call-failed'; with no part covered the terminal failure is the typed ShaperAnswerStepFailedError 'model-failed' with every part's reason and cause chain; being typed it bypasses classifyError and carries no aggregator prefix
+  - User impact: A Vibe outage on a divided input is reported as a failed model call, not as a malformed answer
+- **A single-pass call fails with a Vibe non-zero exit (the aggregator's one call, no division)** (terminal)
+  - Detection: The aggregator's single call throws; the call was not divided, so the typed terminal failures do not apply
+  - Response: runAggregator's classifyError gives the prefixed Error with the original as its cause; isModelCallFailure now recognises 'vibe exited with', so the prefix is 'aggregator-llm-unavailable:'; the legacy route is otherwise unchanged
+  - User impact: A single-pass Vibe outage is reported with the llm-unavailable prefix, as a Claude or Codex outage already was
+- **The reference context of the target (the rule an adherence check classifies against, the capability reuse-check candidates, the code anchor) does not fit with the fixed prompt and the minimum room** (terminal)
+  - Detection: The admission rule counts the reference context in the fixed context; fixed prompt plus reference context plus the 4,000-unit minimum room is not admitted against the part and combine budget
+  - Response: HandlingBudgetError whose message names the reference context and the configuration to change; the reference context is not sectioned and not summarised down, because a part cannot be judged against evidence it cannot see; no partial answer is written
+  - User impact: A typed failure that says the reference evidence is too large to accompany every part, instead of an answer whose sites were silently dropped or misclassified
+- **A dependent part would lose the evidence it is judged against (an adherence request with the rule under docs/ and the code sites under src/; a capability request with concept.resolve hits and reuse-check candidates in different parts; a code request with the anchor and its callers in different parts)** (recoverable)
+  - Detection: selectSharedContext returns the reference blocks for the target from the DEPENDENCY table; the partition blocks exclude them, so no part is built without them
+  - Response: The reference blocks are rendered in every part and every combine call; each part classifies its sites against the rule, excludes reuse-check candidates from related modules and centres on the anchor; the rule-source count and rule restatement are computed in code
+  - User impact: Sites in a different directory from the rule are classified instead of dropped, a candidate is not repeated as a related module, and the bundle is centred on the anchor in every part
+- **An entry appears in more than one part of a deduped sub-section (a file under Related docs, a path under Related modules, a file in the surface layer)** (recoverable)
+  - Detection: The adapter concatenates the parts' entries in ordinal order and applies dedupeByKey with the key DEDUPE_KEYS gives that sub-section
+  - Response: The entry is listed once, the first occurrence by part ordinal winning
+  - User impact: A divided answer does not list the same file or module several times
+- **A synthesize prompt is added or changed without a dependency table entry** (recoverable)
+  - Detection: The audit test compares the registered synthesize prompt keys with the table's keys
+  - Response: The test fails until the table states the prompt's cross-output clauses or records that it has none and why
+  - User impact: A new prompt cannot be divided before its cross-output meaning has been stated
+- **A long record has to be sectioned (a decision or constraint whose text and rationale exceed the room)** (recoverable)
+  - Detection: sectionBlock cuts only the block's sectionable text field and prepends the block's envelope to every section
+  - Response: Every section carries sourceEntityId, file, heading and kind (doc outputs), file and line (hits) or taskId, template and params (aggregate upstream outputs); the cuts are consecutive code-point-safe prefixes; the envelope is counted in the admission; an envelope that leaves less than the minimum room gives HandlingBudgetError naming the envelope
+  - User impact: Each piece of a long record can still be cited and quoted verbatim, and the whole record is read
+- **The combine call fails, its reply stays invalid, or the combine itself is not admitted** (recoverable)
+  - Detection: The combine call throws, or its reply fails validation at the repair bound, or the admission rule does not admit fixed context plus two capped summaries, with at least one part covered
+  - Response: The output is built from the per-part results unchanged by the adapter, its summary layer being the part summaries concatenated by ordinal, and 'combine' is added to notCovered; nothing is thrown
+  - User impact: The per-part results are returned with the combine failure reported
+- **A combine stage does not reduce the count of summaries** (recoverable)
+  - Detection: The helper compares the count before and after the stage
+  - Response: The stage is treated as a combine failure and the per-part fallback applies
+  - User impact: The combine always ends
+- **The room for a section is under the 4,000-unit minimum, or the fixed context leaves no room** (terminal)
+  - Detection: Fixed rendered input plus the minimum room is not admitted against the part and combine budget (with the checked-in local configuration 22,528 bytes: window 32,768 minus PART_MAX_OUTPUT_TOKENS 8,192 minus 2,048), or every part is unadmittable
+  - Response: HandlingBudgetError with the results and the report, whose message names the configuration to change (raise the window or lower PART_MAX_OUTPUT_TOKENS); no partial answer is written
+  - User impact: A typed failure that says the configured window and output size leave no room
+- **A part reply outgrows the 8,192-token part output cap on a local model** (recoverable)
+  - Detection: OllamaProvider passes maxTokens as num_predict, so the provider cuts the reply mid-JSON and it fails validation; the helper sees an invalid reply for that part. A CLI provider enforces no output cap, so this case does not arise there and is not needed: a part reply never enters a later model call
+  - Response: The repair and division rules apply: one repair attempt that is admitted, otherwise the part is divided into smaller sections up to three times, then recorded as not covered; the other parts continue
+  - User impact: A part whose findings do not fit one reply is read in smaller sections or named as not covered; nothing is silently cut
+- **A schema-repair attempt would not be admitted** (recoverable)
+  - Detection: The helper builds each repair prompt itself, from the part, the schema text and the repair note capped at 8,000 characters of listed errors (the rest counted), and applies the admission rule before the attempt
+  - Response: One rule for every repair: the part is divided into smaller sections up to three times; after that the part is recorded as not covered and the other parts continue; HandlingBudgetError is raised only under the terminal precedence rule, so a successful part is never discarded
+  - User impact: A malformed reply with many errors cannot push a call over the limit unnoticed, and cannot erase findings already gathered
+- **A section boundary falls inside a multi-byte character** (recoverable)
+  - Detection: The cutter looks for the largest whole UTF-8 code-point prefix that fits the room; for 4,999 ASCII bytes followed by a four-byte emoji in a 5,000-byte room, the emoji does not fit
+  - Response: The section ends before the emoji and the next section begins with it; the unused bytes of the first section stay unused; decoding any section gives valid text and no byte is lost
+  - User impact: Every character is read whole, in exactly one section
+- **The provider refuses a part as too large** (recoverable)
+  - Detection: InputTooLargeError from the provider, whose sizes may be undefined
+  - Response: The part is divided into smaller sections up to three times, and then recorded as not covered
+  - User impact: The part is read in full or named; nothing is silently cut
+- **A local model's tokenizer produces more tokens than bytes** (terminal)
+  - Detection: Not possible under the stated assumption that a token covers at least one input byte; template and special tokens are covered by the 2,048 reserve, and the assumption is recorded in the report as basis 'bytes-bound'
+  - Response: No separate response: the rule admits an input only if its byte length fits, so the window is not exceeded; a model whose special tokens exceed the reserve would need the reserve raised, one constant
+  - User impact: An admitted local input cannot be silently truncated; the cost is earlier division
+- **A typed answer failure is thrown from inside the free-form final emit** (terminal)
+  - Detection: The free-form lookup catches every ShaperAnswerStepFailedError from the tool loop (HandlingBudgetError, 'model-failed' and 'invalid-answer' alike); executePlan would otherwise turn any error that is not a ConnectionExecutionError into a failed lookup with no data
+  - Response: It throws a LookupFailedError carrying the tool results as partial, the HandlingReport and the original reason (answerStepReason); failedOutput keeps all three, copying the reason as errorCode 'answer-step:<reason>' with the cause; the pipeline rebuilds the ShaperAnswerStepFailedError from that reason and the found results, raises the answer-step failure with the report and does not attempt a second synthesis
+  - User impact: The caller receives the failure with what the search found, how far the handling got and its true reason, whatever the category of the failure
+- **A typed answer failure is thrown from inside synthesize** (terminal)
+  - Detection: The driver's catch sees HandlingBudgetError or ShaperAnswerStepFailedError
+  - Response: The driver passes it through unchanged instead of mapping it to 'answer-invalid'; the daemon's and the plan tree's mappings, which test instanceof ShaperAnswerStepFailedError, carry its results and report; the step tool returns it as StepOutputError with the declared code and its data
+  - User impact: The caller receives the error with the lookup results and the report
+- **A partitioned answer succeeds in part on the ordinary lookup path (a part or the combine is not covered)** (recoverable)
+  - Detection: synthesizeHandled returns layers and a HandlingReport whose notCovered is non-empty; the driver calls applyHandling on found.report before returning the 'bundle' outcome
+  - Response: applyHandling sets report.handling, adds one incomplete source note per uncovered part ('answer step / <part id>') and sets completeness.complete false; settlePipelineOutcome passes this updated report to the stamp callback, so the delivered bundle's report carries the handling, the uncovered parts and complete=false instead of the lookups' complete=true
+  - User impact: A partial answer is never delivered as complete; the head names the parts that were not covered and why
+- **The aggregator's classifyError would discard the original error** (terminal)
+  - Detection: classifyError builds a fresh prefixed Error; before this Story it passed no cause, so nothing downstream could read the original
+  - Response: classifyError keeps the prefix and message and sets the original error as the new Error's cause; the typed terminal failures of a divided call are thrown unwrapped and are not passed to classifyError; failureData reads the cause chain
+  - User impact: The run's failure data names the real cause of an aggregate failure
+- **A typed failure is raised by the aggregator, whose inputs are upstream task outputs and not lookup results** (terminal)
+  - Detection: The typed error's found is AnswerStepFound, whose results are lookup results, so it cannot hold the aggregator's UpstreamOutput records; the aggregator failure sets found.results to [] (no lookup ran) and the error's optional upstream field to the upstream outputs it was given
+  - Response: found.report is built from the failure alone with the helper the lookup path uses for an empty result list; upstream keeps taskId, template, params and value of every output; failureData serialises found, upstream, partFailures and handling together, so nothing is invented and nothing is dropped
+  - User impact: A failed aggregation keeps the actual outputs it was asked to combine and who produced them
+- **A failure is thrown from inside runAggregator** (terminal)
+  - Detection: executeLeafTask catches the aggregate task's error: either a typed ShaperAnswerStepFailedError (HandlingBudgetError included) from a divided call, thrown unwrapped by the helper, or a plain Error built by classifyError for a single-pass call with an aggregator prefix and the original error as its cause
+  - Response: The failed record keeps the failure in its optional data field as failureData(err), a JSON-safe value: { kind:'answer-step', reason, found, upstream, partFailures, handling } for a typed error, { kind:'error', name, message, cause? } for a plain Error with the cause nested at most 3 levels and no Error objects (task and run records are written with JSON.stringify, which turns an Error into {}). When the root aggregate fails the orchestrator copies it into RunFailure.data under the unchanged code 'executor-aggregator-failed'
+  - User impact: A failed aggregation keeps what it carried, including the original cause message, its upstream inputs and its part causes, whatever the kind of error, and survives being stored and read back; the run says how far the handling got
+- **A nested plan's aggregate fails while the root aggregate succeeds from sibling outputs** (recoverable)
+  - Detection: executePlannerTask returns a failed record with the kept childResult; collectPlanSources reads the child's records of a failed planner-kind task before it would stop at the failure status
+  - Response: A source for the nested aggregate's failure and for each uncovered part is added with the nested task path, and concludeRun merges the nested handling with the root's, so the run is incomplete and names the nested failure although no run failure was raised
+  - User impact: A run never reports complete over a nested aggregation that failed
+- **An invalid reply for a part or combine turn on the step tool** (recoverable)
+  - Detection: finalizeSynthesize (the progress overload) raises SynthesizerSchemaUnrecoverable for the current turn
+  - Response: The bundle handler increments progress.retries, persists the progress with a new state token and re-emits the current turn with the same prompt and a retry note; the client is never stranded without a token; at the retry bound the part or the combine is recorded as failed
+  - User impact: The client sees the same turn again with the reason, and the flow cannot loop for ever
+- **A stored handling value is malformed** (recoverable)
+  - Detection: parseHandling finds a missing required field or a wrong type, as for the stored {}
+  - Response: The value is treated as absent by mergeHandling, renderReportHead and isAnswerReport; it is not written back
+  - User impact: An old record is read without handling instead of failing
 
 **Edge cases**
 
 | Input | Expected |
 | :--- | :--- |
-| The rendered input is exactly the budget. | Single-pass: the rule is partitioned only when inputChars is greater than budgetChars. |
-| The division yields one part (the input is over the budget by a little but is a single block that cuts into one section). | A single section is a single-pass call on the section; the report says single-pass with the original input size noted, not partitioned with one part. |
-| Zero lookups returned results, or the plan produced no outputs. | Nothing to divide: single-pass with the existing text for an empty input, as today. |
-| One block is larger than the whole budget (a document section of several hundred thousand characters). | It is cut into consecutive sections on line boundaries, each reasoned over in turn, partitionedBy is 'section' and the answer takes the whole content into account. |
-| A single line longer than the budget (minified text, a long JSON line). | Cut at a character boundary that does not split a surrogate pair or a multi-byte character; sections stay in order. |
-| An exploration output has no list field to divide (only a long string, or a freeform.probe rawBundle). | It is one block; if it exceeds the budget it is cut into sections like any block. |
-| A failed or unsupported lookup output among the results. | It is a small block carried in the part of its position; it is not dropped and its reason appears in the part's input. |
-| More parts than one combine call can accept (hundreds). | Combined in stages until one result remains; the number of stages is reported. |
-| Two blocks with the same key (several lookups name the same file). | They are kept adjacent in lookup order so the part sees the file's findings together. |
-| A model that declares no input limit. | The stated default budget applies and the report's budgetChars shows the figure used. |
+| A size of XS or S whose rendered input is admitted | Single pass: the one call made today, with handling single-pass, parts 1 and no trigger. |
+| A size of M or larger whose rendered input is admitted | The table divides it: partitioned with trigger 'size', on the lookup path, the aggregator and the free-form final emit alike. |
+| A size of S whose rendered input is not admitted | The rule divides it: partitioned with trigger 'fit'; both conditions give trigger 'both'. |
+| A measure that could not be determined | Size XL: partitioned by the table. |
+| A local code or adherence request on the checked-in configuration (32,768-token window, 20,480 single-pass output tokens), whatever its size | The single-pass input limit is 10,240 bytes, below the existing prompt alone (10,652 bytes for code, 11,040 for adherence), so it is never admitted single pass and is handled in parts with trigger 'fit'. This is the accepted departure from the wording of ac4 (user, 2026-11-08); the answer states the parts. A docs request is admitted single pass only when its evidence fits in 3,916 bytes. |
+| A part or combine call on the checked-in local configuration | The limit is 22,528 bytes (32,768 - 8,192 - 2,048); the largest prompt plus the 4,000-byte minimum room is 15,040 bytes, so 7,488 bytes are spare and every existing prompt fits; the reference context and a sectioned block's envelope come out of those spare bytes. |
+| An adherence request with the rule outputs under docs/ and the code sites under src/, forced into separate parts | The rule outputs are reference context: they appear in the prompt of every part and every combine call and not as partition blocks; each part classifies its sites against the rule; the delivered answer has the sites classified, not dropped; the rule-source count is computed in code. |
+| A capability request whose concept.resolve hit equals a capability.reuse-check candidate, forced into different parts | The candidates are reference context, so the part holding the hit sees them and does not list the hit under Related modules; the same module appearing in two parts is listed once. |
+| A code request with the concept.resolve anchor and the anchor's callers forced into different parts | The anchor record is reference context, so every part centres on the anchor, including when a child hit ranks higher. |
+| A file that appears in the Related docs, surface or Related modules sub-section of two parts | It is listed once, the first occurrence by part ordinal winning. |
+| An oversized doc.constraint.enumerate record whose constraint text and rationale cross section boundaries | Every section carries sourceEntityId, file, heading and kind; the cut field's sections concatenate to the original; each section fits the room. |
+| An aggregate upstream value larger than the room | Every section carries taskId, template and params; the stringified value's sections concatenate to the original. |
+| An envelope that leaves less than the 4,000-unit minimum room | HandlingBudgetError naming the envelope. |
+| An adherence request whose rule evidence is too large to accompany every part | HandlingBudgetError naming the reference context and the configuration; nothing is summarised down. |
+| A docs, data or infra request | The reference context is empty (the table records why) and the parts are independent, as before. |
+| A local configuration whose window minus PART_MAX_OUTPUT_TOKENS and the reserve leaves less than the fixed context plus 4,000 bytes | HandlingBudgetError that names the configuration to change. |
+| A CLI provider with a declared character budget | Characters against the budget minus the 16,000 reserve, with budget basis 'declared'; the units are never compared with bytes. |
+| Rendered input exactly at the admitted limit | It is admitted; one unit over is divided. |
+| A local model and an input containing multi-byte characters | The byte length, not the character count, is compared with the limit. |
+| A model with no declared limit, and the step tool | The default of 60,000 characters is used and recorded with source 'default' and basis 'default'. |
+| A 6,000-byte block of ASCII with a room of 5,000 | It is cut into sections of 5,000 and 1,000 bytes, consecutive and without overlap. |
+| 4,999 ASCII bytes then a four-byte emoji in a room of 5,000 | The first section is the 4,999 bytes, the second starts with the emoji; no code point is split and decoding is lossless. |
+| A single-pass root report merged with a partitioned child on a CLI budget while the root used a local model | Merged method 'partitioned', parts the sum with the single pass counted as 1, and both budgets kept in their own units, so the 'bytes-bound' basis is not lost. |
+| Two nested plans that both have a part 1 | mergeHandling qualifies each part id with its plan path, so the two stay distinct. |
+| A free-form M request whose conversation is admitted | It is divided and combined by the table, and the handling is copied onto the report. |
+| A stored bundle with handling {} | It validates against the open schema and parseHandling reads it as absent. |
+| The existing bundle handler calling finalizeSynthesize(input.bundle, execution) | The first overload applies, the result is the bundle layers, and the assignment compiles unchanged. |
+| A step state written before the change | It lacks progress and is read as a single-pass state. |
+| Malformed replies from every part through the real Ollama, Vibe, Codex and Claude adapters | Each adapter throws after its single attempt; the helper classifies the failure as 'invalid-reply', so the terminal failure is ShaperAnswerStepFailedError 'invalid-answer', not 'model-failed'. |
+| A part or combine call on a CLI provider | No output cap is passed or enforced (the adapters ignore maxTokens); admission is input characters only; the size of a part reply does not enter any later call because the combine reads only the capped summaries. |
+| A cause chain deeper than 3 levels, or a cause that is not an Error | failureData stops at 3 levels and records a non-Error cause as its string; the value stays JSON-safe. |
+| A Vibe non-zero exit with and without the retry prefix, and a Vibe size refusal | The two non-size exits are recognised by isModelCallFailure (the prefix is stripped first); the size refusal (InputTooLargeError) is divided before classification and never counted as 'call-failed'; a Vibe malformed reply stays 'invalid-reply'. |
+| An aggregator failure with several upstream outputs from different producers | found.results is [], and upstream lists every output with its taskId, template, params and value, in the order the aggregator received them; after the task record is written and read back the same values and producers are present. |
+| A divided aggregator call in which several parts fail with distinct outer and inner provider messages | partFailures has one entry per failed part with its kind, reason and cause chain; after the task record is written and read back, and in RunFailure.data, every outer and inner message is present. |
 
 **Invariants to preserve**
 
-- A request whose rendered input fits the model's budget is answered by exactly the model calls and the prompt text it gets today: one call, no combine step, and an unchanged answer head except that no handling line is added. [[c3]]
-- No analyzer result is reduced without the answer saying so: a part that could not be covered is named in the report with its reason and is never silently left out. [[c5]]
-- Calls that reach a model are made one after another, never in parallel: the per-part calls and the combine calls are serial for await loops. (the existing rule: no Promise.all on anything that reaches a model) [[c4]]
-- The context builder's shaper keeps no truncation, summarize-down or token-budget knob: the budget only decides whether to divide; nothing is cut, and what a model is given is the whole of each block or consecutive sections that together are the whole block. [[c7]]
-- Every claim in an answer is grounded in a real exploration output: the combining adds no path or finding that a part did not have, and a citation a part had is not lost. [[c8]]
+- Model calls are made one after another, never in parallel, including part, combine and repair calls [[c1]]
+- A request of size XS or S whose input is admitted makes the same single model call as today [[c1]]
+- finalizeSynthesize keeps its existing execution parameter in second place and its bundle return type for a call without progress, and the bundle handler keeps passing the execution [[c1]]
+- A failed free-form lookup does not take the free-form short-circuit and keeps the data it carries [[c2]]
+- The daemon's and the plan tree's mappings recognise the answer-step failure by instanceof and carry its results and report [[c3]]
+- The plan's aggregate task is not a source of its own completeness; only its handling is read [[c4]]
+- mergeAnswerReports keeps its binary signature and its prefix rule for the run context's sources [[c4]]
+- A report without handling renders the same head as today [[c4]]
+- completeStructured keeps its retry behaviour for every other caller; only the handling helper passes maxAttempts 1 with internalRetry false [[c5]]
+- The step tool's registered bundle argument and legacy emit_bundle turn stay valid [[c6]]
+- The code 'executor-aggregator-failed' and RunFailure's shape are unchanged; only the optional data is filled; executePlannerTask keeps childResult on a failed planner task [[c7]]
 
-## 6. Test strategy
+## 7. Test strategy
 
-**Test framework:** `node:test run with tsx (npx tsx --test), the convention of the src/analyze and src/daemon/steps test directories (files under __tests__ named <subject>.test.ts); real graph store and real handlers where the Story touches them, a stub LLMProvider that records the prompts it was given and can be told to fail or to refuse a size`
+**Test framework:** `node:test run through tsx (npx tsx --test 'src/**/__tests__/*.test.ts'), matching the existing analyze, orchestrator, executor, daemon and step-tool suites; live runs gate behind INSRC_LIVE_TESTS=1 as the project does`
 
 **Test levels**
 
-- **unit** — The partition-and-combine helper, the budget and the table, in isolation, with no model.
-  - Subjects: `partition places whole blocks in key order and keeps same-key blocks adjacent; a block over the budget is cut into consecutive sections on line boundaries whose concatenation is the block; a single line over the budget is cut on a character boundary that does not split a surrogate pair`, `the decision rule: partitioned only when inputChars is greater than budgetChars, whatever the size; HANDLING_TABLE names a method for each of XS, S, M, L and XL`, `answerInputBudget converts a chars limit as declared and a tokens limit by the stated ratio, subtracts the fixed characters and reserve, returns the stated default for a model with no limit, and returns zero or less when nothing is left`, `renderReportHead renders the handling line for a partitioned report with its parts and every notCovered part with its reason, and renders nothing for single-pass`, `the combine staging groups per-part results in order until one remains and counts the levels; a group of one passes through`
-  - Fixtures: `blocks of generated text with known keys and lengths`
-- **integration** — The real call sites with a stub provider and the real step handler: the lookup pipeline's synthesize, the plan tree's runAggregator and the step tool's turns, with the budget lowered by a test seam so that a small fixture is large.
-  - Subjects: `synthesize with an input over a lowered budget calls the stub once per part serially, then to combine, returns one bundle whose artefacts contain every part's cite lines, and reports handling through onHandling; with an input within the budget the stub is called once with exactly the prompt the pre-change code built`, `synthesize when one part's call fails keeps the other parts' content and names the failed part in notCovered; when every part fails or the combine fails it raises answer-step-failed carrying the executed results and the report`, `synthesize when a part is refused with InputTooLargeError divides that part once more and still covers it, and records the refusal if a half is refused again`, `runAggregator over a lowered budget concatenates the findings of all parts in plan order, has the model write only the summary, includes the absent-inputs section in every part, and fills metadata.handling`, `the step tool's plan and narrow phases through handleAnalyzeStep with encodeState payloads: an over-budget result returns emit_part for part 1 of N, each bundle-phase call with a valid part advances the state, the last part returns emit_combine, and the combine bundle returns the final answer with handling in the report; a part that fails the schema returns the same turn again; a state whose division key no longer matches is refused`, `a broad docs analysis through the plan walker with an aggregate input larger than the lowered budget completes with a final report and handling.parts greater than one (the case Story s7 accepted as an exception)`
-  - Fixtures: `a stub LLMProvider recording prompts and able to throw a chosen error for a chosen call`, `a graph store sandbox with doc entities and the converted-repos helper`, `a test seam for the budget`
-- **contract** — The shape of the Handling report that Story s4 consumes.
-  - Subjects: `HandlingReport values produced by single-pass, partitioned, section-partitioned and failed-part runs match the sc4 interface, including the three optional fields, and AnswerReport.handling is typed to it`
-- **live** — The real model, once, on this repository (reported by the builder, not run by the gate).
-  - Subjects: `a broad docs analysis of this repository whose aggregate input is larger than the real model's input returns a final report whose head states the number of parts`
+- **unit** — Prove the table, admission rule, output caps, dependency table, sections, repair loop, division, assembly and combine without a model
+  - Subjects: `HANDLING_TABLE: XS and S single pass, M, L and XL partitioned, an undetermined measure is XL`, `decision: the table alone divides (trigger 'size'), the admission rule alone divides a small size ('fit'), both give 'both', a single pass has no trigger`, `admission for a local model with the checked-in values (32,768 window, 20,480 single-pass output, 2,048 reserve) is 10,240 bytes for a single pass: exactly 10,240 is admitted, one byte over is divided, multi-byte text is counted in bytes; part and combine calls use PART_MAX_OUTPUT_TOKENS 8,192 and a limit of 22,528 bytes; a window that leaves less than fixed context plus 4,000 bytes gives HandlingBudgetError naming the configuration`, `with the real code, adherence and docs prompts the single-pass decision for the checked-in local configuration is 'not admitted' for code (10,652 bytes) and adherence (11,040), and admitted for docs only when the evidence is at most 3,916 bytes; every part prompt plus the 4,000-byte minimum room (15,040 at most) fits 22,528`, `a CLI provider is admitted in characters against its declared budget minus 16,000, and the two units are never compared`, `the helper calls the provider with {maxAttempts: 1, internalRetry: false} and builds each repair prompt itself: the note is capped at 8,000 characters with the rest counted, every attempt is admitted before it is sent, and a fake provider that would retry internally is never allowed to`, `repair exhaustion has one outcome: an unadmitted repair divides the part up to three times, then the part is recorded as not covered and the others continue; a part that already succeeded is never discarded`, `terminal precedence when no part is covered, with failures classified by cause: every uncovered part 'unadmittable' gives HandlingBudgetError; a mix of unadmittable and 'invalid-reply' parts gives ShaperAnswerStepFailedError 'invalid-answer'; any 'call-failed' part (isModelCallFailure, including a Vibe non-zero exit) gives 'model-failed'; a thrown schema-invalid error (ModelResponseShapeError, SynthesizerSchemaUnrecoverable) is 'invalid-reply', not 'call-failed'; each part's own reason is in notCovered and its kind and cause chain in partFailures`, `sections cut only the sectionable text field, into the largest whole code-point prefix that fits the room: a 6,000-byte ASCII block in a room of 5,000 gives 5,000 and 1,000; 4,999 ASCII bytes then a four-byte emoji gives 4,999 and a second section that starts with the emoji; every section decodes to valid text, none overlaps, none is dropped; ordinals separate from keys`, `section envelopes: an oversized real-shaped doc.constraint.enumerate record whose constraint text and rationale cross section boundaries yields sections that each carry sourceEntityId, file, heading and kind, whose cut fields concatenate to the original, and that each fit the room (room minus envelope); an aggregate upstream value larger than the room yields sections that each carry taskId, template and params; an envelope that leaves less than the 4,000-unit minimum gives HandlingBudgetError naming the envelope`, `combine terminates: N summaries become ceil(N/g) per stage and a stage whose count does not fall is a combine failure`, `a combine failure, including a combine that is not admitted, with at least one part covered returns the per-part results with 'combine' in notCovered and throws nothing`, `the bundle adapter and the aggregate adapter keep evidence layers and findings exactly, in order, through several combine stages`, `parseHandling reads a stored {} and other malformed values as absent, and accepts a record with and without trigger`, `mergeHandling: absent side ignored; single-pass root with partitioned child gives 'partitioned' and summed parts; budgets concatenated and de-duplicated in their own units keeping the largest inputSize, so a local 'bytes-bound' entry survives a merge with a CLI entry; combineStages sum; partitionedBy 'mixed'; equal local part ordinals in two nested plans stay distinct by plan path`, `mergeAnswerReports keeps its binary signature and prefix behaviour`, `renderReportHead: a report without handling renders exactly as today; with handling it adds one line with method, parts, each budget in its unit and each not-covered part with its reason`, `a compile-time test: the bundle handler's call finalizeSynthesize(input.bundle, execution) resolves to the first overload and its result is assignable to the bundle layers; the progress call resolves to the second overload`, `applyHandling: a single-pass handling with no uncovered part keeps complete as it was; a partitioned handling with an uncovered part or a 'combine' entry sets complete false and adds one incomplete source note 'answer step / <part id>' per uncovered part; the input report is not mutated`, `failureData: a typed error gives { kind:'answer-step', reason, found, upstream, partFailures, handling }; a plain Error gives { kind:'error', name, message, cause } nested at most 3 levels; a non-Error cause is recorded as its string; the value contains no Error object or cycle and survives JSON.stringify and JSON.parse unchanged; upstream keeps taskId, template, params and value of every output in order; partFailures keeps one entry per failed part with its kind, reason and cause chain`, `classifyError keeps its prefixes and messages and sets the original error as the cause; the cause chain of 'aggregator-llm-unavailable:' and 'aggregator-schema-unrecoverable:' errors holds the provider's original error; it is applied only to a single-pass call`, `the part and combine output cap: for a local model the helper passes maxTokens 8,192 (PART_MAX_OUTPUT_TOKENS) and a single pass passes the configured output tokens; for a CLI provider it passes no enforced output cap and the admission is input characters only`, `isModelCallFailure: 'vibe exited with 1.' is a call failure with and without the 'structured-output: validation failed after 2 attempts: ' prefix; 'vibe exited with' inside quoted answer text is not; a Vibe size refusal message (InputTooLargeError) is excluded by the division rule before classification; Claude and Codex wordings are unchanged; a schema-invalid reply is not a call failure`, `classifyError on a single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix (previously 'aggregator-schema-unrecoverable:') with the original error as the cause; Claude and Codex exits keep their prefix`, `selectSharedContext (reference context): for 'adherence' it returns the doc.constraint.enumerate and doc.decision.trace outputs, for 'capability' the capability.reuse-check outputs, for 'code' the anchor record of concept.resolve (anchor.source, anchor identity and, when ranked, hits[0]) as a structural extract, in plan order; for 'docs', 'data' and 'infra' it returns nothing; the returned blocks are absent from the partition blocks; the rule-source count and the rule restatement computed in code match the reference blocks`, `dedupeByKey: with DEDUPE_KEYS, an entry that appears in the Related docs, Related modules or surface sub-section of several parts is listed once, the first occurrence by part ordinal winning, and the order of the rest is kept`, `the DEPENDENCY audit: every registered synthesize prompt key (code, docs, adherence, capability, data, infra) has an entry in the table, each entry names its reference blocks and deduped sub-sections or records that it has none and why, and the test fails when a key is added without an entry`, `reference context in the admission rule: fixed prompt plus reference context plus the 4,000-unit minimum room that does not fit gives HandlingBudgetError whose message names the reference context; one that fits leaves the room for a section equal to the budget minus the prompt minus the reference context minus the envelope, and the reference context is not sectioned`
+  - Fixtures: `a scripted provider that records each call and its attempt count and prompt text, proves no two overlap, and can fail a chosen part, the combine or a repair attempt, refuse an input as too large, or return a reply with many validation errors`, `a configurable window so a small input divides`
+- **integration** — Prove the four callers, the real provider adapters, the failure routes and the bridge into the delivered answer, through real modules and a scripted provider
+  - Subjects: `the real adapters driven through completeStructured with {maxAttempts: 1, internalRetry: false}: Vibe, Claude and Codex (CliProvider with the underlying process stubbed) each make exactly one attempt on a failing reply; the CLI adapters are checked for the single attempt only, since they do not enforce maxTokens (this is asserted, so a later change is noticed)`, `adapter-level output cap and malformed-reply tests: the OllamaProvider request for a part or combine call carries num_predict 8,192 and a single-pass request carries the configured output tokens; a reply cut at the cap (truncated JSON) is handled as an invalid reply; malformed replies from every part through the real Ollama, Vibe, Codex and Claude adapters give ShaperAnswerStepFailedError 'invalid-answer' and a transport failure gives 'model-failed'`, `a non-size Vibe exit failure through the real Vibe adapter (child process stubbed to exit non-zero) for every part of a divided call gives 'call-failed' per part and the terminal typed ShaperAnswerStepFailedError 'model-failed' with no aggregator prefix; a Vibe malformed reply for every part still gives 'invalid-answer'; the same Vibe exit on a single-pass aggregator call through the real runAggregator gives the Error with the 'aggregator-llm-unavailable:' prefix and the original as its cause`, `adherence regression with the rule and the code sites forced into separate parts, through the real synthesizer and a scripted provider: the rule outputs (docs/) and the code sites (src/) are placed so that division puts them in different parts; the scripted provider asserts that the rule text is present in the prompt of every part and every combine call, that no partition block repeats the rule as evidence, and that its reply classifies each site against the rule; the delivered answer has every site classified as match, drift or contradiction and none dropped, and the rule-source count equals the number of rule outputs; the same request with a rule too large to accompany every part gives HandlingBudgetError naming the reference context`, `capability and code regressions with forced partitions: a capability request whose concept.resolve hit equals a capability.reuse-check candidate, with the hit and the candidates in different parts, does not list the hit under Related modules (the prompt of the part holding the hit contains the candidates), and a module seen in two parts is listed once; a code request with the concept.resolve anchor and the anchor's callers in different parts has the anchor record in the prompt of every part and the delivered bundle is centred on it; a file seen in the Related docs or surface sub-sections of two parts is listed once`, `the ordinary lookup path through the real context driver (steps.synthesizeHandled, applyHandling, settlePipelineOutcome and the stamp callback) with a scripted provider: a successful partitioned answer delivers a bundle whose report.handling is the partitioned handling; a run with a failed part delivers a bundle whose report.handling.notCovered names the part, whose incomplete sources include 'answer step / <part id>' and whose completeness.complete is false; the combine fallback delivers the per-part results with 'combine' in notCovered and complete false; a single-pass answer keeps the lookups' completeness; the model's own report is never used`, `synthesize: XS or S and admitted makes the one call of today; M or larger, or not admitted, divides, and a failed part is named`, `free-form lookup: the request size reaches runFinalStructuredEmit through the tool loop; a conversation that fits at size S returns directly with single-pass handling copied onto the report reportFromLookups derives; at size M it is divided although it fits; HandlingBudgetError, 'model-failed' and 'invalid-answer' failures each become a LookupFailedError carrying the tool results, the handling and answerStepReason, failedOutput gives errorCode 'answer-step:<reason>', the failure survives executePlan, does not take the short-circuit and reaches the answer-step failure with the same reason and the report, with no second synthesis attempt`, `runAggregator with the absent-input section counted in every part and every combine call`, `a HandlingBudgetError, an every-part-failed ShaperAnswerStepFailedError and a plain single-pass aggregator Error from the root runAggregator through the real aggregator, the real walker and the orchestrator: classifyError keeps the original as the cause, executeLeafTask (real signature, returning TaskExecutionRecord) keeps failureData in the failed-task record, the record is written and read back through the real store (JSON), and the run failure has the code 'executor-aggregator-failed' with the data in RunFailure.data; for the typed errors found.results is [], upstream holds the actual upstream values with their taskId, template and params, which are compared with the inputs the aggregator was given at every stage, and with several failed parts partFailures keeps each part's kind, reason and distinct outer and inner cause messages; the original cause's message is checked for the plain error, and the report names the uncovered parts`, `a nested plan whose aggregate fails while the root aggregate succeeds from sibling outputs: executePlannerTask returns the failed planner record with its kept childResult, collectPlanSources reads the child and adds the nested sources, concludeRun merges the nested handling, and the run is incomplete and names the nested failure with no run failure raised`, `collectPlanSources and concludeRun with a root and a nested aggregate that each have uncovered parts: the run is incomplete, the handling is merged and the visible head shows the handling line`, `the driver passes HandlingBudgetError through; the daemon's mapping in analyze-rpc and the plan tree's mapping in the orchestrator driver both return its results and report, tested through those mappings and not only through the driver`, `step tool through the real handler: prepareAnswerTurn creates the initial progress (plan with reference blocks and envelopes, decision, budgets; 'single' or 'partitioned') and a state without progress is read as single pass; finalizeSynthesize with a saved and with a session-memory execution, with and without progress, the progress overload deciding from the stored plan whether another part remains and returning the HandlingReport; emit_part and emit_combine turns, each carrying the reference context for the targets that have it; replies through the registered bundle argument; progress persisted with token replacement; an invalid reply re-emits the current turn with a new token and a retry note, and the client can continue; repeated invalid replies across separate calls reach the retry bound; retries reset when a turn advances; progress released on terminal success and failure; a typed failure returned as StepOutputError with data`, `the legacy emit_bundle turn still passes for an input that fits`
+  - Fixtures: `step tool state fixtures including one from before the change`, `a plan tree with a nested plan whose aggregate task fails and one whose aggregate task records have handling`, `adherence, capability and code plans whose reference outputs and dependent outputs are in different directories`, `an oversized real-shaped doc.constraint.enumerate record and an oversized aggregate upstream value`, `stubs for the Vibe, Claude and Codex child processes`
+- **integration** — Prove the accepted exception of Story s7 is closed by a run, not only by a direct call to the aggregator
+  - Subjects: `a broad docs analysis run through the real docs aggregate runtime and the plan walk, with an oversized terminal input and a nested aggregate: the run completes, the final report is delivered, and its head states the handling and the completeness`
+  - Fixtures: `a docs plan tree with oversized upstream outputs, a scripted provider, a lowered window`
+- **live** — Reproduce the actual failure of 2026-10-08 with real run-context construction, planning and the real provider limit
+  - Subjects: `the broad docs request on this repository that previously stopped at the aggregate step runs to a final report, and the recorded run (run id, handling line, parts, completeness) is kept as the regression record`
+  - Fixtures: `a registered and indexed repository, a configured provider, INSRC_LIVE_TESTS=1`
+- **contract** — Prove the shape other Stories consume
+  - Subjects: `HandlingReport against the sc4 sketch plus the additive fields, with and without trigger, budgets in their own units`, `the bundle schema keeps its open handling object valid and AnswerReport.handling is typed`, `the registered MCP bundle argument is unchanged`, `RunFailure's shape and the code 'executor-aggregator-failed' are unchanged`, `TaskExecutionRecord gains only the optional data field, LookupFailedError only the optional handling and answerStepReason, and ShaperAnswerStepFailedError only the optional upstream and partFailures fields`, `AggregateFailureData and the added optional fields (TaskExecutionRecord.data, LookupFailedError.handling and answerStepReason, ShaperAnswerStepFailedError.upstream and partFailures) are JSON-safe and additive`
 
 **Acceptance mapping**
 
 | Criterion | Proving tests |
 | :--- | :--- |
-| `ac1` | `unit: HANDLING_TABLE names a method for each of XS, S, M, L and XL and the decision rule is partitioned only when inputChars is greater than budgetChars`, `integration: the same oversized fixture is divided on the lookup pipeline, the plan tree and the step tool, and each report states method and parts` |
-| `ac2` | `integration: synthesize over a lowered budget calls the stub once per part serially, then to combine, and the combined artefacts contain every part's cite lines`, `integration: runAggregator over a lowered budget concatenates every part's findings in plan order`, `unit: the combine staging joins in levels until one result remains` |
-| `ac3` | `unit: renderReportHead renders the handling line with the number of parts and each notCovered part`, `integration: the step tool's final answer after emit_part and emit_combine turns carries handling.parts equal to the number of parts` |
-| `ac4` | `integration: an input within the budget calls the stub once with exactly the prompt the pre-change code built and adds no handling line to the answer head` |
-| `ac5` | `integration: synthesize when one part's call fails keeps the other parts' content and names the failed part in notCovered`, `integration: a part refused with InputTooLargeError is divided once more and covered, and recorded only if a half is refused again` |
-| `ac6` | `unit: a block over the budget is cut into consecutive sections whose concatenation is the block, and a single over-long line is cut without splitting a surrogate pair`, `integration: a document section larger than the budget is read in sections by synthesize and every section's text reaches a part prompt` |
-| `ac7` | `integration: a broad docs analysis through the plan walker with an aggregate input larger than the lowered budget completes with a final report and handling.parts greater than one`, `live: a broad docs analysis of this repository returns a final report whose head states the number of parts (reported by the builder)` |
+| `ac1` | `handling-table.test.ts: every size on every path takes the table, the free-form final emit included, and the admission rule divides what the table would not`, `handling-admission.test.ts: the checked-in local configuration (10,240 bytes single pass, 22,528 part and combine), the real prompt sizes, exact-boundary, multi-byte, CLI characters, repair-loop and unknown-limit cases`, `synthesize-handling.test.ts: single pass versus divided decision for the lookup path and the free-form lookup`, `part-output-cap.test.ts: the Ollama request carries num_predict 8,192 for part and combine calls and the configured tokens for a single pass; a CLI provider is given no enforced output cap` |
+| `ac2` | `partition-combine.test.ts: every part is reasoned over serially and evidence and findings are kept exactly through several combine stages`, `partition-combine.test.ts: the combine terminates and a combine failure returns the per-part results`, `shared-context.test.ts: an adherence request with the rule and the code sites forced into separate parts has the rule in every part and every combine call and every site classified, none dropped (semantic coverage, not only concatenation)`, `dependency-table.test.ts: the capability, code and dedupe regressions with forced partitions, and the audit that every synthesize prompt key has a table entry` |
+| `ac3` | `handling-report.test.ts: parts, budgets in their units and notCovered with plan-qualified ids appear in the answer report and in the rendered head`, `run-handling-report.test.ts: a root and a nested aggregate with uncovered parts make the run incomplete and the visible head shows the handling line`, `synthesize-driver-handling.test.ts: through the real context driver, the delivered bundle's report carries the handling, the uncovered parts and complete false on the ordinary path` |
+| `ac4` | `synthesize-handling.test.ts: a small size whose input is admitted makes the same single call`, `freeform-handling.test.ts: a small conversation that fits returns directly`, `handling-admission.test.ts: a local code or adherence request on the checked-in configuration is handled in parts with trigger 'fit' and states its parts (the departure from ac4's wording accepted on 2026-11-08)` |
+| `ac5` | `partition-combine.test.ts: a failed part is kept out, the others are kept, completeness is false, repair exhaustion never discards a successful part, and all parts failing follows the terminal precedence rule with failures classified by cause`, `step-tool-parts.test.ts: the retry bound marks a part not covered across separate calls`, `freeform-handling.test.ts: all three typed failures keep the tool results, the handling and their reason through executePlan`, `answer-failure-mapping.test.ts: HandlingBudgetError carries results and report through the daemon and plan tree mappings`, `aggregate-failure.test.ts: the real aggregator, walker, stored task record and orchestrator keep the root aggregate failure's data and original cause, typed or plain, in RunFailure.data; for the typed errors the actual upstream values and producer identities (taskId, template, params) survive, and with several failed parts each part's kind, reason and distinct outer and inner cause messages survive`, `nested-aggregate-failure.test.ts: a failed nested aggregate under a succeeding root aggregate makes the run incomplete and names it`, `provider-failure-kinds.test.ts: malformed replies through the real Ollama, Vibe, Codex and Claude adapters give 'invalid-answer' and transport failures give 'model-failed'; a Vibe outage on a divided call gives the typed 'model-failed' with no prefix, and on a single-pass aggregator call the 'aggregator-llm-unavailable:' prefix`, `synthesize-driver-handling.test.ts: a failed part and the combine fallback on the ordinary path are named in the delivered report`, `model-failure.test.ts: isModelCallFailure recognises 'vibe exited with' with and without the retry prefix; classifyError gives the 'aggregator-llm-unavailable:' prefix for a single-pass Vibe exit`, `shared-context.test.ts: a rule too large to accompany every part gives HandlingBudgetError naming the reference context, not a silently reduced answer` |
+| `ac6` | `partition-combine.test.ts: one block larger than the room is read in consecutive sections with none dropped, the 6,000 over 5,000 case and the emoji boundary case included`, `section-envelope.test.ts: an oversized real-shaped doc.constraint.enumerate record and an oversized aggregate value are cut so that every section carries its record's citation fields, the cut fields reconstruct the original, and an envelope that leaves no room gives HandlingBudgetError` |
+| `ac7` | `docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker and delivers a final report with its handling`, `aggregator-handling.test.ts: the aggregator divides an oversized input and keeps the absent-input section in every call`, `docs-broad-live.test.ts: the recorded live run of the broad docs request returns a final report` |
 
-## 7. Migration
+## 8. Migration
 
-**State before:** Every answer-writing call makes one model call from the whole of its input and has no size check: synthesize and prepareSynthesize (src/analyze/context/synthesizer.ts) build one prompt from the whole executed plan, runAggregator (src/analyze/runtimes/shared/aggregator.ts) renders every upstream task output into one user turn, and prepareAnswerTurn (src/daemon/steps/analyze-step/answer-turn.ts) hands the step tool's agent that one prompt. The only size signal is the CLI provider's InputTooLargeError after a refusal (src/agent/providers/cli-provider.ts). AnswerReport.handling is typed unknown with the comment 'Typed by Story s3' (src/analyze/completeness.ts) and the bundle schema declares an open handling object (src/analyze/context/schema.ts). A broad docs analysis whose aggregate input is larger than one model call accepts does not complete on this repository (the exception accepted for Story s7 on 2026-10-08).
+**State before:** synthesize and runAggregator render the whole of their inputs into one prompt and make one model call with no size check (src/analyze/context/synthesizer.ts:117-169, src/analyze/runtimes/shared/aggregator.ts:100-155). Structured calls retry inside the provider with an uncapped repair note appended after the caller's measurement, and maxAttempts alone does not stop CliProvider's Vibe path (src/agent/providers/structured-output.ts:150-215, src/shared/types.ts:263). finalizeSynthesize(raw, execution?) is called by the bundle handler with the execution and its result assigned to the bundle layers (src/analyze/context/synthesizer.ts:191-225, src/daemon/steps/analyze-step/phases/bundle.ts:90). The free-form lookup's final emit takes the whole conversation and the request's size is not passed to it, a non-ConnectionExecutionError from it becomes a failed lookup that keeps data only for a LookupFailedError, and the short-circuit copies only the seven layers (src/analyze/explore/freeform-probe.ts:150-200, src/analyze/explore/executor.ts:690-715, src/analyze/context/driver.ts:1004-1044, 1640-1690). The daemon and the plan tree map ShaperAnswerStepFailedError with its results and report (src/daemon/analyze-rpc.ts:1046, src/analyze/orchestrator/driver.ts:810), but ShaperAnswerStepFailedError.found is AnswerStepFound, whose results are lookup results and cannot hold the aggregator's UpstreamOutput records or the causes of failed parts (src/analyze/context/driver.ts:1364-1367, src/analyze/executor/types.ts:56-61); runAggregator's classifyError builds a fresh prefixed Error with no cause (so the original is gone before anything else sees it), executeLeafTask returns a TaskExecutionRecord for a failed aggregate task that holds only the message, task and run records are written with JSON.stringify (an Error object becomes {}), and the run failure 'executor-aggregator-failed' is built from it, and a failed nested plan is unreachable from collectPlanSources because it checks failure status before recursing (src/analyze/executor/walker.ts:205-275, 338-390, src/analyze/executor/plan-sources.ts:43-92, src/analyze/executor/types.ts:184-205, src/analyze/orchestrator/driver.ts:515-530). AnswerReport.handling is typed unknown (src/analyze/completeness.ts:206), mergeAnswerReports is binary with a prefix, renderReportHead shows no handling (src/analyze/completeness.ts:377-420). The step tool keeps no progress, and a bad reply returns a retryable error without a new token (src/daemon/steps/analyze-step/phases/bundle.ts:90). On the ordinary lookup path the driver derives found.report before synthesizing and the stamp callback sets the delivered bundle's report from it, so nothing synthesis produces reaches the report (src/analyze/context/driver.ts:577, 1476, 1664, 1715). OllamaProvider enforces maxTokens as num_predict, while CliProvider ignores completion options (src/agent/providers/ollama.ts:673, src/agent/providers/cli-provider.ts:707-721). The wording list isModelCallFailure matches (CLI_FAILURE_TEXTS in src/analyze/context/model-failure.ts) names Claude and Codex but not Vibe, although cli-provider.ts builds every CLI exit as `${cli} exited with ${code}.` and completeStructuredVibe wraps it in the retry prefix, so a Vibe outage is classified as an invalid answer (src/analyze/context/model-failure.ts:25-90, src/agent/providers/cli-provider.ts:1068-1095). The synthesizer prompts compare some outputs with others: adherence classifies code sites against the rule outputs and drops a site it cannot classify, capability lists concept.resolve hits as related modules only when they are not reuse-check candidates, code centres on the concept.resolve anchor, and several prompts dedupe list sub-sections by file or path (src/prompts/analyze/synthesize.adherence.system.md, synthesize.capability.system.md:63, synthesize.code.system.md:132, synthesize.docs.system.md:68). Evidence records are JSON whose long text sits beside the identifying and citation fields (sourceEntityId, file, heading, kind), so cutting the serialisation could separate them (src/prompts/analyze/synthesize.adherence.system.md).
 
-**State after:** A request whose rendered input fits the answering model's budget is answered exactly as before. A larger one is divided along file and directory boundaries (an oversized item into consecutive sections), each part is reasoned over serially, and the per-part results are combined, in stages when needed; the answer's head states the method, the number of parts and any part not covered. AnswerReport.handling is typed HandlingReport, AggregateReport.metadata carries it, the step tool's state carries the parts in the stages awaiting_part and awaiting_combine, and the broad docs analysis returns a final report.
+**State after:** The four callers use one shared helper that divides when the HLD's table says so or when the rendered input is not admitted by a provable bound, in characters for a CLI provider and in UTF-8 bytes for a local model, applied before every attempt. A single pass keeps the configured output tokens (10,240 bytes of input with the checked-in configuration); part and combine calls on a local model use PART_MAX_OUTPUT_TOKENS 8,192, which OllamaProvider enforces as num_predict (22,528 bytes), so every existing prompt plus the minimum room fits; a CLI provider is given no enforced output cap and needs none, because a part reply never enters a later call. On the checked-in local configuration code and adherence requests are therefore always handled in parts, a departure from the wording of ac4 accepted by the user on 2026-11-08. A DEPENDENCY table, built by reading each synthesizer prompt, names for each target the reference context that is rendered in every part and every combine call, never sectioned and counted in the admission (the adherence rule outputs, the capability reuse-check candidates, the code anchor), and the sub-sections a prompt dedupes by file or path, which the adapters dedupe across parts in code; an audit test fails when a prompt has no entry, and a HandlingBudgetError names the reference context when it cannot fit. A block larger than the room is cut only in its sectionable text field, and its envelope of citation fields heads every section and is counted in the admission. The helper owns the repair loop and calls the provider with maxAttempts 1 and internalRetry false, so no provider retries. Sections never split a code point. Evidence and findings are assembled in code, a staged combine writes only the summary and always ends, a failed part or combine is named while the other results are kept, a repair that cannot be admitted ends as a not-covered part and never discards a successful one, each part failure is classified by cause (call-failed, invalid-reply, unadmittable) with a Vibe non-zero exit recognised as call-failed, and when no part is covered a divided call ends in a typed terminal failure under one precedence rule (budget error only when all uncovered parts are unadmittable, else 'model-failed' if any part is call-failed, else 'invalid-answer'), while a single-pass call that fails keeps today's route. finalizeSynthesize has two overloads: the bundle return for a call without progress, FinalizedAnswerTurn for a call with it. The request size reaches the free-form final emit, and every ShaperAnswerStepFailedError from it is carried through the executor with its data and its reason (answerStepReason, errorCode 'answer-step:<reason>'). On the ordinary lookup path the driver applies the handling to found.report (applyHandling) so the delivered bundle's report carries the handling, the uncovered parts and complete=false. A typed failure sets found.results to [] for the aggregator and carries its actual inputs in the new optional upstream field (taskId, template, params, value) and the kind, reason and bounded cause chain of each failed part in the optional partFailures field. Any aggregate failure, typed or plain, keeps its data in TaskExecutionRecord.data and RunFailure.data as a JSON-safe value built by failureData, with the original error kept as the cause by classifyError for a single-pass call, a failed nested aggregate is read through the kept child result and merged even when the root aggregate succeeded, and the handling, with budgets in their own units, reaches the delivered answer on every path and is shown by renderReportHead. The step tool creates an initial AnswerProgress holding the plan (with the reference blocks and envelopes), the decision and the budgets, persists it on every transition and re-emits the current turn with a new token after an invalid reply.
 
-**Zero downtime:** no — **Data rewrite:** no
+**Zero downtime:** yes — **Data rewrite:** no
 
 **Steps**
 
-1. Add the size-to-method table, the model-budget function and the shared partition-and-combine helper, with their unit tests, behind no caller: nothing changes at run time. — ↩ rollbackable
-2. Type AnswerReport.handling as HandlingReport and add the optional handling to the aggregate report's metadata and to the report head's rendering; a report without handling renders as before. — ↩ rollbackable
-3. Switch synthesize to the helper: when the input fits the budget the path is the existing one; when it does not, divide, reason over the parts serially and combine. Fill handling through onHandling. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
-4. Switch runAggregator to the helper: findings concatenated in plan order, summary combined by the model, absent inputs repeated in every part; copy handling from the aggregate report to the answer report in the plan tree's driver. — ↩ rollbackable _(needs: `step 1`, `step 2`)_
-5. Add the step tool's part and combine turns: the new stages in the state payload, the division key in the state, emit_part and emit_combine in the plan, narrow and bundle phases, and update the tool descriptions, the tool-surface golden file and the steering text that name the turns. The daemon is restarted for this step; the MCP processes are restarted after the daemon. — ↩ rollbackable _(needs: `step 3`)_
-6. Run a broad docs analysis of this repository against the updated daemon and record its report as the live evidence that the exception accepted for Story s7 is closed. — ↩ rollbackable _(needs: `step 4`, `step 5`)_
+1. Add HandlingReport (budgets, optional trigger), parseHandling, mergeHandling, applyHandling, HANDLING_TABLE, PART_MAX_OUTPUT_TOKENS (local model only) and the admission rule with the single-pass decision only; nothing divides yet — ↩ rollbackable
+2. Type AnswerReport.handling, merge handling in mergeAnswerReports with its unchanged signature, and render the handling line in renderReportHead — ↩ rollbackable
+3. Add HandlingBudgetError as a ShaperAnswerStepFailedError with the additive reason, add the optional upstream and partFailures fields to ShaperAnswerStepFailedError, and pass the error through the driver — ↩ rollbackable
+4. Add 'vibe exited with' to CLI_FAILURE_TEXTS in model-failure.ts, then add the helper's own repair loop (maxAttempts 1 and internalRetry false, capped repair note, admission before every attempt), failure classification by cause with size refusals divided before classification, code-point-safe division with the section envelope, the DEPENDENCY table with selectSharedContext, DEDUPE_KEYS and dedupeByKey and its audit test (reference context rendered in every part and combine call and counted in the admission), assembly adapters, the terminal precedence rule and the staged combine with the per-part fallback, and move synthesize (through synthesizeHandled, with synthesize kept as a wrapper) and runAggregator onto them so a small admitted request is unchanged — ↩ rollbackable
+5. In the context driver call synthesizeHandled, apply the handling to found.report with applyHandling and return the updated found in the 'bundle' outcome, so settlePipelineOutcome stamps the updated report on the delivered bundle — ↩ rollbackable
+6. Pass the request size through the tool loop to runFinalStructuredEmit, move the free-form final emit onto the helper, add the handling callback and field, make the free-form lookup carry every ShaperAnswerStepFailedError as a LookupFailedError with its data, handling and answerStepReason, have failedOutput copy the reason as errorCode 'answer-step:<reason>', and copy the handling in extractSoleFreeformResult onto the derived report — ↩ rollbackable
+7. Make classifyError keep the original error as the cause for a single-pass call, make the aggregator's typed failures carry found.results [], the upstream inputs and the part failures with their cause chains, keep any aggregate failure's data as failureData (JSON-safe) in the optional data field of TaskExecutionRecord in executeLeafTask and copy it into RunFailure.data in the orchestrator; make collectPlanSources read the kept child result of a failed planner task and each plan's aggregate handling, and concludeRun merge nested handling even when the root aggregate succeeded — ↩ rollbackable
+8. Add the optional AnswerProgress (plan with reference blocks and envelopes, decision, budgets, parts) to the step state, startAnswerProgress in prepareAnswerTurn, the progress overload of finalizeSynthesize beside the unchanged bundle overload, the emit_part and emit_combine outputs and the retry field, persisting progress on every transition — ↩ rollbackable
 
-**Backward compat:** The tool names and phases of insrc_analyze_step do not change; its response gains the next values emit_part and emit_combine, which a client sees only when the lookup results are larger than the model's budget (before this change that request produced an oversized emit_bundle turn that the agent's model could not take). An agent that follows the 'next' field of each response as the tool description says needs no change; the description and the steering text are updated to name the two turns. Answers to small requests are byte-for-byte the same, because the handling line is absent for single-pass. AnswerReport.handling was unknown and unset, so no stored report is invalid; a report stored before the change is read as single-pass. State tokens issued before the restart end at it, as with every daemon restart. Cached lookup outputs and the lookup cache's key are not touched.
+**Backward compat:** All new state and report fields are optional or additive, and the one addition to an existing union value (partitionedBy 'mixed') is on a contract this Story owns; the added failure reason is additive on a class Story s1 declares, and so are the optional upstream and partFailures fields on the same class (absent on the lookup path and on a single-pass failure, so the daemon's and the plan tree's mappings, which read found, need no change); TaskExecutionRecord gains an optional JSON-safe data field, runAggregator's thrown Error for a single-pass call keeps its prefix and message and gains a cause, synthesize keeps its signature as a wrapper over the new synthesizeHandled, LookupFailedError gains optional handling and answerStepReason, and RunFailure already has an optional data, with the code 'executor-aggregator-failed' unchanged. finalizeSynthesize keeps raw and execution in their positions and its first overload keeps the bundle return type, so the bundle handler's existing call and assignment compile and behave as before. completeStructured keeps its retry behaviour for every other caller; only the handling helper passes maxAttempts 1 with internalRetry false. executePlannerTask is not changed. A step state written before the change lacks the progress and is read as single pass. A stored bundle with an open handling object stays valid and a malformed value is read as absent; a handling record without a trigger is valid. A report without handling renders the same head. A Vibe non-zero exit on a single-pass aggregator call now takes the 'aggregator-llm-unavailable:' prefix instead of 'aggregator-schema-unrecoverable:' because isModelCallFailure recognises it (a deliberate behaviour change; the message after the prefix is unchanged, and Claude and Codex exits are unchanged); on a divided call the same outage ends in the typed 'model-failed' failure with no prefix. The dependency table changes the parts of an adherence, capability and code request: the reference outputs are no longer partition blocks but appear in every part, and the sub-sections a prompt dedupes list each entry once. A request of size XS or S whose input is admitted makes the same calls as before; the one behaviour change, local code and adherence requests on the checked-in configuration being handled in parts, is the accepted departure from ac4's wording. synthesize, runAggregator, runFinalStructuredEmit, mergeAnswerReports, collectPlanSources, concludeRun and renderReportHead keep their signatures with new parameters optional. The registered MCP bundle argument is unchanged and the legacy emit_bundle turn is kept.
 
-## 8. Alternatives considered
+## 9. Alternatives considered
 
-### 8.1 a1: One shared partition-and-combine helper, driven by the model's input budget — **CHOSEN**
+### 9.1 a1: Size table plus an enforced input-admission rule with per-call output caps, in one shared helper that owns the repair loop, with a dependency table for cross-output prompts, section envelopes, cause-classified failures, carried-data failures and a rendered handling line — **CHOSEN**
 
-A single helper divides any ordered list of rendered blocks into parts that fit the answer model's input budget, runs one model call per part serially, and combines the per-part results; all three call sites use it.
+One helper divides an answer-writing call's input when the HLD's size table says so or when the rendered input is not admitted by a provable bound, keeps the evidence that other evidence is judged against in every part and dedupes shared list entries in code, repeats a record's citation fields in every section of it, gives part and combine calls on a local model a lower stated output cap, owns the schema-repair loop with provider retries off, classifies every failure by cause, and carries the handling report and any failure's reason, inputs, part causes and data to the delivered answer on every path.
 
-Add one module (under src/analyze) that takes the blocks to be reasoned over (a lookup result, a plan-task output or a section of one item, each already rendered), the budget in characters of the model that will answer (from its inputLimit, converted to characters, or a configured default when the model declares none), and a per-part call and a combine call supplied by the caller. It places whole blocks into parts in order, never splitting a block unless the block alone exceeds the budget, in which case the block is cut into consecutive sections on line boundaries; it keeps the parts along directory and file boundaries by sorting blocks by file path first. It runs the per-part calls one after another, drops a failed part into HandlingReport.notCovered with its reason, and combines the rest; when the combined input still exceeds the budget it combines in stages (groups of per-part results), so any size terminates. The size-to-method table is a small exported constant (XS, S and M: single-pass unless the characters measured exceed the budget; L and XL: partitioned) so the stated method is one place, but the actual decision is the characters against the budget because files and items do not bound characters. The helper returns the combined value and a HandlingReport, which the caller writes into AnswerReport.handling. The lookup pipeline's synthesize, the plan tree's runAggregator and the step tool's part turn call it; the step tool's variant returns the next part to the agent instead of calling a model.
+(1) Decision: partition when EITHER the measured size (sc3) is M, L or XL (undetermined is XL), OR the rendered input is not admitted. (2) Admission in two units never mixed. CLI provider: declared inputBudgetChars minus a 16,000-character reserve (characters); no output cap is enforced or needed for a CLI provider, because the CLI adapters do not enforce maxTokens (modelArgs ignores the completion options, Vibe forwards no limit) and a part reply's size never enters a later model call: the combine reads only the part summaries, capped at 2,000 characters by the schema, and the evidence layers are assembled in code from the replies into the delivered answer. Local model: the UTF-8 byte length must not exceed window tokens minus the call's output tokens minus 2,048 (bytes), because every token covers at least one byte. A single-pass call keeps the full configured output tokens (no truncation knob): with the checked-in configuration 32,768 - 20,480 - 2,048 = 10,240 bytes, and since the existing prompts alone are 10,652 (code), 11,040 (adherence) and 6,324 (docs) bytes, a local code or adherence request is never admitted single-pass and is handled in parts (trigger 'fit'); a docs request is admitted only if its evidence fits in 3,916 bytes. Part and combine calls on a local model use a stated lower output cap PART_MAX_OUTPUT_TOKENS = 8,192, enforced by OllamaProvider as num_predict: 32,768 - 8,192 - 2,048 = 22,528 bytes, which holds the largest prompt (11,040) plus the 4,000-byte minimum room (15,040) and leaves 7,488 spare. A part reply cut at 8,192 tokens ends mid-JSON, fails validation and is handled as an invalid reply by the repair and division rules. This departs from the wording of ac4 for local code and adherence requests, which the user accepted on 2026-11-08 under accuracy over cost; ac4 still guarantees that a small request whose input is admitted is returned whole. (3) The helper owns the repair loop with {maxAttempts: 1, internalRetry: false}, a repair note capped at 8,000 characters, and admission before every attempt; tests run the real adapters. (4) Failures are classified by cause when they happen: each part records a failure kind. A size refusal (InputTooLargeError, a CliExitError subclass) is handled by the division rule before classification and is never 'call-failed'. 'call-failed' is isModelCallFailure(err) from src/analyze/context/model-failure.ts, extended by one entry: 'vibe exited with' is added to CLI_FAILURE_TEXTS beside the Claude and Codex wordings, because cli-provider.ts builds every CLI non-zero exit as `${cli} exited with ${code}.` and completeStructuredVibe wraps it in the retry prefix, which isModelCallFailure strips; without the entry an all-parts Vibe outage would be classified 'invalid-answer'. 'invalid-reply' is ModelResponseShapeError, SynthesizerSchemaUnrecoverable or any other validation failure thrown by completeStructured (which the Ollama, Vibe and Codex adapters throw for a schema-invalid reply); 'unadmittable' is a rendered input that is not admitted. Terminal precedence when no part is covered: HandlingBudgetError only when every uncovered part is unadmittable; otherwise ShaperAnswerStepFailedError with 'model-failed' if any part is 'call-failed', else 'invalid-answer', with every part's own reason in notCovered and, in the error, the bounded cause chain of every failed part. Typed versus legacy: a call that was divided into parts ends in these typed terminal failures, which bypass classifyError; a single-pass call that fails keeps today's route unchanged, so in runAggregator classifyError gives the prefixed Error with the original as cause (a single-pass Vibe exit gets the 'aggregator-llm-unavailable:' prefix, which classifyError takes from the extended wording list, a deliberate behaviour change) and an all-parts Vibe outage on a divided input gets the typed 'model-failed' with no prefix. (5) Division by directory then file, a room under 4,000 refused, ordinals separate from keys, part summaries capped at 2,000 characters, evidence and findings assembled in code, a staged combine of N into ceil(N/g). Dependencies between outputs are stated in one DEPENDENCY table keyed by synthesize target, built by reading each prompt in src/prompts/analyze/synthesize.*.system.md, with two mechanisms. Reference context: the outputs that other outputs are judged against are rendered in every part and every combine call, never sectioned, and counted in the fixed context of the admission rule: adherence = the doc.constraint.enumerate and doc.decision.trace outputs (the rule text, verbatim, with its citations; the prompt classifies each code site against it and drops a site it cannot classify); capability = the capability.reuse-check outputs (concept.resolve hits are listed as related modules only when they are not reuse-check candidates); code = the anchor record of concept.resolve (anchor.source, the anchor identity and, when ranked, hits[0]; the bundle is centred on it), a small structural extract made in code; docs, data and infra = none, each with its reason recorded. Dedupe keys: every sub-section a prompt dedupes by file or path (Related docs by file, Related modules by path, surface by file) is deduped by that key in code when the adapters concatenate the parts, first occurrence by ordinal wins, so an entry that appears in several parts is listed once. selectSharedContext(target, executed) returns the reference blocks and DEDUPE_KEYS names the keys; the reference blocks are removed from the partition blocks. The rule-source count and the rule restatement are computed in code from the reference blocks. If a target's reference context plus the fixed prompt plus the 4,000-unit minimum room is not admitted, the helper throws HandlingBudgetError naming the reference context and the configuration, since the evidence is never summarised down. An audit test fails when a synthesize prompt key has no table entry. Sections: only a block's sectionable text field (a constraint or decision text and its rationale, a section body, a stringified aggregate value) is cut, into consecutive sections each the largest whole code-point prefix that fits the room; the block's envelope, its identifying and citation fields (doc outputs: sourceEntityId, file, heading, kind; code and search hits: file and line; aggregate upstream outputs: taskId, template, params), is repeated at the head of every section and counted in the admission, so the room of a section is the room minus the envelope and a section never separates text from its citation; an envelope that leaves less than the minimum room gives HandlingBudgetError naming the envelope. One repair-exhaustion rule: an unadmitted repair divides the part up to three times, then the part is recorded as not covered. A combine failure or unadmitted combine with a covered part returns the per-part results with 'combine' in notCovered. (6) Ordinary synthesis success transition: synthesizeHandled(args) returns { layers, handling } and synthesize(args) stays as a wrapper returning the layers; applyHandling(report, handling) in completeness.ts sets report.handling by mergeHandling, adds one incomplete source note per not-covered part and sets complete false when a part is not covered; the context driver builds found' with that report and returns it in the 'bundle' outcome, so settlePipelineOutcome hands the updated report to the stamp callback that sets the delivered bundle's report. (7) Callers and failure routes: LookupFailedError carries partial, handling and the original reason (answerStepReason); failedOutput copies the reason as errorCode 'answer-step:<reason>' and keeps the cause, and the pipeline rebuilds the ShaperAnswerStepFailedError from reason and found. ShaperAnswerStepFailedError.found is AnswerStepFound, whose results are lookup results and cannot hold the aggregator's inputs or per-part causes, so the error gains two optional readonly fields (additive, absent on the lookup path and on a single-pass failure): upstream: readonly AggregateInputRecord[], AggregateInputRecord being { taskId, template, params, value } as in UpstreamOutput, and partFailures: readonly { part, kind, reason, cause? }[], cause being a FailureCause { name, message, cause? } built by the same bounded builder as failureData (at most 3 levels, JSON-safe, no Error objects) for every failed part. An aggregator failure sets found.results to [] because no lookup ran, builds found.report from the failure alone with the helper the lookup path uses for an empty result list, and sets upstream to the upstream outputs it was given, so nothing is invented and nothing is dropped. runAggregator's classifyError keeps the original error as the cause of the prefixed Error (prefixes unchanged) and leaves a typed answer-step error unwrapped. executeLeafTask(task: PlannedTask, intent, runId, outputs: ReadonlyMap<string, readonly UpstreamOutput[]>, absentInputs?, execution?): Promise<TaskExecutionRecord> keeps failure data for any aggregate failure in the optional data field of TaskExecutionRecord as a JSON-safe value built by failureData(err): { kind:'answer-step', reason, found, upstream, partFailures, handling } for a typed error, { kind:'error', name, message, cause? } for a plain Error with the cause nested at most 3 levels and no Error objects or functions, because records are written with JSON.stringify; upstream holds plain task outputs that are already stored in task records, and keeps taskId, template and params with each value; the orchestrator puts the data in RunFailure.data under 'executor-aggregator-failed'. For a failed nested plan, collectPlanSources reads the kept child records and concludeRun merges nested handling even when the root aggregate succeeded. (8) Reporting: HandlingReport with budgets in their own units, optional trigger, mergeHandling, parseHandling, renderReportHead line. (9) Step tool: AnswerProgress carries the partition plan (blocks with ordinals, envelopes and section cuts, and the reference blocks), the handling decision (mode and trigger) and the measured budgets as well as the completed parts, the cursor, stage outputs, failures and retries, so the progress overload of finalizeSynthesize can decide whether another part remains and return the HandlingReport; startAnswerProgress creates it; an invalid reply re-emits the turn with a new token and a retry note.
 
-### 8.2 a2: Two path-specific implementations that share only the HandlingReport type
+### 9.2 a2: Size table only, separate implementations per path
 
-Write the partition logic once inside the lookup pipeline's synthesizer and once inside the plan tree's aggregator, with only the HandlingReport contract in common.
+Decide only from the five sizes with a fixed table and implement division and combine once for the lookup pipeline and once for the aggregator.
 
-Keep src/analyze/context/synthesizer.ts and src/analyze/runtimes/shared/aggregator.ts self-contained. Each gets its own private partitioning (the synthesizer divides the executed explorations by file and directory of what they name; the aggregator divides the upstream task outputs by task path), its own per-part call and its own combine call, and both fill the same HandlingReport. No shared helper is introduced; the table from size to method is stated in the documentation and applied by each side with its own threshold. The step tool's part turn is added beside prepareAnswerTurn. This follows the existing layout, where the two paths already have separate message builders, and it avoids a shared interface that three callers must agree on.
+Define a table from size to single pass or partitioned with fixed part counts, and implement the division and combine separately for synthesize and for runAggregator. The size class decides; there is no check that a call is admitted.
 
-**Rejected because:** Meets each criterion on each path, but two copies of the division, failed-part and staged-combine rules mean ac2, ac3 and ac5 are guaranteed only per copy; the table the HLD calls one table (ac1) is stated twice and can disagree. Cheaper to review, costlier to keep correct.
+**Rejected because:** Literal to the HLD but a size class does not bound what a model accepts.
 
-### 8.3 a3: Decide by size class only, with fixed part sizes
+### 9.3 a3: Smallest: halve and retry when the provider refuses the input
 
-Use the five measured sizes as the only trigger: XS to M single-pass, L and XL partitioned into a fixed number of items per part.
+Keep one pass as today and only when the provider refuses the input as too large split it in half, retry and combine the halves.
 
-Define the table in terms of the RequestMeasure size alone, with no look at characters or at the model: sizes XS, S and M are answered in one pass; L is divided into parts of a fixed number of files; XL into parts of a smaller fixed number. The fixed numbers are constants next to SIZE_THRESHOLDS in src/analyze/measure.ts. The division, the per-part calls and the combine call are as in the other alternatives. This is the smallest reading of the HLD's 'stated table from size to method': the decision needs nothing beyond the measure that Story s2 already produces.
+Catch the provider's size refusal in synthesize and runAggregator, split the input at a file boundary into two halves, run each and combine, repeating on refusal. No table, no budget, no step tool part turn beyond a retry.
 
-**Rejected because:** Smallest decision logic, but deciding by size class alone cannot meet ac2 and ac6 for a few very large files (a medium request can still exceed the model's input) and splits tiny-file requests needlessly, so it fails k1 (accuracy first) and k2 (everything relevant is taken into account). It also leaves a model with a smaller limit to fail.
+**Rejected because:** A local model truncates silently instead of refusing, so input is lost with no signal; this violates k1, k2 and k3.
 
-### 8.4 a4: Partition only after the model refuses the input
+## 10. References
 
-Run every request in one pass as today, and divide into parts only when the call fails with an InputTooLargeError.
-
-Leave the single-pass path untouched. Catch the existing InputTooLargeError (src/agent/providers/cli-provider.ts) and the equivalent refusal of the local model at the synthesizer and aggregator call sites, and on that error re-run the same step in parts, using the sizes the error carries to choose the number of parts, then combine. There is no table and no pre-check; the report says 'partitioned' only when it happened.
-
-**Rejected because:** Reactive splitting is the smallest change but has no stated way of handling each size (ac1), cannot detect a local model that truncates instead of refusing (findings lost silently, against ac2 and k3), pays a failed call for every large request, and has no signal at all on the step tool's agent model.
-
-## 9. References
-
-- **[[c1]]** `code` `src/analyze/runtimes/shared/aggregator.ts` — "llmOutput = await provider.completeStructured<AggregateLLMOutput>("
-- **[[c2]]** `code` `src/analyze/context/synthesizer.ts` — "raw = await provider.completeStructured<Omit<AnalyzeContextBundle, 'meta'>>("
-- **[[c3]]** `code` `src/analyze/runtimes/shared/aggregator.ts` — "const upstreamSection = renderUpstreamSection(args.upstreamOutputs, args.absentInputs);"
-- **[[c4]]** `convention` `CLAUDE.md` — "Never `Promise.all` anything that reaches an LLM provider"
-- **[[c5]]** `code` `src/analyze/completeness.ts` — "/** Typed by Story s3. */"
-- **[[c6]]** `code` `src/agent/providers/cli-provider.ts` — "export class InputTooLargeError extends CliExitError {"
-- **[[c7]]** `prior-artifact` `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md` — "no token budget, no summarize-down and no truncation knobs"
-- **[[c8]]** `prior-artifact` `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/DEF.md` — "Every claim in an analysis is grounded in a real exploration output"
-- **[[c9]]** `code` `src/analyze/measure.ts` — "it is recorded for the handling of large results"
-- **[[c10]]** `code` `src/daemon/steps/analyze-step/answer-turn.ts` — "| { readonly ok: true;  readonly prepared: ReturnType<typeof prepareSynthesize> }"
-- **[[c11]]** `code` `src/analyze/context/shaper-provider.ts` — "const inputBudgetChars = model?.inputLimit?.unit === 'chars' ? model.inputLimit.max : undefined;"
-- **[[c12]]** `prior-artifact` `docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/HLD.md` — "Handling report"
-
-## 10. Open questions
-
-- What budget applies to a model that declares no input limit (an Ollama model reads its num_ctx; the agent's in-session model on the step tool declares nothing)? The design states a default in code; the figure is to be set from a measurement of the real models when the plan is made.
-- What characters-per-token ratio converts a tokens limit to characters (the design states 3)? A ratio that is too high is caught by the one-more-division rule on a size refusal, but it costs a call; it is to be checked against the models in the catalog.
-- The contract text of step s4 named the typed error 'AnswerStepFailedError' and the call site src/daemon/steps/analyze-step/types.ts; the audit found the class is ShaperAnswerStepFailedError (src/analyze/context/driver.ts) and the type is declared in src/daemon/steps/analyze-step/state.ts. This artifact carries the corrected names; the s4 step output is not repeated verbatim in those two places, nor in the runAggregator errors, which the audit asked to name by their real message prefixes.
+- **[[c1]]** `code` `src/analyze/context/synthesizer.ts:117-225`
+- **[[c2]]** `code` `src/analyze/context/driver.ts:1640-1690`
+- **[[c3]]** `code` `src/analyze/context/driver.ts:325-362`
+- **[[c4]]** `code` `src/analyze/executor/plan-sources.ts:43-92`
+- **[[c5]]** `code` `src/shared/types.ts:263`
+- **[[c6]]** `code` `src/daemon/steps/analyze-step/types.ts:56-157`
+- **[[c7]]** `code` `src/analyze/executor/walker.ts:338-390`

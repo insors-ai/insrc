@@ -1,0 +1,59 @@
+{
+  "artifactId": "LLD-aaaaaaaaaaaaaaaa-s1",
+  "kind": "LLD",
+  "renderedMarkdown": "# Wire fixture\n",
+  "openQuestions": [],
+  "approvable": false,
+  "blockReason": "Design review changes_requested: 0 HIGH, 1 MED",
+  "designReview": {
+    "reviewId": "wire-review",
+    "attempt": 1,
+    "artifactId": "LLD-aaaaaaaaaaaaaaaa-s1",
+    "status": "changes_requested",
+    "counts": {
+      "HIGH": 0,
+      "MED": 1,
+      "LOW": 0
+    },
+    "chunks": [
+      {
+        "chunkId": "content",
+        "status": "changes_requested",
+        "summary": "Review feedback",
+        "findings": [
+          {
+            "id": "wire-finding",
+            "severity": "MED",
+            "location": "/body/summary",
+            "message": "Wire concern",
+            "evidenceReferences": [
+              "docs/LLD.md"
+            ]
+          }
+        ],
+        "inspectedReferences": [
+          "docs/LLD.md"
+        ],
+        "limitations": [],
+        "advice": []
+      }
+    ],
+    "reviewer": "daemon",
+    "reviewedContentIdentity": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "designFindings": [
+    {
+      "attempt": 1,
+      "chunkId": "content",
+      "finding": {
+        "id": "wire-finding",
+        "severity": "MED",
+        "location": "/body/summary",
+        "message": "Wire concern",
+        "evidenceReferences": [
+          "docs/LLD.md"
+        ]
+      }
+    }
+  ]
+}

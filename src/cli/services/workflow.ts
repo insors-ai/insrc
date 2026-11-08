@@ -1,3 +1,5 @@
+import { renderPermanentDesignReview } from '../../workflow/review/design-review/read.js';
+import { isStoredDesignReview } from '../../workflow/review/report-log.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -190,6 +192,8 @@ export async function reject(artifactPath: string, reason: string): Promise<Reje
 }
 
 export interface ReviewFindingsResult {
+ readonly designMarkdown?:string|undefined;
+ readonly designReview?:import('../../workflow/review/design-review/contracts.js').DesignReviewConsolidated|undefined;
 	readonly verdict:  ReviewVerdict;
 	readonly pending:  readonly Finding[];
 }
@@ -199,6 +203,7 @@ export function reviewFindings(artifactPath: string): ReviewFindingsResult {
 	// the report and its resolutions are the review entry and the later entries of the artifact's log
 	const stored = readReviewRecordOf(jsonPathForMd(artifactPath));
 	if (stored === undefined) return { verdict: 'pass', pending: [] };
+ if(isStoredDesignReview(stored))return {verdict:stored.report.status==='passed'?'pass':'block',pending:[],designReview:stored.report,designMarkdown:renderPermanentDesignReview(stored.history)};
 	return { verdict: effectiveReviewVerdict(stored.report, stored.resolutions), pending: listPendingReviewFindings(stored.report, stored.resolutions) };
 }
 

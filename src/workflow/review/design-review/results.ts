@@ -1,5 +1,5 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
-import { DESIGN_LIMITS, DesignPlanSchema, designChunkResultSchema, allowsDesignFindingDecisions, DesignReportSchema, DesignImpactOutputSchema, decodeDesign, requireDesign } from './contracts.js';
+import { DESIGN_AGGREGATE_LIMITS, DESIGN_LIMITS, DesignPlanSchema, designChunkResultSchema, allowsDesignFindingDecisions, DesignReportSchema, DesignResultSchema, DesignImpactOutputSchema, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignChunkPlan, DesignChunk, DesignChunkResult, DesignReviewInventory, DesignReviewSubject, DesignReviewConsolidated, DesignAttempt, DesignImpactAssessment, DesignFindingOrigin, DesignReportImpact } from './contracts.js';
 import { designFindingKey, effectiveDesignFindingOrigins, validateDesignRetainedSource, resolveDesignCoverage } from './provenance.js';
 
@@ -81,8 +81,8 @@ export function validateDesignPlan(input: unknown, inventory: DesignReviewInvent
 }
 
 /** Structural/coverage checks cannot certify semantic truth; that remains the independent reviewer's assessment. */
-export function assessDesignResult(input: unknown, chunk: DesignChunk, previous: readonly DesignChunkResult[], requiredReferences: readonly string[] = [], impactContext?:{attempt:DesignAttempt;history:readonly DesignAttempt[]}): DesignChunkResult {
- const result=decodeDesign(designChunkResultSchema(chunk,impactContext?.attempt),input,DESIGN_LIMITS.resultBytes);
+export function assessDesignResult(input: unknown, chunk: DesignChunk, previous: readonly DesignChunkResult[], requiredReferences: readonly string[] = [], impactContext?:{attempt:DesignAttempt;history:readonly DesignAttempt[]}, stored = false): DesignChunkResult {
+ const result=decodeDesign(stored ? DesignResultSchema : designChunkResultSchema(chunk,impactContext?.attempt),input,DESIGN_LIMITS.resultBytes);
  requireDesign(result.chunkId===chunk.id,'invalid_result','Result is not for the current chunk');
  const ids=new Set(impactContext?[]:previous.flatMap(r=>r.findings.map(f=>f.id)));
  for(const finding of result.findings) {
@@ -97,7 +97,7 @@ export function assessDesignResult(input: unknown, chunk: DesignChunk, previous:
  const expected=result.limitations.length?'incomplete':blocking?'changes_requested':'passed';
  if(missing.length||result.limitations.length>before)result.status='incomplete';
  requireDesign(result.status===expected,'invalid_result',`Status contradicts findings or mandatory verification limits: received ${result.status}, expected ${expected}; limitations=${result.limitations.length}, HIGH/MED=${result.findings.filter(f=>f.severity==='HIGH'||f.severity==='MED').length}`);
- return result;
+ return decodeDesign(DesignResultSchema,result,DESIGN_LIMITS.resultBytes);
 }
 function reconcileDesignFindings(result:DesignChunkResult,chunk:DesignChunk,previous:readonly DesignChunkResult[],context?:{attempt:DesignAttempt;history:readonly DesignAttempt[]}):void{
  const final=allowsDesignFindingDecisions(chunk,context?.attempt);
@@ -142,7 +142,7 @@ function consolidateImpactReview(reviewId:string,attempt:number,subject:DesignRe
  requireDesign(results.length===selected.length,'incomplete_review','Every selected chunk must have an accepted fresh result');
  requireDesign(results.every((r,i)=>r.chunkId===selected[i]!.id)&&new Set(results.map(r=>r.chunkId)).size===results.length,'invalid_checkpoint','Fresh results do not match selected execution order');
  for(let i=0;i<results.length;i++){
-  const assessed=assessDesignResult(results[i],selected[i]!,results.slice(0,i),designRequiredReferences(subject,selected[i]!,current.progress.checkpointPath),{attempt:current,history});
+  const assessed=assessDesignResult(results[i],selected[i]!,results.slice(0,i),designRequiredReferences(subject,selected[i]!,current.progress.checkpointPath),{attempt:current,history},true);
   requireDesign(JSON.stringify(assessed)===JSON.stringify(results[i]),'invalid_checkpoint','Accepted finding reconciliation is incomplete or inconsistent');
  }
  const final=results.find(r=>r.chunkId===plan.finalConsistencyChunkId)!;
@@ -150,7 +150,7 @@ function consolidateImpactReview(reviewId:string,attempt:number,subject:DesignRe
  const decisions=final.findingDecisions??[],dispositions=new Map(decisions.map(d=>[designFindingKey(d.source),d.action]));
  const carried=baseline.filter(o=>!dispositions.has(designFindingKey(o))||dispositions.get(designFindingKey(o))==='carry');
  const effective:DesignFindingOrigin[]=[...carried,...results.flatMap(r=>r.findings.map(f=>({attempt,chunkId:r.chunkId,findingId:f.id})))];
- requireDesign(effective.length<=DESIGN_LIMITS.findings&&new Set(effective.map(designFindingKey)).size===effective.length,'result_too_large','Effective findings exceed bounds or contain duplicate origins');
+ requireDesign(effective.length<=DESIGN_AGGREGATE_LIMITS.findings&&new Set(effective.map(designFindingKey)).size===effective.length,'result_too_large','Effective findings exceed bounds or contain duplicate origins');
  const counts={HIGH:0,MED:0,LOW:0};
  for(const origin of effective){const source=context.attempts[origin.attempt-1]?.completedChunks.find(r=>r.chunkId===origin.chunkId)?.findings.find(f=>f.id===origin.findingId);requireDesign(source,'invalid_checkpoint','Effective finding origin is missing');counts[source.severity]++;}
  const impact:DesignReportImpact={baselineAttempt:context.impact.baselineAttempt,mode:context.impact.mode,

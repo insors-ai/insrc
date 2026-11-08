@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab1d0da6-1eff-4c6f-9648-14a815bfecdf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.107Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Support bounded design history and deterministic journal replay",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e0f8ccd9557747536c5f39459030f75ddb941546d16e1c44e1ac48fa0aec0259",
+        "at": "2026-11-07T19:42:18.107Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.108Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Support bounded design history and deterministic journal replay",
+    "summary": "Extend existing artifact store journal/sidecar path with validated stable entry ids and narrow known-format size policy using review.maxJsonBytes and the approved ceiling; retain generic 256KiB policy.",
+    "size": "L",
+    "order": 3,
+    "acceptanceChecks": [
+      "Sync/async readers, journal and writer enforce UTF-8 actual size, escaped envelopes and declared-length preallocation bounds.",
+      "Crash at append/head replace replays one identical entry; conflicting stable-id payload rejects; no nested artifact queue."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "U2 UTF-8 frame/journal boundaries and unknown-kind limits"
+      },
+      {
+        "level": "integration",
+        "name": "I1 deterministic-id journal crash replay"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

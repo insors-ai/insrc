@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e1e01b8f-6ec2-476f-849d-b6add90831fd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-07T19:42:18.115Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "envelope": {
+      "description": "Record narrow installed-daemon live qualification",
+      "parent": {
+        "entityId": "STORY-9b04adb36cac716d-s4",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-9b04adb36cac716d-s4",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 2"
+        },
+        {
+          "entityId": "TASK-9b04adb36cac716d-s4-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d2c9f81a8c045c4be3b2020f6f3a594e58628173d8ad9656d8a5a4581abe7f2c",
+        "at": "2026-11-07T19:42:18.116Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-07T19:42:18.116Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record narrow installed-daemon live qualification",
+    "summary": "After coordinated push/update/restart, run narrow independent review scenarios through registered normal tools, record exact provenance, timings, findings/permanent references and approved cleanup dispositions; reuse only exact covered-kind prior live evidence.",
+    "size": "M",
+    "order": 9,
+    "acceptanceChecks": [
+      "Label hosted versus fixture results honestly; uncovered DEF/HLD/LLD kinds stay unverified and failures are investigated.",
+      "Use CliProvider only and explicit human approval for live artifact gates; retain working code-review smoke evidence and no activation-proof framework.",
+      "Externally gated: do not mark complete until the operator has updated/restarted the installed daemon and required human approvals are recorded; local fixtures are insufficient."
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

@@ -12,9 +12,9 @@ import { reviewJsonLimit, requireReview } from '../code-review/task-review/contr
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, openSync, closeSync, fstatSync, readSync, realpathSync, constants } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, relative } from 'node:path';
 
 import { ArtifactIds, InvalidArtifactKeyError, isArtifactIdKind } from '../artifact-ids.js';
 import type { ArtifactKey } from '../artifact-ids.js';
@@ -26,8 +26,8 @@ import { decodeArtifactHead, isActor, isAttachment, isBinding } from './decode.j
 import { validateLogEntry } from './history.js';
 import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
-import { createMemoryJournal, headHashOf } from './journal.js';
-import type { StagedOperation, WriteJournal } from './journal.js';
+import { createMemoryJournal, headHashOf, isDocumentPrecondition } from './journal.js';
+import type { StagedOperation, WriteJournal, DocumentPrecondition } from './journal.js';
 import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, checkIntegrity, isLifecycleOperation } from './lifecycle.js';
 import { ArtifactNotFoundError, ArtifactShapeError, HistoryEntryError, IllegalTransitionError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
@@ -73,6 +73,9 @@ function revisedBytes(bytes: string, number: number): string {
 
 /** What a caller can say about the change log entry of a write. */
 export interface WriteOptions {
+ readonly expectedHeadHash?: string | undefined;
+ readonly expectedDocument?:DocumentPrecondition;
+ readonly entryId?: string | undefined;
 	/** The log operation; create or update when absent. A lifecycle operation must match the status change it makes. */
 	readonly operation?:  Operation | undefined;
 	readonly outcome?:    ChangeLogEntry['outcome'] | undefined;
@@ -102,6 +105,7 @@ export function createNonDurableStore(deps: Omit<ArtifactStoreDeps, 'journal'>):
 
 export class ArtifactStore {
 	constructor(private readonly deps: ArtifactStoreDeps) {}
+ get repoPath():string{return this.deps.repoPath;}
 
 	/** The history this store writes its log entries through, for a writer that appends a revision-less entry of its own under {@link exclusive}. */
 	get history(): History { return this.deps.history; }
@@ -200,10 +204,26 @@ export class ArtifactStore {
 			try { head = await this.read(id); }
 			catch (error) { if (!(error instanceof ArtifactNotFoundError) || !create) throw error; head = create(); }
 			const current = { ...head, changeLog: await this.deps.history.log(id) };
-			const result = await mutate(current);
+			const result = await mutate(structuredClone(current));
 			if (result === undefined) return { wrote: false };
 			if (result.next.id !== id) throw new ArtifactShapeError(`update of ${id} was given the artifact ${result.next.id}`);
-			const entry = await this.writeUnlocked(result.next, by, { ...options, ...(result.options ?? {}) });
+			const resolved = { ...options, ...(result.options ?? {}) };
+   if (resolved.entryId !== undefined) {
+    if (!/^[a-f0-9]{32,64}$/.test(resolved.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+    const previous = current.changeLog.find(e => e.id === resolved.entryId);
+    if (previous) {
+     if (previous.targetHeadHash !== headHashOf(readFileSync(artifactJsonPath(this.deps.repoPath,id),'utf8'))) throw new ArtifactShapeError('Conflicting deterministic history entry id after an intervening head write');
+     if (JSON.stringify(previous.outcome) !== JSON.stringify(resolved.outcome) || previous.operation !== (resolved.operation ?? 'update') ||
+      JSON.stringify(previous.actor) !== JSON.stringify(by) || JSON.stringify(previous.references) !== JSON.stringify(resolved.references) ||
+      current.description !== result.next.description || JSON.stringify(current.payload) !== JSON.stringify(result.next.payload) ||
+      JSON.stringify(current.lifecycle) !== JSON.stringify(result.next.lifecycle) ||
+      JSON.stringify(current.parent) !== JSON.stringify(result.next.parent) || JSON.stringify(current.references) !== JSON.stringify(result.next.references) ||
+      JSON.stringify(current.binding) !== JSON.stringify(result.next.binding) || JSON.stringify(current.attachments) !== JSON.stringify(result.next.attachments) ||
+      (resolved.addresses !== undefined && JSON.stringify(previous.addresses) !== JSON.stringify(resolved.addresses))) throw new ArtifactShapeError('Conflicting deterministic history entry id');
+     return { wrote: false, entry: previous };
+    }
+   }
+			const entry = await this.writeUnlocked(result.next, by, resolved);
 			return { wrote: true, entry };
 		});
 	}
@@ -256,10 +276,16 @@ export class ArtifactStore {
 		await this.completePending(a.id, path, options.outcome?.result === 'conflict-resolved');
 
 		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+  if (options.expectedHeadHash !== undefined && options.expectedHeadHash !== headHashOf(priorBytes)) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed before the prepared write');
 		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 
 		const operation = options.operation ?? (prior === undefined ? 'create' : 'update');
+  if (options.entryId !== undefined) {
+   if (!/^[a-f0-9]{32,64}$/.test(options.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+   const previous = (await this.deps.history.log(a.id)).find(e => e.id === options.entryId);
+   if (previous) throw new ArtifactShapeError('Deterministic entry replay must use updateAndLog to compare the current head');
+  }
 		if (options.operation !== undefined && options.operation !== 'create' && options.operation !== 'update' && !isLifecycleOperation(options.operation)) {
 			throw new ArtifactShapeError(`'${options.operation}' is a content operation that a write cannot log; use create, update or a lifecycle operation`);
 		}
@@ -321,9 +347,11 @@ export class ArtifactStore {
 		if (Array.isArray(addresses)) await this.checkAddresses(a.id, addresses);
 		// A fresh id per staged operation, so the same transition made twice (references A to B, back to A, to B again)
 		// is logged twice. A retry does not mint another: it finds the staged operation in the journal and reuses its id.
-		const operationId = randomUUID().replace(/-/g, '');
+		if (options.entryId !== undefined && !/^[a-f0-9]{32,64}$/.test(options.entryId)) throw new ArtifactShapeError('Invalid deterministic history entry id');
+		const operationId = options.entryId ?? randomUUID().replace(/-/g, '');
 		const entry: ChangeLogEntry = {
 			id: operationId,
+   ...(options.entryId !== undefined ? { targetHeadHash: headHashOf(prepared.bytes) } : {}),
 			actor: by,
 			timestamp,
 			operation,
@@ -337,11 +365,16 @@ export class ArtifactStore {
 		validateLogEntry(entry);
 		checkSidecarEntrySize({ artifactId: a.id, entry });
 		decodeArtifactHead(a.id, prepared.bytes);
-		const op: StagedOperation = { operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
+		const op: StagedOperation = { ...(options.expectedDocument?{expectedDocument:options.expectedDocument}:{}),operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
 
+		this.checkDocument(a.id,options.expectedDocument);
 		await this.deps.journal.stage(a.id, op);
 		await this.deps.history.appendLog(a.id, entry);
-		try { (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes); }
+		try {
+   if (options.expectedHeadHash !== undefined && headHashOf(existsSync(path)?readFileSync(path,'utf8'):undefined) !== options.expectedHeadHash) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed during journal/log awaits; pending publication retained');
+   this.checkDocument(a.id,options.expectedDocument);
+   (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes);
+  }
 		catch (err) {
 			log.warn({ id: a.id, operationId, err: (err as Error).message }, 'the head replace failed; the staged operation is finished by the next write');
 			throw err;
@@ -362,9 +395,22 @@ export class ArtifactStore {
 	 * The head is replaced only while it still hashes to the head the write started from; a head that moved on is never
 	 * overwritten and the journal file is kept. A staged entry the log would refuse is discarded, or it would block every later write.
 	 */
+ private checkDocument(id:string,doc:DocumentPrecondition|undefined):void{
+  if(doc===undefined)return;
+  try{
+   if(!isDocumentPrecondition(doc)||resolve(doc.path)!==doc.path||realpathSync(doc.path)!==doc.path||relative(realpathSync(this.deps.repoPath),doc.path).startsWith('..'))throw Error('Unsafe document precondition');
+   const fd=openSync(doc.path,constants.O_RDONLY|constants.O_NOFOLLOW);
+   try{const stat=fstatSync(fd);if(!stat.isFile()||stat.size>8*1024*1024)throw Error('Unbounded document');
+    const bytes=Buffer.alloc(stat.size+1);let size=0,n=0;while(size<bytes.length&&(n=readSync(fd,bytes,size,bytes.length-size,null))>0)size+=n;
+    if(size!==stat.size||headHashOf(bytes.subarray(0,size).toString('utf8'))!==doc.hash)throw Error('Document changed');
+   }finally{closeSync(fd);}
+  }catch(error){throw new LifecycleConflictError(id,'head-changed-after-stage',`Reviewed document changed or is unreadable; pending operation retained: ${String(error)}`);}
+ }
+
 	private async completePending(id: string, path: string, resolving = false): Promise<void> {
 		const op = await this.deps.journal.pending(id);
 		if (op === undefined) return;
+  if (op.entry.targetHeadHash !== undefined && op.entry.targetHeadHash !== headHashOf(op.bytes)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Deterministic journal head does not match its history binding; journal retained');
 		try {
 			validateLogEntry(op.entry);
 			checkSidecarEntrySize({ artifactId: id, entry: op.entry });
@@ -386,9 +432,16 @@ export class ArtifactStore {
 			}
 			throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
 		}
+		if(replace)this.checkDocument(id,op.expectedDocument);
 		const entries = await this.deps.history.log(id);
-		if (!entries.some(e => e.id === op.entry.id)) await this.deps.history.appendLog(id, op.entry);
-		if (replace) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+  const existing = entries.find(e => e.id === op.entry.id);
+  if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Staged history id already exists with different content; journal retained');
+		if (!existing) await this.deps.history.appendLog(id, op.entry);
+		if (replace) {
+   const latest=existsSync(path)?readFileSync(path,'utf8'):undefined;
+   if(latest!==op.bytes&&headHashOf(latest)!==op.priorHeadHash)throw new LifecycleConflictError(id,'head-changed-after-stage','Head changed during journal recovery; pending operation retained');
+   if(latest!==op.bytes){this.checkDocument(id,op.expectedDocument);(this.deps.writeHead ?? writeAtomic)(path, op.bytes);}
+  }
 		await this.clearQuietly(id, op.operationId);
 	}
 

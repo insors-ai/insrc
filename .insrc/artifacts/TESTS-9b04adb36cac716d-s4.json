@@ -1,0 +1,850 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 22,
+        "contentHash": "85d1b1e29ca50139dcd7c7af6e115ac942ddd50a8b955155163fdef96c7d840b",
+        "at": "2026-11-08T06:50:24.959Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "9b04adb36cac716d",
+    "storyId": "s4",
+    "createdAt": "2026-11-07T19:47:05.310Z",
+    "updatedAt": "2026-11-08T06:50:24.793Z",
+    "epicCreatedAt": "2026-11-03T08:15:34.350Z",
+    "epicSlug": "review-evolving-designs-durable-checkpoints",
+    "revision": 22
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "5e7f04ef8",
+        "ranAt": "2026-11-07T19:47:05.310Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U1 permanent payload integrity and digest; aggregate schemas",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent payload validates exact history, party, binding, digest and version",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "full and impact consolidation preserve 8194 limitations across checkpoint restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "impact consolidation carries more than 256 origins without weakening per-chunk findings",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 865,
+            "titles": [
+              {
+                "title": "permanent payload validates exact history, party, binding, digest and version",
+                "result": "pass"
+              },
+              {
+                "title": "full and impact consolidation preserve 8194 limitations across checkpoint restart",
+                "result": "pass"
+              },
+              {
+                "title": "impact consolidation carries more than 256 origins without weakening per-chunk findings",
+                "result": "pass"
+              },
+              {
+                "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "870fa0c4b",
+        "ranAt": "2026-11-08T05:23:36.631Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "capacity refusal is durable before provider construction and does not spend retries",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "automatic retry and explicit recovery reserve capacity before charging dispatch counters",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 11632,
+            "titles": [
+              {
+                "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
+                "result": "pass"
+              },
+              {
+                "title": "encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling",
+                "result": "pass"
+              },
+              {
+                "title": "capacity refusal is durable before provider construction and does not spend retries",
+                "result": "pass"
+              },
+              {
+                "title": "automatic retry and explicit recovery reserve capacity before charging dispatch counters",
+                "result": "pass"
+              },
+              {
+                "title": "coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "6d3865ff9",
+        "ranAt": "2026-11-08T05:11:22.727Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U2 UTF-8 frame/journal boundaries and unknown-kind limits",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
+                "title": "design history alone receives a bounded UTF-8 allowance in sync and async readers",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I1 deterministic-id journal crash replay",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
+                "title": "deterministic history id survives append and replace crashes and rejects conflicting replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 828,
+            "titles": [
+              {
+                "title": "design history alone receives a bounded UTF-8 allowance in sync and async readers",
+                "result": "pass"
+              },
+              {
+                "title": "deterministic history id survives append and replace crashes and rejects conflicting replay",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "6a661d6bf",
+        "ranAt": "2026-11-08T05:38:31.971Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I1 publication receipt fault recovery and zero model reruns",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I2 immutable baseline, exact owned delta and source mutation",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1333,
+            "titles": [
+              {
+                "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
+                "result": "pass"
+              },
+              {
+                "title": "publication capacity stays pending and a raised history allowance retries persistence only",
+                "result": "pass"
+              },
+              {
+                "title": "publication refuses changed subject before write and additional edits after its exact owned delta",
+                "result": "pass"
+              },
+              {
+                "title": "native review waits for durable publication and recovers failed receipt persistence without rerunning models",
+                "result": "pass"
+              },
+              {
+                "title": "publication append and head-replace crashes replay the same complete history entry",
+                "result": "pass"
+              },
+              {
+                "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
+                "result": "pass"
+              },
+              {
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "d83eecf71",
+        "ranAt": "2026-11-08T06:07:40.976Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U3 versioned readers and current IDE common fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I6 permanent retrieval after cleanup/restart and missing locator",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 852,
+            "titles": [
+              {
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              },
+              {
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "6d35295fc",
+        "ranAt": "2026-11-08T06:47:14.831Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U4 approval applicability and truthful overrides",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "MED overrides retain the original blocked review and repeated normal approval remains idempotent",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "document changes, missing evidence and a later failed review admission cannot approve an older pass",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "active reviewer ownership excludes approval and approval fence excludes new review ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "unfinished checkpoint states and missing referenced history fail closed without altering the head",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "changed authorship and workflow provenance cannot reuse independent evidence",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I3 ordinary/direct lifecycle gate and actual route prerequisites",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "both approval routes refuse missing or unapproved actual required ancestors",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1403,
+            "titles": [
+              {
+                "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
+                "result": "pass"
+              },
+              {
+                "title": "MED overrides retain the original blocked review and repeated normal approval remains idempotent",
+                "result": "pass"
+              },
+              {
+                "title": "document changes, missing evidence and a later failed review admission cannot approve an older pass",
+                "result": "pass"
+              },
+              {
+                "title": "active reviewer ownership excludes approval and approval fence excludes new review ownership",
+                "result": "pass"
+              },
+              {
+                "title": "unfinished checkpoint states and missing referenced history fail closed without altering the head",
+                "result": "pass"
+              },
+              {
+                "title": "ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "changed authorship and workflow provenance cannot reuse independent evidence",
+                "result": "pass"
+              },
+              {
+                "title": "both approval routes refuse missing or unapproved actual required ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 779,
+            "titles": [
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "dffb93691",
+        "ranAt": "2026-11-08T06:32:34.926Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I4 private claims, replacement races, full-history preservation and restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "approval deletes only fully preserved private claims and fresh history remains readable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "public replacements after claim and at deletion remain untouched and retain replay ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "replacement immediately before claim is quarantined and restored without loss",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "crashes after claim and before deletion recover exact claims without touching replacements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "unverified claims never clobber a replacement during no-clobber restore",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "cleanup verifies older failed attempt history as well as the final publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "explicit override approval retains unfinished checkpoint state truthfully",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I5 cleanup concurrency, fixed lock order and foreign-scope exclusion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "actual active model work retains its artifact while another artifact in the same project progresses",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1372,
+            "titles": [
+              {
+                "title": "approval deletes only fully preserved private claims and fresh history remains readable",
+                "result": "pass"
+              },
+              {
+                "title": "public replacements after claim and at deletion remain untouched and retain replay ownership",
+                "result": "pass"
+              },
+              {
+                "title": "replacement immediately before claim is quarantined and restored without loss",
+                "result": "pass"
+              },
+              {
+                "title": "crashes after claim and before deletion recover exact claims without touching replacements",
+                "result": "pass"
+              },
+              {
+                "title": "unverified claims never clobber a replacement during no-clobber restore",
+                "result": "pass"
+              },
+              {
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              },
+              {
+                "title": "active and busy artifacts retain promptly while independent artifacts clean up",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup verifies older failed attempt history as well as the final publication",
+                "result": "pass"
+              },
+              {
+                "title": "explicit override approval retains unfinished checkpoint state truthfully",
+                "result": "pass"
+              },
+              {
+                "title": "real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively",
+                "result": "pass"
+              },
+              {
+                "title": "actual active model work retains its artifact while another artifact in the same project progresses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "effcfa7f3",
+        "ranAt": "2026-11-08T06:50:24.793Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I7 both-party recovery/impact/provenance fixture parity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal stdio controller failure and explicit recovery retain actual connection authority and generations",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S1 compiled normal routes and code-review regression",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
+              }
+            ],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/design-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16614,
+            "titles": [
+              {
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
+              {
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              },
+              {
+                "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
+                "result": "pass"
+              },
+              {
+                "title": "normal stdio controller failure and explicit recovery retain actual connection authority and generations",
+                "result": "pass"
+              },
+              {
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              },
+              {
+                "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2626,
+            "titles": [
+              {
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1150,
+            "titles": [
+              {
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 818,
+            "titles": [
+              {
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              },
+              {
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

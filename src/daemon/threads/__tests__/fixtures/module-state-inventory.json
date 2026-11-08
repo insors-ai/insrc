@@ -1073,6 +1073,31 @@
     "class": "per-thread",
     "reason": "Request id counter of this thread's socket client; ids only have to be unique on one connection."
   },
+  "src/shared/keystore.ts#backend": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "The Keychain backend below the vault, replaced only by a unit test; production always uses keytar on the main thread that owns the vault."
+  },
+  "src/shared/keystore.ts#loadFailure": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "The Keychain vault lives on the main thread only: session workers forward getKey and its siblings over the hub, so one process makes one Keychain read."
+  },
+  "src/shared/keystore.ts#loading": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "The Keychain vault lives on the main thread only: session workers forward getKey and its siblings over the hub, so one process makes one Keychain read."
+  },
+  "src/shared/keystore.ts#mutations": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "The Keychain vault lives on the main thread only: session workers forward getKey and its siblings over the hub, so one process makes one Keychain read."
+  },
+  "src/shared/keystore.ts#vault": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "The Keychain vault lives on the main thread only: session workers forward getKey and its siblings over the hub, so one process makes one Keychain read."
+  },
   "src/shared/locks/lock-manager.ts#_manager": {
     "class": "shared-store",
     "reason": "This thread's lock manager over the one SharedArrayBuffer lock block shared by every thread; the lock state itself lives in that block."

@@ -22,6 +22,9 @@ function enter(call: string): void {
 	appendFileSync(join(dir!, 'calls.log'), `${call}\n`);
 	if (existsSync(join(dir!, 'refuse'))) throw new Error('The user denied access.');
 }
+// A `clock` file holds milliseconds to add to this process's time, to get past a remembered refusal.
+const realNow = Date.now.bind(Date);
+Date.now = () => realNow() + (existsSync(join(dir, 'clock')) ? Number(readFileSync(join(dir, 'clock'), 'utf8')) : 0);
 Object.assign(keytar, {
 	getPassword: async (service: string, account: string) => { enter(`get ${service} ${account}`); return read()[`${service}/${account}`] ?? null; },
 	setPassword: async (service: string, account: string, value: string) => { enter(`set ${service} ${account}`); writeFileSync(storePath, JSON.stringify({ ...read(), [`${service}/${account}`]: value })); },

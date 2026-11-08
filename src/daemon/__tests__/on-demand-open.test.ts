@@ -12,7 +12,7 @@
 
 import { test, after, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -25,7 +25,7 @@ import { PATHS } from '../../shared/paths.js';
 const PRELOAD = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'fake-keytar.ts');
 const base = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-on-demand-')));
 const HOME = join(base, 'home'), KEYTAR = join(base, 'keytar'), REPO = join(base, 'repo'), SECOND = join(base, 'second'), PLAIN = join(base, 'plain');
-const LOG = join(KEYTAR, 'calls.log'), REFUSE = join(KEYTAR, 'refuse');
+const LOG = join(KEYTAR, 'calls.log'), REFUSE = join(KEYTAR, 'refuse'), CLOCK = join(KEYTAR, 'clock');
 const start = () => startDaemon(HOME, { preload: PRELOAD, env: { INSRC_TEST_KEYTAR_DIR: KEYTAR } });
 const calls = (): string[] => existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(l => l.length > 0) : [];
 const clearCalls = (): void => { writeFileSync(LOG, ''); };
@@ -63,10 +63,13 @@ test('on-demand: the first management request opens the repository and a later o
 	try {
 		clearCalls();
 		assert.ok(Array.isArray(await list(REPO)));
-		const first = calls().length;
-		assert.ok(first > 1, 'the first request opened the repository');
+		assert.deepEqual(calls(), ['get insrc-vault secrets'], 'the first request read the vault');
+		// Reopening would close this lease and take a new one: a different file.
+		const lease = statSync(ownerLease(REPO));
 		assert.ok(Array.isArray(await list(REPO)));
-		assert.ok(calls().length - first <= 1, 'the second request found it open: at most its availability check');
+		assert.equal(calls().length, 1, 'the second request needed no Keychain access');
+		const later = statSync(ownerLease(REPO));
+		assert.deepEqual([later.ino, later.birthtimeMs], [lease.ino, lease.birthtimeMs], 'the second request found the repository open');
 	} finally { await daemon.stop(); }
 });
 
@@ -74,10 +77,15 @@ test('on-demand: a refused Keychain read reports secret-unavailable and the next
 	const daemon = await start();
 	try {
 		writeFileSync(REFUSE, '');
+		clearCalls();
 		assert.equal((await list(REPO) as { code?: string }).code, 'secret-unavailable');
+		const reads = calls().length;
 		rmSync(REFUSE);
-		assert.ok(Array.isArray(await list(REPO)), 'the next request opened the repository');
-	} finally { rmSync(REFUSE, { force: true }); await daemon.stop(); }
+		assert.equal((await list(REPO) as { code?: string }).code, 'secret-unavailable', 'the refusal is remembered, without another dialog');
+		assert.equal(calls().filter(c => c === 'get insrc-vault secrets').length, reads, 'no further Keychain read');
+		writeFileSync(CLOCK, String(5 * 60_000 + 1));
+		assert.ok(Array.isArray(await list(REPO)), 'the next request after the five minutes opened the repository');
+	} finally { rmSync(REFUSE, { force: true }); await daemon.stop(); rmSync(CLOCK, { force: true }); }
 });
 
 test('on-demand: a plain listing of an unmanaged repository touches nothing', async () => {

@@ -7,6 +7,7 @@
 **Epic:** `review-evolving-designs-durable-checkpoints`
 **HLD base run:** `wf-1793694252789-heyhey`
 **HLD effective hash:** `20a9ee7f3bdf...`
+**Tracker:** [insors-ai/insrc#107](https://github.com/insors-ai/insrc/issues/107)
 
 S4 connects the existing design-review coordinator to ordinary artifact approval. Complete review history is published once through the artifact store, while the head keeps a compact revision-bound reference. Approval checks the current subject and independent review, and safe artifact-scoped cleanup removes only permanently preserved inactive checkpoints. [[c20]]
 

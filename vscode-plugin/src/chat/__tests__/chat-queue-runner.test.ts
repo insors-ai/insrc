@@ -55,14 +55,14 @@ function spawningAdapter(opts: { pipe?: boolean } = {}): { adapter: StreamAdapte
 function registry(adapter: StreamAdapter): ProviderRegistry {
   return { available: ['claude' as ProviderId], get: () => adapter };
 }
-function harness(opts: { pipe?: boolean; logs?: string[] } = {}) {
+function harness(opts: { pipe?: boolean; logs?: string[]; continuationWaitMs?: number } = {}) {
   const fc = fakeChannel();
   const { adapter, runs } = spawningAdapter(opts);
   const store = createInMemoryChatSessionStore();
   let panels = 0;
   const host = createChatPanelHost({
     createPanel: () => { panels += 1; return fc.channel; },
-    providers: registry(adapter), store, cwd: () => '/repo', continuationWaitMs: 60,
+    providers: registry(adapter), store, cwd: () => '/repo', continuationWaitMs: opts.continuationWaitMs ?? 60,
     ...(opts.logs !== undefined ? { logger: { warn: (m: string) => void opts.logs!.push(`warn: ${m}`), error: (m: string) => void opts.logs!.push(`error: ${m}`) } } : {}),
   });
   return { fc, runs, store, host, panels: () => panels };
@@ -216,7 +216,7 @@ test("chat host: the queued turn runner shows the message's chat (opening the pa
 
 // Epic E20261014613abdb3 Story S004 t3 — a done with ok:false is a failed turn, not a finished one.
 test('ended requests and duplicate IDs resolve only their originating continuation', async () => {
-  const h = harness();
+  const h = harness({ continuationWaitMs: 2_000 });
   const a = h.store.create('claude');
   const b = h.store.create('claude');
   const shownGeneration = () => h.fc.posted.filter((p) => p.payload.type === 'session-restored').at(-1)!.payload['viewGeneration'];
@@ -252,7 +252,10 @@ test('ended requests and duplicate IDs resolve only their originating continuati
   h.runs[2]!.feed(done('t3'));
   h.runs[2]!.proc.exitNow();
   assert.deepEqual(await outA, { kind: 'done' });
-  assert.equal((await outB).kind, 'stopped');
+  h.fc.send('open-chat', { chatId: b.id });
+  h.fc.send('permission-decision', { requestId: 'same', decision: 'deny',
+    target: { sessionId: b.id, turnId: 't2', requestId: 'same', viewGeneration: shownGeneration() } });
+  assert.deepEqual(await outB, { kind: 'done' });
   h.host.dispose();
 });
 

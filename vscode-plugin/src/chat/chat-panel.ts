@@ -37,7 +37,7 @@ import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
 import type { TurnEvent } from './stream-events.js';
 import type { DeclaredOutcome, PresentedTurn, ReviewPresenter } from './review-presenter.js';
 import type { QueuedMessage, TurnOutcome } from './chat-queue-store.js';
-import type { ChatQueueWorker, QueueAction, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
+import type { ChatQueueWorker, QueueAction, QueuedCliIdentity, QueuedTurnRunner, WaitingOn } from './chat-queue-worker.js';
 import { projectOutbox } from './chat-outbox.js';
 import type { LinkOpener } from './link-opener.js';
 import { LINK_MARKUP_STYLE } from './link-markup.js';
@@ -346,7 +346,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   interface QueuedRun {
     readonly message: QueuedMessage;
     readonly session: ChatSession;
-    readonly onSpawn: (cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }) => void;
+    readonly onSpawn: (cli: QueuedCliIdentity) => void;
     /** Story S002: tells the worker the card this message waits on, so every window's outbox can say so. */
     readonly onWaiting: ((on: WaitingOn) => void) | undefined;
     /** The card last reported. */
@@ -2843,7 +2843,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           q.spawned = true;
           q.lastCli = cli;
           try {
-            q.onSpawn({ ...(cli.pid !== undefined ? { pid: cli.pid } : {}), ...(cli.startedAt !== undefined ? { startedAt: cli.startedAt } : {}) });
+            q.onSpawn(cli);
           } catch (err) {
             log.warn(`[chat] the queue could not record the turn's CLI: ${err instanceof Error ? err.message : String(err)}`);
           }
@@ -3532,6 +3532,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
    * continuations have ended.
    */
   const queueRunner: QueuedTurnRunner = {
+    recoverCli(lease) {
+      const live = deps.store.get(lease.sessionId)?.liveTurn;
+      if (live?.pid === undefined || (live.ownerHostPid !== 0 && live.ownerHostPid !== lease.pid)) return undefined;
+      return { pid: live.pid, startedAt: live.startedAt ?? undefined };
+    },
     note(message, text) {
       if (disposed || session === undefined || session.id !== message.sessionId) return log.warn(`[chat-queue] note for ${message.key} not shown (its chat is not open): ${text}`);
       postInfo(`queue-giveup-${message.turnId}`, text); // live only: it is about the queue, not the conversation

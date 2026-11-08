@@ -1482,7 +1482,7 @@ export function buildHandlerRuntime(deps: HandlerRuntimeDeps): HandlerRuntime {
 			const { name } = params as { name: string };
 			const { getKey, maskKey } = await import('../shared/keystore.js');
 			const value = await getKey(name);
-			return value ? { name, masked: maskKey(value), exists: true } : { name, exists: false };
+			return value !== null ? { name, masked: maskKey(value), exists: true } : { name, exists: false };
 		},
 
 		'keys.delete': async (params) => {

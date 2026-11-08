@@ -21,6 +21,11 @@ export interface AdoptionPorts {
 	/** Must come from the safe-stop control, independently verified by the maintenance entrypoint. */
 	readonly stopped: StoppedDaemonEvidence;
 }
+/** For the offline maintenance tool only, once it has confirmed under the vault guard that no daemon is running. */
+export async function claimLiveStoreForMaintenance(): Promise<void> {
+	const { declareLiveStoreOwner } = await import('../../db/graph/store.js');
+	declareLiveStoreOwner();
+}
 export async function adoptManagedRoot(root: string, ports: AdoptionPorts): Promise<void> {
 	if (process.getuid?.() === undefined || process.geteuid?.() === undefined || process.getuid() === 0 || process.getuid() !== process.geteuid())
 		throw new ManagedStoreError('unsupported-filesystem');

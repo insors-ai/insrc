@@ -1,0 +1,116 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-473dfc55-c867-4b72-813f-76170de11d95",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:25.990Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add the single-item vault with validation and a mutation queue",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "bfca55068a0f74bd365d57e197940d685cca2e23f869f5572a2ec88f5a35ba4f",
+        "at": "2026-11-08T16:48:25.990Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:25.996Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add the single-item vault with validation and a mutation queue",
+    "summary": "Back getKey, setKey, deleteKey and listKeys with one Keychain item under service insrc-vault: single-flight load with a five-minute memory of a failed load, runtime validation of names and values, whole-payload validation on load and before every write, one mutation queue writing the Keychain first and memory after, retirement on delete, and a test-only backend setter below the vault.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Concurrent reads perform one Keychain read",
+      "A refused load fails at once for five minutes and then retries",
+      "An invalid stored payload fails closed and is never rewritten",
+      "A malformed name or value leaves memory and the stored item unchanged",
+      "A name such as __proto__ is an ordinary key",
+      "A failed write leaves memory unchanged and concurrent saves lose no update",
+      "A deleted name is recorded as retired",
+      "A retired name saved again is readable",
+      "listKeys never calls findCredentials"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "vault: concurrent reads perform one Keychain read"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a refused load fails at once for five minutes and then retries"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a payload with a bad version, missing secrets, a non-string value or a bad retired list fails closed and is never rewritten"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a malformed name or value leaves memory and the stored item unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a name such as __proto__ is stored and read as an ordinary key"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a failed write leaves memory unchanged"
+      },
+      {
+        "level": "unit",
+        "name": "vault: concurrent saves lose no update"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a deleted name is recorded as retired"
+      },
+      {
+        "level": "unit",
+        "name": "vault: a retired name saved again is readable"
+      },
+      {
+        "level": "unit",
+        "name": "keystore: listKeys never calls findCredentials"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

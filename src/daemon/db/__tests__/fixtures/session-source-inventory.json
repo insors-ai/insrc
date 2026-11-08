@@ -8,7 +8,7 @@
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "Default features retain per-action admission. Capability selection lazily opens only registered fresh roots, deduplicated under daemon ownership; existing legacy or corrupted registries fail closed. Removed the historical audit dependency, not ticket, session, root or privacy authorization.",
-      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3"
+      "sourceDigest": "4bf4296fd80d28a44b49bac674bc60ef62f1ec69ac8d1c64c9cd2f7e2e44efe1"
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -18,7 +18,7 @@
     "src/daemon/db-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "S004: legacy Saved upsert/delete compatibility is unchanged. A probe that borrows a persisted config now holds the existing Saved resolver lease through the supervisor drain; new unsaved drafts do not gain a fictitious stored revision. No session-to-Saved downgrade.",
-      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da"
+      "sourceDigest": "2057e9562ad68ff7e69a2d44edec72c7284fca485e90a1b1afb8fe197fee2b6d"
     },
     "src/daemon/db/draft-test.ts": {
       "classification": "saved-foundation-boundary",
@@ -28,7 +28,7 @@
     "src/daemon/db/management.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S004: existing Saved root gate, MAC/ticket authority, registry and credential journal atomically remove one selected revision. Ambiguous commit retains the old runtime barrier until exact same-ticket inode/receipt reconciliation. Detach precedes asynchronous cleanup; credential and resource phases are independently truthful. No source deletion or new store.",
-      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
+      "sourceDigest": "7571c8a670b382de86d1a4a82df4ac37cf89265d2355b43095a9e3015c370ce7"
     },
     "src/daemon/db/pool.ts": {
       "classification": "resolver-resource-foundation",
@@ -38,7 +38,7 @@
     "src/daemon/db/secrets.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S004: metadata-only removal preparation reuses the protected sc2 journal, owns no staged replacement secrets, and selects only obsolete owned refs. Credential recovery uses existing fences and protected receipts; no plaintext credential is reconstructed for removal/state/retry. Protected cleanup refs remain internal, never sc6 wire/log values.",
-      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca"
+      "sourceDigest": "2275ccdcb49476e70197fb61afe9ea70579971b6c538a17219aeca41f2792d81"
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "session-private-generations",
@@ -6541,7 +6541,14 @@
       ],
       "siteCount": 11,
       "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
-      "sourceDigest": "3a2acd077b3bd8dafb68913621a03fddc205590455a6ff78b6e7169218eddf21"
+      "sourceDigest": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/bin/insrc-connection-test.ts": {
       "classification": "client-process-boundary",
@@ -8527,7 +8534,14 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3"
+      "sourceDigest": "4bf4296fd80d28a44b49bac674bc60ef62f1ec69ac8d1c64c9cd2f7e2e44efe1",
+      "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:symbol:savedConnectionResolver",
+        "connection-use",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -8741,7 +8755,14 @@
       ],
       "siteCount": 13,
       "sitesDigest": "74e4a4c454f0c6e248853fb46a7a54c1fa154b0ca6c8431a78a514d8437d52f6",
-      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da"
+      "sourceDigest": "2057e9562ad68ff7e69a2d44edec72c7284fca485e90a1b1afb8fe197fee2b6d",
+      "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:symbol:savedConnectionResolver",
+        "connection-use",
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/daemon/db/config.ts": {
       "classification": "saved-foundation-boundary",
@@ -10839,7 +10860,13 @@
       ],
       "siteCount": 61,
       "sitesDigest": "69a89181cd97a2eac354dc8842e6526bd6acc5a1d1265e2d3becbe4119e79fe3",
-      "sourceDigest": "1290c8280312d6924ea262463762e494841f908ab114cd270bf254e74ada51e5"
+      "sourceDigest": "fa525ca1a21a571b62bb9ba7855f11a39419ef208d4d240599b102491b6f9516",
+      "boundaries": [
+        "filesystem-open",
+        "filesystem-read",
+        "filesystem-write",
+        "serialization"
+      ]
     },
     "src/daemon/db/management-adoption.ts": {
       "classification": "saved-foundation-boundary",
@@ -10848,6 +10875,14 @@
         [
           "serialization",
           "Buffer.alloc"
+        ],
+        [
+          "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "unresolved-call",
+          "import"
         ],
         [
           "serialization",
@@ -10894,9 +10929,16 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "7d91211dab89e64ab72fc4fd256311c3a2b449245b44bd8035f736f97f173e6b",
-      "sourceDigest": "56f0e0e8c4a320074def5df001dc6321cbfbb37af2038e64b1615447672b382a"
+      "siteCount": 14,
+      "sitesDigest": "87e6a8a928830248255647c256c5e936d6dcf7a45a38182d5dd0a0a52f386d37",
+      "sourceDigest": "db7a68fe20241c990fa308f108f9e46216378bab8f54d9e45d6463626633be0a",
+      "boundaries": [
+        "acquisition:acquire-call",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/db/management-defaults.ts": {
       "classification": "default-managed-root-owner",
@@ -10907,12 +10949,20 @@
           "Buffer.alloc"
         ],
         [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
           "serialization",
           "JSON.stringify"
         ],
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "storage-call",
@@ -10967,9 +11017,17 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "b95e5aa395d1b067c555d11538e8bca63b13fd8d75a99d30e3ffebb9f827eaa3",
-      "sourceDigest": "16ee93d6595be26bc235e5cef4272d3a54768e28808a71fe11710aa0eedb14ee"
+      "siteCount": 18,
+      "sitesDigest": "9ef57259ec65a3c7af8ecb39f25e88df5ae687bc5e63b33c4911e1f9c0d17ef5",
+      "sourceDigest": "de4eaab06b4b3bf4ab9033e2d332e15620bf8390daf9030e7992d0d6ffa53da2",
+      "boundaries": [
+        "acquisition:acquire-call",
+        "diagnostic",
+        "filesystem-read",
+        "filesystem-write",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -11537,7 +11595,14 @@
       ],
       "siteCount": 47,
       "sitesDigest": "71f852b6ed2d2f2ce2d0f83ef7ea80e2b5a9cfe8afed157738147b5e138b9d4e",
-      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
+      "sourceDigest": "7571c8a670b382de86d1a4a82df4ac37cf89265d2355b43095a9e3015c370ce7",
+      "boundaries": [
+        "acquisition:pool-member",
+        "acquisition:symbol:DriverPool",
+        "connection-use",
+        "filesystem-read",
+        "serialization"
+      ]
     },
     "src/daemon/db/memory-file-sources.ts": {
       "classification": "resolver-resource-foundation",
@@ -12592,7 +12657,11 @@
       ],
       "siteCount": 10,
       "sitesDigest": "8a749513dc120a7b98e858b783d553d028eefc0b7747a8f52a5d2a9ed538bf73",
-      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca"
+      "sourceDigest": "2275ccdcb49476e70197fb61afe9ea70579971b6c538a17219aeca41f2792d81",
+      "boundaries": [
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "session-private-generations",
@@ -14096,7 +14165,18 @@
       ],
       "siteCount": 226,
       "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "70743d779c331f2e977dc77a79f2437cab0b7165354dd15a637aa9b5c7f13208"
+      "sourceDigest": "88352a48eb47699dfe46923b65274c7a750e53c184a1bba2ec19c3ca150f20e2",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "filesystem-write",
+        "provider-adapter",
+        "provider-backend",
+        "provider-use",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
@@ -14227,14 +14307,6 @@
           "listRepos"
         ],
         [
-          "storage-call",
-          "listRepos"
-        ],
-        [
-          "storage-call",
-          "listRepos"
-        ],
-        [
           "diagnostic",
           "log.error"
         ],
@@ -14335,10 +14407,6 @@
           "log.warn"
         ],
         [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -14379,9 +14447,17 @@
           "writePid"
         ]
       ],
-      "siteCount": 69,
-      "sitesDigest": "cd1632aac39fe9a7833e281606a62214b103a165a4893dd3bf0bb538a0a48148",
-      "sourceDigest": "525058ac08030e0a98baa49292f562d8485dca7d54b0ceb05016f16b6497a458"
+      "siteCount": 66,
+      "sitesDigest": "26179eb865ebf467ae0ad2ee08ed5b868d73b8766942c7d53a6596f27ff7ac16",
+      "sourceDigest": "d09d6ac5d5a1227731dd9b802ed40c5c2b2de2988e5bc5ef3bebbb54d54533bc",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-write",
+        "provider-adapter",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/lifecycle-registry.ts": {
       "classification": "daemon-admission-boundary",
@@ -16537,7 +16613,14 @@
       ],
       "siteCount": 12,
       "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "e7689d5dec0f6aafd7bfb8a4b79db022f61fd46cb5614ecd2a593faf9401dc6f"
+      "sourceDigest": "c38c560df16293d95efce169ef8925821765efef0c09d05c6ce46d8e3a043954",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/threads/maintenance.ts": {
       "classification": "routing-background-boundary",
@@ -17036,7 +17119,12 @@
       ],
       "siteCount": 5,
       "sitesDigest": "fcaf496b38cbb3b22211173de69b63a3b992009d287989f2e88692e92a4d81cb",
-      "sourceDigest": "737e0efdb16f923a7de575285a4436c87ac1defb7336d304a8840f7cf3b16926"
+      "sourceDigest": "4084639e44e999962748354eac46a7cde9ed92ac60188c8aca72bb99c2ebc5ce",
+      "boundaries": [
+        "provider-adapter",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/threads/worker-requests.ts": {
       "classification": "routing-background-boundary",
@@ -35627,6 +35715,39 @@
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
       "sourceDigest": "5d159c3b445acdd2d080c66ccec8dddf224dba07992e0319259bf6f531ad5e64"
+    },
+    "src/shared/keystore.ts": {
+      "classification": "saved-foundation-boundary",
+      "rationale": "The vault over the OS keychain: its only diagnostic logs a secret name when a legacy item cannot be deleted, never a value, and an invalid stored item is never quoted in an error.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "serialization",
+          "serializeVault"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "6a02ed3511889345e4f86fe6f994950d7bf3a817ae2f50629d6d99e8a4afd3fc",
+      "sourceDigest": "06062733b76ea52dedd95bf2d71376ee385b3ed8cfd157276ac0283285c876de",
+      "boundaries": [
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/shared/locks/lock-manager.ts": {
       "classification": "shared-transport-foundation",

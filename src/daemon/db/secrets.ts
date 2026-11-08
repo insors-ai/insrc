@@ -29,11 +29,19 @@ export interface KeystoreLike {
 	deleteKey(name: string): Promise<void>;
 }
 let keystore: KeystoreLike = defaultKeystore;
+async function reportingUnavailable<T>(access: () => Promise<T>): Promise<T> {
+	try {
+		return await access();
+	}
+	catch (error) {
+		throw error instanceof defaultKeystore.KeystoreUnavailableError ? error : new defaultKeystore.KeystoreUnavailableError({ cause: error });
+	}
+}
 /** Daemon-only port; keeps test stores isolated from the OS keychain. */
 export const credentialKeystore: KeystoreLike = {
-	getKey: ref => keystore.getKey(ref),
-	setKey: (ref, value) => keystore.setKey(ref, value),
-	deleteKey: ref => keystore.deleteKey(ref),
+	getKey: ref => reportingUnavailable(() => keystore.getKey(ref)),
+	setKey: (ref, value) => reportingUnavailable(() => keystore.setKey(ref, value)),
+	deleteKey: ref => reportingUnavailable(() => keystore.deleteKey(ref)),
 };
 export function _setKeystoreForTests(impl: KeystoreLike): KeystoreLike {
 	const previous = keystore;
@@ -209,8 +217,8 @@ export class CredentialGenerations {
 			try {
 				value = await this.ports.keystore.getKey(ref);
 			}
-			catch {
-				throw new ManagedStoreError('recovery-required');
+			catch (error) {
+				throw new ManagedStoreError('recovery-required', { cause: error });
 			}
 			if (value === null)
 				throw new ManagedStoreError('recovery-required');

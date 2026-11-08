@@ -14,6 +14,8 @@ import { connectionManagementEnablement } from './management-enablement.js';
 import { openManagedRoot } from './management-startup.js';
 import type { StartupPorts } from './management-startup.js';
 import { savedManagementFor } from './management.js';
+import {getLogger} from '../../shared/logger.js';
+const log=getLogger('management-defaults');
 
 /** Publish a new read-only registry exclusively; never overwrite or migrate existing data. */
 export async function initializeFreshManagedRoot(root:string, ports:StartupPorts):Promise<void>{
@@ -22,6 +24,11 @@ export async function initializeFreshManagedRoot(root:string, ports:StartupPorts
  const path=connectionsPath(root),parentPath=dirname(path),directory=managementStateDirectory(path);
  const before=await readRegistrySnapshot(path,true);
  if(!before.missing||await managementMarkerExists(path))throw new ManagedStoreError('recovery-required');
+ const keystore=ports.keystore??credentialKeystore,registryId=randomUUID();
+ // The key comes first: a refused keychain read must leave nothing on disk, so the next request starts clean.
+ const tickets=await SavedTicketAuthority.open({root,registryId,adopted:false,keystore,isRegistered:ports.isRegistered});
+ let published=false;
+ try{
  // Only an absent registry can take this path. No legacy writable inode is adopted.
  await mkdir(dirname(parentPath),{recursive:true,mode:0o700});
  const ancestor=await lstat(dirname(parentPath));if(!ancestor.isDirectory()||ancestor.isSymbolicLink()||ancestor.uid!==process.getuid())throw new ManagedStoreError('recovery-required');
@@ -35,21 +42,25 @@ export async function initializeFreshManagedRoot(root:string, ports:StartupPorts
  let temporary:string|undefined;
  try{
   if(!(await readRegistrySnapshot(path,true)).missing)throw new ManagedStoreError('recovery-required');
-  const registryId=randomUUID(),initialGeneration=randomUUID(),snapshotName=`snapshot-${randomUUID()}.json`;
+  const initialGeneration=randomUUID(),snapshotName=`snapshot-${randomUUID()}.json`;
   await writeProtected(join(directory,snapshotName),Buffer.alloc(0),true);
   await writeProtected(join(directory,'preparing.json'),JSON.stringify({version:2,root,registryId,initialGeneration,snapshotName,baselineDigest:before.digest}),true);
-  const tickets=await SavedTicketAuthority.open({root,registryId,adopted:false,keystore:ports.keystore??credentialKeystore,isRegistered:ports.isRegistered});
   const info=await lstat(parentPath);
   const state=await ManagementStateFile.create(directory,{version:2,root,registryId,phase:'adopting',initialGeneration,parent:{inode:info.ino,device:info.dev},baseline:{name:snapshotName,digest:before.digest,missing:true,mode:0},initializedBy:{pid:lease.owner.pid,processIdentity:lease.owner.processIdentity,createdAt:new Date().toISOString()},rollback:[],releaseDigest:policy.digest,committed:registryAnchor(before)},tickets);
   const bytes=JSON.stringify({connections:[],_management:{version:2,registryId,generation:initialGeneration,revisions:{},receipts:{}}})+'\n';
   temporary=join(parentPath,`.db-connections-${randomUUID()}.tmp`);await writeProtected(temporary,bytes,true);
   if(!await ports.isRegistered(root)||!await lease.current())throw new ManagedStoreError('recovery-required');
   // link is exclusive and publishes an already protected inode. EEXIST preserves a racing writer.
-  await link(temporary,path);await syncDirectory(parentPath);await unlink(temporary);temporary=undefined;
+  await link(temporary,path);published=true;await syncDirectory(parentPath);await unlink(temporary);temporary=undefined;
   const current=await readRegistrySnapshot(path);
   if(current.digest!==createHash('sha256').update(bytes).digest('hex'))throw new ManagedStoreError('recovery-required');
   await proveProtectedRegistry(path);await state.update({...await state.current(),phase:'managed',committed:registryAnchor(current)});
  }finally{if(temporary)await unlink(temporary).catch(()=>{});await lease.close();}
+ }catch(error){
+  // Before publication nothing refers to the key; a failed delete leaves only an unused item.
+  if(!published)await keystore.deleteKey(`db-management:v2:${registryId}:ticket-key`).catch(()=>{log.warn({root},'unused ticket key could not be deleted');});
+  throw error;
+ }
 }
 
 const owners=new Map<string,Promise<{close:()=>Promise<void>}>>();

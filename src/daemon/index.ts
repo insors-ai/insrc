@@ -47,7 +47,7 @@ import { installStoreFileOpenDiagnostic } from './store-file-open-diagnostic.js'
 import { reportFatal } from './fatal.js';
 import { createShutdown, exitRespectingStoreHealth } from './shutdown.js';
 import { buildHandlerRuntime, inDaemonOnlyHandlers } from './handler-runtime.js';
-import { ensureDefaultManagedRoot, closeDefaultManagedRoots } from './db/management-defaults.js';
+import { closeDefaultManagedRoots } from './db/management-defaults.js';
 import { initChatHandlers, disposeChatHandlers } from './chat-handler.js';
 // Phase 1 cleanup: handoff-stream, meta-task-stream, gate-handlers, orphan-handlers,
 // the chat agent-flow exports (chatReply, chatRedirect, brainstormAddIdea, chatSend,
@@ -466,13 +466,6 @@ async function main(): Promise<void> {
 	// in-process through the in-daemon client (Epic c2ba6fa6, Story s11).
 	let understandingService: UnderstandingService | undefined;
 	const connectionOwners: { close: () => Promise<void> }[] = [{close:closeDefaultManagedRoots}];
-	for (const registered of await listRepos(db)) {
-		try {
-			await ensureDefaultManagedRoot(registered.path, {
-				isRegistered: async root => (await listRepos(db)).some(repo => repo.path === root),
-			});
-		} catch { log.warn({ repo: registered.path }, 'connection management disabled: maintenance or recovery required'); }
-	}
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;

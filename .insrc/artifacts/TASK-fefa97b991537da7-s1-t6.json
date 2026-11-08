@@ -1,0 +1,103 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-ab319717-1909-46c8-a00e-60ebaf1b84ee",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T16:48:26.011Z",
+    "epicCreatedAt": "2026-11-04T19:31:14.890Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "fefa97b991537da7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Move the keys handlers and other users onto the vault",
+      "parent": {
+        "entityId": "STORY-fefa97b991537da7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-fefa97b991537da7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-fefa97b991537da7-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "79dfd87631861684bfb5779db94f91ee9ade665d9145da2901d6a3a5cc0361ee",
+        "at": "2026-11-08T16:48:26.012Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T16:48:26.013Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Move the keys handlers and other users onto the vault",
+    "summary": "Make keys.list read through the vault, make keys.get use a null check so an empty saved secret exists, confirm notify, web and tool configuration read through the vault, document in the vault module that a remembered refusal applies during the five-minute cooldown and that legacy items are retained after copying, and refresh the pinned inventory.",
+    "size": "S",
+    "order": 6,
+    "acceptanceChecks": [
+      "Notify, web and keys handlers read through the vault",
+      "keys.get reports exists:true for an empty saved secret",
+      "keys.set with a non-string value is refused and other secrets stay readable after a restart",
+      "The vault module documents the cooldown and the retention of legacy items",
+      "The connection-management inventory matches the changed sources"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "consumers: notify, web and keys handlers read through the vault"
+      },
+      {
+        "level": "integration",
+        "name": "ipc: keys.get reports exists:true for an empty saved secret"
+      },
+      {
+        "level": "integration",
+        "name": "ipc: keys.set with a non-string value is refused and other secrets stay readable after a restart"
+      },
+      {
+        "level": "live",
+        "name": "live: after a node upgrade one dialog appears across several connections and threads once migration is complete"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

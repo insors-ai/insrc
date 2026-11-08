@@ -311,6 +311,9 @@ test('citations: a URL alongside prose is refused', () => {
 
 test('citations: a text-only label, a well-formed path and a standalone URL all pass', () => {
 	for (const ref of ['s1 analyze: the session lease and follow after reload', 'paintOpt/paintSel paint the options', 's1.analyzeBundles[0]', 'version 1.2 of the contract', 'src/workflow/synthesizer.ts:280', 'package.json', 'https://example.com/source.ts']) passes(ref);
+	for (const ref of ['https://example.com/source.ts?lines=1,2', 'https://example.com/source.ts;version=2']) {
+		assert.deepEqual(checkNonPathCitationRefs([{ id: 'c1', kind: 'analyze-bundle', ref }]), { ok: true }, ref);
+	}
 	assert.deepEqual(checkNonPathCitationRefs([{ id: 'c1', kind: 'code', ref: 'prose under a code kind is checkPathForms\' job' }]), { ok: true });
 });
 

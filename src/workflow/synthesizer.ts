@@ -275,7 +275,8 @@ export function checkNonPathCitationRefs(citations: readonly Citation[], repoPat
 	for (const c of citations) {
 		if (c.kind === 'code' || c.kind === 'doc') continue;
 		const ref = c.ref.trim();
-		const tokens = ref.split(/[\s;,]+/).filter(t => t.length > 0);
+		// A URL may hold commas and semicolons, so one standing alone is not split on them.
+		const tokens = /^https?:\/\/\S+$/.test(ref) ? [ref] : ref.split(/[\s;,]+/).filter(t => t.length > 0);
 		if (!tokens.some(isFileToken)) continue;
 		const problem = tokens.length === 1 ? pathFormProblem(ref, repoPath) : 'it holds a file reference beside other text';
 		if (problem !== undefined) {

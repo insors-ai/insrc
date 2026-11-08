@@ -12,10 +12,12 @@
  */
 
 import { mkdirSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { dirname } from 'node:path';
 import type { AttachmentRef } from './attachment-store.js';
 import type { ChatPanelLogger } from './chat-panel.js';
 import { isRetryableCause, MAX_INFRA_RETRIES, RETRY_DELAYS_MS } from './chat-failure.js';
+import { observeProcess, processDeparted, type ProcessObservation } from './session-lock.js';
 
 /** At most this many rows live in a repository's queue; done rows are deleted at once. */
 export const QUEUE_RECORD_BOUND = 500;
@@ -29,6 +31,8 @@ export const PRESENCE_GRACE_MS = 30_000;
 export const BUSY_TIMEOUT_MS = 5_000;
 /** The schema this module reads and writes. */
 export const SCHEMA_VERSION = 2;
+export const SESSION_LEASE_SCHEMA_VERSION = 3;
+export const REPO_TURN_CAPACITY = 2;
 
 export type QueueState = 'queued' | 'processing' | 'retrying' | 'done' | 'failed' | 'not-delivered';
 
@@ -165,6 +169,43 @@ export interface ChatQueueLeases {
   presenceOf(windowKey: string): WindowPresence | undefined;
 }
 
+export interface LeaseToken {
+  readonly sessionId: string;
+  readonly seq: number;
+  readonly epoch: string;
+}
+
+export interface SessionLease extends RepoLease, LeaseToken {}
+
+export interface ProcessExitProof {
+  readonly pid: number;
+  readonly recordedStartedAt?: number | undefined;
+  readonly observation: ProcessObservation;
+}
+
+export interface TurnExitProof {
+  readonly owner: ProcessExitProof;
+  readonly cli: ProcessExitProof | { readonly noChild: true };
+}
+
+export type FinishResult = { readonly kind: 'applied'; readonly row?: QueuedMessage | undefined } | { readonly kind: 'stale' };
+
+export interface SessionQueueStore extends Omit<ChatQueueStore, 'head' | 'acknowledge' | 'finish' | 'markWaiting' | 'markNotDeliveredIfHead'>,
+  Pick<ChatQueueLeases, 'presence' | 'leave' | 'windowAlive' | 'presenceOf'> {
+  readonly mode: 'session-leases';
+  head(windowKey: string, at: number): QueuedMessage | undefined;
+  acknowledge(seq: number, claim: LeaseClaim): LeaseToken | undefined;
+  finish(token: LeaseToken, outcome: TurnOutcome): FinishResult;
+  markWaiting(token: LeaseToken, on: QueuedMessage['waitingOn']): boolean;
+  markNotDeliveredIfHead(seq: number, proof?: ProcessExitProof): boolean;
+  lease(sessionId: string): SessionLease | undefined;
+  leases(): readonly SessionLease[];
+  heartbeat(token: LeaseToken): boolean;
+  attachCli(token: LeaseToken, cli: { readonly pid?: number | undefined; readonly startedAt?: number | undefined }): boolean;
+  reclaim(token: LeaseToken, claim: LeaseClaim, proof: ProcessExitProof): LeaseToken | undefined;
+  takeOver(token: LeaseToken, claim: LeaseClaim, proof: TurnExitProof): boolean;
+}
+
 /** The subset of node:sqlite's DatabaseSync the store uses. */
 export interface SqliteStatement {
   run(...params: SqlValue[]): { readonly changes: number | bigint; readonly lastInsertRowid: number | bigint };
@@ -184,6 +225,11 @@ export interface ChatQueueStoreDeps {
   readonly now: () => number;
   readonly pluginVersion: string;
   readonly log?: ChatPanelLogger | undefined;
+}
+
+export interface SessionQueueStoreDeps extends ChatQueueStoreDeps {
+  readonly mode: 'session-leases';
+  readonly observe?: ((pid: number) => ProcessObservation) | undefined;
 }
 
 /** The store cannot be used: the database could not be opened, or another plugin made a newer schema. */
@@ -292,9 +338,39 @@ function rowToLease(r: Record<string, unknown>): RepoLease {
 }
 
 const LIVE_HEAD = `SELECT * FROM messages WHERE state IN ('queued', 'retrying') ORDER BY seq LIMIT 1`;
+const SESSION_HEAD = `
+  SELECT m.* FROM messages m
+   WHERE m.state IN ('queued', 'retrying')
+     AND NOT EXISTS (
+       SELECT 1 FROM messages older
+        WHERE older.session_id = m.session_id AND older.seq < m.seq
+          AND older.state IN ('queued', 'retrying', 'processing'))
+     AND NOT EXISTS (SELECT 1 FROM session_leases l WHERE l.session_id = m.session_id)`;
+const SESSION_LEASE_SCHEMA = `CREATE TABLE session_leases (
+  session_id TEXT PRIMARY KEY,
+  seq INTEGER NOT NULL UNIQUE,
+  epoch TEXT NOT NULL UNIQUE,
+  window_key TEXT NOT NULL,
+  pid INTEGER NOT NULL,
+  pid_started_at INTEGER,
+  cli_pid INTEGER,
+  cli_started_at INTEGER,
+  heartbeat_at INTEGER NOT NULL)`;
 
-export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore & ChatQueueLeases {
+const rowToSessionLease = (row: Record<string, unknown>): SessionLease => ({
+  ...rowToLease(row), sessionId: String(row['session_id']), epoch: String(row['epoch']),
+});
+
+function matchingExit(proof: ProcessExitProof, pid: number, startedAt: number | undefined): boolean {
+  return proof.pid === pid && proof.recordedStartedAt === startedAt && processDeparted(proof.observation, startedAt);
+}
+
+export function createChatQueueStore(deps: SessionQueueStoreDeps): SessionQueueStore;
+export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore & ChatQueueLeases;
+export function createChatQueueStore(deps: ChatQueueStoreDeps | SessionQueueStoreDeps): (ChatQueueStore & ChatQueueLeases) | SessionQueueStore {
   const { now } = deps;
+  const sessionConfig = 'mode' in deps ? deps : undefined;
+  const expectedSchema = sessionConfig === undefined ? SCHEMA_VERSION : SESSION_LEASE_SCHEMA_VERSION;
   let db: SqliteDatabase;
   try {
     mkdirSync(dirname(deps.path), { recursive: true });
@@ -303,6 +379,14 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
     throw new StoreUnavailable(`the chat queue could not be opened: ${err instanceof Error ? err.message : String(err)}`);
   }
   let own = 0;
+  let initialized = false;
+  const schemaVersion = (): number | undefined => {
+    const raw = db.prepare("SELECT value FROM meta WHERE key = 'schema_version'").get()?.['value'];
+    if (raw === undefined) return undefined;
+    const version = Number(raw);
+    if (!Number.isSafeInteger(version) || version < 1) throw new StoreUnavailable('the chat queue schema version is invalid');
+    return version;
+  };
 
   /** One write: BEGIN IMMEDIATE ... COMMIT, rolled back on a throw; a busy wait past the timeout is StoreBusy. */
   function write<T>(fn: () => T): T {
@@ -313,6 +397,9 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
       throw err;
     }
     try {
+      if (initialized && schemaVersion() !== expectedSchema) {
+        throw new StoreUnavailable('the chat queue was made by a newer plugin; reload or update this window');
+      }
       const out = fn();
       db.exec('COMMIT');
       own += 1;
@@ -328,24 +415,60 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
     }
   }
 
+  function upgradeSessionLeases(): void {
+    const observe = sessionConfig?.observe ?? observeProcess;
+    const verifyWriter = (pid: number, startedAt: number | undefined): void => {
+      if (!processDeparted(observe(pid), startedAt)) {
+        throw new StoreUnavailable('the chat queue upgrade needs all older VS Code windows to close and their writers to exit');
+      }
+    };
+    for (const presence of db.prepare('SELECT pid, pid_started_at FROM presence').all()) {
+      verifyWriter(num(presence['pid']) ?? 0, num(presence['pid_started_at']));
+    }
+    const legacyRow = db.prepare('SELECT * FROM lease WHERE id = 1').get();
+    const legacy = legacyRow === undefined ? undefined : rowToLease(legacyRow);
+    const processing = db.prepare("SELECT seq, session_id, window_key FROM messages WHERE state = 'processing'").all();
+    const row = processing[0];
+    if (legacy === undefined ? processing.length !== 0 : processing.length !== 1 ||
+        row?.['seq'] !== legacy.seq || row['window_key'] !== legacy.windowKey) {
+      throw new StoreUnavailable('the legacy chat queue has inconsistent processing ownership');
+    }
+    if (legacy !== undefined) verifyWriter(legacy.pid, legacy.pidStartedAt);
+    db.exec(SESSION_LEASE_SCHEMA);
+    db.exec('CREATE INDEX messages_session_state_seq ON messages (session_id, state, seq)');
+    if (legacy !== undefined && row !== undefined) {
+      db.prepare(`INSERT INTO session_leases
+        (session_id, seq, epoch, window_key, pid, pid_started_at, cli_pid, cli_started_at, heartbeat_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(
+        String(row['session_id']), legacy.seq, randomUUID(), legacy.windowKey, legacy.pid,
+        legacy.pidStartedAt ?? null, legacy.cliPid ?? null, legacy.cliStartedAt ?? null, legacy.heartbeatAt,
+      );
+    }
+    db.exec('DROP TABLE lease');
+  }
+
   try {
     db.exec(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
     db.exec('PRAGMA journal_mode = WAL');
     db.exec('PRAGMA synchronous = NORMAL');
     write(() => {
-      for (const sql of SCHEMA) db.exec(sql);
-      const version = num(Number(str(db.prepare(`SELECT value FROM meta WHERE key = 'schema_version'`).get()?.['value']) ?? NaN));
-      if (version === undefined || Number.isNaN(version)) {
-        db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`).run(String(SCHEMA_VERSION));
-        db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('created_by', ?)`).run(deps.pluginVersion);
-      } else if (version > SCHEMA_VERSION) {
+      db.exec(SCHEMA[0]!);
+      const version = schemaVersion();
+      if (version !== undefined && version > expectedSchema) {
         throw new StoreUnavailable(`the chat queue was made by a newer plugin (schema ${version}); reload or update this window`);
+      }
+      if (version === SESSION_LEASE_SCHEMA_VERSION) return;
+      for (const sql of SCHEMA.slice(1)) db.exec(sql);
+      if (version === undefined) {
+        db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('created_by', ?)`).run(deps.pluginVersion);
       } else if (version < SCHEMA_VERSION) {
         // Epic E20261014613abdb3 Story S002: version 1 -> 2 adds waiting_on; its rows are kept.
         if (version < 2) db.exec(`ALTER TABLE messages ADD COLUMN waiting_on TEXT`);
-        db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`).run(String(SCHEMA_VERSION));
       }
+      if (sessionConfig !== undefined) upgradeSessionLeases();
+      db.prepare(`INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)`).run(String(expectedSchema));
     });
+    initialized = true;
   } catch (err) {
     try {
       db.close();
@@ -404,7 +527,31 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
     }
   }
 
-  return {
+  /** Applies the shared outcome policy within the caller's ownership transaction. */
+  function finishMessage(seq: number, outcome: TurnOutcome): QueuedMessage | undefined {
+    const at = now();
+    if (outcome.kind === 'done' || outcome.kind === 'detached-ended') {
+      db.prepare('DELETE FROM messages WHERE seq = ?').run(seq);
+      return undefined;
+    }
+    if (outcome.kind === 'failed' && !outcome.acted && isRetryableCause(outcome.cause)) {
+      const row = bySeq(seq);
+      const delay = row?.state === 'processing' && row.attempts < MAX_INFRA_RETRIES ? RETRY_DELAYS_MS[row.attempts] : undefined;
+      if (row !== undefined && delay !== undefined) {
+        db.prepare(`UPDATE messages SET state = 'retrying', attempts = ?, next_attempt_at = ?,
+          error = ?, waiting_on = NULL, updated_at = ? WHERE seq = ?`).run(row.attempts + 1, at + delay, outcome.error, at, seq);
+        return bySeq(seq);
+      }
+    }
+    const error = outcome.kind === 'not-delivered' ? 'its window was closed' :
+      outcome.kind === 'stopped' ? outcome.reason ?? 'stopped by the user' : outcome.error;
+    db.prepare('UPDATE messages SET state = ?, error = ?, waiting_on = NULL, updated_at = ? WHERE seq = ?').run(
+      outcome.kind === 'not-delivered' ? 'not-delivered' : 'failed', error, at, seq,
+    );
+    return bySeq(seq);
+  }
+
+  const legacy: ChatQueueStore & ChatQueueLeases = {
     enqueue(m) {
       try {
         return write((): EnqueueResult => {
@@ -450,42 +597,9 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
 
     finish(seq, outcome) {
       return write(() => {
-        const at = now();
-        switch (outcome.kind) {
-          case 'done':
-          case 'detached-ended':
-            db.prepare(`DELETE FROM messages WHERE seq = ?`).run(seq);
-            break;
-          case 'stopped':
-            db.prepare(`UPDATE messages SET state = 'failed', error = ?, updated_at = ? WHERE seq = ?`).run(outcome.reason ?? 'stopped by the user', at, seq);
-            break;
-          case 'failed': {
-            // Story S004: a passing infrastructure failure before the turn acted is retried (state retrying, one more
-            // attempt, due after the schedule's wait) in this same transaction that releases the lease; anything else
-            // - the turn acted, a credentials or unknown cause, or the budget spent - ends failed with the error.
-            const row = bySeq(seq);
-            const attempts = row?.attempts ?? 0;
-            if (row !== undefined && row.state === 'processing' && !outcome.acted && isRetryableCause(outcome.cause) && attempts < MAX_INFRA_RETRIES) {
-              db.prepare(`UPDATE messages SET state = 'retrying', attempts = ?, next_attempt_at = ?, error = ?, updated_at = ? WHERE seq = ?`).run(
-                attempts + 1,
-                at + (RETRY_DELAYS_MS[attempts] ?? RETRY_DELAYS_MS[RETRY_DELAYS_MS.length - 1] ?? 0),
-                outcome.error,
-                at,
-                seq,
-              );
-            } else {
-              db.prepare(`UPDATE messages SET state = 'failed', error = ?, updated_at = ? WHERE seq = ?`).run(outcome.error, at, seq);
-            }
-            break;
-          }
-          case 'not-delivered':
-            db.prepare(`UPDATE messages SET state = 'not-delivered', error = ?, updated_at = ? WHERE seq = ?`).run('its window was closed', at, seq);
-            break;
-        }
-        // Story S002: the card it waited on ends with the run.
-        db.prepare(`UPDATE messages SET waiting_on = NULL WHERE seq = ?`).run(seq);
+        const row = finishMessage(seq, outcome);
         db.prepare(`DELETE FROM lease WHERE id = 1 AND seq = ?`).run(seq);
-        return bySeq(seq);
+        return row;
       });
     },
 
@@ -637,4 +751,112 @@ export function createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore &
       }
     },
   };
+  if (sessionConfig === undefined) return legacy;
+
+  const readLease = (sessionId: string): SessionLease | undefined => {
+    const row = db.prepare('SELECT * FROM session_leases WHERE session_id = ?').get(sessionId);
+    return row === undefined ? undefined : rowToSessionLease(row);
+  };
+  const matchesToken = (lease: SessionLease | undefined, token: LeaseToken): lease is SessionLease =>
+    lease !== undefined && lease.seq === token.seq && lease.epoch === token.epoch;
+  const readHead = (windowKey: string, at: number): QueuedMessage | undefined => {
+    const row = db.prepare(`${SESSION_HEAD} AND m.window_key = ?
+      AND (m.state = 'queued' OR COALESCE(m.next_attempt_at, 0) <= ?) ORDER BY m.seq LIMIT 1`).get(windowKey, at);
+    return row === undefined ? undefined : rowToMessage(row);
+  };
+  const tokenOf = (sessionId: string, seq: number): LeaseToken => Object.freeze({ sessionId, seq, epoch: randomUUID() });
+  const fence = 'session_id = ? AND seq = ? AND epoch = ?';
+  const tokenParams = (token: LeaseToken): [string, number, string] => [token.sessionId, token.seq, token.epoch];
+  const release = (token: LeaseToken): void => {
+    db.prepare(`DELETE FROM session_leases WHERE ${fence}`).run(...tokenParams(token));
+  };
+  const claimsWindow = (claim: LeaseClaim, at: number): boolean => {
+    const presence = legacy.presenceOf(claim.windowKey);
+    return presence !== undefined && presence.pid === claim.pid && presence.pidStartedAt === claim.pidStartedAt &&
+      at - presence.heartbeatAt <= PRESENCE_GRACE_MS;
+  };
+
+  const store: SessionQueueStore = {
+    ...legacy,
+    mode: 'session-leases',
+    head(windowKey, at) {
+      const occupied = num(db.prepare('SELECT COUNT(*) AS n FROM session_leases').get()?.['n']) ?? 0;
+      return occupied < REPO_TURN_CAPACITY ? readHead(windowKey, at) : undefined;
+    },
+    acknowledge(seq, claim) {
+      return write(() => {
+        const at = now();
+        if (!claimsWindow(claim, at)) return undefined;
+        const head = store.head(claim.windowKey, at);
+        if (head?.seq !== seq) return undefined;
+        const token = tokenOf(head.sessionId, seq);
+        db.prepare(`INSERT INTO session_leases (session_id, seq, epoch, window_key, pid, pid_started_at, heartbeat_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)`).run(...tokenParams(token), claim.windowKey, claim.pid, claim.pidStartedAt ?? null, at);
+        const changed = db.prepare("UPDATE messages SET state = 'processing', updated_at = ? WHERE seq = ? AND state IN ('queued', 'retrying')").run(at, seq);
+        if (Number(changed.changes) !== 1) throw new Error(`message ${seq} changed while it was acknowledged`);
+        return token;
+      });
+    },
+    finish(token, outcome) {
+      return write(() => {
+        if (!matchesToken(readLease(token.sessionId), token)) return { kind: 'stale' };
+        const row = finishMessage(token.seq, outcome);
+        release(token);
+        return { kind: 'applied', ...(row !== undefined ? { row } : {}) };
+      });
+    },
+    markWaiting(token, on) {
+      return write(() => matchesToken(readLease(token.sessionId), token) &&
+        Number(db.prepare("UPDATE messages SET waiting_on = ? WHERE seq = ? AND state = 'processing'").run(on ?? null, token.seq).changes) === 1);
+    },
+    markNotDeliveredIfHead(seq, proof) {
+      return write(() => {
+        const head = db.prepare(`${SESSION_HEAD} AND m.seq = ?`).get(seq);
+        if (head === undefined) return false;
+        const presence = legacy.presenceOf(String(head['window_key']));
+        if (presence !== undefined && (now() - presence.heartbeatAt <= PRESENCE_GRACE_MS ||
+            proof === undefined || !matchingExit(proof, presence.pid, presence.pidStartedAt))) return false;
+        finishMessage(seq, { kind: 'not-delivered', reason: 'window-closed' });
+        return true;
+      });
+    },
+    lease: readLease,
+    leases() {
+      return db.prepare('SELECT * FROM session_leases ORDER BY seq').all().map(rowToSessionLease);
+    },
+    heartbeat(token) {
+      return write(() => Number(db.prepare(`UPDATE session_leases SET heartbeat_at = ? WHERE ${fence}`).run(now(), ...tokenParams(token)).changes) === 1);
+    },
+    attachCli(token, cli) {
+      return write(() => Number(db.prepare(`UPDATE session_leases SET cli_pid = ?, cli_started_at = ? WHERE ${fence}`)
+        .run(cli.pid ?? null, cli.startedAt ?? null, ...tokenParams(token)).changes) === 1);
+    },
+    reclaim(token, claim, proof) {
+      return write(() => {
+        const lease = readLease(token.sessionId);
+        if (!matchesToken(lease, token) || lease.windowKey !== claim.windowKey ||
+            !claimsWindow(claim, now()) || !matchingExit(proof, lease.pid, lease.pidStartedAt)) return undefined;
+        const next = tokenOf(token.sessionId, token.seq);
+        db.prepare(`UPDATE session_leases SET epoch = ?, pid = ?, pid_started_at = ?, heartbeat_at = ? WHERE ${fence}`)
+          .run(next.epoch, claim.pid, claim.pidStartedAt ?? null, now(), ...tokenParams(token));
+        return next;
+      });
+    },
+    takeOver(token, claim, proof) {
+      return write(() => {
+        const lease = readLease(token.sessionId);
+        const at = now();
+        if (!matchesToken(lease, token) || !claimsWindow(claim, at) ||
+            !matchingExit(proof.owner, lease.pid, lease.pidStartedAt) ||
+            (lease.windowKey !== claim.windowKey && at - lease.heartbeatAt < LEASE_TAKEOVER_MS)) return false;
+        const cliDeparted = lease.cliPid === undefined ? 'noChild' in proof.cli :
+          !('noChild' in proof.cli) && matchingExit(proof.cli, lease.cliPid, lease.cliStartedAt);
+        if (!cliDeparted) return false;
+        finishMessage(token.seq, { kind: 'stopped', reason: 'the window closed during the turn' });
+        release(token);
+        return true;
+      });
+    },
+  };
+  return store;
 }

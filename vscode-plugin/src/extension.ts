@@ -76,6 +76,7 @@ import type { DiffView } from './chat/edit-governor.js';
 import { createLinkOpener } from './chat/link-opener.js';
 import { createDocsReviewHost, type DocsReviewHost } from './chat/docs-review-panel.js';
 import { createDocsReviewClient } from './chat/docs-review-client.js';
+import { createApprovalNotifier, createApprovalPrompter } from './chat/approval-subscribe.js';
 import { createReviewPresenter } from './chat/review-presenter.js';
 import { createCompanionReader } from './chat/companion-reader.js';
 import { createGitBaseline } from './chat/git-baseline.js';
@@ -188,6 +189,30 @@ export function activate(context: vscode.ExtensionContext): void {
     resolveActivationSettled = resolve;
   });
   activateExtension({ client, status, controller, onSettled: () => resolveActivationSettled() });
+
+  const approvals = createApprovalPrompter({
+    client,
+    notifier: createApprovalNotifier({
+      ask: async text => {
+        const action = await vscode.window.showWarningMessage(text, 'Approve', 'Decline', 'Show details');
+        if (action === 'Approve' || action === 'Decline' || action === 'Show details') return action;
+        return undefined;
+      },
+      openDetails: async content => {
+        const document = await vscode.workspace.openTextDocument({ language: 'json', content });
+        await vscode.window.showTextDocument(document, { preview: true });
+      },
+      notice: text => { void vscode.window.showWarningMessage(text); },
+    }),
+  });
+  let approvalsDisposed = false;
+  context.subscriptions.push({ dispose: () => {
+    approvalsDisposed = true;
+    approvals.stop();
+  } });
+  void activationSettled.then(() => {
+    if (!approvalsDisposed) approvals.start();
+  });
 
   // S003 daemon-auto-update: keep the locally-installed daemon current. This is the
   // SOLE vscode importer, so it binds the real seams — the daemon-owned update+restart

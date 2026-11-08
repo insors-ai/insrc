@@ -22,7 +22,7 @@ import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ExecutedPlan } from '../explore/types.js';
 import { evidenceBlocks, planReference, ruleFacts, selectSharedContext } from './dependency.js';
-import type { ReferenceRound } from './dependency.js';
+import type { ReferenceRound, RuleFacts } from './dependency.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { HandlingBudgetError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
@@ -76,6 +76,8 @@ export interface AnswerProgress {
 	readonly narrative?:    BundleNarrative | undefined;
 	/** Invalid replies to the turn now pending; reset when a turn advances. */
 	readonly retries: number;
+	/** The rules counted from every lookup, kept with the progress so a finished answer needs nothing else. */
+	readonly ruleFacts?: RuleFacts | undefined;
 }
 
 export interface AnswerArgs {
@@ -122,7 +124,8 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	const blocks = evidenceBlocks(args.target, args.executed);
 	const reference = selectSharedContext(args.target, args.executed);
 	const base = { target: args.target, budgets: [decision.budget], parts: [], rounds: [], groupSize: 2, sectioned: false, unadmittable: [], completed: [], roundReplies: [], failures: [], stageItems: [], stageOutputs: [], combineStages: 0, retries: 0 } as const;
-	if (!forcePartition && (decision.method === 'single-pass' || (blocks.length === 0 && reference.length === 0))) return { mode: 'single', ...base };
+	// With no evidence there is nothing to divide: the reference is repeated in every part, never a part of its own.
+	if (blocks.length === 0 || (!forcePartition && decision.method === 'single-pass')) return { mode: 'single', ...base, ruleFacts: ruleFacts(args.executed) };
 
 	const limit = inputLimitFor(target, 'part');
 	// With a reference the prompt carries its wrapper, which an empty round leaves out: the probe round is not empty.
@@ -134,16 +137,13 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	const fixed = messagesSize(adapter.renderCombine([], refPlan.rounds[0] ?? emptyRound, refPlan.rounds.length - 1), limit.unit);
 	const perSummary = (limit.unit === 'bytes' ? 4 : 1) * 2_000 + 64;
 	const progress: AnswerProgress = {
-		...base, mode: 'partitioned', trigger: forcePartition ? 'fit' : decision.trigger, limit,
+		...base, ruleFacts: ruleFacts(args.executed), mode: 'partitioned', trigger: forcePartition ? 'fit' : decision.trigger, limit,
 		budgets: [{ ...limit, inputSize: measureInput(input, limit.unit) }],
 		parts: packed.parts, rounds: refPlan.rounds, sectioned: packed.sectioned, unadmittable: packed.unadmittable,
 		groupSize: Math.max(2, Math.floor((limit.limit - fixed) / perSummary)),
 		pending: packed.parts.length > 0 ? { kind: 'part', index: 0, round: 0 } : undefined,
 	};
 	if (packed.parts.length === 0) throw terminalFailure(progress.unadmittable, { found: found(args.executed) }, handlingOf(progress));
-	// One part with one round of reference is the whole input in one reply: dividing it changes nothing but the name of
-	// the turn, so the client is asked for the one reply it always was.
-	if (!forcePartition && packed.parts.length === 1 && refPlan.rounds.length <= 1 && packed.unadmittable.length === 0) return { mode: 'single', ...base, budgets: progress.budgets };
 	return progress;
 }
 
@@ -297,7 +297,7 @@ function afterPart(progress: AnswerProgress, index: number, covered: CompletedPa
 
 function finish(progress: AnswerProgress, ctx: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn {
 	const covered = progress.completed.map(c => ({ id: c.id, ordinal: c.ordinal, reply: c.reply }));
-	const layers = assembleBundle(progress.target, covered, progress.narrative, ruleFacts(ctx.executed));
+	const layers = assembleBundle(progress.target, covered, progress.narrative, progress.ruleFacts ?? ruleFacts(ctx.executed));
 	return { kind: 'final', layers, handling: handlingOf({ ...progress, pending: undefined }) };
 }
 

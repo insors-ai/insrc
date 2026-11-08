@@ -316,3 +316,17 @@ test('an admitted single-pass conversation whose final answer fails ends the req
 	}
 });
 
+
+test('a tool loop that ends without a tool result is answered in one call at size M, and one that does not fit is a typed budget failure', async () => {
+	const none = conversation(0, 0);
+	let calls = 0;
+	const p = { inputBudgetChars: 76_000, completeStructured: async () => { calls++; return LAYERS; } } as unknown as LLMProvider;
+	let handling: HandlingReport | undefined;
+	const out = await emit(p, none, 3, 20_480, undefined, execution(), h => { handling = h; }, 'M');
+	assert.deepEqual(out, LAYERS);
+	assert.equal(calls, 1);
+	assert.equal(handling?.method, 'single-pass');
+	const huge = conversation(0, 0); huge.push({ role: 'user', content: 'x'.repeat(70_000) });
+	await assert.rejects(emit(p, huge, 3, 20_480, undefined, execution(), undefined, 'M'), HandlingBudgetError);
+	assert.equal(calls, 1, 'no call is made for an input that cannot fit');
+});

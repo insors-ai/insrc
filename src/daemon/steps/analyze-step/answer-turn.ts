@@ -21,7 +21,7 @@ import type { ConnectionExecutionContext } from '../../../shared/step-context.js
 import { renderReportHead } from '../../../analyze/completeness.js';
 import { admitTurn, startAnswerProgress } from '../../../analyze/context/answer-progress.js';
 import type { AnswerProgress, AnswerTurnPrompt } from '../../../analyze/context/answer-progress.js';
-import { ShaperAnswerStepFailedError } from '../../../analyze/context/driver.js';
+import { HandlingBudgetError, ShaperAnswerStepFailedError } from '../../../analyze/context/driver.js';
 import { inputLimitFor, measureInput } from '../../../analyze/context/handling.js';
 import { prepareSynthesize, SynthesizerPromptMissingError } from '../../../analyze/context/synthesizer.js';
 import type { ReportScopeInput } from '../../../analyze/explore/answer-report.js';
@@ -67,6 +67,13 @@ export function prepareAnswerTurn(args: Parameters<typeof prepareSynthesize>[0] 
 			const limit = inputLimitFor({ kind: 'unknown' }, 'single');
 			if (measureInput(`${prepared.systemPrompt}\n${prepared.userTurn}`, limit.unit) <= limit.limit) return { ok: true, prepared, progress: started, turn: undefined };
 			started = startAnswerProgress(answerArgs, prepare.intent.scope, true);
+			if (started.mode === 'single') {
+				// Nothing to divide and the prompt does not fit: the configuration is what has to change.
+				throw new HandlingBudgetError(
+					`the prompt alone takes more than the ${limit.limit} ${limit.unit} a call may hold and there is no evidence to divide`,
+					{ results: args.executed.results, report: reportFromLookups(args.executed.results) },
+				);
+			}
 		}
 		// The first turn is measured as rendered; a part that does not fit is skipped and the next is the first.
 		const admitted = admitTurn(started, answerArgs);

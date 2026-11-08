@@ -41,7 +41,9 @@ function lineKey(line: string): string | undefined {
 	// A `<file> :: <heading>` entry names its whole file, whatever characters the file holds. Only an entry without
 	// that separator can start with a short kind word (`<kind> — <path>`), and the path after it is kept whole.
 	if (entry.includes(' :: ')) return entry.slice(0, entry.indexOf(' :: ')).replace(/^`|`$/g, '').trim() || undefined;
-	const kind = /^[A-Za-z][A-Za-z0-9_ -]{0,30} — (.+)$/.exec(entry);
+	// A plain file name may hold the separator too, so a kind is taken off only where a real path (with a directory)
+	// follows it; anything else is kept whole and only an identical entry is dropped.
+	const kind = /^[A-Za-z][A-Za-z0-9_-]{0,30} — (.*\/.+)$/.exec(entry);
 	return (kind?.[1] ?? entry).replace(/^`|`$/g, '').trim() || undefined;
 }
 

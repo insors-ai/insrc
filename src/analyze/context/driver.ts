@@ -102,7 +102,7 @@ import { executePlan } from '../explore/index.js';
 import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
 import { applyHandling, parseHandling } from '../completeness.js';
 import type { HandlingReport } from '../completeness.js';
-import { emitDivided } from './final-emit.js';
+import { conversationBlocks, emitDivided } from './final-emit.js';
 import { ANSWER_STEP_CODE_PREFIX } from '../explore/lookup-failed.js';
 import { decideHandling, inputLimitFor } from './handling.js';
 import { callWithRepair } from './handling-call.js';
@@ -1088,7 +1088,9 @@ async function runFinalStructuredEmit(
 				.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n'),
 		});
 		let trigger = decision.trigger;
-		if (decision.method === 'single-pass') {
+		// With no tool results there is nothing to divide: the conversation is the one input, whatever the size.
+		const nothingToDivide = conversationBlocks(messages).length === 0;
+		if (decision.method === 'single-pass' || nothingToDivide) {
 			// The admitted single pass goes through the shared helper: admission before every attempt, a bounded repair
 			// note, and a division of the input when the provider refuses it as too large.
 			const outcome = await callWithRepair<AnalyzeContextBundle>({
@@ -1113,6 +1115,12 @@ async function runFinalStructuredEmit(
 				const unrecoverable = new ShaperSchemaUnrecoverable(structuredOutputRetries, [outcome.kind === 'failed' ? outcome.reason : 'the call failed']);
 				unrecoverable.cause = cause;
 				throw unrecoverable;
+			}
+			if (nothingToDivide) {
+				throw new HandlingBudgetError(
+					`the conversation alone does not fit a call and there is no tool result to divide: ${outcome.kind === 'failed' ? outcome.reason : 'the provider refused it as too large'}`,
+					{ results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } },
+				);
 			}
 			trigger = 'fit';
 		}

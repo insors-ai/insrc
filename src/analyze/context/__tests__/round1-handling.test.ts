@@ -130,3 +130,52 @@ test('the part-id probe uses the longest key in the limit\'s own unit: a shorter
 	});
 	assert.ok(probes.some(id => id.includes(wide)), `the probe carries the wide key: ${probes.join('|')}`);
 });
+
+test('plain infra file names that hold the separator stay distinct; a kind before a real path is still taken off', () => {
+	const text = [
+		'## By family',
+		'- Alpha — Notes.yaml',
+		'- Beta — Notes.yaml',
+		'- Deployment — k8s/app.yaml',
+		'- Service — k8s/app.yaml',
+	].join('\n');
+	const out = dedupeLayer(text, 'structure', 'infra').split('\n');
+	assert.ok(out.includes('- Alpha — Notes.yaml') && out.includes('- Beta — Notes.yaml'), 'two plain files are two entries');
+	assert.equal(out.filter(l => l.includes('k8s/app.yaml')).length, 1, 'one file listed under two kinds is listed once');
+});
+
+test('an oversized rule reference goes through the real synthesizer: every section reaches the parts, every site is classified and the rule facts are whole', async () => {
+	const rule = `RULE-START ${'a'.repeat(50_000)} RULE-MIDDLE ${'b'.repeat(50_000)} RULE-END`;
+	const site = (id: string, n: number): unknown => ({
+		exploration: { id, type: 'search.text', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'search.text', hits: [{ file: `src/s${n}.ts`, line: 1, snippet: `code${n} ${'c'.repeat(20_000)}` }], completeness: { complete: true, incomplete: [], failed: [] } },
+	});
+	const executed = {
+		plan: { answerType: 'adherence-check', synthesisHint: 'h', explorations: [] },
+		results: [ruleResult('e1', [rule]), site('e2', 0), site('e3', 1), site('e4', 2)],
+		totalMs: 1, totalCached: 0,
+	} as unknown as Parameters<typeof synthesize>[0]['executed'];
+	const prompts: string[] = [];
+	const provider = {
+		inputBudgetChars: 76_000,
+		completeStructured: async (messages: LLMMessage[], schema: { required?: string[] }) => {
+			const prompt = String(messages[messages.length - 1]?.content);
+			prompts.push(prompt);
+			if ((schema.required ?? []).length === 3) return { system: 'S', focus: 'F', summary: 'combined summary of every part' };
+			const sites = [...new Set([...prompt.matchAll(/code(\d)/g)].map(m => m[1]))];
+			return { system: 'sys', focus: 'f', summary: `classified ${sites.join(',')}`, structure: sites.map(n => `- site ${n}: violates`).join('\n'), surface: '', artefacts: '', upstream: '' };
+		},
+	} as unknown as LLMProvider;
+	const intent = { target: 'code', scope: 'XL', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: '/tmp/r' }, reasoning: 'r' } as const;
+	const out = await synthesizeHandled({ intent, executed, runId: 'r', target: 'adherence', provider });
+	assert.equal(out.handling.method, 'partitioned');
+	const partPrompts = prompts.filter(p => /THIS PART only/.test(p));
+	assert.ok(partPrompts.length >= 3, 'the sites are in several calls');
+	// Each part sees the whole rule, across the rounds of the reference that its own call holds.
+	for (const marker of ['RULE-START', 'RULE-MIDDLE', 'RULE-END']) {
+		assert.ok(partPrompts.some(p => p.includes(marker)), `${marker} reached a part`);
+	}
+	assert.ok(partPrompts.length >= 3 * 2, 'every part is asked once per round of the reference');
+	for (const n of [0, 1, 2]) assert.ok(out.layers.structure.includes(`- site ${n}: violates`), `site ${n} is classified in the delivered answer`);
+	assert.ok(out.layers.focus.includes('RULE-START') && out.layers.focus.includes('RULE-END'), 'the delivered answer states the rule whole');
+});

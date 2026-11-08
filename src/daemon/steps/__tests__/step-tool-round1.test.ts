@@ -150,3 +150,40 @@ test('naturally sectioned evidence next to a reference fits every turn: no part 
 		if (progress.pending?.kind === 'combine') break;
 	}
 });
+
+test('an M request with only rules is answered in one reply, and one that packs into a single part keeps the partitioned handling', async () => {
+	const rule = (id: string, i: number) => ({
+		exploration: { id, type: 'doc.constraint.enumerate', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: 1, completeness: WHOLE,
+			constraints: [{ constraint: `Rule ${i}.`, kind: 'must', sourceEntityId: `ent-${i}`, file: `docs/r${i}.md`, heading: 'Rule', rationale: 'why' }] },
+	}) as unknown as ExecutedExploration;
+	const onlyRules = plan(Array.from({ length: 3 }, (_, i) => rule(`e${i}`, i)));
+	const single = prepareAnswerTurn({ intent: { ...intent, scope: 'M' }, executed: onlyRules, target: 'adherence' });
+	assert.ok(single.ok);
+	if (single.ok) { assert.equal(single.progress.mode, 'single'); assert.equal(single.prepared.kind, undefined); }
+
+	const oneBlock = plan([rule('e0', 0), search('e1', 100)]);
+	const part = prepareAnswerTurn({ intent: { ...intent, scope: 'M' }, executed: oneBlock, target: 'adherence' });
+	assert.ok(part.ok);
+	if (part.ok) { assert.equal(part.progress.mode, 'partitioned'); assert.equal(part.prepared.kind, 'part'); }
+});
+
+test('the three-argument finish of a partitioned adherence answer still states the rules counted from every lookup', () => {
+	const rule = {
+		exploration: { id: 'e0', type: 'doc.constraint.enumerate', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: 2, completeness: WHOLE,
+			constraints: [
+				{ constraint: 'Rule one.', kind: 'must', sourceEntityId: 'a', file: 'docs/a.md', heading: 'A', rationale: 'w' },
+				{ constraint: 'Rule two.', kind: 'must', sourceEntityId: 'b', file: 'docs/b.md', heading: 'B', rationale: 'w' },
+			] },
+	} as unknown as ExecutedExploration;
+	const executed = plan([rule, search('e1', 100)]);
+	const progress = startAnswerProgress({ intent, executed, target: 'adherence' }, 'M');
+	assert.equal(progress.mode, 'partitioned');
+	const done = finalizeSynthesize({ ...LAYERS, summary: 'covers it' }, undefined, progress);
+	assert.equal(done.kind, 'final');
+	if (done.kind === 'final') {
+		assert.match(done.layers.focus, /Rule sources checked \(counted from every lookup\): 2/);
+		assert.ok(done.layers.focus.includes('Rule one.') && done.layers.focus.includes('Rule two.'));
+	}
+});

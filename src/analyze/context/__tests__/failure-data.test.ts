@@ -120,3 +120,19 @@ test('toJSON is applied once per position and an own __proto__ key survives, as 
 	assert.equal(Object.getOwnPropertyNames(copy).includes('__proto__'), true, 'the own key is kept');
 	assert.deepEqual(JSON.parse(JSON.stringify(copy)), JSON.parse(JSON.stringify(parsed)));
 });
+
+test('non-finite numbers and sparse arrays are returned as JSON persists them', () => {
+	// eslint-disable-next-line no-sparse-arrays
+	const sparse = [1, , 3];
+	const data = failureData(new ShaperAnswerStepFailedError('model-failed', 'd', found, { upstream: [
+		{ taskId: 't1', template: 'a', params: {}, value: { n: NaN, big: Infinity, small: -Infinity, ok: 2, sparse } },
+	] }));
+	assert.equal(data.kind, 'answer-step');
+	if (data.kind !== 'answer-step') return;
+	const value = data.upstream[0]?.value as Record<string, unknown>;
+	assert.equal(value['n'], null);
+	assert.equal(value['big'], null);
+	assert.equal(value['small'], null);
+	assert.deepEqual(value['sparse'], [1, null, 3]);
+	assert.deepEqual(JSON.parse(JSON.stringify(data)), data, 'what is returned is what persists');
+});

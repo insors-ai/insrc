@@ -80,6 +80,8 @@ function jsonSafe<T>(value: T): T {
 	const walk = (v: unknown, converted = false): unknown => {
 		if (typeof v === 'bigint') return v.toString();
 		if (typeof v === 'function' || typeof v === 'symbol' || v === undefined) return undefined;
+		// JSON has no NaN or Infinity: they persist as null, so they are returned as null.
+		if (typeof v === 'number') return Number.isFinite(v) ? v : null;
 		if (v === null || typeof v !== 'object') return v;
 		if (ancestors.includes(v)) return '[circular]';
 		if (v instanceof Error) return { name: v.name, message: v.message };
@@ -88,7 +90,8 @@ function jsonSafe<T>(value: T): T {
 		if (!converted && typeof toJSON === 'function') return walk((toJSON as () => unknown).call(v), true);
 		ancestors.push(v);
 		try {
-			if (Array.isArray(v)) return v.map(item => walk(item) ?? null);
+			// Array.from reads a hole as undefined, so a sparse array persists as the nulls JSON gives it.
+			if (Array.isArray(v)) return Array.from(v, item => walk(item) ?? null);
 			const out: Record<string, unknown> = {};
 			for (const [k, item] of Object.entries(v)) {
 				const copy = walk(item);

@@ -234,6 +234,7 @@ test('design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../', asyn
 		}));
 		assert.equal(done['next'], 'done', JSON.stringify(done));
 		const outPath = done['path'] as string;
+		assert.equal((done['pendingApproval'] as { artifactPath: string }).artifactPath, outPath);
 		// Nested docs-tree (S002): the HLD is an item-root singleton at the
 		// work-item folder (labelled by epicSlug 'tag-filtering'); the canonical
 		// JSON stays hash-named. Dynamic createdAt → assert tree + basename.

@@ -27,6 +27,7 @@ import type { TranscriptEntry } from '../session-store.js';
 import { createReviewPresenter, type DeclaredOutcome, type ReviewPresenter } from '../review-presenter.js';
 import { createChatQueueStore, type SqliteDatabase } from '../chat-queue-store.js';
 import { createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { createQueueFactory } from '../chat-queue-setup.js';
 import { DatabaseSync } from 'node:sqlite';
 import { appendFileSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -806,6 +807,88 @@ test('A to B to A restores progress and rejects cross-session terminal and stale
     aProc.exitNow();
     bProc.exitNow();
     host.dispose();
+  }
+});
+
+test('two same-repo turns retain separate progress, decisions and verified Stop', async () => {
+  const root = mkdtempSync(pathJoin(tmpdir(), 'insrc-concurrent-e2e-'));
+  const claim = { windowKey: 'one-window', pid: process.pid };
+  const db = { path: pathJoin(root, 'repo.sqlite'), openDatabase: (p: string) => new DatabaseSync(p) as unknown as SqliteDatabase,
+    now: Date.now, pluginVersion: 'test', mode: 'session-leases' } as const;
+  const queue = createQueueFactory({ ...db, claim, isAlive: () => true, observe: () => ({ kind: 'unknown' }),
+    log: { warn: () => {}, error: () => {} }, notify: (message) => assert.fail(message) });
+  assert.ok(queue);
+  const inspection = createChatQueueStore(db);
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const procs = { A: fakeLiveProc(7201), B: fakeLiveProc(7202) };
+  const decisions: Array<[string, string]> = [];
+  const allowBToFinish = Promise.withResolvers<void>();
+  const adapter: StreamAdapter = {
+    capabilities: { resume: false },
+    decide: (turn, request) => {
+      decisions.push([turn, request]);
+      return { delivered: true };
+    },
+    cancel: () => {},
+    async *run(req, opts) {
+      const name = req.prompt === 'A' ? 'A' : 'B';
+      const proc = procs[name];
+      const turnId = `turn-${name}`;
+      opts?.onSpawn?.({
+        ...proc,
+        cursor: { sessionId: opts.sessionId!, turnId, generation: 1, offset: 0 },
+        stopVerified: async () => { await proc.stop(); return proc.exited(); },
+      });
+      yield { kind: 'status', turnId, phase: 'tool' };
+      yield { kind: 'approval-request', turnId, requestId: 'shared-id', title: name, detail: 'Approve this chat', resolution: 'in-turn' };
+      if (name === 'A') await proc.exit;
+      else {
+        await allowBToFinish.promise;
+        yield { kind: 'assistant-delta', turnId, text: 'B completed independently' };
+        proc.exitNow();
+      }
+      yield { kind: 'done', turnId, ok: true };
+    },
+  };
+  const host = createChatPanelHost({ createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo', queue });
+  const restored = () => posted(fc, 'session-restored').at(-1)!;
+  const target = (turnId: string) => ({ sessionId: restored()['sessionId'], viewGeneration: restored()['viewGeneration'], turnId });
+  try {
+    host.open();
+    fc.send(env('ready', { targetedActions: true }));
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => turnEvents(fc).some((event) => event.kind === 'approval-request' && event.turnId === 'turn-A'), 3_000);
+    const idA = String(restored()['sessionId']);
+    const progressA = store.get(idA)?.progress;
+    const oldA = { ...target('turn-A'), requestId: 'shared-id' };
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => turnEvents(fc).some((event) => event.kind === 'approval-request' && event.turnId === 'turn-B'), 3_000);
+    const idB = String(restored()['sessionId']);
+    assert.equal(inspection.leases().length, 2);
+    fc.send(env('permission-decision', { requestId: 'shared-id', decision: 'approve', target: oldA }));
+    assert.deepEqual(decisions, []);
+    fc.send(env('permission-decision', { requestId: 'shared-id', decision: 'approve', target: { ...target('turn-B'), requestId: 'shared-id' } }));
+    assert.deepEqual(decisions, [['turn-B', 'shared-id']]);
+    fc.send(env('open-chat', { chatId: idA }));
+    assert.deepEqual(restored()['progress'], progressA);
+    fc.send(env('cancel-turn', { target: target('turn-A') }));
+    await waitFor(() => inspection.lease(idA) === undefined, 3_000);
+    assert.deepEqual(procs.A.signals, ['SIGTERM']);
+    assert.deepEqual(procs.B.signals, []);
+    assert.ok(inspection.lease(idB));
+    fc.send(env('open-chat', { chatId: idB }));
+    allowBToFinish.resolve();
+    await waitFor(() => inspection.lease(idB) === undefined, 3_000);
+    assert.ok(turnEvents(fc).some((event) => event.kind === 'assistant-delta' && event.text === 'B completed independently'));
+  } finally {
+    allowBToFinish.resolve();
+    procs.A.exitNow();
+    procs.B.exitNow();
+    host.dispose();
+    inspection.close();
+    await rmrf(root);
   }
 });
 

@@ -661,8 +661,8 @@ export function renderRegistryWebviewSource(): string {
     // approved / red rejected) and REMOVE the actions element so the buttons disappear and the
     // card reads as a settled outcome (the pending card is live-only, never persisted).
     `function resolve(dec){try{card.className='insrc-approval insrc-approval--'+(dec==='approve'?'approved':'rejected');if(actions)card.removeChild(actions);}catch(e){}}` +
-    `approve.addEventListener('click',function(){resolve('approve');if(DEC)DEC(rid,'approve');});` +
-    `deny.addEventListener('click',function(){resolve('deny');if(DEC)DEC(rid,'deny');});` +
+    `approve.addEventListener('click',function(){resolve('approve');if(DEC)DEC(rid,'approve',meta.target);});` +
+    `deny.addEventListener('click',function(){resolve('deny');if(DEC)DEC(rid,'deny',meta.target);});` +
     `actions.appendChild(approve);actions.appendChild(deny);card.appendChild(actions);` +
     `return card;});` +
     // S003 (dev-chat ux polish) t1: the resolved permission-outcome chip — a persisted, non-actionable
@@ -711,7 +711,7 @@ export function renderRegistryWebviewSource(): string {
     `if(confirm.disabled)return;` +
     `var chosen=[];for(var i=0;i<state.length;i++){if(state[i]){var o=options[i]||{};chosen.push(o.id!=null?String(o.id):String(i));}}` +
     `if(chosen.length===0)return;` +
-    `if(SDEC)SDEC(rid,chosen);` +
+    `if(SDEC)SDEC(rid,chosen,meta.target);` +
     `try{card.className='insrc-select insrc-select--resolved';if(list.parentNode===card)card.removeChild(list);if(confirm.parentNode===card)card.removeChild(confirm);}catch(e){}});` +
     `refresh();card.appendChild(confirm);` +
     `wrap.appendChild(card);return wrap;});` +

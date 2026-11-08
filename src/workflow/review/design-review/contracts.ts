@@ -181,6 +181,12 @@ export const DesignReportSchema = object({ reviewId: id, attempt: positive, arti
  impact: Type.Optional(DesignReportImpactSchema),
 });
 export type DesignReviewConsolidated = Static<typeof DesignReportSchema>;
+export const DesignPublicationSchema = object({ reviewId:id, attempt:attemptNumber,
+ state:enumeration(['pending','complete']), artifactHistoryEntryId:Type.Optional(text), reportReference:Type.Optional(text),
+ canonicalBefore:Type.Optional(digest), canonicalAfter:Type.Optional(digest),
+ error:Type.Optional(diagnostic), actions:Type.Optional(Type.Array(object({actionId:id,signature:digest}),{maxItems:DESIGN_LIMITS.actions})),
+});
+export type DesignPublication = Static<typeof DesignPublicationSchema>;
 const baseline = object({ subjectFingerprints: object({ canonical: digest, document: digest }), contentIdentity: digest,
  reviewedContent: object({ canonical: Type.String({ maxLength: DESIGN_LIMITS.subjectBytes }), document: Type.String({ maxLength: DESIGN_LIMITS.subjectBytes }) }), capturedAt: timestamp,
 });
@@ -195,6 +201,7 @@ export const DesignAttemptSchema = object({
  })),
  failure: Type.Optional(object({ code: id, summary: text })),
  report: Type.Optional(DesignReportSchema), model: Type.Optional(text),
+ publication:Type.Optional(DesignPublicationSchema),
  reviewer: Type.Optional(enumeration(['daemon','controller'])),
  recovery: Type.Optional(DesignRecoveryStateSchema), unit: Type.Optional(DesignUnitStateSchema),
  unitSummaries: Type.Optional(Type.Array(DesignUnitSummarySchema,{maxItems:DESIGN_LIMITS.chunks+1})),

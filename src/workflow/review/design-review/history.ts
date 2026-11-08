@@ -7,18 +7,12 @@ import { validateDesignCheckpointIdentity } from './checkpoint.js';
 import { consolidateDesignReview } from './results.js';
 import { DesignCheckpointSchema, DesignStatusSchema, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint } from './contracts.js';
+export { DesignPublicationSchema } from './contracts.js';
+export type { DesignPublication } from './contracts.js';
 
 const digest = Type.String({ pattern: '^[a-f0-9]{64}$' });
 const text = Type.String({ minLength: 1, maxLength: 8192 });
 const party = Type.Union([Type.Literal('daemon'), Type.Literal('controller')]);
-export const DesignPublicationSchema = Type.Object({
- reviewId: DesignCheckpointSchema.properties.reviewId,
- attempt: Type.Integer({ minimum: 1, maximum: 128 }),
- state: Type.Union([Type.Literal('pending'), Type.Literal('complete')]),
- artifactHistoryEntryId: Type.Optional(text), reportReference: Type.Optional(text),
- error: Type.Optional(Type.Object({ code: text, summary: text }, { additionalProperties: false })),
-}, { additionalProperties: false });
-export type DesignPublication = Static<typeof DesignPublicationSchema>;
 export const PermanentDesignReviewSchema = Type.Object({
  kind: Type.Literal('design-chunk-review'), schemaVersion: Type.Literal(1),
  reviewId: DesignCheckpointSchema.properties.reviewId,
@@ -29,7 +23,7 @@ export const PermanentDesignReviewSchema = Type.Object({
  reviewer: party, attempts: DesignCheckpointSchema.properties.attempts,
  applicableAttempt: Type.Integer({ minimum: 1, maximum: 128 }), status: DesignStatusSchema,
  binding: Type.Object({
-  sourceRevision: Type.Object({ number: Type.Integer({ minimum: 1 }), contentHash: digest }, { additionalProperties: false }),
+  sourceRevision: Type.Object({ number: Type.Integer({ minimum: 0 }), contentHash: digest }, { additionalProperties: false }),
   reviewedContentIdentity: digest, documentDigest: digest, workflowDigest: digest, author: party,
  }, { additionalProperties: false }),
  preservationDigest: digest,
@@ -40,7 +34,7 @@ export type PermanentDesignReview = Static<typeof PermanentDesignReviewSchema>;
  * Feedback, baselines, plans, model attribution, counters, failures and recovery actions remain.
  */
 export function designPreservationDigest(checkpoint: DesignReviewCheckpoint): string {
- const attempts = checkpoint.attempts.map(({ progress: _progress, current: _current, ...meaningful }) => meaningful);
+ const attempts = checkpoint.attempts.map(({ progress: _progress, current: _current, publication: _publication, ...meaningful }) => meaningful);
  return contentHash('design-review-preservation-v1', { body: { ...checkpoint, attempts }, citations: [] });
 }
 export function designWorkflowDigest(workflow: DesignReviewCheckpoint['subject']['workflow']): string {

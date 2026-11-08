@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -32,12 +32,13 @@ Run at 2026-11-07T19:47:05.310Z on commit `5e7f04ef8`. Tests check: **passed**. 
 
 ## t2
 
-Run at 2026-11-08T05:18:49.098Z on commit `83c343017`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T05:23:36.631Z on commit `870fa0c4b`. Tests check: **passed**. 5 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: I8 exact-byte dispatch reservations, consolidation duplication, refusal and restart**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over | `src/workflow/review/design-review/__tests__/capacity.test.ts` |
 | pass | real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart | `src/workflow/review/design-review/__tests__/capacity.test.ts` |
 | pass | encoded dispatch reservation accepts exact bound and refuses one byte below without expanding the ceiling | `src/workflow/review/design-review/__tests__/capacity.test.ts` |
 | pass | capacity refusal is durable before provider construction and does not spend retries | `src/workflow/review/design-review/__tests__/capacity.test.ts` |
@@ -47,7 +48,7 @@ Run at 2026-11-08T05:18:49.098Z on commit `83c343017`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/capacity.test.ts` | 0 | 4 | 3.6 s |  |
+| `src/workflow/review/design-review/__tests__/capacity.test.ts` | 0 | 5 | 11.6 s |  |
 
 ## t3
 

@@ -73,6 +73,7 @@ function revisedBytes(bytes: string, number: number): string {
 
 /** What a caller can say about the change log entry of a write. */
 export interface WriteOptions {
+ readonly expectedHeadHash?: string | undefined;
  readonly entryId?: string | undefined;
 	/** The log operation; create or update when absent. A lifecycle operation must match the status change it makes. */
 	readonly operation?:  Operation | undefined;
@@ -273,6 +274,7 @@ export class ArtifactStore {
 		await this.completePending(a.id, path, options.outcome?.result === 'conflict-resolved');
 
 		const priorBytes = existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+  if (options.expectedHeadHash !== undefined && options.expectedHeadHash !== headHashOf(priorBytes)) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed before the prepared write');
 		const prior = priorBytes === undefined ? undefined : decodeArtifactHead(a.id, priorBytes);
 		const priorRevision = prior === undefined ? 0 : prior.artifact.lifecycle.revision.number;
 

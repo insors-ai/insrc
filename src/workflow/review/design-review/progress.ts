@@ -2,7 +2,7 @@
 import { performance } from 'node:perf_hooks';
 import type { ReviewActivityEvent } from '../../../shared/review-activity.js';
 import { currentDesignAttempt, requireDesign } from './contracts.js';
-import type { DesignReviewCheckpoint, DesignReviewProgress, DesignReviewConsolidated, DesignChunkResult, DesignReviewStatus, DesignAttempt } from './contracts.js';
+import type { DesignPublication, DesignReviewCheckpoint, DesignReviewProgress, DesignReviewConsolidated, DesignChunkResult, DesignReviewStatus, DesignAttempt } from './contracts.js';
 import { selectedDesignChunks, nextDesignUnit } from './recovery-state.js';
 
 export function designCoverageProgress(attempt:DesignAttempt):Pick<DesignReviewProgress,'completedChunks'|'totalChunks'|'coverageProgress'>{
@@ -68,6 +68,7 @@ export class DesignProgressTracker {
 }
 export type DesignReportMetadata=Pick<DesignReviewConsolidated,'reviewId'|'attempt'|'artifactId'|'status'|'counts'|'reviewer'|'reviewedContentIdentity'>;
 export interface DesignObservation extends DesignReviewProgress {
+ readonly publication?:DesignPublication|undefined;
  readonly guidance:string;
  readonly completedResults: readonly DesignChunkResult[];
  readonly nextCompletedChunk:number;
@@ -88,8 +89,9 @@ export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,option
  if(attempt.current)progress.executionId=attempt.current.executionId;else delete progress.executionId;
  if(progress.recovery?.failedUnit)progress.failedUnit={...progress.recovery.failedUnit};else delete progress.failedUnit;
  const completedResults=options.includeResult?attempt.completedChunks.slice(cursor,cursor+1):[];
+ if(attempt.publication?.state==='pending'&&attempt.status!=='invalidated'){progress.status=attempt.publication.error?'failed':'running';progress.phase='publishing';}
  const report=['passed','changes_requested','incomplete'].includes(progress.status)?attempt.report:undefined;
  progress.requiresUserInput=['paused','invalidated','failed','interrupted'].includes(progress.status);
  const guidance=['pending','running'].includes(progress.status)?'Review in progress. Show progress and wait for full completion before corrections, resolution or approval.':progress.status==='interrupted'?'Review interrupted. Explicitly request recover with operation resume for the unchanged subject; do not repeat completed chunks.':progress.status==='paused'?'Technical retries exhausted. Ask the user before recover/resume with a retry_failed_unit decision; each action authorizes one additional execution.':progress.status==='invalidated'?'Reviewed artifact changed. Notify the user and obtain approval for recover/restart_full with a restart_full decision; no completed chunk is reused.':progress.status==='failed'?'Review failed. Report the failure and wait for user direction; do not automatically resubmit.':'Review complete. Read all completed feedback before taking action; checkpoint feedback alone does not approve the artifact.';
- return {...progress,guidance,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
+ return {...progress,...(attempt.publication?{publication:structuredClone(attempt.publication)}:{}),guidance,completedResults:structuredClone(completedResults),nextCompletedChunk:cursor+completedResults.length,...(attempt.publication?.error?{failure:{...attempt.publication.error}}:attempt.failure?{failure:{...attempt.failure}}:{}),...(report?{report:{reviewId:report.reviewId,attempt:report.attempt,artifactId:report.artifactId,status:report.status,counts:{...report.counts},reviewer:report.reviewer,reviewedContentIdentity:report.reviewedContentIdentity}}:{})};
 }

@@ -188,10 +188,11 @@ export function prepareDesignSubject(repo: string, artifactPath: string): Prepar
   throw new DesignReviewContextError(error instanceof Error?error.message:'Unable to resolve design context');
  }
 }
-export function assertDesignSubjectUnchanged(subject: DesignReviewSubject, baseline: DesignBaseline): void {
+export function assertDesignSubjectUnchanged(subject: DesignReviewSubject, baseline: DesignBaseline, owned?: {canonicalBefore?:string|undefined;canonicalAfter?:string|undefined}): void {
  try {
   const current={canonical:sha(readDesignFile(subject.project,subject.canonicalPath)),document:sha(readDesignFile(subject.project,subject.documentPath))};
-  requireDesign(current.canonical===baseline.subjectFingerprints.canonical&&current.document===baseline.subjectFingerprints.document,'artifact_changed','Reviewed artifact changed; a user-approved full restart is required');
+  const own=owned?.canonicalBefore===baseline.subjectFingerprints.canonical&&owned?.canonicalAfter===current.canonical;
+  requireDesign((current.canonical===baseline.subjectFingerprints.canonical||own)&&current.document===baseline.subjectFingerprints.document,'artifact_changed','Reviewed artifact changed; a user-approved full restart is required');
  } catch(error) {
   if(error instanceof DesignReviewError&&error.code==='artifact_changed')throw error;
   throw new DesignReviewError('artifact_changed','Reviewed artifact is no longer readable or canonical');

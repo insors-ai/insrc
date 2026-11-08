@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 9,
-        "contentHash": "9958478ff8d67161b46e052b780dd6a722c52a01fc932e558741d130c9aa7d31",
-        "at": "2026-11-08T05:18:49.255Z",
+        "number": 10,
+        "contentHash": "369691cdc83b71e4f7a010638f9d479663a96fb2048d32540c7c9917cfb7fd5f",
+        "at": "2026-11-08T05:23:36.789Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:18:49.098Z",
+    "updatedAt": "2026-11-08T05:23:36.631Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 9
+    "revision": 10
   },
   "body": {
     "tasks": [
@@ -103,8 +103,8 @@
       },
       {
         "taskId": "t2",
-        "commit": "83c343017",
-        "ranAt": "2026-11-08T05:18:49.098Z",
+        "commit": "870fa0c4b",
+        "ranAt": "2026-11-08T05:23:36.631Z",
         "testsPassed": true,
         "tests": [
           {
@@ -112,6 +112,11 @@
             "level": "integration",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
+                "title": "coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over",
+                "result": "pass"
+              },
               {
                 "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
                 "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
@@ -141,7 +146,7 @@
             "file": "src/workflow/review/design-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3646,
+            "durationMs": 11632,
             "titles": [
               {
                 "title": "real checkpoint ceiling reserves maximum byte-valid feedback through consolidation and restart",
@@ -157,6 +162,10 @@
               },
               {
                 "title": "automatic retry and explicit recovery reserve capacity before charging dispatch counters",
+                "result": "pass"
+              },
+              {
+                "title": "coordinator dispatches maximum feedback at the real ceiling and durably refuses one byte over",
                 "result": "pass"
               }
             ],

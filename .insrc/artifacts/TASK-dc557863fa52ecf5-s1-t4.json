@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c49041de-8971-4682-8fe4-e512e8d148cc",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T10:23:47.976Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc557863fa52ecf5",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify the completed extension changes",
+      "parent": {
+        "entityId": "STORY-dc557863fa52ecf5-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-dc557863fa52ecf5-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-dc557863fa52ecf5-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dc557863fa52ecf5-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-dc557863fa52ecf5-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "2197088c14f2053e4d0d458dda39bda5dc6f2fc9d420074e3723b826fb401e0a",
+        "at": "2026-11-08T10:23:47.976Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T10:23:47.977Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify the completed extension changes",
+    "summary": "After all implementation tasks have passed focused checks, run the extension typecheck and full VS Code sweep and record evidence.",
+    "size": "S",
+    "order": 4,
+    "acceptanceChecks": [
+      "Run the full extension sweep only after t1 through t3. Record Node version, command and outcomes for all 16 target cases. Report unrelated failures separately, including the three original isolated-rerun passes if they recur.",
+      "Record manual Tracker and approval smoke status if an IDE is available. Retain rollout and rollback through extension replacement and host reload without a data rewrite."
+    ],
+    "tests": [
+      {
+        "level": "smoke",
+        "name": "node --import tsx --test --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'"
+      },
+      {
+        "level": "smoke",
+        "name": "VS Code extension TypeScript check"
+      },
+      {
+        "level": "smoke",
+        "name": "Manual Tracker read, write and native approval notification"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

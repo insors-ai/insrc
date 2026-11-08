@@ -4,11 +4,11 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
-Run at 2026-11-07T19:47:05.310Z on commit `5e7f04ef8`. Tests check: **passed**. 4 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T08:14:41.970Z on commit `ce7b891ca`. Tests check: **passed**. 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: U1 permanent payload integrity and digest; aggregate schemas**
 
@@ -16,6 +16,8 @@ Run at 2026-11-07T19:47:05.310Z on commit `5e7f04ef8`. Tests check: **passed**. 
 | :--- | :--- | :--- |
 | pass | permanent payload validates exact history, party, binding, digest and version | `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` |
 | pass | host coverage diagnostics remain bounded without expanding model limitations | `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` |
+| pass | permanent history validates unfinished full prefixes before any report exists | `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` |
+| pass | permanent history validates unfinished impact selection provenance and accepted prefixes | `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` |
 
 **integration: I8 full/impact 8194 limitations, >256 finding origins and bounded host diagnostics**
 
@@ -28,7 +30,7 @@ Run at 2026-11-07T19:47:05.310Z on commit `5e7f04ef8`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` | 0 | 4 | 0.9 s |  |
+| `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` | 0 | 6 | 0.9 s |  |
 
 ## t2
 
@@ -157,7 +159,7 @@ Run at 2026-11-08T06:47:14.831Z on commit `6d35295fc`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T08:17:29.726Z on commit `ce7b891ca`. Tests check: **passed**. 13 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: I4 private claims, replacement races, full-history preservation and restart**
 
@@ -171,6 +173,7 @@ Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 
 | pass | foreign corrupt symlink unpreserved and unfinished override checkpoints are retained | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 | pass | cleanup verifies older failed attempt history as well as the final publication | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 | pass | explicit override approval retains unfinished checkpoint state truthfully | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | FIFO checkpoints and claim metadata are retained without blocking the daemon | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 
 **integration: I5 cleanup concurrency, fixed lock order and foreign-scope exclusion**
 
@@ -179,12 +182,13 @@ Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 
 | pass | real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 | pass | actual active model work retains its artifact while another artifact in the same project progresses | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 | pass | foreign corrupt symlink unpreserved and unfinished override checkpoints are retained | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | FIFO checkpoints and claim metadata are retained without blocking the daemon | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 11 | 1.4 s |  |
+| `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 12 | 1.7 s |  |
 
 ## t8
 

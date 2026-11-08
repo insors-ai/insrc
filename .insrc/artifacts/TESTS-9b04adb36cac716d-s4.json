@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 23,
-        "contentHash": "63416ccd321ea3b34a1358b79bc3b9d57952ba8016433a6fec5dffe37ed22b5d",
-        "at": "2026-11-08T07:22:58.543Z",
+        "number": 25,
+        "contentHash": "299faae89058ad60b71749a5a76fd8033f6b7cc1f18ee64945b90adffa754964",
+        "at": "2026-11-08T08:17:29.847Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T07:22:58.481Z",
+    "updatedAt": "2026-11-08T08:17:29.726Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 23
+    "revision": 25
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "5e7f04ef8",
-        "ranAt": "2026-11-07T19:47:05.310Z",
+        "commit": "ce7b891ca",
+        "ranAt": "2026-11-08T08:14:41.970Z",
         "testsPassed": true,
         "tests": [
           {
@@ -49,6 +49,16 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
                 "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent history validates unfinished full prefixes before any report exists",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent history validates unfinished impact selection provenance and accepted prefixes",
                 "result": "pass"
               }
             ],
@@ -78,7 +88,7 @@
             "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 865,
+            "durationMs": 877,
             "titles": [
               {
                 "title": "permanent payload validates exact history, party, binding, digest and version",
@@ -94,6 +104,14 @@
               },
               {
                 "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              },
+              {
+                "title": "permanent history validates unfinished full prefixes before any report exists",
+                "result": "pass"
+              },
+              {
+                "title": "permanent history validates unfinished impact selection provenance and accepted prefixes",
                 "result": "pass"
               }
             ],
@@ -536,8 +554,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "dffb93691",
-        "ranAt": "2026-11-08T06:32:34.926Z",
+        "commit": "ce7b891ca",
+        "ranAt": "2026-11-08T08:17:29.726Z",
         "testsPassed": true,
         "tests": [
           {
@@ -584,6 +602,11 @@
                 "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
                 "title": "explicit override approval retains unfinished checkpoint state truthfully",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
+                "result": "pass"
               }
             ],
             "files": []
@@ -607,6 +630,11 @@
                 "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
                 "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
+                "result": "pass"
               }
             ],
             "files": []
@@ -617,7 +645,7 @@
             "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1372,
+            "durationMs": 1716,
             "titles": [
               {
                 "title": "approval deletes only fully preserved private claims and fresh history remains readable",
@@ -661,6 +689,10 @@
               },
               {
                 "title": "actual active model work retains its artifact while another artifact in the same project progresses",
+                "result": "pass"
+              },
+              {
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
                 "result": "pass"
               }
             ],

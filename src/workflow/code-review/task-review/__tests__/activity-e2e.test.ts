@@ -4,7 +4,7 @@ import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fixture, hash } from './publication-fixture.js';
 import { channel, serve, eventually } from './controller-fixture.js';
-const {CliProvider}=await import(process.env['DESIGN_TEST_COMPILED']==='1'?resolve('out/agent/providers/cli-provider.js'):'../../../../agent/providers/cli-provider.js');
+const {CliProvider}=await import(resolve('out/agent/providers/cli-provider.js'));
 import type { ControllerFrame } from '../controller.js';
 import type { ReviewAcknowledgement } from '../coordinator.js';
 
@@ -17,7 +17,7 @@ test('native adapter plus real IPC persists feedback on both routes and CLIs, an
   const frames=kind==='claude'?[{type:'assistant',uuid:'fixture-output',message:{content:[{type:'tool_use',id:'output-1',name:'StructuredOutput',input:f.result}]}}]:[{type:'item.completed',item:{type:'agent_message',text:JSON.stringify(f.result)}},{type:'turn.completed'}];
   writeFileSync(bin,'#!/usr/bin/env node\nimport{appendFileSync}from"node:fs";appendFileSync('+JSON.stringify(calls)+',"started\\n");process.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(frames.map(x=>JSON.stringify(x)+'\n').join(''))+',()=>{appendFileSync('+JSON.stringify(calls)+',\"wrapper_failed\\n\");process.exit(1)}),20);');chmodSync(bin,0o755);
   const cli=new CliProvider({kind,binPath:bin,timeoutMs:1,codexFirstOutputMs:1});
-  const host=await serve(f.repo,()=>{assert.equal(party,'daemon','controller route cannot invoke daemon provider');return cli;});
+  const host=await serve(f.repo,()=>{assert.equal(party,'daemon','controller route cannot invoke daemon provider');return cli;},true);
   let client=await channel(host.path);
   const id=`end-to-end-${party}-${kind}`,base={repo:f.repo,epicHash:hash,reviewId:id,attempt:1,packet:f.packet};
   try{
@@ -62,7 +62,7 @@ test('both native adapters preserve feedback queued before expiry and never acce
   const bin=join(f.repo,'fake-expiry.mjs');
   const frames=kind==='claude'?[{type:'assistant',message:{content:[{type:'tool_use',id:'output',name:'StructuredOutput',input:f.result}]}}]:[{type:'item.completed',item:{type:'agent_message',text:JSON.stringify(f.result)}},{type:'turn.completed'}];
   writeFileSync(bin,'#!/usr/bin/env node\nprocess.stdin.resume();setTimeout(()=>process.stdout.write('+JSON.stringify(frames.map(x=>JSON.stringify(x)+'\n').join(''))+'),10);setInterval(()=>{},1000);');chmodSync(bin,0o755);
-  const {TaskReviewCoordinator}=await import('../coordinator.js');const {saveCheckpoint}=await import('../checkpoint.js');
+  const {TaskReviewCoordinator}=await import(resolve('out/workflow/code-review/task-review/coordinator.js'));const {saveCheckpoint}=await import(resolve('out/workflow/code-review/task-review/checkpoint.js'));
   class ObservedCli extends CliProvider {
    override async runReviewSession<T>(prompt:string,schema:import('../../../../shared/types.js').StructuredSchema,opts:import('../../../../shared/types.js').ReviewSessionOpts):Promise<T>{
     if(opts.mode!=='activity')throw Error('Expected activity mode');

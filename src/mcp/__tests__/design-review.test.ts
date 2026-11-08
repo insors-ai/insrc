@@ -34,7 +34,7 @@ const reviewResult=(f:Subject,id:string)=>({chunkId:id,status:'passed',summary:'
 async function reviewCall(client:Client,args:Record<string,unknown>){const response=await client.callTool({name:'insrc_review_step',arguments:args});assert.ok(!response.isError,JSON.stringify(response));return decode(response);}
 async function reviewAssignment(client:Client,base:Record<string,unknown>){let assignment:Record<string,unknown>|undefined;await until(async()=>{assignment=(await reviewCall(client,{phase:'assignment',...base})).assignment;return!!assignment;});return assignment!;}
 async function until(fn:()=>boolean|Promise<boolean>){for(let i=0;i<500;i++){if(await fn())return;await pause(10);}throw new Error('Fixture did not settle');}
-async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,compiled=process.env['DESIGN_TEST_COMPILED']==='1'){
+async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,compiled=true){
  const {stepToolTable,createStepCallHandler}=await import(compiled?resolve('out/daemon/steps/host.js'):'../../daemon/steps/host.js');
  const {Router}=await import(compiled?resolve('out/daemon/threads/router.js'):'../../daemon/threads/router.js');
  const {TargetRegistry}=await import(compiled?resolve('out/daemon/threads/registry.js'):'../../daemon/threads/registry.js');
@@ -48,7 +48,7 @@ async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,comp
  const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch({...Object.fromEntries(DESIGN_REVIEW_PHASES.map(phase=>[`designReview.${phase}`,(args:unknown,trusted:Parameters<typeof designReviewOperation>[2])=>designReviewOperation(phase,args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})])), 'workflow.approve':(args:unknown)=>handleWorkflowApprove(args)}, {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
  const ipc=new IpcServer(router.forward,Date.now,path);await ipc.listen();return{ipc,path};
 }
-async function stdio(path:string,repo:string,compiled=process.env['DESIGN_TEST_COMPILED']==='1'){
+async function stdio(path:string,repo:string,compiled=true){
  const client=new Client({name:'codex',version:'test'});
  const transport=new StdioClientTransport({command:process.execPath,args:['--import','tsx',resolve('src/mcp/__tests__/helpers/design-review-stdio.ts')],env:{...process.env as Record<string,string>,DESIGN_TEST_SOCKET:path,DESIGN_TEST_REPO:repo,DESIGN_TEST_COMPILED:compiled?'1':'0',INSRC_MODE:'mcp'},stderr:'pipe'});
  await client.connect(transport);return client;

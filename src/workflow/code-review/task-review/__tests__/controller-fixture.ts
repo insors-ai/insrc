@@ -31,8 +31,7 @@ export async function channel(path:string){
 }
 export async function eventually(check:()=>boolean):Promise<void>{const end=Date.now()+10000;while(!check()){if(Date.now()>end)throw new Error('Condition did not complete');await new Promise(resolve=>setTimeout(resolve,10));}}
 export function provider(run:(prompt:string)=>Promise<unknown>):LLMProvider{return{capabilities:{reviewActivity:true},runReviewSession:run} as unknown as LLMProvider;}
-export async function serve(repo:string,resolveProvider:()=>LLMProvider){
- const compiled=process.env['DESIGN_TEST_COMPILED']==='1';
+export async function serve(repo:string,resolveProvider:()=>LLMProvider,compiled=false){
  if(compiled){const {registerGitTools}=await import(resolve('out/daemon/tools/builtins/git/index.js'));registerGitTools();}
  const {IpcServer,directDispatch}=await import(compiled?resolve('out/daemon/server.js'):'../../../../daemon/server.js');
  const {exchangeControllerTaskReview,startTaskReview,readTaskReviewProgress}=await import(compiled?resolve('out/daemon/task-review-rpc.js'):'../../../../daemon/task-review-rpc.js');

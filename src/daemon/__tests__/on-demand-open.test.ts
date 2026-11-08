@@ -14,30 +14,37 @@ import { test, after, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { rpc, sockOf, startDaemon } from '../../mcp/__tests__/helpers/mcp-e2e.js';
-import { closeDefaultManagedRoots, ensureDefaultManagedRoot } from '../db/management-defaults.js';
+import { ensureDefaultManagedRoot } from '../db/management-defaults.js';
 import { connectionsPath } from '../db/config.js';
+import { managementStateDirectory } from '../db/managed-store.js';
 import { savedManagementFor } from '../db/management.js';
+import { PATHS } from '../../shared/paths.js';
 
 const PRELOAD = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'fake-keytar.ts');
 const base = realpathSync(mkdtempSync(join(tmpdir(), 'insrc-on-demand-')));
-const HOME = join(base, 'home'), KEYTAR = join(base, 'keytar'), REPO = join(base, 'repo'), PLAIN = join(base, 'plain');
+const HOME = join(base, 'home'), KEYTAR = join(base, 'keytar'), REPO = join(base, 'repo'), SECOND = join(base, 'second'), PLAIN = join(base, 'plain');
 const LOG = join(KEYTAR, 'calls.log'), REFUSE = join(KEYTAR, 'refuse');
 const start = () => startDaemon(HOME, { preload: PRELOAD, env: { INSRC_TEST_KEYTAR_DIR: KEYTAR } });
 const calls = (): string[] => existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(l => l.length > 0) : [];
 const clearCalls = (): void => { writeFileSync(LOG, ''); };
+// The daemon's HOME, not this process's: connectionsPath is rooted at the HOME of whoever calls it.
+const daemonPath = (path: string): string => join(HOME, '.insrc', relative(PATHS.insrc, path));
+const ownerLease = (repoRoot: string): string => daemonPath(join(managementStateDirectory(connectionsPath(repoRoot)), 'owner.json'));
 const list = (repoRoot: string) => rpc(sockOf(HOME), 'db.connections.v2.list', { repoRoot });
 
 before(async () => {
-	for (const dir of [HOME, KEYTAR, REPO, PLAIN]) mkdirSync(dir, { recursive: true });
+	for (const dir of [HOME, KEYTAR, REPO, SECOND, PLAIN]) mkdirSync(dir, { recursive: true });
 	const daemon = await start();
 	await rpc(daemon.sock, 'repo.add', { path: REPO });
+	await rpc(daemon.sock, 'repo.add', { path: SECOND });
 	await rpc(daemon.sock, 'repo.add', { path: PLAIN });
 	// The first management request sets the repository up, leaving a managed root for the restarts below.
 	await rpc(daemon.sock, 'db.connections.v2.capabilities', { repoRoot: REPO });
+	await rpc(daemon.sock, 'db.connections.v2.capabilities', { repoRoot: SECOND });
 	assert.ok(calls().length > 0, 'set-up reached the keystore, so a later zero is meaningful');
 	await daemon.stop();
 });
@@ -57,10 +64,10 @@ test('on-demand: the first management request opens the repository and a later o
 	const daemon = await start();
 	try {
 		clearCalls();
-		await list(REPO);
+		assert.ok(Array.isArray(await list(REPO)));
 		const first = calls().length;
-		assert.ok(first > 0, 'the first request opened the repository');
-		await list(REPO);
+		assert.ok(first > 1, 'the first request opened the repository');
+		assert.ok(Array.isArray(await list(REPO)));
 		assert.ok(calls().length - first <= 1, 'the second request found it open: at most its availability check');
 	} finally { await daemon.stop(); }
 });
@@ -81,7 +88,7 @@ test('on-demand: a plain listing of an unmanaged repository touches nothing', as
 		clearCalls();
 		await list(PLAIN);
 		assert.deepEqual(calls(), []);
-		assert.equal(existsSync(dirname(connectionsPath(PLAIN))), false, 'no state was created');
+		assert.equal(existsSync(dirname(daemonPath(connectionsPath(PLAIN)))), false, 'no state was created');
 	} finally { await daemon.stop(); }
 });
 
@@ -95,14 +102,14 @@ test('on-demand: a refused first-time set-up leaves nothing on disk', async () =
 	assert.equal(savedManagementFor(root), undefined);
 });
 
-// Last: closing the default roots is final for this process.
 test('on-demand: shutdown closes every root opened on demand', async () => {
-	const root = join(base, 'opened');
-	mkdirSync(root);
-	const values = new Map<string, string>();
-	const keystore = { getKey: async (k: string) => values.get(k) ?? null, setKey: async (k: string, v: string) => { values.set(k, v); }, deleteKey: async (k: string) => { values.delete(k); } };
-	await ensureDefaultManagedRoot(root, { isRegistered: async c => c === root, keystore });
-	assert.ok(savedManagementFor(root));
-	await closeDefaultManagedRoots();
-	assert.equal(savedManagementFor(root), undefined);
+	const daemon = await start();
+	assert.equal(existsSync(ownerLease(REPO)), false, 'a start opens nothing');
+	await list(REPO);
+	await list(SECOND);
+	assert.ok(existsSync(ownerLease(REPO)) && existsSync(ownerLease(SECOND)), 'both repositories are held open');
+	await daemon.stop();
+	// A root's close releases its owner lease, and a process that merely exits leaves the file behind.
+	assert.equal(existsSync(ownerLease(REPO)), false);
+	assert.equal(existsSync(ownerLease(SECOND)), false);
 });

@@ -2,8 +2,15 @@
  * Test preload (`node --import`): replaces keytar's functions below everything the daemon runs, so a
  * spawned daemon never reaches the real Keychain and no production switch is needed. The store persists
  * across daemon restarts. Every call is appended to calls.log; a `refuse` file makes every call reject.
+ *
+ * It also stands in for the shutdown watchdog helper, which needs a kernel capability a test daemon is
+ * not granted (the broker is refused on macOS). Without one the daemon fails closed by SIGKILL before it
+ * closes anything; with this answer the rest of the real shutdown sequence runs.
  */
+import childProcess from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
 import keytar from 'keytar';
 
@@ -26,3 +33,12 @@ Object.assign(keytar, {
 	},
 	findCredentials: async (service: string) => { enter(`find ${service}`); return []; },
 });
+
+const realFork = childProcess.fork;
+childProcess.fork = ((...args: Parameters<typeof realFork>) => {
+	if (!String(args[0]).includes('insrc-shutdown-watchdog')) return realFork(...args);
+	const helper = Object.assign(new EventEmitter(), { pid: 2 ** 22 + 1, connected: false, unref() {}, kill() { return true; } });
+	setImmediate(() => helper.emit('message', { type: 'ready', pid: helper.pid }));
+	return helper;
+}) as typeof realFork;
+syncBuiltinESMExports();

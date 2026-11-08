@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e0da59c0-cd4d-46a3-8f6f-2aada350a2ae",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T18:32:29.877Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the standalone storage-only memory artifact",
+      "parent": {
+        "entityId": "STORY-46667edffe5cc451-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-46667edffe5cc451-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-46667edffe5cc451-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cbeb45fc031c97ae664073bb1c6d64597b09bacb172a7b432b9c33572629b622",
+        "at": "2026-11-08T18:32:29.878Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:32:29.879Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the standalone storage-only memory artifact",
+    "summary": "Implement shared staging for the normal @insrc/project-memory tarball. Verify upstream LanceDB 0.40.0 integrity, narrow only the optional provider entries, retain licenses and native binding versions, and have packed consumer tests use this same artifact.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "Verify the staged SDK's upstream SHA-512, unchanged code and types, retained license and notices, and removal of only the approved optional provider entries.",
+      "Check actual tarball contents and a clean default consumer graph. The SDK is bundled, native bindings resolve from their pinned optional packages, and staging files, affected embedding paths and host overrides are absent."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "LanceDB staged tarball manifest-diff, integrity and license assertions"
+      },
+      {
+        "level": "integration",
+        "name": "Build and pack the release artifact and inspect the default clean consumer dependency graph without host overrides"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

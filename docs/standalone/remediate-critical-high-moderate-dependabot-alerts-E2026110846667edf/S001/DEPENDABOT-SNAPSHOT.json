@@ -1,0 +1,3900 @@
+[
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-c7w3-x93f-qmm8"
+    },
+    "created_at": "2026-10-28T12:43:47Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 1,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "8.0.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "low",
+      "vulnerable_version_range": "< 8.0.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-vvjj-xcjg-gr5g"
+    },
+    "created_at": "2026-10-28T12:43:47Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 2,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "8.0.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 8.0.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-41907",
+      "ghsa_id": "GHSA-w5hq-g745-h8pq"
+    },
+    "created_at": "2026-10-28T12:43:47Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "uuid"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 3,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "11.1.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "uuid"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 11.1.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-82662",
+      "ghsa_id": "GHSA-r7g4-qg5f-qqm2"
+    },
+    "created_at": "2026-10-28T12:43:48Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 4,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:48Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "8.0.8"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 8.0.7"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wqvq-jvpq-h66f"
+    },
+    "created_at": "2026-10-28T12:43:48Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 5,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:48Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "8.0.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 8.0.8"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-268h-hp4c-crq3"
+    },
+    "created_at": "2026-10-28T12:43:49Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 6,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:49Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "8.0.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 8.0.8"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-82659",
+      "ghsa_id": "GHSA-p6gq-j5cr-w38f"
+    },
+    "created_at": "2026-10-28T12:43:49Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 7,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:49Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "9.0.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 9.0.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-39244",
+      "ghsa_id": "GHSA-xcpc-8h2w-3j85"
+    },
+    "created_at": "2026-10-28T12:43:49Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 8,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:49Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f88m-g3jw-g9cj"
+    },
+    "created_at": "2026-10-28T12:43:50Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 9,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:50Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-16221",
+      "ghsa_id": "GHSA-v2hh-gcrm-f6hx"
+    },
+    "created_at": "2026-10-28T12:43:50Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 10,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:50Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.0.0, <= 3.1.3"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-73566",
+      "ghsa_id": "GHSA-r292-9mhp-454m"
+    },
+    "created_at": "2026-10-28T12:43:51Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "tar"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 11,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:51Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.5.21"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "tar"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 7.5.20"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-14257",
+      "ghsa_id": "GHSA-mh99-v99m-4gvg"
+    },
+    "created_at": "2026-10-28T12:43:51Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 12,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:51Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.3"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 2.0.0, < 2.1.3"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-14257",
+      "ghsa_id": "GHSA-mh99-v99m-4gvg"
+    },
+    "created_at": "2026-10-28T12:43:51Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 13,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:51Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.1.17"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 1.1.17"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-69152",
+      "ghsa_id": "GHSA-rgw5-rvv9-x895"
+    },
+    "created_at": "2026-10-28T12:43:52Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 14,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:52Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.1.18"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 1.1.18"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-69152",
+      "ghsa_id": "GHSA-rgw5-rvv9-x895"
+    },
+    "created_at": "2026-10-28T12:43:52Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 15,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:52Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 2.0.0, < 2.1.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-18446",
+      "ghsa_id": "GHSA-7p8r-x3mc-p8w7"
+    },
+    "created_at": "2026-10-28T12:43:52Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 16,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:52Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-13697",
+      "ghsa_id": "GHSA-4cwx-7wf7-3272"
+    },
+    "created_at": "2026-10-28T12:43:53Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 17,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:53Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-16728",
+      "ghsa_id": "GHSA-8xcm-r25x-g524"
+    },
+    "created_at": "2026-10-28T12:43:53Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 18,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:53Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-16729",
+      "ghsa_id": "GHSA-v3r7-h72x-cjcm"
+    },
+    "created_at": "2026-10-28T12:43:54Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 19,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:54Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-14643",
+      "ghsa_id": "GHSA-jr45-8vmc-qm54"
+    },
+    "created_at": "2026-10-28T12:43:54Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 20,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:54Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-15157",
+      "ghsa_id": "GHSA-m8rv-5g2x-5cg5"
+    },
+    "created_at": "2026-10-28T12:43:54Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 21,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:54Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-54272",
+      "ghsa_id": "GHSA-22jq-vg5j-6vgg"
+    },
+    "created_at": "2026-10-28T12:43:55Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 22,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:55Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.2.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 10.1.1, <= 10.2.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-69198",
+      "ghsa_id": "GHSA-4xrf-jv44-h6hh"
+    },
+    "created_at": "2026-10-28T12:43:55Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 23,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:55Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.2.2"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 10.1.1, <= 10.2.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-69192",
+      "ghsa_id": "GHSA-mwp4-54f8-5fhr"
+    },
+    "created_at": "2026-10-28T12:43:55Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 24,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:55Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.3.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 10.3.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-69207",
+      "ghsa_id": "GHSA-8j4g-w8fx-2239"
+    },
+    "created_at": "2026-10-28T12:43:56Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 25,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:56Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.12.34"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 4.12.34"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-5p4m-2wfm-xmqj"
+    },
+    "created_at": "2026-10-28T12:43:56Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "js-yaml"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 26,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:56Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.3.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "js-yaml"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 4.0.0, < 4.3.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-16633",
+      "ghsa_id": "GHSA-hq66-cqwq-w95j"
+    },
+    "created_at": "2026-10-28T12:43:56Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "pdfjs-dist"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 27,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:56Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "6.2.108"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "pdfjs-dist"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 5.6.83, < 6.2.108"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-71848",
+      "ghsa_id": "GHSA-54fx-42gc-7vw4"
+    },
+    "created_at": "2026-10-28T12:43:57Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 28,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:57Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.12.34"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 4.12.0, < 4.12.34"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-71849",
+      "ghsa_id": "GHSA-79qm-7rj5-m7r9"
+    },
+    "created_at": "2026-10-28T12:43:57Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 29,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:57Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.12.34"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 4.7.0, < 4.12.34"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-71850",
+      "ghsa_id": "GHSA-f23p-vx2j-j53r"
+    },
+    "created_at": "2026-10-28T12:43:58Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 30,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:58Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.12.34"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.8.0, < 4.12.34"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-frvp-7c67-39w9"
+    },
+    "created_at": "2026-10-28T12:43:58Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@hono/node-server"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 31,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:58Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.19.15"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@hono/node-server"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 1.19.15"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-82417",
+      "ghsa_id": "GHSA-4mjr-xmp4-gh2g"
+    },
+    "created_at": "2026-10-28T12:43:58Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 32,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:58Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "6.16.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 2.2.5, < 6.16.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-82562",
+      "ghsa_id": "GHSA-x5fp-wj9c-mxmx"
+    },
+    "created_at": "2026-10-28T12:43:59Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 33,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:59Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "6.16.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 6.14.2, <= 6.15.3"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgwj-5xj2-c3m3"
+    },
+    "created_at": "2026-10-28T12:43:59Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "mysql2"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 34,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:59Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.23.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "mysql2"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 3.23.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-76172",
+      "ghsa_id": "GHSA-jqff-g426-hqxp"
+    },
+    "created_at": "2026-10-28T12:43:59Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 35,
+    "state": "open",
+    "updated_at": "2026-10-28T12:43:59Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-75899",
+      "ghsa_id": "GHSA-fph4-wmhf-6fwf"
+    },
+    "created_at": "2026-10-28T12:44:00Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 36,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:00Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.1.2, < 3.1.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-75975",
+      "ghsa_id": "GHSA-f65p-4m7j-42xc"
+    },
+    "created_at": "2026-10-28T12:44:00Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 37,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:00Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-75931",
+      "ghsa_id": "GHSA-5jgf-p345-68v8"
+    },
+    "created_at": "2026-10-28T12:44:00Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 38,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:00Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.1.3, < 3.1.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-85063",
+      "ghsa_id": "GHSA-8cw4-87c7-c6xx"
+    },
+    "created_at": "2026-10-28T12:44:01Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "csv-parse"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 39,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:01Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.0.2"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "csv-parse"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 7.0.2"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-8m3c-c648-2xjj"
+    },
+    "created_at": "2026-10-28T12:44:01Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 40,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:01Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "9.1.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 9.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-76845",
+      "ghsa_id": "GHSA-vwc7-r8mq-g2x9"
+    },
+    "created_at": "2026-10-28T12:44:02Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 41,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:02Z",
+    "vulnerability": {
+      "first_patched_version": null,
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 0.5.9, <= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84363",
+      "ghsa_id": "GHSA-crvj-82cr-hjcx"
+    },
+    "created_at": "2026-10-28T12:44:02Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 42,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:02Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.13.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 4.13.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84364",
+      "ghsa_id": "GHSA-g6gw-c38x-mqfc"
+    },
+    "created_at": "2026-10-28T12:44:02Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 43,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:02Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.13.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 4.13.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84365",
+      "ghsa_id": "GHSA-gqvv-2mrq-wpjv"
+    },
+    "created_at": "2026-10-28T12:44:03Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 44,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:03Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.13.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 4.13.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84375",
+      "ghsa_id": "GHSA-2883-xcg3-v3hh"
+    },
+    "created_at": "2026-10-28T12:44:03Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "js-yaml"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 45,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:03Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.3.2"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "js-yaml"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 4.0.0, < 4.3.2"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgj7-g3m4-5g8c"
+    },
+    "created_at": "2026-10-28T12:44:03Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 46,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:03Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-cc9r-2j5m-2m83"
+    },
+    "created_at": "2026-10-28T12:44:04Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 47,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:04Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "9.1.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 6.9.16, < 9.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-2x7j-588g-ccc2"
+    },
+    "created_at": "2026-10-28T12:44:04Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 48,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:04Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "9.1.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 9.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wmmp-3585-3rmp"
+    },
+    "created_at": "2026-10-28T12:44:04Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 49,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:04Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "9.1.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 9.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-77301",
+      "ghsa_id": "GHSA-7q85-xj36-vmfc"
+    },
+    "created_at": "2026-10-28T12:44:05Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 50,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:05Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.6.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101910",
+      "ghsa_id": "GHSA-2vr4-cq9g-pvrc"
+    },
+    "created_at": "2026-10-28T12:44:05Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 51,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:05Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.5.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 10.2.0, <= 10.5.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101913",
+      "ghsa_id": "GHSA-rpw4-54j3-4h4q"
+    },
+    "created_at": "2026-10-28T12:44:06Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 52,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:06Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.5.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 10.5.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84292",
+      "ghsa_id": "GHSA-qw65-cvwx-89v3"
+    },
+    "created_at": "2026-10-28T12:44:06Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 53,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:06Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.7"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.7"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-85024",
+      "ghsa_id": "GHSA-3wwx-pv8p-q78v"
+    },
+    "created_at": "2026-10-28T12:44:06Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 54,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:06Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.28.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-6vj9-mwq6-2f5v"
+    },
+    "created_at": "2026-10-28T12:44:07Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 55,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:07Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.2"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 5.0.0, < 10.0.2"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-85014",
+      "ghsa_id": "GHSA-rx4f-c7p8-82vq"
+    },
+    "created_at": "2026-10-28T12:44:07Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 56,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:07Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-85008",
+      "ghsa_id": "GHSA-8436-99hf-9mmv"
+    },
+    "created_at": "2026-10-28T12:44:07Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 57,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:07Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84961",
+      "ghsa_id": "GHSA-w293-vg96-wgc3"
+    },
+    "created_at": "2026-10-28T12:44:08Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 58,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:08Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.24.1, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84947",
+      "ghsa_id": "GHSA-2gqq-gqf2-x968"
+    },
+    "created_at": "2026-10-28T12:44:08Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 59,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:08Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 7.1.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84933",
+      "ghsa_id": "GHSA-2jfj-6hjv-fm6j"
+    },
+    "created_at": "2026-10-28T12:44:08Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 60,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:08Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-84890",
+      "ghsa_id": "GHSA-3xpg-4rpp-hhhm"
+    },
+    "created_at": "2026-10-28T12:44:09Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 61,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:09Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.15.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-19534",
+      "ghsa_id": "GHSA-rfgv-xxqx-mfg5"
+    },
+    "created_at": "2026-10-28T12:44:09Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 62,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:09Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-18540",
+      "ghsa_id": "GHSA-r53p-7pc4-xj5r"
+    },
+    "created_at": "2026-10-28T12:44:10Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 63,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:10Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 7.0.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-18149",
+      "ghsa_id": "GHSA-pmjh-fq2x-6v4x"
+    },
+    "created_at": "2026-10-28T12:44:10Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 64,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:10Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.29.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.11.0, < 7.29.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102282",
+      "ghsa_id": "GHSA-j5f4-cc29-5x44"
+    },
+    "created_at": "2026-10-28T12:44:10Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 65,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:10Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-8vvx-rff5-p5rq"
+    },
+    "created_at": "2026-10-28T12:44:11Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 66,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:11Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.2"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 10.0.2"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rcw4-f5rp-g42v"
+    },
+    "created_at": "2026-10-28T12:44:11Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 67,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:11Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-8238-w5pm-2374"
+    },
+    "created_at": "2026-10-28T12:44:11Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 68,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:11Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-c6fg-446q-cg94"
+    },
+    "created_at": "2026-10-28T12:44:12Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 69,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:12Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-p634-w6r4-rjp2"
+    },
+    "created_at": "2026-10-28T12:44:12Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 70,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:12Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.6.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "adm-zip"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 0.6.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-v53p-9fqp-m79j"
+    },
+    "created_at": "2026-10-28T12:44:13Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 71,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:13Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "<= 10.0.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102276",
+      "ghsa_id": "GHSA-6j4f-fj2g-mc7p"
+    },
+    "created_at": "2026-10-28T12:44:13Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 72,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:13Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 2.0.0, < 2.1.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102276",
+      "ghsa_id": "GHSA-6j4f-fj2g-mc7p"
+    },
+    "created_at": "2026-10-28T12:44:13Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 73,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:13Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.1.19"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 1.1.19"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102278",
+      "ghsa_id": "GHSA-qhr7-859c-m2p7"
+    },
+    "created_at": "2026-10-28T12:44:14Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 74,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:14Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 2.0.0, < 2.1.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102278",
+      "ghsa_id": "GHSA-qhr7-859c-m2p7"
+    },
+    "created_at": "2026-10-28T12:44:14Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 75,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:14Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.1.20"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 1.1.20"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102277",
+      "ghsa_id": "GHSA-q2hr-2g5m-vwhr"
+    },
+    "created_at": "2026-10-28T12:44:15Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 76,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:15Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.7"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 2.0.0, < 2.1.7"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-102277",
+      "ghsa_id": "GHSA-q2hr-2g5m-vwhr"
+    },
+    "created_at": "2026-10-28T12:44:15Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 77,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:15Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.1.21"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "brace-expansion"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 1.1.21"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101911",
+      "ghsa_id": "GHSA-h3mg-xc3c-68pw"
+    },
+    "created_at": "2026-10-28T12:44:15Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 78,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:15Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.7.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 10.7.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101912",
+      "ghsa_id": "GHSA-j6r3-76f7-8jcv"
+    },
+    "created_at": "2026-10-28T12:44:16Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 79,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:16Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.7.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 10.7.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-86472",
+      "ghsa_id": "GHSA-hrr3-gc8f-f4qj"
+    },
+    "created_at": "2026-10-28T12:44:16Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 80,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:16Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.8"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.8"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101915",
+      "ghsa_id": "GHSA-f596-whhp-79r4"
+    },
+    "created_at": "2026-10-28T12:44:16Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@grpc/grpc-js"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 81,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:16Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.14.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@grpc/grpc-js"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 1.14.0, < 1.14.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-101916",
+      "ghsa_id": "GHSA-m9gg-hp2v-232j"
+    },
+    "created_at": "2026-10-28T12:44:17Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@grpc/grpc-js"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 82,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:17Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.14.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@grpc/grpc-js"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 1.14.0, < 1.14.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-93981",
+      "ghsa_id": "GHSA-hxh3-vqpv-xpqv"
+    },
+    "created_at": "2026-10-28T12:44:17Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 83,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:17Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.13.7"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 4.13.7"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-jggr-w7fw-pc2j"
+    },
+    "created_at": "2026-10-28T12:44:17Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-copy"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 84,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:17Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.1.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-copy"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 4.0.0, < 4.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-90711",
+      "ghsa_id": "GHSA-jqcg-44mw-7w3h"
+    },
+    "created_at": "2026-10-28T12:44:18Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "proxy-addr"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 85,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:18Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.0.8"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "proxy-addr"
+      },
+      "severity": "critical",
+      "vulnerable_version_range": ">= 1.1.0, < 2.0.8"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wq5f-xc86-pv6w"
+    },
+    "created_at": "2026-10-28T12:44:18Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 86,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:18Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-104850",
+      "ghsa_id": "GHSA-6qxp-vccf-f47h"
+    },
+    "created_at": "2026-10-28T12:44:19Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 87,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:19Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.31.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 1.12.0, < 1.31.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111757",
+      "ghsa_id": "GHSA-5r4p-p66f-jhc7"
+    },
+    "created_at": "2026-10-28T12:44:19Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 88,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:19Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.13.11"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "hono"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 4.12.4, < 4.13.11"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111769",
+      "ghsa_id": "GHSA-6prh-2h8m-c8cw"
+    },
+    "created_at": "2026-10-28T12:44:19Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 89,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:19Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.32.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "< 1.32.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111767",
+      "ghsa_id": "GHSA-22jm-h49p-29qw"
+    },
+    "created_at": "2026-10-28T12:44:20Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 90,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:20Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.32.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 1.24.0, < 1.32.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111771",
+      "ghsa_id": "GHSA-rvq5-wwqv-78pq"
+    },
+    "created_at": "2026-10-28T12:44:20Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 91,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:20Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.32.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 1.6.0, < 1.32.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111768",
+      "ghsa_id": "GHSA-46jr-4wx8-v453"
+    },
+    "created_at": "2026-10-28T12:44:20Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 92,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:20Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.32.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 1.3.0, < 1.32.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110871",
+      "ghsa_id": "GHSA-39m8-27wv-hr27"
+    },
+    "created_at": "2026-10-28T12:44:21Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 93,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:21Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.10"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, <= 10.0.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111997",
+      "ghsa_id": "GHSA-rxp7-6hxx-x8q5"
+    },
+    "created_at": "2026-10-28T12:44:21Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 94,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:21Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.7.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "ip-address"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": "<= 10.7.3"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2023-54404",
+      "ghsa_id": "GHSA-mrhx-c7xc-m3w5"
+    },
+    "created_at": "2026-10-28T12:44:22Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "zod"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 95,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:22Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "4.6.6"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "zod"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 4.6.6"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-111181",
+      "ghsa_id": "GHSA-27r3-jxmh-p828"
+    },
+    "created_at": "2026-10-28T12:44:22Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "body-parser"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 96,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:22Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.4.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "body-parser"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 2.0.0, < 2.4.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110725",
+      "ghsa_id": "GHSA-333x-w4r6-6crp"
+    },
+    "created_at": "2026-10-28T12:44:22Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 97,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:22Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110180",
+      "ghsa_id": "GHSA-wjr9-j795-jxcr"
+    },
+    "created_at": "2026-10-28T12:44:23Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 98,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:23Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.1.3, < 3.1.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110095",
+      "ghsa_id": "GHSA-xhq7-xmqj-769h"
+    },
+    "created_at": "2026-10-28T12:44:23Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 99,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:23Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "low",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110306",
+      "ghsa_id": "GHSA-w74x-v6f9-j3xg"
+    },
+    "created_at": "2026-10-28T12:44:23Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 100,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:23Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "3.1.9"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "fast-uri"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, < 3.1.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-85x2-q946-cp5h"
+    },
+    "created_at": "2026-10-28T12:44:24Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 101,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:24Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.1.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, < 10.1.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-m943-m63m-w62w"
+    },
+    "created_at": "2026-10-28T12:44:24Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 102,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:24Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.1.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, < 10.1.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-8c8m-p3m8-cjg8"
+    },
+    "created_at": "2026-10-28T12:44:25Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 103,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:25Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.1.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, < 10.1.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109841",
+      "ghsa_id": "GHSA-f72v-6w45-q472"
+    },
+    "created_at": "2026-10-28T12:44:25Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 104,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:25Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.15.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109924",
+      "ghsa_id": "GHSA-4qv8-2p9j-2685"
+    },
+    "created_at": "2026-10-28T12:44:25Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 105,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:25Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109869",
+      "ghsa_id": "GHSA-xjj6-f33q-929c"
+    },
+    "created_at": "2026-10-28T12:44:26Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 106,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:26Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.18.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109461",
+      "ghsa_id": "GHSA-xcx6-jx8p-x3h5"
+    },
+    "created_at": "2026-10-28T12:44:26Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@azure/msal-node"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 107,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:26Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.1.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@azure/msal-node"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 5.0.0-beta.0, < 7.1.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-4g23-2xm8-66gc"
+    },
+    "created_at": "2026-10-28T12:44:26Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 108,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:26Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.10"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, <= 10.0.9"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-g73g-hqqh-jr95"
+    },
+    "created_at": "2026-10-28T12:44:27Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 109,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:27Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.13"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, <= 10.0.12"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-4ffr-jq9g-5ffx"
+    },
+    "created_at": "2026-10-28T12:44:27Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 110,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:27Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "10.0.13"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "nodemailer"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 3.0.0, <= 10.0.12"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-110816",
+      "ghsa_id": "GHSA-6pq8-jhm2-2vcw"
+    },
+    "created_at": "2026-10-28T12:44:27Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 111,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:27Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "6.16.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "qs"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 6.7.0, <= 6.16.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f897-62hf-6gxq"
+    },
+    "created_at": "2026-10-28T12:44:28Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 112,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:28Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "1.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@modelcontextprotocol/sdk"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 1.10.0, < 1.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-87029",
+      "ghsa_id": "GHSA-55wc-3pg8-jfw6"
+    },
+    "created_at": "2026-10-28T12:44:28Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 113,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:28Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.15.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109932",
+      "ghsa_id": "GHSA-9fm3-97px-rjf6"
+    },
+    "created_at": "2026-10-28T12:44:29Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 114,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:29Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 7.0.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-87018",
+      "ghsa_id": "GHSA-qrxm-fqhp-jwvm"
+    },
+    "created_at": "2026-10-28T12:44:29Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 115,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:29Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.0.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109383",
+      "ghsa_id": "GHSA-2m5v-pch6-74hx"
+    },
+    "created_at": "2026-10-28T12:44:29Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 116,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:29Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.0.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-109829",
+      "ghsa_id": "GHSA-4w7w-5xrc-9h26"
+    },
+    "created_at": "2026-10-28T12:44:30Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "relationship": "direct",
+      "scope": "runtime"
+    },
+    "number": 117,
+    "state": "open",
+    "updated_at": "2026-10-28T12:44:30Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "7.30.1"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "undici"
+      },
+      "severity": "high",
+      "vulnerable_version_range": ">= 7.0.0, < 7.30.1"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": "CVE-2026-118663",
+      "ghsa_id": "GHSA-rmxm-3fg6-px4f"
+    },
+    "created_at": "2026-10-29T15:15:34Z",
+    "dependency": {
+      "manifest_path": "package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "@hono/node-server"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 118,
+    "state": "open",
+    "updated_at": "2026-10-29T15:15:34Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "2.1.3"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "@hono/node-server"
+      },
+      "severity": "medium",
+      "vulnerable_version_range": ">= 1.19.10, < 2.1.3"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f88m-g3jw-g9cj"
+    },
+    "created_at": "2026-11-03T13:00:30Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t3-linux/project-memory-linux-node22-24a61e760b4e8e10787e91e658db362e1d6ab254/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 120,
+    "state": "open",
+    "updated_at": "2026-11-03T13:00:30Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgj7-g3m4-5g8c"
+    },
+    "created_at": "2026-11-03T13:00:30Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t3-linux/project-memory-linux-node22-24a61e760b4e8e10787e91e658db362e1d6ab254/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 121,
+    "state": "open",
+    "updated_at": "2026-11-03T13:00:30Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wq5f-xc86-pv6w"
+    },
+    "created_at": "2026-11-03T13:00:30Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t3-linux/project-memory-linux-node22-24a61e760b4e8e10787e91e658db362e1d6ab254/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 122,
+    "state": "open",
+    "updated_at": "2026-11-03T13:00:30Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f88m-g3jw-g9cj"
+    },
+    "created_at": "2026-11-03T17:37:47Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t10-linux/project-memory-linux-node22-a4e040809abeaff4d966e79d6d1e4a639103654f/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 123,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgj7-g3m4-5g8c"
+    },
+    "created_at": "2026-11-03T17:37:47Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t10-linux/project-memory-linux-node22-a4e040809abeaff4d966e79d6d1e4a639103654f/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 124,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wq5f-xc86-pv6w"
+    },
+    "created_at": "2026-11-03T17:37:47Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t10-linux/project-memory-linux-node22-a4e040809abeaff4d966e79d6d1e4a639103654f/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 125,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:47Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f88m-g3jw-g9cj"
+    },
+    "created_at": "2026-11-03T17:37:48Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t13-prewire-linux/project-memory-linux-node22-700c7f1e923a50717bbbf806105dc2b3d1bba98d/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 126,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:48Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgj7-g3m4-5g8c"
+    },
+    "created_at": "2026-11-03T17:37:48Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t13-prewire-linux/project-memory-linux-node22-700c7f1e923a50717bbbf806105dc2b3d1bba98d/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 127,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:48Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wq5f-xc86-pv6w"
+    },
+    "created_at": "2026-11-03T17:37:48Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t13-prewire-linux/project-memory-linux-node22-700c7f1e923a50717bbbf806105dc2b3d1bba98d/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 128,
+    "state": "open",
+    "updated_at": "2026-11-03T17:37:48Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.5"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-f88m-g3jw-g9cj"
+    },
+    "created_at": "2026-11-04T05:06:42Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-linux/project-memory-linux-node22-0990b423e1036ec1d2bf1783f20f40b62de77da3/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 129,
+    "state": "open",
+    "updated_at": "2026-11-04T05:06:42Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.0"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.0"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-rgj7-g3m4-5g8c"
+    },
+    "created_at": "2026-11-04T05:06:43Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-linux/project-memory-linux-node22-0990b423e1036ec1d2bf1783f20f40b62de77da3/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 130,
+    "state": "open",
+    "updated_at": "2026-11-04T05:06:43Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.4"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.4"
+    }
+  },
+  {
+    "advisory": {
+      "cve_id": null,
+      "ghsa_id": "GHSA-wq5f-xc86-pv6w"
+    },
+    "created_at": "2026-11-04T05:06:43Z",
+    "dependency": {
+      "manifest_path": "docs/epics/share-project-memory-across-agents-applications-E2026110117123b6d/S003/evidence/t17-linux/project-memory-linux-node22-0990b423e1036ec1d2bf1783f20f40b62de77da3/package-lock.json",
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "relationship": "transitive",
+      "scope": "runtime"
+    },
+    "number": 131,
+    "state": "open",
+    "updated_at": "2026-11-04T05:06:43Z",
+    "vulnerability": {
+      "first_patched_version": {
+        "identifier": "0.35.5"
+      },
+      "package": {
+        "ecosystem": "npm",
+        "name": "sharp"
+      },
+      "severity": "high",
+      "vulnerable_version_range": "< 0.35.5"
+    }
+  }
+]

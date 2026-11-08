@@ -241,11 +241,16 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 	return typeof v === 'object' && v !== null && !Array.isArray(v);
 }
 
+/** A finite, non-negative number: NaN, Infinity and negatives are malformed. */
+function isCount(v: unknown): v is number {
+	return typeof v === 'number' && Number.isFinite(v) && v >= 0;
+}
+
 function parseBudget(v: unknown): HandlingBudget | undefined {
 	if (!isRecord(v)) return undefined;
 	const { unit, limit, source, basis, inputSize } = v;
 	if (unit !== 'chars' && unit !== 'bytes') return undefined;
-	if (typeof limit !== 'number' || typeof inputSize !== 'number') return undefined;
+	if (!isCount(limit) || !isCount(inputSize)) return undefined;
 	if (source !== 'provider' && source !== 'context-window' && source !== 'default') return undefined;
 	if (basis !== 'declared' && basis !== 'bytes-bound' && basis !== 'default') return undefined;
 	return { unit, limit, source, basis, inputSize };
@@ -260,7 +265,7 @@ export function parseHandling(value: unknown): HandlingReport | undefined {
 	if (!isRecord(value)) return undefined;
 	const { method, parts, partitionedBy, notCovered, budgets, trigger, combineStages } = value;
 	if (method !== 'single-pass' && method !== 'partitioned') return undefined;
-	if (typeof parts !== 'number' || !Number.isFinite(parts) || !Array.isArray(notCovered)) return undefined;
+	if (!isCount(parts) || !Array.isArray(notCovered)) return undefined;
 	const uncovered: { part: string; reason: string }[] = [];
 	for (const n of notCovered) {
 		if (!isRecord(n) || typeof n['part'] !== 'string' || typeof n['reason'] !== 'string') return undefined;
@@ -277,7 +282,7 @@ export function parseHandling(value: unknown): HandlingReport | undefined {
 	}
 	if (partitionedBy !== undefined && !PARTITIONED_BY.includes(partitionedBy as string)) return undefined;
 	if (trigger !== undefined && !TRIGGERS.includes(trigger as string)) return undefined;
-	if (combineStages !== undefined && typeof combineStages !== 'number') return undefined;
+	if (combineStages !== undefined && !isCount(combineStages)) return undefined;
 	return {
 		method,
 		parts,
@@ -302,8 +307,10 @@ export function mergeHandling(
 	second: HandlingReport | undefined,
 	prefix = '',
 ): HandlingReport | undefined {
+	const qualify = (n: { readonly part: string; readonly reason: string }): { readonly part: string; readonly reason: string } =>
+		(prefix.length > 0 ? { ...n, part: `${prefix}${n.part}` } : n);
 	if (first === undefined) return second;
-	if (second === undefined) return first;
+	if (second === undefined) return prefix.length > 0 ? { ...first, notCovered: first.notCovered.map(qualify) } : first;
 	const budgets: HandlingBudget[] = [];
 	for (const b of [...first.budgets, ...second.budgets]) {
 		const i = budgets.findIndex(e => e.unit === b.unit && e.limit === b.limit && e.source === b.source && e.basis === b.basis);
@@ -323,7 +330,7 @@ export function mergeHandling(
 		parts:  first.parts + second.parts,
 		...(by !== undefined ? { partitionedBy: by } : {}),
 		notCovered: [
-			...first.notCovered.map(n => (prefix.length > 0 ? { ...n, part: `${prefix}${n.part}` } : n)),
+			...first.notCovered.map(qualify),
 			...second.notCovered,
 		],
 		budgets,

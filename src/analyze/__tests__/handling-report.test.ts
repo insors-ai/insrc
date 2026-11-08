@@ -38,6 +38,11 @@ test('parseHandling reads {} and malformed values as absent and accepts a record
 	assert.equal(parseHandling({ ...single, notCovered: [{ part: 1 }] }), undefined);
 	assert.equal(parseHandling({ ...single, budgets: [{ unit: 'tokens' }] }), undefined);
 	assert.equal(parseHandling({ ...divided, trigger: 'never' }), undefined);
+	assert.equal(parseHandling({ ...single, parts: Number.NaN }), undefined);
+	assert.equal(parseHandling({ ...single, parts: -1 }), undefined);
+	assert.equal(parseHandling({ ...divided, combineStages: Number.POSITIVE_INFINITY }), undefined);
+	assert.equal(parseHandling({ ...single, budgets: [{ ...BYTES, limit: Number.NaN }] }), undefined);
+	assert.equal(parseHandling({ ...single, budgets: [{ ...BYTES, inputSize: Number.POSITIVE_INFINITY }] }), undefined);
 	assert.deepEqual(parseHandling(single), single);
 	assert.deepEqual(parseHandling(divided), divided);
 	assert.deepEqual(parseHandling(JSON.parse(JSON.stringify(divided))), divided);
@@ -47,6 +52,9 @@ test('mergeHandling keeps units apart, de-duplicates budgets, sums combineStages
 	assert.equal(mergeHandling(undefined, undefined), undefined);
 	assert.equal(mergeHandling(single, undefined), single);
 	assert.equal(mergeHandling(undefined, divided), divided);
+
+	assert.deepEqual(mergeHandling(divided, undefined, 'plan a / ')?.notCovered, [{ part: 'plan a / part 2: docs/a', reason: 'model-failed' }]);
+	assert.equal(mergeHandling(undefined, divided, 'plan a / ')?.notCovered[0]?.part, 'part 2: docs/a');
 
 	const root = mergeHandling(single, divided);
 	assert.equal(root?.method, 'partitioned');

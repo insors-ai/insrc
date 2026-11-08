@@ -14,6 +14,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { createProviderRegistry, type ProviderId } from '../cli-adapter.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ADAPTER_TS = join(HERE, '..', 'cli-adapter.ts');
@@ -51,12 +52,12 @@ test('the adapter is vscode-free (import-scan)', () => {
 });
 
 test('Ollama is never a registrable provider (k4)', () => {
-  const src = adapterSrc();
-  // The ProviderId union is exactly the three agentic CLIs, and the registry loop
-  // iterates exactly them — 'ollama' is not a value anywhere in the code (prose
-  // comments documenting its EXCLUSION are allowed and expected).
-  assert.match(src, /type ProviderId = 'claude' \| 'codex' \| 'vibe'/, 'ProviderId is exactly the three agentic CLIs (claude|codex|vibe)');
-  assert.match(src, /for \(const id of \['claude', 'codex', 'vibe'\] as const\)/, 'the registry iterates exactly the three agentic CLIs');
-  const codeOnly = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
-  assert.doesNotMatch(codeOnly, /ollama/i, "'ollama' never appears in code (only in exclusion comments)");
+  const probed: ProviderId[] = [];
+  const registry = createProviderRegistry({
+    isInstalled: id => { probed.push(id); return true; },
+    spawn: () => assert.fail('registry construction must not spawn a CLI'),
+  });
+  assert.deepEqual(probed, ['claude', 'codex', 'vibe']);
+  assert.deepEqual(registry.available, ['claude', 'codex', 'vibe']);
+  assert.throws(() => registry.get('ollama' as ProviderId), /unknown-provider/);
 });

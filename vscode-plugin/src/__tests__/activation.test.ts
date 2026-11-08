@@ -299,7 +299,7 @@ test('the extension entry runs the settings pull, the update check and onboardin
   // Each of the three waits for it, and none runs bare.
   assert.match(src, /void activationSettled\.then\(\(\) => runDaemonFreshnessCheck\(\{/);
   assert.doesNotMatch(src, /void runDaemonFreshnessCheck\(/);
-  assert.match(src, /void activationSettled\.then\(\(\) => configSync\.pullFromDaemon\(\)\);/);
+  assert.match(src, /void activationSettled\.then\(async \(\) => \{\s*await configSync\.pullFromDaemon\(\);\s*await migrateLegacyKeys\(/);
   assert.doesNotMatch(src, /void configSync\.pullFromDaemon\(\)/);
   assert.match(src, /void \(async \(\) => \{\s*await activationSettled;\s*try \{\s*await runOnboarding\(/);
 });

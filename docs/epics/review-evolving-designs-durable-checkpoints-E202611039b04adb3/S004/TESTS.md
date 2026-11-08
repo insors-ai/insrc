@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -220,3 +220,13 @@ Reported by the builder, not run by the gate: **pass**. Evidence: Production com
 | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 2.6 s |  |
 | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` | 0 | 3 | 1.2 s |  |
 | `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 4 | 0.8 s |  |
+
+## t9
+
+Run at 2026-11-08T07:22:58.481Z on commit `276949430`. Tests check: **passed**. 0 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+
+the gate ran no test: every named test of this Task was reported by the builder
+
+**live: L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup**
+
+Reported by the builder, not run by the gate: **pass**. Evidence: /tmp/s4-t9-live-evidence.json. Installed daemon status confirmed a4ea9d2eebf1632ae8025dc81519387e1758be52 after user update/restart. Registered insrc_review_step reviewed existing pending sandbox DEF-0f4fedd5c524b8b6 in registered /home/subho/work/dev/insors/insrc-test, reviewId s4-t9-live-def-20261108 attempt 1. Actual Codex CliProvider gpt-6.1-sol/medium; ACK 6268ms, review 153190ms (2026-11-08T07:12:52.157Z to 07:15:25.306Z), planning plus 3 dependency-ordered chunks = 4 dispatches, 0 automatic retries. Polled meaningful progress; read all three paginated results. Final incomplete: 0 HIGH, 1 MED, 2 LOW, missing upstream citation evidence. Permanent history entry 5997490366c2061cd3c453532904fe50ec310e62604874b2d2b845c36f89c691 validated against full preservation digest and unchanged Markdown. insrc_present returned presented for DEF; user explicitly approved qualification override in chat. Registered insrc_workflow_approve at 07:21:37.160Z approved with truthful override and returned deleted:[checkpoint], retained:[], errors:[]. Checkpoint absent; registered progress now returns source:history with original incomplete/counts. A fresh compiled coordinator with provider factory throwing also retrieves history. Live hosted coverage DEF only; HLD/LLD are explicitly unverified hosted and retain T8 compiled-fixture coverage. Current code-review smoke evidence /tmp/s4-t8-final-smoke.log passed 8/8; no activation framework or raw approval IPC used.

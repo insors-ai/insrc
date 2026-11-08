@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "85d1b1e29ca50139dcd7c7af6e115ac942ddd50a8b955155163fdef96c7d840b",
-        "at": "2026-11-08T06:50:24.959Z",
+        "number": 23,
+        "contentHash": "63416ccd321ea3b34a1358b79bc3b9d57952ba8016433a6fec5dffe37ed22b5d",
+        "at": "2026-11-08T07:22:58.543Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:50:24.793Z",
+    "updatedAt": "2026-11-08T07:22:58.481Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 22
+    "revision": 23
   },
   "body": {
     "tasks": [
@@ -843,6 +843,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "276949430",
+        "ranAt": "2026-11-08T07:22:58.481Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/s4-t9-live-evidence.json. Installed daemon status confirmed a4ea9d2eebf1632ae8025dc81519387e1758be52 after user update/restart. Registered insrc_review_step reviewed existing pending sandbox DEF-0f4fedd5c524b8b6 in registered /home/subho/work/dev/insors/insrc-test, reviewId s4-t9-live-def-20261108 attempt 1. Actual Codex CliProvider gpt-6.1-sol/medium; ACK 6268ms, review 153190ms (2026-11-08T07:12:52.157Z to 07:15:25.306Z), planning plus 3 dependency-ordered chunks = 4 dispatches, 0 automatic retries. Polled meaningful progress; read all three paginated results. Final incomplete: 0 HIGH, 1 MED, 2 LOW, missing upstream citation evidence. Permanent history entry 5997490366c2061cd3c453532904fe50ec310e62604874b2d2b845c36f89c691 validated against full preservation digest and unchanged Markdown. insrc_present returned presented for DEF; user explicitly approved qualification override in chat. Registered insrc_workflow_approve at 07:21:37.160Z approved with truthful override and returned deleted:[checkpoint], retained:[], errors:[]. Checkpoint absent; registered progress now returns source:history with original incomplete/counts. A fresh compiled coordinator with provider factory throwing also retrieves history. Live hosted coverage DEF only; HLD/LLD are explicitly unverified hosted and retain T8 compiled-fixture coverage. Current code-review smoke evidence /tmp/s4-t8-final-smoke.log passed 8/8; no activation framework or raw approval IPC used."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   },

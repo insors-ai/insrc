@@ -17,10 +17,11 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { finalizeArtifact } from '../orchestrator.js';
+import { checkNonPathCitationRefs, checkPathForms } from '../synthesizer.js';
 import { markApprovedSync } from './lifecycle-fixtures.js';
 import { isLldBody, renderLldMarkdown, type LldArtifact, type LldBody } from '../artifacts/lld.js';
 import { defineArtifactPaths, hldArtifactPaths } from '../storage.js';
-import type { WorkflowIntent } from '../types.js';
+import type { Citation, WorkflowIntent } from '../types.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '../../..');
 const EPIC_HASH = 'b4e1c7d2a9f03e65';
@@ -253,6 +254,9 @@ test('finalize: an incomplete s2 record is refused as non-retryable, naming a re
 		assert.equal(f.retryable, false);
 		assert.match(f.message, /Restart design\.story/);
 		assert.deepEqual(readdirSync(repo), [], 'no companion or other file was written');
+		const empty = refusal(await finalizeArtifact(standaloneIntent(repo, TITLE), { s2: {} }, 'wf', 5, { body: body(), citations: CITATIONS }, 'client'));
+		assert.equal(empty.retryable, false, 'an s2 output with no alternatives is malformed, not absent');
+		assert.match(empty.message, /Restart design\.story/);
 	});
 });
 
@@ -260,4 +264,80 @@ test('stored: isLldBody still accepts a stored LLD with partial alternatives', (
 	const artifact = JSON.parse(readFileSync(join(ROOT, '.insrc/artifacts/LLD-546198e11c24c1e3-s1.json'), 'utf8')) as LldArtifact;
 	assert.equal((artifact.body.alternativesConsidered[0] as { approach?: unknown }).approach, undefined, 'the fixture really is partial');
 	assert.equal(isLldBody(artifact.body), true);
+});
+
+// ---------------------------------------------------------------------------
+// t3 — the file-reference rule on non-path citations
+// ---------------------------------------------------------------------------
+
+const bundle = (ref: string): Citation => ({ id: 'c1', kind: 'analyze-bundle', ref });
+
+function refused(ref: string): string[] {
+	const r = checkNonPathCitationRefs([bundle(ref)], '/repo');
+	assert.equal(r.ok, false, `'${ref}' must be refused`);
+	return r.ok ? [] : [...(r.details ?? [])];
+}
+
+function passes(ref: string): void {
+	assert.deepEqual(checkNonPathCitationRefs([bundle(ref)], '/repo'), { ok: true }, `'${ref}' must pass`);
+}
+
+test("citations: the DeepSeek LLD's actual refs are refused", () => {
+	const artifact = JSON.parse(readFileSync(join(ROOT, '.insrc/artifacts/LLD-546198e11c24c1e3-s1.json'), 'utf8')) as LldArtifact;
+	assert.equal(artifact.citations.length, 6);
+	const r = checkNonPathCitationRefs(artifact.citations, artifact.meta.repoPath);
+	assert.equal(r.ok, false);
+	if (!r.ok) assert.equal(r.details?.length, 6, 'every one of the six is refused');
+});
+
+test('citations: a badly formed path-only ref under analyze-bundle is refused, as under code', () => {
+	for (const ref of ['./src/workflow/synthesizer.ts', 'src/../src/workflow/synthesizer.ts', 'src/workflow/synthesizer.ts:finalize', '/repo/src/x.ts']) {
+		refused(ref);
+		assert.equal(checkPathForms([{ id: 'c1', kind: 'code', ref }], [], '/repo').ok, false, `the same ref under code is refused: ${ref}`);
+	}
+});
+
+test('citations: a root-level file name alongside prose is refused', () => {
+	assert.match(refused('read:manifest: package.json controls dependencies')[0]!, /beside other text/);
+});
+
+test('citations: a URL alongside prose is refused', () => {
+	assert.match(refused('read:source: https://example.com/source.ts explains the implementation')[0]!, /beside other text/);
+});
+
+test('citations: a text-only label, a well-formed path and a standalone URL all pass', () => {
+	for (const ref of ['s1 analyze: the session lease and follow after reload', 'paintOpt/paintSel paint the options', 's1.analyzeBundles[0]', 'version 1.2 of the contract', 'src/workflow/synthesizer.ts:280', 'package.json', 'https://example.com/source.ts']) passes(ref);
+	assert.deepEqual(checkNonPathCitationRefs([{ id: 'c1', kind: 'code', ref: 'prose under a code kind is checkPathForms\' job' }]), { ok: true });
+});
+
+test('citations: a refused citation names its id, writes nothing and succeeds when corrected', async () => {
+	await inRepo('lld-citations-', async repo => {
+		const bad = [{ id: 'c7', kind: 'analyze-bundle', ref: 'read:thing: the store (src/store.ts:12)' }];
+		const emit = { body: { ...body(), sequenceDefinition: { participants: [{ id: 'A' }, { id: 'B' }], messages: [{ from: 'A', to: 'B', label: 'x' }] } } };
+		const r = await finalizeArtifact(standaloneIntent(repo, TITLE), {}, 'wf', 5, { ...emit, citations: bad }, 'client');
+		assert.equal(r.ok, false);
+		if (r.ok || r.failure.ok) return;
+		assert.equal(r.failure.kind, 'paths');
+		assert.notEqual(r.failure.retryable, false);
+		assert.match((r.failure.details ?? []).join(' '), /citation c7/);
+		assert.deepEqual(readdirSync(repo), [], 'nothing was written');
+		const good = [{ id: 'c7', kind: 'code', ref: 'src/store.ts:12', quotedText: 'the store' }];
+		const fixed = await finalizeArtifact(standaloneIntent(repo, TITLE), {}, 'wf', 5, { ...emit, citations: good }, 'client');
+		assert.ok(fixed.ok, fixed.ok ? '' : JSON.stringify(fixed.failure));
+	});
+});
+
+test('citations: other artifact kinds are unaffected', async () => {
+	const intent = { workflow: 'stub', focus: 'demo', repoPath: '/tmp/insrc-lld-gates', repoIndexedAt: null, params: {} } as unknown as WorkflowIntent;
+	const emit = {
+		body: { title: 'Demo', summary: 'A summary [[c1]].', bulletList: ['point [[c1]]'] },
+		citations: [{ id: 'c1', kind: 'analyze-bundle', ref: 'read:thing: the store (src/store.ts:12)' }],
+	};
+	const r = await finalizeArtifact(intent, { s1: { echoed: 'alpha' } }, 'wf', 5, emit, 'client');
+	assert.ok(r.ok, r.ok ? '' : JSON.stringify(r.failure));
+});
+
+test('stored: checkPathForms behaviour for other artifact kinds is unchanged', () => {
+	assert.deepEqual(checkPathForms([bundle('read:thing: the store (src/store.ts:12)')], [], '/repo'), { ok: true }, 'a non-path kind is still not examined');
+	assert.equal(checkPathForms([{ id: 'c1', kind: 'code', ref: './src/x.ts' }], [], '/repo').ok, false, 'a code citation still is');
 });

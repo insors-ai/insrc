@@ -251,6 +251,43 @@ function pathFormProblem(ref: string, repoPath?: string): string | undefined {
 	return undefined;
 }
 
+/** A root-level file name: only a known extension marks it, so a dotted label is not taken for one. */
+const ROOT_FILE_RE = /^[\w@+~-][\w.@+~-]*\.(?:ts|tsx|mts|cts|js|jsx|mjs|cjs|json|jsonl|md|mdx|html|css|py|go|java|kt|kts|scala|rs|rb|sh|sql|yaml|yml|toml|xml|txt|proto)$/;
+
+/** Whether one whitespace-free token of a citation ref names a file. A heuristic: an unusual file name can be missed. */
+function isFileToken(raw: string): boolean {
+	const token = raw.replace(/^[('"`[<]+|[)'"`\],;.>]+$/g, '');
+	if (/^https?:\/\//.test(token)) return true;
+	// The location and anchor are not part of the name.
+	const name = token.replace(/#.*$/, '').replace(/(:[\w$.:-]*)$/, '');
+	if (name.includes('/')) return /\.[A-Za-z]\w*$/.test(name) || /^\/[^/]+\//.test(name);
+	return ROOT_FILE_RE.test(name);
+}
+
+/**
+ * ISSUE-36cbeeac485c0af7: the file-reference rule for an LLD's citations of kinds other than `code`
+ * and `doc`, which `checkPathForms` leaves alone because their refs are usually labels. A ref with
+ * no file reference passes. A ref that is exactly one file reference must be in the one form. A
+ * file reference beside any other text is refused. Called for LLDs only.
+ */
+export function checkNonPathCitationRefs(citations: readonly Citation[], repoPath?: string): ValidationResult {
+	const details: string[] = [];
+	for (const c of citations) {
+		if (c.kind === 'code' || c.kind === 'doc') continue;
+		const ref = c.ref.trim();
+		const tokens = ref.split(/[\s;,]+/).filter(t => t.length > 0);
+		if (!tokens.some(isFileToken)) continue;
+		const problem = tokens.length === 1 ? pathFormProblem(ref, repoPath) : 'it holds a file reference beside other text';
+		if (problem !== undefined) {
+			details.push(`citation ${c.id} (${c.kind}) ref '${c.ref}': ${problem}; use a code or doc citation with the path alone as ref and any prose as quotedText`);
+		}
+	}
+	if (details.length > 0) {
+		return { ok: false, kind: 'paths', message: 'file references are not written in the required form', details };
+	}
+	return { ok: true };
+}
+
 /** The `dataModelChanges[].callSites` of an LLD body; empty for any other body. */
 function callSitesOf(body: unknown): readonly string[] {
 	const changes = (body as { dataModelChanges?: unknown } | null | undefined)?.dataModelChanges;

@@ -21,7 +21,7 @@ import { singleModelAttribution } from './attribution.js';
 import type { Party } from './review/party.js';
 import type { BoundaryFinding, ValidationResult } from './synthesizer.js';
 import type { Alternative } from './artifacts/hld.js';
-import { renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
+import { checkNonPathCitationRefs, renderCitationBlock, validateBodyAndCitations } from './synthesizer.js';
 import {
 	isCitationArray,
 	isStubArtifact,
@@ -2128,13 +2128,14 @@ function applyStepAlternatives(
 	stepOutputs: Readonly<Record<string, unknown>>,
 ): { ok: true; value: readonly Alternative[] } | { ok: false; failure: ValidationResult } {
 	const fields = 'id, name, oneLineSummary, approach, pros, cons and costEstimate';
-	const source = (stepOutputs['s2'] as { alternatives?: unknown } | undefined)?.alternatives;
-	if (source === undefined) {
+	const step = stepOutputs['s2'] as { alternatives?: unknown } | null | undefined;
+	if (step === undefined) {
 		const incomplete = submitted.filter(a => !isAlternative(a)).map(a => (a as { id?: unknown } | null)?.id ?? '(no id)');
 		if (incomplete.length === 0) return { ok: true, value: submitted };
 		return { ok: false, failure: schemaFailure(`alternativesConsidered entries ${incomplete.join(', ')} are incomplete: each needs ${fields}`) };
 	}
 
+	const source = step?.alternatives;
 	const restart = 'Restart design.story: resubmitting cannot correct the alternatives step.';
 	if (!Array.isArray(source) || !source.every(isAlternative)) {
 		return { ok: false, failure: { ok: false, kind: 'schema', retryable: false, message: `the alternatives step output is malformed: each alternative needs ${fields}. ${restart}` } };
@@ -2205,6 +2206,10 @@ async function finalizeDesignStory(
 			return { ok: false, failure: boundaryHardFailure(`s8 scope-boundary hard-fail on: ${items}`, boundaryFindings(failed)) };
 		}
 	}
+
+	// ISSUE-36cbeeac485c0af7: an LLD's citations meet the file-reference rule whatever kind they carry.
+	const citationRefs = checkNonPathCitationRefs(citations, intent.repoPath);
+	if (!citationRefs.ok) return { ok: false, failure: citationRefs };
 
 	// ISSUE-36cbeeac485c0af7: both paths store the alternatives step's content, not the author's copy.
 	const alternatives = applyStepAlternatives(rawBody.alternativesConsidered, stepOutputs);

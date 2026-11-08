@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 25,
-        "contentHash": "299faae89058ad60b71749a5a76fd8033f6b7cc1f18ee64945b90adffa754964",
-        "at": "2026-11-08T08:17:29.847Z",
+        "number": 26,
+        "contentHash": "b951ef98f1e2df85d85c675280ccfe8fda5077ac09a6dde21dba02119bbc62aa",
+        "at": "2026-11-08T08:21:58.870Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T08:17:29.726Z",
+    "updatedAt": "2026-11-08T08:21:58.741Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 25
+    "revision": 26
   },
   "body": {
     "tasks": [
@@ -702,8 +702,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "effcfa7f3",
-        "ranAt": "2026-11-08T06:50:24.793Z",
+        "commit": "984a8f448",
+        "ranAt": "2026-11-08T08:21:58.741Z",
         "testsPassed": true,
         "tests": [
           {
@@ -711,6 +711,11 @@
             "level": "integration",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
               {
                 "file": "src/mcp/__tests__/design-review.test.ts",
                 "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
@@ -727,13 +732,8 @@
                 "result": "pass"
               },
               {
-                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
-                "result": "pass"
-              },
-              {
-                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
                 "result": "pass"
               }
             ],
@@ -750,6 +750,11 @@
                 "result": "pass"
               },
               {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
+                "result": "pass"
+              },
+              {
                 "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
                 "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
                 "result": "pass"
@@ -761,11 +766,6 @@
               },
               {
                 "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
-                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
-                "result": "pass"
-              },
-              {
-                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
                 "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
                 "result": "pass"
               }
@@ -773,7 +773,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance."
+              "evidence": "Compiled qualification is now default, not an environment assumption: host and stdio in src/mcp/__tests__/design-review.test.ts default compiled=true for every normal scenario. Current code-review smoke loads compiled CliProvider, coordinator and checkpoint modules and calls serve(...,true), which loads compiled daemon RPC/server and registers compiled Git tools. /tmp/s4-compiled-default-qualification.log: 9/9 pass. Recovery, retry exhaustion, connection authority, selective impact, publication failure/model-free retry/replay, mutation invalidation, approval refusal/override retention, successful cleanup and fresh history all exercised compiled. Exact correction snapshot 984a8f448 built successfully in isolated /tmp/insrc-s4-qualification-ce7b891ca; /tmp/s4-isolated-final-build.log. Earlier isolated all-focused 145/145 /tmp/s4-isolated-corrections-regression.log. Current IDE evidence retained: /tmp/s4-t8-ide-readers.log 4/4, /tmp/s4-jetbrains-parser-qualification.log PASS for unchanged production Kotlin parser/DTO extraction and source hashes; whole-plugin JVM build remains blocked by unrelated baseline Saved constructor issue. Synthetic fixture outputs only; live DEF qualification remains separately recorded under t9."
             }
           }
         ],
@@ -782,7 +782,7 @@
             "file": "src/mcp/__tests__/design-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 16614,
+            "durationMs": 18015,
             "titles": [
               {
                 "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
@@ -807,6 +807,10 @@
               {
                 "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
                 "result": "pass"
+              },
+              {
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -815,7 +819,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2626,
+            "durationMs": 3146,
             "titles": [
               {
                 "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
@@ -829,31 +833,10 @@
             "otherFailures": []
           },
           {
-            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 1150,
-            "titles": [
-              {
-                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
-                "result": "pass"
-              },
-              {
-                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
-                "result": "pass"
-              },
-              {
-                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
             "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 818,
+            "durationMs": 782,
             "titles": [
               {
                 "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",

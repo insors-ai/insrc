@@ -192,37 +192,36 @@ Run at 2026-11-08T08:17:29.726Z on commit `ce7b891ca`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-08T06:50:24.793Z on commit `effcfa7f3`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
+Run at 2026-11-08T08:21:58.741Z on commit `984a8f448`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: I7 both-party recovery/impact/provenance fixture parity**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
+| pass | normal stdio MCP and Unix IPC preserve native background work and controller connection authority | `src/mcp/__tests__/design-review.test.ts` |
 | pass | normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress | `src/mcp/__tests__/design-review.test.ts` |
 | pass | normal stdio controller failure and explicit recovery retain actual connection authority and generations | `src/mcp/__tests__/design-review.test.ts` |
 | pass | normal impact schema and IPC routing preserve authority and fresh-only coverage progress | `src/mcp/__tests__/design-review.test.ts` |
-| pass | native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
-| pass | controller impact uses the same schema and validator with fenced exchange and durable exact replay | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
+| pass | compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback | `src/mcp/__tests__/design-review.test.ts` |
 
 **smoke: S1 compiled normal routes and code-review regression**
 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart | `src/mcp/__tests__/design-review.test.ts` |
+| pass | compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback | `src/mcp/__tests__/design-review.test.ts` |
 | pass | native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
 | pass | both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
-| pass | versioned readers preserve legacy shape and expose real chunk feedback through current common fields | `src/workflow/review/design-review/__tests__/readers.test.ts` |
 | pass | shared current IDE wire fixture preserves common fields and versioned chunk data | `src/workflow/review/design-review/__tests__/readers.test.ts` |
 
-Reported by the builder, not run by the gate: **pass**. Evidence: Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance.
+Reported by the builder, not run by the gate: **pass**. Evidence: Compiled qualification is now default, not an environment assumption: host and stdio in src/mcp/__tests__/design-review.test.ts default compiled=true for every normal scenario. Current code-review smoke loads compiled CliProvider, coordinator and checkpoint modules and calls serve(...,true), which loads compiled daemon RPC/server and registers compiled Git tools. /tmp/s4-compiled-default-qualification.log: 9/9 pass. Recovery, retry exhaustion, connection authority, selective impact, publication failure/model-free retry/replay, mutation invalidation, approval refusal/override retention, successful cleanup and fresh history all exercised compiled. Exact correction snapshot 984a8f448 built successfully in isolated /tmp/insrc-s4-qualification-ce7b891ca; /tmp/s4-isolated-final-build.log. Earlier isolated all-focused 145/145 /tmp/s4-isolated-corrections-regression.log. Current IDE evidence retained: /tmp/s4-t8-ide-readers.log 4/4, /tmp/s4-jetbrains-parser-qualification.log PASS for unchanged production Kotlin parser/DTO extraction and source hashes; whole-plugin JVM build remains blocked by unrelated baseline Saved constructor issue. Synthetic fixture outputs only; live DEF qualification remains separately recorded under t9.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/design-review.test.ts` | 0 | 6 | 16.6 s |  |
-| `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 2.6 s |  |
-| `src/workflow/review/design-review/__tests__/impact-execution.test.ts` | 0 | 3 | 1.2 s |  |
+| `src/mcp/__tests__/design-review.test.ts` | 0 | 7 | 18 s |  |
+| `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 3.1 s |  |
 | `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 4 | 0.8 s |  |
 
 ## t9

@@ -5562,10 +5562,6 @@
         ],
         [
           "storage-call",
-          "declareLiveStoreOwner"
-        ],
-        [
-          "storage-call",
           "getDb"
         ],
         [
@@ -5601,9 +5597,9 @@
           "process.stderr.write"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "bb6c700f491007e2f3508b341883ac7147184ccf1fa08bcfeb386ab9a442db9e",
-      "sourceDigest": "3d31e1c57dbb21cd59ed2840c7579cceaaa81fb36d9705a8aaf31ae462e1286f",
+      "siteCount": 11,
+      "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
+      "sourceDigest": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -10296,6 +10292,14 @@
           "Buffer.alloc"
         ],
         [
+          "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "serialization",
           "JSON.stringify"
         ],
@@ -10340,9 +10344,9 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "7d91211dab89e64ab72fc4fd256311c3a2b449245b44bd8035f736f97f173e6b",
-      "sourceDigest": "56f0e0e8c4a320074def5df001dc6321cbfbb37af2038e64b1615447672b382a",
+      "siteCount": 14,
+      "sitesDigest": "87e6a8a928830248255647c256c5e936d6dcf7a45a38182d5dd0a0a52f386d37",
+      "sourceDigest": "db7a68fe20241c990fa308f108f9e46216378bab8f54d9e45d6463626633be0a",
       "boundaries": [
         "acquisition:acquire-call",
         "filesystem-read",
@@ -39993,7 +39997,7 @@
     "analyze/summariser/driver.ts": "d46a2c537fce57dc4546a0380f3a4eb13e3071dcf09679b343a733ca4d725b84",
     "analyze/summariser/family.ts": "5bd7a4de6faba51d519dcd3c03d8df73b47321d4a6065d660b3dc607ab418149",
     "analyze/summariser/index.ts": "64d705ff9624161e5184ced474717cc0d38812d4615e7f2e3046d5e9a102ba4e",
-    "bin/insrc-connection-maintenance.ts": "3d31e1c57dbb21cd59ed2840c7579cceaaa81fb36d9705a8aaf31ae462e1286f",
+    "bin/insrc-connection-maintenance.ts": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
     "bin/insrc-connection-test.ts": "e31f4102b1e7c6fd06660c52e95b63b4542f71faa440060c7714297b3134d48f",
     "bin/insrc-mcp.ts": "de46d3551f706df33c3c02b716e4174dd54c549dc20fb5011718fc0843e342ad",
     "bin/insrc-migrate-docs.ts": "be192586379b78e84129ed847ad0a34db26c0dab5fe6211855b367ee059fe105",
@@ -40121,7 +40125,7 @@
     "daemon/db/lease-gate.ts": "74265ef3b19c7aa978c8c57089b7aeb1228604b23a2640d6dd10cb6a0bf68675",
     "daemon/db/list-files.ts": "baa0d798e2b3d99e625422119c97239abb97cad1f8e2b75b9e6daf06182c64f0",
     "daemon/db/managed-store.ts": "fa525ca1a21a571b62bb9ba7855f11a39419ef208d4d240599b102491b6f9516",
-    "daemon/db/management-adoption.ts": "56f0e0e8c4a320074def5df001dc6321cbfbb37af2038e64b1615447672b382a",
+    "daemon/db/management-adoption.ts": "db7a68fe20241c990fa308f108f9e46216378bab8f54d9e45d6463626633be0a",
     "daemon/db/management-enablement.ts": "89d2b93ef8aa3995c7f2dbc78a4d6b82e277268a8c8bdffc1fa404eff4f2db2d",
     "daemon/db/management-files.ts": "8bf64632c001f762b51dc8fec37c5e1068b6e5dfcf1f0a4520ada729407ab1f1",
     "daemon/db/management-owner-lease.ts": "731ae0937e74881578655bdb9d5441cf31e4f9c2cb28d0290d604d13cc687d8e",

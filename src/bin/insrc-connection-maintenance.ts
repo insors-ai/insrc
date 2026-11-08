@@ -3,7 +3,7 @@
 import { lstat } from 'node:fs/promises';
 import { PATHS } from '../shared/paths.js';
 import { readProtected } from '../daemon/db/management-files.js';
-import { adoptManagedRoot } from '../daemon/db/management-adoption.js';
+import { adoptManagedRoot, claimLiveStoreForMaintenance } from '../daemon/db/management-adoption.js';
 import type { StoppedDaemonEvidence } from '../daemon/db/management-state.js';
 import { connectionManagementEnablement } from '../daemon/db/management-enablement.js';
 import { credentialKeystore } from '../daemon/db/secrets.js';
@@ -34,9 +34,8 @@ async function adopt(root: string, proofPath: string) {
 		}
 	}
 	const proof = JSON.parse((await readProtected(proofPath)).bytes.toString('utf8')) as StoppedDaemonEvidence;
-	const { getDb } = await import('../db/client.js'), { listRepos } = await import('../db/repos.js'), { closeGraphStore, declareLiveStoreOwner } = await import('../db/graph/store.js');
-	// No daemon is running, checked above under the guard, so this process owns the store for now.
-	declareLiveStoreOwner();
+	const { getDb } = await import('../db/client.js'), { listRepos } = await import('../db/repos.js'), { closeGraphStore } = await import('../db/graph/store.js');
+	await claimLiveStoreForMaintenance();
 	try {
 		const db = await getDb();
 		await adoptManagedRoot(root, { stopped: proof, keystore: credentialKeystore, enablement: connectionManagementEnablement, isRegistered: async (candidate) => (await listRepos(db)).some(repo => repo.path === candidate) });

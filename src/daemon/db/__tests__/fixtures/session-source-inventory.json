@@ -6504,10 +6504,6 @@
         ],
         [
           "storage-call",
-          "declareLiveStoreOwner"
-        ],
-        [
-          "storage-call",
           "getDb"
         ],
         [
@@ -6543,9 +6539,9 @@
           "process.stderr.write"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "bb6c700f491007e2f3508b341883ac7147184ccf1fa08bcfeb386ab9a442db9e",
-      "sourceDigest": "3d31e1c57dbb21cd59ed2840c7579cceaaa81fb36d9705a8aaf31ae462e1286f",
+      "siteCount": 11,
+      "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
+      "sourceDigest": "32895c82bb7d5cf1dbfbd5ad82de2918173b190fc18b05d6841fbbb1d457c97f",
       "boundaries": [
         "diagnostic",
         "filesystem-read",
@@ -10881,6 +10877,14 @@
           "Buffer.alloc"
         ],
         [
+          "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "serialization",
           "JSON.stringify"
         ],
@@ -10925,9 +10929,16 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 12,
-      "sitesDigest": "7d91211dab89e64ab72fc4fd256311c3a2b449245b44bd8035f736f97f173e6b",
-      "sourceDigest": "56f0e0e8c4a320074def5df001dc6321cbfbb37af2038e64b1615447672b382a"
+      "siteCount": 14,
+      "sitesDigest": "87e6a8a928830248255647c256c5e936d6dcf7a45a38182d5dd0a0a52f386d37",
+      "sourceDigest": "db7a68fe20241c990fa308f108f9e46216378bab8f54d9e45d6463626633be0a",
+      "boundaries": [
+        "acquisition:acquire-call",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/db/management-defaults.ts": {
       "classification": "default-managed-root-owner",

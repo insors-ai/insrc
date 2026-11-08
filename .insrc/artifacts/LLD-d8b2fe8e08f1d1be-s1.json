@@ -1,0 +1,980 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794119119166-t2qxd2",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:25:21.241Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 1664,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "epicSlug": "allow-independent-turns-concurrent-vs-code",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794119119166-t2qxd2",
+    "hldEffectiveHash": "93b55be1c2690325bbb4a2ab64500590c1e02b71b3c1875f15e6fe1e6e8f0ada",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 4,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 4,
+        "contentHash": "e5551e3dea5950a1de1727b2de8518f78df2947c06d57b339104ef74480fa31e",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 4,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:38:29.036Z",
+        "override": {
+          "reason": "User explicitly authorized skipping companion visual verification if no functional items remained, then authorized this correction/review cycle. Independent daemon review concurrent-chat-d8b2fe8e attempt 4 freshly assessed all 38 units and identified no functional defect. The queue and runtime source assessments confirm the earlier corrections, including positive departure proof through resume, Stop, observer progress and fenced recovery. Browser access prevented actual rendering checks of the ER diagram, sequence diagram and UX mock. The incomplete report carries seven historical finding records due to that mandatory visual verification gap. Override is limited to the visual verification/publication gap and does not waive functional findings."
+        }
+      }
+    },
+    "rangeBase": "6be43781d298b9f5b2986507e449c9ae5e244a09"
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Run two chats in the same repository independently, including when one waits for an approval. Switching back restores the running chat’s progress and elapsed time. The queue still preserves message order within each chat and keeps Stop and decisions scoped to that chat. This standalone design follows approved ISSUE-d8b2fe8e08f1d1be. The header’s Epic and HLD fields are generated workflow identifiers."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Allow independent turns in concurrent VS Code chats"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "createChatQueueStore",
+          "signature": "createChatQueueStore(deps: ChatQueueStoreDeps): ChatQueueStore & ChatQueueLeases",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ChatQueueStoreDeps",
+              "purpose": "Existing repository database and clock",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatQueueStore & ChatQueueLeases",
+            "meaning": "Atomic eligible-session admission and fenced per-session ownership"
+          },
+          "errors": [
+            {
+              "type": "StoreUnavailable",
+              "condition": "Newer schema or unsafe/inconsistent legacy state"
+            }
+          ],
+          "preconditions": [
+            "All windows sharing this database must run a compatible plugin before the schema changes."
+          ],
+          "postconditions": [
+            "Acknowledgement atomically leases the oldest due head eligible for its window and marks it processing, preserving attempts. At most one active lease per session and two per repository. An ineligible head in another session does not block an eligible session.",
+            "Heartbeat, spawn registration, waiting update, finish, transfer, and release compare session, sequence and owner epoch in the same transaction. Completion and lease release are atomic."
+          ]
+        },
+        {
+          "name": "createChatQueueWorker",
+          "signature": "createChatQueueWorker(deps: ChatQueueWorkerDeps): ChatQueueWorker",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ChatQueueWorkerDeps",
+              "purpose": "Existing store, runner and window identity",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatQueueWorker",
+            "meaning": "Schedules eligible session heads and observes each lease independently"
+          },
+          "errors": [
+            {
+              "type": "StoreBusy",
+              "condition": "Another writer holds the SQLite write transaction beyond its timeout"
+            }
+          ],
+          "preconditions": [
+            "Worker owns its window presence and starts only messages for that window."
+          ],
+          "postconditions": [
+            "Pending retry, missing owner, waiting input and detached recovery are evaluated per session. A waiting or detached live lease consumes its slot until verified ended or safely transferred.",
+            "Order eligible heads by sequence. A same-session older queued or retrying row blocks younger rows for that session, including across windows. Future retries and closed-window heads do not block other sessions."
+          ]
+        },
+        {
+          "name": "createChatPanelHost",
+          "signature": "createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "ChatPanelHostDeps",
+              "purpose": "Existing provider, store, view and runtime seams",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ChatPanelHost",
+            "meaning": "Routes each session runtime to the selected webview"
+          },
+          "errors": [
+            {
+              "type": "stale-session-action",
+              "condition": "The action’s session, active turn or request identity is stale"
+            }
+          ],
+          "preconditions": [
+            "Session locks remain the final guard against duplicate CLI execution."
+          ],
+          "postconditions": [
+            "Selection changes only which session renders. Stop, permission, selection, transcript and diff operations target the intended session or turn. Background completion cannot reset the current chat.",
+            "Restore sends current progress with the transcript. Subsequent updates are keyed by session and turn and rejected when stale."
+          ]
+        },
+        {
+          "name": "ChatQueueStore",
+          "signature": "head(windowKey: string, now: number): QueuedMessage | undefined; acknowledge(seq: number, claim: LeaseClaim): LeaseToken | undefined; finish(token: LeaseToken, outcome: TurnOutcome): FinishResult; markWaiting(token: LeaseToken, on: WaitingOn): boolean; markNotDeliveredIfHead(seq: number): boolean",
+          "parameters": [
+            {
+              "name": "token",
+              "type": "LeaseToken",
+              "purpose": "Original sessionId, seq and owner epoch returned by admission or reclaim",
+              "optional": false
+            },
+            {
+              "name": "claim",
+              "type": "LeaseClaim",
+              "purpose": "Originating window and verified process identity",
+              "optional": false
+            },
+            {
+              "name": "outcome",
+              "type": "TurnOutcome",
+              "purpose": "Existing classified result",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Typed internal contract",
+            "meaning": "Acknowledgement returns immutable ownership; finish returns {kind:'applied', row?:QueuedMessage} or {kind:'stale'}."
+          },
+          "errors": [
+            {
+              "type": "StoreBusy",
+              "condition": "SQLite write transaction times out"
+            }
+          ],
+          "preconditions": [
+            "Queue stores phase eligibility and ownership in the repository transaction."
+          ],
+          "postconditions": [
+            "Admission rechecks due time, session FIFO, window, capacity and active session lease in the write transaction. Expired presence alone is insufficient to mark not delivered.",
+            "Preserve attempts on acknowledgement. Increment only when finish schedules an existing eligible pre-action infrastructure retry, using the prior count for 10s, 60s, 300s delays. Retry-now preserves attempts. Finish transitions the row and releases the matching lease atomically.",
+            "Every callback retains its original token. A stale finish is a no-op and is never retried using a fresh lease."
+          ]
+        },
+        {
+          "name": "ChatQueueLeases",
+          "signature": "lease(sessionId: string): RepoLease | undefined; leases(): readonly RepoLease[]; heartbeat(token: LeaseToken): boolean; attachCli(token: LeaseToken, cli: CliIdentity): boolean; reclaim(expected: LeaseToken, owner: LeaseClaim, proof: OwnerExitProof): LeaseToken | undefined; takeOver(expected: LeaseToken, owner: LeaseClaim, proof: TurnExitProof): boolean",
+          "parameters": [
+            {
+              "name": "expected",
+              "type": "LeaseToken",
+              "purpose": "Lease observed before checking liveness",
+              "optional": false
+            },
+            {
+              "name": "owner",
+              "type": "LeaseClaim",
+              "purpose": "Replacing window and verified process identity",
+              "optional": false
+            },
+            {
+              "name": "proof",
+              "type": "OwnerExitProof | TurnExitProof",
+              "purpose": "Typed positive evidence of the recorded writer’s departure, plus positive evidence for the CLI when terminal recovery requires it",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Typed internal contract",
+            "meaning": "Recovery returns a new token for a positively departed writer, or false/undefined for stale or unverified ownership."
+          },
+          "errors": [
+            {
+              "type": "StoreBusy",
+              "condition": "SQLite contention prevents a fenced transition"
+            }
+          ],
+          "preconditions": [
+            "Detached live CLI occupies capacity. A missing CLI identity is unresolved until session-lock and output evidence exclude a live child."
+          ],
+          "postconditions": [
+            "Compare original token under transaction before any mutation. Admission and reclaim mint a new unique epoch. Same-window live CLI reclaim follows existing lease grace and liveness rules. Other dead-window recovery finalizes only after both old writer and CLI are verified gone.",
+            "Remove standalone release from normal worker callbacks. A matching terminal transaction releases its own lease, and unknown liveness retains the slot.",
+            "The process probe used by queue setup and worker returns a tagged observation: present with verified start time, absent with a definitive OS no-process result, or unknown for permission errors, timeout or unreadable identity. A present PID with a known start time different from the recorded start time proves replacement. A present PID with the same start time, a missing recorded start time, or unavailable current start time cannot prove departure. Only definitive absence or verified replacement authorizes old-owner recovery. Unknown evidence retains the lease and defers migration. Recheck the observed lease token in the transaction after probing."
+          ]
+        },
+        {
+          "name": "WebviewToHost",
+          "signature": "type SessionActionTarget = { sessionId: string; turnId: string; viewGeneration: number }; type PendingDecisionTarget = SessionActionTarget & { requestId: string }",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "SessionActionTarget | PendingDecisionTarget",
+              "purpose": "Captured from the rendered control and carried unchanged with Stop, permission, selection or edit decisions",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Typed internal contract",
+            "meaning": "Resolve actions against the targeted session runtime and current view generation."
+          },
+          "errors": [
+            {
+              "type": "stale-session-action",
+              "condition": "View generation, session, turn or pending request no longer matches"
+            }
+          ],
+          "preconditions": [
+            "The host assigns a new view generation on session switch or reload and includes it in the restore frame."
+          ],
+          "postconditions": [
+            "Stop requires a matching current active turn. Approval and selection use session, origin turn and request ID to resolve an unresolved persisted request, including a request whose original turn ended before its continuation. A valid ended request cannot be applied to a different current turn. Edit decisions additionally carry the target path and reject an invalidated baseline.",
+            "A stale action never falls back to the selected session. Keep the existing action payload and add the identity fields, and reject missing or stale identity on newly rendered controls."
+          ]
+        },
+        {
+          "name": "HostToWebview",
+          "signature": "type SessionProjectionTarget = { sessionId: string; turnId?: string; viewGeneration: number }; type SessionProgress = { turnId: string; startedAt?: number; phase: ActivePhase; label?: string }",
+          "parameters": [
+            {
+              "name": "target",
+              "type": "SessionProjectionTarget",
+              "purpose": "Identity for progress, transcript, running, completion and diff projections",
+              "optional": false
+            },
+            {
+              "name": "progress",
+              "type": "SessionProgress | undefined",
+              "purpose": "Current active state in the same session-restored frame as the transcript",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Typed internal contract",
+            "meaning": "Restore provides a single coherent selection snapshot and ongoing events for the same view."
+          },
+          "errors": [
+            {
+              "type": "stale-projection",
+              "condition": "Event belongs to a previous view generation, session or superseded turn"
+            }
+          ],
+          "preconditions": [
+            "Per-session persistence happens before any view delivery."
+          ],
+          "postconditions": [
+            "The webview accepts session-restored only for the latest generation. A later terminal for another turn cannot clear the selected chat. Transcript row projections include owning turn when there is one. Filter active turn projections by turn identity and display snapshot with original elapsed time, or no elapsed time if unknown."
+          ]
+        },
+        {
+          "name": "projectOutbox",
+          "signature": "projectOutbox(rows: readonly QueuedMessage[], sessionId: string, ctx: OutboxContext): OutboxView",
+          "parameters": [
+            {
+              "name": "rows",
+              "type": "readonly QueuedMessage[]",
+              "purpose": "Durable rows in seq order",
+              "optional": false
+            },
+            {
+              "name": "sessionId",
+              "type": "string",
+              "purpose": "Visible chat",
+              "optional": false
+            },
+            {
+              "name": "ctx",
+              "type": "OutboxContext",
+              "purpose": "Consistent queue eligibility snapshot with time, lease occupancy and owner availability",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Typed internal contract",
+            "meaning": "Session rows with a typed wait reason, plus running-session summaries and repository slot usage."
+          },
+          "errors": [
+            {
+              "type": "stale-snapshot",
+              "condition": "Queue state changes between projection and click"
+            }
+          ],
+          "preconditions": [
+            "Use the same eligibility predicate and snapshot as store admission. Outbox actions still revalidate the row in its transaction."
+          ],
+          "postconditions": [
+            "Replace global 'runs next' position, aheadFromOtherChats, singleton runningChat and blockedBy with per-session position, activeTurns, capacity and optional waitReason. Render no block reason for an eligible row with free capacity.",
+            "Wait reason precedence for a waiting row: earlier same-session message or active same-session lease, retry delay, unavailable originating window, then repository capacity. A processing row displays its own wait state. Only report another chat waiting as a capacity contributor when slots are full. Idle drafts without a queued row show no blocked message."
+          ]
+        },
+        {
+          "name": "StreamAdapter",
+          "signature": "resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent>; TurnProcess.stopVerified(): Promise<boolean>",
+          "parameters": [
+            {
+              "name": "req",
+              "type": "ResumeRequest",
+              "purpose": "Persisted cursor, PID and recorded process start time for this turn",
+              "optional": false
+            },
+            {
+              "name": "opts",
+              "type": "ResumeOptions",
+              "purpose": "Existing attach, checkpoint, drain and abort hooks",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "AsyncIterable<TurnEvent> / Promise<boolean>",
+            "meaning": "Resumed output events and a positive Stop result only when process exit is verified."
+          },
+          "errors": [
+            {
+              "type": "observation-failed",
+              "condition": "Output cannot establish completion and process identity is unknown"
+            }
+          ],
+          "preconditions": [
+            "Queue, adapter, foreground follower and detached observer use the same tagged process observation. A missing PID or missing current or recorded start time for a present PID yields unknown identity. A definitive no-process result or a verified PID reuse proves the recorded process departed."
+          ],
+          "postconditions": [
+            "Use positive departure proof for the resumed handle’s exit promise and for the tail reader’s finished predicate. Unknown identity keeps the tail eligible to receive real output. Abort or follower teardown releases polling resources without resolving process exit. No synthetic terminal or verified exit follows an unknown observation.",
+            "Real provider terminal output completes the matching logical turn after the existing drain contract. If the tail closes without terminal evidence and process departure is unverified, emit an observationFailure event. A bare segment end or transport error does not prove process exit. Keep the existing cursor, pin, pending decisions, lease, original start time and last progress. Schedule re-observation through existing bounded retry paths.",
+            "A resumed handle signals only the positively matched recorded process using the existing guarded signal path. For unknown identity, Stop sends no signal and returns unverified. A missing handle with retained live metadata also returns unverified. Neither a no-op signal, a follower abort, nor an observation failure can fulfill stopVerified. A later positive exit proof or trusted child exit can certify the stop.",
+            "Stop stays scoped to the requested session and turn. On unverified Stop, show that exit could not be confirmed, keep the session active with its last known progress and reattach observation. Resume and observer projection treat observationFailure as nonterminal. Queue capacity changes only on a matching verified terminal transition or fenced departure recovery."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "Repository queue lease",
+        "change": "invariant-change",
+        "details": "Repository database owns zero to two live leases. Each lease belongs to exactly one session and references exactly one processing message by seq; unique session_id and seq. A unique opaque owner epoch fences stale writes. Window key and PID/start time retain ownership provenance. Detached running CLI retains its slot. Only verified terminal state or verified death allows release or an explicit fenced recovery.",
+        "schemaDiff": "Replace singleton lease id=1 with session_id primary key and unique message seq; add owner epoch and session/sequence index for message eligibility. Bump queue schema from 2 to 3.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-queue-store.ts",
+          "vscode-plugin/src/chat/chat-queue-worker.ts"
+        ]
+      },
+      {
+        "entity": "QueuedMessage",
+        "change": "invariant-change",
+        "details": "One repository owns many queued rows; each row belongs to exactly one session and originating window. Rows and sequence survive migration. A session owns many messages ordered by seq, with at most one processing row. Retry and resends preserve existing idempotency and retain the originating session.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-queue-store.ts",
+          "vscode-plugin/src/chat/chat-queue-worker.ts"
+        ]
+      },
+      {
+        "entity": "ChatSession progress",
+        "change": "field-add",
+        "details": "Each session may own one current turn progress snapshot: turn ID, turn epoch, start timestamp, phase (starting, working, waiting approval or choice), optional latest safe status label. Persist transitions with the owning live-turn checkpoint, coalesce repeated identical updates, and do not append progress to transcript. Clear only on verified terminal or Stop completion for the same turn. Idle is derived when no active turn exists. Legacy missing snapshot derives a running or waiting state from verified live metadata and pending requests; omit elapsed time when the start timestamp is unknown.",
+        "callSites": [
+          "vscode-plugin/src/chat/session-store.ts",
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/turn-lifecycle.ts"
+        ]
+      },
+      {
+        "entity": "Host session runtime",
+        "change": "invariant-change",
+        "details": "Each session owns one runtime containing its current queued run, lifecycle, approval/choice state, diff scope and progress. Reuse existing runtime contracts; reclaim only when no live turn, pending request, or follow remains. A selected-view generation gates projection and never owns execution. In queue-disabled test seams maintain existing single-session behavior.",
+        "callSites": [
+          "vscode-plugin/src/chat/chat-panel.ts",
+          "vscode-plugin/src/chat/turn-lifecycle.ts"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Queue ownership changes during a callback",
+          "detection": "Atomic update matches no row for the expected session, sequence and owner epoch.",
+          "response": "Drop the stale callback and stop the obsolete observer. Preserve the replacement lease and its progress.",
+          "userImpact": "A reloaded window resumes its own session without duplicating work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "SQLite contention or interrupted upgrade",
+          "detection": "Existing SQLite busy error or failed schema transaction.",
+          "response": "Retry contention through existing queue backoff. Roll back upgrade atomically and report invalid rows without dropping messages.",
+          "userImpact": "Messages remain recoverable and the store can reopen after the contention resolves.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Old client still attached during migration",
+          "detection": "A current or legacy extension host has a live presence or queue lease owner. An unconfirmed identity is treated as live.",
+          "response": "Defer migration until old windows are closed or reloaded and their queue owners are positively gone. A still-live detached CLI is adopted as an occupied slot, only after its old writer is gone.",
+          "userImpact": "The upgrade waits for a safe cutover and retains queued and detached work.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Progress observer loses output while CLI is live",
+          "detection": "Existing lifecycle classifies the failure as observation-failed with no verified terminal.",
+          "response": "Retain last known progress and the lease. Reattach using existing cursor recovery.",
+          "userImpact": "The bar continues to show the last known activity during recovery.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Concurrent turns can affect the same worktree path",
+          "detection": "A repository has overlapping active turns or another turn/external edit has invalidated a rollback baseline.",
+          "response": "Scope diff ownership and follow-up to the originating turn. Fail closed for automated reject/revert for any baseline exposed to parallel work unless exclusive path ownership and unchanged after-image are verifiable. Offer manual diff inspection.",
+          "userImpact": "Chats share the working tree. Automatic undo may be unavailable for overlapping edits, so another chat’s changes are preserved.",
+          "recoverable": true
+        },
+        {
+          "scenario": "PID is present but its start time cannot be read",
+          "detection": "Queue setup receives an unknown process observation instead of a verified identity. The existing boolean helper can return false for this case.",
+          "response": "Keep capacity occupied. Use a definitive no-process result or a verified mismatch of recorded and observed start times to form departure proof. Do not convert an unknown observation into a recovery proof.",
+          "userImpact": "The affected chat keeps its queue slot until its process state can be verified.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A resumed live PID’s current start time is unreadable",
+          "detection": "The shared process observation reports unknown while the recorded cursor has no valid terminal event.",
+          "response": "Preserve liveTurn, decoder/cursor checkpoint, output retention, progress and queue ownership. Resume may still consume genuine terminal output. A Stop request without positive process identity returns unverified and resumes observation without sending a signal. Only definitive absence, confirmed PID reuse or a trusted child exit may prove process exit.",
+          "userImpact": "The chat shows its last known progress and an unverified Stop result until the turn genuinely completes or its exit can be confirmed.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A awaits a choice while B and C submit.",
+          "expected": "B uses the second slot. C waits for capacity. The outbox explains actual capacity or same-chat ordering."
+        },
+        {
+          "input": "Switch A to B to A during a quiet interval.",
+          "expected": "A immediately shows its last active phase and original elapsed time without requiring another provider event."
+        },
+        {
+          "input": "Terminal callback arrives from A while B is selected.",
+          "expected": "Only A’s runtime and status complete. B’s progress, Stop control and pending cards stay intact."
+        },
+        {
+          "input": "A legacy live session lacks a start time.",
+          "expected": "Render a verified active or waiting phase immediately, with elapsed time absent until a known start is available."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "At most one CLI per chat across windows, and never replay a turn merely because a view switched.",
+          "source": "c3"
+        },
+        {
+          "text": "Unresolved approval and selection requests remain actionable through their existing owning turn.",
+          "source": "c4"
+        },
+        {
+          "text": "Process identity checks, detached observation and output cursor retention continue to guard recovery.",
+          "source": "c3"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "integration",
+          "purpose": "Prove durable queue scheduling and recovery with real SQLite and two owners.",
+          "subjects": [
+            "Queue admits A and B while preserving FIFO in each session and capacity two across windows.",
+            "A waiting on input or retry does not block B when a slot is available.",
+            "Fenced finish, heartbeat, transfer and terminal handling cannot touch a newer lease.",
+            "Version 2 SQLite upgrade preserves pending messages and an orphaned live lease; concurrent old owner defers upgrade; interrupted transaction rolls back.",
+            "First claim preserves attempts and pre-action failures retry after 10s, 60s and 300s before exhausting the original budget.",
+            "Confirmed absent or replaced PID permits fenced recovery, while a missing start time, permission error or unknown process observation retains the lease and defers migration."
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Execute the panel script and host transport with independent turn streams.",
+          "subjects": [
+            "A → B → A shows the last progress and original elapsed time before the next event.",
+            "Late A events, Stop, approval and choice stay scoped to A when B is selected.",
+            "Reload during a detached turn restores progress and the original start time.",
+            "Parallel edit rollback refuses when the baseline is exposed to another turn.",
+            "Delayed Stop and repeated request IDs are fenced by session, view generation and originating turn. An ended request remains actionable only while its own continuation is pending.",
+            "Outbox reasons match admission for free capacity, full capacity, same-chat FIFO, future retry and unavailable owner.",
+            "Reload a running session with a live PID, recorded start time, unreadable current identity and no terminal output. Restore active progress and controls, retain the lease and cursor, and reject Stop without signaling or certifying exit. Switching to B still uses the second slot. A later genuine terminal or verified departure releases only A’s lease."
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Confirm the visible two-chat flow in VS Code.",
+          "subjects": [
+            "Start A and B in the same repo, return to A while B progresses, and stop A without affecting B."
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Queue admits A and B while preserving FIFO in each session and capacity two across windows.",
+            "A waiting on input or retry does not block B when a slot is available.",
+            "Outbox reasons match admission for free capacity, full capacity, same-chat FIFO, future retry and unavailable owner."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "A → B → A shows the last progress and original elapsed time before the next event.",
+            "Reload during a detached turn restores progress and the original start time.",
+            "Reload a running session with a live PID, recorded start time, unreadable current identity and no terminal output. Restore active progress and controls, retain the lease and cursor, and reject Stop without signaling or certifying exit. Switching to B still uses the second slot. A later genuine terminal or verified departure releases only A’s lease."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Late A events, Stop, approval and choice stay scoped to A when B is selected.",
+            "Parallel edit rollback refuses when the baseline is exposed to another turn.",
+            "Delayed Stop and repeated request IDs are fenced by session, view generation and originating turn. An ended request remains actionable only while its own continuation is pending.",
+            "Reload a running session with a live PID, recorded start time, unreadable current identity and no terminal output. Restore active progress and controls, retain the lease and cursor, and reject Stop without signaling or certifying exit. Switching to B still uses the second slot. A later genuine terminal or verified departure releases only A’s lease."
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Fenced finish, heartbeat, transfer and terminal handling cannot touch a newer lease.",
+            "Version 2 SQLite upgrade preserves pending messages and an orphaned live lease; concurrent old owner defers upgrade; interrupted transaction rolls back.",
+            "First claim preserves attempts and pre-action failures retry after 10s, 60s and 300s before exhausting the original budget.",
+            "Confirmed absent or replaced PID permits fenced recovery, while a missing start time, permission error or unknown process observation retains the lease and defers migration.",
+            "Reload a running session with a live PID, recorded start time, unreadable current identity and no terminal output. Restore active progress and controls, retain the lease and cursor, and reject Stop without signaling or certifying exit. Switching to B still uses the second slot. A later genuine terminal or verified departure releases only A’s lease."
+          ]
+        }
+      ],
+      "testFramework": "Node test runner through tsx, existing fake clocks, fake webview DOM, fake providers and real temporary SQLite."
+    },
+    "migration": {
+      "stateBefore": "The s1 queue bundle identifies a single repository lease in the version 2 SQLite database. The s1 session bundle identifies optional persisted live-turn metadata, while progress status is transient in the selected webview.",
+      "stateAfter": "Version 3 queue retains message sequences, retry state, presence and any recoverable live CLI identity. Session heads may carry additive progress snapshots, and two different sessions may run at once.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Close or reload every window using the older extension. Confirm no live legacy database writer before attempting upgrade. Preserve a consistent offline SQLite backup including WAL state using the SQLite backup mechanism.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Within one write transaction validate existing rows, create session leases, translate any singleton lease through its processing message’s session ID and preserve owner/CLI identity, rebuild indexes, then set version 3. Inconsistent ownership aborts transaction.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Open compatible windows. Recover per-session leases with the existing process identity checks. Derive missing progress on first reattach and persist it only when its ownership is established.",
+          "rollbackable": false
+        }
+      ],
+      "backwardCompat": "Old windows are closed during cutover. An older extension reopening the database refuses the newer version. A failed upgrade leaves version 2 intact. An offline backup can restore version 2 before new writes. After any version 3 work is accepted, reverting to that backup would discard newer messages, so stop and reconcile that work before downgrade. Session heads tolerate absent progress and keep existing transcript fields.",
+      "zeroDowntime": false,
+      "dataRewriteRequired": true
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Shared queue with session leases",
+        "oneLineSummary": "Retain repository SQLite coordination and schedule independent session heads.",
+        "approach": "Replace the singleton lease with one fenced lease per session, cap concurrent leases per repository, and bind progress to each session and turn in the host.",
+        "pros": [
+          "Preserves one atomic coordination boundary across windows and existing queued records.",
+          "Supports independent progress while retaining FIFO within each chat."
+        ],
+        "cons": [
+          "Requires a transactional schema upgrade and removing singleton host assumptions."
+        ],
+        "costEstimate": "L"
+      },
+      {
+        "id": "a2",
+        "name": "Separate queue files per session",
+        "oneLineSummary": "Use the existing one-turn queue independently for each session.",
+        "approach": "Allocate each session a separate queue database and coordinate a shared admission limit and recovery across files. Keep session progress separate from foreground selection.",
+        "pros": [
+          "The single-chat queue state model remains familiar."
+        ],
+        "cons": [
+          "Splits atomic admission across files, complicates migration, discovery and repository-wide bounds."
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Introduces additional state stores and coordination for the same user-visible result."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "erDefinition": {
+      "narrative": "Read each association once from its owner. A repository contains messages and up to two active leases. Each chat owns ordered messages and at most one lease. Each lease belongs to exactly one chat and its one processing message.",
+      "classes": {
+        "RepositoryQueue": {
+          "description": "One SQLite queue per repository, with an initial capacity of two active turns.",
+          "attributes": {
+            "messages": {
+              "range": "QueuedMessage",
+              "multivalued": true,
+              "description": "Messages retained in queue sequence order.",
+              "minimum_cardinality": 0
+            },
+            "leases": {
+              "range": "SessionLease",
+              "multivalued": true,
+              "maximum_cardinality": 2,
+              "description": "Active leases bounded by repository capacity.",
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "ChatSession": {
+          "description": "Chat identity independent of the selected view or provider process.",
+          "attributes": {
+            "id": {
+              "range": "string",
+              "identifier": true,
+              "description": "Stable chat session identifier."
+            },
+            "messages": {
+              "range": "QueuedMessage",
+              "multivalued": true,
+              "description": "Messages retained in queue sequence order.",
+              "minimum_cardinality": 0
+            },
+            "lease": {
+              "range": "SessionLease",
+              "maximum_cardinality": 1,
+              "description": "Optional active lease for this session.",
+              "minimum_cardinality": 0
+            },
+            "progress": {
+              "range": "TurnProgress",
+              "maximum_cardinality": 1,
+              "description": "Optional current turn progress for the session.",
+              "minimum_cardinality": 0
+            }
+          }
+        },
+        "QueuedMessage": {
+          "description": "One durable turn request for one session, ordered by sequence.",
+          "attributes": {
+            "seq": {
+              "range": "integer",
+              "identifier": true,
+              "description": "Durable message sequence."
+            },
+            "lease": {
+              "range": "SessionLease",
+              "minimum_cardinality": 0,
+              "maximum_cardinality": 1,
+              "description": "A processing message owns one lease. Other queue states have no lease."
+            }
+          }
+        },
+        "SessionLease": {
+          "description": "One fenced ownership record for the session’s processing message.",
+          "attributes": {
+            "epoch": {
+              "range": "string",
+              "required": true,
+              "description": "Fencing token for the current lease owner."
+            }
+          }
+        },
+        "TurnProgress": {
+          "description": "Last known active phase and start time for the current turn.",
+          "attributes": {
+            "turnId": {
+              "range": "string",
+              "required": true,
+              "description": "Turn identifier associated with the progress."
+            },
+            "startedAt": {
+              "range": "integer",
+              "description": "Known start time used to restore elapsed time."
+            }
+          }
+        }
+      }
+    },
+    "sequenceDefinition": {
+      "narrative": "Two leases let B start while A is still active. Selecting A restores progress from its own runtime, and B completion stays scoped to B.",
+      "participants": [
+        {
+          "id": "ui",
+          "label": "VS Code chat view",
+          "description": "Projects only the selected chat."
+        },
+        {
+          "id": "host",
+          "label": "Chat host",
+          "description": "Keeps independent session runtimes and owns view selection."
+        },
+        {
+          "id": "store",
+          "label": "Repository queue",
+          "description": "Claims eligible heads and fences leases atomically."
+        },
+        {
+          "id": "a",
+          "label": "Session A",
+          "description": "Runs or waits for a decision under its own lease."
+        },
+        {
+          "id": "b",
+          "label": "Session B",
+          "description": "Runs independently in the second slot."
+        }
+      ],
+      "messages": [
+        {
+          "from": "a",
+          "to": "host",
+          "label": "Publish current phase",
+          "description": "Session A’s progress is saved under its turn identity."
+        },
+        {
+          "from": "ui",
+          "to": "host",
+          "label": "Submit in session B",
+          "description": "The view sends the selected session identity with its action."
+        },
+        {
+          "from": "host",
+          "to": "store",
+          "label": "Claim B’s eligible head",
+          "description": "The repository transaction checks capacity, FIFO and the absence of a B lease."
+        },
+        {
+          "from": "store",
+          "to": "host",
+          "label": "Return B lease",
+          "description": "A keeps its own lease even while waiting for input."
+        },
+        {
+          "from": "host",
+          "to": "b",
+          "label": "Start B’s turn",
+          "description": "B runs with its own runtime and ownership epoch."
+        },
+        {
+          "from": "ui",
+          "to": "host",
+          "label": "Select A",
+          "description": "Selection switches the view while both leases stay active."
+        },
+        {
+          "from": "host",
+          "to": "ui",
+          "label": "Restore A’s progress and transcript",
+          "description": "Render the current phase and elapsed time immediately without waiting for another provider event."
+        },
+        {
+          "from": "b",
+          "to": "host",
+          "label": "Receive B completion",
+          "description": "The terminal event releases only B’s matching lease and cannot reset A’s progress."
+        }
+      ]
+    },
+    "uxDefinition": {
+      "type": "AdaptiveCard",
+      "version": "1.5",
+      "narrative": "The existing progress area changes with the selected session. Returning to a running chat restores its previous phase and elapsed time, while Stop applies to the displayed session.",
+      "body": [
+        {
+          "type": "TextBlock",
+          "text": "Two chats in the same repository",
+          "description": "Illustrates the two existing views before and after switching.",
+          "wrap": true,
+          "weight": "bolder"
+        },
+        {
+          "type": "Container",
+          "description": "Session B selected while A awaits approval.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Chat B selected",
+              "description": "The active dropdown selects B.",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Working · 0:14",
+              "description": "B’s independent live phase and time.",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Stop B",
+              "description": "The existing Stop action targets B.",
+              "wrap": true
+            }
+          ]
+        },
+        {
+          "type": "Container",
+          "description": "Return to session A during the same turn.",
+          "items": [
+            {
+              "type": "TextBlock",
+              "text": "Chat A selected",
+              "description": "The active dropdown selects A.",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Waiting for approval · 1:26",
+              "description": "A’s phase and elapsed time restore immediately.",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Stop A",
+              "description": "The existing Stop action targets A.",
+              "wrap": true
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "Chat C queued · both slots in use",
+          "description": "Only actual capacity or same-chat ordering creates a wait.",
+          "wrap": true
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/er-model.html",
+        "title": "ER model"
+      },
+      {
+        "kind": "ux-mock",
+        "relPath": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/ux-mock.html",
+        "title": "UX mock"
+      },
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-store.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-worker.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-panel.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/session-store.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-outbox.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/ISSUE.md"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/protocol.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/per-repo-chat-turn-queue-outbox-E20261014613abdb3/S001/LLD.md"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/chat-queue-setup.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1484"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts:1607"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/turn-lifecycle.ts:614"
+    }
+  ]
+}

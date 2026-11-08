@@ -653,6 +653,32 @@ test('chat shell: the progress widget is never hidden: idle at the start, workin
   assert.equal(state(), 'progress idle|idle|hidden=false');
 });
 
+test('session restore uses stored phase and elapsed time without another provider event', () => {
+  const clock = { t: 127_000 };
+  const shell = runShell({ clock });
+  const progress = { turnId: 't2', startedAt: 2_000, phase: 'waiting-choice' };
+  shell.msg({ type: 'session-restored', sessionId: 'A', viewGeneration: 3, transcript: [], progress });
+  const label = () => shell.el('insrc-progress').querySelector('.plabel')?.textContent;
+  assert.equal(label(), 'waiting for choice…');
+  assert.equal(shell.el('insrc-elapsed').textContent, '2:05');
+  for (const target of [
+    { sessionId: 'B', viewGeneration: 3, turnId: 't2' },
+    { sessionId: 'A', viewGeneration: 2, turnId: 't2' },
+    { sessionId: 'A', viewGeneration: 3, turnId: 't1' },
+  ]) {
+    shell.msg({ type: 'turn-progress', target, progress: null });
+    shell.msg({ type: 'turn-event', target, event: { kind: 'done', turnId: target.turnId, ok: true } });
+    assert.equal(label(), 'waiting for choice…');
+  }
+  shell.msg({ type: 'session-restored', sessionId: 'B', viewGeneration: 2, transcript: [] });
+  clock.t += 1_000;
+  shell.tickIntervals();
+  assert.equal(shell.el('insrc-elapsed').textContent, '2:06');
+  shell.msg({ type: 'session-restored', sessionId: 'B', viewGeneration: 4, transcript: [], progress: { turnId: 'old', phase: 'working' } });
+  assert.equal(label(), 'working…');
+  assert.equal(shell.el('insrc-elapsed').textContent, '');
+});
+
 test("chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do", () => {
   const v = runShell();
   const prog = v.el('insrc-progress') as BodyStub & { className?: string };

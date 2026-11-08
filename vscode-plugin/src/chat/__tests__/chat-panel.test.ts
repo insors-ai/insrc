@@ -1693,8 +1693,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /const sendBtn=document\.getElementById\('insrc-prompt'\);/, 'the send/stop control is the leading #insrc-prompt');
   assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the prompt glyph/class');
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
-  // t2: click reuses the EXISTING doSubmit / cancel-turn body verbatim (byte-identical send intent).
-  assert.match(html, /if\(running\)\{vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn'\}\}\);setRunning\(false\);setIdle\(\);\}else\{doSubmit\(\);\}/, 'the "> " prompt posts cancel-turn while running AND resets the UI locally, else submits');
+  assert.match(html, /payload:\{type:'cancel-turn',target:target\}\}\);if\(!target\)\{setRunning\(false\);setIdle\(\);\}\}else\{doSubmit\(\);\}/, 'the prompt keeps targeted progress visible until the host confirms Stop');
   assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;started=true;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty, marks the chat started, then posts submit-turn');
   // t2: role=button span is keyboard-activatable (Enter/Space -> click).
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');
@@ -1929,7 +1928,7 @@ test('S002 ac3: renderShell embeds a single #insrc-progress widget above the inp
   assert.ok(html.indexOf('id="insrc-progress"') < html.indexOf('class="inputbar"'), 'progress is above the input');
   // It is animated (a keyframed spinner) and status routes to it, not a transcript row.
   assert.match(html, /@keyframes insrc-blink/, 'the widget is animated');
-  assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label\);\}/, 'status drives the progress widget (gated on running), not a row');
+  assert.match(html, /if\(ev&&ev\.kind==='status'\)\{var mkp=markerFor\(ev\);if\(running&&mkp\)setProgress\(mkp\.label,/, 'status drives the progress widget (gated on running), not a row');
   assert.match(html, /if\(ev&&\(ev\.kind==='done'\|\|\(ev\.kind==='error'&&!ev\.observationFailure\)\)&&!m\.info\)\{setRunning\(false\);setIdle\(\);\}/, 'terminal events restore Send while informational and observation errors preserve progress');
 });
 

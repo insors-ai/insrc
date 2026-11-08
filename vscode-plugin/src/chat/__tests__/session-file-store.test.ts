@@ -11,7 +11,7 @@ import { pageBefore } from '../transcript-window.js';
 import assert from 'node:assert/strict';
 import { createFileChatSessionStore, HEAD_SUFFIX, migrateChatSessionsFromMemento, ROWS_SUFFIX } from '../session-file-store.js';
 import { sessionFileName } from '../session-output.js';
-import { createMementoChatSessionStore, INDEX_KEY, SESSION_PREFIX, type ChatSession, type ChatSessionStore, type MementoLike, type TranscriptEntry } from '../session-store.js';
+import { createMementoChatSessionStore, INDEX_KEY, SESSION_PREFIX, setTurnProgress, type ChatSession, type ChatSessionStore, type MementoLike, type TranscriptEntry } from '../session-store.js';
 import { fakeSessionFs, type FakeSessionFs } from './fake-session-fs.js';
 
 const ROOT = '/sessions';
@@ -39,6 +39,38 @@ const rowsOnDisk = (fake: FakeSessionFs, id: string): unknown[] =>
 /** The bytes a run of calls wrote: appended text plus whole-file writes. */
 const bytesWritten = (fake: FakeSessionFs): number =>
   fake.ops('appendText', 'writeText').reduce((sum, c) => sum + Buffer.byteLength(c.data ?? '', 'utf8'), 0);
+
+test('session progress persists and a stale checkpoint cannot overwrite a newer turn', () => {
+  const { store, fake } = makeStore();
+  const active = store.create('claude');
+  const checkpoint = (turnId: string) => ({ cursor: { turnId, generation: 1, offset: 20 }, ownerHostPid: 7 });
+  active.liveTurn = checkpoint('A');
+  setTurnProgress(active, { turnId: 'A', turnEpoch: 1, phase: 'working', startedAt: 100 });
+  store.save(active);
+  const stale = makeStore({ fake }).store;
+  const old = stale.get(active.id)!;
+  assert.deepEqual(old.progress, active.progress);
+
+  active.liveTurn = checkpoint('B');
+  const next = { turnId: 'B', turnEpoch: 2, phase: 'waiting-choice', startedAt: 200 } as const;
+  setTurnProgress(active, next);
+  store.save(active);
+  setTurnProgress(old, { ...old.progress!, label: 'late A' });
+  stale.save(old);
+  const fresh = makeStore({ fake }).store;
+  assert.deepEqual(fresh.get(active.id)?.progress, next);
+  assert.deepEqual(fresh.get(active.id)?.liveTurn, checkpoint('B'));
+
+  const beforeClear = fresh.get(active.id)!;
+  delete active.liveTurn;
+  setTurnProgress(active, undefined);
+  store.save(active);
+  fresh.save(beforeClear);
+  const reloaded = makeStore({ fake }).store.get(active.id)!;
+  assert.equal(reloaded.progress, undefined);
+  assert.equal(reloaded.liveTurn, undefined);
+  assert.deepEqual(reloaded.transcript, []);
+});
 
 test('a save of a session with new rows appends exactly those rows to the rows file and replaces the head; the bytes written do not grow with the rows already stored (1,000 stored rows, one new row)', () => {
   const measure = (stored: number): { bytes: number; fake: FakeSessionFs; s: ChatSession } => {

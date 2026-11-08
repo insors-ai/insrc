@@ -30,6 +30,7 @@ import { transcriptPagerWebviewSource } from './transcript-pager.js';
 import { createMemorySessionLocks, defaultIsAlive, defaultProcessStartTime, type SessionLocks } from './session-lock.js';
 import { createTurnLifecycle, DEFAULT_TURN_LOCK_TIMEOUT_MS, trySaveSession, type SpawnedCli, type TurnSink } from './turn-lifecycle.js';
 import type { ActiveChatEntry, ChatSessionStore, ChatSession, ChatStatus, PersistedRequest, TranscriptEntry, RunConfig } from './session-store.js';
+import { readTurnProgress, setTurnProgress } from './session-store.js';
 import type { ModelDefinitions } from '../models/definitions.js';
 import { providerIcon, PROVIDER_ICON_SVGS } from './provider-icons.js';
 import { classifyFailure, MAX_INFRA_RETRIES } from './chat-failure.js';
@@ -288,6 +289,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let channel: ChatPanelChannel | undefined;
   let disposed = false;
   let session: ChatSession | undefined;
+  let viewGeneration = 0;
   // Story E202610138d4b90c9:S001: messages another pane handed over, waiting their turn (see drain).
   // Whether the webview has posted 'ready' since the channel was wired. The session is not the
   // test: opening the panel drafts it at once, before the webview listens.
@@ -909,6 +911,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               status: (now!.pendingRequests ?? []).some((r) => !r.resolved) ? 'waiting-input' : 'done',
               lastActivityAt: Math.max(now!.lastActivityAt ?? 0, Date.now()),
             };
+            if (next.progress?.turnId === turnId) setTurnProgress(next, undefined);
             deps.store.save(next);
             transitionSaved = true;
           } catch { /* best-effort: the next pass retries the whole transition */ }
@@ -929,15 +932,19 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
 
   // Story E20261012ddc4ede1:S001: post a live event with the absolute transcript index of the row
   // it wrote (none for an event that writes no row), so the webview knows which row each node is.
-  const postLive = (event: TurnEvent, rowIndex: number | undefined): void =>
-    post({ type: 'turn-event', event, ...(rowIndex !== undefined ? { rowIndex } : {}) });
+  const postLive = (s: ChatSession | undefined, event: TurnEvent, rowIndex: number | undefined, projectTurn = true): void => {
+    if (s !== session) return;
+    post({ type: 'turn-event', event, ...(rowIndex !== undefined ? { rowIndex } : {}),
+      ...(s !== undefined ? { target: { sessionId: s.id, viewGeneration, ...(projectTurn ? { turnId: event.turnId } : {}) } } : {}) });
+  };
 
   // Story E20261012ddc4ede1:S001: every session-restored goes through here. Only the latest window
   // of the transcript is sent (never the whole history), with the absolute index of its first row
   // and the transcript's total row count; the webview asks for older pages with 'load-older'.
   const postRestored = (s: ChatSession): void => {
     const window = latestWindow(s.transcript);
-    post({ type: 'session-restored', sessionId: s.id, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+    viewGeneration += 1;
+    post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
     postRunConfig(s);
     postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
   };
@@ -976,7 +983,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       session.transcript.push({ role: 'permission-outcome', toolName, decision, at: now() });
       rowIndex = session.transcript.length - 1;
     }
-    postLive({ kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision }, rowIndex);
+    postLive(session, { kind: 'permission-outcome', turnId: `perm-${requestId}`, toolName, decision }, rowIndex, false);
     if (session !== undefined) trySave(session);
   };
 
@@ -1402,7 +1409,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const ev: TurnEvent = { kind: 'assistant-delta', turnId, text };
     const rowIndex = appendEvent(s, ev);
     stampLiveTranscriptLen(s);
-    postLive(ev, rowIndex);
+    postLive(s, ev, rowIndex, false);
     post({ type: 'turn-event', event: { kind: 'done', turnId, ok: true }, info: true }); // closes the line, not a turn (ISSUE-160fa1bb)
     trySave(s);
   };
@@ -1749,7 +1756,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       session.transcript.push({ role: 'selection-outcome', chosen: [...chosen], at: now() });
       rowIndex = session.transcript.length - 1;
     }
-    postLive({ kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen }, rowIndex);
+    postLive(session, { kind: 'selection-outcome', turnId: `sel-${requestId}`, chosen }, rowIndex, false);
     if (session !== undefined) trySave(session);
   };
 
@@ -1873,8 +1880,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             pendingSelections.set(ev.requestId, { options: ev.options, prompt: ev.prompt, ...(ev.multi === true ? { multi: true } : {}) });
             setChatStatus(s, 'waiting-input'); // E202611031bd72813:S001 t2: followed selection request
             if (session === s) reportCards();
-            else postLive(ev, rowIndex);
-          } else postLive(ev, rowIndex);
+            else postLive(s, ev, rowIndex);
+          } else postLive(s, ev, rowIndex);
           if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
           approvals.endTurn(ev.turnId); // t2: observation failure is not terminal
           persistQueueSnapshot(); // t6: the ended set must be fresh for reload restoration
@@ -2454,9 +2461,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // ticks each second, and is cleared when the widget hides (done/error/cancel).
       `var progT0=0,progTimer=null;` +
       `function fmtElapsed(ms){var s=Math.floor(ms/1000);var m=Math.floor(s/60);var ss=s%60;return m+':'+(ss<10?'0':'')+ss;}` +
-      `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Date.now()-progT0);}` +
-      `function setProgress(text){if(prog){prog.className='progress';if(progLabel)progLabel.textContent=text;if(!progTimer){progT0=Date.now();tickElapsed();progTimer=setInterval(tickElapsed,1000);}}}` +
-      `function setIdle(){if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
+      `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Math.max(0,Date.now()-progT0));}` +
+      `function clearElapsed(){if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
+      `function setProgress(text,startedAt){if(prog){prog.className='progress';if(progLabel)progLabel.textContent=text;if(startedAt===null){clearElapsed();return;}if(typeof startedAt==='number')progT0=startedAt;else if(!progTimer)progT0=Date.now();tickElapsed();if(!progTimer)progTimer=setInterval(tickElapsed,1000);}}` +
+      `var viewGen=0,activeProgress=null;` +
+      `function setIdle(){activeProgress=null;if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}clearElapsed();}` +
+      `function projectProgress(p){activeProgress=p;setRunning(true);setProgress(p.label||({'starting':'starting…','waiting-approval':'waiting for approval…','waiting-choice':'waiting for choice…'}[p.phase]||'working…'),typeof p.startedAt==='number'?p.startedAt:null);}` +
+      `function matchesTarget(t){return t.sessionId===cur&&t.viewGeneration===viewGen&&(!activeProgress||!t.turnId||t.turnId===activeProgress.turnId);}` +
       // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
       // set-permission-mode; its wrapping seg flags 'perm-auto' (amber pill) when fully autonomous.
       `var pmode='manual';` +
@@ -2476,7 +2487,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // transcript row — rapid phase changes update the one widget in place. assistant-delta/tool-call
       // still render via the sc1 view-model (S001); other markers still append. done/error hides the
       // widget + returns the button to ▶ (ac2). The host status-skip is untouched (lc1/k4).
-      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m)return;if(m.type==='turn-event'){const ev=m.event;pager.track(m.rowIndex,function(){if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
+      `window.addEventListener('message',e=>{const m=e.data&&e.data.payload;if(!m||(m.target&&!matchesTarget(m.target)))return;if(m.type==='turn-event'){const ev=m.event;pager.track(m.rowIndex,function(){if(ev&&ev.kind==='status'){var mkp=markerFor(ev);if(running&&mkp)setProgress(mkp.label,activeProgress?(activeProgress.startedAt??null):undefined);}else if(ev&&(ev.kind==='assistant-delta'||ev.kind==='tool-call'||ev.kind==='tool-result'||ev.kind==='permission-outcome'||ev.kind==='selection-request'||ev.kind==='selection-outcome')){reg.renderRow(reg.toViewModel(ev));}` +
       // S004 ac1: a live approval-request renders the in-chat approve/deny card (the renderer
       // builds a detached node, so the handler appends it) — never a silent block.
       `else if(ev&&ev.kind==='approval-request'){var _c=reg.renderRow({kind:'approval',text:ev.title,collapsible:false,meta:{requestId:ev.requestId,title:ev.title,detail:ev.detail,toolName:ev.toolName,position:ev.position,total:ev.total}});if(_c){pager.append(_c);}}` +
@@ -2492,7 +2503,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='turn-running'){if(m.sessionId===cur){setRunning(true);setProgress('working\\u2026');}}` +
+      `else if(m.type==='turn-running'){if(m.sessionId===cur&&!activeProgress){setRunning(true);setProgress('working\\u2026');}}` +
+      `else if(m.type==='turn-progress'){if(m.progress&&m.progress.turnId===m.target.turnId)projectProgress(m.progress);else if(!m.progress&&activeProgress&&activeProgress.turnId===m.target.turnId){setRunning(false);setIdle();}}` +
       `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       (queueOn ? `else if(m.type==='outbox'){renderOutbox(m.view);}` : '') +
@@ -2504,11 +2516,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the reconciliation map for the fresh replay.
       // Story E20261012ddc4ede1:S001: the posted rows are a window of the transcript starting at
       // absolute index firstIndex (0 when absent); each row is keyed and stamped by its absolute index.
-      `else if(m.type==='session-restored'){cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
+      `else if(m.type==='session-restored'){if(typeof m.viewGeneration==='number'){if(m.viewGeneration<=viewGen)return;viewGen=m.viewGeneration;}else if(viewGen>0)return;cur=m.sessionId||'';t.textContent='';reg.resetKeys();` +
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
       `started=_total>0;` +
       `pager.reset(cur,_first,_total);` +
-      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});reconcile();setRunning(false);setIdle();` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});reconcile();if(m.progress){projectProgress(m.progress);}else{setRunning(false);setIdle();}` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
       `}` +
@@ -2539,9 +2551,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;started=true;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
       pasteScript +
-      // A user cancel posts cancel-turn AND resets the UI locally: the host reap posts no terminal
-      // event, so the webview must clear running + hide the progress widget itself (no stuck spinner).
-      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){vs.postMessage({v:1,payload:{type:'cancel-turn'}});setRunning(false);setIdle();}else{doSubmit();}});` +
+      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){var target=activeProgress?{sessionId:cur,turnId:activeProgress.turnId,viewGeneration:viewGen}:undefined;vs.postMessage({v:1,payload:{type:'cancel-turn',target:target}});if(!target){setRunning(false);setIdle();}}else{doSubmit();}});` +
       // S002 (ux-polish): the '>' prompt is a role=button span — Enter/Space activate it like a click.
       `if(sendBtn)sendBtn.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();sendBtn.click();}});` +
       `setRunning(false);` +
@@ -2808,7 +2818,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
           if (ev.kind === 'approval-request') {
             enqueueApproval(ev);
             setChatStatus(s, 'waiting-input'); // mid-turn: the agent is blocked on this request
-          } else postLive(ev, rowIndex);
+          } else postLive(s, ev, rowIndex);
         }
         // ISSUE-6a811b8a: the turn's end lets its batch of turn-ended requests complete.
         if (ev.kind === 'done' || (ev.kind === 'error' && ev.observationFailure !== true)) {
@@ -2970,6 +2980,15 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   }
 
   function appendEvent(s: ChatSession, ev: TurnEvent): number | undefined {
+    const progress = readTurnProgress(s);
+    if (progress?.turnId === ev.turnId && (ev.kind === 'status' || ev.kind === 'approval-request' || ev.kind === 'selection-request')) {
+      const phase = ev.kind === 'status' ? 'working' : ev.kind === 'approval-request' ? 'waiting-approval' : 'waiting-choice';
+      const label = ev.kind === 'status' ? markerFor(ev)?.label : undefined;
+      if (setTurnProgress(s, { ...progress, phase, label, turnEpoch: s.progressTurnEpoch ?? 0 })) {
+        trySave(s);
+        if (s === session) post({ type: 'turn-progress', target: { sessionId: s.id, viewGeneration, turnId: ev.turnId }, progress: readTurnProgress(s) ?? null });
+      }
+    }
     const row = rowForEvent(ev);
     if (row === undefined) return undefined;
     s.transcript.push(row);
@@ -3020,6 +3039,20 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
         const stopping = session;
+        const turnId = stopping === undefined ? undefined : readTurnProgress(stopping)?.turnId;
+        const generation = viewGeneration;
+        if (msg.target !== undefined && (stopping === undefined || msg.target?.sessionId !== stopping.id ||
+            msg.target.viewGeneration !== generation || msg.target.turnId !== turnId)) return;
+        const clearProgress = (): void => {
+          if (stopping === undefined || turnId === undefined) return;
+          if (stopping.progress?.turnId === turnId) {
+            setTurnProgress(stopping, undefined);
+            trySave(stopping);
+          }
+          if (session === stopping && viewGeneration === generation) {
+            post({ type: 'turn-progress', target: { sessionId: stopping.id, turnId, viewGeneration: generation }, progress: null });
+          }
+        };
         if (stopping?.liveTurn !== undefined && turns.live === undefined) {
           void turns.stop(stopping).then((verified) => {
             if (!verified) {
@@ -3029,6 +3062,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
               }
               return;
             }
+            clearProgress();
             if (session === stopping) reevaluateChatStatus(stopping);
           });
           return;
@@ -3037,7 +3071,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
         settleQueued(); // a queued message waiting only on a card ends now
         endDiffTurn();
-        void turns.stop();
+        void turns.stop().then((verified) => { if (verified) clearProgress(); });
         if (session !== undefined) setChatStatus(session, 'done'); // E202611031bd72813:S001 t2: Stop -> done
         return;
       }

@@ -584,6 +584,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}), ...(live.decoder.toolCommands !== undefined ? { toolCommands: { ...live.decoder.toolCommands } } : {}), ...(live.decoder.editPaths !== undefined ? { editPaths: { ...live.decoder.editPaths } } : {}) } } : {}), },
           {
             signal: ctl.signal,
+            waitForDeparture: true,
             onAttach: (p) => {
               attached = p;
               resumedProc = p;

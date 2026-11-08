@@ -1,0 +1,107 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794127645605-rjz0bd",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T08:48:39.709Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 74102,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "dc557863fa52ecf5",
+    "epicSlug": "fix-16-pre-existing-vs-code",
+    "standalone": true,
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f99cffc4e5080fb56e546a5470cf7a1d3a472eea16ab5d66c2f5b0b3e0c19acd",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T08:54:29.177Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "dc557863fa52ecf5",
+      "slug": "EPIC-dc557863fa52ecf5"
+    }
+  },
+  "body": {
+    "title": "Fix 16 pre-existing VS Code extension test failures",
+    "reproduction": "Run the extension sweep from the repository root:\n\n```sh\nnode --import tsx --test --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'\n```\n\nTo narrow the run, use the following nine test files as arguments in place of the glob:\n\n- `vscode-plugin/src/__tests__/activation.test.ts`\n- `vscode-plugin/src/chat/__tests__/approval-subscribe.test.ts`\n- `vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts`\n- `vscode-plugin/src/chat/__tests__/exec-path-scan.test.ts`\n- `vscode-plugin/src/panels/__tests__/detail-renderers.test.ts`\n- `vscode-plugin/src/panels/__tests__/repo-config.test.ts`\n- `vscode-plugin/src/panels/__tests__/repo-fields-contract.test.ts`\n- `vscode-plugin/src/panels/__tests__/webview-host.test.ts`\n- `vscode-plugin/src/workspace/__tests__/activation.test.ts`\n\nOn Node 26.5.1, all 16 targeted cases failed with the same errors on pre-story commit `610671dd6` and pushed `v2` commit `6b36de118`. The original full sweep had 19 failures. Three that passed on isolated reruns are outside this issue. These 16 failures block the green full-sweep requirement for concurrent-chat verification.",
+    "rootCause": "- **Repo Configuration (6).** Five renderer and message-routing tests expect a Tracker section, an editable `ghHost` field, or a `repoTrackerWrite` handler. The current panel renders model tiers, Core floor, and Providers. The sixth test also expects old imports and Tracker bindings during extension activation. The renderer is grounded in [c1].\n- **Daemon approval prompts (4).** Three fixtures call `IpcServer` with its obsolete constructor shape and fail with `this.ownership.lease is not a function` before sending an approval frame. The fourth expects VS Code activation to instantiate the approval prompter. The prompter still exists and activation does not instantiate it. See [c2] and [c3].\n- **UX fixtures (2).** Both renderer tests expect four ledger fixtures. Two lookups still use the old `-S001` suffix. The available records use `-s1`. The tests report two records found and stop at their count assertion.\n- **Model-role counts (2).** Tests pin 14 critical and 21 peripheral roles. The current taxonomy has 14 critical and 23 peripheral roles, for 37 model-role rows plus the Core floor row. See [c4].\n- **Settings activation (1).** A source assertion expects the former one-line settings pull. The pull still waits for activation and now runs in an async callback that also migrates legacy settings. See [c5].\n- **Ollama registration (1).** A source assertion rejects any Ollama reference in the adapter. The registry still admits only Claude, Codex, and Vibe. Claude's supported Ollama routing adds the references. See [c6] and [c7].",
+    "fixIntent": "Confirm whether the VS Code Tracker controls and daemon approval prompter are still required. Restore their wiring and exercise the user-visible behavior if they are required. If they were intentionally removed or replaced, update the contract tests to cover the supported behavior. Update the approval IPC fixtures so they reach the approval exchange wherever that path remains supported.\n\nResolve the current UX artifact IDs and keep all four render and truncation checks. Assert rendered role groups against the current taxonomy. Verify that the settings pull occurs after activation and that legacy migration follows it. Verify registry membership separately from Claude-to-Ollama routing. Keep all 16 cases covered by repaired or replacement tests, then rerun the full extension sweep and record the result."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/repo-config.ts"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/daemon/server.ts"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/approval-subscribe.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/legacy-keys.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/ollama-routing.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/VS-CODE-SMOKE.md"
+    }
+  ]
+}

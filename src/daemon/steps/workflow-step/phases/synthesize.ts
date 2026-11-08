@@ -17,6 +17,9 @@
 
 import { ensureDraftIssues, readinessFields } from '../../../../workflow/draft-issues.js';
 import { getLogger } from '../../../../shared/logger.js';
+import { stepClient } from '../../../../shared/step-context.js';
+import { familyForClient } from '../../../model-registry.js';
+import { clientAttribution } from '../../../../workflow/attribution.js';
 import { finalizeArtifact } from '../../../../workflow/orchestrator.js';
 import { unresolvedOpen } from '../../../../workflow/questions.js';
 import { appendRunLog, pathsForWorkflow, writeArtifact, writeAtomic } from '../../../../workflow/storage.js';
@@ -54,7 +57,7 @@ export async function handleSynthesize(
 		elapsedMs,
 		input.artifact,
 		undefined,
-		undefined,
+		clientAttribution(familyForClient(stepClient()), input.authorModel),
 		// This phase is the controller's: the MCP client authored the artifact.
 		'controller',
 	);

@@ -334,6 +334,7 @@ export function servedOnSharedState(method: string, params: unknown): boolean {
  */
 export const FIFO_EXEMPT_METHODS: ReadonlySet<string> = new Set([
 	'understanding.watch', 'todos.subscribe',
+	'approval.subscribe', 'approval.answer',
 	'chat.cancel', 'chat.inject', 'chat.redirect', 'chat.status',
 	'workflow.run.poll', 'workflow.run.abort',
 ]);

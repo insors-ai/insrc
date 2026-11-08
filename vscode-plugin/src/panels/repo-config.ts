@@ -27,8 +27,10 @@
 
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import type { Criticality, RoleDescriptor } from '../../../src/config/role-taxonomy.js';
+import { validateRepoSetting, type RepoFieldDef } from '../../../src/config/repo-fields.js';
+import { buildSettingsRows } from '../../../src/cli/panes/repo-settings-model.js';
 import { escapeHtml } from './html.js';
-import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef } from './types.js';
+import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef, RepoTrackerWrite } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
@@ -110,12 +112,66 @@ function readStringAt(root: Record<string, unknown>, path: readonly string[]): s
   return typeof cur === 'string' ? cur : undefined;
 }
 
-/**
- * Build the Repo Configuration body renderer. Reads registeredRepos + rawConfig
- * itself; a rejection propagates to the host's never-throw wrapper.
- */
+function trackerSection(content: string): string {
+  return `<details id="insrc-tracker" class="section"><summary class="section-head">Tracker</summary><div class="tracker-body">${content}</div></details>`;
+}
+
+async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
+  const unavailable = () => trackerSection('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
+  if (!deps.repoFields || !deps.repoSettings) return unavailable();
+  try {
+    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker');
+    if (fields.length === 0) return unavailable();
+    const result = await deps.repoSettings(repoPath);
+    if (!result.ok) return trackerSection(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
+    const config: string[] = [];
+    const status: string[] = [];
+    const policies: string[] = [];
+    for (const [index, row] of buildSettingsRows(fields, result.payload).entries()) {
+      const field = fields[index]!;
+      const key = escapeHtml(row.key);
+      const label = escapeHtml(row.label);
+      const note = row.note === undefined ? '' : `<span class="tracker-hint">${escapeHtml(row.note)}</span>`;
+      if (row.kind === 'policy') {
+        policies.push(`<tr data-kind="policy" data-readonly-key="${key}"><th scope="row">${label}</th><td>${escapeHtml(row.value)}${note}</td></tr>`);
+        continue;
+      }
+      if (row.kind === 'status') {
+        status.push(`<div data-kind="status" data-readonly-key="${key}"><dt>${label}</dt><dd>${escapeHtml(row.value)}${note}</dd></div>`);
+        continue;
+      }
+      let control: string;
+      if (field.type === 'string') {
+        control = `<input type="text" data-tracker-key="${key}" value="${escapeHtml(row.current)}" placeholder="${escapeHtml(row.value)}" />`;
+      } else {
+        const values = field.type === 'boolean' ? ['true', 'false'] : (field.enumValues ?? []);
+        const fallback = field.default === undefined ? '(not set)' : `${String(field.default)} (default)`;
+        const options = ['', ...values].map(value => `<option value="${escapeHtml(value)}"${value === row.current ? ' selected' : ''}>${escapeHtml(value || fallback)}</option>`).join('');
+        control = `<select data-tracker-key="${key}" data-tracker-type="${field.type}">${options}</select>`;
+      }
+      const source = row.current !== '' ? 'Repo override' : row.value;
+      config.push(`<label class="tracker-field" data-kind="local"><span class="tracker-label">${label}</span>${control}<span class="tracker-source">${escapeHtml(source)}</span>${note}</label>`);
+    }
+    const policy = result.payload.policy;
+    const policyBody = !policy.ok
+      ? `<p class="error">Policy unavailable: ${escapeHtml(policy.reason)}</p>`
+      : policy.mode === 'none'
+        ? '<p class="hint">No team policy is configured for this repo.</p>'
+        : `<table class="tracker-policies" aria-labelledby="tracker-policies-heading"><thead><tr><th scope="col">Policy</th><th scope="col">Value</th></tr></thead><tbody>${policies.join('')}</tbody></table>`;
+    return trackerSection(
+      `<section aria-labelledby="tracker-config-heading"><h3 id="tracker-config-heading">Tracker configuration</h3>` +
+      `<dl class="tracker-status">${status.join('')}</dl>` +
+      `<p class="hint">Clear a field to use its default or leave it unset.</p><div class="tracker-grid">${config.join('')}</div></section>` +
+      `<section aria-labelledby="tracker-policies-heading"><h3 id="tracker-policies-heading">Policies</h3>${policyBody}</section>`,
+    );
+  } catch {
+    return unavailable();
+  }
+}
+
+/** Read registered repos and render the selected repo's settings. */
 export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer {
-  return async (selected: string | undefined): Promise<string> => {
+  return async (selected, publishLoading): Promise<string> => {
     const repos = await deps.registeredRepos();
     if (repos.length === 0) {
       return `<p class="placeholder">No repos are registered with the daemon.</p>`;
@@ -151,29 +207,79 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
     const floor = tierRow('coreFloor', ['coreFloor'], readStringAt(raw, ['models', 'byRepo', active, 'coreFloor']) ?? '');
     const floorSection = `<div class="section"><div class="section-head">Core floor</div><div class="floor-row">${floor}</div></div>`;
 
-    // The Providers section: per-provider MCP registration state from the
-    // daemon's mcp.status read — already-registered providers render as
-    // non-checkable; only unregistered, available ones are checkboxes.
-    let providers: string;
-    try {
-      providers = renderProvidersSection(await deps.mcpRegistration(active));
-    } catch (err) {
-      // An old daemon answers 'unknown method: mcp.status' — say so and point at the update.
-      const msg = err instanceof Error ? err.message : String(err);
-      providers = /unknown method/.test(msg)
-        ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
-        : `<p class="hint">Provider registration state is unavailable right now.</p>`;
-    }
-
-    return (
+    const form = (tracker: string, providers: string): string => (
       `${picker}` +
       `<section id="insrc-repo-form" data-repo="${escapeHtml(active)}">` +
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
       groups +
       floorSection +
+      tracker +
       `<h3>Providers</h3>${providers}` +
       `</section>`
     );
+    publishLoading?.(form(trackerSection('<p role="status">Loading Tracker settings…</p>'),
+      '<p role="status">Loading provider status…</p>'));
+    const [tracker, providers] = await Promise.all([
+      renderTrackerSection(deps, active),
+      loadProvidersSection(deps, active),
+    ]);
+    return form(tracker, providers);
+  };
+}
+
+async function loadProvidersSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
+  try {
+    return renderProvidersSection(await deps.mcpRegistration(repoPath));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return /unknown method/.test(msg)
+      ? `<p class="hint">The running daemon predates provider registration — run <b>insrc: Update daemon</b> (or restart the daemon) and reopen this panel.</p>`
+      : `<p class="hint">Provider registration state is unavailable right now.</p>`;
+  }
+}
+
+interface RepoTrackerWriteDeps extends Pick<RepoConfigWriteDeps, 'registeredRepos' | 'consent' | 'status' | 'logger' | 'refresh'> {
+  repoFields(): Promise<readonly RepoFieldDef[]>;
+  writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult>;
+}
+
+export function createRepoTrackerWriteHandler(deps: RepoTrackerWriteDeps): (write: RepoTrackerWrite, isCurrent: () => boolean) => void {
+  return (write, isCurrent) => {
+    const { repoPath, key, value } = write;
+    const report = (detail: string) => deps.status.set({ state: deps.status.current().state, detail });
+    void (async () => {
+      try {
+        if (!isCurrent()) return;
+        const repos = await deps.registeredRepos();
+        const checked = validateRepoSetting(key, value, await deps.repoFields());
+        if (!isCurrent()) return;
+        if (!repos.some(repo => repo.path === repoPath) || !checked.ok) {
+          report(!checked.ok ? checked.message : 'This repository is no longer registered.');
+          return;
+        }
+        const outcome = await deps.consent.ask({
+          title: 'Apply tracker setting change?',
+          detail: `${value === null ? 'Clear' : 'Set'} ${key} for ${repoPath}?`,
+          acceptLabel: 'Apply',
+        });
+        if (!isCurrent()) return;
+        if (outcome !== 'accepted') return;
+        const currentRepos = await deps.registeredRepos();
+        const current = validateRepoSetting(key, checked.value, await deps.repoFields());
+        if (!isCurrent()) return;
+        if (!currentRepos.some(repo => repo.path === repoPath) || !current.ok) {
+          report(!current.ok ? current.message : 'This repository is no longer registered.');
+          return;
+        }
+        const result = await deps.writeRepoSetting(repoPath, key, current.value);
+        report(result.ok ? `Updated ${key} for ${repoPath}.` : `Tracker setting refused: ${result.reason}`);
+      } catch (err) {
+        deps.logger.warn(`insrc: tracker setting write failed — ${err instanceof Error ? err.message : String(err)}`);
+        report('Could not update the tracker setting.');
+      } finally {
+        if (isCurrent()) deps.refresh();
+      }
+    })();
   };
 }
 

@@ -660,6 +660,32 @@ test("stop ends a followed turn's process; detach leaves it running", async () =
   d.resumes[0]!.proc.exitNow();
 });
 
+test('unverified resumed Stop preserves the saved cursor and reattaches', async () => {
+  const { adapter, resumes } = scriptedAdapter();
+  const wrapped: StreamAdapter = {
+    ...adapter,
+    resume: (req, opts) => adapter.resume(req, {
+      ...opts,
+      onAttach: (proc) => opts?.onAttach?.({ ...proc, stopVerified: async () => false }),
+    }),
+  };
+  const h = harness({ providers: registry(wrapped), isAlive: () => false });
+  h.session.liveTurn = savedTurn(99);
+  const sink = followSink(h);
+  h.lc.follow(h.session, sink.sink);
+  await waitFor(() => resumes.length === 1);
+  assert.equal(await h.lc.stop(h.session), false);
+  assert.equal(h.lc.busy(), true);
+  assert.deepEqual(resumes[0]!.proc.signals, []);
+  resumes[0]!.feed.push(delta('old'));
+  await waitFor(() => h.session.liveTurn?.cursor.offset === 110);
+  await h.lc.detach();
+  h.lc.follow(h.session, sink.sink);
+  await waitFor(() => resumes.length === 2);
+  assert.equal(resumes[1]!.req.cursor.offset, 110);
+  await h.lc.detach();
+});
+
 test('a detached session-file turn is resumed by follow', async () => {
   const { adapter, runs, resumes } = scriptedAdapter();
   const h = harness({ providers: registry(adapter) });
@@ -1159,7 +1185,7 @@ test('turn lifecycle: busy is true while a started turn waits, sets up or is rea
     assert.equal(h.lc.busy(), false);
   }
 
-  // stop and detach end a follow: false at once, and onEnd is not called.
+  // Detach ends the follow immediately. Stop waits for verified departure.
   for (const end of ['stop', 'detach'] as const) {
     const { adapter, resumes } = scriptedAdapter();
     const h = harness({ providers: registry(adapter), isAlive: () => false });
@@ -1169,7 +1195,7 @@ test('turn lifecycle: busy is true while a started turn waits, sets up or is rea
     await waitFor(() => resumes.length === 1);
     assert.equal(h.lc.busy(), true);
     const ended = h.lc[end]();
-    assert.equal(h.lc.busy(), false, `${end}: a follow it ended is not in progress`);
+    if (end === 'detach') assert.equal(h.lc.busy(), false);
     await ended;
     await tick(20);
     assert.equal(h.lc.busy(), false);
@@ -1252,7 +1278,7 @@ test('turn lifecycle: a follow whose resume fails calls its end callback exactly
   h3.lc.follow(h3.session, throwing);
   await waitFor(() => calls === 2);
 
-  // A follow that stop() ended while its resume was failing is not reported.
+  // A missing process handle cannot verify Stop or suppress a later observation failure.
   let rejectResume!: (e: Error) => void;
   const pending: StreamAdapter = {
     ...adapter,
@@ -1266,10 +1292,10 @@ test('turn lifecycle: a follow whose resume fails calls its end callback exactly
   const f4 = followSink(h4);
   h4.lc.follow(h4.session, f4.sink);
   await waitFor(() => rejectResume !== undefined);
-  await h4.lc.stop();
+  assert.equal(await h4.lc.stop(), false);
   rejectResume(new Error('read aborted'));
   await tick(20);
-  assert.deepEqual(f4.calls, [], 'stopped: no end is reported');
+  assert.deepEqual(f4.calls, ['end:failed']);
 });
 
 test('turn lifecycle: busy is false when a turn\'s error is reported', async () => {

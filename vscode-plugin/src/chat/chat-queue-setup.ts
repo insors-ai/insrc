@@ -13,7 +13,8 @@ import { createHash } from 'node:crypto';
 import { join } from 'node:path';
 import type { ChatPanelLogger } from './chat-panel.js';
 import { createChatQueueStore, StoreUnavailable, type LeaseClaim, type SqliteDatabase } from './chat-queue-store.js';
-import { createChatQueueWorker, type ChatQueueWorker, type QueuedTurnRunner } from './chat-queue-worker.js';
+import { createChatQueueWorker, createSessionQueueWorker, type ChatQueueWorker, type QueuedTurnRunner } from './chat-queue-worker.js';
+import { observeProcess, processDeparted, type ProcessObservation } from './session-lock.js';
 
 /** The workspace-state key of this window's queue key. */
 export const WINDOW_KEY_STATE = 'insrc.chat.windowKey';
@@ -76,9 +77,9 @@ export function repoKeyOf(folder: string, deps: { readonly gitTopLevel: (cwd: st
 /** The repository's queue file under the insrc home. */
 export const queuePathOf = (insrcHome: string, repoKey: string): string => join(insrcHome, 'chat-queue', `${repoKey}.sqlite`);
 
-/** The pid is alive and, when a start time is given, it is the same process (not a reused pid). */
+/** Treat an unverified departure as still occupied for legacy queue callers. */
 export function processAliveCheck(isAlive: (pid: number) => boolean, startTimeOf: (pid: number) => number | undefined): (pid: number, startedAt?: number) => boolean {
-  return (pid, startedAt) => isAlive(pid) && (startedAt === undefined || startTimeOf(pid) === startedAt);
+  return (pid, startedAt) => !processDeparted(observeProcess(pid, isAlive, startTimeOf), startedAt);
 }
 
 export interface QueueFactoryDeps {
@@ -88,6 +89,8 @@ export interface QueueFactoryDeps {
   readonly pluginVersion: string;
   readonly claim: LeaseClaim;
   readonly isAlive: (pid: number, startedAt?: number) => boolean;
+  readonly mode?: 'session-leases' | undefined;
+  readonly observe?: ((pid: number) => ProcessObservation) | undefined;
   readonly log: ChatPanelLogger;
   /** Shows a notice to the user (once per window). */
   readonly notify: (message: string) => void;
@@ -99,6 +102,10 @@ export interface QueueFactoryDeps {
  */
 export function createQueueFactory(deps: QueueFactoryDeps): ((runner: QueuedTurnRunner) => ChatQueueWorker) | undefined {
   try {
+    if (deps.mode === 'session-leases') {
+      const store = createChatQueueStore({ ...deps, mode: 'session-leases', protectLegacyWriters: true });
+      return (runner) => createSessionQueueWorker({ store, claim: deps.claim, runner, observe: deps.observe, now: deps.now, log: deps.log });
+    }
     const store = createChatQueueStore({ path: deps.path, openDatabase: deps.openDatabase, now: deps.now, pluginVersion: deps.pluginVersion, log: deps.log });
     return (runner) => createChatQueueWorker({ store, claim: deps.claim, runner, isAlive: deps.isAlive, now: deps.now, log: deps.log });
   } catch (err) {

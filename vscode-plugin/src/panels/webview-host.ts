@@ -96,8 +96,8 @@ window.addEventListener('message', function (event) {
 vscode.postMessage({ type: 'ready' });`;
 
 /**
- * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the three
- * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
+ * The Repo Configuration panel's inline bootstrap. Static — it reads only
+ * host-rendered DOM data and preserves the Tracker toggle across repaints.
  * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
  * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
  * clear the override); the Providers section's button posts
@@ -107,7 +107,15 @@ vscode.postMessage({ type: 'ready' });`;
  */
 const REPO_BOOTSTRAP = `const vscode = acquireVsCodeApi();
 const sel = document.getElementById('insrc-repo-select');
-if (sel) { sel.addEventListener('change', function () { vscode.postMessage({ type: 'selectRepo', repoPath: sel.value }); }); }
+if (sel) { sel.addEventListener('change', function () {
+  vscode.setState?.({ trackerOpen: false });
+  vscode.postMessage({ type: 'selectRepo', repoPath: sel.value });
+}); }
+const tracker = document.getElementById('insrc-tracker');
+if (tracker) {
+  tracker.open = vscode.getState?.()?.trackerOpen === true;
+  tracker.addEventListener('toggle', function () { vscode.setState?.({ trackerOpen: tracker.open }); });
+}
 const form = document.getElementById('insrc-repo-form');
 const repoPath = form ? form.getAttribute('data-repo') : '';
 for (const el of document.querySelectorAll('[data-segments]')) {
@@ -116,6 +124,13 @@ for (const el of document.querySelectorAll('[data-segments]')) {
     try { segments = JSON.parse(el.getAttribute('data-segments')); } catch (e) { return; }
     if (!Array.isArray(segments)) return;
     vscode.postMessage({ type: 'repoWrite', repoPath: repoPath, segments: segments, value: el.value === '' ? null : el.value });
+  });
+}
+const trackerDocument = document.getElementById('insrc-tracker-document');
+for (const el of document.querySelectorAll('[data-tracker-key]')) {
+  el.addEventListener('change', function () {
+    const value = el.value === '' ? null : el.getAttribute('data-tracker-type') === 'boolean' ? el.value === 'true' : el.value;
+    vscode.postMessage({ type: 'repoTrackerWrite', repoPath: repoPath, key: el.getAttribute('data-tracker-key'), value: value, renderId: trackerDocument?.getAttribute('data-render-id') });
   });
 }
 const regBtn = document.getElementById('insrc-register-providers');
@@ -155,6 +170,8 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   let detailActiveTab: DetailTab = 'daemon';
   // The Repo Configuration panel's currently-selected repo (S007; select re-renders).
   let repoSelectedRepo: string | undefined;
+  let repoSelectionGeneration = 0;
+  let repoRenderGeneration = 0;
   // The live tab controller's dispose (S006): exactly ONE ticker is armed at a
   // time, and none survives the panel; undefined when the active tab has none.
   let activeControllerDispose: (() => void) | undefined;
@@ -318,13 +335,19 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
    * the next re-render.
    */
   const renderRepoPanel = async (panel: PanelHandle): Promise<void> => {
+    const renderId = String(++repoRenderGeneration);
+    const paint = (body: string, scripted: boolean): void => {
+      if (repoPanel !== panel || renderId !== String(repoRenderGeneration)) return;
+      const content = `<div id="insrc-tracker-document" data-render-id="${renderId}">${body}</div>`;
+      panel.setHtml(shellHtml('Repo Configuration', content, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+    };
     try {
       let body: string;
       let scripted = false;
       const renderer = deps.repoRenderer;
       if (renderer !== undefined) {
         try {
-          body = await renderer(repoSelectedRepo);
+          body = await renderer(repoSelectedRepo, loading => paint(loading, true));
           scripted = true; // the rendered body carries the picker/field controls.
         } catch (err) {
           logger.warn(`insrc: could not render the Repo Configuration view — ${errText(err)}`);
@@ -333,7 +356,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       } else {
         body = REPO_PLACEHOLDER; // S004 fallback (no repoRenderer wired).
       }
-      panel.setHtml(shellHtml('Repo Configuration', body, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+      paint(body, scripted);
     } catch (err) {
       logger.warn(`insrc: could not render the Repo Configuration panel — ${errText(err)}`);
     }
@@ -349,11 +372,28 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
     if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown };
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown; key?: unknown; renderId?: unknown };
     if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
       // The empty option ('') clears the selection back to the picker-only view.
       repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
+      repoSelectionGeneration++;
       void renderRepoPanel(panel);
+      return;
+    }
+    if (
+      msg.type === 'repoTrackerWrite' &&
+      msg.renderId === String(repoRenderGeneration) &&
+      typeof msg.repoPath === 'string' && msg.repoPath === repoSelectedRepo &&
+      typeof msg.key === 'string' && msg.key.length > 0 &&
+      (msg.value === null || typeof msg.value === 'string' || typeof msg.value === 'boolean')
+    ) {
+      const generation = repoSelectionGeneration;
+      try {
+        deps.onRepoTrackerWrite?.({ repoPath: msg.repoPath, key: msg.key, value: msg.value },
+          () => repoPanel === panel && generation === repoSelectionGeneration);
+      } catch (err) {
+        logger.warn(`insrc: the repo tracker write handler failed — ${errText(err)}`);
+      }
       return;
     }
     if (
@@ -664,6 +704,20 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .role-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 2px; border-radius: 4px; }
     .role-row:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
     .floor-row { display: flex; align-items: center; gap: 10px; }
+    #insrc-tracker > summary { display: list-item; padding: 4px 0; }
+    .tracker-body { max-width: 900px; display: grid; gap: 18px; padding: 4px 0 8px; }
+    .tracker-body h3 { margin: 8px 0; font-size: 13px; }
+    .tracker-grid, .tracker-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px 16px; }
+    .tracker-status { margin: 0; padding: 8px 10px; border: 1px solid var(--vscode-panel-border, #666); border-radius: 4px; }
+    .tracker-status dt, .tracker-label { font-weight: 600; }
+    .tracker-status dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+    .tracker-field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+    .tracker-field input, .tracker-field select { width: 100%; box-sizing: border-box; padding: 4px 6px; }
+    .tracker-hint, .tracker-source { display: block; font-size: 0.85em; color: var(--vscode-descriptionForeground, #aaa); overflow-wrap: anywhere; }
+    .tracker-policies { width: 100%; border-collapse: collapse; text-align: left; }
+    .tracker-policies th, .tracker-policies td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border, #666); vertical-align: top; overflow-wrap: anywhere; }
+    .tracker-policies thead { background: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.15)); }
+    .tracker-policies tbody th { width: 34%; font-weight: 500; }
     .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 6px; margin-bottom: 4px; }
     .status-chip { font-size: 10.5px; border-radius: 9px; padding: 1px 8px; white-space: nowrap; }
     .status-chip.ok { background: rgba(35, 134, 54, 0.25); color: #81c995; }

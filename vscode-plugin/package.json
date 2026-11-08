@@ -298,6 +298,12 @@
             "default": false,
             "markdownDescription": "prompt to confirm the classified intent each turn",
             "scope": "machine"
+          },
+          "insrc.review.maxJsonBytes": {
+            "type": "number",
+            "default": 4194304,
+            "markdownDescription": "maximum serialized bytes per code-review packet, checkpoint, final-scope snapshot and permanent CR envelope; positive safe integer; read live, raise to accommodate larger retained histories",
+            "scope": "machine"
           }
         }
       },

@@ -1,0 +1,565 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794129533555-8lkc5i",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T09:19:03.821Z",
+    "epicCreatedAt": "2026-11-08T08:48:39.709Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 9884,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "dc557863fa52ecf5",
+    "epicSlug": "fix-16-pre-existing-vs-code",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794129533555-8lkc5i",
+    "hldEffectiveHash": "814feeaf16ea0053e47e072bb1fb1a23aa635ee5a0e8f7f719fdd29837997ba8",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "ba5b0fe94c7319cfbd27c2d25c87b667d12688cb064cd09656c9287626f5a6d1",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T10:14:34.562Z",
+        "override": {
+          "reason": "The second independent review confirmed that the revised Show details design addresses the functional finding. Its browser host could not verify the diagram rendering. The controller rendered and inspected the revised diagram in Chrome. The review is retained in the daemon checkpoint and the user approved this tooling override."
+        }
+      }
+    },
+    "rangeBase": "0af712793e9e9807ed80165c00d0a19b98d1256d"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "Restore the catalog-backed Tracker section in the registered-repo panel and attach the existing approval prompter to the VS Code extension lifecycle. One panel selection targets one registered repository. One activation owns one subscription, and the daemon broker owns request lifetime and arbitration. The remaining work repairs test fixtures and assertions against current contracts."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Fix 16 pre-existing VS Code extension test failures"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "renderRepoConfig",
+          "signature": "renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer",
+          "parameters": [
+            {
+              "name": "deps",
+              "type": "RepoConfigRendererDeps",
+              "purpose": "Read registered repositories, model config, and existing catalog and settings gateway results",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "RepoConfigRenderer",
+            "meaning": "Renders selected repository model and Tracker sections"
+          },
+          "errors": [
+            {
+              "type": "SettingsResult failure or rejected read",
+              "condition": "Report Tracker unavailable and preserve available model controls"
+            }
+          ],
+          "preconditions": [
+            "Selected repository resolves against the registered list before settings are read"
+          ],
+          "postconditions": [
+            "Catalog descriptors drive local editable and status or policy read-only rows, with escaped values and notes Existing model and provider sections stay in place. Tracker is a separate section below model controls. Each row shows its catalog label, value, source or availability, and any note. Use the catalog's scalar and enum types to choose controls [c4] [c11].",
+            "Repo-local writes use existing consent and repo settings gateway. Revalidate selected registered repo and field before mutation, including after consent. Refresh from authoritative results The host guards repoTrackerWrite carrying repoPath, key, and value, binds the request to the active selection generation, and supplies a live generation check to the consent callback. Ignore earlier settings reads after selection changes [c3] [c4]."
+          ]
+        },
+        {
+          "name": "createDaemonConfigGateway",
+          "signature": "createDaemonConfigGateway(client: IpcClient): ConfigGateway",
+          "parameters": [
+            {
+              "name": "client",
+              "type": "IpcClient",
+              "purpose": "Forward typed requests to daemon-owned catalog and repository settings",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ConfigGateway",
+            "meaning": "Existing catalog, repoSettings, and writeRepoSetting operations"
+          },
+          "errors": [
+            {
+              "type": "ConfigWriteResult failure or rejected IPC",
+              "condition": "Report reason and keep the previously authoritative values"
+            }
+          ],
+          "preconditions": [
+            "Writes target an editable catalog field for the selected registered repo and have consent"
+          ],
+          "postconditions": [
+            "Writes call repo.settings.set with the existing scalar-or-null value contract"
+          ]
+        },
+        {
+          "name": "createApprovalPrompter",
+          "signature": "createApprovalPrompter(opts: { client: IpcClient; notifier: ApprovalNotifier; reconnectMs?: number }): ApprovalPrompter",
+          "parameters": [
+            {
+              "name": "opts",
+              "type": "ApprovalPrompter options",
+              "purpose": "Supply active daemon client and native VS Code notification adapter",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "ApprovalPrompter",
+            "meaning": "Existing start, stop, and open lifecycle"
+          },
+          "errors": [
+            {
+              "type": "accepted false or rejected IPC",
+              "condition": "Use existing stale-answer or transport handling without inventing a decision"
+            }
+          ],
+          "preconditions": [
+            "Extension owns one prompter for the attached client"
+          ],
+          "postconditions": [
+            "Start once at activation and stop on disposal. Reconnect through existing prompter",
+            "Show the daemon's redacted gate content [c2] [c6]. Approve and Decline answer only a currently open request. Show details opens approvalDetails(request) as JSON and offers the same choices again after the JSON opens, if still active. The notifier keeps the same pending choice and handle throughout. Dismissal resolves undefined. The close hook invalidates the handle and prevents reopening or answering after cancel, stream loss or extension disposal, even if VS Code still displays the old toast. The daemon owns expiry and first accepted answer."
+          ]
+        },
+        {
+          "name": "IpcServer",
+          "signature": "new IpcServer(forward: ForwardRequest, now?: () => number, socketPath?: string, ownership?: DaemonRunFileOwnership)",
+          "parameters": [
+            {
+              "name": "forward",
+              "type": "ForwardRequest",
+              "purpose": "Test-only router for existing streaming approval RPCs",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "IpcServer",
+            "meaning": "Real current IPC fixture on isolated socket"
+          },
+          "errors": [
+            {
+              "type": "Connection error",
+              "condition": "Test fixture surfaces startup or stream failure and tears down resources"
+            }
+          ],
+          "preconditions": [
+            "Fixture uses current constructor and isolated socket"
+          ],
+          "postconditions": [
+            "Tests preserve subscription frames and cancellation using the existing router contract"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Catalog or repo settings cannot load",
+          "detection": "IPC rejection, unsuccessful SettingsResult, or absent Tracker descriptors",
+          "response": "Show Tracker unavailable with reload available. Keep independently loaded controls usable and disable Tracker writes",
+          "userImpact": "Model and provider controls remain usable when their reads succeed",
+          "recoverable": true
+        },
+        {
+          "scenario": "Stale or forged Tracker write",
+          "detection": "Selected repo mismatch, absent registration, unknown or read-only catalog key, invalid scalar, or selection generation changed during consent",
+          "response": "Reject before IPC mutation and surface a concise explanation",
+          "userImpact": "No unexpected repository changes",
+          "recoverable": true
+        },
+        {
+          "scenario": "Daemon rejects a Tracker update",
+          "detection": "Gateway reports ok false or IPC rejects",
+          "response": "Report failure and reload authoritative values for the current selection",
+          "userImpact": "The panel displays the persisted state",
+          "recoverable": true
+        },
+        {
+          "scenario": "Approval stream fails or answer arrives too late",
+          "detection": "Existing stream termination or answer accepted false",
+          "response": "Close or invalidate stale prompts on stream loss, use existing reconnect, and report stale answer",
+          "userImpact": "A stale notification cannot authorize a request",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "Repo setting is unset, or user clears a local value",
+          "expected": "Use catalog default and source semantics. Use null on the existing write contract to clear"
+        },
+        {
+          "input": "Repo switch while load, consent, or write is pending",
+          "expected": "Discard stale rendering, decline writes before dispatch when selection changed, and never replace the current repo view with earlier data"
+        },
+        {
+          "input": "Dismissal, Details, cancellation, expiry, or reconnect while a toast is open",
+          "expected": "Show details displays the existing redacted JSON and re-prompts only while the same request is live. The choice remains pending across Details. Dismissal sends no answer. Cancel, disconnect or disposal invalidates the handle. Any clicks from an invalidated toast are ignored."
+        },
+        {
+          "input": "No registered repositories",
+          "expected": "Keep existing empty-state behavior and issue no Tracker write or selected-repo read"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Repo registry and existing scalar-or-null settings gateway remain authoritative",
+          "source": "c3"
+        },
+        {
+          "text": "One broker decides acceptance, expiration and cancellation",
+          "source": "c6"
+        },
+        {
+          "text": "Role order and criticality are sourced from taxonomy",
+          "source": "c7"
+        },
+        {
+          "text": "Keep CLI provider registry and Ollama transport routing contracts intact",
+          "source": "c9"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "Node.js node:test and node:assert via tsx",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Verify rendering, guarded dispatch and activation behavior",
+          "subjects": [
+            "Repo Configuration renderer and webview host",
+            "Activation settings ordering and migration",
+            "Role taxonomy groups and floor",
+            "Four UX ledger fixtures and truncation",
+            "Provider registry plus separate Ollama routing"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Exercise the real approval stream against the current IPC constructor",
+          "subjects": [
+            "Subscribe, present, answer, cancel, reconnect, dispose and no duplicate answers"
+          ],
+          "fixturesNeeded": [
+            "Isolated Unix socket and current IpcServer forwarding adapter"
+          ]
+        },
+        {
+          "level": "smoke",
+          "purpose": "Run the full extension sweep after focused verification and separate unrelated failures",
+          "subjects": [
+            "VS Code extension tests and TypeScript",
+            "Manual Tracker selection/write and approval notification checks when an IDE is available"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "Repo detail renderers, repo-fields contract, webview host and workspace activation tests. Cover editability, deny/accept/reject, repo switch, and degraded reads",
+            "Cover boolean true, false and clear, enum rejection, escaping, unavailable policy fields, and delayed reads completing after a repo switch."
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "Approval subscriber tests with current IPC fixture and actual extension lifecycle. Exercise cancellation, stale answers, dismissal, and reconnect",
+            "Exercise the native notifier adapter through Show details followed by Approve or Decline. Cancel, disconnect or dispose while JSON opens and assert no re-prompt and no answer. Verify an old toast click after invalidation is inert."
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "Both docs review panel tests explicitly resolve four current ledger records and preserve rendering and truncation checks"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "Both repo config tests derive role IDs, groups, and counts from the taxonomy and separately verify Core floor"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "Activation test verifies settings pull after activation and legacy migration after pull. Registry and Ollama routing tests verify distinct contracts"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "Nine focused files cover all 16 baseline failures. Full extension sweep and TypeScript follow the focused tests Report the three initial failures that passed isolated reruns separately if they recur. Record Node version, commands and each targeted result."
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The s1 capability-discovery bundle and approved issue [c1] identify missing editor integration around the repo renderer [c4], existing gateway [c3] and approval prompter [c6].",
+      "stateAfter": "VS Code exposes existing Tracker settings and daemon approval prompts. All 16 targeted regression cases have proving coverage.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Deploy the rebuilt VS Code extension and reload the extension host to activate restored bindings",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Verify the Tracker fields for a registered repo and an approval request in a disposable test workspace",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "The extension consumes existing catalog and approval IPC contracts and repo setting persistence. Extension rollback removes the restored controls and subscriber. Intentional changes to repo settings retain normal persistence and can be cleared through the existing settings contract.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Restore the existing editor contracts",
+        "oneLineSummary": "Restore the two missing VS Code integrations using the daemon contracts and fix drifted coverage.",
+        "approach": "Use the existing config catalog and repo-settings gateway for Tracker rows and the existing approval subscriber for daemon prompts. Keep current wire and storage contracts. Update the tests for current fixture names, taxonomy, settings activation, and registry membership.",
+        "pros": [
+          "Recovers documented editor approval behavior and existing Tracker functionality.",
+          "Keeps authorization, state ownership and validation with the daemon."
+        ],
+        "cons": [
+          "Requires integration tests for editor attachment, repo changes and stale messages."
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Retire the missing editor surfaces",
+        "oneLineSummary": "Treat the missing Tracker controls and approval prompt as product removals.",
+        "approach": "Define the current VS Code panel as model and provider configuration only and delegate tool approvals and Tracker configuration to other existing clients. Align client tests and documented support with those narrower contracts.",
+        "pros": [
+          "Leaves the currently active editor surfaces smaller."
+        ],
+        "cons": [
+          "Conflicts with the current documented editor approval behavior and leaves users without the two editor surfaces."
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "It can refresh assertions, but would remove existing user-facing coverage without product evidence that those editor capabilities were retired."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "id": "editor-approval",
+      "narrative": "The native notification follows the daemon request lifecycle [c2] [c5] [c6] [c14]. The answer path and the asynchronous cancellation or disconnect path can race.",
+      "participants": [
+        {
+          "id": "extension",
+          "label": "VS Code extension",
+          "description": "Owns one prompter per activation and disposes it."
+        },
+        {
+          "id": "prompt",
+          "label": "Approval prompter",
+          "description": "Owns notification handles and the existing streaming client."
+        },
+        {
+          "id": "broker",
+          "label": "Daemon approval broker",
+          "description": "Owns decisions, cancellation and request expiration."
+        },
+        {
+          "id": "editor",
+          "label": "VS Code notification",
+          "description": "Shows redacted data and presents the user's choices."
+        }
+      ],
+      "messages": [
+        {
+          "from": "extension",
+          "to": "prompt",
+          "label": "Start after daemon client is ready",
+          "description": "One subscriber belongs to the extension activation."
+        },
+        {
+          "from": "prompt",
+          "to": "broker",
+          "label": "Subscribe",
+          "description": "Reuse approval.subscribe for incoming frames."
+        },
+        {
+          "from": "broker",
+          "to": "prompt",
+          "label": "Gate frame",
+          "description": "Supply the redacted request and request ID."
+        },
+        {
+          "from": "prompt",
+          "to": "editor",
+          "label": "Show Approve, Decline, Show details",
+          "description": "Display a native notification for each open request ID."
+        },
+        {
+          "from": "editor",
+          "to": "prompt",
+          "label": "Choose Show details, answer, or dismiss",
+          "description": "Show details keeps the notification handle and final decision promise pending. Dismissal leaves the daemon decision pending."
+        },
+        {
+          "from": "prompt",
+          "to": "editor",
+          "label": "Open redacted JSON and ask again if active",
+          "description": "Open approvalDetails(request) as JSON, then offer the same choices if the request handle is still active. Cancel, disconnect, and disposal invalidate the handle even if the JSON or toast stays visible."
+        },
+        {
+          "from": "prompt",
+          "to": "broker",
+          "label": "Answer if still open",
+          "description": "Send the request ID and decision through approval.answer."
+        },
+        {
+          "from": "broker",
+          "to": "prompt",
+          "label": "Accepted or stale result",
+          "description": "Honor the broker response and surface stale answers."
+        },
+        {
+          "from": "broker",
+          "to": "prompt",
+          "label": "Cancel or end stream",
+          "description": "Invalidate notification handles. Reconnect on stream loss while active."
+        },
+        {
+          "from": "extension",
+          "to": "prompt",
+          "label": "Stop on disposal",
+          "description": "End subscription and invalidate outstanding notifications."
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/fix-16-pre-existing-vs-code-E20261108dc557863/ISSUE.md"
+    },
+    {
+      "id": "c2",
+      "kind": "doc",
+      "ref": "docs/daemon.md"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/gateway.ts"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "vscode-plugin/src/panels/repo-config.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/server.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/approval-subscribe.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/config/role-taxonomy.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "vscode-plugin/src/config/legacy-keys.ts"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/cli-adapter.ts"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/ollama-routing.ts"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/config/repo-fields.ts"
+    },
+    {
+      "id": "c12",
+      "kind": "doc",
+      "ref": "docs/standalone/allow-independent-turns-concurrent-vs-code-E20261108d8b2fe8e/S001/VS-CODE-SMOKE.md"
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "vscode-plugin/src/chat/__tests__/docs-review-panel.test.ts"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/daemon/approval.ts"
+    }
+  ]
+}

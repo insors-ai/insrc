@@ -13,6 +13,7 @@ import type { ChatPanelLogger } from './chat-panel.js';
 import type { ProviderId, ProviderRegistry, TurnCursor, TurnProcess, TurnRequest } from './cli-adapter.js';
 import { LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
 import type { ChatSession, ChatSessionStore } from './session-store.js';
+import { setTurnProgress } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
 
 /** How often a running turn's cursor (and transcript) is saved at most. */
@@ -116,7 +117,7 @@ export interface TurnLifecycle {
    * (false when it ignored even SIGKILL within the grace) — recovery uses this as its verified-exit
    * prerequisite. Best-effort callers may ignore the value.
    */
-  stop(): Promise<boolean>;
+  stop(session?: ChatSession): Promise<boolean>;
   /**
    * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
    * the session file keeps running (with its lease) and its cursor stays saved, so following the
@@ -162,6 +163,7 @@ function finishIterator(it: AsyncIterator<TurnEvent>): void {
 /** Once a turn's output has been fully handled: forget its cursor (if it is still that turn's). */
 function clearCursor(s: ChatSession, turnId: string): void {
   if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+  if (s.progress?.turnId === turnId) setTurnProgress(s, undefined);
 }
 
 
@@ -405,7 +407,6 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       // when its answer ends.
       const onSpawn = (proc: TurnProcess): void => {
         attachLease(proc);
-        reportSpawn(sink, proc);
         if (myGen === generation) liveProc = proc;
         const forget = (): void => {
           if (liveProc === proc) liveProc = undefined;
@@ -415,6 +416,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // host, so a reloaded window can follow it from there.
         if (proc.cursor !== undefined) {
           const { turnId, generation: gen, offset } = proc.cursor;
+          const startedAt = Date.now();
+          setTurnProgress(s, { turnId, turnEpoch: Math.max(startedAt, (s.progressTurnEpoch ?? 0) + 1), startedAt, phase: 'starting' });
           cursorTurnId = turnId;
           runningTurns.add(turnId);
           proc.exit.then(
@@ -434,6 +437,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           pinLive(s); // retention: the saved cursor's generation is not discarded under it
           cursor.saveNow();
         }
+        reportSpawn(sink, proc);
       };
       let detached = false;
       let detachThis: (() => void) | undefined;
@@ -584,6 +588,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           { cursor: { sessionId: s.id, ...live.cursor }, pid: live.pid, startedAt: live.startedAt ?? null, ...(live.decoder !== undefined ? { decoderState: { selectionSeq: live.decoder.selectionSeq, ...(live.decoder.selectionBuffer !== undefined ? { selectionBuffer: live.decoder.selectionBuffer } : {}), ...(live.decoder.sessionId !== undefined ? { sessionId: live.decoder.sessionId } : {}), ...(live.decoder.toolCommands !== undefined ? { toolCommands: { ...live.decoder.toolCommands } } : {}), ...(live.decoder.editPaths !== undefined ? { editPaths: { ...live.decoder.editPaths } } : {}) } } : {}), },
           {
             signal: ctl.signal,
+            waitForDeparture: true,
             onAttach: (p) => {
               attached = p;
               resumedProc = p;
@@ -677,20 +682,30 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     return verified;
   };
 
-  const stop = async (): Promise<boolean> => {
-    following?.ctl.abort();
+  const stop = async (session?: ChatSession): Promise<boolean> => {
+    const currentFollow = following;
+    const followedSession = followingSession;
     const resumed = resumedProc;
-    resumedProc = undefined;
-    const liveVerified = await stopLive();
-    let resumedVerified = true;
-    if (resumed !== undefined) {
+    const saved = followedSession?.liveTurn;
+    if (session?.liveTurn !== undefined && liveProc === undefined && currentFollow?.sessionId !== session.id) return false;
+    if (currentFollow !== undefined || (saved !== undefined && liveProc === undefined)) {
+      // Keep following while checking Stop. An unknown identity must not discard its reader.
+      let verified = false;
       try {
-        resumedVerified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
-      } catch {
-        resumedVerified = false;
+        if (resumed !== undefined) {
+          verified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
+        }
+      } catch { /* exit could not be verified */ }
+      if (!verified) return false;
+      currentFollow?.ctl.abort();
+      if (following === currentFollow) resumedProc = undefined;
+      if (followedSession !== undefined && saved !== undefined) {
+        clearCursorPinned(followedSession, saved.cursor.turnId);
+        trySave(followedSession);
       }
+      return true;
     }
-    return liveVerified && resumedVerified;
+    return stopLive();
   };
 
   const detach = async (): Promise<void> => {

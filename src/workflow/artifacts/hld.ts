@@ -295,7 +295,7 @@ function isStoryBoundary(v: unknown): boolean {
 		&& typeof r['internal'] === 'string';
 }
 
-function isAlternative(v: unknown): boolean {
+export function isAlternative(v: unknown): boolean {
 	if (typeof v !== 'object' || v === null) return false;
 	const r = v as Record<string, unknown>;
 	return typeof r['id'] === 'string'

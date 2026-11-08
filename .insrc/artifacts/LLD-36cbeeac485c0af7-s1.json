@@ -1,0 +1,728 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1794122938555-ch5567",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:31:54.223Z",
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 175102,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "36cbeeac485c0af7",
+    "epicSlug": "llds-pass-every-gate-while-thin",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1794122938555-ch5567",
+    "hldEffectiveHash": "7f5480f3f7563fec2e5641d8a8ab0d2512a9f618ca129b1fbcb5c2de3ff43994",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "bugfix",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "0b34981d661469e934ce0f3d297b84a3f2864f52db5a723cf80f15c607b750b5",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:45:05.049Z",
+        "override": {
+          "reason": "scope-02 is one sentence contradicted by the contract, edge cases and tests, which the build follows; the other three MEDs are carried only because the reviewer's browser was unavailable, and the diagram was rendered by hand."
+        }
+      }
+    },
+    "rangeBase": "b5c077ccd079ebb1dbfd7db1603ed277dabb45d7"
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "An LLD's quality will stop depending on which model wrote it. The daemon will fill each alternative from what the alternatives step recorded and refuse new LLDs whose alternatives are incomplete or whose citations carry a file reference outside the documented form. LLD titles will show the Story title, and client-authored artifacts will record the real client family plus the model the client reports, or say the model is unknown. All of this applies when an artifact is written, so stored artifacts read and render exactly as before."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Stop LLD quality depending on the authoring model"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal-shared",
+      "api": [
+        {
+          "name": "handleSynthesize",
+          "signature": "handleSynthesize(input: WorkflowStepInputSynthesize): Promise<WorkflowStepDone | WorkflowStepError>",
+          "parameters": [
+            {
+              "name": "input",
+              "type": "WorkflowStepInputSynthesize",
+              "purpose": "the synthesize phase input; gains optional authorModel, the model the client says authored the artifact",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "Promise<WorkflowStepDone | WorkflowStepError>",
+            "meaning": "the written artifact, or an error naming what must be corrected and whether a retry can help"
+          },
+          "errors": [],
+          "preconditions": [
+            "the run's state is awaiting_synthesize"
+          ],
+          "postconditions": [
+            "the finalized artifact's meta.attribution has one (client) stamp whose runner is the family of the step context's client, or 'unknown' when that client maps to no family",
+            "the stamp's model is the trimmed authorModel when it is a non-empty single line, otherwise 'unknown'"
+          ]
+        },
+        {
+          "name": "finalizeDesignStory",
+          "signature": "finalizeDesignStory(intent: WorkflowIntent, stepOutputs: Readonly<Record<string, unknown>>, runId: string, elapsedMs: number, llmResponse: Record<string, unknown>, model: string, attribution?: ArtifactModelAttribution): Promise<FinalizeResult>",
+          "parameters": [
+            {
+              "name": "stepOutputs",
+              "type": "Readonly<Record<string, unknown>>",
+              "purpose": "the run's step outputs; s2.alternatives is the source of each alternative's content",
+              "optional": false
+            },
+            {
+              "name": "llmResponse",
+              "type": "Record<string, unknown>",
+              "purpose": "the submitted artifact; each alternative needs only its id, and a loser its reasonRejected",
+              "optional": false
+            },
+            {
+              "name": "attribution",
+              "type": "ArtifactModelAttribution",
+              "purpose": "the authoring record, now forwarded on the standalone path as well",
+              "optional": true
+            }
+          ],
+          "returns": {
+            "type": "Promise<FinalizeResult>",
+            "meaning": "the finalized LLD, or a schema or paths failure that says whether a retry can help"
+          },
+          "errors": [
+            {
+              "type": "retryable schema failure",
+              "condition": "submitted alternative ids are duplicated or do not match s2's ids one-to-one, or on a run with no s2 output an alternative is incomplete"
+            },
+            {
+              "type": "non-retryable schema failure",
+              "condition": "s2 itself has duplicate ids or an incomplete record, which no resubmission can correct"
+            },
+            {
+              "type": "retryable paths failure",
+              "condition": "a citation of a non-path kind holds a file reference that is not the whole ref, or a whole-ref file reference not in the one form"
+            }
+          ],
+          "preconditions": [
+            "the body has passed isLldBody"
+          ],
+          "postconditions": [
+            "every stored alternative's name, oneLineSummary, approach, pros, cons and costEstimate equal the s2 record with the same id",
+            "a submitted reasonRejected is retained",
+            "fields s2 does not define, other than reasonRejected, are not stored",
+            "meta.storyTitle is set on both the Epic and the standalone path"
+          ]
+        },
+        {
+          "name": "renderLldMarkdown",
+          "signature": "renderLldMarkdown(artifact: LldArtifact): string",
+          "parameters": [
+            {
+              "name": "artifact",
+              "type": "LldArtifact",
+              "purpose": "the LLD to render, new or stored",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "string",
+            "meaning": "the LLD markdown"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "with meta.storyTitle the H1 is 'LLD: <id> — <title>'",
+            "without meta.storyTitle the output is unchanged from today"
+          ]
+        },
+        {
+          "name": "isAlternative",
+          "signature": "isAlternative(v: unknown): boolean",
+          "parameters": [
+            {
+              "name": "v",
+              "type": "unknown",
+              "purpose": "a candidate alternative",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "boolean",
+            "meaning": "true when every field of a complete alternative is present"
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "exported from hld.ts unchanged, so the LLD finalize path applies the same standard as the HLD"
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "LLD alternatives at finalize",
+        "change": "invariant-change",
+        "details": "Today the model re-types alternatives and only an array is required. A new helper in orchestrator.ts, applyStepAlternatives(body, stepOutputs), runs in finalizeDesignStory before the standalone branch so both paths get it. It first requires s2's ids to be unique and every s2 record to pass isAlternative; otherwise the failure is non-retryable and tells the client to restart design.story, because every resubmission would meet the same s2. It then requires submitted ids to be unique and to match s2's one-to-one, and rebuilds each entry from the s2 record, keeping only the submitted reasonRejected. When the run has no s2 output there is nothing to overlay, and the submitted list must itself pass isAlternative. The synthesis schema gives each item a required id and an optional reasonRejected, and allows other fields, so a model that still copies them is not refused. The synthesis prompt says the daemon fills the rest. isLldBody is unchanged, so stored LLDs still read.",
+        "callSites": [
+          "src/workflow/orchestrator.ts:2022",
+          "src/workflow/orchestrator.ts:2085",
+          "src/workflow/orchestrator.ts:2117",
+          "src/workflow/artifacts/hld.ts:298"
+        ]
+      },
+      {
+        "entity": "LLD citations at finalize",
+        "change": "invariant-change",
+        "details": "Today citations of kinds other than code and doc may hold any text. A new check in synthesizer.ts, checkNonPathCitationRefs(citations, repoPath), is called only from finalizeDesignStory. It looks for file references in the ref: slash-separated paths, root-level file names with a known source or document extension, absolute paths and URLs. A ref with none passes. A ref that is exactly one file reference is judged by the existing pathFormProblem rule, so a bad path-only ref such as one starting with ./ is refused and a standalone URL passes. A file reference alongside any other text is refused. The failure tells the author to use a code or doc citation with the path as ref and any prose as quotedText. Recognition is a heuristic and an unusual file name can be missed. checkPathForms and validateBodyAndCitations are unchanged, so other artifact kinds are unaffected.",
+        "callSites": [
+          "src/workflow/synthesizer.ts:239",
+          "src/workflow/synthesizer.ts:273",
+          "src/workflow/orchestrator.ts:2117"
+        ]
+      },
+      {
+        "entity": "LldMeta",
+        "change": "field-add",
+        "details": "Adds optional storyTitle. finalizeDesignStory's Epic path sets it from story.title. The standalone path sets it from params.storyTitle, falling back to hldContextSlice.boundary.internal as the companion header already does. A stored LLD has no storyTitle and renders exactly as before.",
+        "schemaDiff": "+ readonly storyTitle?: string | undefined;",
+        "callSites": [
+          "src/workflow/artifacts/lld.ts:188",
+          "src/workflow/artifacts/lld.ts:328",
+          "src/workflow/orchestrator.ts:2247",
+          "src/workflow/orchestrator.ts:2363"
+        ]
+      },
+      {
+        "entity": "OutputModelStamp",
+        "change": "field-modify",
+        "details": "Today the runner must be a FamilyId, so an unmapped client takes the default family. runner widens to FamilyId or the literal 'unknown', so such a client is recorded as unknown. A new helper in attribution.ts, clientAttribution(family, authorModel), builds the single (client) stamp. handleSynthesize reads the client from the step context and calls it. singleModelAttribution stays for its other callers, and stored stamps are read unchanged.",
+        "schemaDiff": "- readonly runner: FamilyId;\n+ readonly runner: FamilyId | 'unknown';",
+        "callSites": [
+          "src/workflow/types.ts:281",
+          "src/workflow/attribution.ts:63",
+          "src/daemon/steps/workflow-step/phases/synthesize.ts:35",
+          "src/daemon/model-registry.ts:122"
+        ]
+      },
+      {
+        "entity": "WorkflowStepInputSynthesize",
+        "change": "field-add",
+        "details": "Adds optional authorModel, exposed on the insrc_workflow_step tool for phase=synthesize and described as the model authoring this artifact, to be omitted when not known. Omitting it is valid and records 'unknown'. finalizeDesignStory now forwards attribution to finalizeStandaloneLld, which it drops today.",
+        "schemaDiff": "+ readonly authorModel?: string | undefined;",
+        "callSites": [
+          "src/daemon/steps/workflow-step/types.ts:50",
+          "src/mcp/server.ts:1283",
+          "src/workflow/orchestrator.ts:2339"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "Submitted alternative ids are duplicated or do not match s2's ids one-to-one",
+          "detection": "applyStepAlternatives compares the submitted ids against s2's, checking uniqueness and that both sets are equal",
+          "response": "Returns a retryable schema failure naming the duplicated, unknown or missing ids",
+          "userImpact": "None beyond one synthesize retry; nothing is written",
+          "recoverable": true
+        },
+        {
+          "scenario": "s2 has duplicate ids or an incomplete record",
+          "detection": "applyStepAlternatives checks s2's id uniqueness and runs isAlternative on each s2 record before overlaying",
+          "response": "Returns a non-retryable schema failure naming the defect and telling the client to restart design.story",
+          "userImpact": "The stage must be restarted, because no resubmission can correct a stored step output; nothing is written",
+          "recoverable": false
+        },
+        {
+          "scenario": "On a run with no s2 output, a submitted alternative is incomplete",
+          "detection": "isAlternative returns false for the submitted entry",
+          "response": "Returns a retryable schema failure naming the entry and the required fields",
+          "userImpact": "None beyond one synthesize retry; nothing is written",
+          "recoverable": true
+        },
+        {
+          "scenario": "A non-path citation carries a file reference alongside other text, or a whole-ref file reference outside the one form",
+          "detection": "checkNonPathCitationRefs finds a file reference in the ref and either other text beside it or a pathFormProblem result for it",
+          "response": "Returns a retryable paths failure naming the citation and telling the author to use a code or doc citation",
+          "userImpact": "None beyond one synthesize retry; nothing is written",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A loser in the submission has no reasonRejected",
+          "expected": "Accepted as today; the alternative renders without a rejection line"
+        },
+        {
+          "input": "The submission repeats full alternative fields that differ from s2",
+          "expected": "Accepted, and s2's values are stored"
+        },
+        {
+          "input": "The submission carries an extra field such as chosen: true",
+          "expected": "Accepted, and the field is not stored"
+        },
+        {
+          "input": "On a run with no s2 output, the submission has complete alternatives",
+          "expected": "Accepted as submitted"
+        },
+        {
+          "input": "A non-path citation ref is text with no file reference, such as a step-output label",
+          "expected": "Passes the check"
+        },
+        {
+          "input": "A non-path citation ref is exactly one well-formed path or URL",
+          "expected": "Passes the check"
+        },
+        {
+          "input": "A non-path citation ref is exactly one badly formed path, such as one starting with ./",
+          "expected": "Refused, as the same ref would be under a code citation"
+        },
+        {
+          "input": "A non-path citation ref names a root-level file or a URL alongside prose",
+          "expected": "Refused"
+        },
+        {
+          "input": "authorModel is absent, blank or spans several lines",
+          "expected": "The stamp records model 'unknown'"
+        },
+        {
+          "input": "The client maps to no model family, or there is no client identity",
+          "expected": "The stamp records runner 'unknown'"
+        },
+        {
+          "input": "A Story title contains a line break",
+          "expected": "The H1 stays on one line, with whitespace collapsed"
+        },
+        {
+          "input": "A daemon-driven run, where a per-step attribution is supplied",
+          "expected": "That attribution is written unchanged; the client stamp applies only to handleSynthesize"
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "isLldBody keeps accepting a stored LLD whose alternatives lack the full fields, so stored artifacts keep reading",
+          "source": "c2"
+        },
+        {
+          "text": "checkPathForms keeps examining only code and doc citations, so artifact kinds other than LLD are unaffected",
+          "source": "c4"
+        },
+        {
+          "text": "A stored LLD with no meta.storyTitle renders the same id-only H1 as today",
+          "source": "c5"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testFramework": "node:test (tsx --test)",
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Prove the overlay, id uniqueness, the completeness rule, the citation rule, the title and the attribution stamp in isolation.",
+          "subjects": [
+            "applyStepAlternatives",
+            "checkNonPathCitationRefs",
+            "renderLldMarkdown",
+            "clientAttribution"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Run the full finalize path for both Epic and standalone Stories, the synthesize phase including the client identity and retry behaviour, and re-render real stored LLDs to prove they do not change.",
+          "subjects": [
+            "finalizeDesignStory",
+            "handleSynthesize",
+            "stored LLD re-render"
+          ],
+          "fixturesNeeded": [
+            "the DeepSeek LLD's stored body and step outputs",
+            "a stored LLD with no meta.storyTitle"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "overlay: a submission with only ids and reasonRejected stores every s2 field",
+            "overlay: a submission that alters s2's content stores s2's values",
+            "finalize: both the Epic and the standalone path apply the overlay",
+            "fallback: a run with no s2 output accepts complete submitted alternatives"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "finalize: duplicate submitted ids are refused as retryable",
+            "finalize: an id absent from s2 is refused as retryable",
+            "finalize: an s2 alternative missing from the submission is refused as retryable",
+            "finalize: duplicate s2 ids are refused as non-retryable",
+            "finalize: an incomplete s2 record is refused as non-retryable, naming a restart, and writes nothing",
+            "fallback: a run with no s2 output refuses an id-only submission"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "citations: the DeepSeek LLD's actual refs are refused",
+            "citations: a badly formed path-only ref under analyze-bundle is refused, as under code",
+            "citations: a root-level file name alongside prose is refused",
+            "citations: a URL alongside prose is refused",
+            "citations: a text-only label, a well-formed path and a standalone URL all pass",
+            "citations: a refused citation names its id, writes nothing and succeeds when corrected",
+            "citations: other artifact kinds are unaffected"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "title: the H1 shows id and title on both finalize paths",
+            "title: a title with a line break renders on one line"
+          ]
+        },
+        {
+          "criterionId": "ac5",
+          "provingTests": [
+            "attribution: a Codex client with a reported model stamps cli-codex and that model",
+            "attribution: absent, blank and multiline authorModel stamp unknown",
+            "attribution: a client with no family stamps runner unknown",
+            "attribution: a supplied multi-output attribution stays unchanged on both finalize paths"
+          ]
+        },
+        {
+          "criterionId": "ac6",
+          "provingTests": [
+            "stored: a stored LLD with no storyTitle renders byte-identically",
+            "stored: isLldBody still accepts a stored LLD with partial alternatives",
+            "stored: checkPathForms behaviour for other artifact kinds is unchanged"
+          ]
+        }
+      ]
+    },
+    "migration": {
+      "stateBefore": "The synthesizing model re-types each alternative, and the LLD finalize path checks only that the list is an array. Non-path citations may hold any text. The LLD H1 shows the id alone. A client-authored artifact is stamped from the label 'client', which falls to the default family whichever client wrote it.",
+      "stateAfter": "Each new LLD's alternatives carry s2's content and must be complete, with unique ids matching s2 one-to-one. A non-path citation may hold no file reference or exactly one in the one form. A new LLD's H1 shows the id and the Story title. A client-authored artifact records its client's family and the reported model, or unknown. Stored artifacts read and render as they did.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional fields: storyTitle on the LLD meta, authorModel on the synthesize input, and the 'unknown' runner value on the attribution stamp.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Stamp the Story title at finalize and render it in the H1 when present.",
+          "rollbackable": true
+        },
+        {
+          "order": 3,
+          "action": "Overlay s2's alternatives at LLD finalize, require unique ids and complete entries, and relax the synthesis schema and prompt to ask only for id and reasonRejected.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Refuse non-path citations whose file reference is not the whole ref or is not in the one form, at LLD finalize only.",
+          "rollbackable": true
+        },
+        {
+          "order": 5,
+          "action": "Build the client stamp in the synthesize phase, forward attribution on the standalone path, and describe authorModel on the workflow-step tool.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "All new input fields are optional, so an existing client that sends none keeps working and records the model as unknown. A client that keeps sending full alternatives is accepted. Stored artifacts are not rewritten. The stricter checks apply only to new LLD writes. A run in flight when the daemon updates may need a synthesize retry, or a restart of design.story if its stored s2 output is malformed. MCP clients need a reconnect to see the new tool field.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Daemon overlays s2 alternatives at finalize, then validates",
+        "oneLineSummary": "At finalize the daemon replaces each alternative's content with the s2 record by id, keeps the author's reasonRejected, then requires every entry to be complete.",
+        "approach": "finalizeDesignStory overlays stepOutputs.s2.alternatives onto the submitted list by id, before the standalone branch so both paths get it. Ids must be unique in both lists and match one-to-one. The author supplies id and reasonRejected; every other field comes from s2. A submission that disagrees with s2 is a retryable failure. A malformed s2 record cannot be fixed by resubmitting, so it is a non-retryable failure that tells the client to restart the stage. The result must pass the HLD's isAlternative. At LLD finalize, a citation of a non-path kind must either contain no file reference or be exactly one reference in the one form; anything else is refused. Finalizers stamp meta.storyTitle and the renderer adds it to the H1 when present. The synthesize input gains an optional authorModel and the step context's client, producing a stamp of the real family and the reported model, or the literal unknown.",
+        "pros": [
+          "The authoring model cannot lose or alter s2's content",
+          "Every new check runs only at finalize, so stored artifacts keep reading and re-rendering unchanged",
+          "The citation rule stays out of the validation shared with other artifact kinds",
+          "Reuses the HLD's existing isAlternative, the existing path-form rule and the existing client identity"
+        ],
+        "cons": [
+          "The model still submits the list, so ids must agree with s2",
+          "A synthesize retry is needed when ids disagree",
+          "The reported model name is only as trustworthy as the model's own claim",
+          "Recognizing a file reference inside free text is a heuristic, so it can miss an unusual file name"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Daemon authors alternatives entirely; drop them from the synthesis output",
+        "oneLineSummary": "Remove alternativesConsidered from what the model submits and have the daemon build the list from s2 and s3.",
+        "approach": "The synthesis schema stops asking for alternativesConsidered and chosenAlternative. The daemon assembles the list from s2 and takes the winner and rejection reasons from s3's judgments. Title, citation and attribution handling match a1. This changes the required shape of the LLD synthesis response.",
+        "pros": [
+          "The model has nothing to copy, so no id mismatch can occur",
+          "Shorter synthesis output"
+        ],
+        "cons": [
+          "s3 records a per-alternative rationale, not a written rejection line, so reasonRejected wording would change",
+          "Tests and fixtures that submit alternativesConsidered at finalize must change",
+          "A larger change to the response contract for the same outcome"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Also satisfies ac1 to ac6, but it replaces the authored rejection reasons with s3's rationale and changes the submission contract for every fixture and caller, a larger change for the same result."
+      },
+      {
+        "id": "a3",
+        "name": "Validation only: reject incomplete alternatives and retry",
+        "oneLineSummary": "Tighten the schema and validator and rely on the model retrying until it copies every field.",
+        "approach": "Give alternativesConsidered a full item shape in the synthesis schema and check it at finalize with isAlternative. No overlay: the model remains the source of the content. Title, citation and attribution handling match a1.",
+        "pros": [
+          "The smallest change to the finalize path",
+          "Matches how the HLD works today"
+        ],
+        "cons": [
+          "The model still re-types the content, so it can paraphrase or alter it and still pass, which misses outcome (a)",
+          "Costs retries on models that drop fields"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "The cheapest option, but it violates ac1: the content would still depend on what the model re-types, which is the defect being fixed."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [],
+    "sequenceDefinition": {
+      "narrative": "How a client-authored LLD is finalized after this change. The order matters: the overlay runs before the completeness check, and both run before anything is rendered or written.",
+      "participants": [
+        {
+          "id": "client",
+          "label": "MCP client",
+          "description": "Claude Code, Codex or Vibe, driving the workflow turn by turn"
+        },
+        {
+          "id": "synth",
+          "label": "handleSynthesize",
+          "description": "The synthesize phase in the daemon; it knows the client identity from the step context"
+        },
+        {
+          "id": "finalize",
+          "label": "finalizeDesignStory",
+          "description": "Validates and assembles the LLD on both the Epic and standalone paths"
+        },
+        {
+          "id": "render",
+          "label": "renderLldMarkdown",
+          "description": "Produces the LLD document through the format template"
+        }
+      ],
+      "messages": [
+        {
+          "from": "client",
+          "to": "synth",
+          "label": "synthesize: artifact, authorModel?",
+          "description": "The artifact carries alternative ids and rejection reasons; authorModel is optional"
+        },
+        {
+          "from": "synth",
+          "to": "finalize",
+          "label": "stepOutputs, artifact, client attribution",
+          "description": "The stamp uses the client's family and the reported model, or unknown"
+        },
+        {
+          "from": "finalize",
+          "to": "finalize",
+          "kind": "recurse",
+          "label": "overlay s2, require complete alternatives",
+          "description": "s2's content replaces what the model typed; an incomplete entry is refused"
+        },
+        {
+          "from": "finalize",
+          "to": "finalize",
+          "kind": "recurse",
+          "label": "check non-path citation refs",
+          "description": "Applies to non-path citations, in LLD finalize only"
+        },
+        {
+          "from": "finalize",
+          "to": "render",
+          "label": "LLD with meta.storyTitle",
+          "description": "The H1 shows the Story id and title when the title is present"
+        },
+        {
+          "from": "render",
+          "to": "finalize",
+          "kind": "return",
+          "label": "markdown",
+          "description": "The rendered LLD"
+        },
+        {
+          "from": "finalize",
+          "to": "synth",
+          "kind": "return",
+          "label": "finalized, or failure",
+          "description": "A failure writes nothing and says whether a retry can help"
+        },
+        {
+          "from": "synth",
+          "to": "synth",
+          "kind": "recurse",
+          "label": "write LLD.md and artifact",
+          "description": "Happens only after finalize succeeds"
+        },
+        {
+          "from": "synth",
+          "to": "client",
+          "kind": "return",
+          "label": "done, or error to correct",
+          "description": "The client retries synthesize after a retryable error, or restarts the stage"
+        }
+      ]
+    },
+    "companions": [
+      {
+        "kind": "diagram-mermaid",
+        "relPath": "docs/standalone/llds-pass-every-gate-while-thin-E2026110836cbeeac/S001/sequence-diagram.html",
+        "title": "Sequence diagram"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2117",
+      "quotedText": "async function finalizeDesignStory("
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts:492",
+      "quotedText": "if (!Array.isArray(r['alternativesConsidered'])) return false;"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/hld.ts:298",
+      "quotedText": "function isAlternative(v: unknown): boolean {"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts:280",
+      "quotedText": "if (c.kind !== 'code' && c.kind !== 'doc') continue;"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/artifacts/lld.ts:328",
+      "quotedText": "const h1 = `LLD: ${lldSid ?? meta.storyId}`;"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/attribution.ts:63",
+      "quotedText": "export function singleModelAttribution(label: string): ArtifactModelAttribution {"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/daemon/steps/host.ts:96",
+      "quotedText": "`context.client` must be 'claude', 'codex' or 'vibe'"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/runners/design-story/schemas.ts:57",
+      "quotedText": "required: ['id', 'name', 'oneLineSummary', 'approach', 'pros', 'cons', 'costEstimate']"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2085",
+      "quotedText": "alternativesConsidered: { type: 'array', minItems: 2 }"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2022"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/orchestrator.ts:2339",
+      "quotedText": "async function finalizeStandaloneLld("
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/daemon/steps/workflow-step/phases/synthesize.ts:35",
+      "quotedText": "export async function handleSynthesize("
+    },
+    {
+      "id": "c13",
+      "kind": "code",
+      "ref": "src/assets/artifacts/formats/lld.md:3",
+      "quotedText": "# LLD: <story id — title>"
+    },
+    {
+      "id": "c14",
+      "kind": "code",
+      "ref": "src/workflow/types.ts:281",
+      "quotedText": "export interface OutputModelStamp {"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts:239",
+      "quotedText": "function pathFormProblem(ref: string, repoPath?: string): string | undefined {"
+    },
+    {
+      "id": "c16",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/llds-pass-every-gate-while-thin-E2026110836cbeeac/ISSUE.md"
+    }
+  ]
+}

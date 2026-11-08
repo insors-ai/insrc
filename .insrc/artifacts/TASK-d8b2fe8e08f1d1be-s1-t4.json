@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8c7f6395-87e1-44e5-9c64-3479b01898b6",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.321Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build fenced session leases and the SQLite upgrade",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1223985518375676a9c89efd818c36ce1a11fe91024f470eba80d8bb1f6bf5e5",
+        "at": "2026-11-08T06:58:01.321Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.323Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build fenced session leases and the SQLite upgrade",
+    "summary": "Add and test the v3 schema migration and transactional store operations for per-session claims, recovery and completion. Stage the new path behind internal construction until the worker, runtime and view are wired.",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "Two store connections enforce repository capacity two and one lease per session. Per-chat FIFO and the 10s, 60s, 300s retry schedule remain intact.",
+      "Stale ownership tokens cannot mutate or release replacement leases. Finish transitions and releases atomically.",
+      "Upgrade preserves messages, order, retries and recoverable CLI identity. Live or unknown legacy ownership defers the upgrade. A failed transaction leaves v2 intact."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts: two connections enforce session FIFO, two slots and immutable lease fencing"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-store.test.ts: initial claim preserves attempts and all three retry delays"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-fault-injection.test.ts: v2 migration preserves records, defers live owners and rolls back atomically"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

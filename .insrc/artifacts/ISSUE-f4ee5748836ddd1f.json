@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794138370076-reeuqm",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T11:46:34.545Z",
+    "epicCreatedAt": "2026-11-08T11:46:34.545Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 24468,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "f4ee5748836ddd1f",
+    "epicSlug": "refuse-url-attached-colon-label-lld",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0317147f59f8995b5b002e3c6c21d26c0334713889626d25b6090d2582007fb3",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T11:48:27.054Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "f4ee5748836ddd1f",
+      "slug": "EPIC-f4ee5748836ddd1f"
+    }
+  },
+  "body": {
+    "title": "Refuse a URL attached to a colon label in an LLD citation",
+    "reproduction": "Finalize an LLD with a citation of kind analyze-bundle whose ref is `read:source:https://example.com/source.ts?version=2 explains the implementation`. Observed: the citation is accepted. Expected: it is refused as a file reference beside other text, as `read:source: https://example.com/source.ts explains the implementation` already is. Separately, the test that a stored LLD with no storyTitle renders byte-identically compares both strings after trimEnd(), so a change to trailing spaces or newlines would still pass it.",
+    "rootCause": "isFileToken recognises a URL only when the token starts with http:// or https:// [[c1]]. A token with a colon label in front does not, so it falls through to the colon split, which leaves `//example.com/source.ts?version=2`. That part ends in a query rather than a file extension and matches neither file heuristic, so no token counts as a file and checkNonPathCitationRefs skips the citation [[c2]]. The test weakness is the trimEnd() call on both sides of its comparison [[c3]].",
+    "fixIntent": "A URL that follows a colon label is recognised as a file reference, so a citation holding one beside other text is refused, while a standalone URL and a text-only label keep passing. The byte-identical test compares the rendered strings without trimming them. No other citation kind, finalize path or stored artifact changes."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts:260",
+      "quotedText": "if (/^https?:\\/\\//.test(token)) return true;"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/synthesizer.ts:261-263"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/__tests__/lld-authoring-gates.test.ts:153"
+    }
+  ]
+}

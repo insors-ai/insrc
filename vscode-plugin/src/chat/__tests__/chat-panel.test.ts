@@ -4523,7 +4523,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   assert.match(html, /if\(m\.type==='turn-event'\)\{const ev=m\.event;pager\.track\(m\.rowIndex,function\(\)\{/);
   assert.match(html, /else if\(m\.type==='user-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{reg\.appendKeyed\(reg\.toViewModel\(\{role:'user',text:m\.text,attachments:m\.attachments\}\),m\.key\);\}\);\}/);
   assert.match(html, /else if\(m\.type==='transcript-row'\)\{pager\.track\(m\.rowIndex,function\(\)\{var r=m\.row;if\(r&&r\.role==='diff'&&r\.replaces!=null\)\{reg\.redrawDiff\(r\);\}else if\(r\)\{reg\.renderRow\(reg\.toViewModel\(r\)\);\}\}\);\}/, 'a row the host pushed is tracked with its index too');
-  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
+  assert.match(html, /function track\(rowIndex,fn\)\{var from=term\.children\.length;try\{return fn\(\);\}finally\{stamp\(from,rowIndex\);if\(!rendering&&following\(\)\)toBottom\(\);trimIfNeeded\(\);showJump\(\);\}\}/, 'track stamps the new nodes, moves a following view to the bottom once the row is filled, and then trims');
   assert.match(html, /else if\(m\.type==='run-config'\)\{curProv=m\.provider\|\|'';if\(rb\)\{rb\.setAttribute\('data-provider',m\.provider\|\|''\);rb\.setAttribute\('data-model',m\.model\|\|''\);rb\.setAttribute\('data-effort',m\.effort\|\|''\);\}rlabel\(\);elabel\(\);\}/, 'the run-config echo branch settles the buttons from the session');
 });
 

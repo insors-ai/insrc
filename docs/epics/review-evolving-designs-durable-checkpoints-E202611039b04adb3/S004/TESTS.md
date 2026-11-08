@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 6 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -46,3 +46,25 @@ Run at 2026-11-08T04:54:16.585Z on commit `202923d85`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/capacity.test.ts` | 0 | 2 | 0.9 s |  |
+
+## t3
+
+Run at 2026-11-08T05:00:49.407Z on commit `e413e9f23`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**unit: U2 UTF-8 frame/journal boundaries and unknown-kind limits**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | design history alone receives a bounded UTF-8 allowance in sync and async readers | `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` |
+
+**integration: I1 deterministic-id journal crash replay**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | deterministic history id survives append and replace crashes and rejects conflicting replay | `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` | 0 | 2 | 0.8 s |  |

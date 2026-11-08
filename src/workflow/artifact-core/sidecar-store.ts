@@ -18,7 +18,7 @@ import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { JOURNAL_DIR } from './journal.js';
-import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit } from './sidecar.js';
+import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit, isDesignHistoryRecord, MAX_SIDECAR_ENTRY_BYTES } from './sidecar.js';
 import type { SidecarFile, SidecarIo } from './sidecar.js';
 import { HistoryReadError } from './types.js';
 import type { SidecarRecord } from './types.js';
@@ -157,6 +157,8 @@ export class FileSidecarStore implements SidecarStore {
 				throw new HistoryReadError(`${where} is not a sidecar record with an artifactId and an entry`);
 			}
 			checkSidecarEntrySize(r as SidecarRecord<unknown>);
+   const physicalLimit = isDesignHistoryRecord(r as SidecarRecord<unknown>) ? sidecarOuterLimit() : MAX_SIDECAR_ENTRY_BYTES;
+   if (Buffer.byteLength(json,'utf8') > physicalLimit) throw new HistoryReadError(`${where} exceeds its actual encoded byte limit`);
 			if (r.artifactId !== artifactId) return;
 			const id = entryIdOf(r.entry);
 			const prior = seen.get(id);

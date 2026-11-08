@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { impactFixture } from '../../review/design-review/__tests__/impact-fixtures.js';
 import { designPreservationDigest, designWorkflowDigest } from '../../review/design-review/history.js';
@@ -30,6 +30,10 @@ test('design history alone receives a bounded UTF-8 allowance in sync and async 
  writeFileSync(join(f.repo,store.filesOf(f.id).log),`${sidecarOuterLimit()+1}\t{}\n`);
  assert.throws(()=>store.readRecordsSync('log',f.id),/Declared/);
  await assert.rejects(store.readRecords('log',f.id),/Declared/);
+ const padded=JSON.stringify({artifactId:f.id,entry:{id:'unknown',kind:'unknown'}})+' '.repeat(MAX_SIDECAR_ENTRY_BYTES);
+ writeFileSync(join(f.repo,store.filesOf(f.id).log),`${Buffer.byteLength(padded)}\t${padded}\n`);
+ assert.throws(()=>store.readRecordsSync('log',f.id),/actual encoded/);
+ await assert.rejects(store.readRecords('log',f.id),/actual encoded/);
 });
 test('deterministic history id survives append and replace crashes and rejects conflicting replay', async t => {
  for (const fault of ['append','replace'] as const) {
@@ -43,5 +47,12 @@ test('deterministic history id survives append and replace crashes and rejects c
   assert.equal((await restarted.store.readWithHistory(id)).changeLog.filter(e=>e.id===entryId).length,1);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:current,options:{...options,outcome:{result:'different',summary:'Conflict'}}})),/Conflicting/);
   await assert.rejects(restarted.store.updateAndLog(id,alice,current=>({next:{...current,description:'Different content'},options})),/Conflicting/);
+  const before=readFileSync(join(k.repo,`.insrc/artifacts/${id}.json`),'utf8');
+  const existing=(await restarted.store.readWithHistory(id)).changeLog.find(e=>e.id===entryId)!;
+  const staged={operationId:entryId,priorRevision:existing.revision!.number,priorHeadHash:'absent',bytes:before,entry:{...existing,outcome:{result:'forged',summary:'Conflict'}}};
+  await restarted.journal.stage(id,staged);
+  await assert.rejects(restarted.store.finishPending(id),/different content/);
+  assert.deepEqual(await restarted.journal.pending(id),staged);
+  assert.equal(readFileSync(join(k.repo,`.insrc/artifacts/${id}.json`),'utf8'),before);
  }
 });

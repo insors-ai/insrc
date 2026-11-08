@@ -406,7 +406,9 @@ export class ArtifactStore {
 			throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
 		}
 		const entries = await this.deps.history.log(id);
-		if (!entries.some(e => e.id === op.entry.id)) await this.deps.history.appendLog(id, op.entry);
+  const existing = entries.find(e => e.id === op.entry.id);
+  if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'history-id-conflict', 'Staged history id already exists with different content; journal retained');
+		if (!existing) await this.deps.history.appendLog(id, op.entry);
 		if (replace) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
 		await this.clearQuietly(id, op.operationId);
 	}

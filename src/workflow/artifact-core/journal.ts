@@ -85,10 +85,12 @@ export function createFileJournal(repoPath: string): WriteJournal {
 		if (!existsSync(path)) return undefined;
   if (statSync(path).size > MAX_DESIGN_HISTORY_BYTES * 2) throw new Error('Journal exceeds absolute capacity');
 		let parsed: unknown;
-		try { parsed = JSON.parse(readFileSync(path, 'utf8')); }
+  const raw = readFileSync(path, 'utf8');
+		try { parsed = JSON.parse(raw); }
 		catch (err) { throw new Error(`the journal file ${path} is not valid JSON (${(err as Error).message})`); }
 		if (!isStagedOperation(parsed)) throw new Error(`the journal file ${path} is not a staged operation`);
   journalBytes(id,parsed);
+  if (isDesignHistoryRecord({artifactId:id,entry:parsed.entry}) && Buffer.byteLength(raw)>sidecarOuterLimit()) throw new Error('Journal envelope exceeds actual encoded history capacity');
 		return parsed;
 	};
 	return {

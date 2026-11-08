@@ -825,7 +825,12 @@ function classifyShaperError(err: unknown): RunFailure {
 		return {
 			code: 'answer-step-failed',
 			message: err.message,
-			data: { reason: err.reason, results: err.found.results, report: err.found.report },
+			data: {
+				reason: err.reason, results: err.found.results, report: err.found.report,
+				// A divided call keeps each failed part's kind and cause chain, and an aggregate failure the upstream inputs it was given.
+				...(err.partFailures !== undefined ? { partFailures: err.partFailures } : {}),
+				...(err.upstream !== undefined ? { upstream: err.upstream } : {}),
+			},
 		};
 	}
 	return wrap('internal-error', err);

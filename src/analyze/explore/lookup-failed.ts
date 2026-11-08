@@ -18,6 +18,9 @@
 import type { HandlingReport, PartialFinding } from '../completeness.js';
 import type { AnswerStepFailureReason } from '../context/driver.js';
 
+/** The prefix of a failed lookup's error code when its final answer could not be written; the reason follows. */
+export const ANSWER_STEP_CODE_PREFIX = 'answer-step:';
+
 export class LookupFailedError extends Error {
 	readonly partial: readonly PartialFinding[];
 	/** How the answer step that failed was handled, for a failure of the answer-writing step (Story s3). */

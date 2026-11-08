@@ -28,7 +28,7 @@ import { captureAnalysisDiagnostics } from '../connection-access.js';
 import { legacyShaperPromptPathFor } from '../context/index.js';
 import type { RunShapeInput } from '../context/types.js';
 import type { ResolvedScope } from '../context/scope.js';
-import { runShaperToolLoop, ShaperToolLoopExhausted } from '../context/driver.js';
+import { runShaperToolLoop, ShaperFinalEmitFailed, ShaperToolLoopExhausted } from '../context/driver.js';
 import { getLogger } from '../../shared/logger.js';
 
 import type {
@@ -37,6 +37,7 @@ import type {
 	FreeformProbeOutput,
 } from './types.js';
 import { buildCompleteness } from '../completeness.js';
+import type { HandlingReport } from '../completeness.js';
 import { LookupFailedError } from './lookup-failed.js';
 import { measureRequestScope, measureResolvedScope } from '../measure.js';
 import type { RequestMeasure } from '../measure.js';
@@ -159,6 +160,7 @@ export async function runFreeformProbe(
 
 	let rawBundle: Awaited<ReturnType<typeof runShaperToolLoop>>['rawBundle'];
 	let toolCallCount = 0;
+	let handling: HandlingReport | undefined;
 	try {
 		const result = await loop({
 			connectionExecution,
@@ -168,10 +170,12 @@ export async function runFreeformProbe(
 			inputs,
 			scope,
 			promptPath,
+			size,
 		});
 		assertAnalysisConnectionExecution(connectionExecution);
 		rawBundle     = result.rawBundle;
 		toolCallCount = result.toolCallCount;
+		handling      = result.handling;
 	} catch (err) {
 		assertAnalysisConnectionExecution(connectionExecution);
 		if (err instanceof ConnectionExecutionError) throw err;
@@ -185,6 +189,15 @@ export async function runFreeformProbe(
 				'Refine the request or ask for a specific lookup.',
 				err.toolResults,
 				{ cause: err },
+			);
+		}
+		if (err instanceof ShaperFinalEmitFailed) {
+			// The search ran and its answer could not be written: the lookup fails with the tool results kept, the
+			// reason told apart and how the answer was handled, so the request ends in the matching failure.
+			throw new LookupFailedError(
+				`freeform.probe: the answer could not be written: ${err.message}`,
+				err.toolResults,
+				{ cause: err.cause, handling: err.handling, answerStepReason: err.reason },
 			);
 		}
 		// Anything else (LLM unavailable, schema unrecoverable, ...) --
@@ -212,5 +225,6 @@ export async function runFreeformProbe(
 		shaperId:  params.shaperId,
 		rawBundle,
 		toolCallCount,
+		...(handling !== undefined ? { handling } : {}),
 	};
 }

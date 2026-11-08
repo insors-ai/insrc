@@ -66,7 +66,7 @@ import type { ToolDeps } from '../../daemon/tools/types.js';
 import { listRepos } from '../../db/repos.js';
 import { getLogger } from '../../shared/logger.js';
 import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
-import type { RegisteredRepo } from '../../shared/types.js';
+import type { RegisteredRepo, StructuredSchema } from '../../shared/types.js';
 import type {
 	ContentBlock,
 	LLMMessage,
@@ -96,14 +96,18 @@ import {
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from './tool-surface.js';
 import { withSubsystemContext } from './subsystem-context.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
-import { synthesize, synthesizeHandled, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
+import { admissionTargetOf, synthesize, synthesizeHandled, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
 import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
-import { applyHandling } from '../completeness.js';
+import { applyHandling, parseHandling } from '../completeness.js';
+import type { HandlingReport } from '../completeness.js';
+import { emitDivided } from './final-emit.js';
+import { ANSWER_STEP_CODE_PREFIX } from '../explore/lookup-failed.js';
+import { decideHandling } from './handling.js';
 import type { AnswerReport, PartialFinding } from '../completeness.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { measureLookupResults, measureResolvedScope } from '../measure.js';
-import type { AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
+import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type {
 	AnalyzeContextBundle,
 	BundleLayerName,
@@ -905,6 +909,28 @@ function renderUpstreamSection(inputs: RunShaperArgs['inputs']): string {
 export interface ShaperToolLoopResult {
 	readonly rawBundle:     Omit<AnalyzeContextBundle, 'meta'>;
 	readonly toolCallCount: number;
+	/** How the final answer was handled; absent when the request's size was not given. */
+	readonly handling?:     HandlingReport | undefined;
+}
+
+/**
+ * The tool loop ran and its final answer could not be written. Carries what
+ * the tools returned and the reason, so the free-form lookup fails with the
+ * findings kept and the pipeline ends in the matching answer-step failure,
+ * without a second attempt at the answer.
+ */
+export class ShaperFinalEmitFailed extends Error {
+	readonly reason:       AnswerStepFailureReason;
+	readonly toolResults:  readonly PartialFinding[];
+	readonly handling:     HandlingReport | undefined;
+
+	constructor(reason: AnswerStepFailureReason, toolResults: readonly PartialFinding[], cause: Error, handling?: HandlingReport) {
+		super(cause.message, { cause });
+		this.name = 'ShaperFinalEmitFailed';
+		this.reason = reason;
+		this.toolResults = toolResults;
+		this.handling = handling;
+	}
 }
 
 export interface RunShaperToolLoopArgs {
@@ -920,6 +946,8 @@ export interface RunShaperToolLoopArgs {
 	readonly promptPath:     string;
 	readonly provider?:      LLMProvider;
 	readonly onTrace?:       (event: ShaperTraceEvent) => void;
+	/** The request's size, which decides whether the final answer is written at once or in parts. */
+	readonly size?:          AnalyzeScope | undefined;
 }
 
 /**
@@ -958,28 +986,46 @@ export async function runShaperToolLoop(
 		provider,
 		connectionExecution: execution,
 	});
-	const { messages: finalMessages, toolCallCount } = await runToolLoop(
+	const { messages: finalMessages, toolCallCount, gathered } = await runToolLoop(
 		provider,
 		messages,
 		toolDeps,
 		cfg.shaper.maxToolTurns,
 		args.onTrace,
 	);
-	const rawBundle = await runFinalStructuredEmit(
-		provider,
-		finalMessages,
-		cfg.shaper.structuredOutputRetries,
-		cfg.shaper.ollamaNumPredict,
-		args.onTrace,
-		execution,
-	);
+	let handling: HandlingReport | undefined;
+	let rawBundle: Awaited<ReturnType<typeof runFinalStructuredEmit>>;
+	try {
+		rawBundle = await runFinalStructuredEmit(
+			provider,
+			finalMessages,
+			cfg.shaper.structuredOutputRetries,
+			cfg.shaper.ollamaNumPredict,
+			args.onTrace,
+			execution,
+			(h) => { handling = h; },
+			args.size,
+		);
+	} catch (err) {
+		assertAnalysisConnectionExecution(execution);
+		if (err instanceof ConnectionExecutionError) throw err;
+		// Whatever way the answer failed, the tool results are kept and the reason told apart.
+		if (err instanceof ShaperAnswerStepFailedError) {
+			throw new ShaperFinalEmitFailed(err.reason, gathered, err, parseHandling(err.found.report.handling));
+		}
+		if (err instanceof ShaperLlmUnavailableError) throw new ShaperFinalEmitFailed('model-failed', gathered, err);
+		if (err instanceof ShaperSchemaUnrecoverable) throw new ShaperFinalEmitFailed('invalid-answer', gathered, err);
+		throw err;
+	}
 	assertAnalysisConnectionExecution(execution);
-	return { rawBundle, toolCallCount };
+	return { rawBundle, toolCallCount, ...(handling !== undefined ? { handling } : {}) };
 }
 
 interface ToolLoopResult {
 	readonly messages:      LLMMessage[];
 	readonly toolCallCount: number;
+	/** What each tool call returned, kept so a failed answer step can carry the findings. */
+	readonly gathered:      readonly PartialFinding[];
 }
 
 /** Exported for tests; production reaches it through runShaper and runShaperToolLoop. */
@@ -1021,13 +1067,13 @@ async function runToolLoop(
 		throw classifyOllamaError(err, 'tool loop');
 	}
 	assertAnalysisConnectionExecution(deps.connectionExecution);
-	if (result.done) return { messages: result.messages, toolCallCount: result.toolCallCount };
-
-	// The results are written to a file in full; the error's message names it.
 	const gathered: PartialFinding[] = result.gathered.map(g => ({
 		source:  `${g.tool}(${previewToolArgs(g.input)})`,
 		content: toolOutputText(g.output),
 	}));
+	if (result.done) return { messages: result.messages, toolCallCount: result.toolCallCount, gathered };
+
+	// The results are written to a file in full; the error's message names it.
 	throw toolLoopExhausted(maxToolTurns, gathered, deps.connectionExecution);
 }
 
@@ -1038,6 +1084,8 @@ async function runFinalStructuredEmit(
 	maxOutputTokens:         number,
 	onTrace?:                ((event: ShaperTraceEvent) => void) | undefined,
 	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
+	onHandling?:             ((handling: HandlingReport) => void) | undefined,
+	size?:                   AnalyzeScope | undefined,
 ): Promise<AnalyzeContextBundle> {
 	assertAnalysisConnectionExecution(execution);
 	// Per feedback_prompt_structure: structural reference goes trailing.
@@ -1072,6 +1120,25 @@ async function runFinalStructuredEmit(
 		'    `layers`, `bundle`, `meta`, `data`, or other wrapper keys.\n' +
 		'\n' +
 		'Respond with ONLY the JSON object -- no prose, no fenced block.';
+
+	// When the request's size is known, the table and the admission rule decide whether the answer is written
+	// at once or in parts. Without a size nothing changes: the conversation is answered in one call.
+	if (size !== undefined) {
+		const target = admissionTargetOf(provider, maxOutputTokens);
+		const decision = decideHandling({
+			size, target, input: [...messages, { role: 'user' as const, content: instruction }]
+				.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n'),
+		});
+		if (decision.method === 'single-pass') {
+			onHandling?.({ method: 'single-pass', parts: 1, notCovered: [], budgets: [decision.budget] });
+		} else {
+			const schema = modelFacingBundleSchema({ withMeta: false }) as StructuredSchema;
+			const found: AnswerStepFound = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
+			const divided = await emitDivided({ provider, target, messages, schema, found, trigger: decision.trigger, maxAttempts: structuredOutputRetries, execution });
+			onHandling?.(divided.handling);
+			return divided.layers as unknown as AnalyzeContextBundle;
+		}
+	}
 
 	// Live-preview state: accumulate the incoming stream, keep the tail
 	// visible, throttle emissions so a burst of small chunks doesn't
@@ -1703,6 +1770,16 @@ async function tryExplorationPipeline(
 	// paraphrasing the tool loop's honest output. Return the runner's
 	// rawBundle directly + carry its actual toolCallCount so the meta
 	// stamp reflects the real work done.
+	// A free-form lookup whose final answer could not be written failed with the reason it carried: the request
+	// ends in that answer-step failure, with the tool results and the report, and no second answer is attempted.
+	const bridged = executed.results.find(r => r.output.type === 'failed' && r.output.errorCode.startsWith(ANSWER_STEP_CODE_PREFIX));
+	if (bridged !== undefined && bridged.output.type === 'failed') {
+		const reason = bridged.output.errorCode.slice(ANSWER_STEP_CODE_PREFIX.length) as AnswerStepFailureReason;
+		const withHandling: AnswerStepFound = bridged.output.handling === undefined ? found : { ...found, report: applyHandling(found.report, bridged.output.handling) };
+		throw reason === 'input-does-not-fit'
+			? new HandlingBudgetError(bridged.output.message, withHandling)
+			: new ShaperAnswerStepFailedError(reason, bridged.output.message, withHandling);
+	}
 	const freeformOnly = extractSoleFreeformResult(executed);
 	if (freeformOnly !== null) {
 		captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
@@ -1716,7 +1793,7 @@ async function tryExplorationPipeline(
 			raw:              freeformOnly.rawBundle,
 			explorationCount: freeformOnly.toolCallCount,
 			// One source: the free-form lookup, whose record is never complete.
-			found,
+			found: freeformOnly.handling !== undefined ? { ...found, report: applyHandling(found.report, freeformOnly.handling) } : found,
 		};
 	}
 
@@ -1850,7 +1927,7 @@ function inferAnswerTypeForFallback(shaperId: ShaperId): ExplorationPlan['answer
  */
 function extractSoleFreeformResult(
 	executed: Awaited<ReturnType<typeof executePlan>>,
-): { rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number } | null {
+): { rawBundle: Omit<AnalyzeContextBundle, 'meta'>; toolCallCount: number; handling?: HandlingReport } | null {
 	if (executed.results.length !== 1) return null;
 	const sole = executed.results[0]!.output;
 	if (sole.type !== 'freeform.probe') return null;
@@ -1873,6 +1950,7 @@ function extractSoleFreeformResult(
 			upstream:  layers.upstream,
 		},
 		toolCallCount: sole.toolCallCount,
+		...(sole.handling !== undefined ? { handling: sole.handling } : {}),
 	};
 }
 

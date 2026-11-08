@@ -679,6 +679,16 @@ test('session restore uses stored phase and elapsed time without another provide
   assert.equal(shell.el('insrc-elapsed').textContent, '');
 });
 
+test('chat shell binds Stop to a pending run before the provider spawns', () => {
+  const v = runShell();
+  v.msg({ type: 'session-restored', sessionId: 'a', viewGeneration: 1, pendingTurnId: 'pending-a', transcript: [] });
+  fire(v.el('insrc-prompt'), 'click');
+  assert.deepEqual(v.sent.at(-1), { type: 'cancel-turn', target: { sessionId: 'a', viewGeneration: 1, turnId: 'pending-a' } });
+  v.msg({ type: 'session-restored', sessionId: 'b', viewGeneration: 2, pendingTurnId: 'pending-b', transcript: [] });
+  fire(v.el('insrc-prompt'), 'click');
+  assert.deepEqual(v.sent.at(-1), { type: 'cancel-turn', target: { sessionId: 'b', viewGeneration: 2, turnId: 'pending-b' } });
+});
+
 test("chat shell: an informational line's done does not end a running turn, and the turn's own done and error still do", () => {
   const v = runShell();
   const prog = v.el('insrc-progress') as BodyStub & { className?: string };

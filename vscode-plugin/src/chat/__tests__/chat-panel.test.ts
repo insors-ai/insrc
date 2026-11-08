@@ -978,6 +978,62 @@ const fileEdit = (path: string): TurnEvent => ({ kind: 'file-edit', turnId: 't1'
 const DONE: TurnEvent = { kind: 'done', turnId: 't1', ok: true };
 const settleDiff = (): Promise<void> => new Promise((r) => setTimeout(r, 25));
 
+test('a pre-spawn Stop requires the selected pending run identity', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const gov = fakeGovernance();
+  const setup: Array<() => void> = [];
+  const prompts: string[] = [];
+  const adapter: StreamAdapter = {
+    ...scriptedAdapter([]),
+    async *run(req) {
+      prompts.push(req.prompt);
+      yield { kind: 'done', turnId: req.prompt, ok: true };
+    },
+  };
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel, providers: registry({ claude: adapter }, ['claude']), store, cwd: () => '/repo',
+    editGovernance: {
+      ...gov.deps,
+      baseline: { ...gov.deps.baseline, available: async () => {
+        await new Promise<void>((resolve) => setup.push(resolve));
+        return false;
+      } },
+    },
+  });
+  const runningTarget = () => {
+    const frame = posted(fc, 'turn-running').at(-1)!;
+    return { ...frame['target'] as object, turnId: frame['pendingTurnId'] };
+  };
+  try {
+    host.open();
+    fc.send(env('ready', { targetedActions: true }));
+    fc.send(env('submit-turn', { text: 'A' }));
+    await waitFor(() => setup.length === 1);
+    const a = runningTarget();
+    fc.send(env('new-chat', { provider: 'claude' }));
+    fc.send(env('submit-turn', { text: 'B' }));
+    await waitFor(() => setup.length === 2);
+    const b = runningTarget();
+    assert.notEqual(a.turnId, b.turnId);
+    fc.send(env('cancel-turn'));
+    fc.send(env('cancel-turn', { target: a }));
+    setup[1]!();
+    await waitFor(() => prompts.length === 1);
+    assert.deepEqual(prompts, ['B']);
+    fc.send(env('open-chat', { chatId: store.list().find((item) => item.title === 'A')!.id }));
+    const restored = posted(fc, 'session-restored').at(-1)!;
+    assert.equal(restored['pendingTurnId'], a.turnId);
+    fc.send(env('cancel-turn', { target: { sessionId: restored['sessionId'], viewGeneration: restored['viewGeneration'], turnId: a.turnId } }));
+    setup[0]!();
+    await settleDiff();
+    assert.deepEqual(prompts, ['B'], 'the selected pending run can still be stopped');
+  } finally {
+    for (const release of setup) release();
+    host.dispose();
+  }
+});
+
 test('concurrent edits invalidate unsafe rollback baselines', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
@@ -1773,7 +1829,7 @@ test('S002 (ux-polish) ac1/ac2/t3: the leading ">" prompt (#insrc-prompt) is the
   assert.match(html, /const sendBtn=document\.getElementById\('insrc-prompt'\);/, 'the send/stop control is the leading #insrc-prompt');
   assert.match(html, /function setRunning\(r\)\{running=r;/, 'setRunning toggles the prompt glyph/class');
   assert.match(html, /sendBtn\.textContent=r\?'\\u25a0':'\\u276f'/, 'Stop=■ (u25a0) while running, Send=❯ (u276f) at rest');
-  assert.match(html, /payload:\{type:'cancel-turn',target:target\}\}\);if\(!target\)\{setRunning\(false\);setIdle\(\);\}\}else\{doSubmit\(\);\}/, 'the prompt keeps targeted progress visible until the host confirms Stop');
+  assert.match(html, /if\(target\|\|viewGen===0\)vs\.postMessage\(\{v:1,payload:\{type:'cancel-turn',target:target\}\}\)/, 'the prompt sends Stop with a target on the current protocol');
   assert.match(html, /function doSubmit\(\)\{if\(!box\.value\.trim\(\)\)return;started=true;vs\.postMessage\(\{v:1,payload:\{type:'submit-turn'/, 'doSubmit guards empty, marks the chat started, then posts submit-turn');
   // t2: role=button span is keyboard-activatable (Enter/Space -> click).
   assert.match(html, /sendBtn\.addEventListener\('keydown',function\(e\)\{if\(e\.key==='Enter'\|\|e\.key===' '\)\{e\.preventDefault\(\);sendBtn\.click\(\);\}\}\);/, 'Enter/Space activate the ">" prompt control');

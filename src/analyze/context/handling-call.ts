@@ -24,7 +24,7 @@ import { admits, measureInput } from './handling.js';
 import type { InputLimit } from './handling.js';
 import { isModelCallFailure } from './model-failure.js';
 
-/** How many characters of listed errors a repair note carries; the rest is counted, not sent. */
+/** How many characters a repair note has at most, its instructions included; the errors cut to fit are counted, not sent. */
 export const MAX_REPAIR_NOTE_CHARS = 8_000;
 
 /** Why a call produced no answer, by cause. */
@@ -73,12 +73,19 @@ export function messagesSize(messages: readonly LLMMessage[], unit: InputLimit['
 	return measureInput(messages.map(textOf).join('\n'), unit);
 }
 
-/** The listed errors of a failed reply, at most MAX_REPAIR_NOTE_CHARS characters, with the rest counted. */
+/**
+ * The listed errors of a failed reply, cut so that the whole repair note
+ * (`buildRetryNote`, its instructions included) is at most MAX_REPAIR_NOTE_CHARS
+ * characters. What is cut is counted in the note, not sent.
+ */
 export function cappedErrors(errors: readonly string[]): readonly string[] {
-	const joined = errors.join('\n');
-	if (joined.length <= MAX_REPAIR_NOTE_CHARS) return errors;
-	const omitted = joined.length - MAX_REPAIR_NOTE_CHARS;
-	return [`${joined.slice(0, MAX_REPAIR_NOTE_CHARS)} (${omitted} more characters of errors not shown)`];
+	if (buildRetryNote(errors).length <= MAX_REPAIR_NOTE_CHARS) return errors;
+	const joined = errors.join('\n  - ');
+	// The note around the list, and the marker that counts what is left out (its number has at most 9 digits).
+	const marker = (omitted: number): string => ` (${omitted} more characters of errors not shown)`;
+	const room = MAX_REPAIR_NOTE_CHARS - buildRetryNote(['']).length - marker(999_999_999).length;
+	const kept = joined.slice(0, Math.max(0, room));
+	return [`${kept}${marker(joined.length - kept.length)}`];
 }
 
 /** What a failed reply got wrong, as the lines a repair note lists. */
@@ -144,4 +151,9 @@ export async function callWithRepair<T>(args: CallArgs): Promise<CallOutcome<T>>
 		}
 	}
 	return { kind: 'failed', failure: 'invalid-reply', reason: 'no attempt was made', attempts };
+}
+
+/** The reason a divided call ends with when every uncovered part failed this way (the terminal precedence of the helper). */
+export function terminalReasonOf(kind: CallFailureKind): 'model-failed' | 'invalid-answer' | 'input-does-not-fit' {
+	return kind === 'call-failed' ? 'model-failed' : kind === 'invalid-reply' ? 'invalid-answer' : 'input-does-not-fit';
 }

@@ -22,7 +22,7 @@ import { CliProvider } from '../../../agent/providers/cli-provider.js';
 import { OllamaProvider } from '../../../agent/providers/ollama.js';
 import { inputLimitFor, outputTokensFor } from '../handling.js';
 import type { AdmissionTarget } from '../handling.js';
-import { callWithRepair } from '../handling-call.js';
+import { callWithRepair, terminalReasonOf } from '../handling-call.js';
 import type { CallOutcome } from '../handling-call.js';
 
 const SCHEMA = { type: 'object', required: ['ok'], properties: { ok: { type: 'boolean' } }, additionalProperties: false };
@@ -72,6 +72,7 @@ test('real Vibe, Claude and Codex adapters make exactly one attempt on a failing
 			const out = await viaHelper(new CliProvider({ kind, binPath: down.bin, timeoutMs: 20_000 }), CLI_TARGET);
 			assert.equal(out.kind, 'failed', kind);
 			assert.equal(out.kind === 'failed' ? out.failure : '', 'call-failed', `${kind} transport failure`);
+			assert.equal(out.kind === 'failed' ? terminalReasonOf(out.failure) : '', 'model-failed', `${kind}: a transport failure ends a divided call as model-failed`);
 			assert.equal(down.runs(), 1, `${kind}: exactly one run on a transport failure`);
 		} finally { down.cleanup(); }
 
@@ -82,6 +83,7 @@ test('real Vibe, Claude and Codex adapters make exactly one attempt on a failing
 			const out = await viaHelper(new CliProvider({ kind, binPath: bad.bin, timeoutMs: 20_000 }), CLI_TARGET, 2);
 			assert.equal(out.kind, 'failed', kind);
 			assert.equal(out.kind === 'failed' ? out.failure : '', 'invalid-reply', `${kind} malformed reply`);
+			assert.equal(out.kind === 'failed' ? terminalReasonOf(out.failure) : '', 'invalid-answer', `${kind}: a malformed reply ends a divided call as invalid-answer`);
 			assert.equal(bad.runs(), 2, `${kind}: one run per attempt, no provider-side retry`);
 		} finally { bad.cleanup(); }
 	}

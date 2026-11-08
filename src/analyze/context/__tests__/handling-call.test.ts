@@ -15,7 +15,8 @@ import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import { ModelCallFailedError, ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import type { LLMMessage, LLMProvider, StructuredCompletionOpts } from '../../../shared/types.js';
 import { inputLimitFor } from '../handling.js';
-import { MAX_REPAIR_NOTE_CHARS, callWithRepair, cappedErrors, classifyCallFailure } from '../handling-call.js';
+import { buildRetryNote } from '../../../agent/providers/structured-output.js';
+import { MAX_REPAIR_NOTE_CHARS, callWithRepair, cappedErrors, classifyCallFailure, terminalReasonOf } from '../handling-call.js';
 
 const LOCAL = inputLimitFor({ kind: 'local', windowTokens: 32_768, singlePassOutputTokens: 20_480 }, 'part');
 const SCHEMA = { type: 'object', properties: { ok: { type: 'boolean' } } };
@@ -68,12 +69,15 @@ test('provider called with {maxAttempts:1, internalRetry:false}, repair note cap
 	assert.match(note, /\/field0 must be a string/);
 	assert.match(note, /more characters of errors not shown/);
 	assert.ok(note.indexOf('not shown') < note.length);
-	// The errors listed are at most the cap, and the rest is counted.
+	// The whole note, instructions included, is at most the cap, and the errors left out are counted.
+	assert.ok(note.length <= MAX_REPAIR_NOTE_CHARS, `note is ${note.length} characters`);
+	assert.ok(note.length > MAX_REPAIR_NOTE_CHARS - 200, 'the note uses the cap, it is not cut short');
 	const capped = cappedErrors(many);
 	assert.equal(capped.length, 1);
-	const joinedLength = many.join('\n').length;
-	assert.ok((capped[0] as string).startsWith(many.join('\n').slice(0, MAX_REPAIR_NOTE_CHARS)));
-	assert.match(capped[0] as string, new RegExp(`\\(${joinedLength - MAX_REPAIR_NOTE_CHARS} more characters`));
+	assert.ok(buildRetryNote(capped).length <= MAX_REPAIR_NOTE_CHARS);
+	const shown = (capped[0] as string).replace(/ \(\d+ more characters of errors not shown\)$/, '');
+	const omitted = Number(/\((\d+) more characters/.exec(capped[0] as string)?.[1]);
+	assert.equal(shown.length + omitted, many.join('\n  - ').length, 'what is shown plus what is counted is all of it');
 	assert.deepEqual(cappedErrors(['a', 'b']), ['a', 'b']);
 
 	// Admission before every attempt: an input over the limit is never sent.
@@ -128,4 +132,9 @@ test('failure classification by cause: schema-invalid is invalid-reply, transpor
 	assert.equal(shape.out.kind === 'failed' ? shape.out.failure : '', 'invalid-reply');
 	assert.equal(shape.sent, 3);
 	assert.ok(shape.out.kind === 'failed' && shape.out.cause instanceof ModelResponseShapeError);
+
+	// The terminal reason each cause gives a divided call whose every part failed that way.
+	assert.equal(terminalReasonOf('call-failed'), 'model-failed');
+	assert.equal(terminalReasonOf('invalid-reply'), 'invalid-answer');
+	assert.equal(terminalReasonOf('unadmittable'), 'input-does-not-fit');
 });

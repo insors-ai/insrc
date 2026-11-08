@@ -5562,6 +5562,10 @@
         ],
         [
           "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "storage-call",
           "getDb"
         ],
         [
@@ -5597,8 +5601,8 @@
           "process.stderr.write"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
+      "siteCount": 12,
+      "sitesDigest": "bb6c700f491007e2f3508b341883ac7147184ccf1fa08bcfeb386ab9a442db9e",
       "sourceDigest": "3d31e1c57dbb21cd59ed2840c7579cceaaa81fb36d9705a8aaf31ae462e1286f",
       "boundaries": [
         "diagnostic",
@@ -8000,10 +8004,26 @@
         [
           "serialization",
           "mergePersisted"
+        ],
+        [
+          "acquisition:resolver-member",
+          "savedConnectionResolver.lease"
+        ],
+        [
+          "connection-use",
+          "savedConnectionResolver.lease"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
+        ],
+        [
+          "acquisition:symbol:savedConnectionResolver",
+          "savedConnectionResolver"
         ]
       ],
-      "siteCount": 9,
-      "sitesDigest": "eb2766c44a7a99e04227c37bbbd64c967974cd3079f6eccf1ae8de8078114c67",
+      "siteCount": 13,
+      "sitesDigest": "74e4a4c454f0c6e248853fb46a7a54c1fa154b0ca6c8431a78a514d8437d52f6",
       "sourceDigest": "2057e9562ad68ff7e69a2d44edec72c7284fca485e90a1b1afb8fe197fee2b6d",
       "boundaries": [
         "diagnostic",
@@ -10750,6 +10770,14 @@
           "Buffer.from"
         ],
         [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
+          "serialization",
+          "Buffer.from"
+        ],
+        [
           "acquisition:symbol:DriverPool",
           "DriverPool"
         ],
@@ -10803,7 +10831,43 @@
         ],
         [
           "acquisition:pool-member",
-          "this.ports.pool.reload"
+          "this.ports.pool.cancelRemoval"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.cancelRemoval"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.cancelRemoval"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.cancelRemoval"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.commitRemoval"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.commitRemoval"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.lease"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.lease"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.prepareRemoval"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.prepareRemoval"
         ],
         [
           "acquisition:pool-member",
@@ -10818,7 +10882,11 @@
           "this.ports.pool.reload"
         ],
         [
-          "connection-use",
+          "acquisition:pool-member",
+          "this.ports.pool.reload"
+        ],
+        [
+          "acquisition:pool-member",
           "this.ports.pool.reload"
         ],
         [
@@ -10832,6 +10900,38 @@
         [
           "connection-use",
           "this.ports.pool.reload"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.reload"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.reload"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.removalCleanupPending"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.removalCleanupPending"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.removalCleanupPending"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.removalCleanupPending"
+        ],
+        [
+          "acquisition:pool-member",
+          "this.ports.pool.retryRemovalCleanup"
+        ],
+        [
+          "connection-use",
+          "this.ports.pool.retryRemovalCleanup"
         ],
         [
           "acquisition:pool-member",
@@ -10850,8 +10950,8 @@
           "this.ports.pool.safeList"
         ]
       ],
-      "siteCount": 27,
-      "sitesDigest": "c0156fe15f04e159a75a0a354c223a6f26a82e1ceef8bed01ea9849617e231c3",
+      "siteCount": 47,
+      "sitesDigest": "71f852b6ed2d2f2ce2d0f83ef7ea80e2b5a9cfe8afed157738147b5e138b9d4e",
       "sourceDigest": "7571c8a670b382de86d1a4a82df4ac37cf89265d2355b43095a9e3015c370ce7",
       "boundaries": [
         "acquisition:pool-member",
@@ -12754,6 +12854,146 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "serialization",
           "JSON.parse"
         ],
@@ -12772,6 +13012,14 @@
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "storage-call",
+          "listRepos"
+        ],
+        [
+          "storage-call",
+          "listRepos"
         ],
         [
           "storage-call",
@@ -12856,6 +13104,14 @@
         [
           "diagnostic",
           "log.info"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "diagnostic",
@@ -13034,12 +13290,20 @@
           "statSync"
         ],
         [
+          "storage-call",
+          "subsystemsAnswer"
+        ],
+        [
           "filesystem-write",
           "unlinkSync"
         ],
         [
           "storage-call",
           "unreachableEntities"
+        ],
+        [
+          "storage-call",
+          "validateRepoPath"
         ],
         [
           "storage-call",
@@ -13054,8 +13318,8 @@
           "writeFileSync"
         ]
       ],
-      "siteCount": 185,
-      "sitesDigest": "17e10c1df726588eb5127e903f794144f145325fdfd8e37af76c8af2709e1a08",
+      "siteCount": 226,
+      "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
       "sourceDigest": "88352a48eb47699dfe46923b65274c7a750e53c184a1bba2ec19c3ca150f20e2",
       "boundaries": [
         "diagnostic",
@@ -13174,16 +13438,20 @@
           "import"
         ],
         [
+          "unresolved-call",
+          "import"
+        ],
+        [
+          "unresolved-call",
+          "import"
+        ],
+        [
           "storage-call",
           "initDb"
         ],
         [
           "storage-call",
           "initTodosTables"
-        ],
-        [
-          "storage-call",
-          "listRepos"
         ],
         [
           "storage-call",
@@ -13330,16 +13598,12 @@
           "startPeriodicReaderCheck"
         ],
         [
-          "unresolved-call",
-          "Watcher"
-        ],
-        [
           "serialization",
           "writePid"
         ]
       ],
       "siteCount": 66,
-      "sitesDigest": "01c65e021f0cc5b336b0f1b25d1b013da57dead37e47bd005a9fc7ba26ca72ca",
+      "sitesDigest": "26179eb865ebf467ae0ad2ee08ed5b868d73b8766942c7d53a6596f27ff7ac16",
       "sourceDigest": "d09d6ac5d5a1227731dd9b802ed40c5c2b2de2988e5bc5ef3bebbb54d54533bc",
       "boundaries": [
         "diagnostic",
@@ -15538,8 +15802,16 @@
           "JSON.parse"
         ],
         [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
           "unresolved-call",
           "MessageChannel"
+        ],
+        [
+          "filesystem-read",
+          "readFileSync"
         ],
         [
           "filesystem-read",
@@ -15555,10 +15827,6 @@
         ],
         [
           "unresolved-call",
-          "StatusBoard"
-        ],
-        [
-          "unresolved-call",
           "TargetRegistry"
         ],
         [
@@ -15566,8 +15834,8 @@
           "this.info"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "040dbb179427e0463fa5e78301d06604d9f0f19d0ef49e40c8921c42e4fb3990",
+      "siteCount": 12,
+      "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
       "sourceDigest": "c38c560df16293d95efce169ef8925821765efef0c09d05c6ce46d8e3a043954",
       "boundaries": [
         "diagnostic",
@@ -37994,9 +38262,30 @@
       "classification": "saved-foundation-boundary",
       "rationale": "The vault over the OS keychain: one item holds every secret, the main thread owns it and workers forward. Its only diagnostic logs a secret name when a legacy item cannot be deleted; it never logs a value.",
       "sourceDigest": "06062733b76ea52dedd95bf2d71376ee385b3ed8cfd157276ac0283285c876de",
-      "sites": [],
-      "siteCount": 0,
-      "sitesDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "serialization",
+          "serializeVault"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "6a02ed3511889345e4f86fe6f994950d7bf3a817ae2f50629d6d99e8a4afd3fc"
     },
     "src/shared/locks/maintenance-lock.ts": {
       "classification": "shared-transport-foundation",

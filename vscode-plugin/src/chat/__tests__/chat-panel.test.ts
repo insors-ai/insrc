@@ -2270,7 +2270,7 @@ test('S001 (fidelity) ac1: the input is a FLUSH 2-line prompt — #insrc-input h
 
 test('S001 (fidelity) ac2: the placeholder gains the interrupt hint', () => {
   const html = fidelityHtml();
-  assert.match(html, /placeholder="message claude… \(⌘↵ send · \^C interrupt\)"/, "placeholder reads 'message claude… (⌘↵ send · ^C interrupt)'");
+  assert.match(html, /placeholder="message claude… \(Enter send · Ctrl\+Enter new line · \^C interrupt\)"/, "placeholder states Enter to send, Ctrl+Enter for a new line, and the interrupt");
   assert.doesNotMatch(html, /⌘↵ to send/, "the old '⌘↵ to send' placeholder is gone");
 });
 
@@ -4506,7 +4506,7 @@ test('the shell embeds the pager: line() appends through it, session-restored re
   const html = fidelityHtml();
   // The pager source is embedded once, built on the transcript element with the bar and the host channel, and given the registry.
   assert.equal(html.split(transcriptPagerWebviewSource()).length - 1, 1, 'the pager source is embedded once');
-  assert.match(html, /\(t,\{bar:document\.getElementById\('insrc-older'\),post:function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\}\);/, 'built on the transcript, the bar and the host channel');
+  assert.match(html, /\(t,\{bar:document\.getElementById\('insrc-older'\),jump:document\.getElementById\('insrc-jump'\),post:function\(p\)\{vs\.postMessage\(\{v:1,payload:p\}\);\}\}\);/, 'built on the transcript, the bar, the jump button and the host channel');
   assert.match(html, /<div id="insrc-older" role="button"/, 'the bar element exists');
   assert.ok(html.indexOf('<div id="insrc-older"') < html.indexOf('<div id="insrc-term"'), 'above the transcript');
   assert.ok(html.indexOf('const pager=') < html.indexOf('const reg='), 'the pager is created before the registry');

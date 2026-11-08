@@ -516,7 +516,7 @@ test('diff widget: a diff row in a session-restored window and in a transcript-p
 test('chat shell: the outbox band is present only with the queue, and the queue hint replaces the input placeholder only with it; an outbox message draws its rows and summary and each action posts its seq; with the queue a submit does not mark the turn running', () => {
   const off = runShell();
   for (const absent of ['insrc-outbox', 'renderOutbox']) assert.ok(!off.html.includes(absent), `no ${absent} without the queue`);
-  assert.ok(!off.html.includes('Ctrl+Enter to queue'), 'no queue hint without the queue');
+  assert.ok(!off.html.includes('Enter to queue'), 'no queue hint without the queue');
   assert.ok(off.html.includes("setRunning(true);setProgress('working\\u2026');}"), 'without the queue a submit still marks the turn running');
 
   const v = runShell({ queue: true });
@@ -527,9 +527,9 @@ test('chat shell: the outbox band is present only with the queue, and the queue 
   // The queue hint replaces the input's placeholder while a turn runs and is restored after.
   const ph = v.el('insrc-input') as BodyStub & { placeholder?: string };
   v.msg({ type: 'turn-running', sessionId: 's1' });
-  assert.ok(ph.placeholder?.includes('\u2318/Ctrl+Enter to queue'));
+  assert.ok(ph.placeholder?.includes('Enter to queue'));
   v.msg({ type: 'turn-event', event: { kind: 'done', turnId: 't', ok: true } });
-  assert.ok(ph.placeholder?.includes('\u2318\u21b5 send'));
+  assert.ok(ph.placeholder?.includes('Enter send'));
 
   // A submit posts the message and does not mark the turn running: it waits in the outbox.
   const box = v.el('insrc-input') as BodyStub & { value: string };
@@ -538,7 +538,7 @@ test('chat shell: the outbox band is present only with the queue, and the queue 
   fire(send, 'click');
   assert.deepEqual(ofType(v, 'submit-turn').map((m) => m['text']), ['later']);
   assert.equal(send.textContent, '\u276f', 'still the send control');
-  assert.ok(ph.placeholder?.includes('\u2318\u21b5 send'));
+  assert.ok(ph.placeholder?.includes('Enter send'));
 
   // An outbox for another chat is not drawn; this chat's is.
   const band = v.el('insrc-outbox') as BodyStub & { hidden?: boolean };
@@ -1131,4 +1131,117 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-conf
   assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
   (newRow as unknown as { onclick: () => void }).onclick();
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: 'codex' });
+});
+
+// Send chat prompts with Enter (Story d15a24eb41e0771c/s1).
+type Composer = BodyStub & { value: string; selectionStart: number; selectionEnd: number; setRangeText?: (t: string, s: number, e: number, mode: string) => void; focusedWith?: unknown };
+function composer(v: Shell, text: string, start = text.length, end = start): Composer {
+  const box = v.el('insrc-input') as Composer;
+  box.value = text;
+  box.selectionStart = start;
+  box.selectionEnd = end;
+  box.setRangeText = (t, s, e) => { box.value = box.value.slice(0, s) + t + box.value.slice(e); box.selectionStart = box.selectionEnd = s + t.length; };
+  return box;
+}
+/** Press Enter in the box; true when the handler stopped the browser's own action. */
+function pressEnter(box: Composer, modifiers: Record<string, unknown> = {}): boolean {
+  let prevented = false;
+  fire(box, 'keydown', { key: 'Enter', preventDefault: () => { prevented = true; }, ...modifiers });
+  return prevented;
+}
+
+test('composer: Enter submits and prevents the line break', () => {
+  const v = runShell({ queue: true });
+  const box = composer(v, 'hello');
+  assert.equal(pressEnter(box), true);
+  assert.deepEqual(ofType(v, 'submit-turn').map((m) => m['text']), ['hello']);
+  assert.equal(box.value, '');
+});
+
+test('composer: Enter while a turn is running still submits', () => {
+  const v = runShell({ queue: true });
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 0, total: 0 });
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  pressEnter(composer(v, 'next'));
+  assert.deepEqual(ofType(v, 'submit-turn').map((m) => m['text']), ['next']);
+});
+
+test('composer: Enter on an empty box sends nothing and adds no line break', () => {
+  const v = runShell({ queue: true });
+  for (const text of ['', '   ']) {
+    const box = composer(v, text);
+    assert.equal(pressEnter(box), true, 'no line break is left for the browser to add');
+    assert.equal(box.value, text);
+  }
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test('composer: Ctrl+Enter inserts a line at the caret and does not submit', () => {
+  const v = runShell({ queue: true });
+  const box = composer(v, 'abef', 2);
+  assert.equal(pressEnter(box, { ctrlKey: true }), true);
+  assert.equal(box.value, 'ab\nef');
+  assert.equal(box.selectionStart, 3, 'the caret sits after the new line');
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test('composer: Ctrl+Enter replaces a selection with one line', () => {
+  const v = runShell({ queue: true });
+  const box = composer(v, 'abXXef', 2, 4);
+  pressEnter(box, { ctrlKey: true });
+  assert.equal(box.value, 'ab\nef');
+  assert.equal(box.selectionEnd, 3);
+});
+
+test('composer: Cmd+Enter inserts a line and does not submit', () => {
+  const v = runShell({ queue: true });
+  const box = composer(v, 'ab');
+  assert.equal(pressEnter(box, { metaKey: true }), true);
+  assert.equal(box.value, 'ab\n');
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test('composer: Ctrl+Shift+Enter is a new line, never a send', () => {
+  const v = runShell({ queue: true });
+  const box = composer(v, 'ab');
+  pressEnter(box, { ctrlKey: true, shiftKey: true });
+  assert.equal(box.value, 'ab\n');
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test("composer: Shift+Enter does not submit and leaves the browser's line break", () => {
+  const v = runShell({ queue: true });
+  for (const modifiers of [{ shiftKey: true }, { altKey: true }]) {
+    const box = composer(v, 'ab');
+    assert.equal(pressEnter(box, modifiers), false, 'left to the browser');
+    assert.equal(box.value, 'ab');
+  }
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test('composer: an Enter confirming an IME composition does not submit', () => {
+  const v = runShell({ queue: true });
+  for (const composing of [{ isComposing: true }, { keyCode: 229 }]) {
+    const box = composer(v, 'ni');
+    assert.equal(pressEnter(box, composing), false);
+    assert.equal(box.value, 'ni');
+  }
+  assert.deepEqual(ofType(v, 'submit-turn'), []);
+});
+
+test('composer: the placeholders state the new keys', () => {
+  const v = runShell({ queue: true });
+  assert.ok(v.html.includes('Enter send \u00b7 Ctrl+Enter new line'));
+  v.msg({ type: 'session-restored', sessionId: 's1', transcript: [], firstIndex: 0, total: 0 });
+  v.msg({ type: 'turn-running', sessionId: 's1' });
+  assert.ok((v.el('insrc-input') as BodyStub & { placeholder?: string }).placeholder?.includes('Enter to queue \u00b7 Ctrl+Enter new line'));
+  assert.ok(!v.html.includes('\u2318'), 'no Cmd shortcut is advertised');
+});
+
+test('shell: the jump button sits outside the transcript and a click returns focus to the prompt', () => {
+  const v = runShell({ queue: true });
+  assert.match(v.html, /<div id="insrc-termwrap"><div id="insrc-term" class="term"><\/div><button type="button" id="insrc-jump"[^>]* hidden>/);
+  const box = composer(v, '');
+  fire(v.el('insrc-jump'), 'click');
+  assert.equal(box.focusedWith, 'scroll');
 });

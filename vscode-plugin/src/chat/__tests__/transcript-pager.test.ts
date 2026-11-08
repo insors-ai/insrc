@@ -46,6 +46,7 @@ interface Registry {
 interface View {
   term: BodyStub;
   bar: BodyStub;
+  jump: BodyStub & { hidden?: boolean };
   pager: Pager;
   reg: Registry;
   maxTop: () => number;
@@ -62,6 +63,7 @@ const filledPx = (n: BodyStub): number => (n.children.length > 0 || n.textConten
 function makeView(heightOf: (n: BodyStub) => number = () => ROW_PX): View {
   const term = bodyStub('div', 'insrc-term');
   const bar = bodyStub('div', 'insrc-older');
+  const jump: View['jump'] = bodyStub('button', 'insrc-jump');
   term.clientHeight = VIEW_PX;
   let top = 0;
   const scrollWrites: number[] = [];
@@ -73,6 +75,7 @@ function makeView(heightOf: (n: BodyStub) => number = () => ROW_PX): View {
   const timers: Array<{ fn: () => void; ms: number; live: boolean }> = [];
   const opts = {
     bar,
+    jump,
     post: (m: Record<string, unknown>) => { posted.push(m); },
     setTimeout: (fn: () => void, ms: number) => { const t = { fn, ms, live: true }; timers.push(t); return t; },
     clearTimeout: (t: { live: boolean }) => { t.live = false; },
@@ -90,7 +93,7 @@ function makeView(heightOf: (n: BodyStub) => number = () => ROW_PX): View {
   const reg = (eval(`(${renderRegistryWebviewSource()})`) as (doc: unknown, line: unknown) => Registry)({ createElement: (t: string) => bodyStub(t) }, line);
   pager.attach(reg);
   const runTimers = (): void => { for (const t of timers.splice(0)) if (t.live) { assert.equal(t.ms, LOAD_WAIT_MS, 'the wait is the fixed constant'); t.fn(); } };
-  return { term, bar, pager, reg, maxTop, posted, scrollWrites, runTimers };
+  return { term, bar, jump, pager, reg, maxTop, posted, scrollWrites, runTimers };
 }
 
 /** Render one live row as the shell does: through the registry, stamped with its row index. */
@@ -393,4 +396,112 @@ test('rows that are appended empty and filled afterwards are still followed: the
   assert.equal(v.term.children.length, 100);
   assert.equal(v.term.scrollTop, v.maxTop(), 'the restored window ends at the bottom');
   assert.ok(v.maxTop() > 0);
+});
+
+/** A session of `rows` live rows, at the end of a view that overflows. */
+function liveView(rows: number): View {
+  const v = makeView();
+  v.pager.reset('s1', 0, 0);
+  for (let i = 0; i < rows; i++) liveRow(v, i, 'assistant');
+  return v;
+}
+function scrollUp(v: View, rows = 5): void {
+  v.term.scrollTop = v.maxTop() - rows * ROW_PX;
+  fire(v.term, 'scroll');
+}
+
+test('jump: hidden while following and at the end', () => {
+  const v = liveView(30);
+  assert.equal(v.pager.atBottom(), true);
+  assert.equal(v.jump.hidden, true);
+});
+
+test('jump: hidden on a transcript too short to scroll', () => {
+  const v = liveView(3);
+  assert.equal(v.jump.hidden, true);
+});
+
+test('jump: shown when the reader scrolls up and stays shown as new rows arrive', () => {
+  const v = liveView(30);
+  scrollUp(v);
+  assert.equal(v.jump.hidden, false);
+  const top = v.term.scrollTop;
+  liveRow(v, 30, 'assistant');
+  liveRow(v, 31, 'assistant');
+  assert.equal(v.jump.hidden, false, 'new output does not hide it');
+  assert.equal(v.term.scrollTop, top, 'and does not move the reader');
+});
+
+test('jump: stays hidden while a row is appended empty and then filled', () => {
+  const v = makeView(filledPx);
+  v.pager.reset('s1', 0, 0);
+  for (let i = 0; i < 30; i++) v.pager.track(i, () => { const d = bodyStub('div'); d.textContent = 'row'; return v.pager.append(d); });
+  v.pager.track(30, () => {
+    const d = bodyStub('div');
+    v.pager.append(d);
+    assert.equal(v.jump.hidden, true, 'the empty row');
+    d.textContent = 'filled';
+    assert.equal(v.pager.atBottom(), false, 'the view is now short of the end though the reader has not moved');
+    fire(v.term, 'scroll');
+    assert.equal(v.jump.hidden, true, 'the filled row');
+    return d;
+  });
+  assert.equal(v.jump.hidden, true);
+  assert.equal(v.pager.atBottom(), true);
+});
+
+test('jump: a click moves to the end, resumes following and hides the button', () => {
+  const v = liveView(30);
+  scrollUp(v);
+  fire(v.jump, 'click');
+  assert.equal(v.term.scrollTop, v.maxTop());
+  assert.equal(v.jump.hidden, true);
+  liveRow(v, 30, 'assistant');
+  assert.equal(v.term.scrollTop, v.maxTop(), 'following again: the next row is shown');
+});
+
+test('jump: hides when the reader scrolls back to the end', () => {
+  const v = liveView(30);
+  scrollUp(v);
+  v.term.scrollTop = v.maxTop();
+  fire(v.term, 'scroll');
+  assert.equal(v.jump.hidden, true);
+});
+
+test('jump: hidden after a session reset', () => {
+  const v = liveView(30);
+  scrollUp(v);
+  v.pager.reset('s2', 0, 0);
+  assert.equal(v.jump.hidden, true);
+});
+
+test('jump: stays shown when a page of older rows loads, and the reader keeps their place', () => {
+  const v = restored('s1', 900, 1000);
+  v.term.scrollTop = 0;
+  fire(v.term, 'scroll');
+  assert.equal(v.jump.hidden, false);
+  const heightBefore = v.term.scrollHeight;
+  assert.equal(v.pager.prepend(page('s1', 800, 900, 1000)), true);
+  assert.equal(v.jump.hidden, false);
+  assert.equal(v.term.scrollTop, v.term.scrollHeight - heightBefore, 'moved by the height added');
+});
+
+test('jump: arriving at the end by the button still trims a long view', () => {
+  const v = liveView(MAX_HELD_ROWS - 10);
+  scrollUp(v);
+  for (let i = MAX_HELD_ROWS - 10; i < MAX_HELD_ROWS + 20; i++) liveRow(v, i, 'assistant');
+  const held = v.term.children.length;
+  assert.ok(held > MAX_HELD_ROWS, 'a reader scrolled up is never trimmed');
+  fire(v.jump, 'click');
+  fire(v.term, 'scroll');
+  assert.ok(v.term.children.length < held, 'the scroll that follows the jump trims');
+  assert.equal(v.jump.hidden, true);
+});
+
+test('jump: the pager works with no jump element', () => {
+  const term = bodyStub('div', 'insrc-term');
+  term.clientHeight = VIEW_PX;
+  // eslint-disable-next-line no-eval
+  const pager = (eval(`(${transcriptPagerWebviewSource()})`) as (t: BodyStub, o: unknown) => Pager)(term, {});
+  assert.doesNotThrow(() => { pager.reset('s1', 0, 0); pager.append(bodyStub('div')); fire(term, 'scroll'); });
 });

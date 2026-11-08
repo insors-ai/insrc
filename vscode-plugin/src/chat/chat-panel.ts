@@ -260,8 +260,8 @@ export interface ChatPanelHost {
 
 /** How long a queued turn may wait on an unanswered approval or selection card (10 minutes). */
 /** The input's placeholder when idle, and while a turn runs with the queue on (the hint to queue replaces it). */
-const IDLE_PLACEHOLDER = 'message claude… (⌘↵ send · ^C interrupt)';
-const QUEUE_PLACEHOLDER = 'message claude… (⌘/Ctrl+Enter to queue · ^C interrupt)';
+const IDLE_PLACEHOLDER = 'message claude… (Enter send · Ctrl+Enter new line · ^C interrupt)';
+const QUEUE_PLACEHOLDER = 'message claude… (Enter to queue · Ctrl+Enter new line · ^C interrupt)';
 
 export const CONTINUATION_WAIT_MS = 600_000;
 
@@ -2099,6 +2099,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `.chrome .right{margin-left:auto;display:inline-flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;}` +
       // The scrolling transcript band (mock .term): the only overflow region, its own padding +
       // subtle top gradient. Replaces the former inset .pad wrapper so progress/input are full bars.
+      // A positioned wrapper, so the jump button can float over the transcript without being a row of it.
+      `#insrc-termwrap{flex:1 1 auto;min-height:0;position:relative;display:flex;flex-direction:column;}` +
+      `#insrc-jump{position:absolute;right:18px;bottom:12px;width:28px;height:28px;padding:0;border-radius:50%;border:1px solid var(--border-lit);background:var(--dropdown-bg);color:var(--fg);font-size:14px;line-height:1;cursor:pointer;z-index:1;}` +
+      `#insrc-jump[hidden]{display:none;}#insrc-jump:hover{color:var(--accent);border-color:var(--accent);}#insrc-jump:focus-visible{outline:1px solid var(--focus);outline-offset:1px;}` +
       `#insrc-term{flex:1 1 auto;min-height:0;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding:16px 14px;white-space:pre-wrap;word-break:break-word;color:var(--fg);background:var(--panel);}` +
       // Story E20261013b2e8109f:S001: a row of the transcript never shrinks. A row with overflow:hidden
       // has a minimum height of zero in a flex column, which is how the old diff box was squashed to nothing.
@@ -2417,7 +2421,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Story E20261012ddc4ede1:S001: the transcript pager, single-sourced with transcript-pager.ts.
       // Every node joins the transcript through pager.append, which follows to the bottom only
       // when the view was already there; nothing else writes the transcript's scroll position.
-      `const pager=(${transcriptPagerWebviewSource()})(t,{bar:document.getElementById('insrc-older'),post:function(p){vs.postMessage({v:1,payload:p});}});` +
+      `const pager=(${transcriptPagerWebviewSource()})(t,{bar:document.getElementById('insrc-older'),jump:document.getElementById('insrc-jump'),post:function(p){vs.postMessage({v:1,payload:p});}});` +
       `function line(s,cls){const d=document.createElement('div');if(cls)d.className=cls;d.textContent=s;return pager.append(d);}` +
       // S004: the marker mapper, single-sourced with the host markerFor (markers.ts), embedded in THIS one nonce'd script.
       `const markerFor=${markerWebviewSource()};` +
@@ -2611,7 +2615,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `else if(m.type==='active-list'){actEntries=m.chats||[];var urg='';var rank={'waiting-input':3,working:2,done:1};(m.chats||[]).forEach(function(c){if((rank[c.status]||0)>(rank[urg]||0))urg=c.status;});if(actChip&&actChip.dataset)actChip.dataset.urgent=urg;reconcile();}` +
       `});` +
       `const box=document.getElementById('insrc-input');` +
-      // S002 ac2: submit converges on ONE path (Cmd/Ctrl+Enter and the leading '>' prompt control); it
+      // S002 ac2: submit converges on ONE path (Enter and the leading '>' prompt control); it
       // posts submit-turn + marks running. The '>' prompt posts cancel-turn while running.
       // Guard on non-empty (matches the host runTurn no-op) so an empty submit never marks running
       // or shows a stuck spinner. On submit, show the progress widget; status events refine its label.
@@ -2619,7 +2623,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // Epic E20261014613abdb3 Story S002: with the queue, a sent message waits in the outbox until it
       // starts, so the turn is marked running only when the host says so ('turn-running').
       `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;started=true;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}}` +
-      `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
+      // Enter sends. Ctrl or Cmd with it adds a line, which a textarea does not do by itself (execCommand keeps
+      // the undo stack and scrolls to the caret). Shift or Alt is left to the browser, and so is an Enter that
+      // confirms an input-method composition.
+      `box.addEventListener('keydown',e=>{if(e.key!=='Enter'||e.isComposing||e.keyCode===229)return;` +
+      `if(e.ctrlKey||e.metaKey){e.preventDefault();if(!(document.execCommand&&document.execCommand('insertText',false,'\\n')))box.setRangeText('\\n',box.selectionStart,box.selectionEnd,'end');return;}` +
+      `if(e.shiftKey||e.altKey)return;e.preventDefault();doSubmit();});` +
+      `document.getElementById('insrc-jump').addEventListener('click',function(){box.focus();});` +
       pasteScript +
       `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){var turnId=pendingTurn||(activeProgress&&activeProgress.turnId),target=turnId?{sessionId:cur,turnId:turnId,viewGeneration:viewGen}:undefined;if(target||viewGen===0)vs.postMessage({v:1,payload:{type:'cancel-turn',target:target}});if(!target&&viewGen===0){setRunning(false);setIdle();}}else{doSubmit();}});` +
       // S002 (ux-polish): the '>' prompt is a role=button span — Enter/Space activate it like a click.
@@ -2657,7 +2667,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // bar — each a flex:0 band with its own top border + inset ground, NOT inset inside a .pad.
       // Story E20261012ddc4ede1:S001: the 'load earlier' bar (the pager fills and shows it).
       `<div id="insrc-older" role="button" tabindex="0" aria-label="load earlier messages"></div>` +
-      `<div id="insrc-term" class="term"></div>` +
+      `<div id="insrc-termwrap"><div id="insrc-term" class="term"></div><button type="button" id="insrc-jump" title="Jump to latest output" aria-label="jump to latest output" hidden>&#8595;</button></div>` +
       // S002 ac3: the single animated progress widget above the input (live-only). Mock: 3 blinking
       // dots + a label + a right-aligned elapsed timer; idle (never hidden) until a turn runs.
       `<div id="insrc-progress" class="progress idle"><span class="spin"><i></i><i></i><i></i></span><span class="plabel">idle</span><span class="elapsed" id="insrc-elapsed"></span></div>` +

@@ -29,6 +29,10 @@
  * rows, in order, and the scroll position is moved by the height added, so the row the reader was
  * looking at stays where it was. A page that is not for the shown session, or does not end at the
  * first held index, is discarded.
+ *
+ * While the view is not following the end, the optional jump button is shown; a click returns to the
+ * end. It reads the remembered following state, not the measured position, so it does not flicker
+ * while a following view's last row is appended empty and filled.
  */
 
 /** A session's view is trimmed once it holds more rows than this. Fixed: not a setting. */
@@ -42,7 +46,8 @@ export const LOAD_WAIT_MS = 5000;
 
 /**
  * The pager factory as source: `function(term,o){...}` returning the pager. `term` is the scrolling
- * transcript element. `o` (all optional) carries `bar`, the 'load earlier' element; `post`, which
+ * transcript element. `o` (all optional) carries `bar`, the 'load earlier' element; `jump`, the
+ * jump-to-latest button (never a child of `term`, whose children are all rows); `post`, which
  * sends a message to the host; and `setTimeout` / `clearTimeout` (the globals by default). The
  * registry is handed over afterwards with `attach(reg)`, because the registry is built on a line()
  * that appends through this pager.
@@ -51,17 +56,18 @@ export function transcriptPagerWebviewSource(): string {
   return `function(term,o){
 o=o||{};
 var MAX=${MAX_HELD_ROWS},KEEP=${KEEP_ROWS},SLACK=${BOTTOM_SLACK_PX},WAIT=${LOAD_WAIT_MS};
-var bar=o.bar||null,post=o.post||function(){};
+var bar=o.bar||null,jump=o.jump||null,post=o.post||function(){};
 var later=o.setTimeout||function(f,ms){return setTimeout(f,ms);},cancel=o.clearTimeout||function(t){clearTimeout(t);};
 var reg=null,sid='',first=0,last=-1,total=0,rendering=false,loading=false,timer=null,pinned=true,pinTop=0;
 function attach(r){reg=r;}
 function atBottom(){return term.scrollHeight-term.scrollTop-term.clientHeight<=SLACK;}
-function toBottom(){term.scrollTop=term.scrollHeight;pinned=true;pinTop=term.scrollTop;}
+function toBottom(){term.scrollTop=term.scrollHeight;pinned=true;pinTop=term.scrollTop;showJump();}
+function showJump(){if(jump)jump.hidden=following();}
 function following(){
 if(atBottom()){pinned=true;pinTop=term.scrollTop;}
 else if(pinned&&term.scrollTop<pinTop)pinned=false;
 return pinned;}
-function append(node){var follow=!rendering&&following();term.appendChild(node);if(follow)toBottom();return node;}
+function append(node){var follow=!rendering&&following();term.appendChild(node);if(follow)toBottom();else showJump();return node;}
 function showBar(){if(!bar)return;
 if(first>0){bar.textContent='\\u2191 Load earlier messages ('+first+' older)';bar.style.display='';}
 else{bar.textContent='';bar.style.display='none';}}
@@ -83,7 +89,7 @@ if(gone.length===0)return false;
 first=cut;
 if(reg){reg.forgetKeysBefore(cut);reg.forgetPendingIn(gone);}
 showBar();toBottom();return true;}
-function track(rowIndex,fn){var from=term.children.length;try{return fn();}finally{stamp(from,rowIndex);if(!rendering&&following())toBottom();trimIfNeeded();}}
+function track(rowIndex,fn){var from=term.children.length;try{return fn();}finally{stamp(from,rowIndex);if(!rendering&&following())toBottom();trimIfNeeded();showJump();}}
 function endLoad(){loading=false;if(timer!==null){cancel(timer);timer=null;}}
 function requestOlder(){
 if(loading||first<=0||sid==='')return false;
@@ -110,14 +116,16 @@ for(var m=0;m<fresh.length;m++)term.insertBefore(fresh[m],anchor);}
 first=start;showBar();
 term.scrollTop=oldTop+(term.scrollHeight-oldHeight);
 if(pinned)pinTop=term.scrollTop;
+showJump();
 return true;}
-function onScroll(){if(term.scrollTop<=SLACK&&first>0)requestOlder();if(following()&&atBottom())trimIfNeeded();}
+function onScroll(){if(term.scrollTop<=SLACK&&first>0)requestOlder();if(following()&&atBottom())trimIfNeeded();showJump();}
 function reset(sessionId,firstIndex,totalRows){
 sid=sessionId||'';first=typeof firstIndex==='number'&&firstIndex>0?firstIndex:0;last=first-1;
 total=typeof totalRows==='number'?totalRows:0;rendering=false;endLoad();showBar();toBottom();}
 function state(){return {sessionId:sid,first:first,last:last,total:total,loading:loading};}
 term.addEventListener('scroll',onScroll);
 if(bar)bar.addEventListener('click',function(){requestOlder();});
+if(jump)jump.addEventListener('click',toBottom);
 showBar();
 return {attach:attach,append:append,stamp:stamp,track:track,trimIfNeeded:trimIfNeeded,reset:reset,prepend:prepend,requestOlder:requestOlder,atBottom:atBottom,state:state};}`;
 }

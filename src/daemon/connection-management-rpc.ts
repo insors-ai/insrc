@@ -129,7 +129,8 @@ export async function connectionManagementRpc(method: Method, value: unknown, tr
 			if (params.repoRoot !== undefined) {
 				const repoRoot = await root(params.repoRoot);
      // Registered-root initialization is independent of release-audit completion.
-     if(!savedManagementFor(repoRoot)&&!testPorts.sessionRuntime){try{await ensureDefaultManagedRoot(repoRoot);}catch{/* Existing legacy data or damaged metadata still needs recovery. */}}
+     // A Keychain refusal is reported; existing legacy data or damaged metadata still needs recovery.
+     if(!testPorts.sessionRuntime)await openOnDemand(repoRoot);
      const service = savedManagementFor(repoRoot);
 				if (service) {
 					try {

@@ -18,10 +18,8 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { rpc, sockOf, startDaemon } from '../../mcp/__tests__/helpers/mcp-e2e.js';
-import { ensureDefaultManagedRoot } from '../db/management-defaults.js';
 import { connectionsPath } from '../db/config.js';
 import { managementStateDirectory } from '../db/managed-store.js';
-import { savedManagementFor } from '../db/management.js';
 import { PATHS } from '../../shared/paths.js';
 
 const PRELOAD = join(dirname(fileURLToPath(import.meta.url)), 'fixtures', 'fake-keytar.ts');
@@ -92,14 +90,19 @@ test('on-demand: a plain listing of an unmanaged repository touches nothing', as
 	} finally { await daemon.stop(); }
 });
 
-const denying = { getKey: async () => { throw new Error('denied'); }, setKey: async () => {}, deleteKey: async () => {} };
-
 test('on-demand: a refused first-time set-up leaves nothing on disk', async () => {
-	const root = join(base, 'fresh');
-	mkdirSync(root);
-	await assert.rejects(ensureDefaultManagedRoot(root, { isRegistered: async c => c === root, keystore: denying }));
-	assert.deepEqual(readdirSync(root), []);
-	assert.equal(savedManagementFor(root), undefined);
+	const fresh = join(base, 'fresh');
+	mkdirSync(fresh);
+	const daemon = await start();
+	try {
+		await rpc(daemon.sock, 'repo.add', { path: fresh });
+		const registered = readdirSync(fresh);
+		writeFileSync(REFUSE, '');
+		const answer = await rpc(daemon.sock, 'db.connections.v2.capabilities', { repoRoot: fresh }).catch((error: Error) => error) as { code?: string; message?: string };
+		assert.match(`${answer.code ?? ''} ${answer.message ?? ''}`, /secret-unavailable/, 'the refusal is what stopped the set-up');
+		assert.equal(existsSync(dirname(daemonPath(connectionsPath(fresh)))), false, 'the repository state directory was not created');
+		assert.deepEqual(readdirSync(fresh), registered);
+	} finally { rmSync(REFUSE, { force: true }); await daemon.stop(); }
 });
 
 test('on-demand: shutdown closes every root opened on demand', async () => {

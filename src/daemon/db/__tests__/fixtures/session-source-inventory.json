@@ -8,7 +8,7 @@
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "Default features retain per-action admission. Capability selection lazily opens only registered fresh roots, deduplicated under daemon ownership; existing legacy or corrupted registries fail closed. Removed the historical audit dependency, not ticket, session, root or privacy authorization.",
-      "sourceDigest": "69f2f607844f102c0df7425f7947d7c7b24c26c741f2dbe395567a133a8aa49f"
+      "sourceDigest": "4bf4296fd80d28a44b49bac674bc60ef62f1ec69ac8d1c64c9cd2f7e2e44efe1"
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -8527,7 +8527,7 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "69f2f607844f102c0df7425f7947d7c7b24c26c741f2dbe395567a133a8aa49f",
+      "sourceDigest": "4bf4296fd80d28a44b49bac674bc60ef62f1ec69ac8d1c64c9cd2f7e2e44efe1",
       "boundaries": [
         "acquisition:resolver-member",
         "acquisition:symbol:savedConnectionResolver",

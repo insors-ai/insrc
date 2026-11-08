@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 54 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -188,7 +188,7 @@ Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 
 
 ## t8
 
-Run at 2026-11-08T06:43:32.591Z on commit `31ac0dec8`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T06:50:24.793Z on commit `effcfa7f3`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 1 reported by the builder and not run by the gate.
 
 **integration: I7 both-party recovery/impact/provenance fixture parity**
 
@@ -199,7 +199,6 @@ Run at 2026-11-08T06:43:32.591Z on commit `31ac0dec8`. Tests check: **passed**. 
 | pass | normal impact schema and IPC routing preserve authority and fresh-only coverage progress | `src/mcp/__tests__/design-review.test.ts` |
 | pass | native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
 | pass | controller impact uses the same schema and validator with fenced exchange and durable exact replay | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
-| pass | document edits during publication and approval persistence fail closed through journal restart | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **smoke: S1 compiled normal routes and code-review regression**
 
@@ -208,12 +207,16 @@ Run at 2026-11-08T06:43:32.591Z on commit `31ac0dec8`. Tests check: **passed**. 
 | pass | compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart | `src/mcp/__tests__/design-review.test.ts` |
 | pass | native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
 | pass | both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
+| pass | versioned readers preserve legacy shape and expose real chunk feedback through current common fields | `src/workflow/review/design-review/__tests__/readers.test.ts` |
+| pass | shared current IDE wire fixture preserves common fields and versioned chunk data | `src/workflow/review/design-review/__tests__/readers.test.ts` |
+
+Reported by the builder, not run by the gate: **pass**. Evidence: Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance.
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/mcp/__tests__/design-review.test.ts` | 0 | 6 | 16.9 s |  |
-| `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 2.7 s |  |
-| `src/workflow/review/design-review/__tests__/impact-execution.test.ts` | 0 | 3 | 1.1 s |  |
-| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 1 | 0.8 s |  |
+| `src/mcp/__tests__/design-review.test.ts` | 0 | 6 | 16.6 s |  |
+| `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 2.6 s |  |
+| `src/workflow/review/design-review/__tests__/impact-execution.test.ts` | 0 | 3 | 1.2 s |  |
+| `src/workflow/review/design-review/__tests__/readers.test.ts` | 0 | 4 | 0.8 s |  |

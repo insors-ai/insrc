@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 21,
-        "contentHash": "34044d75d06d823fec9ff3eb1a721a5ee3ea79017809f23042ac09a3ca7aa560",
-        "at": "2026-11-08T06:47:14.987Z",
+        "number": 22,
+        "contentHash": "85d1b1e29ca50139dcd7c7af6e115ac942ddd50a8b955155163fdef96c7d840b",
+        "at": "2026-11-08T06:50:24.959Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:47:14.831Z",
+    "updatedAt": "2026-11-08T06:50:24.793Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 21
+    "revision": 22
   },
   "body": {
     "tasks": [
@@ -670,8 +670,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "31ac0dec8",
-        "ranAt": "2026-11-08T06:43:32.591Z",
+        "commit": "effcfa7f3",
+        "ranAt": "2026-11-08T06:50:24.793Z",
         "testsPassed": true,
         "tests": [
           {
@@ -703,11 +703,6 @@
                 "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
                 "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
                 "result": "pass"
-              },
-              {
-                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
-                "title": "document edits during publication and approval persistence fail closed through journal restart",
-                "result": "pass"
               }
             ],
             "files": []
@@ -731,9 +726,23 @@
                 "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
                 "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
+                "result": "pass"
               }
             ],
-            "files": []
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance."
+            }
           }
         ],
         "files": [
@@ -741,7 +750,7 @@
             "file": "src/mcp/__tests__/design-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 16852,
+            "durationMs": 16614,
             "titles": [
               {
                 "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
@@ -774,7 +783,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2739,
+            "durationMs": 2626,
             "titles": [
               {
                 "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
@@ -791,7 +800,7 @@
             "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1120,
+            "durationMs": 1150,
             "titles": [
               {
                 "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
@@ -809,13 +818,25 @@
             "otherFailures": []
           },
           {
-            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 803,
+            "durationMs": 818,
             "titles": [
               {
-                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              },
+              {
+                "title": "legacy display stays unchanged and read-only across artifact content delivery and CLI",
+                "result": "pass"
+              },
+              {
+                "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
                 "result": "pass"
               }
             ],

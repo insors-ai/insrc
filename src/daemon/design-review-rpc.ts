@@ -27,7 +27,7 @@ export async function designReviewStep(raw:unknown,trusted?:TrustedRpcContext,de
   }};
   return request.phase==='start'?coordinator.start(request,context):coordinator.recover(request,context);
  }
- if(request.phase==='progress')return coordinator.progress(repo,request.reviewId,request.attempt,{includeResult:request.includeResult,afterCompletedChunk:request.afterCompletedChunk});
+ if(request.phase==='progress')return coordinator.progress(repo,request.reviewId,request.attempt,{includeResult:request.includeResult,afterCompletedChunk:request.afterCompletedChunk,artifactPath:request.artifactPath});
  requireDesign(owner,'wrong_owner','Trusted controller connection is required');return coordinator.exchange(request,owner);
 }
 

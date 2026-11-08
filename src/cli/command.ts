@@ -206,6 +206,7 @@ async function runWorkflow(sub: string | undefined, rest: readonly string[], svc
 		case 'findings': {
 			if (rest[0] === undefined) return ['usage: workflow findings <path>'];
 			const r = svc.workflow.reviewFindings(rest[0]);
+   if(r.designMarkdown!==undefined)return [r.designMarkdown,'Findings are reconciled by a subsequent design-review attempt.'];
 			if (r.pending.length === 0) return [`review: ${r.verdict} · no findings need your attention`];
 			return [
 				`review: ${r.verdict} · ${r.pending.length} finding(s) need your attention:`,

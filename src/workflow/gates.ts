@@ -1,3 +1,4 @@
+import { isStoredDesignReview } from './review/report-log.js';
 import { rpc } from '../shared/ipc-client.js';
 import type { CleanupResult } from './code-review/task-review/cleanup.js';
 /*---------------------------------------------------------------------------------------------
@@ -644,14 +645,15 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 	const overridden = override !== undefined && override.length > 0;
 	const stored = readReviewRecordOf(jsonPath);
 	const lifecycleVerdict = seen?.lifecycle.review?.verdict;
-	const effective = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) : lifecycleVerdict;
+	const effective = stored !== undefined ? (isStoredDesignReview(stored)?(stored.report.status==='passed'?'pass':'block'):effectiveReviewVerdict(stored.report,stored.resolutions)) : lifecycleVerdict;
 	if (effective === 'block') {
 		if (!overridden) {
-			const res = stored?.resolutions ?? {};
-			const pending = (stored?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
+			const legacy=stored&&!isStoredDesignReview(stored)?stored:undefined;
+   const res = legacy?.resolutions ?? {};
+			const pending = (legacy?.report.findings ?? []).filter(f => (f.severity === 'HIGH' || f.severity === 'MED') && res[f.claimId] === undefined);
 			const highs = pending.filter(f => f.severity === 'HIGH').length;
 			const meds = pending.filter(f => f.severity === 'MED').length;
-			const summary = stored !== undefined ? `${highs} HIGH · ${meds} MED unresolved` : 'the review verdict is block';
+			const summary = stored !== undefined ? (isStoredDesignReview(stored)?`design review ${stored.report.status} (${stored.report.counts.HIGH} HIGH · ${stored.report.counts.MED} MED)`:`${highs} HIGH · ${meds} MED unresolved`) : 'the review verdict is block';
 			throw new ReviewBlockedError(
 				`Review blocks approval (${summary}). Resolve findings ('insrc workflow resolve <path> <id> <action>') or approve with an override reason.`,
 				summary,

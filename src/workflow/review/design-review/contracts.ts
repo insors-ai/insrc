@@ -219,7 +219,7 @@ const submission = { ...identity, executionId: id, sequence: positive };
 export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','impact','activity','result','recover','failure'] as const;
 export const DesignRequestSchemas = {
  start: object({ phase: Type.Literal('start'), repo: path, reviewId: id, attempt: attemptNumber, artifactPath: path }),
- progress: object({ phase: Type.Literal('progress'), ...identity, afterCompletedChunk: Type.Optional(number), includeResult: Type.Optional(Type.Boolean()) }),
+ progress: object({ phase: Type.Literal('progress'), ...identity, artifactPath:Type.Optional(path), afterCompletedChunk: Type.Optional(number), includeResult: Type.Optional(Type.Boolean()) }),
  assignment: object({ phase: Type.Literal('assignment'), ...identity }),
  plan: object({ phase: Type.Literal('plan'), ...submission, plan: DesignPlanSchema }),
  impact: object({ phase: Type.Literal('impact'), ...submission, plan: DesignPlanSchema, impact: DesignImpactSchema }),

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 11,
-        "contentHash": "40aa037ba7d2c1bd6f9e08ffcf394326debcced16e12e7b0b34ed9050b145dbe",
-        "at": "2026-11-08T05:34:43.222Z",
+        "number": 12,
+        "contentHash": "630a3febeb073aab0c9e4dfa50f19f9d0f4bbfdaee71dc6cc9e59bb2362eaf3c",
+        "at": "2026-11-08T05:38:32.132Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:34:43.056Z",
+    "updatedAt": "2026-11-08T05:38:31.971Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 11
+    "revision": 12
   },
   "body": {
     "tasks": [
@@ -228,8 +228,8 @@
       },
       {
         "taskId": "t4",
-        "commit": "fc5fd0e45",
-        "ranAt": "2026-11-08T05:34:43.056Z",
+        "commit": "6a661d6bf",
+        "ranAt": "2026-11-08T05:38:31.971Z",
         "testsPassed": true,
         "tests": [
           {
@@ -277,6 +277,11 @@
               },
               {
                 "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
                 "result": "pass"
               }
@@ -289,7 +294,7 @@
             "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1305,
+            "durationMs": 1333,
             "titles": [
               {
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
@@ -313,6 +318,10 @@
               },
               {
                 "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
+                "result": "pass"
+              },
+              {
+                "title": "canonical edits during journal staging or log append are preserved and refuse publication",
                 "result": "pass"
               }
             ],

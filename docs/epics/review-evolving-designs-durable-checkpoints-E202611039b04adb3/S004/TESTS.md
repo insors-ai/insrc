@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 18 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 19 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -74,7 +74,7 @@ Run at 2026-11-08T05:11:22.727Z on commit `6d3865ff9`. Tests check: **passed**. 
 
 ## t4
 
-Run at 2026-11-08T05:34:43.056Z on commit `fc5fd0e45`. Tests check: **passed**. 7 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T05:38:31.971Z on commit `6a661d6bf`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: I1 publication receipt fault recovery and zero model reruns**
 
@@ -91,10 +91,11 @@ Run at 2026-11-08T05:34:43.056Z on commit `fc5fd0e45`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | publication refuses changed subject before write and additional edits after its exact owned delta | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | canonical edits during journal staging or log append are preserved and refuse publication | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 | pass | journalled publication and lost-receipt recovery preserve one exact full history without model calls | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 6 | 1.3 s |  |
+| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 7 | 1.3 s |  |

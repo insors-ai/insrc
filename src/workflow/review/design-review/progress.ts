@@ -69,6 +69,7 @@ export class DesignProgressTracker {
 export type DesignReportMetadata=Pick<DesignReviewConsolidated,'reviewId'|'attempt'|'artifactId'|'status'|'counts'|'reviewer'|'reviewedContentIdentity'>;
 export interface DesignObservation extends DesignReviewProgress {
  readonly publication?:DesignPublication|undefined;
+ readonly source?:'history'|'checkpoint'|undefined;
  readonly guidance:string;
  readonly completedResults: readonly DesignChunkResult[];
  readonly nextCompletedChunk:number;

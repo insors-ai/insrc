@@ -22,6 +22,7 @@ import { impactFixture } from '../../workflow/review/design-review/__tests__/imp
 import { appendFileSync } from 'node:fs';
 import { designFixture } from '../../workflow/review/design-review/__tests__/fixtures.js';
 import { loadDesignCheckpoint,saveDesignCheckpoint,designCheckpointPath } from '../../workflow/review/design-review/checkpoint.js';
+import { publishDesignReview } from '../../workflow/review/design-review/publication.js';
 import { prepareDesignSubject } from '../../workflow/review/design-review/subject.js';
 import { artifactJsonPath } from '../../workflow/storage.js';
 import { resolveArtifactMdPath } from '../../workflow/path-scheme.js';
@@ -137,7 +138,8 @@ test('normal stdio controller failure and explicit recovery retain actual connec
 
 
 test('normal impact schema and IPC routing preserve authority and fresh-only coverage progress',async t=>{
- const f=impactFixture(t,'daemon');f.checkpoint.attempts=[f.baseline];await saveDesignCheckpoint(f.repo,f.checkpoint);appendFileSync(f.md,'\nCorrected contract');
+ const f=impactFixture(t,'daemon');f.checkpoint.attempts=[f.baseline];await saveDesignCheckpoint(f.repo,f.checkpoint);
+ f.baseline.publication=await publishDesignReview(f.checkpoint);await saveDesignCheckpoint(f.repo,f.checkpoint);appendFileSync(f.md,'\nCorrected contract');
  const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{throw Error('Controller route must not construct native work');}} as unknown as LLMProvider;
  const h=await host(f,provider),client=await stdio(h.path,f.repo),observer=await stdio(h.path,f.repo),base={repo:f.repo,reviewId:'review-1',attempt:2};
  try{

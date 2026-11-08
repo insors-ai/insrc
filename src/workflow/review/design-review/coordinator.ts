@@ -25,6 +25,7 @@ import { createDesignActivityMonitor } from './activity-monitor.js';
 import { assertDesignDispatchCapacity } from './capacity.js';
 import type { DesignPublication } from './contracts.js';
 import { publishDesignReview } from './publication.js';
+import { permanentDesignCheckpoint } from './read.js';
 
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
@@ -67,6 +68,7 @@ interface DesignJob {
 /** Main-daemon owner. Request disconnection is deliberately not an execution signal. */
 export class DesignReviewCoordinator {
  private readonly jobs=new Map<string,DesignJob>();
+ private readonly knownArtifacts=new Map<string,string>();
  private readonly admitting=new Map<string,{signature:string;promise:Promise<DesignReviewAcknowledgement>}>();
  private readonly subjects=new Map<string,string>();
  // Only tiny diagnostics remain if a terminal failure itself could not be saved.
@@ -86,6 +88,7 @@ export class DesignReviewCoordinator {
   try{return await promise;}finally{if(this.admitting.get(key)?.promise===promise)this.admitting.delete(key);}
  }
  private ack(checkpoint:DesignReviewCheckpoint,active:boolean,number=currentDesignAttempt(checkpoint).number):DesignReviewAcknowledgement{
+  this.knownArtifacts.set(this.key(checkpoint.project,checkpoint.reviewId),checkpoint.subject.canonicalPath);
   const attempt=checkpoint.attempts[number-1];requireDesign(attempt,'missing_attempt','Design review attempt not found');
   const error=number===currentDesignAttempt(checkpoint).number&&this.uncertain.get(this.key(checkpoint.project,checkpoint.reviewId));
   return {reviewId:checkpoint.reviewId,attempt:attempt.number,artifactId:checkpoint.artifactId,reviewer:attempt.reviewer??checkpoint.subject.reviewer,
@@ -251,10 +254,16 @@ export class DesignReviewCoordinator {
    return this.ack(checkpoint,true);
   }catch(error){if(this.subjects.get(subjectKey)===key)this.subjects.delete(subjectKey);throw error;}
  }
- async progress(project:string,reviewId:string,attempt:number,options:{includeResult?:boolean|undefined;afterCompletedChunk?:number|undefined}={}):Promise<DesignObservation>{
+ async progress(project:string,reviewId:string,attempt:number,options:{includeResult?:boolean|undefined;afterCompletedChunk?:number|undefined;artifactPath?:string|undefined}={}):Promise<DesignObservation>{
   project=await realpath(project);const key=this.key(project,reviewId),job=this.jobs.get(key);
   const checkpoint=job?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(project,reviewId);
-  requireDesign(checkpoint,'missing_checkpoint','Design review not found');
+  if(!checkpoint){
+   const locator=options.artifactPath??this.knownArtifacts.get(key);requireDesign(locator,'artifact-reference-required','Result has no checkpoint mapping; provide artifactPath for permanent history');
+   const stored=permanentDesignCheckpoint(project,locator,reviewId,attempt);
+   this.knownArtifacts.set(key,stored.checkpoint.subject.canonicalPath);
+   return {...observeDesignCheckpoint(stored.checkpoint,options),source:'history',publication:{reviewId,attempt,state:'complete',artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId}};
+  }
+  this.knownArtifacts.set(key,checkpoint.subject.canonicalPath);
   requireDesign(checkpoint.attempts[attempt-1]?.number===attempt,'missing_attempt','Design review attempt not found');
   const live=!!job&&currentDesignAttempt(checkpoint).number===attempt;
   const view=observeDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.slice(0,attempt)},{...options,active:live,...(live?{liveProgress:job.tracker.snapshot()}:{})});

@@ -33,6 +33,8 @@ interface DeliveryEvidenceView {
 }
 
 export interface DocsContent {
+ readonly designReview?:ArtifactReviewView['designReview'];
+ readonly designFindings?:ArtifactReviewView['designFindings'];
   readonly markdown: string;
   readonly openQuestions: readonly string[];
   readonly blocked: boolean;
@@ -185,6 +187,8 @@ export function createDocsReviewClient(client: IpcClient, opts: DocsReviewClient
       if (isError(res)) throw new Error(res.error);
       return {
         markdown: res.renderedMarkdown,
+        ...(res.designReview!==undefined?{designReview:res.designReview}:{}),
+        ...(res.designFindings!==undefined?{designFindings:res.designFindings}:{}),
         openQuestions: res.openQuestions.map((q) => q.text),
         blocked: !res.approvable,
         // Strict pass-through (t2): each record is forwarded byte-identical, and an

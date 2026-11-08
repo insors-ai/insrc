@@ -1,3 +1,4 @@
+import { designFindingViews } from './review/design-review/read.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -33,8 +34,8 @@ import { FileSidecarStore } from './artifact-core/sidecar-store.js';
 import type { ChangeLogEntry, Feedback, Review } from './artifact-core/types.js';
 import { jsonPathForMd } from './gates.js';
 import { openQuestions, type OpenQuestionStatus } from './questions.js';
-import { reviewRecordOf } from './review/report-log.js';
-import type { ReviewRecord } from './review/report-log.js';
+import { reviewRecordOf, isStoredDesignReview } from './review/report-log.js';
+import type { StoredReviewRecord } from './review/report-log.js';
 import { effectiveReviewVerdict } from './review/resolve.js';
 import type { ReviewReport } from './review/types.js';
 import type { FunctionalDefinition } from './artifacts/functional-definition.js';
@@ -55,6 +56,8 @@ export interface OpenQuestionRef {
 }
 
 export interface ArtifactReviewView {
+ readonly designFindings?:readonly import('./review/design-review/read.js').DesignFindingView[]|undefined;
+ readonly designReview?:import('./review/design-review/contracts.js').DesignReviewConsolidated|undefined;
 	readonly artifactId:       string;   // canonical file identity, e.g. 'LLD-<hash>-s2'
 	readonly kind:             string;   // SPEC / DEF / HLD / LLD / PLAN / ISSUE / CR
 	readonly renderedMarkdown: string;   // the artifact's own .md read verbatim (k5/lc1)
@@ -228,17 +231,18 @@ export async function handleArtifactContent(
 	// the lifecycle review, with the full report and its resolutions read from the review entry of the artifact's log
 	const lifecycleReview = lifecycleReviewOf(meta);
 	const stored = reviewRecordOfLog(repoPath, artifactId, lifecycleReview);
-	const blocked = stored !== undefined ? effectiveReviewVerdict(stored.report, stored.resolutions) === 'block' : lifecycleReview?.['verdict'] === 'block';
+	const blocked = stored !== undefined ? (isStoredDesignReview(stored)?stored.report.status!=='passed':effectiveReviewVerdict(stored.report, stored.resolutions)==='block') : lifecycleReview?.['verdict'] === 'block';
 
 	const feedback = feedbackLinesOf(repoPath, artifactId);
 
 	return {
 		artifactId,
 		kind,
+  ...(stored&&isStoredDesignReview(stored)?{designReview:stored.report,designFindings:designFindingViews(stored.history)}:{}),
 		renderedMarkdown,
 		openQuestions: oq,
 		approvable: !blocked,
-		...(blocked ? { blockReason: stored !== undefined ? summarizeBlock(stored.report) : 'Review blocks approval — the review verdict is block' } : {}),
+		...(blocked ? { blockReason: stored !== undefined ? (isStoredDesignReview(stored)?`Design review ${stored.report.status}: ${stored.report.counts.HIGH} HIGH, ${stored.report.counts.MED} MED`:summarizeBlock(stored.report)) : 'Review blocks approval — the review verdict is block' } : {}),
 		...structuredRecords(body),
 		docPath: docPathOf(repoPath, realMd),
 		contentVersion: contentVersionOf(renderedMarkdown),
@@ -255,7 +259,7 @@ function feedbackLinesOf(repoPath: string, artifactId: string): readonly Feedbac
 }
 
 /** The report a lifecycle review names and its resolutions, from the artifact's log (read synchronously, as the content view is built in one pass). */
-function reviewRecordOfLog(repoPath: string, artifactId: string, review: Readonly<Record<string, unknown>> | undefined): ReviewRecord | undefined {
+function reviewRecordOfLog(repoPath: string, artifactId: string, review: Readonly<Record<string, unknown>> | undefined): StoredReviewRecord | undefined {
 	const report = review?.['report'];
 	if (typeof report !== 'object' || report === null) return undefined;
 	try {

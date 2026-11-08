@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794162510470-et6te8",
-    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-08T18:30:58.216Z",
+    "runId": "wf-1794165920582-ylvflq",
+    "repoPath": "/private/tmp/insrc-dependabot-build.VhhDqJ",
+    "createdAt": "2026-11-08T19:26:19.667Z",
     "epicCreatedAt": "2026-11-08T16:46:43.683Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 147450,
+    "elapsedMs": 58504,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "46667edffe5cc451",
@@ -25,17 +25,17 @@
     "lldRunId": "wf-1794158892326-31wwbi",
     "lldEffectiveHash": "7cca28aa1022bf998ab35918e0b0b7692a6b02f4466286eec275e61b20552646",
     "authoredBy": "controller",
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
+    "revision": 2,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "3f58267a33becbc31944f9d7ef24cc594ad22c6ae02a3e5a4a40c06447475697",
+        "number": 2,
+        "contentHash": "7686f60d906f4d52124434c952dc9e5e7914b2bd98057621280c2158b0d9f8f6",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,16 +45,16 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 2,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-08T18:32:27.964Z"
+        "at": "2026-11-08T19:39:35.991Z"
       }
     },
-    "rangeBase": "d5567e4647980f7745a4223aa18b5784392ca7c3"
+    "rangeBase": "9bea092af59f118da3ba957c958e0f952d7c537b"
   },
   "body": {
     "summary": {
@@ -105,7 +105,7 @@
         "summary": "Apply batch 2 Nodemailer, Cassandra and ZIP, MySQL, etcd and gRPC, and SQL Server Azure Identity changes. Preserve saved configuration loading and driver contracts.",
         "acceptanceChecks": [
           "Confirm every batch 2 resolved dependency is outside the mapped affected ranges.",
-          "Verify authenticated STARTTLS, recipient handling and attachments, plus existing Cassandra, etcd, MySQL and SQL Server configuration, connection, schema and read paths. Record each unavailable live service and what fixtures covered.",
+          "Verify authenticated STARTTLS, recipient handling and attachments. Run live saved-configuration connection, schema and bounded-read checks for Cassandra, etcd and MySQL. Verify SQL Server saved configuration, schema and bounded reads at the Tedious SDK boundary with the existing fixture. Record live SQL Server qualification as deferred at the user's direction, outside this build gate.",
           "Prove the overwrite-enabled destination symlink fixture detects baseline behavior and passes on the selected adm-zip release for synchronous, asynchronous and single-entry extraction."
         ],
         "derivedFrom": [
@@ -124,7 +124,11 @@
           },
           {
             "level": "live",
-            "name": "Load saved Cassandra, etcd, MySQL and SQL Server settings through daemon registration, then connect, read schema and perform a bounded read"
+            "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read"
+          },
+          {
+            "level": "integration",
+            "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture"
           }
         ]
       },

@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 52 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -183,3 +183,35 @@ Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 11 | 1.4 s |  |
+
+## t8
+
+Run at 2026-11-08T06:43:32.591Z on commit `31ac0dec8`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: I7 both-party recovery/impact/provenance fixture parity**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress | `src/mcp/__tests__/design-review.test.ts` |
+| pass | normal stdio controller failure and explicit recovery retain actual connection authority and generations | `src/mcp/__tests__/design-review.test.ts` |
+| pass | normal impact schema and IPC routing preserve authority and fresh-only coverage progress | `src/mcp/__tests__/design-review.test.ts` |
+| pass | native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
+| pass | controller impact uses the same schema and validator with fenced exchange and durable exact replay | `src/workflow/review/design-review/__tests__/impact-execution.test.ts` |
+| pass | document edits during publication and approval persistence fail closed through journal restart | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
+
+**smoke: S1 compiled normal routes and code-review regression**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart | `src/mcp/__tests__/design-review.test.ts` |
+| pass | native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
+| pass | both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write | `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/mcp/__tests__/design-review.test.ts` | 0 | 6 | 16.9 s |  |
+| `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` | 0 | 2 | 2.7 s |  |
+| `src/workflow/review/design-review/__tests__/impact-execution.test.ts` | 0 | 3 | 1.1 s |  |
+| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 1 | 0.8 s |  |

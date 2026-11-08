@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 19,
-        "contentHash": "74d9c1260f48510e1afe92b2fec76955c5d2bff6ebf40d1a1a4dc9a1cc61239f",
-        "at": "2026-11-08T06:32:35.095Z",
+        "number": 20,
+        "contentHash": "11cc6cd8017a6e2ec41566f755a7705902fd1d9ba884736b2adbd924ed7bbc34",
+        "at": "2026-11-08T06:43:32.749Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:32:34.926Z",
+    "updatedAt": "2026-11-08T06:43:32.591Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 19
+    "revision": 20
   },
   "body": {
     "tasks": [
@@ -643,6 +643,161 @@
               },
               {
                 "title": "actual active model work retains its artifact while another artifact in the same project progresses",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t8",
+        "commit": "31ac0dec8",
+        "ranAt": "2026-11-08T06:43:32.591Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I7 both-party recovery/impact/provenance fixture parity",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal stdio controller failure and explicit recovery retain actual connection authority and generations",
+                "result": "pass"
+              },
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "S1 compiled normal routes and code-review regression",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/mcp/__tests__/design-review.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 16852,
+            "titles": [
+              {
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
+              {
+                "title": "design schema discovery and steering expose bounded current phases and completion discipline",
+                "result": "pass"
+              },
+              {
+                "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
+                "result": "pass"
+              },
+              {
+                "title": "normal stdio controller failure and explicit recovery retain actual connection authority and generations",
+                "result": "pass"
+              },
+              {
+                "title": "normal impact schema and IPC routing preserve authority and fresh-only coverage progress",
+                "result": "pass"
+              },
+              {
+                "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2739,
+            "titles": [
+              {
+                "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
+                "result": "pass"
+              },
+              {
+                "title": "both native adapters preserve feedback queued before expiry and never accept a failed checkpoint write",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1120,
+            "titles": [
+              {
+                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
+                "result": "pass"
+              },
+              {
+                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "result": "pass"
+              },
+              {
+                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 803,
+            "titles": [
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
                 "result": "pass"
               }
             ],

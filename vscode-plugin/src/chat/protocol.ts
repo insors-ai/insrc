@@ -121,6 +121,7 @@ export type HostToWebview =
       readonly sessionId: string;
       readonly viewGeneration?: number | undefined;
       readonly progress?: SessionProgress | undefined;
+      readonly pendingTurnId?: string | undefined;
       readonly transcript: TranscriptEntry[];
       readonly mode?: PermissionMode;
       readonly firstIndex?: number | undefined;
@@ -249,7 +250,7 @@ export type HostToWebview =
   // Story E2026101259da3204:S001 (additive): `attachments` is the files the message carries.
   // Epic E20261014613abdb3 Story S001: a queued message's turn began for this session, so the webview
   // shows the turn as running (and offers Stop) though no submit was clicked for it.
-  | { readonly type: 'turn-running'; readonly sessionId: string; readonly target?: SessionProjectionTarget | undefined }
+  | { readonly type: 'turn-running'; readonly sessionId: string; readonly target?: SessionProjectionTarget | undefined; readonly pendingTurnId?: string | undefined }
   // Epic E20261014613abdb3 Story S002: the shown chat's outbox, posted after every queue change.
   | { readonly type: 'outbox'; readonly view: OutboxView }
   | {

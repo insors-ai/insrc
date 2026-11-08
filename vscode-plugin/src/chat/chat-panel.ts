@@ -291,6 +291,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   let session: ChatSession | undefined;
   let viewGeneration = 0;
   let targetedActions = false;
+  let nextPendingTurn = 0;
   // Story E202610138d4b90c9:S001: messages another pane handed over, waiting their turn (see drain).
   // Whether the webview has posted 'ready' since the channel was wired. The session is not the
   // test: opening the panel drafts it at once, before the webview listens.
@@ -373,6 +374,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     readonly approvals: ReturnType<typeof createApprovalQueue>;
     readonly pendingSelections: Map<string, SelectionRequest>;
     startingTurns: number;
+    pendingTurnId?: string | undefined;
     queued?: QueuedRun | undefined;
     shownApproval?: string | undefined;
     shownTotal: number;
@@ -396,7 +398,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   };
   const selected = (): SessionRuntime | undefined => session === undefined ? undefined : runtimeOf(session);
   const matchesAction = (rt: SessionRuntime, target: SessionActionTarget | undefined, turnId: string | undefined): boolean =>
-    target === undefined ? !targetedActions : target?.sessionId === rt.session.id && target.viewGeneration === viewGeneration && target.turnId === turnId;
+    target === undefined ? !targetedActions : turnId !== undefined && target?.sessionId === rt.session.id && target.viewGeneration === viewGeneration && target.turnId === turnId;
+  const postRunning = (rt: SessionRuntime): void => {
+    if (rt.session !== session) return;
+    post({ type: 'turn-running', sessionId: rt.session.id, pendingTurnId: rt.pendingTurnId, target: { sessionId: rt.session.id, viewGeneration } });
+  };
   const readyWaiters: Array<() => void> = [];
 
   const post = (msg: HostToWebview): void => {
@@ -972,7 +978,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
   const postRestored = (s: ChatSession): void => {
     const window = latestWindow(s.transcript);
     viewGeneration += 1;
-    post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
+    post({ type: 'session-restored', sessionId: s.id, viewGeneration, progress: readTurnProgress(s), pendingTurnId: runtimes.get(s.id)?.pendingTurnId, transcript: [...window.rows], mode: permissionMode, firstIndex: window.firstIndex, total: s.transcript.length });
     postRunConfig(s);
     postOutbox(); // Epic E20261014613abdb3 Story S002: each chat shows its own outbox
   };
@@ -2518,10 +2524,10 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function tickElapsed(){if(progElapsed)progElapsed.textContent=fmtElapsed(Math.max(0,Date.now()-progT0));}` +
       `function clearElapsed(){if(progTimer){clearInterval(progTimer);progTimer=null;}if(progElapsed)progElapsed.textContent='';}` +
       `function setProgress(text,startedAt){if(prog){prog.className='progress';if(progLabel)progLabel.textContent=text;if(startedAt===null){clearElapsed();return;}if(typeof startedAt==='number')progT0=startedAt;else if(!progTimer)progT0=Date.now();tickElapsed();if(!progTimer)progTimer=setInterval(tickElapsed,1000);}}` +
-      `var viewGen=0,activeProgress=null;` +
-      `function setIdle(){activeProgress=null;if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}clearElapsed();}` +
+      `var viewGen=0,activeProgress=null,pendingTurn=null;` +
+      `function setIdle(){activeProgress=null;pendingTurn=null;if(prog){prog.className='progress idle';if(progLabel)progLabel.textContent='idle';}clearElapsed();}` +
       `function projectProgress(p){activeProgress=p;setRunning(true);setProgress(p.label||({'starting':'starting…','waiting-approval':'waiting for approval…','waiting-choice':'waiting for choice…'}[p.phase]||'working…'),typeof p.startedAt==='number'?p.startedAt:null);}` +
-      `function matchesTarget(t){return t.sessionId===cur&&t.viewGeneration===viewGen&&(!activeProgress||!t.turnId||t.turnId===activeProgress.turnId);}` +
+      `function matchesTarget(t){return t.sessionId===cur&&t.viewGeneration===viewGen&&(!activeProgress||!t.turnId||t.turnId===activeProgress.turnId||t.turnId===pendingTurn);}` +
       `function decisionTarget(ev){return viewGen>0?{sessionId:cur,viewGeneration:viewGen,turnId:ev.turnId,requestId:ev.requestId}:undefined;}` +
       // S001 (bugfix): the SINGLE chat-mode control (Manual / Edit Automatically / Auto). Posts
       // set-permission-mode; its wrapping seg flags 'perm-auto' (amber pill) when fully autonomous.
@@ -2558,8 +2564,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // the held rows and keeps the reader's place (a page it did not ask for is discarded).
       `else if(m.type==='transcript-page'){pager.prepend(m);}` +
       // S001 ac1/lc1: the live user-row echo — reconciled to ONE row via its stable key.
-      `else if(m.type==='turn-running'){if(m.sessionId===cur&&!activeProgress){setRunning(true);setProgress('working\\u2026');}}` +
-      `else if(m.type==='turn-progress'){if(m.progress&&m.progress.turnId===m.target.turnId)projectProgress(m.progress);else if(!m.progress&&activeProgress&&activeProgress.turnId===m.target.turnId){setRunning(false);setIdle();}}` +
+      `else if(m.type==='turn-running'){if(m.sessionId===cur){pendingTurn=m.pendingTurnId||null;if(!activeProgress){setRunning(true);setProgress('working\\u2026',pendingTurn?null:undefined);}}}` +
+      `else if(m.type==='turn-progress'){if(m.progress&&m.progress.turnId===m.target.turnId){pendingTurn=null;projectProgress(m.progress);}else if(!m.progress&&((activeProgress&&activeProgress.turnId===m.target.turnId)||pendingTurn===m.target.turnId)){setRunning(false);setIdle();}}` +
       `else if(m.type==='user-row'){pager.track(m.rowIndex,function(){reg.appendKeyed(reg.toViewModel({role:'user',text:m.text,attachments:m.attachments}),m.key);});}` +
       (attachOn ? `else if(m.type==='attachments-pending'){renderPending(m);}` : '') +
       (queueOn ? `else if(m.type==='outbox'){renderOutbox(m.view);}` : '') +
@@ -2575,7 +2581,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `var _rows=m.transcript||[],_first=typeof m.firstIndex==='number'?m.firstIndex:0,_total=typeof m.total==='number'?m.total:_first+_rows.length;` +
       `started=_total>0;` +
       `pager.reset(cur,_first,_total);` +
-      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});reconcile();if(m.progress){projectProgress(m.progress);}else{setRunning(false);setIdle();}` +
+      `_rows.forEach(function(x,i){pager.track(_first+i,function(){reg.appendKeyed(reg.toViewModel(x),'r'+(_first+i));});});reconcile();setRunning(false);setIdle();pendingTurn=m.pendingTurnId||null;if(m.progress){projectProgress(m.progress);}else if(pendingTurn){setRunning(true);setProgress('starting…',null);}` +
       // S001 (bugfix): reflect the session's persisted mode in the mode control (follows the session).
       `if(m.mode&&pm){pmode=m.mode;pm.value=m.mode;updatePermSeg();}` +
       `}` +
@@ -2606,7 +2612,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function doSubmit(){if(!box.value.trim()${attachOn ? '&&attCount===0' : ''})return;started=true;vs.postMessage({v:1,payload:{type:'submit-turn',text:box.value}});box.value='';${queueOn ? '' : `setRunning(true);setProgress('working\\u2026');`}}` +
       `box.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey)){doSubmit();}});` +
       pasteScript +
-      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){var target=activeProgress?{sessionId:cur,turnId:activeProgress.turnId,viewGeneration:viewGen}:undefined;vs.postMessage({v:1,payload:{type:'cancel-turn',target:target}});if(!target){setRunning(false);setIdle();}}else{doSubmit();}});` +
+      `if(sendBtn)sendBtn.addEventListener('click',function(){if(running){var turnId=pendingTurn||(activeProgress&&activeProgress.turnId),target=turnId?{sessionId:cur,turnId:turnId,viewGeneration:viewGen}:undefined;if(target||viewGen===0)vs.postMessage({v:1,payload:{type:'cancel-turn',target:target}});if(!target&&viewGen===0){setRunning(false);setIdle();}}else{doSubmit();}});` +
       // S002 (ux-polish): the '>' prompt is a role=button span — Enter/Space activate it like a click.
       `if(sendBtn)sendBtn.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();sendBtn.click();}});` +
       `setRunning(false);` +
@@ -2710,6 +2716,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     const owner = opts?.session ?? session;
     if (owner === undefined) return;
     const rt = runtimeOf(owner);
+    const pendingTurnId = `pending-${++nextPendingTurn}`;
+    rt.pendingTurnId = pendingTurnId;
+    postRunning(rt);
     rt.startingTurns += 1;
     let counted = true;
     const started = (): void => {
@@ -2718,9 +2727,13 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       rt.startingTurns -= 1;
     };
     try {
-      await startTurn(text, allowedTools, { ...opts, session: rt.session }, started);
+      await startTurn(text, allowedTools, { ...opts, session: rt.session }, started, pendingTurnId);
     } finally {
       started();
+      if (rt.pendingTurnId === pendingTurnId) {
+        rt.pendingTurnId = undefined;
+        if (rt.session === session) post({ type: 'turn-progress', target: { sessionId: rt.session.id, viewGeneration, turnId: pendingTurnId }, progress: null });
+      }
     }
   }
 
@@ -2729,6 +2742,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     allowedTools: readonly string[] | undefined,
     opts: { readonly suppressEcho?: boolean | undefined; readonly skipUserRow?: boolean | undefined; readonly attachments?: readonly AttachmentRef[] | undefined; readonly session?: ChatSession | undefined; readonly shouldSpawn?: (() => boolean) | undefined } | undefined,
     started: () => void,
+    pendingTurnId: string,
   ): Promise<void> {
     if (typeof text !== 'string') return; // malformed submit-turn -> no-op (never throws)
     const typed = text.trim();
@@ -2815,6 +2829,11 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       onSpawn: (cli) => {
         spawned = true;
         void cli.exited.then(releaseWriter);
+        const progress = readTurnProgress(s);
+        if (progress !== undefined && rt.pendingTurnId === pendingTurnId) {
+          rt.pendingTurnId = undefined;
+          if (session === s) post({ type: 'turn-progress', target: { sessionId: s.id, viewGeneration, turnId: progress.turnId }, progress });
+        }
         // a pending follow-up run actually spawned: its decisions were delivered. Only a spawn of a
         // DIFFERENT turn than the one the follow-up was queued behind consumes the marker — events of
         // the original turn must not mark the follow-up delivered before it starts.
@@ -3090,7 +3109,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         postInitialState();
         // ISSUE-de069d56d76eaacd: a rebuilt page (VS Code discards a covered tab's page) starts idle after its
         // session-restored; tell it when a turn is still in progress, so the progress widget and Stop come back.
-        if (rt !== undefined && (rt.turns.busy() || rt.startingTurns > 0 || rt.queued !== undefined)) post({ type: 'turn-running', sessionId: rt.session.id, target: { sessionId: rt.session.id, viewGeneration } });
+        if (rt !== undefined && (rt.turns.busy() || rt.startingTurns > 0 || rt.queued !== undefined)) postRunning(rt);
         return;
       case 'submit-turn':
         if (att !== undefined) {
@@ -3117,9 +3136,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         // Idempotent when no turn is active (stop() no-ops).
         if (rt === undefined) return;
         const stopping = rt.session;
-        const turnId = stopping === undefined ? undefined : readTurnProgress(stopping)?.turnId;
+        const turnId = rt.pendingTurnId ?? readTurnProgress(stopping)?.turnId;
         const generation = viewGeneration;
-        if ((msg.target !== undefined || turnId !== undefined) && !matchesAction(rt, msg.target, turnId)) return;
+        if (!matchesAction(rt, msg.target, turnId)) return;
         const clearProgress = (): void => {
           if (stopping === undefined || turnId === undefined) return;
           if (stopping.progress?.turnId === turnId) {
@@ -3130,7 +3149,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             post({ type: 'turn-progress', target: { sessionId: stopping.id, turnId, viewGeneration: generation }, progress: null });
           }
         };
-        if (stopping?.liveTurn !== undefined && rt.turns.live === undefined) {
+        if (stopping.liveTurn !== undefined && rt.turns.live === undefined && rt.pendingTurnId === undefined) {
           void rt.turns.stop(stopping).then((verified) => {
             if (!verified) {
               if (session === stopping) {
@@ -3534,7 +3553,6 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
             }
             if (rt.queued !== undefined) return resolve({ kind: 'failed', error: 'this chat already owns a queue run', acted: false });
             rt.queued = { message, session: s, onSpawn, onWaiting, waiting: undefined, turns: 0, spawned: false, lastCli: undefined, terminal: undefined, error: undefined, acted: false, stopped: false, viewLost: false, waitTimer: undefined, resolve };
-            if (s === session) post({ type: 'turn-running', sessionId: s.id, target: { sessionId: s.id, viewGeneration } });
             const retried = message.attempts > 0;
             if (retried) {
               const cause = classifyFailure(message.error ?? '');

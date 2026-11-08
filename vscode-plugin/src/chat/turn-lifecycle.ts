@@ -407,7 +407,6 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
       // when its answer ends.
       const onSpawn = (proc: TurnProcess): void => {
         attachLease(proc);
-        reportSpawn(sink, proc);
         if (myGen === generation) liveProc = proc;
         const forget = (): void => {
           if (liveProc === proc) liveProc = undefined;
@@ -438,6 +437,7 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
           pinLive(s); // retention: the saved cursor's generation is not discarded under it
           cursor.saveNow();
         }
+        reportSpawn(sink, proc);
       };
       let detached = false;
       let detachThis: (() => void) | undefined;

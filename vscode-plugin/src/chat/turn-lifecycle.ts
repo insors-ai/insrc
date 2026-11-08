@@ -13,6 +13,7 @@ import type { ChatPanelLogger } from './chat-panel.js';
 import type { ProviderId, ProviderRegistry, TurnCursor, TurnProcess, TurnRequest } from './cli-adapter.js';
 import { LockWaitAborted, LockWaitSuperseded, runLeased, type SessionLease, type SessionLocks } from './session-lock.js';
 import type { ChatSession, ChatSessionStore } from './session-store.js';
+import { setTurnProgress } from './session-store.js';
 import type { TurnEvent } from './stream-events.js';
 
 /** How often a running turn's cursor (and transcript) is saved at most. */
@@ -162,6 +163,7 @@ function finishIterator(it: AsyncIterator<TurnEvent>): void {
 /** Once a turn's output has been fully handled: forget its cursor (if it is still that turn's). */
 function clearCursor(s: ChatSession, turnId: string): void {
   if (s.liveTurn?.cursor.turnId === turnId) delete s.liveTurn;
+  if (s.progress?.turnId === turnId) setTurnProgress(s, undefined);
 }
 
 
@@ -415,6 +417,8 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
         // host, so a reloaded window can follow it from there.
         if (proc.cursor !== undefined) {
           const { turnId, generation: gen, offset } = proc.cursor;
+          const startedAt = Date.now();
+          setTurnProgress(s, { turnId, turnEpoch: Math.max(startedAt, (s.progressTurnEpoch ?? 0) + 1), startedAt, phase: 'starting' });
           cursorTurnId = turnId;
           runningTurns.add(turnId);
           proc.exit.then(

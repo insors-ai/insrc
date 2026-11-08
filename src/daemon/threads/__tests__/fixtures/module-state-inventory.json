@@ -1082,6 +1082,11 @@
     "class": "per-thread",
     "reason": "Where this thread sends keystore calls: set on every worker at start and unset on the main thread, which owns the vault. It holds no secret."
   },
+  "src/shared/keystore.ts#guardHeldHere": {
+    "class": "one-owner",
+    "owner": "main",
+    "reason": "Set only by the offline maintenance process while it holds the vault guard; on a daemon it stays false, and only the main thread that owns the vault reads it."
+  },
   "src/shared/keystore.ts#legacyRuns": {
     "class": "one-owner",
     "owner": "main",

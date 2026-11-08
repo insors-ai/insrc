@@ -7,6 +7,8 @@ const LOG_DIR   = join('/tmp', '.insrc');
 export const PATHS = {
   insrc:       INSRC_DIR,
   config:      join(INSRC_DIR, 'config.json'),
+  // Held by the offline maintenance tool while it owns the keychain vault.
+  vaultGuard:  join(INSRC_DIR, 'vault.guard'),
   // Per-user approved-model store (Epic ce99b720 sc2): { version: 1, profiles: ApprovedProfile[] }.
   // Read by the per-thread ModelRegistry; written only by the model check/approval flow (s4).
   approvedModels: join(INSRC_DIR, 'approved-models.json'),

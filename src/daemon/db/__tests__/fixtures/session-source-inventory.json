@@ -6504,6 +6504,10 @@
         ],
         [
           "storage-call",
+          "declareLiveStoreOwner"
+        ],
+        [
+          "storage-call",
           "getDb"
         ],
         [
@@ -6539,9 +6543,16 @@
           "process.stderr.write"
         ]
       ],
-      "siteCount": 11,
-      "sitesDigest": "99ab558a3b8fc48a415e9f120726d5da03345cbcb28b36b14810ee2a40d480cf",
-      "sourceDigest": "3a2acd077b3bd8dafb68913621a03fddc205590455a6ff78b6e7169218eddf21"
+      "siteCount": 12,
+      "sitesDigest": "bb6c700f491007e2f3508b341883ac7147184ccf1fa08bcfeb386ab9a442db9e",
+      "sourceDigest": "3d31e1c57dbb21cd59ed2840c7579cceaaa81fb36d9705a8aaf31ae462e1286f",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/bin/insrc-connection-test.ts": {
       "classification": "client-process-boundary",

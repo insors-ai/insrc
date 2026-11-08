@@ -17,7 +17,9 @@
 
 import keytar from 'keytar';
 
+import { acquireRunFileGuard, runFileGuardConflict } from './daemon-run-files.js';
 import { getLogger } from './logger.js';
+import { PATHS } from './paths.js';
 
 const log = getLogger('keystore');
 
@@ -78,6 +80,19 @@ let mutations: Promise<unknown> = Promise.resolve();
 const legacyRuns = new Map<string, LegacyRun>();
 /** Set on a worker thread: every call goes to the vault's owner and never to the Keychain. */
 let forward: ((call: KeystoreCall) => Promise<unknown>) | undefined;
+/** True in the offline maintenance process, which owns the vault while it holds the guard. */
+let guardHeldHere = false;
+
+/**
+ * Taken by the offline maintenance tool before its check that no daemon is running, and held until it
+ * exits. A daemon loads the vault only after its socket is open, so the tool either sees that socket and
+ * refuses, or holds the guard before the daemon's first load.
+ */
+export function acquireVaultGuard(): { release(): void } {
+  const guard = acquireRunFileGuard(PATHS.vaultGuard);
+  guardHeldHere = true;
+  return { release() { guardHeldHere = false; guard.release(); } };
+}
 
 /** Sends this thread's keystore calls to the vault's owner, or back to this thread's own vault with undefined. */
 export function forwardKeystoreCalls(to: ((call: KeystoreCall) => Promise<unknown>) | undefined): void {
@@ -148,6 +163,9 @@ async function readVault(): Promise<Vault> {
 function loadVault(): Promise<Vault> {
   if (vault) return Promise.resolve(vault);
   if (loading) return loading;
+  // Not remembered: the first request after the guard is released succeeds.
+  const conflict = guardHeldHere ? undefined : runFileGuardConflict(PATHS.vaultGuard);
+  if (conflict !== undefined) return Promise.reject(new KeystoreUnavailableError({ cause: new Error(conflict) }));
   if (loadFailure) {
     if (Date.now() - loadFailure.at < LOAD_FAILURE_MEMORY_MS) return Promise.reject(new KeystoreUnavailableError({ cause: loadFailure.cause }));
     loadFailure = undefined;

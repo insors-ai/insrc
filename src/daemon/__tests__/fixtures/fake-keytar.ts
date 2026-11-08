@@ -8,7 +8,9 @@
  * closes anything; with this answer the rest of the real shutdown sequence runs.
  */
 import childProcess from 'node:child_process';
+import fsPromises from 'node:fs/promises';
 import { EventEmitter } from 'node:events';
+import { homedir } from 'node:os';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
@@ -46,4 +48,13 @@ childProcess.fork = ((...args: Parameters<typeof realFork>) => {
 	setImmediate(() => helper.emit('message', { type: 'ready', pid: helper.pid }));
 	return helper;
 }) as typeof realFork;
+
+// The maintenance tool's daemon check, logged with whether the vault guard is held at that moment.
+const realLstat = fsPromises.lstat;
+if ((process.argv[1] ?? '').includes('insrc-connection-maintenance')) {
+	fsPromises.lstat = ((path: string, ...rest: []) => {
+		if (String(path).endsWith('daemon.sock')) appendFileSync(join(dir, 'calls.log'), `daemon-check guard=${existsSync(join(homedir(), '.insrc', 'vault.guard'))}\n`);
+		return realLstat(path, ...rest);
+	}) as typeof realLstat;
+}
 syncBuiltinESMExports();

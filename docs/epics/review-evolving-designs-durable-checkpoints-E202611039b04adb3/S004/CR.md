@@ -2,7 +2,7 @@
 
 # Code review: s4
 
-Status: **changes_requested** · task-based schema version 2
+Status: **passed** · task-based schema version 2
 
 ## design-s4-code-20261108 — attempt 1
 
@@ -1322,3 +1322,1085 @@ Builder-reported at 984a8f4486ecacd0cd5289d450dff69d485225f9, exit 0. Assertions
 
 Test: `Node 22 inline read-only probe invoking readReviewRecordOf` — fail
 Reviewer-executed against available compiled output, without claiming a pinned version. Returned the permanent incomplete report and confirmed checkpoint absence, then terminated with EROFS when the logger attempted to open /tmp/.insrc/daemon.34.log. No retry performed.
+## design-s4-code-20261108 — attempt 3
+
+Scope: whole story · reviewer: daemon · 2026-11-08T10:37:22.457Z
+
+9 selected task assessment(s): failed. Attribution failure (attribution_failed): origins: Relevant task inputs changed; reassessment required
+Native output diagnostics: [{"phase":"attribution","provider":"codex","resolved":false,"errors":[{"code":"HOST_VALIDATION_ERROR","field":"origins","correction":"Correct the host-rejected review field before resubmitting.","occurrences":1}]}]
+
+### Submitted scope
+
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — [{"after":[1,87]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/__tests__/impact-contracts.test.ts` — [{"after":[18,19]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/checkpoint.ts` — [{"after":[105,105]},{"after":[148,148]},{"after":[155,155]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/contracts.ts` — [{"after":[13,19]},{"after":[114,114]},{"after":[121,121]},{"after":[133,133]},{"after":[141,141]},{"after":[147,148]},{"after":[150,150]},{"after":[179,179]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/history.ts` — [{"after":[1,76]},{"after":[78,86]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/provenance.ts` — [{"after":[2,2]},{"after":[12,12]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/results.ts` — [{"after":[2,2]},{"after":[84,85]},{"after":[100,100]},{"after":[145,145]},{"after":[153,153]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[1,35]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/capacity.ts` — [{"after":[1,42]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/checkpoint.ts` — [{"after":[6,6]},{"after":[162,162]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/coordinator.ts` — [{"after":[25,26]},{"after":[35,35]},{"after":[279,279]},{"after":[378,378]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[1,47]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/journal.ts` — [{"after":[16,16]},{"after":[21,29]},{"after":[86,86]},{"after":[91,91]},{"after":[96,96]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[14,14]},{"after":[21,21]},{"after":[43,69]},{"after":[74,74]},{"after":[141,141]},{"after":[159,159]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/sidecar.ts` — [{"after":[18,20]},{"after":[24,30]},{"after":[43,43]},{"after":[46,48]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/store.ts` — [{"after":[76,76]},{"after":[207,219]},{"after":[276,280]},{"after":[342,343]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[10,51]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[3,3]},{"after":[33,36]},{"after":[50,56]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/journal.ts` — [{"after":[88,89]},{"after":[93,93]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[21,21]},{"after":[160,161]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/store.ts` — [{"after":[409,411]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"deletionAt":9}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[7,7]},{"after":[24,25]},{"after":[33,35]},{"after":[54,55]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/journal.ts` — [{"after":[21,21]},{"after":[26,26]},{"after":[93,93]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[21,21]},{"after":[46,60]},{"after":[67,68]},{"after":[70,70]},{"deletionAt":71},{"after":[166,166]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/sidecar.ts` — [{"after":[25,26]},{"after":[44,44]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/store.ts` — [{"after":[215,218]},{"after":[413,413]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[63,65]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/history.ts` — [{"after":[48,48]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/store.ts` — [{"after":[212,212]},{"after":[350,350]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/types.ts` — [{"after":[59,60]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[10,10]},{"after":[27,33]},{"after":[37,38]},{"after":[63,63]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/journal.ts` — [{"after":[23,23]},{"after":[26,26]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/store.ts` — [{"after":[204,204]},{"after":[392,392]}]
+- `c372553974c364435e13706318722cd440cc0e1b:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[10,51]}]
+- `83c343017121296c46a04ae221866abe9f294506:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[9,10]},{"after":[79,93]}]
+- `83c343017121296c46a04ae221866abe9f294506:src/workflow/review/design-review/coordinator.ts` — [{"after":[167,173]},{"after":[246,246]},{"deletionAt":277},{"after":[281,281]}]
+- `870fa0c4bfd3cb5053eb623618f582cf2252d332:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[12,13]},{"after":[95,126]}]
+- `870fa0c4bfd3cb5053eb623618f582cf2252d332:src/workflow/review/design-review/capacity.ts` — [{"after":[15,15]},{"after":[32,37]},{"after":[44,44]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/daemon/design-review-rpc.ts` — [{"after":[3,3]},{"after":[19,19]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/artifact-core/store.ts` — [{"after":[76,76]},{"after":[277,277]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/__tests__/publication.test.ts` — [{"after":[1,113]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/__tests__/recovery.test.ts` — [{"after":[90,90]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/contracts.ts` — [{"after":[184,189]},{"after":[204,204]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/coordinator.ts` — [{"after":[26,27]},{"after":[37,39]},{"after":[58,58]},{"after":[92,92]},{"after":[114,138]},{"after":[140,140]},{"after":[168,169]},{"after":[195,195]},{"after":[199,199]},{"after":[202,202]},{"after":[223,223]},{"after":[277,277]},{"after":[279,279]},{"after":[283,283]},{"after":[418,418]},{"after":[441,454]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/history.ts` — [{"after":[10,11]},{"deletionAt":15},{"after":[26,26]},{"after":[37,37]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/progress.ts` — [{"after":[5,5]},{"after":[71,71]},{"after":[92,92]},{"after":[96,96]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/publication.ts` — [{"after":[1,80]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/subject.ts` — [{"after":[191,191]},{"after":[194,195]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/artifact-core/store.ts` — [{"after":[370,373]},{"after":[423,427]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/review/design-review/__tests__/publication.test.ts` — [{"after":[114,128]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/review/design-review/publication.ts` — [{"after":[6,6]},{"after":[15,15]},{"after":[71,74]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt` — [{"after":[80,81]},{"after":[1889,1890]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/cli/command.ts` — [{"after":[209,209]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/cli/services/workflow.ts` — [{"after":[1,2]},{"after":[195,196]},{"after":[206,206]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/daemon/design-review-rpc.ts` — [{"after":[30,30]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/mcp/__tests__/design-review.test.ts` — [{"after":[25,25]},{"after":[141,142]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/artifact-content.ts` — [{"after":[1,1]},{"after":[37,38]},{"after":[59,60]},{"after":[234,234]},{"after":[241,241]},{"after":[245,245]},{"after":[262,262]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/delivery/gate.ts` — [{"after":[1,1]},{"after":[112,120]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/delivery/types.ts` — [{"after":[15,15]},{"after":[54,54]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/gates.ts` — [{"after":[1,1]},{"after":[648,648]},{"after":[651,653]},{"after":[656,656]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[1,60]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/contracts.ts` — [{"after":[222,222]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/coordinator.ts` — [{"after":[28,28]},{"after":[71,71]},{"after":[91,91]},{"after":[257,257]},{"after":[260,266]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/history.ts` — [{"after":[6,7]},{"after":[72,77]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/progress.ts` — [{"after":[72,72]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/read.ts` — [{"after":[1,36]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/report-file.ts` — [{"after":[21,21]},{"after":[29,29]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/report-log.ts` — [{"after":[22,24]},{"after":[40,40]},{"after":[44,50]},{"after":[101,101]},{"after":[107,112]},{"after":[126,126]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/tracker-auto.ts` — [{"after":[1,2]},{"after":[228,228]},{"after":[353,353]},{"after":[388,389]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:vscode-plugin/src/chat/docs-review-client.ts` — [{"after":[36,37]},{"after":[190,191]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[20,21]},{"after":[52,53]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/read.ts` — [{"after":[4,4]},{"after":[11,12]},{"after":[18,18]},{"after":[21,21]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/subject.ts` — [{"after":[165,166]},{"after":[177,181]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt` — [{"after":[29,45]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json` — [{"after":[1,59]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[22,23]},{"after":[67,88]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/daemon/design-review-rpc.ts` — [{"after":[1,1]},{"after":[20,20]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[24,25]},{"after":[90,94]},{"after":[124,131]},{"after":[164,164]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/artifact-core/store.ts` — [{"after":[107,107]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/gates.ts` — [{"after":[649,650]},{"after":[669,669]},{"deletionAt":692},{"deletionAt":712}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/__tests__/approval.test.ts` — [{"after":[1,92]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/approval.ts` — [{"after":[1,60]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/coordinator.ts` — [{"after":[1,1]},{"after":[41,41]},{"after":[132,132]},{"after":[142,142]},{"after":[211,211]},{"after":[213,213]},{"after":[216,216]},{"after":[236,236]},{"after":[241,241]},{"after":[244,244]},{"after":[251,251]},{"after":[256,256]},{"after":[260,260]},{"after":[481,481]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/fence.ts` — [{"after":[1,15]}]
+- `02bec22884db66b811ec873fc82b2223fb6b635d:src/workflow/review/design-review/__tests__/approval.test.ts` — [{"after":[10,10]},{"after":[26,26]},{"after":[86,86]},{"after":[94,115]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/daemon/design-review-rpc.ts` — [{"after":[1,1]},{"after":[21,21]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[1,2]},{"after":[62,62]},{"after":[94,97]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/gates.ts` — [{"after":[1,1]},{"after":[689,689]},{"after":[692,692]},{"after":[698,698]},{"after":[706,706]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,84]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/cleanup.ts` — [{"after":[1,113]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/coordinator.ts` — [{"after":[1,1]},{"after":[83,87]}]
+- `dffb93691833995fa4700a73f38f3f1ad987087f:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,7]},{"after":[92,120]}]
+- `dffb93691833995fa4700a73f38f3f1ad987087f:src/workflow/review/design-review/cleanup.ts` — [{"after":[20,20]},{"after":[71,71]},{"after":[107,108]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,45]},{"after":[48,48]},{"after":[51,51]},{"after":[53,53]},{"after":[167,198]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/mcp/__tests__/helpers/design-review-stdio.ts` — [{"after":[1,1]},{"after":[4,8]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/prompts/steering-block.md` — [{"after":[421,421]},{"after":[482,482]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/__tests__/gates-lifecycle-service.test.ts` — [{"after":[109,109]},{"after":[127,127]},{"after":[129,130]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/__tests__/other-party-review-gate.test.ts` — [{"after":[1,1]},{"after":[147,147]},{"after":[151,152]},{"after":[170,170]},{"after":[174,175]},{"after":[308,310]},{"after":[321,322]},{"after":[330,330]},{"after":[336,336]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/journal.ts` — [{"after":[39,43]},{"after":[45,46]},{"after":[84,84]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[130,130]},{"after":[136,136]},{"after":[170,170]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/store.ts` — [{"after":[15,15]},{"after":[17,17]},{"after":[29,30]},{"after":[77,77]},{"after":[368,368]},{"after":[370,370]},{"after":[375,375]},{"after":[398,409]},{"after":[435,435]},{"after":[443,443]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — [{"after":[1,34]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/approval.ts` — [{"after":[1,1]},{"after":[40,40]},{"after":[42,42]},{"after":[60,60]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/publication.ts` — [{"after":[70,70]}]
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[70,73]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[558,558]}]
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[846,866]}]
+- `1c08afb8776b55be3b028bd9a0b755b7c89b52b4:src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — [{"after":[88,115]}]
+- `1c08afb8776b55be3b028bd9a0b755b7c89b52b4:src/workflow/review/design-review/history.ts` — [{"after":[7,7]},{"after":[70,74]},{"after":[76,82]},{"after":[84,84]}]
+- `78363c60010c517d4abf80abe95db86caf8e18dc:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,2]},{"after":[123,132]}]
+- `78363c60010c517d4abf80abe95db86caf8e18dc:src/workflow/review/design-review/cleanup.ts` — [{"after":[27,27]},{"after":[36,36]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,37]},{"after":[51,51]},{"after":[199,245]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — [{"after":[4,4]},{"after":[7,7]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[4,4]},{"after":[35,38]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,590]},{"after":[593,593]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[35,36]},{"after":[53,62]},{"after":[91,91]},{"after":[108,115]},{"after":[557,558]},{"after":[605,609]},{"after":[633,637]},{"after":[648,648]},{"after":[693,696]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,37]},{"after":[51,51]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — [{"after":[7,7]},{"after":[20,20]},{"after":[65,65]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[34,34]}]
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[705,706]},{"after":[716,716]},{"after":[721,721]},{"after":[726,726]},{"after":[730,731]},{"after":[735,736]},{"after":[753,754]},{"after":[759,759]},{"after":[763,764]},{"after":[776,776]},{"after":[785,785]},{"deletionAt":809},{"after":[812,812]},{"after":[819,819]},{"after":[822,822]},{"after":[825,825]},{"after":[829,829]},{"after":[839,839]}]
+- `7f80d3df180f31c6efaef951223670de82d8bab3:src/workflow/artifact-core/store.ts` — [{"after":[402,402]}]
+- `7f80d3df180f31c6efaef951223670de82d8bab3:src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — [{"after":[3,5]},{"after":[17,43]}]
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[196,197]},{"after":[222,226]},{"after":[237,237]},{"after":[249,265]},{"after":[271,272]},{"after":[304,308]},{"after":[332,336]},{"after":[343,359]},{"after":[364,364]},{"after":[472,473]},{"after":[538,542]},{"after":[553,553]},{"after":[598,598]},{"after":[600,603]}]
+
+### Verified final scope: 446d05427398c712e848adcb08eda1506ab0c21b
+
+Projection: a897543e555335d4dac35a8803a82090fbfbade3e681c42051871d9cbf376699 · attribution: unmapped_failure
+
+- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` (1c1483cfe607c48c37a77769e26ec803626fabc9) — selected: [{"after":[1,87]}]
+- `src/workflow/review/design-review/__tests__/impact-contracts.test.ts` (386511bfcc511e280acb518fdbe51c0bdb6df932) — selected: [{"after":[18,19]}]
+- `src/workflow/review/design-review/checkpoint.ts` (10e874fc9c3a26c1187d633b081d9db4b75092ce) — selected: [{"after":[106,106]},{"after":[149,149]},{"after":[156,156]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[13,19]},{"after":[114,114]},{"after":[121,121]},{"after":[133,133]},{"after":[141,141]},{"after":[147,148]},{"after":[150,150]},{"after":[179,179]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[1,5]},{"after":[8,9]},{"after":[12,15]},{"after":[16,25]},{"after":[27,36]},{"after":[38,69]},{"after":[84,84]},{"after":[85,93]}]
+- `src/workflow/review/design-review/provenance.ts` (2ffd6d0543230abe2a56d4db732cc34578d93a40) — selected: [{"after":[2,2]},{"after":[12,12]}]
+- `src/workflow/review/design-review/results.ts` (030572d49d03988a516bfba783a205fbaa359beb) — selected: [{"after":[2,2]},{"after":[84,85]},{"after":[100,100]},{"after":[145,145]},{"after":[153,153]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[1,8]},{"after":[54,79]}]
+- `src/workflow/review/design-review/capacity.ts` (64d0c9df17a6c338d50a200d6d84795d36b77762) — selected: [{"after":[1,14]},{"after":[16,31]},{"after":[38,43]},{"after":[45,49]}]
+- `src/workflow/review/design-review/checkpoint.ts` (10e874fc9c3a26c1187d633b081d9db4b75092ce) — selected: [{"after":[6,6]},{"after":[162,162]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[27,27]},{"after":[31,31]},{"after":[44,44]},{"after":[340,340]},{"after":[440,440]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[1,2]},{"after":[4,6]},{"after":[8,9]},{"after":[11,23]},{"after":[26,26]},{"after":[34,36]},{"after":[39,41]},{"after":[45,45]},{"after":[50,62]},{"after":[76,77]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[16,16]},{"after":[22,22]},{"after":[24,25]},{"after":[27,29]},{"after":[94,94]},{"after":[100,100]},{"after":[106,106]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[14,14]},{"after":[43,45]},{"after":[61,66]},{"after":[69,69]},{"after":[71,71]},{"after":[72,75]},{"after":[80,80]},{"after":[147,147]},{"after":[165,165]}]
+- `src/workflow/artifact-core/sidecar.ts` (457a45398516fa992b8bc36d0b5da9ec9de6a2ff) — selected: [{"after":[18,20]},{"after":[24,24]},{"after":[27,31]},{"after":[47,49]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[78,78]},{"after":[210,214]},{"after":[216,218]},{"after":[223,226]},{"after":[284,288]},{"after":[350,351]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[11,11]},{"after":[14,53]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[3,3]},{"after":[46,49]},{"after":[66,72]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[96,97]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[167,167]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[437,437]},{"after":[439,439]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — none: []
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[7,7]},{"after":[24,25]},{"after":[42,44]},{"after":[64,65]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[21,21]},{"after":[101,101]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[21,21]},{"after":[46,60]},{"after":[67,68]},{"after":[70,70]},{"after":[166,166]},{"deletionAt":71}]
+- `src/workflow/artifact-core/sidecar.ts` (457a45398516fa992b8bc36d0b5da9ec9de6a2ff) — selected: [{"after":[25,26]},{"after":[44,44]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[219,222]},{"after":[438,438]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[73,75]}]
+- `src/workflow/artifact-core/history.ts` (1593ad9eb33446bfd84b1dca990df559404de510) — selected: [{"after":[48,48]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[215,215]},{"after":[354,354]}]
+- `src/workflow/artifact-core/types.ts` (391930bb84e99858d97bc66eeab4beb8e93e3217) — selected: [{"after":[59,60]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[10,10]},{"after":[27,33]},{"after":[37,38]},{"after":[63,63]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[23,23]},{"after":[26,26]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[207,207]},{"after":[413,413]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[11,11]},{"after":[14,53]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[9,10]},{"after":[80,94]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[211,212]},{"after":[214,216]},{"after":[334,334]},{"deletionAt":330}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[12,13]},{"after":[95,126]}]
+- `src/workflow/review/design-review/capacity.ts` (64d0c9df17a6c338d50a200d6d84795d36b77762) — selected: [{"after":[15,15]},{"after":[32,37]},{"after":[44,44]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[5,5]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[76,76]},{"after":[279,279]}]
+- `src/workflow/review/design-review/__tests__/publication.test.ts` (57ccb44b5127c2d6ea9b0453aeba20102e66ace3) — selected: [{"after":[1,113]}]
+- `src/workflow/review/design-review/__tests__/recovery.test.ts` (b8b5256c82ec245a26665a3ba52a7511d99f632c) — selected: [{"after":[90,90]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[184,189]},{"after":[204,204]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[28,29]},{"after":[40,41]},{"after":[43,43]},{"after":[62,62]},{"after":[103,103]},{"after":[125,137]},{"after":[139,147]},{"after":[149,149]},{"after":[151,151]},{"after":[179,180]},{"after":[206,206]},{"after":[210,210]},{"after":[213,213]},{"after":[235,235]},{"after":[297,297]},{"after":[299,299]},{"after":[303,303]},{"after":[438,438]},{"after":[461,474]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[10,11]},{"after":[26,26]},{"after":[37,37]},{"deletionAt":15}]
+- `src/workflow/review/design-review/progress.ts` (11e7a6af7cd9a50b8c320b11c629a96f78b724f9) — selected: [{"after":[5,5]},{"after":[71,71]},{"after":[93,93]},{"after":[97,97]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[1,5]},{"after":[7,14]},{"after":[16,69]},{"after":[75,84]}]
+- `src/workflow/review/design-review/subject.ts` (4fc0a5c457560f059015baaeda80abd1a5c251e9) — selected: [{"after":[196,196]},{"after":[199,200]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[373,374]},{"after":[376,377]},{"after":[440,442]},{"after":[444,444]}]
+- `src/workflow/review/design-review/__tests__/publication.test.ts` (57ccb44b5127c2d6ea9b0453aeba20102e66ace3) — selected: [{"after":[114,128]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[6,6]},{"after":[15,15]},{"after":[71,74]}]
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt` (48c150685a71fcbf7314f771e30c0484f4f6cc07) — selected: [{"after":[80,81]},{"after":[1889,1890]}]
+- `src/cli/command.ts` (395326ed09cf31a14a9824954f066cd5a1fcba68) — selected: [{"after":[209,209]}]
+- `src/cli/services/workflow.ts` (704cfc21d39777140acd0a7898dda6418044566d) — selected: [{"after":[1,2]},{"after":[195,196]},{"after":[206,206]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[32,32]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[25,25]},{"after":[149,150]}]
+- `src/workflow/artifact-content.ts` (7949952f82df0695114e04aea073044274399e43) — selected: [{"after":[1,1]},{"after":[37,38]},{"after":[59,60]},{"after":[234,234]},{"after":[241,241]},{"after":[245,245]},{"after":[262,262]}]
+- `src/workflow/delivery/gate.ts` (634bb289e2d76c656a760e1be95d0f769fd0c5bb) — selected: [{"after":[1,1]},{"after":[112,120]}]
+- `src/workflow/delivery/types.ts` (eb2cea508ef2746d1f5414a07ad23803fe1f3ea1) — selected: [{"after":[15,15]},{"after":[54,54]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[2,2]},{"after":[649,649]},{"after":[653,655]},{"after":[658,658]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[1,19]},{"after":[24,53]},{"after":[56,66]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[222,222]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[30,30]},{"after":[74,74]},{"after":[99,99]},{"after":[268,268]},{"after":[271,277]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[6,6]},{"after":[75,75]},{"after":[83,83]}]
+- `src/workflow/review/design-review/progress.ts` (11e7a6af7cd9a50b8c320b11c629a96f78b724f9) — selected: [{"after":[72,72]}]
+- `src/workflow/review/design-review/read.ts` (1364c5f639e55813520ce9697b18419e10025d15) — selected: [{"after":[1,3]},{"after":[5,10]},{"after":[13,17]},{"after":[19,20]},{"after":[22,37]}]
+- `src/workflow/review/report-file.ts` (d388beea4089e3c837b1e620c3f4bba6ecfcf0c2) — selected: [{"after":[21,21]},{"after":[29,29]}]
+- `src/workflow/review/report-log.ts` (88baf4b7f07c3a2aab3013b248fa4c5a3c6b0d2e) — selected: [{"after":[22,24]},{"after":[40,40]},{"after":[44,50]},{"after":[101,101]},{"after":[107,112]},{"after":[126,126]}]
+- `src/workflow/tracker-auto.ts` (d2edf2eef1e0a0c423da173eadcd3062b291bdb9) — selected: [{"after":[1,2]},{"after":[228,228]},{"after":[353,353]},{"after":[388,389]}]
+- `vscode-plugin/src/chat/docs-review-client.ts` (4c2c5bff53547debc6cadfd72bbf495e2bd15a26) — selected: [{"after":[36,37]},{"after":[190,191]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[20,21]},{"after":[54,55]}]
+- `src/workflow/review/design-review/read.ts` (1364c5f639e55813520ce9697b18419e10025d15) — selected: [{"after":[4,4]},{"after":[11,12]},{"after":[18,18]},{"after":[21,21]}]
+- `src/workflow/review/design-review/subject.ts` (4fc0a5c457560f059015baaeda80abd1a5c251e9) — selected: [{"after":[165,166]},{"after":[177,181]}]
+- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt` (d5f5f3d0fb681cd86bda798571178990f2091569) — selected: [{"after":[29,45]}]
+- `src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json` (bbcdf6e4daed60a306e1187980b6bbd1fc4bc19a) — selected: [{"after":[1,59]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[22,23]},{"after":[67,88]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[2,2]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[26,27]},{"after":[93,93]},{"after":[98,100]},{"after":[131,135]},{"after":[137,137]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[108,108]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[650,651]},{"after":[670,670]},{"deletionAt":695},{"deletionAt":716}]
+- `src/workflow/review/design-review/__tests__/approval.test.ts` (e50de0e4317edb6dff712b588707b430cfc9882d) — selected: [{"after":[1,9]},{"after":[11,25]},{"after":[27,85]},{"after":[87,93]}]
+- `src/workflow/review/design-review/approval.ts` (ded2f8b6a7874b23e0146235de60c8b6ea8cc529) — selected: [{"after":[2,39]},{"after":[41,41]},{"after":[43,59]},{"after":[61,61]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[2,2]},{"after":[42,42]},{"after":[138,138]},{"after":[148,148]},{"after":[217,217]},{"after":[219,219]},{"after":[222,222]},{"after":[242,242]},{"after":[247,247]},{"after":[250,250]},{"after":[257,257]},{"after":[262,262]},{"after":[266,266]},{"after":[487,487]}]
+- `src/workflow/review/design-review/fence.ts` (360b49e21a72200817cd8c16fa63889e4fe6fce5) — selected: [{"after":[1,15]}]
+- `src/workflow/review/design-review/__tests__/approval.test.ts` (e50de0e4317edb6dff712b588707b430cfc9882d) — selected: [{"after":[10,10]},{"after":[26,26]},{"after":[86,86]},{"after":[94,115]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[1,1]},{"after":[21,21]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[1,2]},{"after":[62,62]},{"after":[94,97]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[1,1]},{"after":[689,689]},{"after":[692,692]},{"after":[698,698]},{"after":[706,706]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[10,93]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[1,19]},{"after":[21,26]},{"after":[28,35]},{"after":[37,70]},{"after":[72,106]},{"after":[109,113]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[1,1]},{"after":[83,87]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[3,9]},{"after":[94,122]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[20,20]},{"after":[71,71]},{"after":[107,108]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[38,45]},{"after":[48,48]},{"after":[53,53]},{"after":[167,198]}]
+- `src/mcp/__tests__/helpers/design-review-stdio.ts` (adaf5e2c738038a9e565b9565e046d9f80ee6e5b) — selected: [{"after":[1,1]},{"after":[4,8]}]
+- `src/prompts/steering-block.md` (3fce20faf3206c1bc03c52ad7b5fef016ee33776) — selected: [{"after":[421,421]},{"after":[482,482]}]
+- `src/workflow/__tests__/gates-lifecycle-service.test.ts` (6485cc8d715c8a9ac78c04815b927adb9a7e729f) — selected: [{"after":[109,109]},{"after":[127,127]},{"after":[129,130]}]
+- `src/workflow/__tests__/other-party-review-gate.test.ts` (395bfd8d37833ca89aa3ffb01837e59f97b44889) — selected: [{"after":[1,1]},{"after":[147,147]},{"after":[151,152]},{"after":[170,170]},{"after":[174,175]},{"after":[308,310]},{"after":[321,322]},{"after":[330,330]},{"after":[336,336]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[39,43]},{"after":[45,46]},{"after":[84,84]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[130,130]},{"after":[136,136]},{"after":[170,170]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[15,15]},{"after":[17,17]},{"after":[29,30]},{"after":[77,77]},{"after":[368,368]},{"after":[370,370]},{"after":[375,375]},{"after":[398,401]},{"after":[403,409]},{"after":[435,435]},{"after":[443,443]}]
+- `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` (bf4427be4a9aca4ceed39216d3a6ec630e99c0f9) — selected: [{"after":[1,2]},{"after":[6,16]},{"after":[44,63]}]
+- `src/workflow/review/design-review/approval.ts` (ded2f8b6a7874b23e0146235de60c8b6ea8cc529) — selected: [{"after":[1,1]},{"after":[40,40]},{"after":[42,42]},{"after":[60,60]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[70,70]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[70,73]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[919,939]}]
+- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` (1c1483cfe607c48c37a77769e26ec803626fabc9) — selected: [{"after":[88,115]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[7,7]},{"after":[70,74]},{"after":[76,82]},{"after":[84,84]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[1,2]},{"after":[123,132]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[27,27]},{"after":[36,36]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[199,245]}]
+- `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` (c1cd7cce3e336dce4673c5a39817507ac69fb16c) — selected: [{"after":[4,4]}]
+- `src/workflow/code-review/task-review/__tests__/controller-fixture.ts` (d0dec95a8b010bb3b2ceeeaa5495eea520ab68a9) — selected: [{"after":[4,4]},{"after":[35,37]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[556,561]},{"after":[563,568]},{"after":[570,575]},{"after":[577,582]},{"after":[584,589]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[35,36]},{"after":[53,62]},{"after":[91,91]},{"after":[108,115]},{"after":[615,616]},{"after":[663,667]},{"after":[691,695]},{"after":[706,706]},{"after":[751,754]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[37,37]},{"after":[51,51]}]
+- `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` (c1cd7cce3e336dce4673c5a39817507ac69fb16c) — selected: [{"after":[7,7]},{"after":[20,20]},{"after":[65,65]}]
+- `src/workflow/code-review/task-review/__tests__/controller-fixture.ts` (d0dec95a8b010bb3b2ceeeaa5495eea520ab68a9) — selected: [{"after":[34,34]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — none: []
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[763,764]},{"after":[774,774]},{"after":[779,779]},{"after":[784,784]},{"after":[788,789]},{"after":[793,794]},{"after":[811,812]},{"after":[817,817]},{"after":[821,822]},{"after":[834,834]},{"after":[843,843]},{"after":[870,870]},{"after":[877,877]},{"after":[880,880]},{"after":[883,883]},{"after":[887,887]},{"after":[897,897]},{"deletionAt":867}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[402,402]}]
+- `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` (bf4427be4a9aca4ceed39216d3a6ec630e99c0f9) — selected: [{"after":[3,5]},{"after":[17,43]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[196,197]},{"after":[222,226]},{"after":[237,237]},{"after":[249,265]},{"after":[271,272]},{"after":[304,308]},{"after":[332,336]},{"after":[343,359]},{"after":[364,364]},{"after":[472,473]},{"after":[538,542]},{"after":[553,553]},{"after":[598,598]},{"after":[600,603]}]
+
+Attribution failure (attribution_failed): origins: Relevant task inputs changed; reassessment required
+
+### t1: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t2: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t3: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t4: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t5: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t6: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t7: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t8: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+
+### t9: failed
+
+No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Coverage: **unverified** — No valid completed assessment was obtained.
+
+
+Review limitations (blocking):
+
+- No task scope was accepted. See the shared attribution failure and review diagnostics.
+
+Inspected references:
+
+## design-s4-code-20261108 — attempt 4
+
+Scope: whole story · reviewer: daemon · 2026-11-08T12:48:57.233Z
+
+9 selected task assessment(s): passed.
+
+### Submitted scope
+
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — [{"after":[1,87]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/__tests__/impact-contracts.test.ts` — [{"after":[18,19]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/checkpoint.ts` — [{"after":[105,105]},{"after":[148,148]},{"after":[155,155]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/contracts.ts` — [{"after":[13,19]},{"after":[114,114]},{"after":[121,121]},{"after":[133,133]},{"after":[141,141]},{"after":[147,148]},{"after":[150,150]},{"after":[179,179]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/history.ts` — [{"after":[1,76]},{"after":[78,86]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/provenance.ts` — [{"after":[2,2]},{"after":[12,12]}]
+- `5e7f04ef83a9d6cfdc6d332094ac055f35527363:src/workflow/review/design-review/results.ts` — [{"after":[2,2]},{"after":[84,85]},{"after":[100,100]},{"after":[145,145]},{"after":[153,153]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[1,35]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/capacity.ts` — [{"after":[1,42]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/checkpoint.ts` — [{"after":[6,6]},{"after":[162,162]}]
+- `202923d85cb32ae2f8ceea4d01b885c29b72ff7c:src/workflow/review/design-review/coordinator.ts` — [{"after":[25,26]},{"after":[35,35]},{"after":[279,279]},{"after":[378,378]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[1,47]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/journal.ts` — [{"after":[16,16]},{"after":[21,29]},{"after":[86,86]},{"after":[91,91]},{"after":[96,96]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[14,14]},{"after":[21,21]},{"after":[43,69]},{"after":[74,74]},{"after":[141,141]},{"after":[159,159]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/sidecar.ts` — [{"after":[18,20]},{"after":[24,30]},{"after":[43,43]},{"after":[46,48]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/artifact-core/store.ts` — [{"after":[76,76]},{"after":[207,219]},{"after":[276,280]},{"after":[342,343]}]
+- `e413e9f23764b0ad642cc5b2f238af6f5e75fee8:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[10,51]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[3,3]},{"after":[33,36]},{"after":[50,56]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/journal.ts` — [{"after":[88,89]},{"after":[93,93]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[21,21]},{"after":[160,161]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/artifact-core/store.ts` — [{"after":[409,411]}]
+- `9ded13c8def7506a1ab021bb534a87b278bd77e2:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"deletionAt":9}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[7,7]},{"after":[24,25]},{"after":[33,35]},{"after":[54,55]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/journal.ts` — [{"after":[21,21]},{"after":[26,26]},{"after":[93,93]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/sidecar-store.ts` — [{"after":[21,21]},{"after":[46,60]},{"after":[67,68]},{"after":[70,70]},{"deletionAt":71},{"after":[166,166]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/sidecar.ts` — [{"after":[25,26]},{"after":[44,44]}]
+- `74c81377e92a621f39e18abeba6809ce2c7d922e:src/workflow/artifact-core/store.ts` — [{"after":[215,218]},{"after":[413,413]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[63,65]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/history.ts` — [{"after":[48,48]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/store.ts` — [{"after":[212,212]},{"after":[350,350]}]
+- `f63562c5b81a173ca646a621c798601b60168634:src/workflow/artifact-core/types.ts` — [{"after":[59,60]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — [{"after":[10,10]},{"after":[27,33]},{"after":[37,38]},{"after":[63,63]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/journal.ts` — [{"after":[23,23]},{"after":[26,26]}]
+- `6d3865ff9cf6c83c8102ec383d807ce25f5905ad:src/workflow/artifact-core/store.ts` — [{"after":[204,204]},{"after":[392,392]}]
+- `c372553974c364435e13706318722cd440cc0e1b:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[10,51]}]
+- `83c343017121296c46a04ae221866abe9f294506:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[9,10]},{"after":[79,93]}]
+- `83c343017121296c46a04ae221866abe9f294506:src/workflow/review/design-review/coordinator.ts` — [{"after":[167,173]},{"after":[246,246]},{"deletionAt":277},{"after":[281,281]}]
+- `870fa0c4bfd3cb5053eb623618f582cf2252d332:src/workflow/review/design-review/__tests__/capacity.test.ts` — [{"after":[12,13]},{"after":[95,126]}]
+- `870fa0c4bfd3cb5053eb623618f582cf2252d332:src/workflow/review/design-review/capacity.ts` — [{"after":[15,15]},{"after":[32,37]},{"after":[44,44]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/daemon/design-review-rpc.ts` — [{"after":[3,3]},{"after":[19,19]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/artifact-core/store.ts` — [{"after":[76,76]},{"after":[277,277]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/__tests__/publication.test.ts` — [{"after":[1,113]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/__tests__/recovery.test.ts` — [{"after":[90,90]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/contracts.ts` — [{"after":[184,189]},{"after":[204,204]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/coordinator.ts` — [{"after":[26,27]},{"after":[37,39]},{"after":[58,58]},{"after":[92,92]},{"after":[114,138]},{"after":[140,140]},{"after":[168,169]},{"after":[195,195]},{"after":[199,199]},{"after":[202,202]},{"after":[223,223]},{"after":[277,277]},{"after":[279,279]},{"after":[283,283]},{"after":[418,418]},{"after":[441,454]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/history.ts` — [{"after":[10,11]},{"deletionAt":15},{"after":[26,26]},{"after":[37,37]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/progress.ts` — [{"after":[5,5]},{"after":[71,71]},{"after":[92,92]},{"after":[96,96]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/publication.ts` — [{"after":[1,80]}]
+- `fc5fd0e4581a9b1f2b7d8b2099483e657b011bd8:src/workflow/review/design-review/subject.ts` — [{"after":[191,191]},{"after":[194,195]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/artifact-core/store.ts` — [{"after":[370,373]},{"after":[423,427]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/review/design-review/__tests__/publication.test.ts` — [{"after":[114,128]}]
+- `6a661d6bf5b336fc5bed4c902a64c49fa390f05b:src/workflow/review/design-review/publication.ts` — [{"after":[6,6]},{"after":[15,15]},{"after":[71,74]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt` — [{"after":[80,81]},{"after":[1889,1890]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/cli/command.ts` — [{"after":[209,209]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/cli/services/workflow.ts` — [{"after":[1,2]},{"after":[195,196]},{"after":[206,206]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/daemon/design-review-rpc.ts` — [{"after":[30,30]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/mcp/__tests__/design-review.test.ts` — [{"after":[25,25]},{"after":[141,142]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/artifact-content.ts` — [{"after":[1,1]},{"after":[37,38]},{"after":[59,60]},{"after":[234,234]},{"after":[241,241]},{"after":[245,245]},{"after":[262,262]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/delivery/gate.ts` — [{"after":[1,1]},{"after":[112,120]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/delivery/types.ts` — [{"after":[15,15]},{"after":[54,54]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/gates.ts` — [{"after":[1,1]},{"after":[648,648]},{"after":[651,653]},{"after":[656,656]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[1,60]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/contracts.ts` — [{"after":[222,222]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/coordinator.ts` — [{"after":[28,28]},{"after":[71,71]},{"after":[91,91]},{"after":[257,257]},{"after":[260,266]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/history.ts` — [{"after":[6,7]},{"after":[72,77]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/progress.ts` — [{"after":[72,72]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/design-review/read.ts` — [{"after":[1,36]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/report-file.ts` — [{"after":[21,21]},{"after":[29,29]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/review/report-log.ts` — [{"after":[22,24]},{"after":[40,40]},{"after":[44,50]},{"after":[101,101]},{"after":[107,112]},{"after":[126,126]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:src/workflow/tracker-auto.ts` — [{"after":[1,2]},{"after":[228,228]},{"after":[353,353]},{"after":[388,389]}]
+- `ab57810e9a326edb1f76b0a9db0b14853387c84a:vscode-plugin/src/chat/docs-review-client.ts` — [{"after":[36,37]},{"after":[190,191]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[20,21]},{"after":[52,53]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/read.ts` — [{"after":[4,4]},{"after":[11,12]},{"after":[18,18]},{"after":[21,21]}]
+- `a4df89db2fda1766e9dad6410b545f4b950ec0a0:src/workflow/review/design-review/subject.ts` — [{"after":[165,166]},{"after":[177,181]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt` — [{"after":[29,45]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json` — [{"after":[1,59]}]
+- `d83eecf71fc0b4e9e20b3a5aafb7dc77681f6686:src/workflow/review/design-review/__tests__/readers.test.ts` — [{"after":[22,23]},{"after":[67,88]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/daemon/design-review-rpc.ts` — [{"after":[1,1]},{"after":[20,20]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[24,25]},{"after":[90,94]},{"after":[124,131]},{"after":[164,164]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/artifact-core/store.ts` — [{"after":[107,107]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/gates.ts` — [{"after":[649,650]},{"after":[669,669]},{"deletionAt":692},{"deletionAt":712}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/__tests__/approval.test.ts` — [{"after":[1,92]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/approval.ts` — [{"after":[1,60]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/coordinator.ts` — [{"after":[1,1]},{"after":[41,41]},{"after":[132,132]},{"after":[142,142]},{"after":[211,211]},{"after":[213,213]},{"after":[216,216]},{"after":[236,236]},{"after":[241,241]},{"after":[244,244]},{"after":[251,251]},{"after":[256,256]},{"after":[260,260]},{"after":[481,481]}]
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/review/design-review/fence.ts` — [{"after":[1,15]}]
+- `02bec22884db66b811ec873fc82b2223fb6b635d:src/workflow/review/design-review/__tests__/approval.test.ts` — [{"after":[10,10]},{"after":[26,26]},{"after":[86,86]},{"after":[94,115]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/daemon/design-review-rpc.ts` — [{"after":[1,1]},{"after":[21,21]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[1,2]},{"after":[62,62]},{"after":[94,97]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/gates.ts` — [{"after":[1,1]},{"after":[689,689]},{"after":[692,692]},{"after":[698,698]},{"after":[706,706]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,84]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/cleanup.ts` — [{"after":[1,113]}]
+- `e0d7f2ccb42ba52511a9a30a493a0d4777ccdb6d:src/workflow/review/design-review/coordinator.ts` — [{"after":[1,1]},{"after":[83,87]}]
+- `dffb93691833995fa4700a73f38f3f1ad987087f:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,7]},{"after":[92,120]}]
+- `dffb93691833995fa4700a73f38f3f1ad987087f:src/workflow/review/design-review/cleanup.ts` — [{"after":[20,20]},{"after":[71,71]},{"after":[107,108]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,45]},{"after":[48,48]},{"after":[51,51]},{"after":[53,53]},{"after":[167,198]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/mcp/__tests__/helpers/design-review-stdio.ts` — [{"after":[1,1]},{"after":[4,8]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/prompts/steering-block.md` — [{"after":[421,421]},{"after":[482,482]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/__tests__/gates-lifecycle-service.test.ts` — [{"after":[109,109]},{"after":[127,127]},{"after":[129,130]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/__tests__/other-party-review-gate.test.ts` — [{"after":[1,1]},{"after":[147,147]},{"after":[151,152]},{"after":[170,170]},{"after":[174,175]},{"after":[308,310]},{"after":[321,322]},{"after":[330,330]},{"after":[336,336]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/journal.ts` — [{"after":[39,43]},{"after":[45,46]},{"after":[84,84]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/lifecycle-service.ts` — [{"after":[130,130]},{"after":[136,136]},{"after":[170,170]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/artifact-core/store.ts` — [{"after":[15,15]},{"after":[17,17]},{"after":[29,30]},{"after":[77,77]},{"after":[368,368]},{"after":[370,370]},{"after":[375,375]},{"after":[398,409]},{"after":[435,435]},{"after":[443,443]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — [{"after":[1,34]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/approval.ts` — [{"after":[1,1]},{"after":[40,40]},{"after":[42,42]},{"after":[60,60]}]
+- `31ac0dec820cd5d7949335f09a8d983baee011a2:src/workflow/review/design-review/publication.ts` — [{"after":[70,70]}]
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[70,73]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[558,558]}]
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[846,866]}]
+- `1c08afb8776b55be3b028bd9a0b755b7c89b52b4:src/workflow/review/design-review/__tests__/history-aggregate.test.ts` — [{"after":[88,115]}]
+- `1c08afb8776b55be3b028bd9a0b755b7c89b52b4:src/workflow/review/design-review/history.ts` — [{"after":[7,7]},{"after":[70,74]},{"after":[76,82]},{"after":[84,84]}]
+- `78363c60010c517d4abf80abe95db86caf8e18dc:src/workflow/review/design-review/__tests__/cleanup.test.ts` — [{"after":[1,2]},{"after":[123,132]}]
+- `78363c60010c517d4abf80abe95db86caf8e18dc:src/workflow/review/design-review/cleanup.ts` — [{"after":[27,27]},{"after":[36,36]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,37]},{"after":[51,51]},{"after":[199,245]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — [{"after":[4,4]},{"after":[7,7]}]
+- `ce7b891ca09a689d2c3139b39dbd22b59d42fee4:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[4,4]},{"after":[35,38]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,590]},{"after":[593,593]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[35,36]},{"after":[53,62]},{"after":[91,91]},{"after":[108,115]},{"after":[557,558]},{"after":[605,609]},{"after":[633,637]},{"after":[648,648]},{"after":[693,696]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/mcp/__tests__/design-review.test.ts` — [{"after":[37,37]},{"after":[51,51]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — [{"after":[7,7]},{"after":[20,20]},{"after":[65,65]}]
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:src/workflow/code-review/task-review/__tests__/controller-fixture.ts` — [{"after":[34,34]}]
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[705,706]},{"after":[716,716]},{"after":[721,721]},{"after":[726,726]},{"after":[730,731]},{"after":[735,736]},{"after":[753,754]},{"after":[759,759]},{"after":[763,764]},{"after":[776,776]},{"after":[785,785]},{"deletionAt":809},{"after":[812,812]},{"after":[819,819]},{"after":[822,822]},{"after":[825,825]},{"after":[829,829]},{"after":[839,839]}]
+- `7f80d3df180f31c6efaef951223670de82d8bab3:src/workflow/artifact-core/store.ts` — [{"after":[402,402]}]
+- `7f80d3df180f31c6efaef951223670de82d8bab3:src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — [{"after":[3,5]},{"after":[17,43]}]
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` — [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[196,197]},{"after":[222,226]},{"after":[237,237]},{"after":[249,265]},{"after":[271,272]},{"after":[304,308]},{"after":[332,336]},{"after":[343,359]},{"after":[364,364]},{"after":[472,473]},{"after":[538,542]},{"after":[553,553]},{"after":[598,598]},{"after":[600,603]}]
+
+### Verified final scope: 446d05427398c712e848adcb08eda1506ab0c21b
+
+Projection: a897543e555335d4dac35a8803a82090fbfbade3e681c42051871d9cbf376699 · attribution: accepted
+
+- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` (1c1483cfe607c48c37a77769e26ec803626fabc9) — selected: [{"after":[1,87]}]
+- `src/workflow/review/design-review/__tests__/impact-contracts.test.ts` (386511bfcc511e280acb518fdbe51c0bdb6df932) — selected: [{"after":[18,19]}]
+- `src/workflow/review/design-review/checkpoint.ts` (10e874fc9c3a26c1187d633b081d9db4b75092ce) — selected: [{"after":[106,106]},{"after":[149,149]},{"after":[156,156]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[13,19]},{"after":[114,114]},{"after":[121,121]},{"after":[133,133]},{"after":[141,141]},{"after":[147,148]},{"after":[150,150]},{"after":[179,179]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[1,5]},{"after":[8,9]},{"after":[12,15]},{"after":[16,25]},{"after":[27,36]},{"after":[38,69]},{"after":[84,84]},{"after":[85,93]}]
+- `src/workflow/review/design-review/provenance.ts` (2ffd6d0543230abe2a56d4db732cc34578d93a40) — selected: [{"after":[2,2]},{"after":[12,12]}]
+- `src/workflow/review/design-review/results.ts` (030572d49d03988a516bfba783a205fbaa359beb) — selected: [{"after":[2,2]},{"after":[84,85]},{"after":[100,100]},{"after":[145,145]},{"after":[153,153]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[1,8]},{"after":[54,79]}]
+- `src/workflow/review/design-review/capacity.ts` (64d0c9df17a6c338d50a200d6d84795d36b77762) — selected: [{"after":[1,14]},{"after":[16,31]},{"after":[38,43]},{"after":[45,49]}]
+- `src/workflow/review/design-review/checkpoint.ts` (10e874fc9c3a26c1187d633b081d9db4b75092ce) — selected: [{"after":[6,6]},{"after":[162,162]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[27,27]},{"after":[31,31]},{"after":[44,44]},{"after":[340,340]},{"after":[440,440]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[1,2]},{"after":[4,6]},{"after":[8,9]},{"after":[11,23]},{"after":[26,26]},{"after":[34,36]},{"after":[39,41]},{"after":[45,45]},{"after":[50,62]},{"after":[76,77]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[16,16]},{"after":[22,22]},{"after":[24,25]},{"after":[27,29]},{"after":[94,94]},{"after":[100,100]},{"after":[106,106]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[14,14]},{"after":[43,45]},{"after":[61,66]},{"after":[69,69]},{"after":[71,71]},{"after":[72,75]},{"after":[80,80]},{"after":[147,147]},{"after":[165,165]}]
+- `src/workflow/artifact-core/sidecar.ts` (457a45398516fa992b8bc36d0b5da9ec9de6a2ff) — selected: [{"after":[18,20]},{"after":[24,24]},{"after":[27,31]},{"after":[47,49]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[78,78]},{"after":[210,214]},{"after":[216,218]},{"after":[223,226]},{"after":[284,288]},{"after":[350,351]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[11,11]},{"after":[14,53]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[3,3]},{"after":[46,49]},{"after":[66,72]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[96,97]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[167,167]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[437,437]},{"after":[439,439]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — none: []
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[7,7]},{"after":[24,25]},{"after":[42,44]},{"after":[64,65]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[21,21]},{"after":[101,101]}]
+- `src/workflow/artifact-core/sidecar-store.ts` (ce48b9d1e4dbc7b62864025d93a1613e772c8308) — selected: [{"after":[21,21]},{"after":[46,60]},{"after":[67,68]},{"after":[70,70]},{"after":[166,166]},{"deletionAt":71}]
+- `src/workflow/artifact-core/sidecar.ts` (457a45398516fa992b8bc36d0b5da9ec9de6a2ff) — selected: [{"after":[25,26]},{"after":[44,44]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[219,222]},{"after":[438,438]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[73,75]}]
+- `src/workflow/artifact-core/history.ts` (1593ad9eb33446bfd84b1dca990df559404de510) — selected: [{"after":[48,48]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[215,215]},{"after":[354,354]}]
+- `src/workflow/artifact-core/types.ts` (391930bb84e99858d97bc66eeab4beb8e93e3217) — selected: [{"after":[59,60]}]
+- `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` (3bc3a0276cc78bdfd8f7740f3faeaa92369facb3) — selected: [{"after":[10,10]},{"after":[27,33]},{"after":[37,38]},{"after":[63,63]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[23,23]},{"after":[26,26]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[207,207]},{"after":[413,413]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[11,11]},{"after":[14,53]}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[9,10]},{"after":[80,94]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[211,212]},{"after":[214,216]},{"after":[334,334]},{"deletionAt":330}]
+- `src/workflow/review/design-review/__tests__/capacity.test.ts` (20e435cb6966b11d7bbfa9e7772a3d6220f3f852) — selected: [{"after":[12,13]},{"after":[95,126]}]
+- `src/workflow/review/design-review/capacity.ts` (64d0c9df17a6c338d50a200d6d84795d36b77762) — selected: [{"after":[15,15]},{"after":[32,37]},{"after":[44,44]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[5,5]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[76,76]},{"after":[279,279]}]
+- `src/workflow/review/design-review/__tests__/publication.test.ts` (57ccb44b5127c2d6ea9b0453aeba20102e66ace3) — selected: [{"after":[1,113]}]
+- `src/workflow/review/design-review/__tests__/recovery.test.ts` (b8b5256c82ec245a26665a3ba52a7511d99f632c) — selected: [{"after":[90,90]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[184,189]},{"after":[204,204]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[28,29]},{"after":[40,41]},{"after":[43,43]},{"after":[62,62]},{"after":[103,103]},{"after":[125,137]},{"after":[139,147]},{"after":[149,149]},{"after":[151,151]},{"after":[179,180]},{"after":[206,206]},{"after":[210,210]},{"after":[213,213]},{"after":[235,235]},{"after":[297,297]},{"after":[299,299]},{"after":[303,303]},{"after":[438,438]},{"after":[461,474]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[10,11]},{"after":[26,26]},{"after":[37,37]},{"deletionAt":15}]
+- `src/workflow/review/design-review/progress.ts` (11e7a6af7cd9a50b8c320b11c629a96f78b724f9) — selected: [{"after":[5,5]},{"after":[71,71]},{"after":[93,93]},{"after":[97,97]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[1,5]},{"after":[7,14]},{"after":[16,69]},{"after":[75,84]}]
+- `src/workflow/review/design-review/subject.ts` (4fc0a5c457560f059015baaeda80abd1a5c251e9) — selected: [{"after":[196,196]},{"after":[199,200]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[373,374]},{"after":[376,377]},{"after":[440,442]},{"after":[444,444]}]
+- `src/workflow/review/design-review/__tests__/publication.test.ts` (57ccb44b5127c2d6ea9b0453aeba20102e66ace3) — selected: [{"after":[114,128]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[6,6]},{"after":[15,15]},{"after":[71,74]}]
+- `jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt` (48c150685a71fcbf7314f771e30c0484f4f6cc07) — selected: [{"after":[80,81]},{"after":[1889,1890]}]
+- `src/cli/command.ts` (395326ed09cf31a14a9824954f066cd5a1fcba68) — selected: [{"after":[209,209]}]
+- `src/cli/services/workflow.ts` (704cfc21d39777140acd0a7898dda6418044566d) — selected: [{"after":[1,2]},{"after":[195,196]},{"after":[206,206]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[32,32]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[25,25]},{"after":[149,150]}]
+- `src/workflow/artifact-content.ts` (7949952f82df0695114e04aea073044274399e43) — selected: [{"after":[1,1]},{"after":[37,38]},{"after":[59,60]},{"after":[234,234]},{"after":[241,241]},{"after":[245,245]},{"after":[262,262]}]
+- `src/workflow/delivery/gate.ts` (634bb289e2d76c656a760e1be95d0f769fd0c5bb) — selected: [{"after":[1,1]},{"after":[112,120]}]
+- `src/workflow/delivery/types.ts` (eb2cea508ef2746d1f5414a07ad23803fe1f3ea1) — selected: [{"after":[15,15]},{"after":[54,54]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[2,2]},{"after":[649,649]},{"after":[653,655]},{"after":[658,658]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[1,19]},{"after":[24,53]},{"after":[56,66]}]
+- `src/workflow/review/design-review/contracts.ts` (4706d0f67de9b3cdf5155cc3355a5e11182a8a48) — selected: [{"after":[222,222]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[30,30]},{"after":[74,74]},{"after":[99,99]},{"after":[268,268]},{"after":[271,277]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[6,6]},{"after":[75,75]},{"after":[83,83]}]
+- `src/workflow/review/design-review/progress.ts` (11e7a6af7cd9a50b8c320b11c629a96f78b724f9) — selected: [{"after":[72,72]}]
+- `src/workflow/review/design-review/read.ts` (1364c5f639e55813520ce9697b18419e10025d15) — selected: [{"after":[1,3]},{"after":[5,10]},{"after":[13,17]},{"after":[19,20]},{"after":[22,37]}]
+- `src/workflow/review/report-file.ts` (d388beea4089e3c837b1e620c3f4bba6ecfcf0c2) — selected: [{"after":[21,21]},{"after":[29,29]}]
+- `src/workflow/review/report-log.ts` (88baf4b7f07c3a2aab3013b248fa4c5a3c6b0d2e) — selected: [{"after":[22,24]},{"after":[40,40]},{"after":[44,50]},{"after":[101,101]},{"after":[107,112]},{"after":[126,126]}]
+- `src/workflow/tracker-auto.ts` (d2edf2eef1e0a0c423da173eadcd3062b291bdb9) — selected: [{"after":[1,2]},{"after":[228,228]},{"after":[353,353]},{"after":[388,389]}]
+- `vscode-plugin/src/chat/docs-review-client.ts` (4c2c5bff53547debc6cadfd72bbf495e2bd15a26) — selected: [{"after":[36,37]},{"after":[190,191]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[20,21]},{"after":[54,55]}]
+- `src/workflow/review/design-review/read.ts` (1364c5f639e55813520ce9697b18419e10025d15) — selected: [{"after":[4,4]},{"after":[11,12]},{"after":[18,18]},{"after":[21,21]}]
+- `src/workflow/review/design-review/subject.ts` (4fc0a5c457560f059015baaeda80abd1a5c251e9) — selected: [{"after":[165,166]},{"after":[177,181]}]
+- `jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt` (d5f5f3d0fb681cd86bda798571178990f2091569) — selected: [{"after":[29,45]}]
+- `src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json` (bbcdf6e4daed60a306e1187980b6bbd1fc4bc19a) — selected: [{"after":[1,59]}]
+- `src/workflow/review/design-review/__tests__/readers.test.ts` (c35dcc948473cc1292453ce772b1f68476babf25) — selected: [{"after":[22,23]},{"after":[67,88]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[2,2]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[26,27]},{"after":[93,93]},{"after":[98,100]},{"after":[131,135]},{"after":[137,137]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[108,108]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[650,651]},{"after":[670,670]},{"deletionAt":695},{"deletionAt":716}]
+- `src/workflow/review/design-review/__tests__/approval.test.ts` (e50de0e4317edb6dff712b588707b430cfc9882d) — selected: [{"after":[1,9]},{"after":[11,25]},{"after":[27,85]},{"after":[87,93]}]
+- `src/workflow/review/design-review/approval.ts` (ded2f8b6a7874b23e0146235de60c8b6ea8cc529) — selected: [{"after":[2,39]},{"after":[41,41]},{"after":[43,59]},{"after":[61,61]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[2,2]},{"after":[42,42]},{"after":[138,138]},{"after":[148,148]},{"after":[217,217]},{"after":[219,219]},{"after":[222,222]},{"after":[242,242]},{"after":[247,247]},{"after":[250,250]},{"after":[257,257]},{"after":[262,262]},{"after":[266,266]},{"after":[487,487]}]
+- `src/workflow/review/design-review/fence.ts` (360b49e21a72200817cd8c16fa63889e4fe6fce5) — selected: [{"after":[1,15]}]
+- `src/workflow/review/design-review/__tests__/approval.test.ts` (e50de0e4317edb6dff712b588707b430cfc9882d) — selected: [{"after":[10,10]},{"after":[26,26]},{"after":[86,86]},{"after":[94,115]}]
+- `src/daemon/design-review-rpc.ts` (e410b562d12ef1198d96545b2ffd2e6ff0694766) — selected: [{"after":[1,1]},{"after":[21,21]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[1,2]},{"after":[62,62]},{"after":[94,97]}]
+- `src/workflow/gates.ts` (b6b36f492222d48338ddb9fd3105d849102d9470) — selected: [{"after":[1,1]},{"after":[689,689]},{"after":[692,692]},{"after":[698,698]},{"after":[706,706]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[10,93]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[1,19]},{"after":[21,26]},{"after":[28,35]},{"after":[37,70]},{"after":[72,106]},{"after":[109,113]}]
+- `src/workflow/review/design-review/coordinator.ts` (b26b0fc916cc9868297a51f46959838f7eeb7bff) — selected: [{"after":[1,1]},{"after":[83,87]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[3,9]},{"after":[94,122]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[20,20]},{"after":[71,71]},{"after":[107,108]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[38,45]},{"after":[48,48]},{"after":[53,53]},{"after":[167,198]}]
+- `src/mcp/__tests__/helpers/design-review-stdio.ts` (adaf5e2c738038a9e565b9565e046d9f80ee6e5b) — selected: [{"after":[1,1]},{"after":[4,8]}]
+- `src/prompts/steering-block.md` (3fce20faf3206c1bc03c52ad7b5fef016ee33776) — selected: [{"after":[421,421]},{"after":[482,482]}]
+- `src/workflow/__tests__/gates-lifecycle-service.test.ts` (6485cc8d715c8a9ac78c04815b927adb9a7e729f) — selected: [{"after":[109,109]},{"after":[127,127]},{"after":[129,130]}]
+- `src/workflow/__tests__/other-party-review-gate.test.ts` (395bfd8d37833ca89aa3ffb01837e59f97b44889) — selected: [{"after":[1,1]},{"after":[147,147]},{"after":[151,152]},{"after":[170,170]},{"after":[174,175]},{"after":[308,310]},{"after":[321,322]},{"after":[330,330]},{"after":[336,336]}]
+- `src/workflow/artifact-core/journal.ts` (425a17b288288df9aecae535ad0e73ea94e7c1a4) — selected: [{"after":[39,43]},{"after":[45,46]},{"after":[84,84]}]
+- `src/workflow/artifact-core/lifecycle-service.ts` (a067bae54d57540259cf29bc65af4e89cf3b7fea) — selected: [{"after":[130,130]},{"after":[136,136]},{"after":[170,170]}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[15,15]},{"after":[17,17]},{"after":[29,30]},{"after":[77,77]},{"after":[368,368]},{"after":[370,370]},{"after":[375,375]},{"after":[398,401]},{"after":[403,409]},{"after":[435,435]},{"after":[443,443]}]
+- `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` (bf4427be4a9aca4ceed39216d3a6ec630e99c0f9) — selected: [{"after":[1,2]},{"after":[6,16]},{"after":[44,63]}]
+- `src/workflow/review/design-review/approval.ts` (ded2f8b6a7874b23e0146235de60c8b6ea8cc529) — selected: [{"after":[1,1]},{"after":[40,40]},{"after":[42,42]},{"after":[60,60]}]
+- `src/workflow/review/design-review/publication.ts` (9c9a19c81980b029d32e80a2e238e3dec8a28a3b) — selected: [{"after":[70,70]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[70,73]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[919,939]}]
+- `src/workflow/review/design-review/__tests__/history-aggregate.test.ts` (1c1483cfe607c48c37a77769e26ec803626fabc9) — selected: [{"after":[88,115]}]
+- `src/workflow/review/design-review/history.ts` (d860fecf3dfdb2cc493f972b1828d10b0e4a1b04) — selected: [{"after":[7,7]},{"after":[70,74]},{"after":[76,82]},{"after":[84,84]}]
+- `src/workflow/review/design-review/__tests__/cleanup.test.ts` (fed4a17012614365c76cd77d7287bef742cb146a) — selected: [{"after":[1,2]},{"after":[123,132]}]
+- `src/workflow/review/design-review/cleanup.ts` (b0b62e723a7a2747567245de4883f1af2c548656) — selected: [{"after":[27,27]},{"after":[36,36]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[199,245]}]
+- `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` (c1cd7cce3e336dce4673c5a39817507ac69fb16c) — selected: [{"after":[4,4]}]
+- `src/workflow/code-review/task-review/__tests__/controller-fixture.ts` (d0dec95a8b010bb3b2ceeeaa5495eea520ab68a9) — selected: [{"after":[4,4]},{"after":[35,37]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[556,561]},{"after":[563,568]},{"after":[570,575]},{"after":[577,582]},{"after":[584,589]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[35,36]},{"after":[53,62]},{"after":[91,91]},{"after":[108,115]},{"after":[615,616]},{"after":[663,667]},{"after":[691,695]},{"after":[706,706]},{"after":[751,754]}]
+- `src/mcp/__tests__/design-review.test.ts` (fe8516388850b616c289ca18e5c2e08ce4dc1d3a) — selected: [{"after":[37,37]},{"after":[51,51]}]
+- `src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` (c1cd7cce3e336dce4673c5a39817507ac69fb16c) — selected: [{"after":[7,7]},{"after":[20,20]},{"after":[65,65]}]
+- `src/workflow/code-review/task-review/__tests__/controller-fixture.ts` (d0dec95a8b010bb3b2ceeeaa5495eea520ab68a9) — selected: [{"after":[34,34]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — none: []
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[763,764]},{"after":[774,774]},{"after":[779,779]},{"after":[784,784]},{"after":[788,789]},{"after":[793,794]},{"after":[811,812]},{"after":[817,817]},{"after":[821,822]},{"after":[834,834]},{"after":[843,843]},{"after":[870,870]},{"after":[877,877]},{"after":[880,880]},{"after":[883,883]},{"after":[887,887]},{"after":[897,897]},{"deletionAt":867}]
+- `src/workflow/artifact-core/store.ts` (f05ba72988ef498c9bd9e2eec85a90318e4d76b9) — selected: [{"after":[402,402]}]
+- `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` (bf4427be4a9aca4ceed39216d3a6ec630e99c0f9) — selected: [{"after":[3,5]},{"after":[17,43]}]
+- `.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json` (1836c7b709603df6b32feefbf73d4d75b531bb08) — selected: [{"after":[11,13]},{"after":[32,33]},{"after":[76,76]},{"after":[86,86]},{"after":[93,93]},{"after":[100,100]},{"after":[107,107]},{"after":[114,114]},{"after":[121,121]},{"after":[128,128]},{"after":[135,135]},{"after":[142,142]},{"after":[149,149]},{"after":[156,156]},{"after":[163,163]},{"after":[170,170]},{"after":[177,177]},{"after":[184,184]},{"after":[191,191]},{"after":[198,198]},{"after":[205,205]},{"after":[212,212]},{"after":[219,219]},{"after":[226,226]},{"after":[233,233]},{"after":[240,240]},{"after":[247,247]},{"after":[254,254]},{"after":[261,261]},{"after":[268,268]},{"after":[275,275]},{"after":[282,282]},{"after":[289,289]},{"after":[296,296]},{"after":[303,303]},{"after":[310,310]},{"after":[317,317]},{"after":[324,324]},{"after":[331,331]},{"after":[338,338]},{"after":[345,345]},{"after":[352,352]},{"after":[359,359]},{"after":[366,366]},{"after":[373,373]},{"after":[380,380]},{"after":[387,387]},{"after":[394,394]},{"after":[401,401]},{"after":[408,408]},{"after":[415,415]},{"after":[422,422]},{"after":[429,429]},{"after":[436,436]},{"after":[443,443]},{"after":[450,450]},{"after":[457,457]},{"after":[464,464]},{"after":[471,471]},{"after":[478,478]},{"after":[485,485]},{"after":[492,492]},{"after":[499,499]},{"after":[506,506]},{"after":[513,513]},{"after":[520,520]},{"after":[527,527]},{"after":[534,534]},{"after":[541,541]},{"after":[548,548]},{"after":[555,555]},{"after":[562,562]},{"after":[569,569]},{"after":[576,576]},{"after":[583,583]},{"after":[590,590]},{"after":[593,593]}]
+- `.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json` (0db66bf782617b4264f564e1508d930dc0bf3085) — selected: [{"after":[11,13]},{"after":[26,26]},{"after":[29,29]},{"after":[196,197]},{"after":[222,226]},{"after":[237,237]},{"after":[249,265]},{"after":[271,272]},{"after":[304,308]},{"after":[332,336]},{"after":[343,359]},{"after":[364,364]},{"after":[472,473]},{"after":[538,542]},{"after":[553,553]},{"after":[598,598]},{"after":[600,603]}]
+- Task t1: reassess; changes 0, 1, 2, 3, 4, 5, 6, 43, 45, 64, 107, 108, 115, 120, 124; identity 89463876c23efee7f61419dc93577ba0d961c5202662f45e6f8b3f28ad447f7d
+- Task t2: reuse; changes 7, 8, 9, 10, 16, 21, 34, 35, 36, 37, 38, 44, 83; identity 28a44dce98149105b436d2792cdc8b0a6b1f79809f7443b917a9cafa99b01c84
+- Task t3: reassess; changes 11, 12, 13, 14, 15, 17, 18, 19, 20, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 99, 101, 102, 121, 122, 124; identity f8c889d961dc304ee7ccb21b3908c72701fd60d6113e5ce44a1fc761a7f61b42
+- Task t4: reassess; changes 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 56, 83, 86, 96, 99, 101, 102, 104, 121, 122, 124; identity 1b6b813fe040de3639c5f73f5dfccf31fa24c3154649684b4d14d27bc3706def
+- Task t5: reassess; changes 52, 53, 54, 55, 57, 58, 59, 60, 61, 62, 63, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 96; identity f6cbfea9443402a3ca1dc12f60d95de0e735c41053b33c65f257bc7004d7a21c
+- Task t6: reassess; changes 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 96, 97, 98, 99, 100, 101, 102, 103, 104, 121, 122, 124; identity c60bfc4871c99214135ed2cf7b3a98f1853528260d0d210c9e98e775b492753a
+- Task t7: reassess; changes 84, 86, 87, 88, 89, 90, 91, 92, 93, 96, 109, 110, 115, 120, 124; identity b58cd7372b500b5ab88e56dad98f73f60fa91ac859d2cefec3a7aa0c2a5779a4
+- Task t8: reassess; changes 56, 74, 75, 76, 94, 95, 96, 97, 98, 102, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 122, 123, 124; identity 537a264e6a1019a9d5eea0cff756c8f1d691f5cb540ac45fc2f4a7e47e79542e
+- Task t9: reassess; changes 105, 106, 114, 115, 119, 120, 123, 124; identity d7eae381c9611564a1c02d90a9fccabdc11fb16a830788673b1c3284e5969e93
+
+Attributed all 125 changes and all 16 supplied tests, including regression evidence, cross-task compatibility checks, replacement witnesses and qualification records. Reuse t2 from accepted attempt 2 because its current task inputs match; reassess all other tasks. No code findings are made.
+
+### t1: passed
+
+Completed reassessment of all selected t1 implementation, test and record changes at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned requirements, design and both acceptance checks. Unfinished attempts now receive plan, provenance and accepted-prefix validation. No blocking defects found.
+
+Coverage: **verified** — Inspected test bodies, fixtures and assertions covering permanent-record version, identity, binding and tampering rejection; preservation digests; 8194 limitations through full/impact consolidation and checkpoint restart; 300 carried finding origins; unchanged per-chunk finding limits; and separate model/stored limitation bounds. Full and impact unfinished-prefix regressions reseal mutated records before asserting semantic rejection, directly addressing the earlier defect. Supporting tests cover provenance eligibility, reconciliation, immutable feedback, recovery, publication and version-aware readback. Coverage review is complete; reported executions were not treated as reviewer runs or execution proof for the final pin.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typecheck or build were independently run. The committed record reports t1 tests passing at ce7b891ca, capacity tests at 870fa0c4b, compiled qualification at 984a8f448 and corrective persistence tests at 7f80d3df1; these remain builder-reported results.
+- Strengthen the 8194-limitations regression with ordered content equality assertions alongside its length checks.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/contracts.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/checkpoint.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/provenance.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/results.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/publication.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-contracts.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/capacity.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/recovery.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/provenance.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/policy-results.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-consolidation.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/recovery-checkpoint.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/readers.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/design-history-storage.test.ts`
+
+Reused task t2 feedback from attempt 2 (daemon); original assessment attempt 2; not a fresh assessment. The recorded comparison establishes that these reservation, dispatch and recovery inputs match accepted attempt 2. Preserve its completed passing assessment and coverage.
+
+### t2: passed
+
+Reassessed all selected t2 changes at 117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4 against the pinned DEF, LLD, Plan and both acceptance checks. The serializer reservations, dispatch/recovery integration and corrected history validation remain consistent. No material defects found; attempt 1's passing conclusion stands.
+
+Coverage: **verified** — Inspected all five capacity test bodies and fixtures, plus relevant aggregate, recovery, retry, publication and ownership assertions. Coverage demonstrates exact-ceiling maximum feedback persistence and consolidation across restart, durable one-byte-over refusal without provider construction, unchanged dispatch/retry/action counters on refusal, bounded host diagnostics, and preservation of accepted prefixes under corrected history validation. This completes the coverage assessment; it does not claim independent test execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No independent tests, integration checks, typecheck or build were run.
+- Optional execution: The committed capacity-test results describe historical commit 870fa0c4bfd3cb5053eb623618f582cf2252d332; they do not establish execution at the current review pin.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/capacity.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/checkpoint.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/coordinator.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/contracts.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/results.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/recovery-state.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/technical-failure.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/history.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/publication.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/fence.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/capacity.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/recovery.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/retry.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:src/workflow/review/design-review/__tests__/cleanup.test.ts`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/capacity.test.ts` — pass
+Builder-reported historical execution, corroborated by the committed TESTS record: commit 870fa0c4bfd3cb5053eb623618f582cf2252d332, recorded 2026-11-08T05:23:36.631Z, exit code 0, duration 11632 ms. Not independently executed and not execution evidence for pin 117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4.
+
+### t3: passed
+
+Reassessed all selected t3 implementation, test and qualification-record segments at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned DEF, LLD, nine-task plan context and both t3 acceptance checks. No blocking defects found. The nonblocking document-open correction resolves the prior FIFO finding.
+
+Coverage: **verified** — Completed assertion-level coverage review for both acceptance checks and document preconditions. Tests cover UTF-8 boundaries, generic and unsupported-format limits, escaped journal envelopes, sync/async readers, rejection of oversized declared lengths before frame concatenation, padded physical frames, append/replace recovery, identical replay, conflicting payloads, in-place mutation and intervening writes. Inspected fault-injection and fixture bodies establish the exercised paths. The subprocess-bounded FIFO regression exercises publication and approval at stage/append boundaries, asserts refusal and unchanged heads, verifies retained pending operations after restart, and proves restoration enables exactly one recovered entry. Publication tests additionally assert receipt recovery without model reruns. Queue and consumer inspection found no nested artifact enqueue in the selected paths.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, integration checks, typechecks or builds. The results listed below are builder-reported executions corroborated by the committed TESTS record, not my executions. A focused comparison found no differences between the reported test commit and final pin in the selected production modules and two t3 test files.
+- Naming follows local TypeScript examples including checkSidecarEntrySize, validateLogEntry, completePending, ArtifactStore and FileSidecarStore. Added persisted fields preserve existing names and historical optionality; state ownership and queue responsibilities remain within the existing artifact store.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/sidecar.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/sidecar-store.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/journal.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/store.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/types.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/lifecycle-service.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/design-history-storage.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/durable-kit.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/store-kit.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/sidecar-read.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/sidecar.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/sidecar-append.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/store-update.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/journal-durable.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/journal-recovery-durable.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/publication.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/approval.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/subject.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/approval.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/config/review.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/artifact-core/__tests__/design-history-storage.test.ts` — pass
+Builder-reported execution, not my run: commit 7f80d3df180f31c6efaef951223670de82d8bab3, recorded 2026-11-08T10:02:48.957Z, exit 0, 752 ms.
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — pass
+Builder-reported t3 execution, not my run: commit 7f80d3df180f31c6efaef951223670de82d8bab3, recorded 2026-11-08T10:02:48.957Z, exit 0, 1285 ms. The record also reports t4 and t6 passes at that commit.
+
+### t4: passed
+
+Reviewed every selected t4 segment at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned DEF, LLD, Plan dependencies and all three acceptance checks. The FIFO correction resolves the prior finding. No blocking implementation or coverage defects found.
+
+Coverage: **verified** — Inspected test bodies and assertions covering durable publication/readback, lost receipts, receipt-save failure, deterministic journal replay, immutable baselines and Markdown, exact owned deltas, concurrent canonical/document edits, unavailable publishers, and persistence-only capacity retry with zero model calls. Reviewed fixed checkpoint-capacity tests separately from publication limits, lower-level frame/journal boundaries, permanent-history validation, and compiled both-party MCP integration. The subprocess-bounded FIFO regression covers publication and approval at staging/append boundaries, retained pending operations after restart, and exact-document restoration before replay. Verified means coverage inspection is complete; tests were not independently executed.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typecheck or build were independently run. Builder-reported results below identify their tested revision and do not establish independent execution at the final pin.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/daemon/design-review-rpc.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/store.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/journal.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/sidecar.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/contracts.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/coordinator.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/progress.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/publication.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/subject.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/checkpoint.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/fence.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/prompts/steering-block.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/recovery.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/capacity.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/design-history-storage.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/publication.test.ts` — pass
+Builder-reported, not reviewer-executed. Committed TESTS record identifies revision 7f80d3df1, 2026-11-08T09:58:12.394Z, exitCode 0, durationMs 1150.
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — pass
+Builder-reported, not reviewer-executed. The t4 TESTS record identifies revision 7f80d3df1, 2026-11-08T09:58:12.394Z, exitCode 0, durationMs 1274.
+
+### t5: passed
+
+Reassessed every selected t5 segment at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned DEF, LLD, nine-task Plan context and both acceptance checks, including the changed TESTS evidence. No material in-scope defects found.
+
+Coverage: **verified** — Inspected all four reader test bodies, all seven assigned MCP test bodies, history-validation assertions, the shared wire fixture and the Kotlin test through the actual RPC parser. Assertions cover exact-locator retrieval without checkpoint, directory enumeration or provider; explicit missing-locator errors; pagination; version rejection; unchanged legacy files and display; CLI/delivery projections; and both current IDE contracts. Compiled fixtures cover both reviewer parties and DEF/HLD/LLD approval, cleanup and fresh-coordinator retrieval. This completes coverage assessment without claiming independent execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: I did not run tests, integration checks, typechecks or builds. Results below are recorded builder/gate evidence at identified earlier commits, not my execution of the final pin.
+- Optional execution: Full Kotlin JUnit execution was reported blocked by a baseline SaveResult.Saved constructor error. The separately reported parser qualification does not establish a passing full plugin build.
+- Optional execution: Hosted qualification records cover installed daemon a4ea9d2eebf1632ae8025dc81519387e1758be52 and DEF only; HLD/LLD evidence is from compiled fixtures. I did not repeat hosted qualification.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt`
+- `446d05427398c712e848adcb08eda1506ab0c21b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/cli/command.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/cli/services/workflow.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/daemon/design-review-rpc.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-content.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/delivery/gate.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/delivery/types.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/delivery/load.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/gates.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/contracts.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/coordinator.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/progress.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/read.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/subject.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/results.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/report-file.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/report-log.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/tracker-auto.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:vscode-plugin/src/chat/docs-review-client.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/prompts/steering-block.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/readers.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/TESTS.md`
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/readers.test.ts` — pass
+Recorded gate run at 984a8f4486ecacd0cd5289d450dff69d485225f9 on 2026-11-08T08:21:58.741Z: four passes, exit 0. I inspected the assertions and confirmed this file and history validator have no diff to the final pin. I did not execute the suite or establish equivalence of every runtime dependency.
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/mcp/__tests__/design-review.test.ts` — pass
+Recorded gate run at 984a8f4486ecacd0cd5289d450dff69d485225f9 on 2026-11-08T08:21:58.741Z: seven passes, exit 0. I inspected all seven bodies and confirmed the file is unchanged at the final pin. Compiled-output provenance remains reported evidence; I did not execute it.
+
+Test: `./gradlew test --tests ai.insors.insrc.jetbrains.review.ArtifactContentTest` — not_run
+Full JUnit execution was reported blocked by the baseline constructor error. I inspected the production DTO/parser additions, actual RPC-parser test path, shared fixture and assertions. Separate parser-harness qualification is builder-reported, not my execution.
+
+### t6: passed
+
+Completed review of all selected t6 implementation, test, guide and qualification-record changes at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned DEF, LLD, nine-task Plan and both acceptance checks. The prior FIFO-blocking defect is corrected, with bounded regression coverage. No demonstrated HIGH/MED defects remain.
+
+Coverage: **verified** — Inspected test bodies, assertions and fixture construction. Coverage exercises ordinary daemon and direct lifecycle approval, LOW-only passage, blocking review evidence, truthful overrides, idempotence, active ownership exclusion, latest unfinished admission refusal, missing history, changed documents/authorship/provenance, actual epic/standalone/sized-issue ancestors, and ISSUE/SPEC/PLAN exemptions. Existing transition assertions cover stale review revisions. Persistence tests cover regular-file edits and FIFO replacements at journal-stage and history-append boundaries for publication and approval, restart refusal, retained pending operations, exact-document restoration and single-entry recovery. Compiled fixtures exercise both reviewer parties and registered approval/cleanup/history routes. This is a completed coverage assessment, not a claim of independent execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typechecks or builds were independently run. The executions below are builder-reported results at their recorded commit, not reviewer executions.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/daemon/design-review-rpc.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/daemon/workflow-approve.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/lifecycle-service.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/store.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/journal.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/gates.ts`
+- `ad48348e8fe65e609b099392a3f2a0e674d24325:src/workflow/gates.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/approval.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/coordinator.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/fence.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/publication.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/subject.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/cleanup.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/prompts/steering-block.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/approval.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/cleanup.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/__tests__/other-party-review-gate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/__tests__/gates-lifecycle-service.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/lifecycle-transition.test.ts`
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/approval.test.ts` — pass
+Builder-reported at 7f80d3df180f31c6efaef951223670de82d8bab3, 2026-11-08T10:00:00.300Z; exit 0, 1419 ms. Focused comparison confirms the approval test and compared approval/store/lifecycle implementation files are unchanged at the final pin. Not independently executed.
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — pass
+Builder-reported for t6 at 7f80d3df180f31c6efaef951223670de82d8bab3, 2026-11-08T10:00:00.300Z; exit 0, 1269 ms. The committed record also reports t3/t4 runs separately. Focused comparison confirms this test and the corrected store implementation are unchanged at the final pin. Not independently executed.
+
+### t7: passed
+
+Reviewed all selected t7 implementation, guide, test and qualification-record segments at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned requirements, design and plan. Private claims, full-history preservation, nonblocking unsafe-file handling, concurrency and replay release satisfy the acceptance checks. No blocking findings remain.
+
+Coverage: **verified** — Inspected all 12 cleanup tests, their fixture construction, six history-aggregate tests, seven MCP tests and both persistence-fence tests. Assertions cover replacement safety, quarantine and no-clobber restoration, persisted claim recovery, older failed-attempt preservation, unsafe and unfinished retention, truthful overrides, contention, independent progress, conditional replay-release callbacks, compiled approval cleanup and fresh permanent retrieval. FIFO regressions use timeout-bounded subprocesses. Reported historical passes were distinguished from reviewer execution.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typecheck or build were independently executed. The committed TESTS record reports history/cleanup passes at ce7b891ca, compiled MCP qualification at 984a8f448 and document-FIFO correction tests at 7f80d3df1; these are builder-reported historical results, not reviewer executions of the final pin.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/fence.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/daemon/design-review-rpc.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/lifecycle-service.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/gates.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/cleanup.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/coordinator.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/prompts/steering-block.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/cleanup.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/history.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/checkpoint.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/cleanup.ts`
+
+### t8: passed
+
+Completed the t8 reassessment at 446d05427398c712e848adcb08eda1506ab0c21b. Inspected all selected changes, pinned requirements, both acceptance checks and every supplied focused regression. No blocking findings remain.
+
+Coverage: **verified** — Reviewed test bodies and assertions for history integrity, capacity admission, bounded storage/replay, publication recovery, versioned readers, approval, cleanup, recovery and impact contracts. Compiled MCP qualification asserts recovery, retry exhaustion, connection ownership, selective impact, persistence-only retry, mutation invalidation, refusal/override, DEF/HLD/LLD cleanup and fresh history retrieval. The other-engine smoke exercises compiled provider/coordinator/IPC modules. The new subprocess-bounded FIFO test asserts all four publication/approval boundary combinations, refusal through restart, unchanged heads and pending operations, and exactly one history entry after document restoration. Both current IDE parser bodies and shared-fixture assertions were inspected; pinned Kotlin source hashes match the reported parser qualification provenance. Both t8 acceptance checks are covered. This assessment does not claim fresh execution or full JVM qualification.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, integration checks, typechecks or builds were independently run. Inspected committed records and logs remain builder/gate-reported evidence at their recorded revisions, not fresh qualification of the final pin.
+- Optional execution: Full JetBrains JUnit execution was reported blocked by the baseline SaveResult.Saved constructor error. The isolated production-parser qualification does not establish a passing complete plugin build.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/TESTS.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/helpers/design-review-stdio.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/prompts/steering-block.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/__tests__/gates-lifecycle-service.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/__tests__/other-party-review-gate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-fixtures.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/fixtures/artifact-review-wire.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/capacity.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/design-history-storage.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/readers.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/approval.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/cleanup.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/recovery.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/impact-contracts.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:vscode-plugin/src/chat/docs-review-client.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:jetbrains-plugin/src/test/kotlin/ai/insors/insrc/jetbrains/review/ArtifactContentTest.kt`
+- `446d05427398c712e848adcb08eda1506ab0c21b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/DaemonGateway.kt`
+- `446d05427398c712e848adcb08eda1506ab0c21b:jetbrains-plugin/src/main/kotlin/ai/insors/insrc/jetbrains/daemon/UnixSocketDaemonRpc.kt`
+
+Test: `node --import tsx --test --experimental-test-isolation=none src/mcp/__tests__/design-review.test.ts` — pass
+Builder/gate-reported at 984a8f4486ecacd0cd5289d450dff69d485225f9; not executed by this reviewer. Test and stdio helper are byte-identical to the final pin. Runtime dependencies were not freshly executed.
+
+Test: `node --import tsx --test --experimental-test-isolation=none src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — pass
+Builder/gate-reported at 984a8f4486ecacd0cd5289d450dff69d485225f9; not executed by this reviewer. Test and controller fixture are byte-identical to the final pin.
+
+Test: `node --import tsx --test --experimental-test-isolation=none src/workflow/review/design-review/__tests__/persistence-fence.test.ts` — pass
+Builder/gate-reported at 7f80d3df180f31c6efaef951223670de82d8bab3 under t3, t4 and t6. Not executed by this reviewer.
+
+Test: `./gradlew test --tests ai.insors.insrc.jetbrains.review.ArtifactContentTest` — not_run
+Full JUnit run reported blocked by the baseline constructor error. Separate isolated parser qualification reported passing; its source hashes match the pinned Kotlin files. No reviewer execution.
+
+### t9: passed
+
+Completed reassessment of all selected t9 qualification-record segments at 446d05427398c712e848adcb08eda1506ab0c21b against the pinned requirements, design and three acceptance checks. Inspected underlying live evidence and relevant test assertions. No blocking defects found. Hosted evidence covers DEF only; hosted HLD/LLD remain explicitly unverified.
+
+Coverage: **verified** — Coverage review is complete for this qualification-only task. Live observations corroborate progress, three feedback pages, permanent publication, override approval, checkpoint deletion and subsequent history retrieval while preserving the incomplete verdict and 0 HIGH/1 MED/2 LOW counts. Sandbox lifecycle metadata retains the explicit qualification override. Smoke assertions cover both reviewer routes and CLI adapters, persisted feedback, no repeated CLI invocation, expiry handling and failed-write rejection. Compiled fixtures assert publication retry without model calls, mutation invalidation, approval refusal, truthful overrides and history retrieval. Later selected validation entries are backed by assertions for unfinished history prefixes, bounded FIFO cleanup, and publication/approval/recovery persistence fences. Relevant test blobs match their recorded revisions; these reported executions are not reviewer executions or proof of hosted coverage at the final pin.
+
+
+Optional verification and advice (nonblocking):
+
+- Optional execution: No tests, builds, typechecks or new hosted reviews were independently run. Inspected hosted evidence applies to installed daemon a4ea9d2eebf1632ae8025dc81519387e1758be52, not the final source pin.
+- Optional execution: Inspected retained smoke, compiled qualification, final build and isolated Kotlin parser logs as reported evidence. The disclosed whole-plugin JVM build blockage was not independently rerun.
+
+Inspected references:
+
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/DEF-9b04adb36cac716d.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/LLD-9b04adb36cac716d-s4.json`
+- `dd4105633925e21b55f2467115c06baf3ad03ed4:.insrc/artifacts/PLAN-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/BUILD-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `446d05427398c712e848adcb08eda1506ab0c21b:docs/epics/review-evolving-designs-durable-checkpoints-E202611039b04adb3/S004/TESTS.md`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/__tests__/controller-fixture.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/code-review/task-review/__tests__/publication-fixture.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/mcp/__tests__/design-review.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/readers.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/history-aggregate.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/cleanup.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/publication.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/review/design-review/__tests__/persistence-fence.test.ts`
+- `446d05427398c712e848adcb08eda1506ab0c21b:src/workflow/artifact-core/__tests__/design-history-storage.test.ts`
+- `984a8f4486ecacd0cd5289d450dff69d485225f9:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+- `117088eac02bf9a0aa4b5bc1a82ea57dfc2db5e4:.insrc/artifacts/TESTS-9b04adb36cac716d-s4.json`
+
+Test: `Registered review/progress, presentation, human-approved workflow approval, cleanup and history retrieval` — pass
+Builder-reported on installed daemon a4ea9d2eebf1632ae8025dc81519387e1758be52; underlying observations inspected, not independently rerun. Hosted DEF review took 153190 ms with four dispatches and zero retries. Its incomplete verdict and findings survived explicit override approval and checkpoint cleanup.
+
+Test: `PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH node --import tsx --test --experimental-test-isolation=none src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts` — pass
+Validation-record reported at 984a8f4486ecacd0cd5289d450dff69d485225f9, exit 0, 3146 ms. Test and controller-fixture blobs match the final pin. Assertions and retained smoke logs inspected; not independently executed.

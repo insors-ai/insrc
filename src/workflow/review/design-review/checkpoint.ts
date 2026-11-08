@@ -3,6 +3,7 @@ import { promises as fs, constants } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { consolidateDesignReview } from './results.js';
+import { serializeDesignCheckpoint } from './capacity.js';
 import { ArtifactIds } from '../../artifact-ids.js';
 import { artifactJsonPath } from '../../storage.js';
 import { DESIGN_LIMITS, DesignCheckpointSchema, DesignReviewError, DesignReviewPersistenceError, decodeDesign, requireDesign } from './contracts.js';
@@ -158,7 +159,7 @@ export async function saveDesignCheckpoint(project: string, input: DesignReviewC
  const previous=await loadDesignCheckpoint(project,checkpoint.reviewId);
  requireDesign(!previous||previous.artifactId===checkpoint.artifactId,'foreign_checkpoint','Cannot replace another subject');
  if(previous)checkEvolution(previous,checkpoint);
- const raw=JSON.stringify(checkpoint,null,2)+'\n';
+ const raw=serializeDesignCheckpoint(checkpoint);
  requireDesign(Buffer.byteLength(raw)<=DESIGN_LIMITS.checkpointBytes,'checkpoint_too_large','Checkpoint exceeds limit');
  const temporary=`${path}.${randomUUID()}.tmp`;
  let created=false;

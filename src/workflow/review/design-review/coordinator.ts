@@ -22,6 +22,8 @@ import { DesignSubjectMonitor } from './subject-monitor.js';
 import type { DesignSubjectMonitorDeps } from './subject-monitor.js';
 import { createDesignActivityMonitor } from './activity-monitor.js';
 
+import { assertDesignDispatchCapacity } from './capacity.js';
+
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
 function requestSignature(value:unknown):string{
@@ -30,6 +32,7 @@ function requestSignature(value:unknown):string{
 }
 export interface DesignProvider { readonly provider:LLMProvider; readonly model:string; }
 export interface DesignCoordinatorDeps {
+ readonly capacity?:typeof assertDesignDispatchCapacity;
  readonly provider?:(subject:DesignReviewSubject)=>DesignProvider;
  readonly prepare?:typeof prepareDesignSubject;
  readonly save?:typeof saveDesignCheckpoint;
@@ -273,6 +276,7 @@ export class DesignReviewCoordinator {
   }
  }
  private async unitExecution(job:DesignJob,provider:LLMProvider|undefined,chunk?:DesignChunk):Promise<unknown>{
+  (this.deps.capacity??assertDesignDispatchCapacity)(job.checkpoint);
   const checkpoint=job.checkpoint,attempt=currentDesignAttempt(checkpoint),path=designCheckpointPath(checkpoint.project,checkpoint.reviewId);
   assertDesignSubjectUnchanged(checkpoint.subject,attempt.baseline);
   const preparationKind=attempt.preparationKind??'planning',impactUnit=!chunk&&preparationKind==='impact';
@@ -371,6 +375,7 @@ export class DesignReviewCoordinator {
   try{
    if(job.abort.signal.aborted)throw job.abort.signal.reason;
    let provider:LLMProvider|undefined;
+   if(nextDesignUnit(currentDesignAttempt(job.checkpoint)))(this.deps.capacity??assertDesignDispatchCapacity)(job.checkpoint);
    if(!job.owner&&nextDesignUnit(currentDesignAttempt(job.checkpoint))){const descriptor=job.providerFactory();provider=descriptor.provider;requireReviewActivity(provider);await this.commit(job,a=>{a.model=descriptor.model;});}
    let plan=currentDesignAttempt(job.checkpoint).plan;
    if(!plan){

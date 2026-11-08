@@ -1,3 +1,4 @@
+import { cleanupDesignArtifact } from './review/design-review/cleanup.js';
 import { isStoredDesignReview } from './review/report-log.js';
 import { rpc } from '../shared/ipc-client.js';
 import type { CleanupResult } from './code-review/task-review/cleanup.js';
@@ -685,13 +686,16 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		? priorBase
 		: stampsRangeBase(artifact.meta) ? (await headFullSha(dirname(jsonPath))) : undefined;
 
+	let designCleanup:CleanupResult|undefined;
 	let approvedAt: string;
 	if (seen !== undefined && APPROVED_OR_BEYOND.includes(seen.status)) {
+		if(reviewRequiredFor(jsonPath)==='design')designCleanup=await cleanupDesignArtifact(lifecycle.store.repoPath,id,{store:lifecycle.store});
 		approvedAt = seen.lifecycle.approval?.at ?? new Date().toISOString();   // approved already: it stays as it is
 	} else {
 		if (seen !== undefined && seen.status !== 'draft') throw new IllegalTransitionError(`${id} cannot be approved from ${seen.status}`);
 		// an override the caller gave is recorded on the approval, whether or not this artifact needed it
 		const done = await lifecycle.apply(id, 'approve', actor, overridden ? { override: { reason: override as string } } : {}, { overrideReview: overridden ? override : undefined });
+		designCleanup=done.cleanup;
 		approvedAt = done.lifecycle.approval?.at ?? new Date().toISOString();
 	}
 	if (rangeBase !== undefined && priorBase !== rangeBase) {
@@ -699,7 +703,7 @@ export async function approveArtifactByJsonPath(jsonPath: string, opts: ApproveO
 		const current = JSON.parse(readFileSync(jsonPath, 'utf8')) as { meta: Record<string, unknown> };
 		writeArtifact(jsonPath, { ...current, meta: { ...current.meta, [RANGE_BASE_KEY]: rangeBase } }, 'meta-only');
 	}
-	let cleanup: CleanupResult | undefined;
+	let cleanup: CleanupResult | undefined=designCleanup;
 	const buildMeta = artifact.meta as ApprovableArtifactMeta & { epicHash?: unknown; storyId?: unknown };
 	if (buildMeta.workflow === 'build' && typeof buildMeta.epicHash === 'string' && typeof buildMeta.storyId === 'string') {
 	 const project = dirname(dirname(dirname(jsonPath)));

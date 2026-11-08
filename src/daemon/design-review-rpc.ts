@@ -1,3 +1,4 @@
+import { registerDesignCleanupRelease } from '../workflow/review/design-review/cleanup.js';
 import { recordDesignAdmission } from '../workflow/review/design-review/approval.js';
 import { realpath } from 'node:fs/promises';
 import { DesignReviewCoordinator } from '../workflow/review/design-review/coordinator.js';
@@ -17,7 +18,7 @@ export interface DesignReviewRpcDeps { readonly provider?:((repo:string)=>Design
 export async function designReviewStep(raw:unknown,trusted?:TrustedRpcContext,deps:DesignReviewRpcDeps={}):Promise<unknown>{
  const input=parseDesignRequest(raw),repo=await realpath(input.repo),request={...input,repo};
  requireDesign(!repoSchemaRefusal(repo),'repo_schema','Repository schema must be current');
- let coordinator=coordinators.get(repo);if(!coordinator){coordinator=new DesignReviewCoordinator({admit:recordDesignAdmission,publish:publishDesignReview,preflight:preflightDesignPublication});coordinators.set(repo,coordinator);}
+ let coordinator=coordinators.get(repo);if(!coordinator){coordinator=new DesignReviewCoordinator({admit:recordDesignAdmission,publish:publishDesignReview,preflight:preflightDesignPublication});coordinators.set(repo,coordinator);const owner=coordinator;registerDesignCleanupRelease(repo,id=>owner.forgetCheckpoint(repo,id));}
  const owner=trusted?.connectionIdentity&&trusted.connectionSignal?{id:trusted.connectionIdentity,signal:trusted.connectionSignal}:undefined;
  if(request.phase==='start'||request.phase==='recover'){
   const client=currentStepContext()?.client;

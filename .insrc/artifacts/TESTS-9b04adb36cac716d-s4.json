@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 16,
-        "contentHash": "64810060c4acc1b2901d7a2fd30fbc6c389501bf0f3a4cbe7e525d054b0d90bc",
-        "at": "2026-11-08T06:20:00.383Z",
+        "number": 17,
+        "contentHash": "43b42df6ad2109ec41d1b7f4fb7cbb81a405b0770c71451128903a089d174e2c",
+        "at": "2026-11-08T06:22:30.533Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:20:00.219Z",
+    "updatedAt": "2026-11-08T06:22:30.368Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 16
+    "revision": 17
   },
   "body": {
     "tasks": [
@@ -402,8 +402,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "ad48348e8",
-        "ranAt": "2026-11-08T06:20:00.219Z",
+        "commit": "02bec2288",
+        "ranAt": "2026-11-08T06:22:30.368Z",
         "testsPassed": true,
         "tests": [
           {
@@ -453,6 +453,16 @@
                 "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
                 "title": "ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "both approval routes refuse missing or unapproved actual required ancestors",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
+                "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
+                "result": "pass"
               }
             ],
             "files": []
@@ -463,7 +473,7 @@
             "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1188,
+            "durationMs": 1476,
             "titles": [
               {
                 "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
@@ -491,6 +501,14 @@
               },
               {
                 "title": "changed authorship and workflow provenance cannot reuse independent evidence",
+                "result": "pass"
+              },
+              {
+                "title": "both approval routes refuse missing or unapproved actual required ancestors",
+                "result": "pass"
+              },
+              {
+                "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
                 "result": "pass"
               }
             ],

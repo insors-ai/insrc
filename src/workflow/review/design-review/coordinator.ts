@@ -1,3 +1,4 @@
+import { lstatSync } from 'node:fs';
 import { claimDesignArtifact, releaseDesignArtifact } from './fence.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { realpath } from 'node:fs/promises';
@@ -78,6 +79,11 @@ export class DesignReviewCoordinator {
  private readonly uncertain=new Map<string,{code:string;summary:string}>();
  constructor(private readonly deps:DesignCoordinatorDeps={}){
   requireDesign(isMainThread,'wrong_owner','Design review execution belongs to the main daemon');
+ }
+ forgetCheckpoint(project:string,reviewId:string):void{
+  const key=this.key(project,reviewId);if(this.jobs.has(key)||this.admitting.has(key))return;
+  try{lstatSync(designCheckpointPath(project,reviewId));return;}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')return;}
+  this.uncertain.delete(key);for(const replay of this.replays.keys())if(replay.startsWith(`${key}\0`))this.replays.delete(replay);
  }
  private key(project:string,id:string):string{return `${project}\0${id}`;}
  private subjectKey(subject:DesignReviewSubject):string{return this.key(subject.project,subject.artifactId);}

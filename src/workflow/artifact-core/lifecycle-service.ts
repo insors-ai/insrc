@@ -1,3 +1,5 @@
+import { cleanupDesignArtifact } from '../review/design-review/cleanup.js';
+import type { CleanupResult } from '../code-review/task-review/cleanup.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -57,6 +59,7 @@ export interface ContentWriteOptions {
 }
 
 export interface ApplyResult {
+ readonly cleanup?: CleanupResult;
 	readonly lifecycle: Lifecycle;
 	readonly entry:     ChangeLogEntry;
 	/** False when the operation was `complete` and a complete entry already stands. */
@@ -88,7 +91,10 @@ export class LifecycleService {
 	/** Apply one lifecycle operation. Writes and logs nothing when it throws before the write. */
 	async apply(id: string, op: Operation, by: Actor, detail: TransitionDetail = {}, ctx: EvidenceContext = {}): Promise<ApplyResult> {
   const kind=ArtifactIds.parse(id)?.kind;
-  if(op==='approve'&&kind&&['DEF','HLD','LLD'].includes(kind))return withDesignArtifactFence(this.deps.store.repoPath,id,()=>this.applyInQueue(id,op,by,detail,ctx));
+  if(op==='approve'&&kind&&['DEF','HLD','LLD'].includes(kind)){
+   const result=await withDesignArtifactFence(this.deps.store.repoPath,id,()=>this.applyInQueue(id,op,by,detail,ctx));
+   const cleanup=await cleanupDesignArtifact(this.deps.store.repoPath,id,{store:this.deps.store});return {...result,cleanup};
+  }
   return this.applyInQueue(id,op,by,detail,ctx);
  }
  private async applyInQueue(id:string,op:Operation,by:Actor,detail:TransitionDetail,ctx:EvidenceContext):Promise<ApplyResult>{

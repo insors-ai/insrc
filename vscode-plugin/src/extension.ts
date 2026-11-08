@@ -50,7 +50,7 @@ import { createWebviewPanelHost } from './panels/webview-host.js';
 import { defaultProcessScan } from './panels/process-scan.js';
 import { renderDaemonTab, renderWorkflowsTab } from './panels/detail-renderers.js';
 import { renderDebugTab, createDebugTabController, createDebugActionHandler } from './panels/debug-renderer.js';
-import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler } from './panels/repo-config.js';
+import { renderRepoConfig, createRepoConfigWriteHandler, createRepoRegisterProvidersHandler, createRepoTrackerWriteHandler } from './panels/repo-config.js';
 import { renderModelTiers, createModelTiersWriteHandler } from './panels/model-tiers.js';
 import { createLogTail } from './panels/log-tail.js';
 import { createOrphanKill, readManagedPid } from './panels/orphan-kill.js';
@@ -466,6 +466,8 @@ export function activate(context: vscode.ExtensionContext): void {
     repoRenderer: renderRepoConfig({
       registeredRepos: () => daemonData.registeredRepos(),
       rawConfig: () => configGateway.rawConfig(),
+      repoFields: async () => (await configGateway.catalog()).repoFields,
+      repoSettings: (repoPath) => configGateway.repoSettings(repoPath),
       // Forward the selected repo so mcp.status also probes the repo's own
       // project-layer .vibe/config.toml for vibe (vibe merges layers by name).
       mcpRegistration: (repoPath?: string) => daemonData.mcpRegistration(repoPath),
@@ -481,6 +483,15 @@ export function activate(context: vscode.ExtensionContext): void {
       logger: panelLog,
       refresh: () => panelHost.openRepoConfiguration(),
       offerRestart,
+    }),
+    onRepoTrackerWrite: createRepoTrackerWriteHandler({
+      consent,
+      registeredRepos: () => daemonData.registeredRepos(),
+      repoFields: async () => (await configGateway.catalog()).repoFields,
+      writeRepoSetting: (repoPath, key, value) => configGateway.writeRepoSetting(repoPath, key, value),
+      status,
+      logger: panelLog,
+      refresh: () => panelHost.openRepoConfiguration(),
     }),
     // Post-setup provider registration: the repo form's Providers section posts
     // the checked (unregistered) providers; the sink consent-gates and calls the

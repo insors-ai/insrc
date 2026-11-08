@@ -27,8 +27,10 @@
 
 import { reasoningRoleTaxonomy } from '../../../src/config/role-taxonomy.js';
 import type { Criticality, RoleDescriptor } from '../../../src/config/role-taxonomy.js';
+import { validateRepoSetting, type RepoFieldDef } from '../../../src/config/repo-fields.js';
+import { buildSettingsRows } from '../../../src/cli/panes/repo-settings-model.js';
 import { escapeHtml } from './html.js';
-import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef } from './types.js';
+import type { McpRegistrationView, RepoConfigRenderer, RepoConfigRendererDeps, RepoConfigWrite, RepoProviderRegistration, RepoRef, RepoTrackerWrite } from './types.js';
 import type { ConfigWriteResult } from '../config/types.js';
 import type { ConsentGate } from '../surfaces/consent-gate.js';
 import type { StatusSurface } from '../surfaces/status-surface.js';
@@ -114,6 +116,39 @@ function readStringAt(root: Record<string, unknown>, path: readonly string[]): s
  * Build the Repo Configuration body renderer. Reads registeredRepos + rawConfig
  * itself; a rejection propagates to the host's never-throw wrapper.
  */
+async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
+  const section = (content: string) => `<section id="insrc-tracker"><h3>Tracker</h3>${content}</section>`;
+  const unavailable = () => section('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
+  if (!deps.repoFields || !deps.repoSettings) return unavailable();
+  try {
+    const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker');
+    if (fields.length === 0) return unavailable();
+    const result = await deps.repoSettings(repoPath);
+    if (!result.ok) return section(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
+    const rows = buildSettingsRows(fields, result.payload).map((row, index) => {
+      const field = fields[index]!;
+      const key = escapeHtml(row.key);
+      const note = row.note === undefined ? '' : ` <span class="note">${escapeHtml(row.note)}</span>`;
+      let control: string;
+      if (!row.editable) {
+        control = `<span class="value readonly" data-readonly-key="${key}">${escapeHtml(row.value)}</span> <span class="note">(read-only)</span>`;
+      } else if (field.type === 'string') {
+        control = `<input type="text" data-tracker-key="${key}" value="${escapeHtml(row.current)}" placeholder="${escapeHtml(row.value)}" />`;
+      } else {
+        const values = field.type === 'boolean' ? ['true', 'false'] : (field.enumValues ?? []);
+        const fallback = field.default === undefined ? '(not set)' : `${String(field.default)} (default)`;
+        const options = ['', ...values].map(value => `<option value="${escapeHtml(value)}"${value === row.current ? ' selected' : ''}>${escapeHtml(value || fallback)}</option>`).join('');
+        control = `<select data-tracker-key="${key}" data-tracker-type="${field.type}">${options}</select>`;
+      }
+      const source = row.editable && row.current !== '' ? 'Repo override' : row.editable ? row.value : row.kind;
+      return `<label class="field tracker-row" data-kind="${row.kind}">${escapeHtml(row.label)} ${control}${note} <span class="hint">${escapeHtml(source)}</span></label>`;
+    }).join('');
+    return section(`<p class="hint">Clear a field to use its default or leave it unset.</p>${rows}`);
+  } catch {
+    return unavailable();
+  }
+}
+
 export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer {
   return async (selected: string | undefined): Promise<string> => {
     const repos = await deps.registeredRepos();
@@ -171,9 +206,55 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       `<p class="hint">The tier each role uses in this repo, and its core floor. 'global' uses the global choice; the tiers' models are set with 'insrc: Set model tier'.</p>` +
       groups +
       floorSection +
+      await renderTrackerSection(deps, active) +
       `<h3>Providers</h3>${providers}` +
       `</section>`
     );
+  };
+}
+
+interface RepoTrackerWriteDeps extends Pick<RepoConfigWriteDeps, 'registeredRepos' | 'consent' | 'status' | 'logger' | 'refresh'> {
+  repoFields(): Promise<readonly RepoFieldDef[]>;
+  writeRepoSetting(repoPath: string, key: string, value: string | boolean | null): Promise<ConfigWriteResult>;
+}
+
+export function createRepoTrackerWriteHandler(deps: RepoTrackerWriteDeps): (write: RepoTrackerWrite, isCurrent: () => boolean) => void {
+  return (write, isCurrent) => {
+    const { repoPath, key, value } = write;
+    const report = (detail: string) => deps.status.set({ state: deps.status.current().state, detail });
+    void (async () => {
+      try {
+        if (!isCurrent()) return;
+        const repos = await deps.registeredRepos();
+        const checked = validateRepoSetting(key, value, await deps.repoFields());
+        if (!isCurrent()) return;
+        if (!repos.some(repo => repo.path === repoPath) || !checked.ok) {
+          report(!checked.ok ? checked.message : 'This repository is no longer registered.');
+          return;
+        }
+        const outcome = await deps.consent.ask({
+          title: 'Apply tracker setting change?',
+          detail: `${value === null ? 'Clear' : 'Set'} ${key} for ${repoPath}?`,
+          acceptLabel: 'Apply',
+        });
+        if (!isCurrent()) return;
+        if (outcome !== 'accepted') return;
+        const currentRepos = await deps.registeredRepos();
+        const current = validateRepoSetting(key, checked.value, await deps.repoFields());
+        if (!isCurrent()) return;
+        if (!currentRepos.some(repo => repo.path === repoPath) || !current.ok) {
+          report(!current.ok ? current.message : 'This repository is no longer registered.');
+          return;
+        }
+        const result = await deps.writeRepoSetting(repoPath, key, current.value);
+        report(result.ok ? `Updated ${key} for ${repoPath}.` : `Tracker setting refused: ${result.reason}`);
+      } catch (err) {
+        deps.logger.warn(`insrc: tracker setting write failed — ${err instanceof Error ? err.message : String(err)}`);
+        report('Could not update the tracker setting.');
+      } finally {
+        if (isCurrent()) deps.refresh();
+      }
+    })();
   };
 }
 

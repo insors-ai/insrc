@@ -78,6 +78,7 @@ function makeHost(opts: {
   onDetailAction?: WebviewPanelHostDeps['onDetailAction'];
   repoRenderer?: WebviewPanelHostDeps['repoRenderer'];
   onRepoConfigWrite?: WebviewPanelHostDeps['onRepoConfigWrite'];
+  onRepoTrackerWrite?: WebviewPanelHostDeps['onRepoTrackerWrite'];
   onRepoRegisterProviders?: WebviewPanelHostDeps['onRepoRegisterProviders'];
   modelTiersRenderer?: WebviewPanelHostDeps['modelTiersRenderer'];
   onModelTiersWrite?: WebviewPanelHostDeps['onModelTiersWrite'];
@@ -109,6 +110,7 @@ function makeHost(opts: {
     onDetailAction: opts.onDetailAction,
     repoRenderer: opts.repoRenderer,
     onRepoConfigWrite: opts.onRepoConfigWrite,
+    onRepoTrackerWrite: opts.onRepoTrackerWrite,
     onRepoRegisterProviders: opts.onRepoRegisterProviders,
     modelTiersRenderer: opts.modelTiersRenderer,
     onModelTiersWrite: opts.onModelTiersWrite,
@@ -653,47 +655,69 @@ test('S007: a malformed selectRepo/repoWrite is a silent no-op (no re-render, no
   assert.equal(warns.length, 0, 'a malformed message is a silent no-op, not an error');
 });
 
-test('Story s3: a {repoTrackerWrite} is forwarded as a validated RepoTrackerWrite; the models.byRepo route and malformed tracker messages are unaffected', async () => {
+test('Tracker writes require the active repo and current rendered document', async () => {
   const writes: unknown[] = [];
+  let isCurrent: (() => boolean) | undefined;
   const { host, created, warns } = makeHost({
-    repoRenderer: async () => `<div>body</div>`,
-    onRepoConfigWrite: (w) => writes.push(w),
+    repoRenderer: async () => '<div>body</div>',
+    onRepoTrackerWrite: (write, current) => { writes.push(write); isCurrent = current; },
+    onRepoConfigWrite: (write) => writes.push(write),
   });
   host.openRepoConfiguration();
   await tick();
-
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' });
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'ghPath', value: null });
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/repo/a', key: 'pushTasks', value: true });
-  created[0]!.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' });
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  const renderId = /data-render-id="([^"]+)"/.exec(panel.html)?.[1];
+  const tracker = { type: 'repoTrackerWrite', repoPath: '/repo/a', renderId };
+  for (const value of [true, false, null]) panel.injectMessage({ ...tracker, key: 'gitHooks', value });
+  panel.injectMessage({ type: 'repoWrite', repoPath: '/repo/a', segments: ['coreFloor'], value: 'mid' });
   assert.deepEqual(writes, [
-    { repoPath: '/repo/a', key: 'ghHost', value: 'ghe.example.com' },
-    { repoPath: '/repo/a', key: 'ghPath', value: null },
-    { repoPath: '/repo/a', key: 'pushTasks', value: true },
-    { repoPath: '/repo/a', segments: ['tiers', 'core', 'runner'], value: 'ollama' },
-  ], 'tracker writes carry key and value; the models.byRepo write keeps its segments shape');
-
-  // Malformed tracker messages are silent no-ops.
-  const before = writes.length;
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', key: 'ghHost', value: 'x' });                       // no repoPath
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', value: 'x' });                      // no key
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: '', value: 'x' });             // empty key
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 5 });         // bad value
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: ['a'] });     // bad value
-  created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost' });                   // missing value
-  assert.equal(writes.length, before, 'no forward on a malformed repoTrackerWrite');
-  assert.equal(warns.length, 0, 'a malformed message is a silent no-op');
+    ...[true, false, null].map(value => ({ repoPath: '/repo/a', key: 'gitHooks', value })),
+    { repoPath: '/repo/a', segments: ['coreFloor'], value: 'mid' },
+  ]);
+  assert.equal(isCurrent?.(), true);
+  for (const invalid of [{ key: '', value: 'x' }, { key: 'ghHost', value: 5 }, { key: 'ghHost' }, { key: 'ghHost', value: 'x', repoPath: '/other' }]) {
+    panel.injectMessage({ ...tracker, ...invalid });
+  }
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/b' });
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/repo/a' });
+  await tick();
+  panel.injectMessage({ ...tracker, key: 'ghHost', value: 'x' });
+  assert.equal(isCurrent?.(), false);
+  assert.equal(writes.length, 4);
+  assert.deepEqual(warns, []);
 });
 
 test('Story s3: a throwing tracker write sink is caught and logged; errors never reach the webview', async () => {
   const { host, created, warns } = makeHost({
-    repoRenderer: async () => `<div>ok</div>`,
-    onRepoConfigWrite: () => { throw new Error('sink boom'); },
+    repoRenderer: async () => '<div>ok</div>',
+    onRepoTrackerWrite: () => { throw new Error('sink boom'); },
   });
   host.openRepoConfiguration();
   await tick();
-  assert.doesNotThrow(() => created[0]!.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 'x' }));
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/r' });
+  await tick();
+  const renderId = /data-render-id="([^"]+)"/.exec(panel.html)?.[1];
+  assert.doesNotThrow(() => panel.injectMessage({ type: 'repoTrackerWrite', repoPath: '/r', key: 'ghHost', value: 'x', renderId }));
   assert.ok(warns.some((w) => /repo tracker write handler failed/.test(w)));
+});
+
+test('a delayed repo render never replaces the current selection', async () => {
+  let finish: ((value: string) => void) | undefined;
+  const { host, created } = makeHost({
+    repoRenderer: async selected => selected === '/slow' ? new Promise(resolve => { finish = resolve; }) : `<p>${selected}</p>`,
+  });
+  host.openRepoConfiguration();
+  const panel = created[0]!;
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/slow' });
+  panel.injectMessage({ type: 'selectRepo', repoPath: '/current' });
+  await tick();
+  finish?.('<p>stale render</p>');
+  await tick();
+  assert.match(panel.html, /<p>\/current<\/p>/);
+  assert.doesNotMatch(panel.html, /stale render/);
 });
 
 test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {

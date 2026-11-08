@@ -118,6 +118,13 @@ for (const el of document.querySelectorAll('[data-segments]')) {
     vscode.postMessage({ type: 'repoWrite', repoPath: repoPath, segments: segments, value: el.value === '' ? null : el.value });
   });
 }
+const trackerDocument = document.getElementById('insrc-tracker-document');
+for (const el of document.querySelectorAll('[data-tracker-key]')) {
+  el.addEventListener('change', function () {
+    const value = el.value === '' ? null : el.getAttribute('data-tracker-type') === 'boolean' ? el.value === 'true' : el.value;
+    vscode.postMessage({ type: 'repoTrackerWrite', repoPath: repoPath, key: el.getAttribute('data-tracker-key'), value: value, renderId: trackerDocument?.getAttribute('data-render-id') });
+  });
+}
 const regBtn = document.getElementById('insrc-register-providers');
 if (regBtn) { regBtn.addEventListener('click', function () {
   var clients = [];
@@ -155,6 +162,8 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   let detailActiveTab: DetailTab = 'daemon';
   // The Repo Configuration panel's currently-selected repo (S007; select re-renders).
   let repoSelectedRepo: string | undefined;
+  let repoSelectionGeneration = 0;
+  let repoRenderGeneration = 0;
   // The live tab controller's dispose (S006): exactly ONE ticker is armed at a
   // time, and none survives the panel; undefined when the active tab has none.
   let activeControllerDispose: (() => void) | undefined;
@@ -318,6 +327,7 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
    * the next re-render.
    */
   const renderRepoPanel = async (panel: PanelHandle): Promise<void> => {
+    const renderId = String(++repoRenderGeneration);
     try {
       let body: string;
       let scripted = false;
@@ -333,7 +343,9 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
       } else {
         body = REPO_PLACEHOLDER; // S004 fallback (no repoRenderer wired).
       }
-      panel.setHtml(shellHtml('Repo Configuration', body, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
+      if (repoPanel !== panel || renderId !== String(repoRenderGeneration)) return;
+      const content = `<div id="insrc-tracker-document" data-render-id="${renderId}">${body}</div>`;
+      panel.setHtml(shellHtml('Repo Configuration', content, makeNonce(), scripted ? REPO_BOOTSTRAP : undefined));
     } catch (err) {
       logger.warn(`insrc: could not render the Repo Configuration panel — ${errText(err)}`);
     }
@@ -349,11 +361,28 @@ export function createWebviewPanelHost(deps: WebviewPanelHostDeps): WebviewPanel
   const handleRepoMessage = (panel: PanelHandle, message: unknown): void => {
     if (repoPanel !== panel) return; // stale panel (disposed/replaced) — no-op.
     if (typeof message !== 'object' || message === null) return;
-    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown };
+    const msg = message as { type?: unknown; repoPath?: unknown; segments?: unknown; value?: unknown; clients?: unknown; key?: unknown; renderId?: unknown };
     if (msg.type === 'selectRepo' && typeof msg.repoPath === 'string') {
       // The empty option ('') clears the selection back to the picker-only view.
       repoSelectedRepo = msg.repoPath.length > 0 ? msg.repoPath : undefined;
+      repoSelectionGeneration++;
       void renderRepoPanel(panel);
+      return;
+    }
+    if (
+      msg.type === 'repoTrackerWrite' &&
+      msg.renderId === String(repoRenderGeneration) &&
+      typeof msg.repoPath === 'string' && msg.repoPath === repoSelectedRepo &&
+      typeof msg.key === 'string' && msg.key.length > 0 &&
+      (msg.value === null || typeof msg.value === 'string' || typeof msg.value === 'boolean')
+    ) {
+      const generation = repoSelectionGeneration;
+      try {
+        deps.onRepoTrackerWrite?.({ repoPath: msg.repoPath, key: msg.key, value: msg.value },
+          () => repoPanel === panel && generation === repoSelectionGeneration);
+      } catch (err) {
+        logger.warn(`insrc: the repo tracker write handler failed — ${errText(err)}`);
+      }
       return;
     }
     if (

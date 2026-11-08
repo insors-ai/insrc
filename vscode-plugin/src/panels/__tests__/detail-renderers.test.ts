@@ -118,11 +118,11 @@ test('source-scan: the webview bootstraps post only the sanctioned message shape
   const repo = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(src);
   assert.ok(repo, 'the REPO_BOOTSTRAP script constant is present');
   const repoPosts = [...repo![1]!.matchAll(/postMessage\(\{\s*type:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.deepEqual(repoPosts.sort(), ['repoTrackerWrite', 'repoWrite', 'selectRepo'], 'the repo bootstrap posts only selectRepo + repoWrite + repoTrackerWrite');
+  assert.deepEqual(repoPosts.sort(), ['repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo'], 'the repo bootstrap posts only registered repo actions');
 
   // The union across both bootstraps is the full closed set — nothing else is posted.
   const union = [...new Set([...detailPosts, ...repoPosts])].sort();
-  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoTrackerWrite', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
+  assert.deepEqual(union, ['action', 'ready', 'refresh', 'repoRegisterProviders', 'repoTrackerWrite', 'repoWrite', 'selectRepo', 'switchTab'], 'the closed message set');
 });
 
 test('editing the ghHost row of the rendered tracker section posts repoTrackerWrite with repoPath, key and value', async () => {
@@ -130,6 +130,7 @@ test('editing the ghHost row of the rendered tracker section posts repoTrackerWr
   const html = await renderRepoConfig({
     registeredRepos: async () => [{ path: repoPath, name: 'one' }],
     rawConfig: async () => ({}),
+    mcpRegistration: async () => [],
     repoFields: async () => REPO_TRACKER_FIELDS,
     repoSettings: async () => ({
       ok: true,
@@ -156,18 +157,18 @@ test('editing the ghHost row of the rendered tracker section posts repoTrackerWr
     addEventListener: (_evt: string, fn: () => void) => { handlers.push(fn); },
   };
   const doc = {
-    getElementById: (id: string) => (id === 'insrc-repo-form' ? { getAttribute: () => repoPath } : null),
+    getElementById: (id: string) => (id === 'insrc-repo-form' ? { getAttribute: () => repoPath } : id === 'insrc-tracker-document' ? { getAttribute: () => '2' } : null),
     querySelectorAll: (sel: string) => (sel === '[data-tracker-key]' ? [el] : []),
   };
   new Function('acquireVsCodeApi', 'document', bootstrap)(() => ({ postMessage: (m: unknown) => posted.push(m) }), doc);
   assert.equal(handlers.length, 1, 'only the tracker input is wired');
   handlers[0]!();
-  assert.deepEqual(posted, [{ type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: 'ghe.corp.example' }]);
+  assert.deepEqual(posted, [{ type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: 'ghe.corp.example', renderId: '2' }]);
 
   // A blank input clears the row (null), like the model-tier fields.
   el.value = '';
   handlers[0]!();
-  assert.deepEqual(posted.at(-1), { type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: null });
+  assert.deepEqual(posted.at(-1), { type: 'repoTrackerWrite', repoPath, key: 'ghHost', value: null, renderId: '2' });
 });
 
 test('renderDaemonTab lists each repository with its status and completeness: complete, incomplete with its reasons, and the status alone without the field (Epic c2ba6fa6 s1)', async () => {

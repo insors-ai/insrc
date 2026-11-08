@@ -18,6 +18,8 @@
 import type { DisposableLike } from '../surfaces/types.js';
 import type { DocRelationsStatus, RegisteredRepo, RepoCompleteness } from '../../../src/shared/types.js';
 import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
+import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
+import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -199,6 +201,14 @@ export interface RepoConfigRendererDeps {
   rawConfig(): Promise<Record<string, unknown>>;
   /** Per-provider MCP registration state (mcp.status) — the Providers section source. */
   mcpRegistration(repoPath?: string): Promise<readonly McpRegistrationView[]>;
+  repoFields?(): Promise<readonly RepoFieldDef[]>;
+  repoSettings?(repoPath: string): Promise<SettingsResult>;
+}
+
+export interface RepoTrackerWrite {
+  readonly repoPath: string;
+  readonly key: string;
+  readonly value: string | boolean | null;
 }
 
 /**
@@ -292,6 +302,7 @@ export interface WebviewPanelHostDeps {
    * config.write, k4); the host performs no write itself.
    */
   readonly onRepoConfigWrite?: ((write: RepoConfigWrite) => void) | undefined;
+  readonly onRepoTrackerWrite?: ((write: RepoTrackerWrite, isCurrent: () => boolean) => void) | undefined;
   /**
    * OPTIONAL sink for a provider registration (the repo form's Providers section).
    * The form posts {type:'repoRegisterProviders', repoPath, clients}; the host

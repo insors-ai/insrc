@@ -9,7 +9,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { renderRepoConfig } from '../repo-config.js';
+import { createRepoTrackerWriteHandler, renderRepoConfig } from '../repo-config.js';
+import type { ConsentOutcome } from '../../surfaces/consent-gate.js';
 import type { RepoFieldDef } from '../../../../src/config/repo-fields.js';
 import type { RepoSettingsPayload } from '../../../../src/daemon/repo-settings.js';
 
@@ -25,6 +26,7 @@ async function render(fields: readonly RepoFieldDef[]): Promise<string> {
   return await renderRepoConfig({
     registeredRepos: async () => [{ path: REPO, name: 'repo-a' }],
     rawConfig: async () => ({}),
+    mcpRegistration: async () => [],
     repoFields: async () => fields,
     repoSettings: async () => ({ ok: true, payload: FIXTURE.settings }),
   })(REPO);
@@ -36,7 +38,7 @@ function trackerRows(html: string): Array<{ key: string; label: string; kind: st
   return [...section.matchAll(/<label class="field tracker-row" data-kind="([^"]*)">([\s\S]*?)<\/label>/g)].map((m) => {
     const body = m[2]!;
     const key = /data-(?:tracker|readonly)-key="([^"]*)"/.exec(body)![1]!;
-    const label = unescape(body.slice(0, body.search(/ <(?:input|span class="value)/)));
+    const label = unescape(body.slice(0, body.search(/ <(?:input|select|span class="value)/)));
     const notes = [...body.matchAll(/<span class="note">([\s\S]*?)<\/span>/g)].map((n) => unescape(n[1]!)).filter((n) => n !== '(read-only)');
     return { key: unescape(key), label, kind: m[1]!, note: notes[0] ?? null };
   });
@@ -64,4 +66,74 @@ test('VS Code rows equal the shared catalog fixture and a new row appears', asyn
   assert.deepEqual(trackerRows(html2), contract([...FIXTURE.repoFields, policy]));
   assert.match(html2, /data-readonly-key="newRule"/);
   assert.doesNotMatch(html2, /data-tracker-key="newRule"/);
+});
+
+test('Tracker validates catalog values and rechecks selection and registration after consent', async () => {
+  const writes: unknown[] = [];
+  const notices: string[] = [];
+  let current = true;
+  let registered = true;
+  let approve: ((value: ConsentOutcome) => void) | undefined;
+  const handle = createRepoTrackerWriteHandler({
+    repoFields: async () => FIXTURE.repoFields,
+    registeredRepos: async () => registered ? [{ path: REPO, name: 'repo' }] : [],
+    consent: { ask: () => new Promise(resolve => { approve = resolve; }) },
+    writeRepoSetting: async (_repo, key, value) => { writes.push([key, value]); return { ok: true }; },
+    status: { current: () => ({ state: 'ready' }), set: ({ detail }) => { if (detail) notices.push(detail); } } as Parameters<typeof createRepoTrackerWriteHandler>[0]['status'],
+    logger: { warn: message => assert.fail(message) },
+    refresh: () => {},
+  });
+  const tick = () => new Promise(resolve => setImmediate(resolve));
+  const send = (key: string, value: string | boolean | null) => handle({ repoPath: REPO, key, value }, () => current);
+  for (const value of [true, false, null]) {
+    send('gitHooks', value);
+    await tick();
+    assert.ok(approve);
+    approve('accepted');
+    await tick();
+  }
+  approve = undefined;
+  send('type', 'bogus');
+  send('signin', null);
+  await tick();
+  assert.equal(approve, undefined);
+  assert.match(notices.join(' '), /must be one of.*read-only/);
+
+  send('gitHooks', true);
+  await tick();
+  current = false;
+  assert.ok(approve);
+  approve('accepted');
+  await tick();
+  current = true;
+  send('gitHooks', true);
+  await tick();
+  registered = false;
+  approve('accepted');
+  await tick();
+  assert.deepEqual(writes, [true, false, null].map(value => ['gitHooks', value]));
+});
+
+test('Tracker escapes catalog and setting text and degrades without removing model controls', async () => {
+  const read = renderRepoConfig({
+    registeredRepos: async () => [{ path: REPO, name: 'repo' }],
+    rawConfig: async () => ({}),
+    mcpRegistration: async () => [],
+    repoFields: async () => FIXTURE.repoFields.map(field => field.key === 'ghHost' ? { ...field, label: '<img>', note: '"quoted"' } : field),
+    repoSettings: async () => ({ ok: true, payload: {
+      ...FIXTURE.settings, values: { ghHost: '"><script>' }, policy: { ok: false, reason: '<missing>' },
+    } }),
+  });
+  const html = await read(REPO);
+  assert.match(html, /&lt;img&gt;.*&quot;&gt;&lt;script&gt;.*&quot;quoted&quot;/);
+  assert.match(html, /unavailable: &lt;missing&gt;/);
+  const degraded = await renderRepoConfig({
+    registeredRepos: async () => [{ path: REPO, name: 'repo' }],
+    rawConfig: async () => ({}),
+    mcpRegistration: async () => [],
+    repoFields: async () => { throw new Error('offline'); },
+  })(REPO);
+  assert.match(degraded, /Core floor/);
+  assert.match(degraded, /Tracker settings are unavailable/);
+  assert.doesNotMatch(degraded, /data-tracker-key/);
 });

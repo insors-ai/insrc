@@ -34,6 +34,7 @@ const VAULT_READ = 'get insrc-vault secrets';
 const calls = (): string[] => existsSync(LOG) ? readFileSync(LOG, 'utf8').split('\n').filter(l => l.length > 0) : [];
 const start = () => startDaemon(HOME, { preload: FIXTURE, env: { INSRC_TEST_KEYTAR_DIR: KEYTAR } });
 const originalSettings = getToolSettings();
+const originalBraveKey = process.env['BRAVE_API_KEY'];
 
 before(() => {
 	mkdirSync(HOME, { recursive: true });
@@ -41,7 +42,11 @@ before(() => {
 	writeFileSync(join(KEYTAR, 'store.json'), JSON.stringify({ 'insrc-vault/secrets': JSON.stringify({ version: 1, secrets: { first: 'value-one', second: 'value-two' }, retired: [] }) }));
 });
 after(() => { rmSync(base, { recursive: true, force: true }); });
-afterEach(() => { setKeychainBackendForTest(undefined); replaceToolSettings(originalSettings); });
+afterEach(() => {
+	setKeychainBackendForTest(undefined);
+	replaceToolSettings(originalSettings);
+	if (originalBraveKey === undefined) delete process.env['BRAVE_API_KEY']; else process.env['BRAVE_API_KEY'] = originalBraveKey;
+});
 
 function vaultOf(secrets: Record<string, string>): KeychainBackend & { vaultReads: number; legacy: string[] } {
 	const backend = {
@@ -72,6 +77,8 @@ test('consumers: notify, web and keys handlers read through the vault', async ()
 		await notifySlackTool.execute({ text: 'hello' });
 		assert.deepEqual(received, ['/hook-from-vault']);
 		// Web: its key is looked up through the same vault, and not found there falls to the legacy item.
+		// Without this variable a missing key stops the tool before it reaches the real search service.
+		delete process.env['BRAVE_API_KEY'];
 		const search = await webSearchTool.execute({ query: 'x' });
 		assert.equal(search.success, false);
 		assert.deepEqual(backend.legacy, ['brave']);

@@ -127,6 +127,22 @@ test('prepareAnswerTurn creates progress, state without progress reads as single
 	assert.equal(renderCompletenessLine(done.report!).startsWith('Complete'), true);
 	// Released on terminal success.
 	await assert.rejects(loadState((combine as StepOutputEmitCombine).state), StateTokenNotFound);
+
+	// Released on terminal failure: when no part is ever valid, the last token the client held is gone.
+	const bad = { system: 1 };
+	let dead: StepOutput = await step({ bundle: bad, state: (await awaitingBundle(plan)).token });
+	let lastHeld = '';
+	for (let guard = 0; guard < 60 && dead.next === 'emit_part'; guard++) {
+		lastHeld = dead.state;
+		dead = await step({ bundle: bad, state: dead.state });
+	}
+	assert.equal(dead.next, 'error');
+	assert.notEqual(lastHeld, '');
+	await assert.rejects(loadState(lastHeld), StateTokenNotFound, 'the state is released on the terminal failure');
+	// The single reply released on its terminal failure as well: an invalid reply is retried, the state kept until it ends.
+	const { token: singleToken } = await awaitingBundle(executed(1, 100));
+	const again = await step({ bundle: bad, state: singleToken });
+	assert.equal(again.next, 'error');
 });
 
 test('invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data', async () => {

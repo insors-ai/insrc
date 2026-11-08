@@ -37,7 +37,17 @@ import type {
 	AnalyzeScope,
 	AnalyzeTarget,
 } from '../../../shared/analyze-types.js';
-import type { LLMMessage, LLMProvider } from '../../../shared/types.js';
+import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
+import type { HandlingReport } from '../../completeness.js';
+import { ShaperAnswerStepFailedError } from '../../context/driver.js';
+import type { AnswerStepFound } from '../../context/driver.js';
+import type { AggregateInputRecord } from '../../context/failure-data.js';
+import { assembleAggregate } from '../../context/handling-adapters.js';
+import { runHandled } from '../../context/handling-parts.js';
+import type { PartAdapter } from '../../context/handling-parts.js';
+import { renderSection, upstreamBlocks } from '../../context/sections.js';
+import type { EvidenceBlock } from '../../context/sections.js';
+import { admissionTargetOf } from '../../context/synthesizer.js';
 import type { AbsentInput, UpstreamOutput } from '../../executor/types.js';
 
 import {
@@ -116,21 +126,28 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 		absentInputs:    args.absentInputs,
 	});
 
+	// The upstream outputs as records, kept on a typed failure: its `found.results` holds lookup results only.
+	const upstream: AggregateInputRecord[] = [...args.upstreamOutputs.values()].flat()
+		.map(o => ({ taskId: o.taskId, template: o.template, params: o.params, value: o.value }));
+	const found: AnswerStepFound = { results: [], report: { completeness: { complete: false, incomplete: [], failed: [] } } };
+
 	let llmOutput: AggregateLLMOutput;
+	let handling: HandlingReport;
 	try {
-		llmOutput = await provider.completeStructured<AggregateLLMOutput>(
-			messages,
-			AGGREGATE_LLM_SCHEMA as Record<string, unknown>,
-			{
-				maxAttempts:     cfg.shaper.structuredOutputRetries,
-				disableThinking: true,
-				// Final report can be multi-page markdown across summary +
-				// findings[] entries. Lean on the same shaper budget so
-				// long reports don't get truncated mid-finding.
-				maxTokens:       cfg.shaper.ollamaNumPredict,
-			},
-		);
+		const handled = await runHandled<AggregateLLMOutput, { summary: string }>({
+			provider, target: admissionTargetOf(provider, cfg.shaper.ollamaNumPredict), adapter: aggregateAdapter(promptContent, args),
+			blocks: upstreamBlocksOf(args.upstreamOutputs), reference: [], found, upstream,
+			maxAttempts: cfg.shaper.structuredOutputRetries, connectionExecution: args.connectionExecution,
+			// The report's size is the request's: an undetermined one divides.
+			size: args.scope, singleMessages: messages, singleSchema: AGGREGATE_LLM_SCHEMA as Record<string, unknown>,
+		});
+		if (handled.kind === 'single') llmOutput = handled.reply;
+		else llmOutput = assembleAggregate(handled.covered, handled.combine);
+		handling = handled.handling;
 	} catch (err) {
+		// A divided call ends in its own typed failure, which keeps the results, the upstream inputs and every part's cause.
+		// A single pass keeps the legacy classification, with the original error as the cause.
+		if (err instanceof ShaperAnswerStepFailedError) throw err;
 		throw classifyError(err);
 	}
 
@@ -150,7 +167,51 @@ export async function runAggregator(args: RunAggregatorArgs): Promise<AggregateR
 			scope:         args.scope,
 			runId:         args.runId,
 			tasksAnalyzed: countOutputs(args.upstreamOutputs),
+			handling,
 		},
+	};
+}
+
+// ---------------------------------------------------------------------------
+// Parts
+// ---------------------------------------------------------------------------
+
+const SUMMARY_CAP = 2_000;
+
+/** The upstream outputs as blocks of evidence, in the order they are rendered. */
+function upstreamBlocksOf(map: ReadonlyMap<string, readonly UpstreamOutput[]>): readonly EvidenceBlock[] {
+	return Array.from(map.keys()).filter(name => (map.get(name) ?? []).length > 0).sort()
+		.flatMap(name => (map.get(name) ?? []).flatMap(o => upstreamBlocks({ taskId: o.taskId, template: o.template, params: o.params, value: o.value })));
+}
+
+/**
+ * The prompts of a report written in parts. The absent-input section is part
+ * of every part and every combine call, so a part never speaks of an input it
+ * was not given and the admission counts it.
+ */
+function aggregateAdapter(promptContent: string, args: RunAggregatorArgs): PartAdapter<AggregateLLMOutput, { summary: string }> {
+	const system = promptContent.trimEnd();
+	const absent = renderAbsentSection(args.absentInputs, args.upstreamOutputs);
+	const focus = args.focus !== undefined && args.focus.length > 0 ? `\nFocus: ${args.focus}\n` : '';
+	const head = `Target: ${args.target}\nScope:  ${args.scope}\n${focus}\n`;
+	const partSchema = structuredClone(AGGREGATE_LLM_SCHEMA) as unknown as { properties: { summary: Record<string, unknown> } };
+	partSchema.properties.summary = { ...partSchema.properties.summary, maxLength: SUMMARY_CAP };
+	return {
+		partSchema: partSchema as unknown as StructuredSchema,
+		combineSchema: { type: 'object', additionalProperties: false, required: ['summary'], properties: { summary: { type: 'string', minLength: 20 } } },
+		renderPart: (part) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: head + `Upstream task outputs of this part (${part.id}); the report is written in parts and this is one of them:\n\n`
+				+ part.sections.map(renderSection).join('\n\n') + absent + '\n\n'
+				+ `Compose the aggregate report for THIS PART only. Respond with ONLY the JSON object matching the schema; keep summary under ${SUMMARY_CAP} characters.` },
+		],
+		renderCombine: (summaries) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: head + 'The report was written in parts. Part summaries:\n\n' + summaries.map(s => `### ${s.id}\n${s.summary}`).join('\n\n')
+				+ absent + '\n\nWrite the executive summary of the whole report as JSON {summary}. The findings are assembled from the parts; do not write them.' },
+		],
+		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+		mergeRounds: rs => ({ summary: rs.map(r => r.summary).join(' ').slice(0, SUMMARY_CAP), findings: rs.flatMap(r => r.findings) }),
 	};
 }
 

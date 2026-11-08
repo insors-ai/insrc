@@ -229,7 +229,7 @@ test('runAggregator: stub provider -> report carries LLM output + runtime metada
 	const report = await runAggregator({
 		promptRelPath:   PROMPT_REL,
 		target:          'code',
-		scope:           'M',
+		scope:           'S',
 		runId:           'rt-agg-1',
 		upstreamOutputs: single([
 			['t01', { ok: 1 }],
@@ -242,7 +242,7 @@ test('runAggregator: stub provider -> report carries LLM output + runtime metada
 	assert.equal(report.summary, reply.summary);
 	assert.equal(report.findings.length, 2);
 	assert.equal(report.metadata.target, 'code');
-	assert.equal(report.metadata.scope,  'M');
+	assert.equal(report.metadata.scope,  'S');
 	assert.equal(report.metadata.runId,  'rt-agg-1');
 	assert.equal(report.metadata.tasksAnalyzed, 3);
 
@@ -335,7 +335,7 @@ test("the aggregator's prompt lists each absent input with its producer and reas
 	const ask = async (absentInputs?: Parameters<typeof runAggregator>[0]['absentInputs'], omit = false) => {
 		const capture: { messages?: import('../../../../shared/types.js').LLMMessage[] } = {};
 		await runAggregator({
-			promptRelPath: PROMPT_REL, target: 'code', scope: 'M', runId: 'r1', upstreamOutputs: upstream, focus: 'refunds',
+			promptRelPath: PROMPT_REL, target: 'code', scope: 'S', runId: 'r1', upstreamOutputs: upstream, focus: 'refunds',
 			provider: stubProvider(reply, capture),
 			...(omit ? {} : { absentInputs }),
 		});
@@ -343,7 +343,7 @@ test("the aggregator's prompt lists each absent input with its producer and reas
 	};
 
 	// --- nothing absent: the prompt is the one it always was, in each way of saying so ---
-	const before = _buildMessagesForTest({ promptContent: 'P', target: 'code', scope: 'M', focus: 'refunds', upstreamOutputs: upstream });
+	const before = _buildMessagesForTest({ promptContent: 'P', target: 'code', scope: 'S', focus: 'refunds', upstreamOutputs: upstream });
 	const none = await ask(undefined, true);
 	assert.equal(none.user, String(before[1]!.content), 'no absentInputs argument');
 	assert.equal((await ask(undefined)).user, none.user, 'absentInputs undefined');

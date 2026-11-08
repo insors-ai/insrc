@@ -23,7 +23,7 @@
  */
 
 export { runExecutor } from './walker.js';
-export { collectPlanSources, taskPath } from './plan-sources.js';
+export { collectPlanHandling, collectPlanSources, taskPath } from './plan-sources.js';
 export {
 	registerTemplateRuntime,
 	getRuntime,

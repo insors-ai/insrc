@@ -16,6 +16,7 @@ import { purgeAllTaskOutputs, registerTemplateRuntime, runExecutor, _resetRuntim
 import type { TemplateExecuteArgs, TemplateRuntime } from '../../executor/types.js';
 import { runWithRoutingContext } from '../../context/shaper-provider.js';
 import { docsAggregateReportRuntime } from '../docs/aggregate-report.js';
+import { concludeRun } from '../../orchestrator/driver.js';
 import {
 	WHOLE, big, intent, leaf, model, node, plan, respond, routing, runAggregate, runIdOf, task,
 } from './aggregate-fixtures.js';
@@ -56,5 +57,14 @@ test('a broad docs run with an oversized terminal input and a nested aggregate c
 		const nested = executed.children.get('t03')!.root.finalReport as { metadata: { handling?: { method: string } } };
 		assert.ok(nested !== undefined);
 		assert.ok(['single-pass', 'partitioned'].includes(nested.metadata.handling?.method ?? ''));
+
+		// The same run concluded as the orchestrator does: the delivered final report's head states the handling.
+		const concluded = concludeRun(root, executed, { completeness: { complete: true, incomplete: [], failed: [] } });
+		assert.equal(concluded.report.completeness.complete, true);
+		assert.equal(concluded.report.handling?.method, 'partitioned');
+		const head = (concluded.finalReport as { summary: string }).summary.split('\n\n')[0]!.split('\n');
+		assert.equal(head[0], 'Complete.');
+		assert.match(head[1] ?? '', /^Handling: divided into \d+ parts?/);
+		assert.equal((concluded.finalReport as { summary: string }).summary.endsWith('the executive summary of the whole report'), true);
 	} finally { purgeAllTaskOutputs(runId); }
 });

@@ -21,10 +21,12 @@ import { buildCompleteness } from '../../completeness.js';
 import type { ExecutedPlan, ExplorationPlan } from '../../explore/types.js';
 import type { RequestMeasure } from '../../measure.js';
 import {
-	ShaperAnswerStepFailedError, _fallbackFreeformPlanForTest, _runExplorationPipelineForTest as pipeline,
+	ShaperAnswerStepFailedError, _fallbackFreeformPlanForTest, settlePipelineOutcome, _runExplorationPipelineForTest as pipeline,
 } from '../driver.js';
 import type { PipelineOutcome, PipelineSteps } from '../driver.js';
 import type { ResolvedScope } from '../scope.js';
+import { SCHEMA_VERSION } from '../schema.js';
+import type { AnalyzeContextBundle } from '../types.js';
 import { synthesizeHandled } from '../synthesizer.js';
 
 const REPO = '/work/app';
@@ -72,6 +74,16 @@ async function drive(args: { size: ClassifiedIntent['scope']; evidence: number; 
 const part = (prompt: string): unknown => ({ ...LAYERS, report: MODEL_REPORT, summary: `covers ${[...prompt.matchAll(/code(\d)/g)].map(m => m[1]).join(',')}` });
 const respond = (prompt: string, combine: boolean): unknown => (combine ? { system: 'S', focus: 'F', summary: 'combined' } : part(prompt));
 
+/** The bundle the daemon delivers: the stamp callback puts the outcome's report on the layers, as production does. */
+function delivered(outcome: PipelineOutcome): AnalyzeContextBundle {
+	const settled = settlePipelineOutcome(outcome, (raw, explorationCount, report) => ({
+		...raw, report,
+		meta: { mode: 'run', shaper: 'code', toolCalls: explorationCount, modelId: 'm', emptyLayers: [], schemaVersion: SCHEMA_VERSION },
+	}) as unknown as AnalyzeContextBundle);
+	assert.ok(settled !== null);
+	return settled.bundle;
+}
+
 function foundOf(outcome: PipelineOutcome) {
 	assert.equal(outcome.kind, 'bundle', JSON.stringify(outcome).slice(0, 300));
 	return (outcome as Extract<PipelineOutcome, { kind: 'bundle' }>).found;
@@ -79,7 +91,9 @@ function foundOf(outcome: PipelineOutcome) {
 
 test('through the real context driver a partitioned success, a failed part and the combine fallback deliver the report with handling, uncovered parts and complete false; single pass keeps lookup completeness; the model\'s own report is never used', async () => {
 	// A single pass: the lookups' completeness is kept, and the handling says single pass.
-	const single = foundOf(await drive({ size: 'S', evidence: 2, chars: 300, budget: 60_000, respond: () => ({ ...LAYERS, report: MODEL_REPORT }) }));
+	const singleOutcome = await drive({ size: 'S', evidence: 2, chars: 300, budget: 60_000, respond: () => ({ ...LAYERS, report: MODEL_REPORT }) });
+	const single = foundOf(singleOutcome);
+	assert.equal(delivered(singleOutcome).report?.completeness.complete, true, 'the stamped bundle keeps the lookups\' completeness');
 	assert.equal(single.report.completeness.complete, true);
 	assert.equal(single.report.handling?.method, 'single-pass');
 	assert.equal(single.report.handling?.parts, 1);
@@ -87,17 +101,24 @@ test('through the real context driver a partitioned success, a failed part and t
 	assert.deepEqual(single.report.completeness.incomplete, []);
 
 	// A partitioned success: the handling is the partitioned handling, nothing uncovered, the lookups' completeness kept.
-	const ok = foundOf(await drive({ size: 'L', evidence: 8, chars: 4_500, budget: 20_000, respond }));
+	const okOutcome = await drive({ size: 'L', evidence: 8, chars: 4_500, budget: 20_000, respond });
+	const ok = foundOf(okOutcome);
+	// Complete stays true when no part is uncovered: the report says complete=false only for a part or the combine that was not covered.
+	assert.equal(delivered(okOutcome).report?.handling?.method, 'partitioned');
+	assert.equal(delivered(okOutcome).report?.completeness.complete, true);
 	assert.equal(ok.report.handling?.method, 'partitioned');
 	assert.ok((ok.report.handling?.parts ?? 0) >= 3);
 	assert.deepEqual(ok.report.handling?.notCovered, []);
 	assert.equal(ok.report.completeness.complete, true);
 
 	// A failed part: named in the handling, in the incomplete sources, and complete is false.
-	const failed = foundOf(await drive({
+	const failedOutcome = await drive({
 		size: 'L', evidence: 8, chars: 4_500, budget: 20_000,
 		respond: (prompt, combine) => (!combine && prompt.includes('code3 ') ? new ModelResponseShapeError('reply failed validation', ['bad']) : respond(prompt, combine)),
-	}));
+	});
+	const failed = foundOf(failedOutcome);
+	assert.equal(delivered(failedOutcome).report?.completeness.complete, false, 'the stamped bundle is incomplete');
+	assert.deepEqual(delivered(failedOutcome).report?.handling?.notCovered, failed.report.handling?.notCovered);
 	assert.ok((failed.report.handling?.notCovered.length ?? 0) >= 1);
 	assert.equal(failed.report.completeness.complete, false);
 	const uncovered = failed.report.handling?.notCovered.map(n => n.part) ?? [];
@@ -105,10 +126,13 @@ test('through the real context driver a partitioned success, a failed part and t
 	assert.ok(failed.report.completeness.incomplete.every(n => n.sourceKind === 'lookup'));
 
 	// The combine fallback: the per-part results are delivered with 'combine' in notCovered and complete false.
-	const fallback = foundOf(await drive({
+	const fallbackOutcome = await drive({
 		size: 'L', evidence: 8, chars: 4_500, budget: 20_000,
 		respond: (prompt, combine) => (combine ? new ModelResponseShapeError('reply failed validation', ['bad']) : part(prompt)),
-	}));
+	});
+	const fallback = foundOf(fallbackOutcome);
+	assert.equal(delivered(fallbackOutcome).report?.completeness.complete, false);
+	assert.deepEqual(delivered(fallbackOutcome).report?.handling?.notCovered.map(n => n.part), ['combine']);
 	assert.deepEqual(fallback.report.handling?.notCovered.map(n => n.part), ['combine']);
 	assert.equal(fallback.report.completeness.complete, false);
 	assert.deepEqual(fallback.report.completeness.incomplete.map(n => n.sourceId), ['answer step / combine']);

@@ -22,13 +22,13 @@ const REPO = FIXTURE.settings.repo;
 
 const unescape = (s: string): string => s.replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 
-async function render(fields: readonly RepoFieldDef[]): Promise<string> {
+async function render(fields: readonly RepoFieldDef[], settings = FIXTURE.settings): Promise<string> {
   return await renderRepoConfig({
     registeredRepos: async () => [{ path: REPO, name: 'repo-a' }],
     rawConfig: async () => ({}),
     mcpRegistration: async () => [],
     repoFields: async () => fields,
-    repoSettings: async () => ({ ok: true, payload: FIXTURE.settings }),
+    repoSettings: async () => ({ ok: true, payload: settings }),
   })(REPO);
 }
 
@@ -118,6 +118,58 @@ test('Tracker validates catalog values and rechecks selection and registration a
   approve('accepted');
   await tick();
   assert.deepEqual(writes, [true, false, null].map(value => ['gitHooks', value]));
+});
+
+test('Tracker write outcomes refresh saved values and only accepted consent reaches the daemon', { timeout: 5000 }, async () => {
+  const original = 'original.example.test';
+  const requested = 'requested.example.test';
+  const cases = [
+    { consent: 'declined', outcome: 'unused', detail: undefined },
+    { consent: 'dismissed', outcome: 'unused', detail: undefined },
+    { consent: 'accepted', outcome: 'saved', detail: /Updated ghHost/ },
+    { consent: 'accepted', outcome: 'refused', detail: /Tracker setting refused: read only/ },
+    { consent: 'accepted', outcome: 'failed', detail: /Could not update the tracker setting/ },
+  ] as const;
+
+  for (const { consent, outcome, detail } of cases) {
+    const events: string[] = [];
+    const notices: string[] = [];
+    const warnings: string[] = [];
+    const refreshed = Promise.withResolvers<string>();
+    let saved = original;
+    const handle = createRepoTrackerWriteHandler({
+      repoFields: async () => FIXTURE.repoFields,
+      registeredRepos: async () => [{ path: REPO, name: 'repo' }],
+      consent: { ask: async () => { events.push('consent'); return consent; } },
+      writeRepoSetting: async (repo, key, value) => {
+        events.push('write');
+        assert.deepEqual([repo, key, value], [REPO, 'ghHost', requested]);
+        if (outcome === 'failed') throw new Error('transport closed');
+        if (outcome === 'refused') return { ok: false, reason: 'read only' };
+        saved = requested;
+        return { ok: true };
+      },
+      status: {
+        current: () => ({ state: 'ready' }),
+        set: ({ detail: notice }) => { if (notice) notices.push(notice); },
+      } as Parameters<typeof createRepoTrackerWriteHandler>[0]['status'],
+      logger: { warn: message => warnings.push(message) },
+      refresh: () => {
+        events.push('refresh');
+        void render(FIXTURE.repoFields, { ...FIXTURE.settings, values: { ghHost: saved } })
+          .then(refreshed.resolve, refreshed.reject);
+      },
+    });
+    handle({ repoPath: REPO, key: 'ghHost', value: requested }, () => true);
+    const html = await refreshed.promise;
+    assert.deepEqual(events, consent === 'accepted' ? ['consent', 'write', 'refresh'] : ['consent', 'refresh'], outcome);
+    const actual = /data-tracker-key="ghHost" value="([^"]*)"/.exec(html)?.[1];
+    assert.equal(actual, outcome === 'saved' ? requested : original, outcome);
+    if (detail) assert.match(notices.join(' '), detail);
+    else assert.deepEqual(notices, []);
+    if (outcome === 'failed') assert.match(warnings.join(' '), /transport closed/);
+    else assert.deepEqual(warnings, []);
+  }
 });
 
 test('Tracker escapes catalog and setting text and degrades without removing model controls', async () => {

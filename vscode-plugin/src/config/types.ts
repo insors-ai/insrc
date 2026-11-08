@@ -17,6 +17,7 @@ import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
 
 /** A settings row's shape (type, default, enum, group), as the sync engine validates against it. */
 export type { ConfigOption };
+export type DaemonRead = <T = unknown>(method: string, params?: unknown, timeoutMs?: number) => Promise<T>;
 import type { ModelDefinitions } from '../models/definitions.js';
 
 /** One native settings key that changed since the last daemon sync. */

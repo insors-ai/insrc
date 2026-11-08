@@ -20,7 +20,7 @@ import type { DocRelationsStatus, RegisteredRepo, RepoCompleteness } from '../..
 import type { ModelTiersRenderer, ModelTiersWrite } from './model-tiers.js';
 import type { RepoFieldDef } from '../../../src/config/repo-fields.js';
 import type { SettingsResult } from '../../../src/daemon/repo-settings.js';
-import type { IpcClient } from '../../../src/shared/ipc-client.js';
+import type { DaemonRead } from '../config/types.js';
 
 // ---------------------------------------------------------------------------
 // sc9 host + view types (verbatim from the HLD interfaceSketch)
@@ -346,7 +346,7 @@ export interface WebviewPanelHostDeps {
 /** The read-only data sources `createDaemonDataGateway` wires (all local, no cloud). */
 export interface DaemonDataGatewayDeps {
   /** The shared sc1 client — the only daemon path (daemon.status/repo.list/daemon.debug-status). */
-  readonly rpc: IpcClient['rpc'];
+  readonly rpc: DaemonRead;
   /** Resolves the `.insrc/artifacts` root for the workflow-chain read (or undefined). */
   readonly artifactsRoot: () => string | undefined;
   /** The local process-table scan (mirrors the JetBrains OrphanProcessSeam). */

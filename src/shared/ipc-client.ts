@@ -50,11 +50,6 @@ export class DaemonDisconnectedError extends Error {
   }
 }
 
-export interface IpcRpcOptions {
-  readonly timeoutMs?: number | undefined;
-  readonly closeAware?: boolean | undefined;
-}
-
 /**
  * Send one JSON-RPC request to the daemon and return the result.
  * Throws if the daemon is not running or returns an error, and
@@ -72,7 +67,7 @@ export async function rpc<T = unknown>(
   method: string,
   params: unknown = {},
   connect: () => Socket = connectToDaemon,
-  opts?: IpcRpcOptions,
+  opts?: { readonly timeoutMs?: number | undefined; readonly closeAware?: boolean | undefined },
 ): Promise<T> {
   return new Promise<T>((resolveReply, rejectReply) => {
     const socket = connect();
@@ -153,7 +148,7 @@ export async function rpc<T = unknown>(
  */
 export interface IpcClient {
   /** One JSON-RPC round-trip to the daemon; rejects on daemon error / unreachable socket. */
-  rpc<T = unknown>(method: string, params?: unknown, opts?: IpcRpcOptions): Promise<T>;
+  rpc<T = unknown>(method: string, params?: unknown): Promise<T>;
   /** The daemon's real status snapshot (via `daemon.status`); rejects when the daemon is down. */
   status(): Promise<DaemonStatus>;
   /** Coarse reachability, derived from a `daemon.status` outcome. Never throws. */
@@ -228,8 +223,8 @@ export function openStream(
  * fake socket (no live daemon required).
  */
 export function createIpcClient(connect?: () => Socket): IpcClient {
-  const call = <T>(method: string, params?: unknown, opts?: IpcRpcOptions): Promise<T> =>
-    rpc<T>(method, params, connect, opts);
+  const call = <T>(method: string, params?: unknown): Promise<T> =>
+    connect === undefined ? rpc<T>(method, params) : rpc<T>(method, params, connect);
 
   return {
     rpc: call,

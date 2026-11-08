@@ -18,7 +18,7 @@ import { ConnectionsWorkbenchOwner } from './connections/session-owner.js';
 import { ConnectionsManagerHost } from './connections/host.js';
 import { registerConnectionCommands } from './connections/wiring.js';
 import { ConnectionRemovals } from '../../src/shared/connection-manager/removal.js';
-import { createIpcClient } from '../../src/shared/ipc-client.js';
+import { createIpcClient, rpc } from '../../src/shared/ipc-client.js';
 import { PATHS } from '../../src/shared/paths.js';
 import { createStatusSurface } from './surfaces/status-surface.js';
 import { createCommandRegistry } from './surfaces/command-registry.js';
@@ -281,7 +281,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // The sc8 ConfigGateway (config.catalog/config.show/config.write over the shared
   // client) — constructed once and reused by the ConfigSync engine AND the S007
   // Repo Configuration panel (its writeKeyPath/rawConfig per-repo read/write).
-  const configGateway = createDaemonConfigGateway(client);
+  const readDaemon = <T>(method: string, params?: unknown, timeoutMs?: number): Promise<T> =>
+    timeoutMs === undefined ? client.rpc<T>(method, params) : rpc<T>(method, params, undefined, { timeoutMs });
+  const configGateway = createDaemonConfigGateway(client, readDaemon);
   // Offer a daemon restart for changes that apply only after one (s6): the action runs the
   // restart and reports whether the daemon came back (restartDaemonAndReport).
   const offerRestart = (message: string): void => {
@@ -347,7 +349,7 @@ export function activate(context: vscode.ExtensionContext): void {
     error: (message: string): void => console.error(`[insrc] ${message}`),
   };
   const daemonData = createDaemonDataGateway({
-    rpc: (method, params, opts) => client.rpc(method, params, opts),
+    rpc: readDaemon,
     artifactsRoot: () => {
       const root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
       return root === undefined ? undefined : join(root, '.insrc', 'artifacts');

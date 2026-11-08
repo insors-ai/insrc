@@ -14,3 +14,12 @@ Ran on Node 22.22.1. The resolved batch-two package graph excludes all 30 mapped
 The ZIP test loads the resolved Cassandra dependency by default. To repeat the baseline comparison, unpack the npm archive for adm-zip 0.5.18 in an isolated directory and set `INSRC_TEST_ADM_ZIP_BASELINE` to the unpacked package directory before running the same test file. The baseline fixture result is independently named in the TAP output.
 
 The saved-driver test exposes the Cassandra and etcd cases when `INSRC_TEST_CASSANDRA_ADDRESS` and `INSRC_TEST_ETCD_ADDRESS` point to disposable services. Seed Cassandra with a keyspace `insrc_test`, a table `orders (id int PRIMARY KEY, label text)` and one row. Seed etcd with `orders/first` containing the JSON object `{"label":"verified"}`. The localhost services were stopped after the checks.
+
+## Installed SDK diagnostics audit
+
+The full sweep flagged the intentionally pinned SDK versions and source hashes after the upgrade. The audit was repeated against the actual installed packages before refreshing those pins.
+
+- MySQL 3.24.6 keeps its raw packet and command diagnostics behind the per-connection debug option. The driver continues to set debug and trace to false for temporary resources. The unconditional packet-order warning still formats only numeric sequence fields. The tracing module was byte-identical to the previous version.
+- Cassandra 4.10.0 keeps the audited client and client-options source byte-identical, including the configurable log emitter. The quiet driver still supplies its resource-local no-op emitter.
+- gRPC 1.14.7 changes the tracer lookup to skip empty tracer names and return early with tracing disabled. The process-level logger remains. The existing prohibition on temporary etcd resources stays in place.
+- Tedious remains 19.2.2. Its audited connection and debug files are byte-identical. The SQL Server driver still uses default username/password authentication. Live SQL Server remains deferred under the revised plan.

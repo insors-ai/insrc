@@ -1,0 +1,137 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "e2b2cf31e9e0a0818dc638e99fc21b94d486bf43d172f3c907ba3813f79a1b34",
+        "at": "2026-11-08T18:55:44.699Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "1b83eadf639af8a9",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T18:55:44.593Z",
+    "updatedAt": "2026-11-08T18:55:44.593Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-08T18:44:17.617Z",
+    "epicSlug": "do-not-request-artifact-approval-tracker",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "fb85e7f12",
+        "ranAt": "2026-11-08T18:55:44.593Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts"
+            ]
+          },
+          {
+            "name": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1072,
+            "titles": [
+              {
+                "title": "design.epic: happy path writes HLD.md under docs/epics/<slug>-E.../",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: synthesize with a Define that carries no creation time fails with missing-anchor and writes nothing",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses to start without an approved Define",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: s6 sbdry1=missed forces synthesize hard-fail",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when a Story from Epic is missing from storyBoundaries",
+                "result": "pass"
+              },
+              {
+                "title": "design.epic: refuses when interfaceSketch contains a return",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 883,
+            "titles": [
+              {
+                "title": "tracker.push: happy path binds the Epic and Story heads to the pushed issues",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: checklist failure refuses synthesize + leaves meta untouched",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: happy path merges status + lastSyncedAt into meta.tracker",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.sync: refuses when Epic has no prior tracker refs",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses without epicHash param",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.push: refuses when Epic is unapproved",
+                "result": "pass"
+              },
+              {
+                "title": "tracker.post: completed comment produces an audit report without pending approval",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

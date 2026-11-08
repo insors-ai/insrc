@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 17,
-        "contentHash": "43b42df6ad2109ec41d1b7f4fb7cbb81a405b0770c71451128903a089d174e2c",
-        "at": "2026-11-08T06:22:30.533Z",
+        "number": 18,
+        "contentHash": "278c20f53b276a42a362e5deb5a8b4930af4efd0dc99b8ddadf524597378774b",
+        "at": "2026-11-08T06:29:16.160Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:22:30.368Z",
+    "updatedAt": "2026-11-08T06:29:15.989Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 17
+    "revision": 18
   },
   "body": {
     "tasks": [
@@ -509,6 +509,127 @@
               },
               {
                 "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t7",
+        "commit": "e0d7f2ccb",
+        "ranAt": "2026-11-08T06:29:15.989Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "I4 private claims, replacement races, full-history preservation and restart",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "approval deletes only fully preserved private claims and fresh history remains readable",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "public replacements after claim and at deletion remain untouched and retain replay ownership",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "replacement immediately before claim is quarantined and restored without loss",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "crashes after claim and before deletion recover exact claims without touching replacements",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "unverified claims never clobber a replacement during no-clobber restore",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "cleanup verifies older failed attempt history as well as the final publication",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "explicit override approval retains unfinished checkpoint state truthfully",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I5 cleanup concurrency, fixed lock order and foreign-scope exclusion",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "active and busy artifacts retain promptly while independent artifacts clean up",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 985,
+            "titles": [
+              {
+                "title": "approval deletes only fully preserved private claims and fresh history remains readable",
+                "result": "pass"
+              },
+              {
+                "title": "public replacements after claim and at deletion remain untouched and retain replay ownership",
+                "result": "pass"
+              },
+              {
+                "title": "replacement immediately before claim is quarantined and restored without loss",
+                "result": "pass"
+              },
+              {
+                "title": "crashes after claim and before deletion recover exact claims without touching replacements",
+                "result": "pass"
+              },
+              {
+                "title": "unverified claims never clobber a replacement during no-clobber restore",
+                "result": "pass"
+              },
+              {
+                "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
+                "result": "pass"
+              },
+              {
+                "title": "active and busy artifacts retain promptly while independent artifacts clean up",
+                "result": "pass"
+              },
+              {
+                "title": "cleanup verifies older failed attempt history as well as the final publication",
+                "result": "pass"
+              },
+              {
+                "title": "explicit override approval retains unfinished checkpoint state truthfully",
                 "result": "pass"
               }
             ],

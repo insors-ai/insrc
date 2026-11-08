@@ -17,7 +17,7 @@ export interface DesignCleanupDeps {
  readonly store?:ArtifactStore;
  readonly onDeleted?:(reviewId:string)=>void;
  /** Fault/race injection at real filesystem boundaries; never supplied by normal callers. */
- readonly boundary?:(stage:'beforeClaim'|'afterClaim'|'beforeDelete',source:string,claimed:string)=>void;
+ readonly boundary?:(stage:'beforeClaim'|'afterClaim'|'beforeDelete',source:string,claimed:string)=>void|Promise<void>;
 }
 const releasers=new Map<string,(reviewId:string)=>void>();
 export function registerDesignCleanupRelease(project:string,release:(id:string)=>void):void{releasers.set(project,release);}
@@ -68,7 +68,7 @@ export async function cleanupDesignArtifact(projectInput:string,artifactId:strin
     const got=bounded(claimed,DESIGN_LIMITS.checkpointBytes);
     requireDesign(got.ino===c.ino&&got.dev===c.dev&&digest(got.bytes)===c.digest,'changed_claim','Claimed bytes changed or were replaced');
     const cp=decode(got.bytes,project,c.reviewId);await preserved(project,artifactId,cp,store);
-    deps.boundary?.('beforeDelete',c.source,claimed);
+    await deps.boundary?.('beforeDelete',c.source,claimed);
     await preserved(project,artifactId,cp,store);
     const final=bounded(claimed,DESIGN_LIMITS.checkpointBytes);requireDesign(final.ino===got.ino&&final.dev===got.dev&&final.bytes.equals(got.bytes),'changed_claim','Private claim changed before deletion');
     unlinkSync(claimed);syncDirectory(dir);result.deleted.push(c.source);
@@ -104,8 +104,8 @@ export async function cleanupDesignArtifact(projectInput:string,artifactId:strin
     const dir=mkdtempSync(join(root,'.cleanup-'));chmodSync(dir,0o700);
     const c:Claim={schemaVersion:1,project,artifactId,reviewId,source:path,digest:digest(got.bytes),ino:got.ino,dev:got.dev,state:'claimed'};
     saveManifest(dir,c,true);syncDirectory(root);const claimed=join(dir,'checkpoint.json');
-    deps.boundary?.('beforeClaim',path,claimed);renameSync(path,claimed);syncDirectory(dir);syncDirectory(root);
-    deps.boundary?.('afterClaim',path,claimed);await finish(dir,c);
+    await deps.boundary?.('beforeClaim',path,claimed);renameSync(path,claimed);syncDirectory(dir);syncDirectory(root);
+    await deps.boundary?.('afterClaim',path,claimed);await finish(dir,c);
    }catch(error){retain(path,error);}
   }
   return result;

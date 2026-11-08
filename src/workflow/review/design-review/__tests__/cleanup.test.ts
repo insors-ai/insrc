@@ -1,3 +1,10 @@
+import { DesignReviewCoordinator } from '../coordinator.js';
+import { prepareDesignSubject } from '../subject.js';
+import { artifactJsonPath } from '../../../storage.js';
+import { resolveArtifactMdPath } from '../../../path-scheme.js';
+import { mkdirSync } from 'node:fs';
+import { setTimeout as pause } from 'node:timers/promises';
+import type { LLMProvider } from '../../../../shared/types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync, writeFileSync, readdirSync, symlinkSync, unlinkSync, renameSync } from 'node:fs';
@@ -81,4 +88,33 @@ test('explicit override approval retains unfinished checkpoint state truthfully'
  const f=await fixture(t,false),raw=JSON.parse(f.bytes.toString());raw.attempts[0].status='paused';writeFileSync(f.path,JSON.stringify(raw));
  const result=await f.lc.service.apply(f.id,'approve',actor,{override:{reason:'Retain unfinished review for follow-up'}});
  assert.equal(result.lifecycle.status,'approved');assert.equal(result.cleanup!.deleted.length,0);assert.ok(result.cleanup!.retained.includes(f.path));assert.equal(JSON.parse(readFileSync(f.path,'utf8')).attempts[0].status,'paused');
+});
+
+test('real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively',async t=>{
+ const f=await fixture(t),c=new DesignReviewCoordinator({publish:publishDesignReview,admit:recordDesignAdmission,provider:()=>{throw Error('No provider under cleanup');}});
+ let queued=false,release!:()=>void;const gate=new Promise<void>(r=>release=r);
+ const occupied=f.lc.store.exclusive(f.id,async()=>{queued=true;await gate;});while(!queued)await pause(1);
+ try{
+  const result=await cleanupDesignArtifact(f.repo,f.id,{boundary:async stage=>{
+   if(stage!=='beforeClaim')return;
+   await assert.rejects(c.start({phase:'start',repo:f.repo,reviewId:'new-review',attempt:1,artifactPath:f.json}),/busy/);
+   await assert.rejects(c.start({phase:'start',repo:f.repo,reviewId:'review-1',attempt:2,artifactPath:f.json}),/busy/);
+   await assert.rejects(c.recover({phase:'recover',repo:f.repo,reviewId:'review-1',attempt:1,operation:'retry_publication',actionId:'competing-publication'}),/busy/);
+  }});
+  assert.deepEqual(result.deleted,[f.path]);assert.equal(queued,true,'cleanup completes without entering the occupied artifact write queue');
+ }finally{release();await occupied;}
+});
+test('actual active model work retains its artifact while another artifact in the same project progresses',async t=>{
+ const f=await fixture(t);let calls=0,release!:()=>void;const barrier=new Promise<void>(r=>release=r);
+ const provider={capabilities:{reviewActivity:true},runReviewSession:async()=>{calls++;await barrier;throw Error('End deterministic fixture');}} as unknown as LLMProvider;
+ const c=new DesignReviewCoordinator({provider:()=>({provider,model:'fixture-only'}),admit:recordDesignAdmission});
+ await c.start({phase:'start',repo:f.repo,reviewId:'active-review',attempt:1,artifactPath:f.json});while(!calls)await pause(1);
+ const held=await cleanupDesignArtifact(f.repo,f.id);assert.equal(held.deleted.length,0);assert.match(held.errors.join(),/active/);
+ const id='LLD-aaaaaaaaaaaaaaaa-s2',json=artifactJsonPath(f.repo,id),raw=JSON.parse(readFileSync(f.json,'utf8'));raw.meta.storyId='s2';delete raw.meta.lifecycle;delete raw.meta.envelope;
+ writeFileSync(json,JSON.stringify(raw));const md=resolveArtifactMdPath(f.repo,{epicHash:'aaaaaaaaaaaaaaaa',epicCreatedAt:raw.meta.epicCreatedAt,story:'s2'},'LLD','standalone','fixture');mkdirSync(dirname(md),{recursive:true});writeFileSync(md,`<!-- insrc:artifact ${id} -->\n# Other story\n`);prepareDesignSubject(f.repo,json);
+ try{
+  await withDesignArtifactFence(f.repo,f.id,async()=>{
+   await c.start({phase:'start',repo:f.repo,reviewId:'other-artifact',attempt:1,artifactPath:json});while(calls<2)await pause(1);
+  });assert.equal(calls,2);
+ }finally{release();for(let i=0;i<100;i++){const a=await c.progress(f.repo,'active-review',1);const b=await c.progress(f.repo,'other-artifact',1);if(['paused','failed'].includes(a.status)&&['paused','failed'].includes(b.status))break;await pause(10);}}
 });

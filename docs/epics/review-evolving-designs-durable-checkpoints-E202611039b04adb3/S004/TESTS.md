@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 32 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -152,3 +152,33 @@ Run at 2026-11-08T06:22:30.368Z on commit `02bec2288`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/approval.test.ts` | 0 | 9 | 1.5 s |  |
+
+## t7
+
+Run at 2026-11-08T06:29:15.989Z on commit `e0d7f2ccb`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: I4 private claims, replacement races, full-history preservation and restart**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | approval deletes only fully preserved private claims and fresh history remains readable | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | public replacements after claim and at deletion remain untouched and retain replay ownership | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | replacement immediately before claim is quarantined and restored without loss | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | crashes after claim and before deletion recover exact claims without touching replacements | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | unverified claims never clobber a replacement during no-clobber restore | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | foreign corrupt symlink unpreserved and unfinished override checkpoints are retained | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | cleanup verifies older failed attempt history as well as the final publication | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | explicit override approval retains unfinished checkpoint state truthfully | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+
+**integration: I5 cleanup concurrency, fixed lock order and foreign-scope exclusion**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | active and busy artifacts retain promptly while independent artifacts clean up | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | foreign corrupt symlink unpreserved and unfinished override checkpoints are retained | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 9 | 1 s |  |

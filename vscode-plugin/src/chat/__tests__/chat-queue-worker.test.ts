@@ -8,7 +8,8 @@ import { DatabaseSync } from 'node:sqlite';
 import type { Timers } from '../async-util.js';
 import { createChatQueueStore, FULL_NOTE, LEASE_HEARTBEAT_MS, PRESENCE_GRACE_MS, LEASE_TAKEOVER_MS, QUEUE_RECORD_BOUND, StoreBusy, type ChatQueueLeases, type ChatQueueStore, type QueuedMessage, type SqliteDatabase, type TurnOutcome } from '../chat-queue-store.js';
 import { RETRY_DELAYS_MS, MAX_INFRA_RETRIES } from '../chat-failure.js';
-import { ACTION_NOTES, ACTIVE_POLL_MS, BUSY_GIVE_UP_MS, GIVE_UP_NOTE, IDLE_POLL_MS, createChatQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import { ACTION_NOTES, ACTIVE_POLL_MS, BUSY_GIVE_UP_MS, GIVE_UP_NOTE, IDLE_POLL_MS, createChatQueueWorker, createSessionQueueWorker, type QueuedTurnRunner } from '../chat-queue-worker.js';
+import type { ProcessObservation } from '../session-lock.js';
 
 /** Fake timers over a fake clock: advance() runs what is due, in order. */
 function fakeTime() {
@@ -48,6 +49,74 @@ function gatedRunner() {
   return { runner, runs };
 }
 const sub = (sessionId: string, text: string) => ({ sessionId, text, origin: 'typed' as const, attachments: [] });
+
+test('two window owners schedule eligible session heads and recover only the matching lease', async () => {
+  const r = repo();
+  const t = fakeTime();
+  const deps = { path: r.path, openDatabase: (path: string) => new DatabaseSync(path) as unknown as SqliteDatabase,
+    now: t.now, pluginVersion: 'test', mode: 'session-leases' } as const;
+  const storeA = createChatQueueStore(deps);
+  const storeB = createChatQueueStore(deps);
+  const a = gatedRunner();
+  const b = gatedRunner();
+  const reload = gatedRunner();
+  const observed = new Map<number, ProcessObservation>([
+    [101, { kind: 'present', startedAt: 1 }], [202, { kind: 'present', startedAt: 2 }],
+    [303, { kind: 'present', startedAt: 3 }], [404, { kind: 'present', startedAt: 4 }],
+    [900, { kind: 'unknown' }],
+  ]);
+  const make = (store: typeof storeA, windowKey: string, pid: number, runner: QueuedTurnRunner) =>
+    createSessionQueueWorker({ store, claim: { windowKey, pid }, runner, observe: (p) => observed.get(p) ?? { kind: 'absent' }, now: t.now, timers: t.timers });
+  const firstA = make(storeA, 'A', 101, a.runner);
+  const workerB = make(storeB, 'B', 202, b.runner);
+  let reloadedA: ReturnType<typeof make> | undefined;
+  let secondReload: ReturnType<typeof make> | undefined;
+  try {
+    assert.ok(firstA.submit(sub('sA', 'first')).ok);
+    assert.ok(workerB.submit(sub('sB', 'second')).ok);
+    await t.advance(0);
+    assert.equal(a.runs.length, 1);
+    assert.equal(b.runs.length, 1);
+    a.runs[0]!.spawn({ pid: 900, startedAt: 5 });
+    const oldA = storeA.lease('sA')!;
+    const originalB = storeB.lease('sB')!;
+    firstA.dispose();
+    observed.delete(101);
+    reloadedA = make(storeA, 'A', 303, reload.runner);
+    await t.advance(0);
+    assert.notEqual(storeA.lease('sA')?.epoch, oldA.epoch);
+    assert.equal(storeA.lease('sA')?.cliPid, 900, 'unreadable CLI remains attached');
+    assert.equal(storeB.lease('sB')?.epoch, originalB.epoch);
+    a.runs[0]!.end({ kind: 'done' });
+    await t.advance(LEASE_HEARTBEAT_MS * 2);
+    assert.equal(reload.runs.length, 0, 'recovery observes instead of relaunching');
+    assert.equal(storeA.leases().length, 2, 'late outcome cannot release a recovered live child');
+    observed.delete(900);
+    await t.advance(ACTIVE_POLL_MS);
+    assert.equal(storeA.lease('sA'), undefined);
+    assert.equal(storeB.lease('sB')?.epoch, originalB.epoch);
+
+    assert.ok(reloadedA.submit(sub('sA', 'missing child identity')).ok);
+    await t.advance(0);
+    assert.equal(reload.runs.length, 1);
+    const missing = storeA.lease('sA')!;
+    reloadedA.dispose();
+    observed.delete(303);
+    secondReload = make(storeA, 'A', 404, reload.runner);
+    await t.advance(LEASE_HEARTBEAT_MS * 2);
+    assert.equal(storeA.lease('sA')?.epoch, missing.epoch);
+    assert.equal(reload.runs.length, 1, 'missing spawn evidence keeps the slot reserved');
+    assert.equal(storeB.lease('sB')?.epoch, originalB.epoch);
+  } finally {
+    firstA.dispose();
+    reloadedA?.dispose();
+    secondReload?.dispose();
+    workerB.dispose();
+    storeA.close();
+    storeB.close();
+    r.done();
+  }
+});
 
 test("chat queue worker: the window whose message is at the front takes the lease, runs it through the runner with onSpawn recording the CLI, heartbeats the lease while it runs, finishes it and releases the lease; another window's message at the front is left alone; a submit in one window is seen by another within one poll; a finish that fails is retried on the next poll before any new message is taken; dispose releases the lease when the turn's CLI has exited and leaves it when it still runs; onChange fires after this window's own submit and after another window's commit", async () => {
   const r = repo();

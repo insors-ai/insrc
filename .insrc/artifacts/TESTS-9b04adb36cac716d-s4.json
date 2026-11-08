@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 12,
-        "contentHash": "630a3febeb073aab0c9e4dfa50f19f9d0f4bbfdaee71dc6cc9e59bb2362eaf3c",
-        "at": "2026-11-08T05:38:32.132Z",
+        "number": 13,
+        "contentHash": "629cb291a51f257c87f269bbb681f7101d216b9030f8812c0f64f4bb8d9480e5",
+        "at": "2026-11-08T05:57:52.343Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:38:31.971Z",
+    "updatedAt": "2026-11-08T05:57:52.174Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 12
+    "revision": 13
   },
   "body": {
     "tasks": [
@@ -322,6 +322,59 @@
               },
               {
                 "title": "canonical edits during journal staging or log append are preserved and refuse publication",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "ab57810e9",
+        "ranAt": "2026-11-08T05:57:52.174Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "U3 versioned readers and current IDE common fields",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "I6 permanent retrieval after cleanup/restart and missing locator",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 901,
+            "titles": [
+              {
+                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
+                "result": "pass"
+              },
+              {
+                "title": "fresh coordinator retrieves permanent pages without checkpoint, scan or provider and requires an exact artifact locator",
                 "result": "pass"
               }
             ],

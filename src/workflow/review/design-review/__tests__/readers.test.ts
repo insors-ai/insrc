@@ -17,6 +17,8 @@ import { deriveGates } from '../../../delivery/gate.js';
 import { reviewFindings } from '../../../../cli/services/workflow.js';
 import { createDocsReviewClient } from '../../../../../vscode-plugin/src/chat/docs-review-client.js';
 import { parseDesignRequest } from '../contracts.js';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
 
 async function fixture(t:Parameters<typeof impactFixture>[0]){
  const f=impactFixture(t);const finding={id:'real-finding',severity:'MED' as const,location:'/body/summary',message:'Real chunk concern',evidenceReferences:[f.md]};
@@ -47,6 +49,8 @@ test('fresh coordinator retrieves permanent pages without checkpoint, scan or pr
  const f=await fixture(t);unlinkSync(f.path);
  writeFileSync(join(f.repo,'.insrc/artifacts/LLD-bbbbbbbbbbbbbbbb-s1.log.jsonl'),'corrupt unrelated history');
  const c=new DesignReviewCoordinator({provider:()=>{throw Error('No model');}});
+ const scan=t.mock.method(fs,'readdirSync',()=>{throw Error('Permanent history lookup must not enumerate directories');});syncBuiltinESMExports();
+ t.after(()=>{scan.mock.restore();syncBuiltinESMExports();});
  assert.equal(parseDesignRequest({phase:'progress',repo:f.repo,reviewId:'review-1',attempt:1,artifactPath:f.json}).phase,'progress');
  await assert.rejects(c.progress(f.repo,'review-1',1),{code:'artifact-reference-required'});
  const result=await c.progress(f.repo,'review-1',1,{artifactPath:f.json,includeResult:true});

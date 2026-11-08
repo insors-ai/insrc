@@ -336,10 +336,10 @@ export type HandledResult<R, C> =
 export async function runHandled<R, C>(args: HandledArgs<R, C>): Promise<HandledResult<R, C>> {
 	const decision = decideHandling({ size: args.size, target: args.target, input: args.singleMessages.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n') });
 	let trigger = decision.trigger;
-	// With no evidence to divide the prompt alone is the input: dividing cannot shrink it, so it is sent as one pass.
+	// With no evidence to divide, dividing cannot shrink the prompt: it is sent as one pass, and if it does not fit that is a typed failure.
 	const nothingToDivide = args.blocks.length === 0 && args.reference.length === 0;
 	if (decision.method === 'single-pass' || nothingToDivide) {
-		const limit = nothingToDivide ? { ...inputLimitFor(args.target, 'single'), limit: Number.POSITIVE_INFINITY } : inputLimitFor(args.target, 'single');
+		const limit = inputLimitFor(args.target, 'single');
 		const outcome = await callWithRepair<R>({
 			provider: args.provider, messages: args.singleMessages, schema: args.singleSchema, limit,
 			maxTokens: outputTokensFor(args.target, 'single'), maxAttempts: args.maxAttempts,
@@ -351,6 +351,14 @@ export async function runHandled<R, C>(args: HandledArgs<R, C>): Promise<Handled
 		}
 		const divisible = outcome.kind === 'too-large' || outcome.failure === 'unadmittable';
 		if (!divisible) throw outcome.kind === 'failed' && outcome.cause !== undefined ? outcome.cause : new Error(outcome.kind === 'failed' ? outcome.reason : 'the call failed');
+		// With nothing to divide the prompt alone does not fit: a typed failure, as the configuration is what must change.
+		if (nothingToDivide) {
+			const reason = outcome.kind === 'failed' ? outcome.reason : 'the provider refused the input as too large';
+			throw new HandlingBudgetError(
+				`the prompt alone does not fit a call and there is no evidence to divide: ${reason}; raise the model's context window`,
+				args.found, { partFailures: [{ part: 'single', kind: 'unadmittable', reason }] },
+			);
+		}
 		trigger = 'fit';
 	}
 	return { kind: 'divided', ...(await runDivided({ ...args, trigger })) };

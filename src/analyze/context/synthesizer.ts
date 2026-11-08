@@ -37,7 +37,7 @@ import { ShaperAnswerStepFailedError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import type { AdmissionTarget } from './handling.js';
 import { assembleBundle } from './handling-adapters.js';
-import { applyReply } from './answer-progress.js';
+import { applyReply, handlingOf } from './answer-progress.js';
 import type { AnswerProgress, FinalizedAnswerTurn } from './answer-progress.js';
 import type { BundleLayers, BundleNarrative } from './handling-adapters.js';
 import { runHandled } from './handling-parts.js';
@@ -300,7 +300,12 @@ export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecution
 export function finalizeSynthesize(raw: unknown, execution: ConnectionExecutionContext | undefined, progress: AnswerProgress, ctx?: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn;
 export function finalizeSynthesize(raw: unknown, execution?: ConnectionExecutionContext, progress?: AnswerProgress, ctx?: { readonly executed: ExecutedPlan }): Omit<AnalyzeContextBundle, 'meta'> | FinalizedAnswerTurn {
 	if (progress !== undefined && progress.mode === 'partitioned') {
-		return applyReply(progress, raw, ctx ?? { executed: { plan: { answerType: '', synthesisHint: '', explorations: [] }, results: [], totalMs: 0, totalCached: 0 } as unknown as ExecutedPlan });
+		return applyReply(progress, raw, ctx ?? { executed: { plan: { answerType: '', synthesisHint: '', explorations: [] }, results: [], totalMs: 0, totalCached: 0 } as unknown as ExecutedPlan }, execution);
+	}
+	if (progress !== undefined) {
+		// An answer in one reply is finished by its one reply; the same shape comes back as for an answer in parts.
+		const layers = finalizeSynthesize(raw, execution);
+		return { kind: 'final', layers, handling: handlingOf(progress) };
 	}
 	const strippedSchema = stripMetaFromSchema(
 		ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>,

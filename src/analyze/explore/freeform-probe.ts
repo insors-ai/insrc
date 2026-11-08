@@ -197,7 +197,7 @@ export async function runFreeformProbe(
 			throw new LookupFailedError(
 				`freeform.probe: the answer could not be written: ${err.message}`,
 				err.toolResults,
-				{ cause: err.cause, handling: err.handling, answerStepReason: err.reason },
+				{ cause: err.cause, handling: err.handling, answerStepReason: err.reason, partFailures: err.partFailures },
 			);
 		}
 		// Anything else (LLM unavailable, schema unrecoverable, ...) --

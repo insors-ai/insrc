@@ -284,3 +284,25 @@ test('a single pass keeps the legacy route: the original error is thrown as it i
 	assert.equal(refused.kind === 'divided' ? refused.handling.trigger : '', 'fit');
 });
 
+test('dedupe drops only a repeated whole entry: distinct files whose names share a prefix or hold spaces are all kept, and the infra family lists are deduped', () => {
+	const replyOf = (surface: string, structure = ''): Reply => ({ system: 's', focus: 'f', summary: 'sum', structure, surface, artefacts: '', upstream: '' });
+	const part = (id: string, ordinal: number, reply: Reply) => ({ id, ordinal, reply });
+	// Distinct paths with spaces: one part, and two parts.
+	const spaced = replyOf('## Related docs\ndocs/Model One.md :: One\ndocs/Model Two.md :: Two\ndocs/Model One.md :: One again');
+	const one = assembleBundle('docs', [part('part 1', 0, spaced)], undefined);
+	assert.deepEqual(one.surface.split('\n').slice(1), ['docs/Model One.md :: One', 'docs/Model Two.md :: Two']);
+	const two = assembleBundle('docs', [part('part 1', 0, replyOf('docs/a b.md :: x\ndocs/a c.md :: y')), part('part 2', 1, replyOf('docs/a b.md :: x again\ndocs/a d.md :: z'))], undefined);
+	assert.deepEqual(two.surface.split('\n').filter(l => l.startsWith('docs/')), ['docs/a b.md :: x', 'docs/a c.md :: y', 'docs/a d.md :: z']);
+	// Infra: overlapping manifests found in two parts are listed once under their family, in the structure layer too.
+	const family = (...files: string[]) => `## By family\n### Kubernetes\n${files.map(f => `- Deployment — ${f}`).join('\n')}\n## Diagnostics\nnone`;
+	const infra = assembleBundle('infra', [
+		part('part 1', 0, replyOf('deploy/a.yaml\ndeploy/b.yaml', family('deploy/a.yaml', 'deploy/b.yaml'))),
+		part('part 2', 1, replyOf('deploy/b.yaml\ndeploy/c.yaml', family('deploy/b.yaml', 'deploy/c.yaml'))),
+	], undefined);
+	const listed = infra.structure.split('\n').filter(l => l.startsWith('- Deployment'));
+	assert.deepEqual(listed, ['- Deployment — deploy/a.yaml', '- Deployment — deploy/b.yaml', '- Deployment — deploy/c.yaml']);
+	assert.deepEqual(infra.surface.split('\n').filter(l => l.startsWith('deploy/')), ['deploy/a.yaml', 'deploy/b.yaml', 'deploy/c.yaml']);
+	// A line under Diagnostics is not a deduped list.
+	assert.equal(infra.structure.split('\n').filter(l => l === 'none').length, 2);
+});
+

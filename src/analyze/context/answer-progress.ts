@@ -18,10 +18,12 @@
 
 import type { AnalyzeScope, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { StructuredSchema } from '../../shared/types.js';
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ExecutedPlan } from '../explore/types.js';
 import { evidenceBlocks, planReference, selectSharedContext } from './dependency.js';
 import type { ReferenceRound } from './dependency.js';
+import { reportFromLookups } from '../explore/answer-report.js';
 import { HandlingBudgetError } from './answer-step-error.js';
 import type { AnswerStepFound } from './driver.js';
 import type { PartFailure } from './failure-data.js';
@@ -96,8 +98,9 @@ export interface AnswerTurnPrompt {
 	readonly group?:    number;
 }
 
+/** What the lookups returned and the report derived from them, so a failure keeps what they found. */
 const found = (executed: ExecutedPlan): AnswerStepFound =>
-	({ results: executed.results, report: { completeness: { complete: true, incomplete: [], failed: [] } } });
+	({ results: executed.results, report: reportFromLookups(executed.results) });
 
 /**
  * The initial progress. The step tool has no provider, so the input limit is the default (60,000 characters). The
@@ -139,8 +142,23 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	return progress;
 }
 
-/** The prompt of the pending turn. */
+/**
+ * The prompt of the pending turn. The turn is measured as it is rendered (envelopes, reference wrapper, its real id)
+ * against the limit it was planned for, so a turn that does not fit is a typed failure, not a call the client's model
+ * would refuse.
+ */
 export function currentTurn(progress: AnswerProgress, args: AnswerArgs): AnswerTurnPrompt {
+	const turn = renderTurn(progress, args);
+	const limit = progress.mode === 'single' || progress.pending === undefined || progress.limit === undefined ? inputLimitFor({ kind: 'unknown' }, 'single') : progress.limit;
+	const size = measureInput(`${turn.systemPrompt}\n${turn.userTurn}`, limit.unit);
+	if (size > limit.limit) {
+		const detail = `the ${turn.kind} turn is ${size} ${limit.unit} and the limit is ${limit.limit}`;
+		throw new HandlingBudgetError(`no turn of the answer fits: ${detail}`, found(args.executed), { partFailures: [{ part: turn.id ?? turn.kind, kind: 'unadmittable', reason: detail }] });
+	}
+	return turn;
+}
+
+function renderTurn(progress: AnswerProgress, args: AnswerArgs): AnswerTurnPrompt {
 	const adapter = bundleAdapter(loadSynthesizePrompt(args.target), args.intent, args.executed);
 	const pending = progress.pending;
 	if (progress.mode === 'single' || pending === undefined) {
@@ -185,18 +203,18 @@ export type FinalizedAnswerTurn =
 	| { readonly kind: 'next';  readonly progress: AnswerProgress };
 
 /** Validates a reply against the pending turn's schema; throws SynthesizerSchemaUnrecoverable. */
-function validate<T>(schema: StructuredSchema, raw: unknown): T {
-	const result = validateAgainstSchema<T>(schema, raw);
+function validate<T>(schema: StructuredSchema, raw: unknown, execution?: ConnectionExecutionContext): T {
+	const result = validateAgainstSchema<T>(schema, raw, execution);
 	if (!result.ok) throw new SynthesizerSchemaUnrecoverable(result.errors);
 	return result.value;
 }
 
 /** Takes the client's reply to the pending turn and returns the next turn's progress, or the finished answer. */
-export function applyReply(progress: AnswerProgress, raw: unknown, ctx: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn {
+export function applyReply(progress: AnswerProgress, raw: unknown, ctx: { readonly executed: ExecutedPlan }, execution?: ConnectionExecutionContext): FinalizedAnswerTurn {
 	const pending = progress.pending;
 	if (progress.mode === 'single' || pending === undefined) throw new Error('applyReply: the answer is not in parts');
 	if (pending.kind === 'part') {
-		const reply = validate<Reply>(partSchema(), raw);
+		const reply = validate<Reply>(partSchema(), raw, execution);
 		const roundReplies = [...progress.roundReplies, reply];
 		if (pending.round + 1 < progress.rounds.length) {
 			return { kind: 'next', progress: { ...progress, roundReplies, retries: 0, pending: { kind: 'part', index: pending.index, round: pending.round + 1 } } };
@@ -206,7 +224,7 @@ export function applyReply(progress: AnswerProgress, raw: unknown, ctx: { readon
 	}
 	// The client replies with the registered bundle argument: a combine reply fills system, focus and summary and leaves
 	// the four evidence layers empty; only the narrative is read from it.
-	const full = validate<Reply>(partSchema(), raw);
+	const full = validate<Reply>(partSchema(), raw, execution);
 	const narrative: BundleNarrative = { system: full.system, focus: full.focus, summary: full.summary };
 	const stageOutputs = [...progress.stageOutputs, narrative];
 	const groups = Math.ceil(progress.stageItems.length / progress.groupSize);

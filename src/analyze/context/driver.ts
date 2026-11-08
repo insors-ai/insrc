@@ -103,7 +103,8 @@ import { applyHandling, parseHandling } from '../completeness.js';
 import type { HandlingReport } from '../completeness.js';
 import { emitDivided } from './final-emit.js';
 import { ANSWER_STEP_CODE_PREFIX } from '../explore/lookup-failed.js';
-import { decideHandling } from './handling.js';
+import { decideHandling, inputLimitFor } from './handling.js';
+import { callWithRepair } from './handling-call.js';
 import type { AnswerReport, PartialFinding } from '../completeness.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { measureLookupResults, measureResolvedScope } from '../measure.js';
@@ -872,13 +873,16 @@ export class ShaperFinalEmitFailed extends Error {
 	readonly reason:       AnswerStepFailureReason;
 	readonly toolResults:  readonly PartialFinding[];
 	readonly handling:     HandlingReport | undefined;
+	/** One entry per part of a divided answer that was not covered, with its cause chain. */
+	readonly partFailures: readonly PartFailure[] | undefined;
 
-	constructor(reason: AnswerStepFailureReason, toolResults: readonly PartialFinding[], cause: Error, handling?: HandlingReport) {
+	constructor(reason: AnswerStepFailureReason, toolResults: readonly PartialFinding[], cause: Error, handling?: HandlingReport, partFailures?: readonly PartFailure[]) {
 		super(cause.message, { cause });
 		this.name = 'ShaperFinalEmitFailed';
 		this.reason = reason;
 		this.toolResults = toolResults;
 		this.handling = handling;
+		this.partFailures = partFailures;
 	}
 }
 
@@ -960,7 +964,7 @@ export async function runShaperToolLoop(
 		if (err instanceof ConnectionExecutionError) throw err;
 		// Whatever way the answer failed, the tool results are kept and the reason told apart.
 		if (err instanceof ShaperAnswerStepFailedError) {
-			throw new ShaperFinalEmitFailed(err.reason, gathered, err, parseHandling(err.found.report.handling));
+			throw new ShaperFinalEmitFailed(err.reason, gathered, err, parseHandling(err.found.report.handling), err.partFailures);
 		}
 		if (err instanceof ShaperLlmUnavailableError) throw new ShaperFinalEmitFailed('model-failed', gathered, err);
 		if (err instanceof ShaperSchemaUnrecoverable) throw new ShaperFinalEmitFailed('invalid-answer', gathered, err);
@@ -1078,15 +1082,37 @@ async function runFinalStructuredEmit(
 			size, target, input: [...messages, { role: 'user' as const, content: instruction }]
 				.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n'),
 		});
+		let trigger = decision.trigger;
 		if (decision.method === 'single-pass') {
-			onHandling?.({ method: 'single-pass', parts: 1, notCovered: [], budgets: [decision.budget] });
-		} else {
-			const schema = modelFacingBundleSchema({ withMeta: false }) as StructuredSchema;
-			const found: AnswerStepFound = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
-			const divided = await emitDivided({ provider, target, messages, schema, found, trigger: decision.trigger, maxAttempts: structuredOutputRetries, execution });
-			onHandling?.(divided.handling);
-			return divided.layers as unknown as AnalyzeContextBundle;
+			// The admitted single pass goes through the shared helper: admission before every attempt, a bounded repair
+			// note, and a division of the input when the provider refuses it as too large.
+			const outcome = await callWithRepair<AnalyzeContextBundle>({
+				provider, messages: [...messages, { role: 'user' as const, content: instruction }],
+				schema: modelFacingBundleSchema({ withMeta: true }) as StructuredSchema, limit: inputLimitFor(target, 'single'),
+				maxTokens: maxOutputTokens, maxAttempts: structuredOutputRetries, connectionExecution: execution,
+			});
+			if (outcome.kind === 'ok') {
+				onHandling?.({ method: 'single-pass', parts: 1, notCovered: [], budgets: [decision.budget] });
+				return outcome.value;
+			}
+			const divisible = outcome.kind === 'too-large' || outcome.failure === 'unadmittable';
+			if (!divisible) {
+				assertAnalysisConnectionExecution(execution);
+				const cause = outcome.kind === 'failed' ? outcome.cause : undefined;
+				if (cause instanceof ConnectionExecutionError) throw cause;
+				if (outcome.kind === 'failed' && outcome.failure === 'call-failed') {
+					const errClass = classifyOllamaError(cause, 'final structured emit');
+					if (errClass instanceof ShaperLlmUnavailableError) throw errClass;
+				}
+				throw new ShaperSchemaUnrecoverable(structuredOutputRetries, [outcome.kind === 'failed' ? outcome.reason : 'the call failed']);
+			}
+			trigger = 'fit';
 		}
+		const schema = modelFacingBundleSchema({ withMeta: false }) as StructuredSchema;
+		const found: AnswerStepFound = { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } };
+		const divided = await emitDivided({ provider, target, messages, schema, found, trigger, maxAttempts: structuredOutputRetries, execution });
+		onHandling?.(divided.handling);
+		return divided.layers as unknown as AnalyzeContextBundle;
 	}
 
 	// Live-preview state: accumulate the incoming stream, keep the tail
@@ -1725,9 +1751,11 @@ async function tryExplorationPipeline(
 	if (bridged !== undefined && bridged.output.type === 'failed') {
 		const reason = bridged.output.errorCode.slice(ANSWER_STEP_CODE_PREFIX.length) as AnswerStepFailureReason;
 		const withHandling: AnswerStepFound = bridged.output.handling === undefined ? found : { ...found, report: applyHandling(found.report, bridged.output.handling) };
+		const partFailures = bridged.output.partFailures;
+		const extra = partFailures !== undefined ? { partFailures } : undefined;
 		throw reason === 'input-does-not-fit'
-			? new HandlingBudgetError(bridged.output.message, withHandling)
-			: new ShaperAnswerStepFailedError(reason, bridged.output.message, withHandling);
+			? new HandlingBudgetError(bridged.output.message, withHandling, extra)
+			: new ShaperAnswerStepFailedError(reason, bridged.output.message, withHandling, extra);
 	}
 	const freeformOnly = extractSoleFreeformResult(executed);
 	if (freeformOnly !== null) {

@@ -114,8 +114,11 @@ export async function handleBundle(
 	try {
 		layers = preset ?? finalizeSynthesize(input.bundle, execution);
 	} catch (err) {
-		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('bundle-schema', 'Temporary analysis bundle is invalid.', true); }
+		const temporary = execution?.mode === 'session-memory';
+		if (temporary) { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); }
 		if (err instanceof SynthesizerSchemaUnrecoverable) {
+			// A temporary request is told no more than that the bundle is invalid; the wording of the schema errors stays out.
+			const said = temporary ? 'Temporary analysis bundle is invalid.' : err.message;
 			// A state with progress asks the same turn again, with a new token and a retry note, up to the retry bound;
 			// past it the state is released and the failure is final. A state without progress keeps the error it always had.
 			if (answer !== undefined && answer.mode === 'single' && state.executed !== undefined) {
@@ -127,11 +130,12 @@ export async function handleBundle(
 						executed: state.executed, target: state.synthesizerKey,
 					});
 					const token = await reencodeState(input.state, { ...state, answer: progress }, execution);
-					return turnOutput(prepared, undefined, token, { attempt: progress.retries, reason: err.message });
+					return turnOutput(prepared, undefined, token, { attempt: progress.retries, reason: said });
 				}
 				await releaseState(input.state, execution);
-				return errorResult('bundle-schema', `emitted bundle failed schema validation after ${bound} attempts: ${err.message}.`, false);
+				return errorResult('bundle-schema', temporary ? said : `emitted bundle failed schema validation after ${bound} attempts: ${said}.`, false);
 			}
+			if (temporary) return errorResult('bundle-schema', said, true);
 			return errorResult(
 				'bundle-schema',
 				`emitted bundle failed schema validation: ${err.message}. ` +
@@ -139,6 +143,7 @@ export async function handleBundle(
 				true,
 			);
 		}
+		if (temporary) return errorResult('bundle-schema', 'Temporary analysis bundle is invalid.', true);
 		throw err;
 	}
 
@@ -235,8 +240,10 @@ async function handlePartReply(
 			outcome = finalizeSynthesize(input.bundle, execution, answer, ctx);
 		} catch (err) {
 			if (!(err instanceof SynthesizerSchemaUnrecoverable)) throw err;
-			outcome = recordInvalid(answer, err.message, loadAnalyzeConfig().shaper.structuredOutputRetries, ctx);
-			if (outcome.kind === 'retry') return next(outcome.progress, { attempt: outcome.progress.retries, reason: err.message });
+			// A temporary request is told no more than that the reply is invalid.
+			const said = execution?.mode === 'session-memory' ? 'Temporary analysis bundle is invalid.' : err.message;
+			outcome = recordInvalid(answer, said, loadAnalyzeConfig().shaper.structuredOutputRetries, ctx);
+			if (outcome.kind === 'retry') return next(outcome.progress, { attempt: outcome.progress.retries, reason: said });
 		}
 	} catch (err) {
 		if (!(err instanceof ShaperAnswerStepFailedError)) throw err;

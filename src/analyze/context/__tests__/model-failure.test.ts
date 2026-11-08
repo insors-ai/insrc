@@ -255,6 +255,8 @@ test('the two prompt-missing errors carry the prompt path', () => {
 /** A real OllamaProvider whose client fails with a socket error mid-stream. */
 function ollamaWithBrokenSocket(): LLMProvider {
 	const p = new OllamaProvider();
+	// A window the answer's input fits, so the failure under test is the socket and not the admission rule.
+	(p as unknown as { numCtx: number }).numCtx = 65_536;
 	(p as unknown as { client: unknown }).client = {
 		chat: async () => (async function* () {
 			yield { message: { content: '{' }, done: false };

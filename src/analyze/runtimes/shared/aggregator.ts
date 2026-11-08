@@ -184,6 +184,11 @@ function upstreamBlocksOf(map: ReadonlyMap<string, readonly UpstreamOutput[]>): 
 		.flatMap(name => (map.get(name) ?? []).flatMap(o => upstreamBlocks({ taskId: o.taskId, template: o.template, params: o.params, value: o.value })));
 }
 
+/** A combine reply holds one summary, capped like a part's so a staged combine stays inside its call. */
+export const AGGREGATE_COMBINE_SCHEMA: StructuredSchema = {
+	type: 'object', additionalProperties: false, required: ['summary'], properties: { summary: { type: 'string', minLength: 20, maxLength: 2_000 } },
+} as unknown as StructuredSchema;
+
 /**
  * The prompts of a report written in parts. The absent-input section is part
  * of every part and every combine call, so a part never speaks of an input it
@@ -198,7 +203,7 @@ function aggregateAdapter(promptContent: string, args: RunAggregatorArgs): PartA
 	partSchema.properties.summary = { ...partSchema.properties.summary, maxLength: SUMMARY_CAP };
 	return {
 		partSchema: partSchema as unknown as StructuredSchema,
-		combineSchema: { type: 'object', additionalProperties: false, required: ['summary'], properties: { summary: { type: 'string', minLength: 20 } } },
+		combineSchema: AGGREGATE_COMBINE_SCHEMA,
 		renderPart: (part) => [
 			{ role: 'system', content: system },
 			{ role: 'user', content: head + `Upstream task outputs of this part (${part.id}); the report is written in parts and this is one of them:\n\n`

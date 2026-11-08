@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import type { Completeness, HandlingReport, PartialFinding } from '../completeness.js';
+import type { PartFailure } from '../context/failure-data.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
@@ -798,6 +799,8 @@ export interface FailedExplorationOutput {
 	readonly partial?:  readonly PartialFinding[] | undefined;
 	/** How the answer step was handled, when the lookup failed because its final answer could not be written. */
 	readonly handling?:  HandlingReport | undefined;
+	/** The parts of a divided answer that were not covered, with their cause chains. */
+	readonly partFailures?: readonly PartFailure[] | undefined;
 }
 
 export type ExplorationOutput =

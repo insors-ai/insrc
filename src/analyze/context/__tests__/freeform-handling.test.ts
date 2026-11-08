@@ -17,6 +17,7 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import { ModelCallFailedError, ModelResponseShapeError } from '../../../agent/providers/model-call-error.js';
 import { closeGraphStore, setGraphStorePath } from '../../../db/graph/store.js';
 import { addRepo } from '../../../db/repos.js';
@@ -177,6 +178,8 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 		const out = failedOutput(freeform, thrown);
 		assert.equal(out.errorCode, `answer-step:${reason}`);
 		assert.deepEqual(out.handling, thrown.handling);
+		assert.ok((thrown.partFailures?.length ?? 0) >= 1, 'each part that was not covered is named with its cause');
+		assert.deepEqual(out.partFailures, thrown.partFailures, 'the part failures cross the executor bridge');
 
 		// Through the real executor: the failure survives as a failed output; then the real context driver ends the request in the
 		// matching answer-step failure, with the tool results and the report, and the answer is not synthesized again.
@@ -206,7 +209,30 @@ test('HandlingBudgetError, model-failed and invalid-answer become LookupFailedEr
 		assert.equal(failed?.type === 'failed' ? failed.partial?.length : 0, 1, 'the tool results are kept');
 		assert.deepEqual(err.found.report.handling?.notCovered.map(n => n.part), thrown.handling?.notCovered.map(n => n.part), 'the report carries how the answer was handled');
 		assert.equal(err.found.report.completeness.complete, false);
+		assert.deepEqual(err.partFailures?.map(f => [f.part, f.kind]), thrown.partFailures?.map(f => [f.part, f.kind]), 'the rebuilt typed error carries every part failure');
+		if (reason === 'model-failed') assert.ok(err.partFailures?.every(f => f.kind === 'call-failed' && f.cause !== undefined), 'with its cause chain');
 	}
+});
+
+test('an admitted single-pass final answer goes through the shared helper: one attempt per call with no provider retry, and a size refusal divides it', async () => {
+	const seen: Array<{ maxAttempts?: number; internalRetry?: boolean }> = [];
+	let first = true;
+	const p = {
+		inputBudgetChars: 76_000,
+		completeStructured: async (messages: LLMMessage[], schema: { required?: string[] }, options: { maxAttempts?: number; internalRetry?: boolean }) => {
+			seen.push(options);
+			if ((schema.required ?? []).length === 3) return { system: 'S', focus: 'F', summary: 'combined summary of the answer' };
+			if (first) { first = false; throw new InputTooLargeError('too large', 'Prompt is too long', { maxChars: 1_000, actualChars: 2_000 }); }
+			const last = messages[messages.length - 1];
+			return { ...LAYERS, summary: `covers ${typeof last?.content === 'string' ? last.content.length : 0}` };
+		},
+	} as unknown as LLMProvider;
+	let handling: HandlingReport | undefined;
+	const bundle = await emit(p, conversation(3, 300), 3, 20_480, undefined, execution(), h => { handling = h; }, 'S');
+	assert.equal(bundle.system, 'sys', 'the part answer is returned');
+	assert.equal(handling?.method, 'partitioned');
+	assert.equal(handling?.trigger, 'fit');
+	assert.ok(seen.every(o => o.maxAttempts === 1 && o.internalRetry === false), 'the helper owns the retries');
 });
 
 test('a temporary (session-memory) request keeps only the reason of a failed final answer, and the request still ends without a second synthesis', () => {

@@ -17,6 +17,7 @@
 
 import type { HandlingReport, PartialFinding } from '../completeness.js';
 import type { AnswerStepFailureReason } from '../context/driver.js';
+import type { PartFailure } from '../context/failure-data.js';
 
 /** The prefix of a failed lookup's error code when its final answer could not be written; the reason follows. */
 export const ANSWER_STEP_CODE_PREFIX = 'answer-step:';
@@ -27,6 +28,8 @@ export class LookupFailedError extends Error {
 	readonly handling?: HandlingReport | undefined;
 	/** The answer-step reason the failure carried, when the failure is that of the answer-writing step. */
 	readonly answerStepReason?: AnswerStepFailureReason | undefined;
+	/** The parts of a divided answer that were not covered, with their cause chains. */
+	readonly partFailures?: readonly PartFailure[] | undefined;
 
 	constructor(
 		message: string,
@@ -35,6 +38,7 @@ export class LookupFailedError extends Error {
 			readonly cause?:            unknown;
 			readonly handling?:         HandlingReport | undefined;
 			readonly answerStepReason?: AnswerStepFailureReason | undefined;
+			readonly partFailures?:     readonly PartFailure[] | undefined;
 		},
 	) {
 		super(message, options?.cause !== undefined ? { cause: options.cause } : undefined);
@@ -42,6 +46,7 @@ export class LookupFailedError extends Error {
 		this.partial = partial;
 		this.handling = options?.handling;
 		this.answerStepReason = options?.answerStepReason;
+		this.partFailures = options?.partFailures;
 	}
 }
 

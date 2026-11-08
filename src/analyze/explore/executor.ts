@@ -709,6 +709,7 @@ export function failedOutput(exp: Exploration, err: unknown, execution?: import(
 		message:   errorMessage(err),
 		...(partial.length > 0 ? { partial } : {}),
 		...(err instanceof LookupFailedError && err.handling !== undefined ? { handling: err.handling } : {}),
+		...(err instanceof LookupFailedError && err.partFailures !== undefined ? { partFailures: err.partFailures } : {}),
 	};
 }
 

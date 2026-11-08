@@ -79,8 +79,8 @@ export const DEPENDENCY: Readonly<Record<SynthesizerPromptKey, DependencyEntry>>
 	infra: {
 		referenceTypes: [],
 		anchorExtract:  false,
-		dedupe:         [{ section: 'surface', key: 'file' }],
-		reason:         'No comparison between outputs is stated; the surface lists each manifest file once.',
+		dedupe:         [{ section: 'By family', key: 'file' }, { section: 'surface', key: 'file' }],
+		reason:         'No comparison between outputs is stated; the family lists and the surface list each manifest file once.',
 	},
 });
 

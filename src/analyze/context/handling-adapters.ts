@@ -29,9 +29,17 @@ export interface BundleNarrative {
 
 const EVIDENCE_LAYERS = ['structure', 'surface', 'artefacts', 'upstream'] as const;
 
-/** The key of a list line: the first path-like token in it, or none. */
+/**
+ * The key of a list entry: the whole file or path the entry names, not a part of it. An entry is
+ * `<file> :: <heading>`, `<kind> — <path>`, `` `<path>` `` or the path alone, with or without a bullet; a path may hold
+ * spaces. A line that is none of these (prose) is its own key, so only an identical line is ever dropped.
+ */
 function lineKey(line: string): string | undefined {
-	return /[\w@.-]+(?:\/[\w@.-]+)+|[\w@-]+\.[a-z]{1,6}\b/.exec(line)?.[0];
+	const entry = line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim();
+	if (entry.length === 0) return undefined;
+	const head = entry.includes(' :: ') ? entry.slice(0, entry.indexOf(' :: ')) : entry;
+	const tail = head.includes(' — ') ? head.slice(head.lastIndexOf(' — ') + 3) : head;
+	return tail.replace(/^`|`$/g, '').trim() || undefined;
 }
 
 /**
@@ -47,8 +55,9 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 	let section: string | undefined = layer === 'surface' ? 'surface' : undefined;
 	const seen = new Map<string, Set<string>>();
 	for (const line of lines) {
-		const heading = /^#{2,3}\s+(.*)$/.exec(line);
-		if (heading !== null && layer !== 'surface') section = heading[1];
+		// A `## ` heading names the sub-section; a `### ` heading (a part, a family) stays inside it.
+		const heading = /^(#{2,3})\s+(.*)$/.exec(line);
+		if (heading !== null && heading[1] === '##' && layer !== 'surface') section = heading[2];
 		const rule = keys.find(k => (k.section === 'surface' ? layer === 'surface' : section !== undefined && section.includes(k.section)));
 		const key = rule === undefined || heading !== null ? undefined : lineKey(line);
 		if (rule === undefined || key === undefined) { out.push(line); continue; }

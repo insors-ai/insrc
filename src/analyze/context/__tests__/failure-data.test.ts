@@ -82,3 +82,26 @@ test('typed and plain shapes, 3-level cause bound, non-Error cause as string, JS
 		assert.deepEqual(JSON.parse(text), d);
 	}
 });
+
+test('an object reached by two routes is kept in both places; only an object that contains itself is a cycle', () => {
+	const shared = { dir: 'docs', nested: { depth: 1 } };
+	const twice: AggregateInputRecord[] = [
+		{ taskId: 't01', template: 'a', params: shared, value: { from: shared } },
+		{ taskId: 't02', template: 'b', params: shared, value: 2 },
+	];
+	const data = failureData(new ShaperAnswerStepFailedError('model-failed', 'd', found, { upstream: twice }));
+	assert.equal(data.kind, 'answer-step');
+	if (data.kind !== 'answer-step') return;
+	assert.deepEqual(data.upstream[0]?.params, shared);
+	assert.deepEqual(data.upstream[1]?.params, shared, 'the second record keeps its params');
+	assert.deepEqual((data.upstream[0]?.value as { from: unknown }).from, shared);
+	assert.deepEqual(JSON.parse(JSON.stringify(data)).upstream, JSON.parse(JSON.stringify(twice)));
+	// A real cycle is still cut, and a toJSON object is serialised as JSON.stringify would.
+	const loop: Record<string, unknown> = { name: 'loop', at: new Date('2026-01-01T00:00:00.000Z') };
+	loop['self'] = loop;
+	const cut = failureData(new ShaperAnswerStepFailedError('model-failed', 'd', found, { upstream: [{ taskId: 't9', template: 'x', params: {}, value: loop }] }));
+	const v = cut.kind === 'answer-step' ? (cut.upstream[0]?.value as Record<string, unknown>) : {};
+	assert.equal(v['self'], '[circular]');
+	assert.equal(v['at'], '2026-01-01T00:00:00.000Z');
+});
+

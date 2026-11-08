@@ -71,20 +71,32 @@ export function causeOf(err: unknown, depth = MAX_CAUSE_DEPTH): FailureCause | u
 	return { name: err.name, message: err.message, ...(cause !== undefined ? { cause } : {}) };
 }
 
-/** A copy of `value` that is plain JSON: no Error, function, bigint or cycle survives. */
+/**
+ * A copy of `value` that is plain JSON: no Error, function, bigint or cycle survives. Only an object that contains
+ * itself is a cycle; an object reached twice by two routes (two records sharing one `params`) is copied twice.
+ */
 function jsonSafe<T>(value: T): T {
-	const seen = new WeakSet<object>();
-	const text = JSON.stringify(value, (_key, v: unknown) => {
+	const ancestors: object[] = [];
+	const walk = (v: unknown): unknown => {
 		if (typeof v === 'bigint') return v.toString();
-		if (typeof v === 'function') return undefined;
+		if (typeof v === 'function' || typeof v === 'symbol' || v === undefined) return undefined;
+		if (v === null || typeof v !== 'object') return v;
+		if (ancestors.includes(v)) return '[circular]';
 		if (v instanceof Error) return { name: v.name, message: v.message };
-		if (typeof v === 'object' && v !== null) {
-			if (seen.has(v)) return '[circular]';
-			seen.add(v);
-		}
-		return v;
-	});
-	return (text === undefined ? undefined : JSON.parse(text)) as T;
+		const toJSON = (v as { toJSON?: unknown }).toJSON;
+		if (typeof toJSON === 'function') return walk((toJSON as () => unknown).call(v));
+		ancestors.push(v);
+		try {
+			if (Array.isArray(v)) return v.map(item => walk(item) ?? null);
+			const out: Record<string, unknown> = {};
+			for (const [k, item] of Object.entries(v)) {
+				const copy = walk(item);
+				if (copy !== undefined) out[k] = copy;
+			}
+			return out;
+		} finally { ancestors.pop(); }
+	};
+	return walk(value) as T;
 }
 
 /** The value kept for an aggregate task's failure. */

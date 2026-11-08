@@ -296,3 +296,19 @@ test("isModelCallFailure recognises 'vibe exited with' with and without the retr
 		assert.equal(isModelCallFailure(new Error(text)), true, text);
 	}
 });
+
+test("classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix", () => {
+	const vibe = new Error('vibe exited with 1. stderr=API Error: overloaded');
+	const out = aggregatorClassify(vibe);
+	assert.match(out.message, /^aggregator-llm-unavailable: /);
+	assert.equal(out.cause, vibe);
+	const claude = new Error('claude exited with 1.');
+	assert.match(aggregatorClassify(claude).message, /^aggregator-llm-unavailable: /);
+	assert.equal(aggregatorClassify(claude).cause, claude);
+	const shape = new ModelResponseShapeError('reply failed validation', ['bad']);
+	const schema = aggregatorClassify(shape);
+	assert.match(schema.message, /^aggregator-schema-unrecoverable: reply failed validation/);
+	assert.equal(schema.cause, shape);
+	assert.match(aggregatorClassify('plain').message, /^aggregator-internal: plain/);
+	assert.equal(aggregatorClassify('plain').cause, 'plain');
+});

@@ -352,9 +352,10 @@ function resolveRelativeToInsrcRoot(relativePath: string): string {
 // ---------------------------------------------------------------------------
 
 function classifyError(err: unknown): Error {
-	if (!(err instanceof Error)) return new Error(`aggregator-internal: ${String(err)}`);
-	if (isModelCallFailure(err)) return new Error(`aggregator-llm-unavailable: ${modelCallFailureDetail(err)}`);
-	return new Error(`aggregator-schema-unrecoverable: ${err.message}`);
+	if (!(err instanceof Error)) return new Error(`aggregator-internal: ${String(err)}`, { cause: err });
+	// The original error is kept as the cause, so the stored failure can say what the provider said.
+	if (isModelCallFailure(err)) return new Error(`aggregator-llm-unavailable: ${modelCallFailureDetail(err)}`, { cause: err });
+	return new Error(`aggregator-schema-unrecoverable: ${err.message}`, { cause: err });
 }
 
 // ---------------------------------------------------------------------------

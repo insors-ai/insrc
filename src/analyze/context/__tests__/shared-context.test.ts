@@ -176,7 +176,7 @@ interface SiteReply { summary: string; sites: string[] }
 const siteAdapter: PartAdapter<SiteReply, { summary: string }> = {
 	partSchema: { kind: 'part' }, combineSchema: { kind: 'combine' },
 	renderPart: (part, round) => [{ role: 'user', content: `PART ${part.id}\nRULE:\n${round.rendered}\nSITES:\n${part.sections.map(renderSection).join('\n\n')}` }],
-	renderCombine: (summaries, round) => [{ role: 'user', content: `COMBINE\nRULE:\n${round.rendered}\n${summaries.map(x => x.summary).join('\n')}` }],
+	renderCombine: (summaries, round, more) => [{ role: 'user', content: `COMBINE\nMORE:${more}\nRULE:\n${round.rendered}\n${summaries.map(x => x.summary).join('\n')}` }],
 	summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
 	mergeRounds: rs => ({ summary: rs.map(r => r.summary).join(' '), sites: rs.flatMap(r => r.sites) }),
 };
@@ -229,6 +229,10 @@ test('adherence regression with rule and code sites forced into separate parts, 
 	const rounds = partCalls / big.result.covered.length;
 	assert.ok(Number.isInteger(rounds) && rounds > 1, `each part is called once per round (${rounds})`);
 	assert.equal(big.result.covered.flatMap(c => c.reply.sites).length, 8 * rounds, 'each round classifies each site');
+	// A combine call carries the first round and says how many more there are: it reads summaries that each saw every round.
+	const combines = big.prompts.filter(p => p.startsWith('COMBINE'));
+	assert.ok(combines.length >= 1);
+	for (const c of combines) assert.ok(c.includes(`MORE:${rounds - 1}`) && /RULE:\n\[/.test(c));
 	assert.equal(new Set(big.result.covered.flatMap(c => c.reply.sites)).size, 8);
 
 	// A reference whose own envelope cannot fit: the error names the reference context.

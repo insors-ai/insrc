@@ -21,6 +21,7 @@
 
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
 import { planReference, pairPartsWithReference } from './dependency.js';
 import type { ReferencePlan, ReferenceRound } from './dependency.js';
@@ -28,7 +29,7 @@ import { HandlingBudgetError, ShaperAnswerStepFailedError } from './driver.js';
 import type { AnswerStepFound } from './driver.js';
 import { causeOf } from './failure-data.js';
 import type { AggregateInputRecord, PartFailure } from './failure-data.js';
-import { inputLimitFor, measureInput, outputTokensFor } from './handling.js';
+import { decideHandling, inputLimitFor, measureInput, outputTokensFor } from './handling.js';
 import type { AdmissionTarget, HandlingTrigger, InputLimit } from './handling.js';
 import { callWithRepair, messagesSize, terminalReasonOf } from './handling-call.js';
 import type { CallFailureKind, CallOutcome } from './handling-call.js';
@@ -51,7 +52,11 @@ export interface PartAdapter<R, C> {
 	/** The prompt of one part against one round of the reference context. */
 	renderPart(part: PartInput, round: ReferenceRound): LLMMessage[];
 	/** The prompt that combines summaries (of parts, or of an earlier combine stage). */
-	renderCombine(summaries: readonly { readonly id: string; readonly summary: string }[], round: ReferenceRound): LLMMessage[];
+	/**
+	 * `moreRounds` is how many further rounds of reference there are after `round`: a combine call carries the
+	 * first round only, because it reads summaries that each part wrote having read every round.
+	 */
+	renderCombine(summaries: readonly { readonly id: string; readonly summary: string }[], round: ReferenceRound, moreRounds: number): LLMMessage[];
 	summaryOf(reply: R): string;
 	summaryOfCombine(reply: C): string;
 	/** One reply from the replies of one part against several rounds of reference, in round order. */
@@ -240,7 +245,7 @@ async function combine<R, C>(
 ): Promise<{ ok: true; reply: C; stages: number } | { ok: false; reason: string; stages: number }> {
 	const { adapter, provider } = args;
 	const round = reference.rounds[0] ?? EMPTY_ROUND;
-	const fixed = messagesSize(adapter.renderCombine([], round), limit.unit);
+	const fixed = messagesSize(adapter.renderCombine([], round, reference.rounds.length - 1), limit.unit);
 	// A summary has at most SUMMARY_CAP characters; in bytes that is up to four bytes each.
 	const perSummary = (limit.unit === 'bytes' ? 4 : 1) * SUMMARY_CAP + 64;
 	const group = Math.max(2, Math.floor((limit.limit - fixed) / perSummary));
@@ -252,7 +257,7 @@ async function combine<R, C>(
 		for (let i = 0; i < items.length; i += group) {
 			const chunk = items.slice(i, i + group);
 			const outcome = await callWithRepair<C>({
-				provider, messages: adapter.renderCombine(chunk, round), schema: adapter.combineSchema, limit, maxTokens,
+				provider, messages: adapter.renderCombine(chunk, round, reference.rounds.length - 1), schema: adapter.combineSchema, limit, maxTokens,
 				maxAttempts: args.maxAttempts, signal: args.signal, connectionExecution: args.connectionExecution,
 			});
 			if (outcome.kind !== 'ok') {
@@ -289,4 +294,47 @@ function terminalFailure<R, C>(failures: readonly Failure[], args: DivideArgs<R,
 	return new ShaperAnswerStepFailedError(
 		reason, `${failures.length} part(s) were not covered: ${failures.map(f => `${f.part}: ${f.reason}`).join('; ')}`, found, extra,
 	);
+}
+
+// ---------------------------------------------------------------------------
+// The entry point: one pass, or parts
+// ---------------------------------------------------------------------------
+
+export interface HandledArgs<R, C> extends DivideArgs<R, C> {
+	/** The measured size of the request; undetermined is XL. */
+	readonly size:           AnalyzeScope | undefined;
+	/** The rendered input of the single call, which the admission rule measures. */
+	readonly singleMessages: readonly LLMMessage[];
+	readonly singleSchema:   StructuredSchema;
+}
+
+export type HandledResult<R, C> =
+	| { readonly kind: 'single'; readonly reply: R; readonly handling: HandlingReport }
+	| ({ readonly kind: 'divided' } & DividedResult<R, C>);
+
+/**
+ * Answers in one pass when the table says single-pass and the input is admitted;
+ * else in parts. A single pass that fails keeps the legacy route: the original
+ * error is thrown for the caller to classify, so it stays the cause. A provider's
+ * size refusal of an admitted single pass divides the input (trigger 'fit').
+ */
+export async function runHandled<R, C>(args: HandledArgs<R, C>): Promise<HandledResult<R, C>> {
+	const decision = decideHandling({ size: args.size, target: args.target, input: args.singleMessages.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n') });
+	let trigger = decision.trigger;
+	if (decision.method === 'single-pass') {
+		const limit = inputLimitFor(args.target, 'single');
+		const outcome = await callWithRepair<R>({
+			provider: args.provider, messages: args.singleMessages, schema: args.singleSchema, limit,
+			maxTokens: outputTokensFor(args.target, 'single'), maxAttempts: args.maxAttempts,
+			signal: args.signal, connectionExecution: args.connectionExecution,
+		});
+		if (outcome.kind === 'ok') {
+			const handling: HandlingReport = { method: 'single-pass', parts: 1, notCovered: [], budgets: [decision.budget] };
+			return { kind: 'single', reply: outcome.value, handling };
+		}
+		const divisible = outcome.kind === 'too-large' || outcome.failure === 'unadmittable';
+		if (!divisible) throw outcome.kind === 'failed' && outcome.cause !== undefined ? outcome.cause : new Error(outcome.kind === 'failed' ? outcome.reason : 'the call failed');
+		trigger = 'fit';
+	}
+	return { kind: 'divided', ...(await runDivided({ ...args, trigger })) };
 }

@@ -17,7 +17,7 @@ import { HandlingBudgetError, ShaperAnswerStepFailedError } from '../driver.js';
 import type { AnswerStepFound } from '../driver.js';
 import { assembleAggregate, assembleBundle } from '../handling-adapters.js';
 import type { BundleLayers } from '../handling-adapters.js';
-import { MAX_DIVISIONS, runDivided } from '../handling-parts.js';
+import { MAX_DIVISIONS, runDivided, runHandled } from '../handling-parts.js';
 import type { DivideArgs, PartAdapter } from '../handling-parts.js';
 import type { AdmissionTarget } from '../handling.js';
 import { renderSection } from '../sections.js';
@@ -108,7 +108,11 @@ test('serial parts, division up to three times, repair exhaustion never discards
 	assert.equal(MAX_DIVISIONS, 3);
 	const huge = block('big', 60_000);
 	const stuck = scripted(() => new ModelResponseShapeError('reply failed validation', ['bad']));
-	await assert.rejects(runDivided(args(stuck, [huge, block('small', 100)], 12_000, { maxAttempts: 1 })), ShaperAnswerStepFailedError);
+	const exhausted = await runDivided(args(stuck, [huge, block('small', 100)], 12_000, { maxAttempts: 1 })).then(() => undefined, (e: unknown) => e);
+	assert.ok(exhausted instanceof ShaperAnswerStepFailedError);
+	const depths = (exhausted.partFailures ?? []).map(p => (p.part.match(/(?:\.\d+)+$/)?.[0].split('.').length ?? 1) - 1);
+	assert.equal(Math.max(...depths), MAX_DIVISIONS, 'a part is divided three times and no more');
+	assert.ok(depths.filter(d => d === MAX_DIVISIONS).length >= 2, 'the halves of a divided part are each recorded');
 	assert.ok(stuck.prompts.length < 200, 'division is bounded');
 
 	// A combine that cannot be answered returns the per-part results with 'combine' in notCovered and throws nothing.
@@ -205,11 +209,30 @@ test('bundle and aggregate adapters keep evidence layers and findings exactly th
 	const only = assembleBundle('docs', [result.covered[0] as (typeof result.covered)[number]], undefined);
 	assert.equal(only.structure, result.covered[0]?.reply.structure);
 
-	// Aggregate: the findings are concatenated in ordinal order, each keeping its sources; the summary is the combine's.
+	// Aggregate: run through real combine stages; the findings are the parts' own, in ordinal order, each keeping its sources.
+	interface AggReply { summary: string; findings: { title: string; detail: string; sources: string[] }[] }
+	const aggAdapter: PartAdapter<AggReply, { summary: string }> = {
+		partSchema: PART_SCHEMA, combineSchema: COMBINE_SCHEMA,
+		renderPart: (part, round) => [{ role: 'user', content: `PART ${part.id}\nREF:${round.rendered}\n${part.sections.map(renderSection).join('\n\n')}` }],
+		renderCombine: s => [{ role: 'user', content: `COMBINE ${s.map(x => x.summary).join('|')}` }],
+		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+	};
+	const aggRun = scripted((prompt, kind) => (kind === 'combine'
+		? { summary: `merged[${prompt.split('|').length}]` }
+		: { summary: `s:${keysIn(prompt).join(',')}`, findings: keysIn(prompt).map(k => ({ title: `T ${k}`, detail: `D ${k}`, sources: [`task-${k}`] })) }));
+	const aggResult = await runDivided<AggReply, { summary: string }>({
+		...args(aggRun, ['f1', 'f2', 'f3', 'f4', 'f5'].map(k => block(k, 4_100)), 6_000), adapter: aggAdapter,
+	});
+	assert.ok((aggResult.handling.combineStages ?? 0) >= 2, 'several combine stages');
+	const agg = assembleAggregate(aggResult.covered, aggResult.combine);
+	assert.match(agg.summary, /^merged\[/);
+	assert.deepEqual(agg.findings.map(f => f.title), ['f1', 'f2', 'f3', 'f4', 'f5'].map(k => `T ${k}`), 'every finding, in ordinal order, none read from a combine');
+	assert.deepEqual(agg.findings.map(f => f.sources[0]), ['f1', 'f2', 'f3', 'f4', 'f5'].map(k => `task-${k}`), 'each finding keeps its sources');
+
 	const parts = [1, 2, 3].map(n => ({ id: `part ${n}`, ordinal: n - 1, reply: { summary: `s${n}`, findings: [{ title: `t${n}`, detail: `d${n}`, sources: [`t0${n}`] }] } }));
-	const agg = assembleAggregate(parts, { summary: 'final' });
-	assert.equal(agg.summary, 'final');
-	assert.deepEqual(agg.findings, parts.flatMap(p => p.reply.findings));
+	const direct = assembleAggregate(parts, { summary: 'final' });
+	assert.equal(direct.summary, 'final');
+	assert.deepEqual(direct.findings, parts.flatMap(p => p.reply.findings));
 	assert.equal(assembleAggregate(parts, undefined).summary, 's1\n\ns2\n\ns3');
 });
 
@@ -223,3 +246,41 @@ test('mixed oversized-envelope and admissible blocks return the covered parts wi
 	assert.match(result.handling.notCovered[0]?.reason ?? '', /envelope of block 'fat'/);
 	assert.ok(!run.prompts.some(p => p.includes('MARK-fat') || p.includes('blob')), 'the oversized block is never sent');
 });
+
+test('a single pass keeps the legacy route: the original error is thrown as it is, and a size refusal of an admitted pass divides', async () => {
+	const messages: LLMMessage[] = [{ role: 'user', content: 'a small question' }];
+	const common = { target: cli(12_000), adapter, blocks: [block('g1', 4_000), block('g2', 4_000)], reference: [], found: FOUND, maxAttempts: 2, singleMessages: messages, singleSchema: PART_SCHEMA } as const;
+
+	// Admitted at size S: one call, single-pass handling.
+	const ok = scripted(prompt => okPart(prompt));
+	const single = await runHandled<Reply, Narrative>({ ...common, provider: ok.provider, size: 'S' });
+	assert.equal(single.kind, 'single');
+	assert.equal(single.handling.method, 'single-pass');
+	assert.equal(ok.prompts.length, 1);
+
+	// A failed single pass throws the original error itself (a transport failure, then an invalid reply), not a typed one.
+	const outage = new ModelCallFailedError('claude exited with 1.', { cause: new Error('socket closed') });
+	await assert.rejects(runHandled<Reply, Narrative>({ ...common, provider: scripted(() => outage).provider, size: 'S' }), (err: unknown) => err === outage);
+	const bad = new ModelResponseShapeError('reply failed validation', ['bad']);
+	await assert.rejects(runHandled<Reply, Narrative>({ ...common, provider: scripted(() => bad).provider, size: 'S' }), (err: unknown) => err === bad);
+
+	// The table divides M; the rule divides an input that is not admitted (trigger 'fit').
+	const table = await runHandled<Reply, Narrative>({ ...common, provider: scripted((p, k) => (k === 'combine' ? okCombine(p) : okPart(p))).provider, size: 'M' });
+	assert.equal(table.kind, 'divided');
+	assert.equal(table.kind === 'divided' ? table.handling.trigger : '', 'size');
+	const big: LLMMessage[] = [{ role: 'user', content: 'q'.repeat(13_000) }];
+	const fit = await runHandled<Reply, Narrative>({ ...common, singleMessages: big, provider: scripted((p, k) => (k === 'combine' ? okCombine(p) : okPart(p))).provider, size: 'XS' });
+	assert.equal(fit.kind === 'divided' ? fit.handling.trigger : '', 'fit');
+
+	// The provider refusing an admitted single pass as too large divides it too.
+	const { InputTooLargeError } = await import('../../../agent/providers/cli-provider.js');
+	let first = true;
+	const refusing = scripted((p, k) => {
+		if (k === 'part' && first && !p.startsWith('PART')) { first = false; return new InputTooLargeError('prompt is too long', 'prompt is too long', { maxChars: 1, actualChars: 2 }); }
+		return k === 'combine' ? okCombine(p) : okPart(p);
+	});
+	const refused = await runHandled<Reply, Narrative>({ ...common, provider: refusing.provider, size: 'S' });
+	assert.equal(refused.kind, 'divided');
+	assert.equal(refused.kind === 'divided' ? refused.handling.trigger : '', 'fit');
+});
+

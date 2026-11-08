@@ -103,7 +103,7 @@ test('failure classification by cause: schema-invalid is invalid-reply, transpor
 	const sizes = { maxChars: 100, actualChars: 200 };
 	assert.equal(classifyCallFailure(invalid('x')), 'invalid-reply');
 	assert.equal(classifyCallFailure(new Error('structured-output: validation failed after 1 attempts: bad json')), 'invalid-reply');
-	assert.equal(classifyCallFailure(new ModelCallFailedError('ollama', 'connect ECONNREFUSED')), 'call-failed');
+	assert.equal(classifyCallFailure(new ModelCallFailedError('connect ECONNREFUSED')), 'call-failed');
 	assert.equal(classifyCallFailure(new Error('vibe exited with 1.')), 'call-failed');
 	assert.equal(classifyCallFailure(new Error('structured-output: validation failed after 2 attempts: vibe exited with 1.')), 'call-failed');
 	assert.equal(classifyCallFailure(new Error('claude exited with 1.')), 'call-failed');

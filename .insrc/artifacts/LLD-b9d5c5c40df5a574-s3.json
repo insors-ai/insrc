@@ -27,7 +27,38 @@
       "AMD-b9d5c5c40df5a574-1"
     ],
     "authoredBy": "controller",
-    "revision": 12
+    "revision": 12,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 12,
+        "contentHash": "128dabf4de21d56e7eb5b89cdafbda59d33eeeec208c5de76b47c51b63db51e0",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 12,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:14:26.065Z",
+        "override": {
+          "reason": "Self-review; design review r12 left 6 MED findings (5 themes), carried into the PLAN and BUILD as explicit tasks and tests."
+        }
+      }
+    }
   },
   "body": {
     "hldContextSlice": {

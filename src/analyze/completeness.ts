@@ -369,7 +369,7 @@ export function renderHandlingLine(handling: HandlingReport): string {
 			+ `${handling.trigger !== undefined ? ` (${handling.trigger})` : ''}`
 			+ `${handling.combineStages !== undefined ? `, ${handling.combineStages} combine stage${handling.combineStages === 1 ? '' : 's'}` : ''}.`;
 	const budgets = handling.budgets.map(b => `${b.limit} ${b.unit}`);
-	const uncovered = handling.notCovered.map(n => `${n.part} (${oneLine(n.reason)})`);
+	const uncovered = handling.notCovered.map(n => `${oneLine(n.part)} (${oneLine(n.reason)})`);
 	return [
 		how,
 		...(budgets.length > 0 ? [`Input budget: ${budgets.join(', ')}.`] : []),

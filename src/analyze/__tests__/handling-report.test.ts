@@ -111,6 +111,10 @@ test('renderReportHead is unchanged without handling and adds one line with it; 
 	assert.match(line, /10240 bytes/);
 	assert.match(line, /Not covered: part 2: docs\/a \(model-failed\)/);
 	assert.match(renderReportHead(report({ handling: single })), /single pass/);
+	const multiline = { ...divided, notCovered: [{ part: 'part\n2:\tdocs/a', reason: 'model\nfailed' }] };
+	const lines = renderReportHead(report({ handling: multiline })).split('\n');
+	assert.equal(lines.length, 2);
+	assert.match(lines[1] ?? '', /Not covered: part 2: docs\/a \(model failed\)/);
 
 	const merged = mergeAnswerReports(report({ handling: single }), report({ handling: divided }), 'root / ');
 	assert.equal(merged.handling?.parts, 4);

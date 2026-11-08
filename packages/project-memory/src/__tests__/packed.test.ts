@@ -4,11 +4,14 @@ import { execFileSync } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, writeFile, rm, lstat, rename, cp, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { nativeTest, node22 } from './fixtures/node22.js';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+const upstreamSdk = join(dirname(createRequire(import.meta.url).resolve('@lancedb/lancedb')), '..');
+const bundledSdk = (dir: string) => join(dir, 'node_modules/@insrc/project-memory/node_modules/@lancedb/lancedb');
 let directory: string | undefined;
 let setup: Promise<{ dir: string; env: NodeJS.ProcessEnv; files: string[] }> | undefined;
 after(async () => { if (directory) await rm(directory, { recursive: true, force: true }); });
@@ -21,7 +24,7 @@ function packed() {
     env['NPM_CONFIG_GLOBALCONFIG'] = join(dir, 'global.npmrc');
     await writeFile(env['NPM_CONFIG_USERCONFIG']!, ''); await writeFile(env['NPM_CONFIG_GLOBALCONFIG']!, '');
     const npm = (args: string[], cwd = dir) => execFileSync('npm', args, { cwd, env, encoding: 'utf8', timeout: 120_000, maxBuffer: 4_000_000 });
-    const result = JSON.parse(npm(['pack', root, '--json', '--pack-destination', dir])) as { filename: string; files: { path: string }[] }[];
+    const result = JSON.parse(npm(['run', '--silent', 'pack:release', '--', dir], root)) as { filename: string; files: { path: string }[] }[];
     const artifact = result[0]!;
     await writeFile(join(dir, 'package.json'), JSON.stringify({ private: true, type: 'module' }));
     npm(['install', '--no-audit', '--no-fund', join(dir, artifact.filename), 'typescript@5.9.3', '@types/node@22.20.5']);
@@ -33,7 +36,8 @@ function packed() {
       const native = '@lancedb/lancedb-' + process.platform + '-' + process.arch + (process.platform === 'linux' ? '-gnu' : '');
       const dependencies = [];
       for (const name of ['@insrc/project-memory', '@lancedb/lancedb', native, 'apache-arrow', 'fs-ext']) {
-        const path = join(dir, 'node_modules', name), entries = (await readdir(path)).sort();
+        const path = name === '@lancedb/lancedb' ? bundledSdk(dir) : join(dir, 'node_modules', name);
+        const entries = (await readdir(path)).sort();
         const manifest = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
         const files = [];
         for (const file of entries.filter(name => /license|copying|\.node$/i.test(name))) files.push({ file, sha256: createHash('sha256').update(await readFile(join(path, file))).digest('hex') });
@@ -97,7 +101,17 @@ const s = await MemoryFactory.open({ dataDirectory: ${JSON.stringify(join(dir, '
 nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', async () => {
   const { dir, files } = await packed();
   for (const required of ['package.json', 'README.md', 'LICENSE', 'dist/index.js', 'dist/index.d.ts', 'dist/host-node.js']) assert.ok(files.includes(required), required);
-  for (const file of files) assert.match(file, /^(?:package\.json|README\.md|LICENSE|dist\/(?:queue\/|store\/)?[\w-]+\.(?:js|d\.ts)(?:\.map)?)$/);
+  const allowedBundles = [
+    'node_modules/@lancedb/lancedb/',
+    'node_modules/@opentelemetry/api/',
+    'node_modules/reflect-metadata/',
+  ];
+  for (const file of files) {
+    assert.ok(!file.endsWith('.node'), file);
+    if (!allowedBundles.some(prefix => file.startsWith(prefix))) {
+      assert.match(file, /^(?:package\.json|README\.md|LICENSE|dist\/(?:queue\/|store\/)?[\w-]+\.(?:js|d\.ts)(?:\.map)?)$/);
+    }
+  }
   for (const module of ['types', 'shape', 'codec', 'io', 'checkpoint', 'index-record', 'recovery', 'receipts', 'retirement', 'file-queue', 'admission']) {
     assert.ok(files.includes('dist/queue/' + module + '.js')); assert.ok(files.includes('dist/queue/' + module + '.d.ts'));
   }
@@ -105,13 +119,44 @@ nativeTest(import.meta.url, 'tarball-public-dependency-and-asset-allowlist', asy
     assert.ok(files.includes('dist/store/' + module + '.js')); assert.ok(files.includes('dist/store/' + module + '.d.ts'));
   }
   const manifest = JSON.parse(await readFile(join(dir, 'node_modules/@insrc/project-memory/package.json'), 'utf8'));
-  assert.deepEqual(manifest.dependencies, { '@lancedb/lancedb': '0.40.0', 'apache-arrow': '18.1.0', 'fs-ext': '2.1.1' });
+  assert.deepEqual(manifest.dependencies, { '@lancedb/lancedb': 'file:vendor/lancedb', 'apache-arrow': '18.1.0', 'fs-ext': '2.1.1' });
+  assert.deepEqual(manifest.bundledDependencies, ['@lancedb/lancedb']);
+  assert.equal(manifest.overrides, undefined);
+  assert.equal(manifest.private, undefined);
+  const lock = JSON.parse(await readFile(join(dir, 'package-lock.json'), 'utf8'));
+  const entries = Object.keys(lock.packages);
+  assert.ok(!entries.some(path => /node_modules\/(?:sharp|onnxruntime-node|openai|@huggingface\/transformers)$/.test(path)));
+  assert.ok(lock.packages['node_modules/@insrc/project-memory/node_modules/@lancedb/lancedb'].inBundle);
+  const nativeName = '@lancedb/lancedb-' + process.platform + '-' + process.arch + (process.platform === 'linux' ? '-gnu' : '');
+  assert.equal(manifest.optionalDependencies[nativeName], '0.40.0');
+  const native = createRequire(join(bundledSdk(dir), 'package.json')).resolve(nativeName);
+  assert.match(native, /[.]node$/);
   assert.deepEqual(Object.keys(manifest.exports), ['.', './node']);
+});
+
+nativeTest(import.meta.url, 'bundled LanceDB retains upstream code and notices with only approved manifest exclusions', async () => {
+  const { dir } = await packed();
+  const sdk = bundledSdk(dir);
+  const original = JSON.parse(await readFile(join(upstreamSdk, 'package.json'), 'utf8'));
+  delete original.optionalDependencies['@huggingface/transformers'];
+  delete original.optionalDependencies.openai;
+  assert.deepEqual(JSON.parse(await readFile(join(sdk, 'package.json'), 'utf8')), original);
+  const originalFiles = (await readdir(join(upstreamSdk, 'dist'), { recursive: true, withFileTypes: true }))
+    .filter(entry => entry.isFile() && /[.](?:js|ts)$/.test(entry.name));
+  for (const entry of originalFiles) {
+    const source = join(entry.parentPath, entry.name);
+    const relative = source.slice(upstreamSdk.length + 1);
+    assert.deepEqual(await readFile(join(sdk, relative)), await readFile(source), relative);
+  }
+  for (const name of ['NODEJS_THIRD_PARTY_LICENSES.md', 'RUST_THIRD_PARTY_LICENSES.html']) {
+    assert.deepEqual(await readFile(join(sdk, name)), await readFile(join(upstreamSdk, name)));
+  }
+  assert.match(await readFile(join(sdk, 'LICENSE'), 'utf8'), /Apache License[\s\S]*Version 2[.]0/);
 });
 
 nativeTest(import.meta.url, 'packed-lance-dependency-stays-lazy-on-import', async () => {
   const { dir, env } = await packed();
-  const sdk = join(dir, 'node_modules/@lancedb/lancedb');
+  const sdk = bundledSdk(dir);
   await rename(sdk, sdk + '.unavailable');
   try {
     await writeFile(join(dir, 'lazy-lance.mjs'), `import assert from 'node:assert/strict';

@@ -7,6 +7,7 @@
 **Epic:** `review-evolving-designs-durable-checkpoints`
 **HLD base run:** `wf-1793694252789-heyhey`
 **HLD effective hash:** `20a9ee7f3bdf...`
+**Tracker:** [insors-ai/insrc#105](https://github.com/insors-ai/insrc/issues/105)
 
 S2 lets an interrupted design review continue from its accepted chunks and retries only the failed unit, with one persisted budget. It detects changes to the reviewed artifact during execution, stops that attempt, and requires user approval for a fresh full review. The existing coordinator/checkpoint remain authoritative for native and controller reviewers.
 

@@ -25,7 +25,16 @@
           "fragment": "revision 1"
         }
       ],
-      "attachments": []
+      "attachments": [],
+      "binding": {
+        "reference": {
+          "entityId": "insors-ai/insrc#109",
+          "type": "github:issue",
+          "relation": "tracked-by"
+        },
+        "createdAtRevision": 1,
+        "posted": []
+      }
     },
     "lifecycle": {
       "status": "approved",

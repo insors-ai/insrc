@@ -7,6 +7,7 @@
 **Epic:** `review-evolving-designs-durable-checkpoints`
 **HLD base run:** `wf-1793694252789-heyhey`
 **HLD effective hash:** `20a9ee7f3bdf...`
+**Tracker:** [insors-ai/insrc#106](https://github.com/insors-ai/insrc/issues/106)
 
 Review corrected designs by assessing direct and indirect impact before selecting chunks. Preserve unaffected prior coverage with explicit provenance, carry unresolved findings forward, and run a fresh consistency check. Fall back to full review whenever safe reuse cannot be established. [[c8]] [[c1]] Citation convention: c1 identifies the HLD requirement for proposed S3 behavior; code citations identify existing contracts or extension points, and do not claim the proposal is implemented. Proposed additions remain design requirements until S3 is built. [[c1]]
 

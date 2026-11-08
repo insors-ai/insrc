@@ -53,6 +53,20 @@
           "reason": "User explicitly approved the presented DEF with review override and proceeding to HLD. Independent design-review execution intentionally removed pending this epic; author self-review and structural/citation checks found no HIGH/MED. No independent review claimed."
         }
       }
+    },
+    "tracker": {
+      "adapter": "github",
+      "labelsCreated": [
+        "epic:review-evolving-designs-durable-checkpoints"
+      ],
+      "epicStatus": "closed",
+      "storyStatus": {
+        "s1": "closed",
+        "s2": "closed",
+        "s3": "closed",
+        "s4": "closed"
+      },
+      "lastSyncedAt": "2026-11-08T19:24:44Z"
     }
   },
   "body": {

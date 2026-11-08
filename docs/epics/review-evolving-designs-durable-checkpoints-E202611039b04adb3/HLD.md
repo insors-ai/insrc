@@ -4,6 +4,8 @@
 
 ## Summary
 
+**Tracker:** [insors-ai/insrc#108](https://github.com/insors-ai/insrc/issues/108)
+
 A dedicated design-review coordinator runs coherent reviews of current DEF, HLD and LLD documents through existing model and artifact services. It persists completed chunks, reports progress and pauses for user decisions when retries are exhausted or the artifact changes. Corrected designs receive impact-based follow-up reviews, and normal approval preserves review history before temporary state is removed.
 
 ## Contents

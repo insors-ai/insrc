@@ -377,5 +377,6 @@ test("extension wiring: a restored chat tab gets the chat's current title, since
 
 test('extension wiring: the repo-config panel probes mcp.status WITH the selected repo path, so the project-layer .vibe/config.toml counts for vibe', () => {
   const src = read(EXT).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  assert.match(src, /mcpRegistration: \(repoPath\?: string\) => daemonData\.mcpRegistration\(repoPath\)/, 'the selected repo path is forwarded to the daemon probe');
+  assert.match(src, /mcpRegistration: \(repoPath\?: string\) => daemonData\.mcpRegistration\(repoPath, repoConfigReadTimeoutMs\)/,
+    'the selected repo path and timeout are forwarded to the daemon probe');
 });

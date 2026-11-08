@@ -96,8 +96,8 @@ window.addEventListener('message', function (event) {
 vscode.postMessage({ type: 'ready' });`;
 
 /**
- * The Repo Configuration panel's inline bootstrap (nonce'd; posts ONLY the three
- * sanctioned repo message shapes). Static — it reads only host-rendered DOM data.
+ * The Repo Configuration panel's inline bootstrap. Static — it reads only
+ * host-rendered DOM data and preserves the Tracker toggle across repaints.
  * The repo <select> change posts {type:'selectRepo',repoPath}; each per-repo form
  * field change posts {type:'repoWrite',repoPath,segments,value} (value '' -> null to
  * clear the override); the Providers section's button posts
@@ -107,7 +107,15 @@ vscode.postMessage({ type: 'ready' });`;
  */
 const REPO_BOOTSTRAP = `const vscode = acquireVsCodeApi();
 const sel = document.getElementById('insrc-repo-select');
-if (sel) { sel.addEventListener('change', function () { vscode.postMessage({ type: 'selectRepo', repoPath: sel.value }); }); }
+if (sel) { sel.addEventListener('change', function () {
+  vscode.setState?.({ trackerOpen: false });
+  vscode.postMessage({ type: 'selectRepo', repoPath: sel.value });
+}); }
+const tracker = document.getElementById('insrc-tracker');
+if (tracker) {
+  tracker.open = vscode.getState?.()?.trackerOpen === true;
+  tracker.addEventListener('toggle', function () { vscode.setState?.({ trackerOpen: tracker.open }); });
+}
 const form = document.getElementById('insrc-repo-form');
 const repoPath = form ? form.getAttribute('data-repo') : '';
 for (const el of document.querySelectorAll('[data-segments]')) {
@@ -696,6 +704,20 @@ function shellHtml(title: string, content: string, nonce: string, bootstrap?: st
     .role-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 3px 2px; border-radius: 4px; }
     .role-row:hover { background: var(--vscode-list-hoverBackground, #2a2d2e); }
     .floor-row { display: flex; align-items: center; gap: 10px; }
+    #insrc-tracker > summary { display: list-item; padding: 4px 0; }
+    .tracker-body { max-width: 900px; display: grid; gap: 18px; padding: 4px 0 8px; }
+    .tracker-body h3 { margin: 8px 0; font-size: 13px; }
+    .tracker-grid, .tracker-status { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px 16px; }
+    .tracker-status { margin: 0; padding: 8px 10px; border: 1px solid var(--vscode-panel-border, #666); border-radius: 4px; }
+    .tracker-status dt, .tracker-label { font-weight: 600; }
+    .tracker-status dd { margin: 3px 0 0; overflow-wrap: anywhere; }
+    .tracker-field { display: grid; gap: 4px; align-content: start; min-width: 0; }
+    .tracker-field input, .tracker-field select { width: 100%; box-sizing: border-box; padding: 4px 6px; }
+    .tracker-hint, .tracker-source { display: block; font-size: 0.85em; color: var(--vscode-descriptionForeground, #aaa); overflow-wrap: anywhere; }
+    .tracker-policies { width: 100%; border-collapse: collapse; text-align: left; }
+    .tracker-policies th, .tracker-policies td { padding: 6px 8px; border-bottom: 1px solid var(--vscode-panel-border, #666); vertical-align: top; overflow-wrap: anywhere; }
+    .tracker-policies thead { background: var(--vscode-editorWidget-background, rgba(127, 127, 127, 0.15)); }
+    .tracker-policies tbody th { width: 34%; font-weight: 500; }
     .provider-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 4px 8px; border: 1px solid var(--vscode-panel-border, #3c3c3c); border-radius: 6px; margin-bottom: 4px; }
     .status-chip { font-size: 10.5px; border-radius: 9px; padding: 1px 8px; white-space: nowrap; }
     .status-chip.ok { background: rgba(35, 134, 54, 0.25); color: #81c995; }

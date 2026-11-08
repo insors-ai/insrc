@@ -754,6 +754,38 @@ test('Repo Configuration paints model controls while Tracker and Providers are s
   assert.doesNotMatch(panel.html, /Loading Tracker settings/);
 });
 
+test('Tracker stays expanded across repaints and resets when the repo changes', () => {
+  const source = readFileSync(join(HERE, '..', 'webview-host.ts'), 'utf8');
+  const script = /const REPO_BOOTSTRAP = `([\s\S]*?)`;/.exec(source)?.[1];
+  assert.ok(script);
+  let state: { trackerOpen: boolean } | undefined;
+  const posted: unknown[] = [];
+  function loadDocument() {
+    const listeners = new Map<string, () => void>();
+    const tracker = { open: false, addEventListener: (event: string, fn: () => void) => listeners.set(event, fn) };
+    const repo = { value: '/repo/b', addEventListener: (event: string, fn: () => void) => listeners.set(event, fn) };
+    const document = {
+      getElementById: (id: string) => id === 'insrc-tracker' ? tracker : id === 'insrc-repo-select' ? repo : null,
+      querySelectorAll: () => [],
+    };
+    new Function('acquireVsCodeApi', 'document', script!)(() => ({
+      getState: () => state,
+      setState: (next: { trackerOpen: boolean }) => { state = next; },
+      postMessage: (message: unknown) => posted.push(message),
+    }), document);
+    return { tracker, listeners };
+  }
+  const initial = loadDocument();
+  assert.equal(initial.tracker.open, false);
+  initial.tracker.open = true;
+  initial.listeners.get('toggle')?.();
+  const repainted = loadDocument();
+  assert.equal(repainted.tracker.open, true);
+  repainted.listeners.get('change')?.();
+  assert.deepEqual(posted, [{ type: 'selectRepo', repoPath: '/repo/b' }]);
+  assert.equal(loadDocument().tracker.open, false);
+});
+
 test('S007: the empty selectRepo option clears the selection back to picker-only', async () => {
   const seen: (string | undefined)[] = [];
   const { host, created } = makeHost({

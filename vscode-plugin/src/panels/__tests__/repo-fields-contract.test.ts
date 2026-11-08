@@ -32,24 +32,30 @@ async function render(fields: readonly RepoFieldDef[]): Promise<string> {
   })(REPO);
 }
 
-/** The Tracker section's rows as the user sees them: key, label, kind and the row's own note. */
+/** The Tracker section's rows as the user sees them, in display order. */
 function trackerRows(html: string): Array<{ key: string; label: string; kind: string; note: string | null }> {
-  const section = /<section id="insrc-tracker">([\s\S]*?)<\/section>/.exec(html)?.[1] ?? '';
-  return [...section.matchAll(/<label class="field tracker-row" data-kind="([^"]*)">([\s\S]*?)<\/label>/g)].map((m) => {
-    const body = m[2]!;
-    const key = /data-(?:tracker|readonly)-key="([^"]*)"/.exec(body)![1]!;
-    const label = unescape(body.slice(0, body.search(/ <(?:input|select|span class="value)/)));
-    const notes = [...body.matchAll(/<span class="note">([\s\S]*?)<\/span>/g)].map((n) => unescape(n[1]!)).filter((n) => n !== '(read-only)');
-    return { key: unescape(key), label, kind: m[1]!, note: notes[0] ?? null };
+  const section = /<details id="insrc-tracker" class="section">([\s\S]*?)<\/details>/.exec(html)?.[1] ?? '';
+  return [...section.matchAll(/<(div|label|tr) [^>]*data-kind="(status|local|policy)"[^>]*>[\s\S]*?<\/\1>/g)].map((m) => {
+    const key = /data-(?:tracker|readonly)-key="([^"]*)"/.exec(m[0])![1]!;
+    const label = /<(?:dt|th scope="row"|span class="tracker-label")>([^<]*)<\//.exec(m[0])![1]!;
+    const note = /<span class="tracker-hint">([^<]*)<\/span>/.exec(m[0])?.[1];
+    return { key: unescape(key), label: unescape(label), kind: m[2]!, note: note === undefined ? null : unescape(note) };
   });
 }
 
 const contract = (rows: ReadonlyArray<{ key: string; label: string; kind: string; note?: string | undefined }>) =>
-  rows.map((r) => ({ key: r.key, label: r.label, kind: r.kind, note: r.note ?? null }));
+  ['status', 'local', 'policy'].flatMap(kind => rows.filter(r => r.kind === kind)
+    .map(r => ({ key: r.key, label: r.label, kind: r.kind, note: r.note ?? null })));
 
 test('VS Code rows equal the shared catalog fixture and a new row appears', async () => {
-  const rows = trackerRows(await render(FIXTURE.repoFields));
-  assert.deepEqual(rows, contract(FIXTURE.repoFields), 'key, label, kind and note per row, in order');
+  const initial = await render(FIXTURE.repoFields);
+  assert.match(initial, /<details id="insrc-tracker" class="section"><summary class="section-head">Tracker<\/summary>/);
+  assert.match(initial, /<h3 id="tracker-config-heading">Tracker configuration<\/h3>/);
+  const policyTable = /<h3 id="tracker-policies-heading">Policies<\/h3><table[^>]*>([\s\S]*?)<\/table>/.exec(initial)?.[1];
+  assert.ok(policyTable);
+  assert.match(policyTable, /<th scope="col">Policy<\/th><th scope="col">Value<\/th>/);
+  assert.doesNotMatch(policyTable, /data-tracker-key|<input|<select/);
+  assert.deepEqual(trackerRows(initial), contract(FIXTURE.repoFields), 'key, label, kind and note per row, in each group');
 
   // A row added to a copy of the table appears with no renderer change, editable when it is local.
   const extra: RepoFieldDef = {
@@ -126,7 +132,8 @@ test('Tracker escapes catalog and setting text and degrades without removing mod
   });
   const html = await read(REPO);
   assert.match(html, /&lt;img&gt;.*&quot;&gt;&lt;script&gt;.*&quot;quoted&quot;/);
-  assert.match(html, /unavailable: &lt;missing&gt;/);
+  assert.match(html, /Policy unavailable: &lt;missing&gt;/);
+  assert.doesNotMatch(html, /class="tracker-policies"/);
   const degraded = await renderRepoConfig({
     registeredRepos: async () => [{ path: REPO, name: 'repo' }],
     rawConfig: async () => ({}),

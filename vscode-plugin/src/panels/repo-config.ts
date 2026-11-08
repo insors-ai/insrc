@@ -112,27 +112,36 @@ function readStringAt(root: Record<string, unknown>, path: readonly string[]): s
   return typeof cur === 'string' ? cur : undefined;
 }
 
-/**
- * Build the Repo Configuration body renderer. Reads registeredRepos + rawConfig
- * itself; a rejection propagates to the host's never-throw wrapper.
- */
+function trackerSection(content: string): string {
+  return `<details id="insrc-tracker" class="section"><summary class="section-head">Tracker</summary><div class="tracker-body">${content}</div></details>`;
+}
+
 async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: string): Promise<string> {
-  const section = (content: string) => `<section id="insrc-tracker"><h3>Tracker</h3>${content}</section>`;
-  const unavailable = () => section('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
+  const unavailable = () => trackerSection('<p class="hint">Tracker settings are unavailable. Reopen Repo Configuration to retry.</p>');
   if (!deps.repoFields || !deps.repoSettings) return unavailable();
   try {
     const fields = (await deps.repoFields()).filter(field => field.group === 'Tracker');
     if (fields.length === 0) return unavailable();
     const result = await deps.repoSettings(repoPath);
-    if (!result.ok) return section(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
-    const rows = buildSettingsRows(fields, result.payload).map((row, index) => {
+    if (!result.ok) return trackerSection(`<p class="error">${escapeHtml(result.error.message)} Reopen Repo Configuration to retry.</p>`);
+    const config: string[] = [];
+    const status: string[] = [];
+    const policies: string[] = [];
+    for (const [index, row] of buildSettingsRows(fields, result.payload).entries()) {
       const field = fields[index]!;
       const key = escapeHtml(row.key);
-      const note = row.note === undefined ? '' : ` <span class="note">${escapeHtml(row.note)}</span>`;
+      const label = escapeHtml(row.label);
+      const note = row.note === undefined ? '' : `<span class="tracker-hint">${escapeHtml(row.note)}</span>`;
+      if (row.kind === 'policy') {
+        policies.push(`<tr data-kind="policy" data-readonly-key="${key}"><th scope="row">${label}</th><td>${escapeHtml(row.value)}${note}</td></tr>`);
+        continue;
+      }
+      if (row.kind === 'status') {
+        status.push(`<div data-kind="status" data-readonly-key="${key}"><dt>${label}</dt><dd>${escapeHtml(row.value)}${note}</dd></div>`);
+        continue;
+      }
       let control: string;
-      if (!row.editable) {
-        control = `<span class="value readonly" data-readonly-key="${key}">${escapeHtml(row.value)}</span> <span class="note">(read-only)</span>`;
-      } else if (field.type === 'string') {
+      if (field.type === 'string') {
         control = `<input type="text" data-tracker-key="${key}" value="${escapeHtml(row.current)}" placeholder="${escapeHtml(row.value)}" />`;
       } else {
         const values = field.type === 'boolean' ? ['true', 'false'] : (field.enumValues ?? []);
@@ -140,15 +149,27 @@ async function renderTrackerSection(deps: RepoConfigRendererDeps, repoPath: stri
         const options = ['', ...values].map(value => `<option value="${escapeHtml(value)}"${value === row.current ? ' selected' : ''}>${escapeHtml(value || fallback)}</option>`).join('');
         control = `<select data-tracker-key="${key}" data-tracker-type="${field.type}">${options}</select>`;
       }
-      const source = row.editable && row.current !== '' ? 'Repo override' : row.editable ? row.value : row.kind;
-      return `<label class="field tracker-row" data-kind="${row.kind}">${escapeHtml(row.label)} ${control}${note} <span class="hint">${escapeHtml(source)}</span></label>`;
-    }).join('');
-    return section(`<p class="hint">Clear a field to use its default or leave it unset.</p>${rows}`);
+      const source = row.current !== '' ? 'Repo override' : row.value;
+      config.push(`<label class="tracker-field" data-kind="local"><span class="tracker-label">${label}</span>${control}<span class="tracker-source">${escapeHtml(source)}</span>${note}</label>`);
+    }
+    const policy = result.payload.policy;
+    const policyBody = !policy.ok
+      ? `<p class="error">Policy unavailable: ${escapeHtml(policy.reason)}</p>`
+      : policy.mode === 'none'
+        ? '<p class="hint">No team policy is configured for this repo.</p>'
+        : `<table class="tracker-policies" aria-labelledby="tracker-policies-heading"><thead><tr><th scope="col">Policy</th><th scope="col">Value</th></tr></thead><tbody>${policies.join('')}</tbody></table>`;
+    return trackerSection(
+      `<section aria-labelledby="tracker-config-heading"><h3 id="tracker-config-heading">Tracker configuration</h3>` +
+      `<dl class="tracker-status">${status.join('')}</dl>` +
+      `<p class="hint">Clear a field to use its default or leave it unset.</p><div class="tracker-grid">${config.join('')}</div></section>` +
+      `<section aria-labelledby="tracker-policies-heading"><h3 id="tracker-policies-heading">Policies</h3>${policyBody}</section>`,
+    );
   } catch {
     return unavailable();
   }
 }
 
+/** Read registered repos and render the selected repo's settings. */
 export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRenderer {
   return async (selected, publishLoading): Promise<string> => {
     const repos = await deps.registeredRepos();
@@ -196,7 +217,7 @@ export function renderRepoConfig(deps: RepoConfigRendererDeps): RepoConfigRender
       `<h3>Providers</h3>${providers}` +
       `</section>`
     );
-    publishLoading?.(form('<section id="insrc-tracker"><h3>Tracker</h3><p role="status">Loading Tracker settings…</p></section>',
+    publishLoading?.(form(trackerSection('<p role="status">Loading Tracker settings…</p>'),
       '<p role="status">Loading provider status…</p>'));
     const [tracker, providers] = await Promise.all([
       renderTrackerSection(deps, active),

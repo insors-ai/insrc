@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 26,
-        "contentHash": "b951ef98f1e2df85d85c675280ccfe8fda5077ac09a6dde21dba02119bbc62aa",
-        "at": "2026-11-08T08:21:58.870Z",
+        "number": 30,
+        "contentHash": "f08894b8f9e0605087f37d3d2dbcb35c2056f12db62e69ee748bacdd189e0cbc",
+        "at": "2026-11-08T10:02:49.092Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T08:21:58.741Z",
+    "updatedAt": "2026-11-08T10:02:48.957Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 26
+    "revision": 30
   },
   "body": {
     "tasks": [
@@ -193,8 +193,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "6d3865ff9",
-        "ranAt": "2026-11-08T05:11:22.727Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T10:02:48.957Z",
         "testsPassed": true,
         "tests": [
           {
@@ -219,6 +219,11 @@
                 "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
                 "title": "deterministic history id survives append and replace crashes and rejects conflicting replay",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -229,7 +234,7 @@
             "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 828,
+            "durationMs": 752,
             "titles": [
               {
                 "title": "design history alone receives a bounded UTF-8 allowance in sync and async readers",
@@ -241,13 +246,30 @@
               }
             ],
             "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1285,
+            "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
           }
         ]
       },
       {
         "taskId": "t4",
-        "commit": "6a661d6bf",
-        "ranAt": "2026-11-08T05:38:31.971Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T09:58:12.394Z",
         "testsPassed": true,
         "tests": [
           {
@@ -279,6 +301,11 @@
                 "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
                 "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -302,6 +329,11 @@
                 "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -309,10 +341,27 @@
         ],
         "files": [
           {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1274,
+            "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1333,
+            "durationMs": 1150,
             "titles": [
               {
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
@@ -420,8 +469,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "6d35295fc",
-        "ranAt": "2026-11-08T06:47:14.831Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T10:00:00.300Z",
         "testsPassed": true,
         "tests": [
           {
@@ -486,6 +535,11 @@
                 "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
                 "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -496,7 +550,7 @@
             "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1403,
+            "durationMs": 1419,
             "titles": [
               {
                 "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
@@ -541,8 +595,12 @@
             "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 779,
+            "durationMs": 1269,
             "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
               {
                 "title": "document edits during publication and approval persistence fail closed through journal restart",
                 "result": "pass"

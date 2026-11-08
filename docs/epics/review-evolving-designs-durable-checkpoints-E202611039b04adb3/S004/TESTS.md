@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 58 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
+**Totals:** 62 pass, 0 fail, 0 skipped, 0 not found; 2 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -54,7 +54,7 @@ Run at 2026-11-08T05:23:36.631Z on commit `870fa0c4b`. Tests check: **passed**. 
 
 ## t3
 
-Run at 2026-11-08T05:11:22.727Z on commit `6d3865ff9`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T10:02:48.957Z on commit `7f80d3df1`. Tests check: **passed**. 3 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: U2 UTF-8 frame/journal boundaries and unknown-kind limits**
 
@@ -67,16 +67,18 @@ Run at 2026-11-08T05:11:22.727Z on commit `6d3865ff9`. Tests check: **passed**. 
 | Result | Test | File |
 | :--- | :--- | :--- |
 | pass | deterministic history id survives append and replace crashes and rejects conflicting replay | `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` |
+| pass | FIFO document replacements refuse publication approval and recovery without blocking | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/artifact-core/__tests__/design-history-storage.test.ts` | 0 | 2 | 0.8 s |  |
+| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 2 | 1.3 s |  |
 
 ## t4
 
-Run at 2026-11-08T05:38:31.971Z on commit `6a661d6bf`. Tests check: **passed**. 8 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T09:58:12.394Z on commit `7f80d3df1`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: I1 publication receipt fault recovery and zero model reruns**
 
@@ -87,6 +89,7 @@ Run at 2026-11-08T05:38:31.971Z on commit `6a661d6bf`. Tests check: **passed**. 
 | pass | native review waits for durable publication and recovers failed receipt persistence without rerunning models | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 | pass | publication append and head-replace crashes replay the same complete history entry | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 | pass | known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | FIFO document replacements refuse publication approval and recovery without blocking | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **integration: I2 immutable baseline, exact owned delta and source mutation**
 
@@ -95,12 +98,14 @@ Run at 2026-11-08T05:38:31.971Z on commit `6a661d6bf`. Tests check: **passed**. 
 | pass | publication refuses changed subject before write and additional edits after its exact owned delta | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 | pass | canonical edits during journal staging or log append are preserved and refuse publication | `src/workflow/review/design-review/__tests__/publication.test.ts` |
 | pass | journalled publication and lost-receipt recovery preserve one exact full history without model calls | `src/workflow/review/design-review/__tests__/publication.test.ts` |
+| pass | FIFO document replacements refuse publication approval and recovery without blocking | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 7 | 1.3 s |  |
+| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 2 | 1.3 s |  |
+| `src/workflow/review/design-review/__tests__/publication.test.ts` | 0 | 7 | 1.2 s |  |
 
 ## t5
 
@@ -128,7 +133,7 @@ Run at 2026-11-08T06:07:40.976Z on commit `d83eecf71`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-08T06:47:14.831Z on commit `6d35295fc`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T10:00:00.300Z on commit `7f80d3df1`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: U4 approval applicability and truthful overrides**
 
@@ -149,13 +154,14 @@ Run at 2026-11-08T06:47:14.831Z on commit `6d35295fc`. Tests check: **passed**. 
 | pass | ordinary daemon and direct lifecycle approvals honor actual epic standalone and issue ancestors | `src/workflow/review/design-review/__tests__/approval.test.ts` |
 | pass | both approval routes refuse missing or unapproved actual required ancestors | `src/workflow/review/design-review/__tests__/approval.test.ts` |
 | pass | ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | FIFO document replacements refuse publication approval and recovery without blocking | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/workflow/review/design-review/__tests__/approval.test.ts` | 0 | 9 | 1.4 s |  |
-| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 1 | 0.8 s |  |
+| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 2 | 1.3 s |  |
 
 ## t7
 

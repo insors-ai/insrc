@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-c898707f-5b22-453d-bded-02983d5547e1",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.329Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify the complete concurrent-chat flow",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5fdb60cc3c3af2d2fe712d815b802255de10c607d59407184b0d7ccde27e29c1",
+        "at": "2026-11-08T06:58:01.329Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.330Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify the complete concurrent-chat flow",
+    "summary": "Run the full VS Code extension test sweep and typecheck once after every prior task passes its focused checks. Record manual VS Code validation as pending until performed, with an exact reproduction checklist and expected outcomes.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "End-to-end tests show two same-repo turns, independent progress on switches, and Stop in one chat without affecting the other.",
+      "The full plugin sweep and TypeScript check pass, with any existing failures identified separately. Record the real manual smoke outcome when run."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts: two same-repo turns retain separate progress, decisions and verified Stop"
+      },
+      {
+        "level": "integration",
+        "name": "Complete VS Code extension test suite and TypeScript check after all functional tasks"
+      },
+      {
+        "level": "smoke",
+        "name": "Start A and B in the same repo, return to A while B progresses, and stop A without affecting B."
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

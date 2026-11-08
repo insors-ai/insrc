@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b7a1b863-bf7c-45c9-a535-e18833eec0f0",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T06:58:01.327Z",
+    "epicCreatedAt": "2026-11-08T05:31:52.982Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "d8b2fe8e08f1d1be",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Project queue waits and enable concurrent admission",
+      "parent": {
+        "entityId": "STORY-d8b2fe8e08f1d1be-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-d8b2fe8e08f1d1be-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-d8b2fe8e08f1d1be-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "0b006b3647159d2a1c0b7426b0cfd51abc4412c06187698eb349e77f199735d0",
+        "at": "2026-11-08T06:58:01.327Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T06:58:01.328Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Project queue waits and enable concurrent admission",
+    "summary": "Wire the admission-based outbox into the host and webview, then enable the v3 queue path with its compatible worker and runtime. Preserve existing queue recovery affordances and enforce the upgrade preflight.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "Visible rows explain same-chat order, retry delay, unavailable origin and full capacity using the same eligibility snapshot as admission. Free capacity and idle drafts show no unrelated blocking message.",
+      "No window can keep using the old singleton schema after cutover. Incompatible reopen and unsafe migration fail closed with a recoverable notice."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-outbox.test.ts: wait reason uses shared eligibility for FIFO, retries, origin and capacity"
+      },
+      {
+        "level": "integration",
+        "name": "vscode-plugin/src/chat/__tests__/chat-queue-outbox-host.test.ts: compatible v3 cutover and idle drafts with no unrelated blocker"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

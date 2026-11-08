@@ -162,6 +162,21 @@ test('get returns the saved session with every row variant, editMode, mode, nati
   third.store.append('missing', row(1)); // a no-op, never a throw
 });
 
+test('ISSUE-0d3939248a956860: hasMessages is true only for a stored session with a row, never reads a file, and counts an unreadable rows file as having messages', () => {
+  const { store, fake } = makeStore();
+  const used = store.draft('claude');
+  used.transcript.push(row(0));
+  store.save(used);
+  const empty = store.create('claude');
+  fake.clear();
+  assert.equal(store.hasMessages(used.id), true, 'a session with a row has messages');
+  assert.equal(store.hasMessages(empty.id), false, 'a stored session with no row has none');
+  assert.equal(store.hasMessages('missing'), false, 'an unknown id has none');
+  assert.deepEqual(fake.ops('readText'), [], 'it reads no file (stat only)');
+  fake.failOn = (c) => (c.op === 'stat' ? new Error('EACCES') : undefined);
+  assert.equal(store.hasMessages(empty.id), true, 'a failing stat keeps the session listed');
+});
+
 test('list reads head files only, never a rows file, and returns id, provider, title and updatedAt sorted by updatedAt descending', () => {
   const { store, fake } = makeStore();
   const a = store.draft('claude');

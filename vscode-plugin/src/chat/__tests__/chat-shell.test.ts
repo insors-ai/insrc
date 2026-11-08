@@ -18,6 +18,7 @@ import type { TurnEvent } from '../stream-events.js';
 import { createAttachmentStore } from '../attachment-store.js';
 import { allOf, bodyStub, fire, textNode, textOf, type BodyStub } from './fake-dom.js';
 import { fakeAttachmentFs } from './fake-attachment-fs.js';
+import { PROVIDER_ICON_SVGS } from '../provider-icons.js';
 
 const ROW_PX = 10;
 const VIEW_PX = 100;
@@ -75,7 +76,8 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     s['options'] = [];
     s['dataset'] = {};
     s['remove'] = () => {};
-    s['focus'] = () => {};
+    // Records how it was last focused, so a test can tell a scrolling focus from a non-scrolling one.
+    s['focus'] = (opts?: unknown) => { s['focusedWith'] = opts ?? 'scroll'; };
     s['removeAttribute'] = () => {};
     const classes = new Set<string>();
     s['classList'] = { add: (c: string) => classes.add(c), remove: (c: string) => classes.delete(c), toggle: (c: string) => { if (classes.has(c)) classes.delete(c); else classes.add(c); }, contains: (c: string) => classes.has(c) };
@@ -674,7 +676,7 @@ test("chat shell: an informational line's done does not end a running turn, and 
   assert.deepEqual([prog.className, prompt.textContent], ['progress idle', '\u276f'], "the turn's error ends it");
 });
 
-test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded entries; selecting posts open-chat { chatId }', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): #insrc-active chip sits LEFT of the .right history chip; active-list populates dot-coded menu rows; activating one posts open-chat { chatId }', () => {
   const s = runShell();
   // layout: the active chip precedes the .right (history) span in the chrome
   const chromeAt = s.html.indexOf('class="chrome"');
@@ -682,41 +684,47 @@ test('E202611031bd72813:S001 t4: #insrc-active chip sits LEFT of the .right hist
   const rightAt = s.html.indexOf('class="right"');
   const histAt = s.html.indexOf('id="insrc-history"');
   assert.ok(chromeAt !== -1 && actAt > chromeAt && actAt < rightAt && histAt > rightAt, 'active chip is left of .right; history stays right-aligned in .right');
-  // drive the select like a browser: options is a real array, appendChild feeds it
-  const act = s.el('insrc-active') as unknown as { options: unknown[] & { remove?: (i: number) => void }; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
-  const opts: unknown[] = [];
-  (act as { options: unknown[] }).options = opts;
-  act.remove = (i: number) => { opts.splice(i, 1); };
-  const origAppend = act.appendChild.bind(act);
-  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
+  const act = s.el('insrc-active');
+  const actMenu = s.el('insrc-actmenu');
+  const rowLabel = (r: BodyStub): string => r.querySelector('.lbl')!.textContent;
+  const rowDot = (r: BodyStub): string => r.querySelector('.sub')!.getAttribute('data-dot')!;
   s.msg({ type: 'active-list', chats: [
     { id: 'a', title: 'Chat A', status: 'waiting-input', lastActivityAt: 1 },
     { id: 'b', title: 'Chat B', status: 'working', lastActivityAt: 2 },
     { id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 },
   ] });
-  assert.equal(opts.length, 3, 'three entries');
-  assert.match(String((opts[0] as { textContent: string }).textContent), /^● Chat A/, 'dot + title');
-  assert.match(String((opts[1] as { textContent: string }).textContent), /^● Chat B/);
-  assert.match(String((opts[2] as { textContent: string }).textContent), /^● Chat C/);
+  // open the menu (the trigger's click handler renders + opens it)
+  fire(act, 'click');
+  const rows = actMenu.children;
+  assert.equal(rows.length, 3, 'three entries');
+  assert.equal(rowLabel(rows[0]!), 'Chat A', 'label is the title');
+  assert.equal(rows[0]!.querySelector('.sub')!.textContent, '●', 'the status-dot sub carries the ● glyph');
+  assert.equal(rowLabel(rows[1]!), 'Chat B');
+  assert.equal(rowLabel(rows[2]!), 'Chat C');
   // ac1: EACH entry carries its OWN indicator — waiting-input red, working yellow, done green —
-  // and the shell CSS consumes data-dot, so the popup paints every option in its status colour
-  assert.deepEqual((opts as { dataset: Record<string, string> }[]).map((o) => o.dataset.dot), ['red', 'yellow', 'green'], 'per-option data-dot: red/yellow/green by status');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="red"]{color:var(--red);}'), 'CSS consumes data-dot=red');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="yellow"]{color:var(--warn);}'), 'CSS consumes data-dot=yellow');
-  assert.ok(s.html.includes('#insrc-active option[data-dot="green"]{color:var(--pass);}'), 'CSS consumes data-dot=green');
-  // the dot colour rides on the option's dataset in a real browser; here the chip glyph carries it
+  // and the shell CSS consumes data-dot, so the popup paints every row in its status colour
+  assert.deepEqual(rows.map(rowDot), ['red', 'yellow', 'green'], 'per-row data-dot: red/yellow/green by status');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="red"]{color:var(--red);}'), 'CSS consumes data-dot=red');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="yellow"]{color:var(--warn);}'), 'CSS consumes data-dot=yellow');
+  assert.ok(s.html.includes('.popup .item .sub[data-dot="green"]{color:var(--pass);}'), 'CSS consumes data-dot=green');
+  // the dot colour rides on the row's dataset; here the chip glyph carries the aggregate status
   const chip = s.el('insrc-actchip') as unknown as { dataset: Record<string, string> };
   assert.equal(chip.dataset.urgent, 'waiting-input', 'chip glyph shows the most urgent status (red)');
+  // activating a row posts the SAME open-chat { chatId } the history dropdown posts
+  const bRow = rows.find((r) => rowLabel(r) === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // selecting a differently-ranked row (working) must NOT override the aggregate chip glyph
+  assert.equal(chip.dataset.urgent, 'waiting-input', 'the chip keeps the most urgent status, not the selected row');
+  // a later active-list re-settles the chip; reopening the menu re-renders it (pickChat closed it).
   s.msg({ type: 'active-list', chats: [{ id: 'c', title: 'Chat C', status: 'done', lastActivityAt: 3 }] });
   assert.equal(chip.dataset.urgent, 'done', 'with only a done chat left, the chip goes green');
-  assert.equal((opts.at(-1) as { dataset: Record<string, string> }).dataset.dot, 'green', 'the re-rendered entry carries data-dot=green');
-  // selecting an entry posts the SAME open-chat { chatId } the history dropdown posts
-  act.value = 'b';
-  fire(act as never, 'change');
-  assert.deepEqual(s.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  fire(act, 'click');
+  assert.equal(actMenu.children.length, 1, 'the menu re-renders to the one remaining chat');
+  assert.equal(rowDot(actMenu.children[0]!), 'green', 'the re-rendered row carries data-dot=green');
 });
 
-test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdown selection posts open-chat, the real host receives it, and answers session-restored for that chat', () => {
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): TRUE end-to-end round trip — activating an active-menu row posts open-chat, the real host receives it, and answers session-restored for that chat', () => {
   const posted: unknown[] = [];
   let onMsg: ((m: unknown) => void) | undefined;
   let html = '';
@@ -734,20 +742,17 @@ test('E202611031bd72813:S001 t4: TRUE end-to-end round trip — the shell dropdo
   const b = store.create('claude' as never);
   store.save(a);
   store.save(b);
-  const act = s.el('insrc-active') as unknown as { options: unknown[]; remove: (i: number) => void; appendChild: (o: unknown) => unknown; value: string };
-  const opts: unknown[] = [];
-  act.options = opts as never;
-  act.remove = (i: number) => { opts.splice(i, 1); };
-  const origAppend = act.appendChild.bind(act);
-  act.appendChild = (o: unknown) => { opts.push(o); return origAppend(o); };
-  // the host posts the active list; the shell renders it (options wired first, like the browser)
+  const act = s.el('insrc-active');
+  const actMenu = s.el('insrc-actmenu');
+  // the host posts the active list; the shell caches it and renders the menu on open
   s.msg({ type: 'active-list', chats: [
     { id: a.id, title: 'Chat A', status: 'done', lastActivityAt: 1 },
     { id: b.id, title: 'Chat B', status: 'done', lastActivityAt: 2 },
   ] });
-  // select Chat B in the dropdown, like a browser change event
-  act.value = b.id;
-  fire(act as never, 'change');
+  // activate Chat B (open the menu, then invoke its row's click handler, like a browser click)
+  fire(act, 'click');
+  const bRow = actMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
   const last = s.sent.at(-1) as { type: string; chatId: string };
   assert.deepEqual(last, { type: 'open-chat', chatId: b.id }, 'the shell posted open-chat for the selected chat');
   // forward it through the channel to the REAL host (webview -> host)
@@ -810,4 +815,284 @@ test('new-session model and effort controls open and apply selections in the exe
   assert.equal(v.el('insrc-effortlabel').textContent, 'high');
   assert.ok(v.el('insrc-runpop').listeners['click']?.length, 'menu consumes inside clicks before document dismissal');
   assert.ok(v.el('insrc-effortpop').listeners['click']?.length, 'slider consumes inside clicks before document dismissal');
+});
+
+// ---- Story 546198e11c24c1e3/s1: rendered provider icons + trigger/reconcile/keyboard behaviour ----
+// These run the REAL shell script and read the RENDERED innerHTML / attributes, so each
+// subject below is evidenced by the webview's own output (not by pinning a source string).
+
+const chatEntries = (prov: 'claude' | 'codex'): Array<Record<string, unknown>> => [
+  { id: 'a', title: 'Chat A', provider: prov, status: 'done', lastActivityAt: 1 },
+  { id: 'b', title: 'Chat B', provider: prov === 'claude' ? 'codex' : 'vibe', status: 'working', lastActivityAt: 2 },
+];
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a rendered menu row and both triggers inline the REAL provider SVG (not a source string), and the empty active trigger reads "no active work"', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+  const actMenu = v.el('insrc-actmenu');
+
+  // A rendered active-menu row's innerHTML carries the provider's real inline SVG (mitem -> pico()).
+  fire(act, 'click');
+  assert.equal(actMenu.children.length, 2, 'two active rows');
+  assert.ok(actMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'row A inlines the Claude SVG');
+  assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'row B inlines the Codex SVG');
+
+  // The history menu's persisted-chat rows carry the same real per-row SVG (historyRow -> pico()).
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  assert.equal(histMenu.children.length, 3, 'two history rows + the new… row');
+  assert.ok(histMenu.children[0]!.innerHTML.includes(PROVIDER_ICON_SVGS.claude), 'history row A inlines the Claude SVG');
+  assert.ok(histMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'history row B inlines the Codex SVG');
+
+  // Both triggers render the settled chat's icon + title (chatTrig -> pico(e.provider)).
+  v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'the active trigger inlines the Codex SVG');
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger labels the settled chat');
+  assert.ok(hs.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'the history trigger inlines the Codex SVG');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger labels the settled chat');
+
+  // The empty active trigger (a restored session absent from the active list) reads the new placeholder.
+  v.msg({ type: 'session-restored', sessionId: 'gone', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('no active work'), "the empty active trigger reads 'no active work'");
+  assert.doesNotMatch(act.innerHTML, /active…/, "the old 'active…' placeholder is gone");
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a row writes the selection optimistically (both triggers re-render to the chosen chat before any host reply) and posts open-chat/new-chat', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+  const actMenu = v.el('insrc-actmenu');
+
+  fire(act, 'click');
+  const bRow = actMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // Optimistic: no session-restored arrived, yet both triggers already show Chat B + its icon.
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger re-rendered optimistically');
+  assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with the Codex icon');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger re-rendered optimistically');
+
+  // The history menu's trailing 'new…' row posts new-chat (subject 5 history activation).
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  const newRow = histMenu.children.at(-1)!;
+  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
+  (newRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: '' });
+});
+
+test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the trailing new… row WITHOUT scrolling to it; arrow keys still scroll', () => {
+  // Where the menu then sits is layout, which this fake DOM does not model:
+  // history-menu-browser.live.test.ts checks it in a real browser.
+  const v = runShell();
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const hs = v.el('insrc-history');
+  const histMenu = v.el('insrc-histmenu');
+
+  fire(hs, 'click');
+  const rows = histMenu.children;
+  const newRow = rows.at(-1)!;
+  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the selected row of a draft is the trailing new…');
+  assert.equal(newRow.getAttribute('tabindex'), '0', 'it carries the roving focus');
+  // The script runs in its own realm: compare the focus options by value, not by prototype.
+  assert.equal(JSON.stringify((newRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
+
+  fire(histMenu, 'keydown', { key: 'ArrowDown', preventDefault() {}, stopPropagation() {} });
+  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'ArrowDown wraps to the most recent chat');
+  assert.equal((rows[0] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list', () => {
+  const v = runShell();
+  // Chat B is a persisted history chat that is NOT in the active list — the persisted-history
+  // path must still open it. The open-chat/new-chat split is by row kind, not active membership.
+  v.msg({ type: 'active-list', chats: [{ id: 'a', title: 'Chat A', provider: 'claude', status: 'done', lastActivityAt: 1 }] });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  const bRow = histMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+
+  // A persisted history row posts open-chat, never new-chat.
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  // The history trigger optimistically re-renders to the chosen chat with its provider icon.
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger re-rendered to the persisted chat');
+  assert.ok(hs.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with the Codex icon');
+  // Chat B is absent from the active list, so the active trigger stays empty until the host confirms.
+  assert.ok(act.innerHTML.includes('no active work'), 'the active trigger does not claim a chat absent from the active list');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored settles BOTH triggers on the restored chat (and clears one absent from a list)', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('Chat B'), 'active trigger settled on the restored chat');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'history trigger settled on the restored chat');
+  assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with its provider icon');
+
+  // A restored session absent from BOTH lists clears both triggers.
+  v.msg({ type: 'session-restored', sessionId: 'x', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('no active work'), 'an absent restored chat clears the active trigger');
+  assert.ok(hs.innerHTML.includes('new…'), 'and the history trigger');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): a history-list-only response (a rejected open-chat) recovers BOTH triggers to the confirmed session', () => {
+  const v = runShell();
+  // A confirmed session A; B is cached in BOTH the active and history lists.
+  v.msg({ type: 'session-restored', sessionId: 'a', transcript: [], firstIndex: 0, total: 0 });
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+  const actMenu = v.el('insrc-actmenu');
+
+  // The user optimistically opens B (pickChat): both triggers re-render to B before any host reply.
+  fire(act, 'click');
+  const bRow = actMenu.children.find((r) => r.querySelector('.lbl')!.textContent === 'Chat B')!;
+  (bRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'b' });
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger shows the optimistic B');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger shows the optimistic B');
+
+  // The host REJECTS the open: a history-list WITHOUT B arrives (no session-restored), while B
+  // remains cached in actEntries. reconcile() must re-settle BOTH triggers to the confirmed session A.
+  v.msg({ type: 'history-list', chats: [{ id: 'a', title: 'Chat A', provider: 'claude', lastActivityAt: 1 }] });
+  assert.ok(hs.innerHTML.includes('Chat A'), 'the history trigger recovered to the confirmed session A');
+  assert.ok(!hs.innerHTML.includes('Chat B'), 'the rejected B is gone from the history trigger');
+  assert.ok(act.innerHTML.includes('Chat A'), 'the active trigger recovered to the confirmed session A (no active-list message)');
+  assert.ok(!act.innerHTML.includes('Chat B'), 'the rejected B is gone from the active trigger');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): active-list reconcile re-settles the active trigger to the confirmed session (dropped from active -> cleared)', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('Chat B'), 'active trigger settled on B');
+
+  // The host re-posts the active list without B (aged out of active work): the active trigger clears,
+  // but the history trigger stays (B is still a persisted chat).
+  v.msg({ type: 'active-list', chats: [{ id: 'a', title: 'Chat A', provider: 'claude', status: 'done', lastActivityAt: 1 }] });
+  assert.ok(act.innerHTML.includes('no active work'), 'the active trigger cleared (B dropped from the active list)');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger still shows the persisted chat');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the menu keyboard moves the roving tabindex (ArrowDown/ArrowUp/Home/End) and Escape closes', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: [
+    { id: 'a', title: 'Chat A', provider: 'claude', status: 'done', lastActivityAt: 1 },
+    { id: 'b', title: 'Chat B', provider: 'codex', status: 'working', lastActivityAt: 2 },
+    { id: 'c', title: 'Chat C', provider: 'vibe', status: 'done', lastActivityAt: 3 },
+  ] });
+  const act = v.el('insrc-active');
+  const actMenu = v.el('insrc-actmenu');
+  const key = (k: string): Record<string, unknown> => ({ key: k, preventDefault() {}, stopPropagation() {} });
+
+  fire(act, 'click');
+  assert.equal(act.getAttribute('aria-expanded'), 'true', 'the menu is open');
+  const rows = actMenu.children;
+  assert.equal(rows.length, 3, 'three rows');
+  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'open focuses the first row');
+  assert.equal(rows[1]!.getAttribute('tabindex'), '-1', 'the rest are -1');
+  assert.equal(rows[2]!.getAttribute('tabindex'), '-1', 'the rest are -1');
+
+  fire(actMenu, 'keydown', key('ArrowDown'));
+  assert.equal(rows[0]!.getAttribute('tabindex'), '-1', 'ArrowDown unfocuses A');
+  assert.equal(rows[1]!.getAttribute('tabindex'), '0', 'and focuses B');
+  fire(actMenu, 'keydown', key('ArrowDown'));
+  assert.equal(rows[2]!.getAttribute('tabindex'), '0', 'ArrowDown focuses C');
+  fire(actMenu, 'keydown', key('ArrowDown'));
+  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'ArrowDown wraps to A');
+  fire(actMenu, 'keydown', key('ArrowUp'));
+  assert.equal(rows[2]!.getAttribute('tabindex'), '0', 'ArrowUp wraps to C');
+  fire(actMenu, 'keydown', key('Home'));
+  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'Home focuses A');
+  fire(actMenu, 'keydown', key('End'));
+  assert.equal(rows[2]!.getAttribute('tabindex'), '0', 'End focuses C');
+
+  // Enter activates the focused row (C after End) — open-chat + close.
+  fire(actMenu, 'keydown', key('Enter'));
+  assert.deepEqual(v.sent.at(-1), { type: 'open-chat', chatId: 'c' }, 'Enter activates the focused row');
+  assert.equal(act.getAttribute('aria-expanded'), 'false', 'Enter closes the menu');
+
+  fire(act, 'click');
+  assert.equal(act.getAttribute('aria-expanded'), 'true', 'menu re-opens for Escape');
+  fire(actMenu, 'keydown', key('Escape'));
+  assert.equal(act.getAttribute('aria-expanded'), 'false', 'Escape closes the menu');
+
+  // Tab also closes (a roving menu must not trap focus).
+  fire(act, 'click');
+  assert.equal(act.getAttribute('aria-expanded'), 'true', 'menu re-opens for Tab');
+  fire(actMenu, 'keydown', key('Tab'));
+  assert.equal(act.getAttribute('aria-expanded'), 'false', 'Tab closes the menu');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): an unknown provider falls back to an empty .pico (no broken SVG or image)', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: [{ id: 'x', title: 'Mystery', provider: 'mystery', status: 'done', lastActivityAt: 1 }] });
+  v.msg({ type: 'history-list', chats: [{ id: 'x', title: 'Mystery', provider: 'mystery', lastActivityAt: 1 }] });
+  const act = v.el('insrc-active');
+  fire(act, 'click');
+  const row = v.el('insrc-actmenu').children[0]!;
+  // pico('mystery') -> '' — the row still labels itself but carries NO provider SVG or image.
+  assert.equal(row.querySelector('.lbl')!.textContent, 'Mystery', 'the row still renders its title');
+  assert.ok(!row.innerHTML.includes('<svg'), 'no SVG for an unknown provider');
+  assert.ok(!row.innerHTML.includes('<img'), 'and no image tag');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): session-restored-before-list ordering settles BOTH triggers once the lists arrive', () => {
+  const v = runShell();
+  const act = v.el('insrc-active');
+  const hs = v.el('insrc-history');
+
+  // The session arrives BEFORE either list: neither dropdown knows the id yet.
+  v.msg({ type: 'session-restored', sessionId: 'b', transcript: [], firstIndex: 0, total: 0 });
+  assert.ok(act.innerHTML.includes('no active work'), 'before the lists, the active trigger is empty');
+  assert.ok(hs.innerHTML.includes('new…'), 'before the lists, the history trigger is empty');
+
+  // The lists arrive afterwards: reconcile() settles BOTH triggers on the restored chat.
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  assert.ok(act.innerHTML.includes('Chat B'), 'the active trigger settles on the restored chat once the active list arrives');
+  assert.ok(act.innerHTML.includes(PROVIDER_ICON_SVGS.codex), 'with its provider icon');
+  assert.ok(hs.innerHTML.includes('Chat B'), 'the history trigger settles on the restored chat once the history list arrives');
+});
+
+test("E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): the 'vibe' provider branch inlines the Vibe SVG too, not just Claude/Codex", () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('codex') });
+  const act = v.el('insrc-active');
+  fire(act, 'click');
+  const actMenu = v.el('insrc-actmenu');
+  assert.equal(actMenu.children.length, 2, 'two active rows (codex/vibe)');
+  assert.ok(actMenu.children[1]!.innerHTML.includes(PROVIDER_ICON_SVGS.vibe), 'row B inlines the Vibe SVG');
+});
+
+test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): with a run-config provider set, the history new… row posts new-chat carrying that provider', () => {
+  const v = runShell();
+  v.msg({ type: 'active-list', chats: chatEntries('claude') });
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const hs = v.el('insrc-history');
+  v.msg({ type: 'run-config', provider: 'codex', model: '', effort: '' });
+  fire(hs, 'click');
+  const histMenu = v.el('insrc-histmenu');
+  const newRow = histMenu.children.at(-1)!;
+  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
+  (newRow as unknown as { onclick: () => void }).onclick();
+  assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: 'codex' });
 });

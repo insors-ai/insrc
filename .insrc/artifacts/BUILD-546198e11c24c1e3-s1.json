@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 6,
+        "contentHash": "48977a40b3cf700c6010018ca1300bd792e052ec3b1d41a0cf31fe410cb60f58",
+        "at": "2026-11-07T15:29:59.391Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 6,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T05:36:38.575Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-a4feb75b-111d-4dd9-b277-4b622b0f4b68",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-07T14:48:24.346Z",
+    "epicCreatedAt": "2026-11-07T12:39:44.150Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "546198e11c24c1e3",
+    "storyId": "s1",
+    "revision": 6,
+    "updatedAt": "2026-11-07T15:29:02.808Z",
+    "authoredBy": "controller",
+    "standalone": true,
+    "sizeClass": "small",
+    "triageRationale": "Contained webview-chrome change: two dropdowns + a placeholder relabel, no data-model or IPC change; triaged as a standalone small feature.",
+    "epicSlug": "show-provider-icons-chat-dropdowns-relabel"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Renders the real provider icon (Claude/Codex/Vibe) in the history and active-chat chrome dropdowns and relabels the empty active-chat placeholder to \"no active work\". Validation-driven fixes: (1) the history menu was left-anchored like the active menu and overflowed the right viewport edge — now right-anchored via #insrc-histmenu{left:auto;right:0}, with the new selector listed in chat-theme's exact-selector assertion; (2) the history-activation subject had no persisted-history-row coverage — added N9 (persisted history row posts open-chat even when absent from the active list). Smoke is a real headless-Chrome run including a viewport-boundary check for the history menu (22 assertions pass, /tmp/insrc-smoke-546198e11c24c1e3-s1.json + .png).",
+    "testRecord": {
+      "md": "docs/standalone/show-provider-icons-chat-dropdowns-relabel-E20261107546198e1/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-panel.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T15:29:02.808Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-shell.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T15:29:02.808Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme-before.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T15:29:02.808Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/__tests__/chat-theme.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T15:29:02.808Z"
+      },
+      {
+        "target": {
+          "file": "vscode-plugin/src/chat/chat-panel.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-07T15:29:02.808Z"
+      }
+    ],
+    "commit": "7ff090a46"
+  },
+  "citations": []
+}

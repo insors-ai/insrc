@@ -305,15 +305,15 @@ test('chat theme: each component uses the name the mapping gives it (bars, trans
   assert.match(style, /:focus-visible\{outline:1px solid var\(--focus\);outline-offset:1px;\}<?$/);
 });
 
-test('chat theme: the history chip is one wrapper around the select with a masked icon in the current text colour; the select keeps its id and options, and every image source the shell declares is allowed by its content security policy', () => {
+test('chat theme: the history chip is one wrapper around the trigger button with a masked icon in the current text colour; the trigger keeps its id, and every image source the shell declares is allowed by its content security policy', () => {
   const html = shellHtml();
   const style = ownStyle(html);
   assert.equal((html.match(/class="histchip"/g) ?? []).length, 1);
-  assert.match(html, /<span class="right"><span class="histchip"><select id="insrc-history" class="segsel [^"]*" aria-label="session"><option value="">new…<\/option><\/select><\/span><\/span>/);
+  assert.match(html, /<span class="right"><span class="histchip"><button type="button" id="insrc-history" class="chatbtn [^"]*" aria-haspopup="menu"[^>]*><span class="pico"><\/span><span class="chatlbl">new…<\/span><span class="chev">▾<\/span><\/button><div id="insrc-histmenu" class="popup chatmenu" role="menu" aria-label="session"><\/div><\/span><\/span>/);
   const icon = rule(style, '.histchip::before');
   assert.match(icon, /background-color:currentColor/);
   assert.match(icon, /(?:^|;)mask:url\("data:image\/svg\+xml,[^"]*"\) center\/12px 12px no-repeat/);
-  assert.match(icon, /pointer-events:none/, 'the glyph never takes a click meant for the select');
+  assert.match(icon, /pointer-events:none/, 'the glyph never takes a click meant for the trigger');
   // The select itself no longer paints an icon; it keeps the two arrow layers every .segsel has.
   assert.equal(rule(style, '.chrome #insrc-history'), 'max-width:100%;');
   assert.ok(!/\.segsel\{[^}]*data:image/.test(style));
@@ -332,10 +332,18 @@ test("chat theme: every selector and element id of the shell and the row rendere
   // Every selector from before is still there; what is new is listed here and nowhere else.
   assert.deepEqual(before.selectors.filter((s) => !now.has(s)), [], 'no selector was removed or renamed');
   assert.deepEqual([...now].filter((s) => !before.selectors.includes(s)).sort(), [
-    // E202611031bd72813:S001 t4 ac1: the per-option status-colour rules that consume data-dot.
-    '#insrc-active option[data-dot="green"]',
-    '#insrc-active option[data-dot="red"]',
-    '#insrc-active option[data-dot="yellow"]',
+    // Story 546198e11c24c1e3/s1: the button triggers + custom chat menus (the native <select>s are
+    // gone); each active row's status-dot sub carries data-dot, coloured here.
+    '.chatbtn',
+    '.chatbtn:hover',
+    '.chatbtn:focus-visible',
+    '.chatbtn .chatlbl',
+    '.chatbtn .chev',
+    '.chatmenu',
+    '#insrc-histmenu',
+    '.popup .item .sub[data-dot="green"]',
+    '.popup .item .sub[data-dot="red"]',
+    '.popup .item .sub[data-dot="yellow"]',
     '#insrc-prompt:focus-visible,#insrc-older:focus-visible,.segsel:focus-visible,.attachbtn:focus-visible,.attchip__x:focus-visible,.insrc-attchip:focus-visible',
     '.histchip',
     '.histchip::before',

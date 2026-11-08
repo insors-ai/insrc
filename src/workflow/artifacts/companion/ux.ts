@@ -345,14 +345,22 @@ function elementHtml(el: UxElement, mk?: UxMarkers): string {
 			const w = el.width !== undefined ? ` style="flex:${/^\d+$/.test(String(el.width)) ? String(el.width) : '1'} 1 0"` : '';
 			return `<div class="ux-column"${w}>${childListHtml(el, mk)}</div>`;
 		}
-		case 'Image':
-			// A placeholder: the url is SHOWN, never fetched. This is the one element
-			// where a renderer would naturally reach out, and the no-network invariant
-			// is at its sharpest here.
+		case 'Image': {
+			// A data: URI is INLINE — the bytes are part of the document itself, so
+			// nothing is fetched. It renders as a real <img> while the no-network
+			// invariant holds (the src points at the document, not the network).
+			if (el.url.startsWith('data:image/')) {
+				return `<span class="ux-image ux-image--inline">${pin}`
+					+ `<img class="ux-image__img" src="${esc(el.url)}" alt="${esc(el.altText ?? 'image')}"/></span>`;
+			}
+			// Anything else (http(s), file:, a bare path) is a PLACEHOLDER: the url
+			// is SHOWN, never fetched. This is the one element where a renderer would
+			// naturally reach out, and the no-network invariant is at its sharpest here.
 			return `<div class="ux-image" role="img" aria-label="${esc(el.altText ?? 'image')}">${pin}`
 				+ `<span class="ux-image__icon" aria-hidden="true">▣</span>`
 				+ `<span class="ux-image__meta"><span class="ux-image__alt">${esc(el.altText ?? 'image')}</span>`
 				+ `<span class="ux-image__url">${esc(el.url)}</span></span></div>`;
+		}
 		case 'Input.Text':
 			return `<label class="ux-field"><span class="ux-label">${pin}${esc(el.label ?? el.id)}</span>`
 				+ (el.isMultiline === true
@@ -436,6 +444,8 @@ const UX_CARD_STYLE = [
 	`.ux-image__meta{display:flex;flex-direction:column;min-width:0}`,
 	`.ux-image__alt{font-size:13px}`,
 	`.ux-image__url{font-size:11px;color:#8b95a1;overflow-wrap:anywhere}`,
+	`.ux-image--inline{display:inline-flex;align-items:center;border:0;padding:0;background:transparent;gap:0}`,
+	`.ux-image__img{width:16px;height:16px;display:block}`,
 	`.ux-field{display:block}`,
 	`.ux-label{display:block;font-size:12px;font-weight:600;color:#44505e;margin-bottom:4px}`,
 	`.ux-input{display:block;border:1px solid #c4ccd4;border-radius:5px;padding:7px 10px;`,
@@ -551,7 +561,7 @@ function keyElementRow(el: UxElement, n: number): UxKeyElement {
 		case 'TextBlock':        return { n, name: shortText(el.text), type: el.type, target: null, description };
 		case 'Input.Text':       return { n, name: el.label ?? el.id, type: el.type, target: el.id, description };
 		case 'Input.ChoiceSet':  return { n, name: el.label ?? el.id, type: el.type, target: el.id, description };
-		case 'Image':            return { n, name: el.altText ?? 'Image', type: el.type, target: el.url, description };
+		case 'Image':            return { n, name: el.altText ?? 'Image', type: el.type, target: el.url.startsWith('data:image/') ? 'inline data URI' : el.url, description };
 		case 'Container':        return { n, name: 'Container', type: el.type, target: null, description };
 		case 'ColumnSet':        return { n, name: 'Column set', type: el.type, target: null, description };
 		case 'ActionSet':        return { n, name: 'Action set', type: el.type, target: null, description };

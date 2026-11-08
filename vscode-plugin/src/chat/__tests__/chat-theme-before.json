@@ -150,7 +150,9 @@
  "ids": [
   "insrc-actchip",
   "insrc-active",
+  "insrc-actmenu",
   "insrc-history",
+  "insrc-histmenu",
   "insrc-older",
   "insrc-term",
   "insrc-progress",

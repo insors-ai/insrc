@@ -133,6 +133,9 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 		pending: packed.parts.length > 0 ? { kind: 'part', index: 0, round: 0 } : undefined,
 	};
 	if (packed.parts.length === 0) throw terminalFailure(progress.unadmittable, { found: found(args.executed) }, handlingOf(progress));
+	// One part with one round of reference is the whole input in one reply: dividing it changes nothing but the name of
+	// the turn, so the client is asked for the one reply it always was.
+	if (packed.parts.length === 1 && refPlan.rounds.length <= 1 && packed.unadmittable.length === 0) return { mode: 'single', ...base, budgets: progress.budgets };
 	return progress;
 }
 

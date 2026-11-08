@@ -257,6 +257,9 @@ test('finalize: an incomplete s2 record is refused as non-retryable, naming a re
 		const empty = refusal(await finalizeArtifact(standaloneIntent(repo, TITLE), { s2: {} }, 'wf', 5, { body: body(), citations: CITATIONS }, 'client'));
 		assert.equal(empty.retryable, false, 'an s2 output with no alternatives is malformed, not absent');
 		assert.match(empty.message, /Restart design\.story/);
+		const nulled = refusal(await finalizeArtifact(standaloneIntent(repo, TITLE), { s2: null }, 'wf', 5, { body: body(), citations: CITATIONS }, 'client'));
+		assert.equal(nulled.retryable, false, 'a null s2 output is malformed, not absent');
+		assert.match(nulled.message, /Restart design\.story/);
 	});
 });
 

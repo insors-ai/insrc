@@ -116,7 +116,7 @@ export interface TurnLifecycle {
    * (false when it ignored even SIGKILL within the grace) — recovery uses this as its verified-exit
    * prerequisite. Best-effort callers may ignore the value.
    */
-  stop(): Promise<boolean>;
+  stop(session?: ChatSession): Promise<boolean>;
   /**
    * A chat switch, the panel closing, or adopt(): stop reading the live turn. A turn that writes to
    * the session file keeps running (with its lease) and its cursor stays saved, so following the
@@ -677,20 +677,30 @@ export function createTurnLifecycle(deps: TurnLifecycleDeps): TurnLifecycle {
     return verified;
   };
 
-  const stop = async (): Promise<boolean> => {
-    following?.ctl.abort();
+  const stop = async (session?: ChatSession): Promise<boolean> => {
+    const currentFollow = following;
+    const followedSession = followingSession;
     const resumed = resumedProc;
-    resumedProc = undefined;
-    const liveVerified = await stopLive();
-    let resumedVerified = true;
-    if (resumed !== undefined) {
+    const saved = followedSession?.liveTurn;
+    if (session?.liveTurn !== undefined && liveProc === undefined && currentFollow?.sessionId !== session.id) return false;
+    if (currentFollow !== undefined || (saved !== undefined && liveProc === undefined)) {
+      // Keep following while checking Stop. An unknown identity must not discard its reader.
+      let verified = false;
       try {
-        resumedVerified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
-      } catch {
-        resumedVerified = false;
+        if (resumed !== undefined) {
+          verified = resumed.stopVerified !== undefined ? await resumed.stopVerified() : await resumed.stop().then(() => true);
+        }
+      } catch { /* exit could not be verified */ }
+      if (!verified) return false;
+      currentFollow?.ctl.abort();
+      if (following === currentFollow) resumedProc = undefined;
+      if (followedSession !== undefined && saved !== undefined) {
+        clearCursorPinned(followedSession, saved.cursor.turnId);
+        trySave(followedSession);
       }
+      return true;
     }
-    return liveVerified && resumedVerified;
+    return stopLive();
   };
 
   const detach = async (): Promise<void> => {

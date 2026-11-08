@@ -167,7 +167,7 @@ export interface ChatPanelHostDeps {
   /** A pid's process start time, recorded with the cursor so a reused pid is never followed. */
   readonly processStartTime?: ((pid: number) => number | undefined) | undefined;
   /** Whether a pid is alive (another window's extension host owning a saved cursor). */
-  readonly isAlive?: ((pid: number) => boolean) | undefined;
+  readonly isAlive?: ((pid: number, startedAt?: number) => boolean) | undefined;
   /**
    * Story E2026101259da3204:S001: pasting images and attaching documents. The store keeps the
    * files; `pickFiles` (the file dialog, resolving with the chosen paths, none when dismissed)
@@ -853,7 +853,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       // an observation failure, or a thrown pass
       // caught up = drained to the end of the available output without an abort/failure — reading
       // nothing new also counts when the checkpoint already holds an ingested terminal.
-      const pidDead0 = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid);
+      const pidDead0 = live.pid !== undefined && deps.isAlive !== undefined && !deps.isAlive(live.pid, live.startedAt ?? undefined);
       // caught up = drained without abort/throw; an observation failure does not block it when the
       // process is VERIFIED dead (the synthetic EOF error is expected then).
       const caughtUp = (pass.ingestedAny || cp.sawTerminal === true) && !pass.abortedByBudget && !pass.threw && (!pass.sawObservationFailure || (pidDead0 && pass.syntheticEofOnly));
@@ -3026,9 +3026,23 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       case 'outbox-retry-now':
         outboxAction(msg.seq, 'retry-now');
         return;
-      case 'cancel-turn':
+      case 'cancel-turn': {
         // S002 ac2: the Stop control cancels the in-flight turn via the existing reap.
         // Idempotent when no turn is active (stop() no-ops).
+        const stopping = session;
+        if (stopping?.liveTurn !== undefined && turns.live === undefined) {
+          void turns.stop(stopping).then((verified) => {
+            if (!verified) {
+              if (session === stopping) {
+                post({ type: 'turn-event', event: { kind: 'error', turnId: stopping.liveTurn?.cursor.turnId ?? 'none', message: 'Could not confirm that the process stopped. Still following this turn.', observationFailure: true } });
+                followLiveTurn(stopping);
+              }
+              return;
+            }
+            if (session === stopping) reevaluateChatStatus(stopping);
+          });
+          return;
+        }
         if (queued !== undefined) queued.stopped = true; // Epic E20261014613abdb3 Story S001: wins over the CLI's error
         rejectQueuedApprovals(); // ISSUE-6a811b8a: Stop rejects the requests still waiting
         settleQueued(); // a queued message waiting only on a card ends now
@@ -3036,6 +3050,7 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         void turns.stop();
         if (session !== undefined) setChatStatus(session, 'done'); // E202611031bd72813:S001 t2: Stop -> done
         return;
+      }
       case 'new-chat': {
         if (typeof msg.provider !== 'string') return;
         // S005: only start a chat on an INSTALLED agentic CLI (k4). A stale webview

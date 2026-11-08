@@ -41,7 +41,7 @@ import { randomUUID } from 'node:crypto';
 import { ollamaClaudeEnv, type ChatOllamaTarget } from './ollama-routing.js';
 import type { TurnEvent, UnifiedDiff } from './stream-events.js';
 import type { PermissionMode } from './protocol.js';
-import { DEFAULT_GRACE_MS, defaultIsAlive, defaultKillGroup, defaultProcessStartTime, signalGroup, stopProcess } from './session-lock.js';
+import { DEFAULT_GRACE_MS, defaultKillGroup, observeProcess, processDeparted, signalGroup, stopProcess } from './session-lock.js';
 import { parseMarker, SegmentGone, type SegmentCursor, type SessionOutput } from './session-output.js';
 
 export type ProviderId = 'claude' | 'codex' | 'vibe';
@@ -1470,40 +1470,61 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
   }
 
   async function* resume(req: ResumeRequest, opts?: ResumeOptions): AsyncIterable<TurnEvent> {
+    const aborted = () => opts?.signal?.aborted === true;
+    if (aborted()) return;
     const turnId = req.cursor.turnId;
     const sessionOutput = deps.sessionOutput;
     if (sessionOutput === undefined) {
       yield { kind: 'error', turnId, message: `${mapper.id} turn output is not kept, so it cannot be resumed` };
       return;
     }
-    const isAlive = deps.isAlive ?? defaultIsAlive;
     const killGroup = deps.killGroup ?? defaultKillGroup;
-    const startTime = deps.processStartTime ?? defaultProcessStartTime;
     const pid = req.pid;
-    // The recorded process, and only while it is still that process (never a reused pid).
-    const isTheProcess = (): boolean =>
-      pid !== undefined && isAlive(pid) && (req.startedAt === null || startTime(pid) === req.startedAt);
-    const exit = new Promise<{ code: number | null; signal: string | null }>((resolve) => {
-      const check = (): void => {
-        if (isTheProcess()) return;
-        clearInterval(timer);
-        resolve({ code: null, signal: null });
+    const observe = () => observeProcess(pid, deps.isAlive, deps.processStartTime);
+    const finished = () => processDeparted(observe(), req.startedAt);
+    const watchExit = () => {
+      let departed = false;
+      let resolve!: (result: { code: null; signal: null }) => void;
+      const exit = new Promise<{ code: null; signal: null }>((done) => { resolve = done; });
+      const check = (): boolean => {
+        if (!departed && finished()) {
+          departed = true;
+          clearInterval(timer);
+          resolve({ code: null, signal: null });
+        }
+        return departed;
       };
       const timer = setInterval(check, deps.livenessPollMs ?? 200);
       timer.unref?.();
       check();
-    });
+      return { exit, check, dispose: () => clearInterval(timer) };
+    };
+    const follower = watchExit();
+    const kill = (signal: 'SIGTERM' | 'SIGKILL'): void => {
+      const observation = observe();
+      if (pid !== undefined && observation.kind === 'present' && observation.startedAt === req.startedAt) {
+        killGroup(pid, signal);
+      }
+    };
+    const stopVerified = async (): Promise<boolean> => {
+      const observation = observe();
+      if (processDeparted(observation, req.startedAt)) return true;
+      if (observation.kind !== 'present' || observation.startedAt !== req.startedAt) return false;
+      const stopping = watchExit();
+      try {
+        return await stopProcess({ pid, exit: stopping.exit, kill }, stopGraceMs);
+      } finally {
+        stopping.dispose();
+      }
+    };
     const handle: TurnProcess = {
       pid,
-      exit,
+      exit: follower.exit,
       cursor: req.cursor,
-      kill: (signal) => {
-        if (pid !== undefined && isTheProcess()) killGroup(pid, signal);
-      },
-      stop: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs).then(() => {}),
-      stopVerified: () => stopProcess({ pid, exit, kill: (signal) => handle.kill(signal) }, stopGraceMs),
+      kill,
+      stop: () => stopVerified().then(() => {}),
+      stopVerified,
     };
-    opts?.onAttach?.(handle);
 
     const requestUuid = mapper.id === 'claude' ? /^claude-request-([0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/.exec(turnId)?.[1] : undefined;
     // E202611031bd72813:S001 t5: restore the persisted decoder state instead of starting empty, so a
@@ -1526,6 +1547,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     });
     let sawTerminalInDrain = req.sawTerminal === true;
     try {
+      opts?.onAttach?.(handle);
       // A caller that carries no saved decoder state (a reloaded live reader) has a saved cursor
       // that holds identity but not the result: rebuild it from the turn's prefix without replaying
       // visible events. The background observer passes its decoder state and checkpoint, so it never
@@ -1538,7 +1560,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
           catch { log.warn(`[chat:${mapper.id}] skipped unparseable prefix line`); }
           if (state.result !== undefined) break;
         }
-        if (opts?.signal?.aborted === true) return;
+        if (aborted()) return;
         // The terminal line may have been checkpointed immediately before a reload.
         if (state.result !== undefined) {
           yield doneEvent(state.result.ok, state.result.message);
@@ -1550,8 +1572,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       // completed by the writer and must not be abandoned).
       // E202611031bd72813:S001 t5: an ABSENT pid is not 'finished' (unverifiable) — the read ends at
       // the turn-end marker or a verified-dead recorded pid only.
-      const finished = (): boolean => pid !== undefined && !isTheProcess();
-      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished, signal: opts?.signal })) {
+      for await (const { line, cursor } of sessionOutput.tail(req.cursor, { finished: follower.check, signal: opts?.signal })) {
         let events: TurnEvent[];
         try {
           events = parseMarker(line) !== undefined ? [] : mapper.mapLine(line, turnId, state);
@@ -1595,8 +1616,10 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
       }
       yield { kind: 'error', turnId, message: `the output of this turn could not be read: ${err instanceof Error ? err.message : String(err)}`, observationFailure: true };
       return;
+    } finally {
+      follower.dispose();
     }
-    if (opts?.signal?.aborted === true) return; // stopped following; the turn goes on
+    if (aborted()) return; // stopped following; the turn goes on
     // E202611031bd72813:S001 t5: EOF without a terminal event is an OBSERVATION failure (no real
     // terminal was ingested and the pid may still be alive) — never a synthetic completion. A drain
     // that DID see a terminal ends cleanly instead (the segment's turn-end marker closed it).
@@ -1604,7 +1627,7 @@ function makeStreamAdapter(mapper: ProviderMapper, deps: AdapterDeps): StreamAda
     // E202611031bd72813:S001 t5: EOF without a terminal event — a plain terminal error ONLY when a
     // recorded pid is verified dead; alive OR ABSENT pid is an observation failure (an absent pid
     // is unverifiable, never a synthetic completion).
-    const verifiedDead = pid !== undefined && !isTheProcess();
+    const verifiedDead = follower.check();
     yield { kind: 'error', turnId, message: 'the turn ended without a result', ...(verifiedDead ? {} : { observationFailure: true }) };
   }
 

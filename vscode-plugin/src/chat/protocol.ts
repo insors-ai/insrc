@@ -145,9 +145,9 @@ export type HostToWebview =
    * `replaces` redraws the widget of that section; any other row is drawn as the same row is drawn
    * on restore.
    */
-  | { readonly type: 'transcript-row'; readonly rowIndex: number; readonly row: TranscriptEntry }
+  | { readonly type: 'transcript-row'; readonly rowIndex: number; readonly row: TranscriptEntry; readonly target?: SessionProjectionTarget | undefined }
   // ISSUE-6a811b8a: the shown approval card's place in the queue changed ('1 of N'); update it in place.
-  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number }
+  | { readonly type: 'approval-position'; readonly requestId: string; readonly position: number; readonly total: number; readonly target?: SessionProjectionTarget | undefined }
   | { readonly type: 'docs-list'; readonly artifacts: DocsArtifactSummary[] }
   // S007: one pending artifact's rendered body for the docs-review pane (additive).
   // `commentable` (optional; default true) hides request-changes for artifact kinds the
@@ -249,11 +249,12 @@ export type HostToWebview =
   // Story E2026101259da3204:S001 (additive): `attachments` is the files the message carries.
   // Epic E20261014613abdb3 Story S001: a queued message's turn began for this session, so the webview
   // shows the turn as running (and offers Stop) though no submit was clicked for it.
-  | { readonly type: 'turn-running'; readonly sessionId: string }
+  | { readonly type: 'turn-running'; readonly sessionId: string; readonly target?: SessionProjectionTarget | undefined }
   // Epic E20261014613abdb3 Story S002: the shown chat's outbox, posted after every queue change.
   | { readonly type: 'outbox'; readonly view: OutboxView }
   | {
       readonly type: 'user-row';
+      readonly target?: SessionProjectionTarget | undefined;
       readonly text: string;
       readonly key: string;
       readonly rowIndex?: number | undefined;
@@ -328,7 +329,7 @@ export type WebviewToHost =
   // (show-after-hide / restore, since the panel has no retainContextWhenHidden). The host
   // (re)sends theme + active session + history in response, so a reloaded webview is always
   // populated instead of racing the not-yet-attached listener with a post-after-setHtml.
-  | { readonly type: 'ready' }
+  | { readonly type: 'ready'; readonly targetedActions?: boolean | undefined }
   // Story E20261012ddc4ede1:S001: the webview asks for the page of rows that ends just before
   // absolute transcript index `before` (its first held row). Answered with 'transcript-page'.
   | { readonly type: 'load-older'; readonly sessionId: string; readonly before: number }

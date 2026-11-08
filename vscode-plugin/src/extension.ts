@@ -814,6 +814,10 @@ export function activate(context: vscode.ExtensionContext): void {
               'Revert',
             );
             if (pick === 'Revert') {
+              if (opts.canRevert?.() === false) {
+                void vscode.window.showWarningMessage('The edit could not be reverted because its original baseline is no longer exclusive.');
+                return;
+              }
               if (baseline === undefined) await nodeFsp.rm(abs, { force: true });
               else await nodeFsp.writeFile(abs, baseline, 'utf8');
             }

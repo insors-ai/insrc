@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-520d9e73-2bc8-4791-8b9e-c62cf1e20ef1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.985Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Helper division and assembly: parts, combine, adapters, terminal precedence",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "35b85462c4e84d074945fe070d014d181dac86cc5f23c29762cd57fdf30b0fda",
+        "at": "2026-11-08T07:21:40.985Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.987Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Helper division and assembly: parts, combine, adapters, terminal precedence",
+    "summary": "Build the division layer on the call layer: serial parts with division up to three times, the staged combine of N into ceil(N/g) with the per-part fallback ('combine' in notCovered), assembly adapters for the bundle and the aggregate, per-block unadmittable handling that keeps covered parts, and the terminal precedence (HandlingBudgetError only when every uncovered part is unadmittable, else model-failed or invalid-answer) with partFailures and bounded causes.",
+    "size": "L",
+    "order": 7,
+    "acceptanceChecks": [
+      "terminal precedence follows the stated rule across unadmittable, call-failed and invalid-reply parts",
+      "a failed part is kept out, the others are kept, a combine failure returns the per-part results with 'combine' in notCovered, and a successful part is never discarded",
+      "a mixed request with one oversized-envelope block and admissible blocks returns the covered parts with the oversized block in notCovered",
+      "a single-pass call keeps the legacy route with the original error as cause"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "partition-combine.test.ts: serial parts, division up to three times, repair exhaustion never discards a successful part, combine terminates and a combine failure returns per-part results with 'combine' in notCovered"
+      },
+      {
+        "level": "unit",
+        "name": "partition-combine.test.ts: terminal precedence by cause (unadmittable, invalid-reply, call-failed) with partFailures kinds and cause chains"
+      },
+      {
+        "level": "unit",
+        "name": "partition-combine.test.ts: bundle and aggregate adapters keep evidence layers and findings exactly through several combine stages"
+      },
+      {
+        "level": "integration",
+        "name": "partition-combine.test.ts: mixed oversized-envelope and admissible blocks return the covered parts with the oversized block in notCovered"
+      },
+      {
+        "level": "integration",
+        "name": "shared-context.test.ts: adherence regression with rule and code sites forced into separate parts, rule in every part and combine call, every site classified; a rule too large gives HandlingBudgetError naming the reference context"
+      },
+      {
+        "level": "integration",
+        "name": "dependency-table.test.ts: capability and code regressions with forced partitions and deduped Related modules, Related docs and surface"
+      },
+      {
+        "level": "integration",
+        "name": "provider-failure-kinds.test.ts: Vibe outage on every part of a divided call gives typed model-failed with no prefix; malformed Vibe reply gives invalid-answer"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

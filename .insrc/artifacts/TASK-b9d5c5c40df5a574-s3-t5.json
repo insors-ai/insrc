@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-cdc13140-9005-4c90-bc1a-23e6aa5064b8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.979Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Dependency table, reference context, dedupe keys and oversized reference evidence",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a30c59758acf19c8b209e7ef4471975b94a54a47a02d43d496b6c4693ddce9f6",
+        "at": "2026-11-08T07:21:40.979Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.980Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Dependency table, reference context, dedupe keys and oversized reference evidence",
+    "summary": "Add the DEPENDENCY table read from the six synthesizer prompts, selectSharedContext (adherence rule outputs, capability reuse-check outputs, code anchor extract, none for docs, data and infra), DEDUPE_KEYS with dedupeByKey, and the audit that every prompt key has an entry. Handle a reference record larger than the room without ending in HandlingBudgetError (finding 1): cut it into sections with its envelope and pair every section of the reference evidence with the parts that depend on it, so each part is judged against the whole reference in sequence, with the rule-source count and restatement still computed in code from the whole reference.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "selectSharedContext returns the stated blocks per target and removes them from the partition blocks",
+      "dedupeByKey lists an entry that appears in several parts once, first ordinal winning",
+      "the audit test fails when a synthesize prompt key has no table entry",
+      "an adherence request whose single rule record exceeds the room is cut into sections with its envelope, every part is judged against every section of the reference in sequence, and the rule-source count comes from the whole reference",
+      "no code site is dropped for that oversized-reference request and it never ends in HandlingBudgetError"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "shared-context.test.ts: selectSharedContext per target, blocks removed from partition blocks, rule-source count and restatement match the reference"
+      },
+      {
+        "level": "unit",
+        "name": "dependency-table.test.ts: dedupeByKey first ordinal wins and order kept; audit fails when a synthesize prompt key has no entry"
+      },
+      {
+        "level": "unit",
+        "name": "shared-context.test.ts: reference context in the admission rule, unfittable reference names the reference context, fitting reference leaves the stated section room"
+      },
+      {
+        "level": "unit",
+        "name": "shared-context.test.ts: an oversized single rule record is cut into sections, each part sees every section in sequence, rule-source count from the whole reference, no HandlingBudgetError"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

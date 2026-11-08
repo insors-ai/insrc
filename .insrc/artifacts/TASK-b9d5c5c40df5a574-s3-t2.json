@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-81d976e2-25c8-4c72-82b9-f1268d8f094c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.972Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Error fields, failure data and the Vibe wording",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a20db8c57d842a74fa36cced03a8521ecc19b6fb2ada10e9f0220efdf7533067",
+        "at": "2026-11-08T07:21:40.972Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.973Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Error fields, failure data and the Vibe wording",
+    "summary": "Add HandlingBudgetError with the 'input-does-not-fit' reason and the optional upstream and partFailures fields (with FailureCause) to ShaperAnswerStepFailedError; add failureData with the bounded JSON-safe cause builder; add 'vibe exited with' to CLI_FAILURE_TEXTS; add handling and answerStepReason to LookupFailedError; add the optional data field to TaskExecutionRecord.",
+    "size": "M",
+    "order": 2,
+    "acceptanceChecks": [
+      "failureData gives the typed and plain shapes, nests a cause at most 3 levels, records a non-Error cause as a string and survives JSON.stringify and parse",
+      "isModelCallFailure recognises a Vibe non-zero exit with and without the retry prefix, not inside quoted text, and still not a size refusal or a schema-invalid reply",
+      "the added error and record fields are optional and existing callers compile unchanged"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "failure-data.test.ts: typed and plain shapes, 3-level cause bound, non-Error cause as string, JSON round trip, upstream and partFailures kept in order"
+      },
+      {
+        "level": "unit",
+        "name": "model-failure.test.ts: isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies"
+      },
+      {
+        "level": "unit",
+        "name": "failure-contract.test.ts: RunFailure shape and code 'executor-aggregator-failed' unchanged; TaskExecutionRecord, LookupFailedError and ShaperAnswerStepFailedError gain only optional JSON-safe fields"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

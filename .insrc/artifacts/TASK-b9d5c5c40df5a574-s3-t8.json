@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1b8b9116-4fcd-4b8f-908c-8c1ad9ac7a86",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.989Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "synthesizeHandled, the synthesize wrapper and the driver's report transition",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "aab8090df8ceb7d4576421f81953abc436309e21098ae57c085ba54f6346a8d2",
+        "at": "2026-11-08T07:21:40.989Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.990Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "synthesizeHandled, the synthesize wrapper and the driver's report transition",
+    "summary": "Move synthesize onto the helper through synthesizeHandled (synthesize stays a wrapper returning the layers), and in the context driver apply the handling to found.report with applyHandling and return the updated found in the 'bundle' outcome so settlePipelineOutcome stamps it.",
+    "size": "M",
+    "order": 8,
+    "acceptanceChecks": [
+      "an XS or S admitted request makes the same single call as today",
+      "through the real driver a partitioned success, a failed part and a combine fallback deliver a bundle whose report carries the handling, the uncovered parts and complete false, and a single-pass answer keeps the lookups' completeness",
+      "the model's own report is never used"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "synthesize-handling.test.ts: XS or S admitted makes the one call of today; M or larger or not admitted divides and a failed part is named"
+      },
+      {
+        "level": "integration",
+        "name": "synthesize-driver-handling.test.ts: through the real context driver a partitioned success, a failed part and the combine fallback deliver the report with handling, uncovered parts and complete false; single pass keeps lookup completeness; the model's own report is never used"
+      }
+    ],
+    "planTaskId": "t8"
+  },
+  "citations": []
+}

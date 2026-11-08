@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4efbfb81-d453-4b9c-9525-3547026cb90c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.974Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "HANDLING_TABLE, the admission rule and the output caps",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a79c35971b1e997319af93f32902fff24bfb2c88f727ffc0c2149b778f971c54",
+        "at": "2026-11-08T07:21:40.974Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.975Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "HANDLING_TABLE, the admission rule and the output caps",
+    "summary": "Add the size-to-method table (undetermined is XL), the two-unit admission rule (CLI characters minus 16,000; local UTF-8 bytes against window minus output tokens minus 2,048; default 60,000), PART_MAX_OUTPUT_TOKENS 8,192 for local part and combine calls, and the trigger decision (size, fit, both) with the budgets it records.",
+    "size": "M",
+    "order": 3,
+    "acceptanceChecks": [
+      "a local single pass is admitted at exactly 10,240 bytes and divided one byte over, with multi-byte text counted in bytes",
+      "the real code, adherence and docs prompt sizes give the stated single-pass decisions and every part prompt plus the minimum room fits 22,528 bytes",
+      "a CLI provider is admitted in characters and the units are never compared",
+      "a window that leaves less than the fixed context plus 4,000 bytes raises HandlingBudgetError naming the configuration"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handling-table.test.ts: XS and S single pass, M, L and XL partitioned, undetermined is XL, trigger size/fit/both and no trigger for single pass"
+      },
+      {
+        "level": "unit",
+        "name": "handling-admission.test.ts: checked-in local values give 10,240 bytes, exact boundary, one byte over, multi-byte, 22,528 for parts, window too small gives HandlingBudgetError naming the configuration"
+      },
+      {
+        "level": "unit",
+        "name": "handling-admission.test.ts: real code, adherence and docs prompt sizes, CLI characters minus 16,000, units never compared, local code and adherence handled in parts with trigger 'fit'"
+      },
+      {
+        "level": "unit",
+        "name": "part-output-cap.test.ts: PART_MAX_OUTPUT_TOKENS 8,192 for local part and combine calls, configured tokens for single pass, no enforced cap for CLI"
+      }
+    ],
+    "planTaskId": "t3"
+  },
+  "citations": []
+}

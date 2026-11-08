@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { chmodSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fixture, hash } from './publication-fixture.js';
 import { channel, serve, eventually } from './controller-fixture.js';
-import { CliProvider } from '../../../../agent/providers/cli-provider.js';
+const {CliProvider}=await import(process.env['DESIGN_TEST_COMPILED']==='1'?resolve('out/agent/providers/cli-provider.js'):'../../../../agent/providers/cli-provider.js');
 import type { ControllerFrame } from '../controller.js';
 import type { ReviewAcknowledgement } from '../coordinator.js';
 

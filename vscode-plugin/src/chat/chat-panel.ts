@@ -583,7 +583,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
     log.warn(`[chat] edit governor ${step} failed: ${err instanceof Error ? err.message : String(err)}`);
 
   // S005: (re)post the extension-local chat history so the webview history-dropdown stays current.
-  const postHistory = (): void => post({ type: 'history-list', chats: [...deps.store.list()] });
+  // ISSUE-0d3939248a956860: a chat with no message is left out — it would show as an empty
+  // "new chat" row that opens to nothing (it stays on disk; the list is only filtered).
+  const postHistory = (): void => post({ type: 'history-list', chats: deps.store.list().filter((c) => deps.store.hasMessages(c.id)) });
   // E202611031bd72813:S001 t3: the active-chats dropdown feed — recomputed (purge included) on every
   // status change, on history refresh, and on a 60 s timer so done chats age out of the list.
   // E202611031bd72813:S001 t4 ac4: project to the exact protocol ActiveChatEntry wire shape
@@ -2409,8 +2411,12 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
       `function renderActiveMenu(){actMenu.innerHTML='';if(actEntries.length===0){actMenu.appendChild(mitem(false,'no active work',undefined,undefined,undefined,true,''));return;}for(var i=0;i<actEntries.length;i++)actMenu.appendChild(activeRow(actEntries[i]));}` +
       `function renderHistoryMenu(){histMenu.innerHTML='';for(var i=0;i<histEntries.length;i++)histMenu.appendChild(historyRow(histEntries[i]));histMenu.appendChild(mitem(histSel==='','new…','starts a new chat',function(){newChatPick(hs);},undefined,false,''));}` +
       `function chatRows(menu){var out=[];for(var i=0;i<menu.children.length;i++){var c=menu.children[i];if(c.getAttribute&&c.getAttribute('role')==='menuitem'&&c.getAttribute('aria-disabled')!=='true')out.push(c);}return out;}` +
-      `function focusRow(rows,row){for(var i=0;i<rows.length;i++)rows[i].setAttribute('tabindex',rows[i]===row?'0':'-1');chatFocused=row;if(row&&row.focus)row.focus();}` +
-      `function focusMenu(menu){var rows=chatRows(menu);var sel=null;for(var i=0;i<rows.length;i++){if((' '+(rows[i].className||'')+' ').indexOf(' sel ')>=0){sel=rows[i];break;}}var target=sel||rows[0]||null;if(target)focusRow(rows,target);else chatFocused=null;}` +
+      `function focusRow(rows,row,keep){for(var i=0;i<rows.length;i++)rows[i].setAttribute('tabindex',rows[i]===row?'0':'-1');chatFocused=row;if(row&&row.focus){if(keep)row.focus({preventScroll:true});else row.focus();}}` +
+      // ISSUE-0d3939248a956860: opening a menu shows its top (the most recent chats) and focuses its
+      // selected row WITHOUT scrolling to it. Focusing the trailing 'new…' row of a fresh chat used
+      // to scroll it to its oldest entries, and a hidden menu keeps the offset it was closed at.
+      // Arrow keys still scroll to the row they move to.
+      `function focusMenu(menu){var rows=chatRows(menu);var sel=null;for(var i=0;i<rows.length;i++){if((' '+(rows[i].className||'')+' ').indexOf(' sel ')>=0){sel=rows[i];break;}}var target=sel||rows[0]||null;if(target)focusRow(rows,target,true);else chatFocused=null;menu.scrollTop=0;}` +
       `function openChatMenu(trigger,menu,render){render();menu.classList.add('open');trigger.setAttribute('aria-expanded','true');focusMenu(menu);}` +
       `function toggleChatMenu(trigger,menu,render){var was=menu.classList.contains('open');closePops();if(!was)openChatMenu(trigger,menu,render);}` +
       `function chatMenuKey(trigger,menu,e){var rows=chatRows(menu);if(e.key==='Escape'){if(e.stopPropagation)e.stopPropagation();closePops();if(trigger&&trigger.focus)trigger.focus();return;}if(e.key==='Tab'){closePops();return;}if(!rows.length)return;var idx=-1;for(var i=0;i<rows.length;i++){if(rows[i]===chatFocused){idx=i;break;}}if(e.key==='ArrowDown'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx+1)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='ArrowUp'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();idx=(idx-1+rows.length)%rows.length;focusRow(rows,rows[idx]);}else if(e.key==='Home'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[0]);}else if(e.key==='End'){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();focusRow(rows,rows[rows.length-1]);}else if(e.key==='Enter'||e.key===' '){if(e.preventDefault)e.preventDefault();if(e.stopPropagation)e.stopPropagation();var r=rows[idx<0?0:idx];if(r&&r.onclick)r.onclick();}}` +
@@ -3075,7 +3081,9 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (model === undefined && effort === undefined) return;
         if (model !== undefined) session.model = model === '' ? undefined : model;
         if (effort !== undefined) session.effort = effort === '' ? undefined : effort;
-        trySave(session);
+        // ISSUE-0d3939248a956860: a draft keeps its run config in memory and persists it on its
+        // first turn, as set-permission-mode does; saving it here wrote an empty chat to history.
+        if (deps.store.get(session.id) !== undefined) trySave(session);
         postRunConfig(session);
         return;
       }
@@ -3120,7 +3128,8 @@ export function createChatPanelHost(deps: ChatPanelHostDeps): ChatPanelHost {
         if (msg.mode !== 'auto' && msg.mode !== 'review') return; // invalid -> drop
         if (session === undefined) return;
         session.editMode = msg.mode;
-        deps.store.save(session);
+        // ISSUE-0d3939248a956860: a draft persists on its first turn (set-permission-mode's rule).
+        if (deps.store.get(session.id) !== undefined) deps.store.save(session);
         return;
       }
       case 'edit-decision': {

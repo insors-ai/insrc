@@ -76,7 +76,8 @@ function runShell(opts: { attach?: boolean | undefined; queue?: boolean | undefi
     s['options'] = [];
     s['dataset'] = {};
     s['remove'] = () => {};
-    s['focus'] = () => {};
+    // Records how it was last focused, so a test can tell a scrolling focus from a non-scrolling one.
+    s['focus'] = (opts?: unknown) => { s['focusedWith'] = opts ?? 'scroll'; };
     s['removeAttribute'] = () => {};
     const classes = new Set<string>();
     s['classList'] = { add: (c: string) => classes.add(c), remove: (c: string) => classes.delete(c), toggle: (c: string) => { if (classes.has(c)) classes.delete(c); else classes.add(c); }, contains: (c: string) => classes.has(c) };
@@ -883,6 +884,27 @@ test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a ro
   assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the last history row is new…');
   (newRow as unknown as { onclick: () => void }).onclick();
   assert.deepEqual(v.sent.at(-1), { type: 'new-chat', provider: '' });
+});
+
+test('ISSUE-0d3939248a956860: opening the history menu on a fresh (draft) chat focuses the trailing new… row WITHOUT scrolling to it; arrow keys still scroll', () => {
+  // Where the menu then sits is layout, which this fake DOM does not model:
+  // history-menu-browser.live.test.ts checks it in a real browser.
+  const v = runShell();
+  v.msg({ type: 'history-list', chats: chatEntries('claude') });
+  const hs = v.el('insrc-history');
+  const histMenu = v.el('insrc-histmenu');
+
+  fire(hs, 'click');
+  const rows = histMenu.children;
+  const newRow = rows.at(-1)!;
+  assert.equal(newRow.querySelector('.lbl')!.textContent, 'new…', 'the selected row of a draft is the trailing new…');
+  assert.equal(newRow.getAttribute('tabindex'), '0', 'it carries the roving focus');
+  // The script runs in its own realm: compare the focus options by value, not by prototype.
+  assert.equal(JSON.stringify((newRow as unknown as { focusedWith: unknown }).focusedWith), '{"preventScroll":true}', 'focused without scrolling to it');
+
+  fire(histMenu, 'keydown', { key: 'ArrowDown', preventDefault() {}, stopPropagation() {} });
+  assert.equal(rows[0]!.getAttribute('tabindex'), '0', 'ArrowDown wraps to the most recent chat');
+  assert.equal((rows[0] as unknown as { focusedWith: unknown }).focusedWith, 'scroll', 'keyboard moves use a scrolling focus');
 });
 
 test('E202611031bd72813:S001 t4 (now Story 546198e11c24c1e3/s1): activating a persisted history row posts open-chat (not new-chat) even when that chat is absent from the active list', () => {

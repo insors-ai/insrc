@@ -1485,12 +1485,12 @@ test('diff sections: a followed turn writes and posts its rows as today and asks
   assert.equal(held.gov.snapshots.count, 1);
 });
 
-test('S006 integration: set-edit-mode updates + persists session.editMode', async () => {
+test('S006 integration: set-edit-mode updates + persists session.editMode (a draft persists it on its first turn)', async () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
-    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
     store,
     cwd: () => '/repo',
     editGovernance: fakeGovernance().deps,
@@ -1498,11 +1498,61 @@ test('S006 integration: set-edit-mode updates + persists session.editMode', asyn
   host.open();
   assert.equal(store.list().length, 0, 'the fresh chat is a draft — not persisted until it is saved');
   fc.send(env('set-edit-mode', { mode: 'review' }));
+  // ISSUE-0d3939248a956860: toggling the mode on a draft does not write an empty chat to history.
+  assert.equal(store.list().length, 0, 'set-edit-mode on a draft does not persist it');
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
   const id = store.list()[0]?.id;
-  assert.ok(id, 'set-edit-mode saved the (previously draft) session');
-  assert.equal(store.get(id!)!.editMode, 'review', 'set-edit-mode persisted review');
+  assert.ok(id, 'the first turn saved the session');
+  assert.equal(store.get(id!)!.editMode, 'review', 'the draft\'s mode rode along into the first save');
+  fc.send(env('set-edit-mode', { mode: 'auto' }));
+  assert.equal(store.get(id!)!.editMode, 'auto', 'set-edit-mode persists at once on a stored session');
   fc.send(env('set-edit-mode', { mode: 'bogus' }));
-  assert.equal(store.get(id!)!.editMode, 'review', 'an invalid mode is dropped (unchanged)');
+  assert.equal(store.get(id!)!.editMode, 'auto', 'an invalid mode is dropped (unchanged)');
+  host.dispose();
+});
+
+test('ISSUE-0d3939248a956860: changing the model or effort of a draft does not write it to history; the first turn persists the run config', async () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([{ kind: 'done', turnId: 't', ok: true }]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  fc.send(env('set-run-config', { model: 'sonnet', effort: 'max' }));
+  assert.equal(store.list().length, 0, 'set-run-config on a draft does not persist it');
+  fc.send(env('submit-turn', { text: 'hi' }));
+  await new Promise((r) => setTimeout(r, 20));
+  const saved = store.get(store.list()[0]!.id)!;
+  assert.equal(saved.model, 'sonnet', 'the draft\'s model rode along into the first save');
+  assert.equal(saved.effort, 'max', 'and its effort');
+  fc.send(env('set-run-config', { effort: 'low' }));
+  assert.equal(store.get(saved.id)!.effort, 'low', 'set-run-config persists at once on a stored session');
+  host.dispose();
+});
+
+test('ISSUE-0d3939248a956860: the history-list feed leaves out stored chats with no message (they stay in the store)', () => {
+  const fc = fakeChannel();
+  const store = createInMemoryChatSessionStore();
+  const empty = store.create('claude'); // a stored chat that never got a message (the old leak)
+  const used = store.create('claude');
+  used.title = 'Used chat';
+  used.transcript.push({ role: 'user', text: 'hi', at: 't' });
+  store.save(used);
+  const host = createChatPanelHost({
+    createPanel: () => fc.channel,
+    providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
+    store,
+    cwd: () => '/repo',
+  });
+  host.open();
+  const ids = (historyLists(fc).at(-1) as Array<{ id: string }>).map((c) => c.id);
+  assert.deepEqual(ids, [used.id], 'only the chat with a message is listed');
+  assert.ok(store.get(empty.id), 'the empty chat is not deleted');
+  host.dispose();
 });
 
 test('S006: without editGovernance the host behaves as before (no transcript-row; file-edit marker still renders)', async () => {
@@ -2340,8 +2390,8 @@ test('S001 the webview posts a ready handshake AFTER attaching its message liste
 test('S001 a ready message (re)posts theme + active session + history — a reloaded webview repopulates', () => {
   const fc = fakeChannel();
   const store = createInMemoryChatSessionStore();
-  store.create('claude'); // seed history so list() is non-empty
-  store.create('claude');
+  // seed history (ISSUE-0d3939248a956860: a listed chat has a message; an empty one is left out)
+  for (let i = 0; i < 2; i++) store.append(store.create('claude').id, { role: 'user', text: `q${i}`, at: 't' });
   const host = createChatPanelHost({
     createPanel: () => fc.channel,
     providers: registry({ claude: scriptedAdapter([]) }, ['claude']),
@@ -2371,7 +2421,7 @@ test('S001 ready before any open-time delivery still populates history (models t
   // Wire a channel directly (adopt path = a VS-Code-restored panel) whose initial posts are
   // assumed lost; only the ready handshake arrives. History must still reach the webview.
   const store = createInMemoryChatSessionStore();
-  store.create('codex');
+  store.append(store.create('codex').id, { role: 'user', text: 'q', at: 't' }); // a listed chat has a message
   const host = createChatPanelHost({
     createPanel: () => fakeChannel().channel,
     providers: registry({ codex: scriptedAdapter([]) }, ['codex']),
@@ -4286,9 +4336,12 @@ test("the shell is still one nonce'd inline script, with no direct scrollTop wri
   // The one script still parses as JavaScript with the pager embedded in it.
   const body = html.slice(html.indexOf('>', html.indexOf('<script nonce=')) + 1, html.lastIndexOf('</script>'));
   assert.doesNotThrow(() => new Script(body), 'the inline script is valid JavaScript');
-  // Scroll position: only the pager writes it.
+  // Scroll position: only the pager writes it. The one other write is the chat menus' reset to
+  // their top on open (ISSUE-0d3939248a956860): a popup menu's own offset, not the transcript's.
   const pagerSrc = transcriptPagerWebviewSource();
-  const withoutPager = html.split(pagerSrc).join('');
+  const menuReset = 'else chatFocused=null;menu.scrollTop=0;}';
+  assert.equal(html.split(menuReset).length, 2, 'the menu reset is written once, in focusMenu');
+  const withoutPager = html.split(pagerSrc).join('').split(menuReset).join('');
   assert.ok(withoutPager.length < html.length);
   assert.doesNotMatch(withoutPager, /scrollTop\s*=[^=]/, 'no scrollTop write outside the pager');
   assert.match(pagerSrc, /term\.scrollTop=/, 'the pager is where it is written');

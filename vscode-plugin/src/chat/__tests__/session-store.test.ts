@@ -44,6 +44,17 @@ test('draft(): an in-memory session NOT persisted until saved (no empty chats in
   assert.equal(store.get(d.id)?.transcript.length, 1);
 });
 
+test('ISSUE-0d3939248a956860: hasMessages is true only for a stored session with a transcript row', () => {
+  const store = createInMemoryChatSessionStore();
+  const empty = store.create('claude');
+  const used = store.create('claude');
+  store.append(used.id, { role: 'user', text: 'hi', at: 't' });
+  assert.equal(store.hasMessages(empty.id), false);
+  assert.equal(store.hasMessages(used.id), true);
+  assert.equal(store.hasMessages('missing'), false);
+  assert.equal(store.hasMessages(store.draft('claude').id), false, 'an unsaved draft has none');
+});
+
 test('round-trip: create/append/save then get/list reflect it', () => {
   const store = createInMemoryChatSessionStore({ now: () => '2026-01-01T00:00:00.000Z', genId: (() => { let n = 0; return () => `id-${++n}`; })() });
   const s = store.create('claude');

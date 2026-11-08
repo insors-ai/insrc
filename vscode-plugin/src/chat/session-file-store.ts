@@ -391,6 +391,15 @@ export function createFileChatSessionStore(deps: FileStoreDeps): ChatSessionStor
       return session;
     },
     get,
+    // A rows file holds one line per row, so a non-empty one means the session has a message.
+    // An unreadable one counts as having messages: the session stays listed, as before.
+    hasMessages(id: string): boolean {
+      try {
+        return (fs.stat(paths(id).rows)?.size ?? 0) > 0;
+      } catch {
+        return true;
+      }
+    },
     list(): ReadonlyArray<ChatSummary> {
       const out: ChatSummary[] = [];
       let names: string[];

@@ -271,6 +271,12 @@ export interface ChatSessionStore {
   draft(provider: ProviderId, run?: RunConfig): ChatSession;
   get(id: string): ChatSession | undefined;
   list(): ReadonlyArray<ChatSummary>;
+  /**
+   * ISSUE-0d3939248a956860: whether a stored session has at least one transcript row. The chat's
+   * history feed leaves out a session without one (an empty "new chat"), without deleting it.
+   * Cheap: it never reads the transcript. False for an unknown id.
+   */
+  hasMessages(id: string): boolean;
   append(id: string, entry: TranscriptEntry): void;
   save(session: ChatSession): void;
   /**
@@ -457,6 +463,7 @@ export function createMementoChatSessionStore(deps: MementoStoreDeps): ChatSessi
       return session;
     },
     get,
+    hasMessages: (id: string): boolean => (get(id)?.transcript.length ?? 0) > 0,
     list(): ReadonlyArray<ChatSummary> {
       const out: ChatSummary[] = [];
       for (const id of readIndex()) {

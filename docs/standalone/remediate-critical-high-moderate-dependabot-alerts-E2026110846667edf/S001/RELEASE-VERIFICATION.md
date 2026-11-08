@@ -2,7 +2,31 @@
 
 The root lockfile has zero matching resolved instances for all 110 in-scope root Dependabot alerts. The four archived qualification lockfiles match their reviewed baseline bytes. The eight low alerts are outside this story.
 
-The combined sweep is pending completion of targeted build validation. SQL Server live verification is the outstanding driver check. The standalone package passed clean macOS arm64/APFS and Linux arm64/ext4 installs and cross-release restore tests. See DRIVER-QUALIFICATION.md and NATIVE-QUALIFICATION.md for details.
+Live SQL Server verification is deferred under the approved plan. The saved-configuration fixture exercised schema discovery and bounded reads at the Tedious SDK boundary. The standalone package passed clean macOS arm64/APFS and Linux arm64/ext4 installs and cross-release restore tests. See DRIVER-QUALIFICATION.md and NATIVE-QUALIFICATION.md for details.
+
+## Combined build and test sweep
+
+After tasks t1–t5 passed targeted validation, the root build passed and the combined backend and project-memory sweep exited with status 1 on `f37bfbb51e42e744f053540bdbf56dc9924b7359` under Node 22.22.1. The packed tests used the qualified release tarball and the pre-upgrade tarball.
+
+```sh
+export PATH="/tmp/insrc-node22.UC6NTB/node_modules/.bin:$PATH"
+export CXXFLAGS=-std=c++17
+export INSRC_MEMORY_RELEASE_TARBALL=/tmp/insrc-memory-release-t5.3Qvyi2/insrc-project-memory-0.1.0.tgz
+export INSRC_MEMORY_PREVIOUS_TARBALL=/tmp/insrc-memory-preupgrade.HO924N/insrc-project-memory-0.1.0.tgz
+npm run build
+node --import tsx --test --test-concurrency=2 --test-force-exit --test-reporter=tap \
+  'src/**/__tests__/*.test.ts' 'packages/project-memory/src/**/__tests__/*.test.ts'
+```
+
+| Tests | Passed | Failed | Cancelled | Skipped | Todo |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 8,709 | 7,965 | 560 | 37 | 144 | 3 |
+
+One stalled worker for `peer-state-store-leakfree.test.ts` was stopped so the sweep could finish. That file also stalled on the unchanged baseline. The sweep took about 28 minutes. Raw logs and the runner interruption record are in `/tmp/insrc-dependabot-sweep.XHqEr6/`.
+
+Targeted reruns on baseline `33eefb2693c64ae393b54ebda479c5dce182d846` reproduced 600 of the 602 distinct TAP failure or cancellation signatures when matched by file and case title, including file and hook failures. A separate diagnostic rerun on baseline reproduced the MCP publication race with the same `reviewId: already-running` response. See `comparison.txt` and `mcp-baseline-probe-16.tap` in the sweep log directory.
+
+The driver diagnostic audit was the sole remaining branch-specific failure. Commit `445774cf2` refreshed reviewed SDK version and source pins after auditing the changed SDKs. All seven targeted checks passed in `t2-post-sweep.tap`, and the daemon revalidated t2. The combined sweep remains red at the recorded revision. The correction was tested with targeted checks after the sweep.
 
 ## Post-deployment GitHub reconciliation
 

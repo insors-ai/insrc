@@ -28,6 +28,7 @@ import type { ConnectionExecutionContext } from '../../../../shared/step-context
 
 import {
 	finalizeSynthesize,
+	prepareSynthesize,
 	SynthesizerSchemaUnrecoverable,
 } from '../../../../analyze/context/synthesizer.js';
 import { SCHEMA_VERSION } from '../../../../analyze/context/schema.js';
@@ -115,6 +116,22 @@ export async function handleBundle(
 	} catch (err) {
 		if (execution?.mode === 'session-memory') { const code = connectionExecutionErrorCode(err); if (code) throw new ConnectionExecutionError(code); return errorResult('bundle-schema', 'Temporary analysis bundle is invalid.', true); }
 		if (err instanceof SynthesizerSchemaUnrecoverable) {
+			// A state with progress asks the same turn again, with a new token and a retry note, up to the retry bound;
+			// past it the state is released and the failure is final. A state without progress keeps the error it always had.
+			if (answer !== undefined && answer.mode === 'single' && state.executed !== undefined) {
+				const bound = loadAnalyzeConfig().shaper.structuredOutputRetries;
+				if (answer.retries + 1 < bound) {
+					const progress: AnswerProgress = { ...answer, retries: answer.retries + 1 };
+					const prepared = prepareSynthesize({
+						intent: { ...state.intent, scope: measureLookupResults(state.executed.results, state.sizeHint).size },
+						executed: state.executed, target: state.synthesizerKey,
+					});
+					const token = await reencodeState(input.state, { ...state, answer: progress }, execution);
+					return turnOutput(prepared, undefined, token, { attempt: progress.retries, reason: err.message });
+				}
+				await releaseState(input.state, execution);
+				return errorResult('bundle-schema', `emitted bundle failed schema validation after ${bound} attempts: ${err.message}.`, false);
+			}
 			return errorResult(
 				'bundle-schema',
 				`emitted bundle failed schema validation: ${err.message}. ` +

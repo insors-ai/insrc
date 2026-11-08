@@ -32,7 +32,7 @@ import { handleAnalyzeStep } from '../analyze-step/handler.js';
 import { decodeState, encodeState, STATE_VERSION } from '../analyze-step/state.js';
 import type { StepStatePayload } from '../analyze-step/state.js';
 import { loadState, StateTokenNotFound, _stateStoreSize } from '../analyze-step/state-store.js';
-import type { StepOutput, StepOutputDone, StepOutputEmitCombine, StepOutputEmitPart, StepOutputError } from '../analyze-step/types.js';
+import type { StepOutput, StepOutputDone, StepOutputEmitBundle, StepOutputEmitCombine, StepOutputEmitPart, StepOutputError } from '../analyze-step/types.js';
 
 const WHOLE = buildCompleteness({ returned: 1, basis: 'graph' });
 const REPO = '/work/app';
@@ -139,10 +139,26 @@ test('prepareAnswerTurn creates progress, state without progress reads as single
 	assert.equal(dead.next, 'error');
 	assert.notEqual(lastHeld, '');
 	await assert.rejects(loadState(lastHeld), StateTokenNotFound, 'the state is released on the terminal failure');
-	// The single reply released on its terminal failure as well: an invalid reply is retried, the state kept until it ends.
+	// The single reply: an invalid reply asks the same emit_bundle turn again with a new token and a retry note, up to the
+	// bound; then the failure is final and the state is released.
 	const { token: singleToken } = await awaitingBundle(executed(1, 100));
-	const again = await step({ bundle: bad, state: singleToken });
-	assert.equal(again.next, 'error');
+	let single: StepOutput = await step({ bundle: bad, state: singleToken });
+	assert.equal(single.next, 'emit_bundle');
+	const reasked = single as StepOutputEmitBundle;
+	assert.equal(reasked.retry?.attempt, 1);
+	assert.notEqual(reasked.state, singleToken);
+	assert.match(reasked.guidance, /previous reply was invalid/);
+	await assert.rejects(loadState(singleToken), StateTokenNotFound);
+	let held = reasked.state;
+	for (let guard = 0; guard < 10 && single.next === 'emit_bundle'; guard++) { held = (single as StepOutputEmitBundle).state; single = await step({ bundle: bad, state: held }); }
+	assert.equal(single.next, 'error');
+	assert.equal((single as StepOutputError).error.retryable, false);
+	await assert.rejects(loadState(held), StateTokenNotFound, 'the state is released when the single reply is given up');
+	// A valid reply after a retry completes, and the retry count does not leak into the answer.
+	const { token: again } = await awaitingBundle(executed(1, 100));
+	const second = await step({ bundle: bad, state: again }) as StepOutputEmitBundle;
+	const finished = await step({ bundle: LAYERS, state: second.state });
+	assert.equal(finished.next, 'done');
 });
 
 test('invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data', async () => {

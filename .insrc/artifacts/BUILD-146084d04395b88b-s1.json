@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "2292b2ca8e076dfc65592ebbe2331ee9a214adc31e621f88f41dcd8e47ed9c8e",
+        "at": "2026-11-08T10:58:01.338Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-2c8be070-00c9-4b11-b9de-0627fcffbf5e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T10:58:00.474Z",
+    "epicCreatedAt": "2026-11-08T10:57:05.313Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "146084d04395b88b",
+    "storyId": "s1",
+    "revision": 1,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "make-rejected-code-review-reuse-actionable"
+  },
+  "body": {
+    "focus": "Implement approved ISSUE-146084d04395b88b: actionable exact-identity reuse rejections, preserved correction feedback and regression for changed T5 evidence with eligible T2 reuse; no relaxed checks or historical checkpoint changes.",
+    "producesLld": false,
+    "commit": "25568cc00"
+  },
+  "citations": []
+}

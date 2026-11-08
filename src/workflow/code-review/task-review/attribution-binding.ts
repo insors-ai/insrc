@@ -1,4 +1,5 @@
 import { qualifyReviewCapacity } from './capacity.js';
+import { diagnosticText } from '../../../shared/review-diagnostics.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
@@ -19,14 +20,45 @@ const digest = (value: unknown) => createHash('sha256').update(canonical(value))
 export function attributionIdentity(state: 'accepted' | 'unmapped_failure', finalScopeIdentity: string, selectedTaskIds: readonly string[], testCount: number, rows: readonly (AcceptedTaskAttribution & { identity: string })[]): string {
  return digest({ format: 'final-attribution-v1', state, finalScopeIdentity, selectedTaskIds, testCount, rows });
 }
-export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment): string {
+function taskFinalInput(prepared: PreparedReviewPacket, assignment: TaskAssignment) {
  requireReview(prepared.projection && prepared.finalTestBlobs?.length === prepared.packet.tests.length, 'attribution', 'Missing final task source identities');
  const task = prepared.tasks.find(t => t.id === assignment.taskId)!;
- return digest({ format: 'final-task-v1', taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
+ return { format: 'final-task-v1', taskId: task.id, title: task.title, summary: task.summary, acceptanceChecks: assignment.acceptanceChecks,
   changes: assignment.changes.map(c => { requireReview('origin' in c, 'attribution', 'Historical scope cannot authorize pinned reuse'); return { path: c.path, blobOid: c.after?.oid ?? null, findingScope: c.findingScope, segments: c.segments }; }),
   documents: Object.entries(prepared.packet.documents).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0).map(([role, ref]) => ({ role, ...ref, contentIdentity: digest(prepared.documents[role as keyof typeof prepared.documents]) })),
   tests: assignment.tests.map(test => { const index = prepared.packet.tests.indexOf(test); requireReview(index >= 0, 'attribution', 'Unknown assigned test'); return { detail: test, blobOid: prepared.finalTestBlobs![index] }; }),
- });
+ };
+}
+export function taskFinalIdentity(prepared: PreparedReviewPacket, assignment: TaskAssignment): string {
+ return digest(taskFinalInput(prepared, assignment));
+}
+export interface TaskInputFingerprint {
+ readonly requirements: string;
+ readonly sources: readonly { path: string; identity: string }[];
+ readonly documents: readonly { path: string; identity: string }[];
+ readonly tests: readonly { path: string; identity: string }[];
+}
+/** Small transient diagnostics: retain hashes, never historical source buffers. */
+export function taskInputFingerprint(prepared: PreparedReviewPacket, assignment: TaskAssignment): TaskInputFingerprint {
+ const input=taskFinalInput(prepared,assignment);
+ return {requirements:digest([input.taskId,input.title,input.summary,input.acceptanceChecks]),
+  sources:input.changes.map(c=>({path:c.path,identity:digest(c)})),
+  documents:input.documents.map(d=>({path:`${d.role}:${d.path}`,identity:digest(d)})),
+  tests:input.tests.map(t=>({path:t.detail.file,identity:digest(t)}))};
+}
+function reuseMismatch(review: AdmittedReview, assignment: TaskAssignment, sourceAttempt: number): string {
+ const before=review.priorTaskInputs?.get(sourceAttempt)?.get(assignment.taskId),after=taskInputFingerprint(review.prepared,assignment);
+ const changed:string[]=[];
+ if(before){
+  if(before.requirements!==after.requirements)changed.push('requirements');
+  for(const kind of ['sources','documents','tests'] as const){
+   for(const path of new Set([...before[kind],...after[kind]].map(x=>x.path))){
+    if(!isDeepStrictEqual(before[kind].filter(x=>x.path===path),after[kind].filter(x=>x.path===path)))changed.push(`${kind} ${JSON.stringify(path)}`);
+   }
+  }
+ }
+ const details=diagnosticText(changed.length?changed.join('; '):'source, test, document or assignment identity/order changed',640);
+ return diagnosticText(`Task ${JSON.stringify(assignment.taskId)} cannot reuse attempt ${sourceAttempt}: relevant task inputs changed (${details}). Set action to "reassess" and omit sourceAttempt for this task; retain eligible reuse for other tasks.`,8192);
 }
 export function validateSavedAttribution(attempt: ReviewAttempt): void {
  const h = attempt.header;
@@ -80,7 +112,10 @@ export function requireReuseIdentity(review: AdmittedReview, assignment: TaskAss
  const source = review.checkpoint.attempts.find(e => e.header.attempt === decision.sourceAttempt);
  requireReview(source?.submitted.reviewRevision && source.header.reviewer === review.attempt.header.reviewer && source.header.attributionState === 'accepted' && source['review-response'].tasks.some(t => t.taskId === assignment.taskId), 'origins', 'Missing or foreign-party accepted source');
  validateSavedAttribution(source);
- requireReview(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity === taskFinalIdentity(review.prepared, assignment), 'origins', 'Relevant task inputs changed; reassessment required');
+ if(source.header.taskScopeIdentities?.find(b => b.taskId === assignment.taskId)?.identity !== taskFinalIdentity(review.prepared, assignment)){
+  const taskIndex=review.attempt.header.selectedTaskIds.indexOf(assignment.taskId);
+  requireReview(false, `origins/tasks/${taskIndex}/sourceAttempt/${decision.sourceAttempt}`, reuseMismatch(review,assignment,decision.sourceAttempt));
+ }
 }
 /** Mutate one complete candidate; caller MUST await its save before ACK/dispatch. */
 export async function bindTaskFinalIdentities(review: AdmittedReview, input: readonly AcceptedTaskAttribution[]): Promise<readonly TaskAssignment[]> {

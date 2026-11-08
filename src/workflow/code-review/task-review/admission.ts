@@ -16,7 +16,8 @@ import type { ReviewSources } from './sources.js';
 import type { AdmittedReview } from './execution.js';
 import { aggregateTaskStatus, validateTaskResult, validateResultOrigins } from './results.js';
 import { resultReferences, validateTaskBody } from './record.js';
-import { restoreAcceptedAssignments } from './attribution-binding.js';
+import { restoreAcceptedAssignments, taskInputFingerprint } from './attribution-binding.js';
+import type { TaskInputFingerprint } from './attribution-binding.js';
 
 export function canonicalReviewStory(story: string, hash: string): string {
  const local = story.startsWith(`STORY-${hash}-`) ? story.slice(`STORY-${hash}-`.length) : story;
@@ -36,6 +37,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  const canonical = await realpath(project), path = checkpointPath(canonical, request.reviewId);
  const saved = await loadCheckpoint(path);
  let priorPrepared: PreparedReviewPacket | undefined;
+ const priorTaskInputs=new Map<number,ReadonlyMap<string,TaskInputFingerprint>>();
  if (saved) {
   requireReview(saved.project === canonical && saved.reviewId === reviewId, 'checkpoint', 'Checkpoint identity mismatch');
   requireReview(saved.attempts.every((entry, index) => entry.header.attempt === index + 1), 'attempt', 'Attempt history must be contiguous');
@@ -44,7 +46,8 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
    validateFailureDiagnostics(entry);
    const prepared = await prepareReviewPacket(entry.submitted, sources, true, undefined, entry.header.derived);
    requireReview(!entry.submitted.reviewRevision || entry.header.finalScopeIdentity === prepared.projection?.identity, 'attribution', 'Saved final scope does not match pinned source');
-   const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared });
+   const boundAssignments = await restoreAcceptedAssignments({ path, checkpoint: saved, attempt: entry, prepared, priorTaskInputs });
+   if(boundAssignments)priorTaskInputs.set(entry.header.attempt,new Map(boundAssignments.map(a=>[a.taskId,taskInputFingerprint(prepared,a)])));
    requireReview(!priorPrepared || priorPrepared.epicHash === prepared.epicHash, 'scope', 'Attempt belongs to another epic');
    requireReview(canonicalReviewStory(saved.storyId, prepared.epicHash) === canonicalReviewStory(prepared.packet.storyId, prepared.epicHash) && saved.taskId === prepared.packet.taskId, 'scope', 'Attempt belongs to another story/task');
    const selected = prepared.tasks.filter(task => !saved.taskId || task.id === saved.taskId).map(task => task.id);
@@ -85,7 +88,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
   requireReview(request.packet === undefined || isDeepStrictEqual(request.packet, latest.submitted), 'packet', 'attempt-conflict: resume input is pinned');
   requireReview(!['pending', 'running'].includes(latest.header.status) || latest.submitted.reviewRevision !== undefined, 'reviewRevision', 'Interrupted unpinned history is read-only; submit a new pinned attempt');
   requireReview(!context.epicHash || context.epicHash === priorPrepared.epicHash, 'epicHash', 'Pinned Plan belongs to another review subject');
-  return capacity({ path, checkpoint: saved, attempt: latest, prepared: priorPrepared });
+  return capacity({ path, checkpoint: saved, attempt: latest, prepared: priorPrepared, priorTaskInputs });
  }
  requireReview(request.packet, 'packet', 'Start requires a committed packet');
  requireReview(saved ? attempt === saved.attempts.length + 1 : attempt === 1, 'attempt', saved ? 'attempt-conflict: expected next sequential attempt' : 'missing-checkpoint: first attempt must be 1');
@@ -105,5 +108,5 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
  const checkpoint = saved ? { ...saved, attempts: [...saved.attempts, entry] } : { schemaVersion: 1 as const, reviewId, project: canonical, storyId: prepared.packet.storyId, ...(prepared.packet.taskId ? { taskId: prepared.packet.taskId } : {}), attempts: [entry] };
  // Include the appended input in the existing whole-checkpoint bound before any caller can save it.
  decodeReview(CheckpointSchema, checkpoint);
- return capacity({ path, checkpoint, attempt: entry, prepared });
+ return capacity({ path, checkpoint, attempt: entry, prepared, priorTaskInputs });
 }

@@ -1,3 +1,5 @@
+import { spawnSync, execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
 import { DesignReviewCoordinator } from '../coordinator.js';
 import { prepareDesignSubject } from '../subject.js';
 import { artifactJsonPath } from '../../../storage.js';
@@ -117,4 +119,14 @@ test('actual active model work retains its artifact while another artifact in th
    await c.start({phase:'start',repo:f.repo,reviewId:'other-artifact',attempt:1,artifactPath:json});while(calls<2)await pause(1);
   });assert.equal(calls,2);
  }finally{release();for(let i=0;i<100;i++){const a=await c.progress(f.repo,'active-review',1);const b=await c.progress(f.repo,'other-artifact',1);if(['paused','failed'].includes(a.status)&&['paused','failed'].includes(b.status))break;await pause(10);}}
+});
+
+test('FIFO checkpoints and claim metadata are retained without blocking the daemon',async t=>{
+ const f=await fixture(t),fifo=join(f.root,'unsafe-fifo.json');execFileSync('mkfifo',[fifo]);
+ const claim=join(f.root,'.cleanup-fifo');mkdirSync(claim,{mode:0o700});execFileSync('mkfifo',[join(claim,'claim.json')]);
+ // Keep a regression from freezing the test runner itself: its child has a hard execution timeout.
+ const code=`import {cleanupDesignArtifact} from ${JSON.stringify(resolve('src/workflow/review/design-review/cleanup.ts'))};const r=await cleanupDesignArtifact(${JSON.stringify(f.repo)},${JSON.stringify(f.id)});process.stdout.write(JSON.stringify(r));`;
+ const child=spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',code],{encoding:'utf8',timeout:5000});
+ assert.equal(child.error,undefined,String(child.error));assert.equal(child.status,0,child.stderr);
+ const result=JSON.parse(child.stdout.trim().split('\n').at(-1)!);assert.ok(result.retained.includes(fifo));assert.ok(result.retained.includes(claim));assert.ok(existsSync(fifo));assert.deepEqual(result.deleted,[f.path]);
 });

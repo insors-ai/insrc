@@ -34,7 +34,7 @@ const reviewResult=(f:Subject,id:string)=>({chunkId:id,status:'passed',summary:'
 async function reviewCall(client:Client,args:Record<string,unknown>){const response=await client.callTool({name:'insrc_review_step',arguments:args});assert.ok(!response.isError,JSON.stringify(response));return decode(response);}
 async function reviewAssignment(client:Client,base:Record<string,unknown>){let assignment:Record<string,unknown>|undefined;await until(async()=>{assignment=(await reviewCall(client,{phase:'assignment',...base})).assignment;return!!assignment;});return assignment!;}
 async function until(fn:()=>boolean|Promise<boolean>){for(let i=0;i<500;i++){if(await fn())return;await pause(10);}throw new Error('Fixture did not settle');}
-async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,compiled=false){
+async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,compiled=true){
  const {stepToolTable,createStepCallHandler}=await import(compiled?resolve('out/daemon/steps/host.js'):'../../daemon/steps/host.js');
  const {Router}=await import(compiled?resolve('out/daemon/threads/router.js'):'../../daemon/threads/router.js');
  const {TargetRegistry}=await import(compiled?resolve('out/daemon/threads/registry.js'):'../../daemon/threads/registry.js');
@@ -48,7 +48,7 @@ async function host(f:ReturnType<typeof designFixture>,provider:LLMProvider,comp
  const router=new Router({classOf:()=> 'session',registry:new TargetRegistry(),routed:new Set(['session']),holdMs:50,local:directDispatch({...Object.fromEntries(DESIGN_REVIEW_PHASES.map(phase=>[`designReview.${phase}`,(args:unknown,trusted:Parameters<typeof designReviewOperation>[2])=>designReviewOperation(phase,args,trusted,{provider:()=>({provider,model:'fake-model (fixture)'})})])), 'workflow.approve':(args:unknown)=>handleWorkflowApprove(args)}, {'step.call':createStepCallHandler(table,{registeredRepos:async()=>new Set([f.repo])})})});
  const ipc=new IpcServer(router.forward,Date.now,path);await ipc.listen();return{ipc,path};
 }
-async function stdio(path:string,repo:string,compiled=false){
+async function stdio(path:string,repo:string,compiled=true){
  const client=new Client({name:'codex',version:'test'});
  const transport=new StdioClientTransport({command:process.execPath,args:['--import','tsx',resolve('src/mcp/__tests__/helpers/design-review-stdio.ts')],env:{...process.env as Record<string,string>,DESIGN_TEST_SOCKET:path,DESIGN_TEST_REPO:repo,DESIGN_TEST_COMPILED:compiled?'1':'0',INSRC_MODE:'mcp'},stderr:'pipe'});
  await client.connect(transport);return client;
@@ -194,5 +194,52 @@ test('compiled registered MCP and daemon qualify both parties across DEF HLD LLD
    assert.equal(readFileSync(f.md,'utf8'),markdown);const restarted=new CompiledCoordinator({provider:()=>{throw Error('History lookup must not invoke a model');}});
    const historical=await restarted.progress(f.repo,'review-1',1,{artifactPath:f.json,includeResult:true});assert.equal(historical.source,'history');assert.equal(historical.status,'passed');assert.equal(historical.completedResults.length,1);
   }finally{await client.close();await h.ipc.close();}
+ }
+});
+test('compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback',async t=>{
+ // Synthetic providers over compiled production MCP/daemon modules, not hosted evidence.
+ const {execFileSync}=await import('node:child_process');
+ const {existsSync,renameSync,rmdirSync}=await import('node:fs');
+ const {designArtifactActive}=await import(resolve('out/workflow/review/design-review/fence.js'));
+ for(const author of ['controller','daemon'] as const){
+  const f=designFixture(t,author);execFileSync('git',['init','-q',f.repo]);
+  let calls=0,correcting=false,faulted=false;
+  const log=f.json.replace(/\.json$/,'.log.jsonl'),backup=log+'.saved';
+  const fault=()=>{if(!faulted){renameSync(log,backup);mkdirSync(log);faulted=true;}};
+  const result=(id:string)=>({...reviewResult(f,id),...(id==='content'?{status:'changes_requested',findings:[{id:'fixture-concern',severity:'MED',location:'/body/summary',message:'Synthetic qualification concern',evidenceReferences:[f.md]}]}:{})});
+  const provider={capabilities:{reviewActivity:true},runReviewSession:async(prompt:string,_schema:unknown,opts:ActivityReviewSessionOpts)=>{
+   calls++;
+   if(correcting){await new Promise<void>((_resolve,reject)=>{if(opts.signal.aborted)reject(opts.signal.reason);else opts.signal.addEventListener('abort',()=>reject(opts.signal.reason),{once:true});});throw Error('Invalidation should abort this fixture');}
+   const chunk=prompt.match(/Chunk assignment: (.+)\n/)?.[1],id=chunk?JSON.parse(chunk).id:undefined;
+   if(id==='final')fault();const value=id?result(id):reviewPlan(f);assert.equal((await opts.onCandidate(value)).accepted,true);return value;
+  }} as unknown as LLMProvider;
+  const h=await host(f,provider,true),client=await stdio(h.path,f.repo,true),base={repo:f.repo,reviewId:'review-1',attempt:1};
+  try{
+   await reviewCall(client,{phase:'start',...base,artifactPath:f.json});
+   if(author==='daemon')for(const unit of ['planning','content','final']){
+    const a=await reviewAssignment(client,base);if(unit==='final')fault();
+    await reviewCall(client,{phase:unit==='planning'?'plan':'result',...base,executionId:a.executionId,sequence:Number(a.sequence)+1,...(unit==='planning'?{plan:reviewPlan(f)}:{result:result(unit)})});
+   }
+   await until(async()=>{const p=await reviewCall(client,{phase:'progress',...base});return p.publication?.state==='pending'&&!!p.publication.error&&!designArtifactActive(f.repo,f.id);});
+   const saved=(await loadDesignCheckpoint(f.repo,'review-1'))!,accepted=structuredClone(saved.attempts[0]!.completedChunks),before=calls;
+   assert.equal(accepted.length,2);assert.equal(saved.attempts[0]!.report!.counts.MED,1);
+   rmdirSync(log);renameSync(backup,log);
+   const retry={phase:'recover',...base,operation:'retry_publication',actionId:'persist-only'};
+   const first=await reviewCall(client,retry);assert.equal(first.status,'changes_requested');await reviewCall(client,retry);assert.equal(calls,before,'publication/replay must never redispatch reviewer work');
+   assert.deepEqual((await loadDesignCheckpoint(f.repo,'review-1'))!.attempts[0]!.completedChunks,accepted);
+   assert.equal((readFileSync(log,'utf8').match(/design-chunk-review/g)??[]).length,1,'one permanent history record after persistence retry');
+   const refusal=await client.callTool({name:'insrc_workflow_approve',arguments:{repo:f.repo,artifactPath:f.json}});assert.ok(!refusal.isError);const refused=decode(refusal);assert.equal(refused.approved.length,0);assert.equal(refused.skipped.length,1);assert.equal(existsSync(f.path),true);
+   // New attempt admits current paths; a further subject edit invalidates active impact work.
+   appendFileSync(f.md,'\nCorrection preparation\n');correcting=true;
+   const next={...base,attempt:2};await reviewCall(client,{phase:'start',...next,artifactPath:f.json});
+   if(author==='daemon')assert.equal((await reviewAssignment(client,next)).kind,'impact');else await until(()=>calls===before+1);
+   appendFileSync(f.md,'\nChanged during impact\n');await until(async()=>(await reviewCall(client,{phase:'progress',...next})).status==='invalidated'&&!designArtifactActive(f.repo,f.id));
+   const invalidated=(await loadDesignCheckpoint(f.repo,'review-1'))!;assert.equal(invalidated.attempts[1]!.status,'invalidated');assert.deepEqual(invalidated.attempts[0]!.completedChunks,accepted);
+   const override=await client.callTool({name:'insrc_workflow_approve',arguments:{repo:f.repo,artifactPath:f.json,overrideReview:'Explicit synthetic qualification override; preserve unfinished work and findings'}});assert.ok(!override.isError);const approved=decode(override);assert.equal(approved.approved.length,1,JSON.stringify(approved));assert.deepEqual(approved.approved[0].result.cleanup.deleted,[]);assert.ok(approved.approved[0].result.cleanup.retained.includes(f.path));
+   const head=JSON.parse(readFileSync(f.json,'utf8'));assert.equal(head.meta.lifecycle.review.verdict,'block');assert.equal(head.meta.lifecycle.review.counts.MED,1);assert.equal(existsSync(f.path),true);
+  }finally{
+   if(existsSync(backup)){rmdirSync(log);renameSync(backup,log);}
+   await client.close();await h.ipc.close();
+  }
  }
 });

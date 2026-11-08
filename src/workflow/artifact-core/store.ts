@@ -399,7 +399,7 @@ export class ArtifactStore {
   if(doc===undefined)return;
   try{
    if(!isDocumentPrecondition(doc)||resolve(doc.path)!==doc.path||realpathSync(doc.path)!==doc.path||relative(realpathSync(this.deps.repoPath),doc.path).startsWith('..'))throw Error('Unsafe document precondition');
-   const fd=openSync(doc.path,constants.O_RDONLY|constants.O_NOFOLLOW);
+   const fd=openSync(doc.path,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
    try{const stat=fstatSync(fd);if(!stat.isFile()||stat.size>8*1024*1024)throw Error('Unbounded document');
     const bytes=Buffer.alloc(stat.size+1);let size=0,n=0;while(size<bytes.length&&(n=readSync(fd,bytes,size,bytes.length-size,null))>0)size+=n;
     if(size!==stat.size||headHashOf(bytes.subarray(0,size).toString('utf8'))!==doc.hash)throw Error('Document changed');

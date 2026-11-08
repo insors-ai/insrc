@@ -1,0 +1,93 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-3cf30f99-9600-4986-940f-a664d9684910",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.981Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Helper call layer: repair loop, admission per attempt, failure classification",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "edc082420dbe09d636ae5e90a9e6630625c524bc6735d9ce97a6da0c1ec1758b",
+        "at": "2026-11-08T07:21:40.982Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.983Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Helper call layer: repair loop, admission per attempt, failure classification",
+    "summary": "Implement the single-call layer of the shared helper: completeStructured with maxAttempts 1 and internalRetry false, repair prompt built by the helper with the note capped at 8,000 characters, admission before every attempt, and per-call failure classification by cause (call-failed, invalid-reply, unadmittable) with a size refusal reported as divisible before classification.",
+    "size": "M",
+    "order": 6,
+    "acceptanceChecks": [
+      "no provider retries: the real Vibe, Claude and Codex adapters make exactly one attempt per call",
+      "a thrown schema-invalid reply is invalid-reply, not call-failed, and a transport failure is call-failed",
+      "the repair note is capped at 8,000 characters and admission is checked before every attempt",
+      "a size refusal (InputTooLargeError) is reported for division before it is classified"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handling-call.test.ts: provider called with {maxAttempts:1, internalRetry:false}, repair note capped at 8,000 characters, every attempt admitted before it is sent, no internal retry allowed"
+      },
+      {
+        "level": "unit",
+        "name": "handling-call.test.ts: failure classification by cause: schema-invalid is invalid-reply, transport and Vibe exit are call-failed, size refusal divided before classification"
+      },
+      {
+        "level": "integration",
+        "name": "provider-failure-kinds.test.ts: real Vibe, Claude and Codex adapters make exactly one attempt on a failing reply; Ollama request carries num_predict 8,192 for parts; malformed replies give invalid-answer, transport failures give model-failed"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

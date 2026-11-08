@@ -24,7 +24,8 @@
  * failed, is a failed source with its reason.
  */
 
-import type { ReportSource } from '../completeness.js';
+import { mergeHandling, parseHandling } from '../completeness.js';
+import type { HandlingReport, ReportSource } from '../completeness.js';
 import type { PlanTreeNode } from '../planner/recursive.js';
 import type { ExecutorResult } from './types.js';
 
@@ -66,6 +67,13 @@ export function collectPlanSources(
 		}
 		if (record.status !== 'ok') {
 			sources.push({ sourceId, sourceKind: 'plan-task', failure: record.error ?? record.status });
+			// A planner task that failed keeps its child's records: what the child plan could not do is still read, so a
+			// failed nested aggregate and the tasks around it are named and not only the planner task that stood for them.
+			if (record.kind === 'planner') {
+				const childTree = tree.children.get(task.taskId);
+				const childExecuted = executed.children.get(task.taskId);
+				if (childTree !== undefined && childExecuted !== undefined) sources.push(...collectPlanSources(childTree, childExecuted, sourceId));
+			}
 			continue;
 		}
 		if (record.kind === 'planner') {
@@ -83,5 +91,53 @@ export function collectPlanSources(
 		// runtime returned none, so a missing record here makes the derivation throw.
 		sources.push({ sourceId, sourceKind: 'plan-task', completeness: record.completeness });
 	}
+
+	// The aggregate task is not a source of its own completeness, but what it could not cover is: a part of its report
+	// that was not written, or the aggregate task itself failing, is named by the aggregate task's path.
+	const aggregate = tasks[aggregateIndex];
+	const aggregateRecord = aggregate === undefined ? undefined : executed.root.perTask.get(aggregate.taskId);
+	if (aggregate !== undefined && aggregateRecord !== undefined) {
+		const aggregateId = taskPath(parentPath, aggregate.taskId);
+		if (aggregateRecord.status === 'failed') {
+			sources.push({ sourceId: aggregateId, sourceKind: 'plan-task', failure: aggregateRecord.error ?? 'the aggregate task failed' });
+		}
+		for (const n of aggregateHandling(aggregateRecord)?.notCovered ?? []) {
+			sources.push({ sourceId: `${aggregateId} / ${n.part}`, sourceKind: 'plan-task', failure: n.reason });
+		}
+	}
 	return sources;
+}
+
+/** How an aggregate task's report was written: read from the report it stored, or from the failure it kept. */
+function aggregateHandling(record: { readonly outputs?: Readonly<Record<string, unknown>> | undefined; readonly data?: unknown }): HandlingReport | undefined {
+	const report = record.outputs?.['report'] as { metadata?: { handling?: unknown } } | undefined;
+	const fromReport = parseHandling(report?.metadata?.handling);
+	if (fromReport !== undefined) return fromReport;
+	const data = record.data as { kind?: string; handling?: unknown } | undefined;
+	return data?.kind === 'answer-step' ? parseHandling(data.handling) : undefined;
+}
+
+/**
+ * How every aggregate report of the plan tree was written, as one handling: the
+ * plan's own, then each nested plan's with its part ids qualified by the planner
+ * task's path. A planner task that failed still contributes the child it kept.
+ */
+export function collectPlanHandling(tree: PlanTreeNode, executed: ExecutorResult, parentPath?: string): HandlingReport | undefined {
+	const tasks = tree.plan.tasks;
+	const aggregateIndex = tasks.length - 1;
+	let handling: HandlingReport | undefined;
+	const own = tasks[aggregateIndex];
+	const ownRecord = own === undefined ? undefined : executed.root.perTask.get(own.taskId);
+	if (ownRecord !== undefined) handling = aggregateHandling(ownRecord);
+	if (handling !== undefined && parentPath !== undefined) handling = mergeHandling(handling, undefined, `${parentPath} / `);
+	for (let i = 0; i < aggregateIndex; i++) {
+		const task = tasks[i]!;
+		if (task.kind !== 'planner') continue;
+		const childTree = tree.children.get(task.taskId);
+		const childExecuted = executed.children.get(task.taskId);
+		if (childTree === undefined || childExecuted === undefined) continue;
+		const nested = collectPlanHandling(childTree, childExecuted, taskPath(parentPath, task.taskId));
+		handling = mergeHandling(handling, nested);
+	}
+	return handling;
 }

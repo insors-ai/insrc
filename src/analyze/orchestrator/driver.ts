@@ -66,13 +66,15 @@ import {
 	PlanBuilderSchemaUnrecoverable,
 	runRecursivePlanner,
 } from '../planner/index.js';
-import { collectPlanSources, runExecutor } from '../executor/index.js';
+import { collectPlanHandling, collectPlanSources, runExecutor } from '../executor/index.js';
 import { resolveTaskScope } from '../runtimes/shared/task-scope.js';
 import type { ExecutorResult } from '../executor/types.js';
 import type { PlanTreeNode } from '../planner/recursive.js';
 import {
 	deriveAnswerReport,
 	mergeAnswerReports,
+	mergeHandling,
+	parseHandling,
 	renderReportHead,
 	RUN_COMPLETENESS_NOT_RECORDED,
 	type AnswerReport,
@@ -525,6 +527,9 @@ async function runStages(
 			data: {
 				tasksCompleted: rootPlan.tasksCompleted,
 				tasksFailed: rootPlan.tasksFailed,
+				// What the aggregate task kept of its failure (a typed failure's results, upstream inputs, part failures and
+				// handling, or a plain error's cause chain), so the stored run failure says why and not only that.
+				...(aggregateFailureData(tree, rootPlan.perTask) !== undefined ? { aggregate: aggregateFailureData(tree, rootPlan.perTask) } : {}),
 			},
 		};
 		record = patch(record, {
@@ -589,6 +594,13 @@ const RUN_CONTEXT_NOT_RECORDED: AnswerReport = {
 	},
 };
 
+/** What the plan's last (aggregate) task kept of its failure, if it failed. */
+function aggregateFailureData(tree: PlanTreeNode, perTask: ReadonlyMap<string, { readonly status: string; readonly data?: unknown }>): unknown {
+	const last = tree.plan.tasks[tree.plan.tasks.length - 1];
+	const record = last === undefined ? undefined : perTask.get(last.taskId);
+	return record?.status === 'failed' ? record.data : undefined;
+}
+
 /**
  * Put a line at the head of the final report's text. The final report is the
  * aggregate-report task's output, whose text is its `summary`; a report of
@@ -625,7 +637,9 @@ export function concludeRun(
 	// The merge keeps the completeness part and the answer failure only. The
 	// run's measure is added after it, so the stored report and the head of
 	// the final report both carry it.
-	const report: AnswerReport = measure !== undefined ? { ...merged, measure } : merged;
+	const handling = collectPlanHandling(tree, executed);
+	const withHandling: AnswerReport = handling !== undefined ? { ...merged, handling: mergeHandling(parseHandling(merged.handling), handling) } : merged;
+	const report: AnswerReport = measure !== undefined ? { ...withHandling, measure } : withHandling;
 	return { report, finalReport: headFinalReport(executed.root.finalReport, renderReportHead(report)) };
 }
 
@@ -811,7 +825,12 @@ function classifyShaperError(err: unknown): RunFailure {
 		return {
 			code: 'answer-step-failed',
 			message: err.message,
-			data: { reason: err.reason, results: err.found.results, report: err.found.report },
+			data: {
+				reason: err.reason, results: err.found.results, report: err.found.report,
+				// A divided call keeps each failed part's kind and cause chain, and an aggregate failure the upstream inputs it was given.
+				...(err.partFailures !== undefined ? { partFailures: err.partFailures } : {}),
+				...(err.upstream !== undefined ? { upstream: err.upstream } : {}),
+			},
 		};
 	}
 	return wrap('internal-error', err);

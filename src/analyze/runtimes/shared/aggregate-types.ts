@@ -22,6 +22,7 @@
  * aggregator task's `report` produces.
  */
 
+import type { HandlingReport } from '../../completeness.js';
 import type { AnalyzeScope, AnalyzeTarget } from '../../../shared/analyze-types.js';
 
 // ---------------------------------------------------------------------------
@@ -49,6 +50,8 @@ export interface AggregateMetadata {
 	readonly scope:         AnalyzeScope;
 	readonly runId:         string;
 	readonly tasksAnalyzed: number;
+	/** How the report was written (Story s3): in one pass, or in parts with what was not covered. */
+	readonly handling?:     HandlingReport | undefined;
 }
 
 // ---------------------------------------------------------------------------

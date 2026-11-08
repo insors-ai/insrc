@@ -1,3 +1,4 @@
+import { failureData } from '../context/failure-data.js';
 import { captureAnalysisDiagnostics } from '../connection-access.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
@@ -202,7 +203,7 @@ async function executePlan(
 				children.set(task.taskId, planRes.childResult);
 			}
 		} else {
-			result = await executeLeafTask(task, intent, runId, outputs, absentInputs, opts.connectionExecution);
+			result = await executeLeafTask(task, intent, runId, outputs, absentInputs, opts.connectionExecution, isAggregator);
 		}
 
 		// Step 4 + 5: persist + accumulate. A record that cannot be written
@@ -260,6 +261,8 @@ async function executeLeafTask(
 	/** For the aggregate-report task only: what the plan did not produce. */
 	absentInputs?: readonly AbsentInput[] | undefined,
 	execution?: import('../../shared/step-context.js').ConnectionExecutionContext,
+	/** True for the aggregate-report task: its failure is kept in full in the record's `data`. */
+	isAggregator = false,
 ): Promise<TaskExecutionRecord> {
 	const runtime = getRuntime(task.template);
 	if (runtime === undefined) {
@@ -292,7 +295,9 @@ async function executeLeafTask(
 			return failedRecord(task, refused.message, refused.code);
 		}
 		captureAnalysisDiagnostics(log).emit('warn', () => [{ runId, taskId: task.taskId, err: msg }, 'leaf task runtime threw']);
-		return failedRecord(task, `runtime-threw: ${msg}`);
+		// An aggregate failure is kept whole, JSON-safe (an Error object would be stored as {}): the typed failure's results,
+		// upstream inputs, part failures and handling, or a plain error's name, message and cause chain.
+		return failedRecord(task, `runtime-threw: ${msg}`, undefined, isAggregator ? failureData(err) : undefined);
 	}
 
 	assertSessionReuseNow(execution);
@@ -565,7 +570,7 @@ async function persistTaskRecord(
 	}
 }
 
-function failedRecord(task: PlannedTask, error: string, code?: TaskRefusalCode): TaskExecutionRecord {
+function failedRecord(task: PlannedTask, error: string, code?: TaskRefusalCode, data?: unknown): TaskExecutionRecord {
 	return {
 		taskId:      task.taskId,
 		template:    task.template,
@@ -574,6 +579,7 @@ function failedRecord(task: PlannedTask, error: string, code?: TaskRefusalCode):
 		status:      'failed',
 		error,
 		...(code !== undefined ? { code } : {}),
+		...(data !== undefined ? { data } : {}),
 		completedAt: nowIso(),
 	};
 }

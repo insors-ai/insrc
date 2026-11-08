@@ -1,0 +1,91 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-328c7a58-978c-4654-9e30-be9ba224d4b1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.969Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "HandlingReport, parseHandling, mergeHandling, applyHandling and the report head line",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cbc7dfe5f7964fe84de5ad0e79a51aea68c4b093cfadbf685b06431737e335d1",
+        "at": "2026-11-08T07:21:40.969Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.971Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "HandlingReport, parseHandling, mergeHandling, applyHandling and the report head line",
+    "summary": "Type HandlingReport with budgets in their own units, optional trigger, combineStages and 'mixed'; add parseHandling (malformed value read as absent), mergeHandling (prefix-qualified part ids, budgets de-duplicated per unit), applyHandling (handling plus one incomplete source note per uncovered part, complete false) and the single handling line in renderReportHead; type AnswerReport.handling and merge it in mergeAnswerReports without changing its signature.",
+    "size": "M",
+    "order": 1,
+    "acceptanceChecks": [
+      "parseHandling reads a stored {} and any malformed value as absent and accepts a record with and without trigger",
+      "mergeHandling keeps units apart, qualifies part ids with the plan path and returns 'partitioned' for a single-pass root with a partitioned child",
+      "applyHandling sets complete false and adds an 'answer step / <part id>' note per uncovered part without mutating its input",
+      "renderReportHead is unchanged for a report without handling and adds one line with it"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "handling-report.test.ts: parseHandling reads {} and malformed values as absent and accepts a record with and without trigger"
+      },
+      {
+        "level": "unit",
+        "name": "handling-report.test.ts: mergeHandling keeps units apart, de-duplicates budgets, sums combineStages, gives 'mixed' and keeps plan-qualified part ids distinct"
+      },
+      {
+        "level": "unit",
+        "name": "handling-report.test.ts: applyHandling sets complete false, adds one 'answer step / <part id>' note per uncovered part and does not mutate its input"
+      },
+      {
+        "level": "unit",
+        "name": "handling-report.test.ts: renderReportHead is unchanged without handling and adds one line with it; mergeAnswerReports keeps its binary signature"
+      },
+      {
+        "level": "unit",
+        "name": "handling-contract.test.ts: HandlingReport against the sc4 sketch plus additive fields, bundle schema open handling object still valid"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-6ada773f-1411-46a9-9b3f-f5b88089fbdf",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.976Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Sections with envelopes, structural sectioning of nested records, per-block unadmittable",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "015de9bec0f6b2b8b77ca9040baa413ff15873cf122dbe6f4fb267385a3e9a6e",
+        "at": "2026-11-08T07:21:40.976Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.977Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Sections with envelopes, structural sectioning of nested records, per-block unadmittable",
+    "summary": "Add sectionBlock: cut only the sectionable text field into the largest whole code-point prefixes that fit the room minus the envelope, repeat the envelope (doc outputs: sourceEntityId, file, heading, kind; hits: file and line; aggregate upstream outputs: taskId, template, params) at the head of every section, and cut an aggregate upstream value structurally by its nested records so each record's sourceEntityId, file and heading head every section of it (finding 2). An envelope that leaves less than the minimum room marks only that block unadmittable, not the whole call (finding 3).",
+    "size": "L",
+    "order": 4,
+    "acceptanceChecks": [
+      "6,000 ASCII bytes in a room of 5,000 give 5,000 and 1,000 and 4,999 bytes then an emoji give 4,999 and a section starting with the emoji, with lossless decoding",
+      "an oversized doc.constraint.enumerate record yields sections that each carry sourceEntityId, file, heading and kind, whose cut fields concatenate to the original and that fit the room",
+      "an aggregate upstream value with nested decision and constraint records is cut so every section repeats the nested record's sourceEntityId, file and heading as well as taskId, template and params",
+      "an envelope too large for one block marks that block unadmittable and leaves the other blocks admissible"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "partition-sections.test.ts: 6,000 over 5,000 gives 5,000 and 1,000; emoji boundary; valid text, no overlap, none dropped; ordinals separate from keys"
+      },
+      {
+        "level": "unit",
+        "name": "section-envelope.test.ts: oversized real-shaped doc.constraint.enumerate record keeps sourceEntityId, file, heading and kind in every section and reconstructs the original"
+      },
+      {
+        "level": "unit",
+        "name": "section-envelope.test.ts: oversized aggregate upstream value with nested records repeats each nested record's citation fields plus taskId, template and params in every section"
+      },
+      {
+        "level": "unit",
+        "name": "section-envelope.test.ts: an envelope leaving less than 4,000 units marks only that block unadmittable and the other blocks stay admissible"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

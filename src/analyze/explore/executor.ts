@@ -76,7 +76,7 @@ import { runSearchText } from './search-text.js';
 import { runSymbolLocate } from './symbol-locate.js';
 import { runTestLocate } from './test-locate.js';
 import { runUsageExample } from './usage-example.js';
-import { errorMessage, LookupFailedError } from './lookup-failed.js';
+import { ANSWER_STEP_CODE_PREFIX, errorMessage, LookupFailedError } from './lookup-failed.js';
 import { getDb } from '../../db/client.js';
 import type {
 	ExecutedExploration,
@@ -694,14 +694,22 @@ async function stepPlanWithContext(
  * is copied to `partial`.
  */
 export function failedOutput(exp: Exploration, err: unknown, execution?: import('../../shared/step-context.js').ConnectionExecutionContext): FailedExplorationOutput {
-	if (execution?.mode === 'session-memory') return { type: 'failed', requested: exp.type, errorCode: 'temporary-failure', message: 'Temporary exploration failed.' };
+	// A lookup whose final answer could not be written carries the reason; it is told apart from other failures by the code.
+	const reason = err instanceof LookupFailedError ? err.answerStepReason : undefined;
+	// A temporary request keeps no detail, no findings and no handling; the reason alone is kept, so the request still ends
+	// in the matching failure and is not answered a second time.
+	if (execution?.mode === 'session-memory') {
+		return { type: 'failed', requested: exp.type, errorCode: reason !== undefined ? `${ANSWER_STEP_CODE_PREFIX}${reason}` : 'temporary-failure', message: 'Temporary exploration failed.' };
+	}
 	const partial = err instanceof LookupFailedError ? err.partial : [];
 	return {
 		type:      'failed',
 		requested: exp.type,
-		errorCode: classifyExplorationError(err),
+		errorCode: reason !== undefined ? `${ANSWER_STEP_CODE_PREFIX}${reason}` : classifyExplorationError(err),
 		message:   errorMessage(err),
 		...(partial.length > 0 ? { partial } : {}),
+		...(err instanceof LookupFailedError && err.handling !== undefined ? { handling: err.handling } : {}),
+		...(err instanceof LookupFailedError && err.partFailures !== undefined ? { partFailures: err.partFailures } : {}),
 	};
 }
 

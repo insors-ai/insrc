@@ -1,0 +1,107 @@
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Procix Software India. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+/**
+ * The free-form lookup's final answer in parts (LLD-b9d5c5c40df5a574-s3,
+ * task t9). A tool loop ends in a conversation whose size depends on what the
+ * tools returned. When the table or the admission rule says the conversation
+ * is not answered in one call, each tool result becomes a block of evidence
+ * and the answer is written in parts by the shared helper; the request and the
+ * system prompt head every part. Pure apart from the model calls it makes.
+ */
+
+import type { ConnectionExecutionContext } from '../../shared/step-context.js';
+import type { LLMMessage, LLMProvider, StructuredSchema } from '../../shared/types.js';
+import type { HandlingReport } from '../completeness.js';
+import type { AnswerStepFound } from './driver.js';
+import type { AdmissionTarget, HandlingTrigger } from './handling.js';
+import { assembleBundle } from './handling-adapters.js';
+import type { BundleLayers, BundleNarrative } from './handling-adapters.js';
+import { runDivided } from './handling-parts.js';
+import type { PartAdapter } from './handling-parts.js';
+import { renderSection } from './sections.js';
+import type { EvidenceBlock } from './sections.js';
+
+const SUMMARY_CAP = 2_000;
+
+const textOf = (content: LLMMessage['content']): string => (typeof content === 'string' ? content : JSON.stringify(content));
+
+/** The tool results of a conversation as blocks, named after the tool call that produced each. */
+export function conversationBlocks(messages: readonly LLMMessage[]): readonly EvidenceBlock[] {
+	const calls = new Map<string, { name: string; input: unknown }>();
+	const blocks: EvidenceBlock[] = [];
+	for (const message of messages) {
+		if (typeof message.content === 'string') continue;
+		for (const block of message.content) {
+			if (block.type === 'tool_use') calls.set(block.id, { name: block.name, input: block.input });
+			if (block.type === 'tool_result') {
+				const call = calls.get(block.tool_use_id);
+				blocks.push({
+					key: `${call?.name ?? 'tool'}#${blocks.length + 1}`,
+					envelope: { tool: call?.name ?? 'tool', input: call?.input ?? {} },
+					text: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
+				});
+			}
+		}
+	}
+	return blocks;
+}
+
+/** What heads every part: the system prompt and the request (the first user turn that is text). */
+function headOf(messages: readonly LLMMessage[]): { system: string; request: string } {
+	const system = messages.find(m => m.role === 'system');
+	const user = messages.find(m => m.role === 'user' && (typeof m.content === 'string' || m.content.some(b => b.type === 'text')));
+	const request = user === undefined ? ''
+		: typeof user.content === 'string' ? user.content
+			: user.content.flatMap(b => (b.type === 'text' ? [b.text] : [])).join('\n');
+	return { system: system === undefined ? '' : textOf(system.content), request };
+}
+
+type Reply = BundleLayers & { summary: string };
+
+function adapterFor(messages: readonly LLMMessage[], schema: StructuredSchema): PartAdapter<Reply, BundleNarrative> {
+	const { system, request } = headOf(messages);
+	const partSchema = structuredClone(schema) as { properties: Record<string, Record<string, unknown>> };
+	partSchema.properties['summary'] = { type: 'string', maxLength: SUMMARY_CAP };
+	return {
+		partSchema: partSchema as unknown as StructuredSchema,
+		combineSchema: {
+			type: 'object', additionalProperties: false, required: ['system', 'focus', 'summary'],
+			properties: { system: { type: 'string' }, focus: { type: 'string' }, summary: { type: 'string', maxLength: SUMMARY_CAP } },
+		},
+		renderPart: (part) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: `${request}\n\nThe search was run with tools and its results were too large to answer from at once. `
+				+ `The results of this part (${part.id}) follow:\n\n${part.sections.map(renderSection).join('\n\n')}\n\n`
+				+ `Emit the AnalyzeContextBundle for THIS PART only, as a JSON object with the seven string fields. Keep summary under ${SUMMARY_CAP} characters.` },
+		],
+		renderCombine: (summaries) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: `${request}\n\nThe answer was written in parts. Part summaries:\n\n`
+				+ summaries.map(s => `### ${s.id}\n${s.summary}`).join('\n\n')
+				+ `\n\nEmit {system, focus, summary} for the whole answer; the evidence layers are assembled from the parts.` },
+		],
+		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+	};
+}
+
+/** The conversation answered in parts: the bundle layers and how it was handled. */
+export async function emitDivided(args: {
+	readonly provider:     LLMProvider;
+	readonly target:       AdmissionTarget;
+	readonly messages:     readonly LLMMessage[];
+	readonly schema:       StructuredSchema;
+	readonly found:        AnswerStepFound;
+	readonly trigger:      HandlingTrigger | undefined;
+	readonly maxAttempts:  number;
+	readonly execution?:   ConnectionExecutionContext | undefined;
+}): Promise<{ readonly layers: BundleLayers; readonly handling: HandlingReport }> {
+	const result = await runDivided<Reply, BundleNarrative>({
+		provider: args.provider, target: args.target, adapter: adapterFor(args.messages, args.schema),
+		blocks: conversationBlocks(args.messages), reference: [], found: args.found,
+		trigger: args.trigger, maxAttempts: args.maxAttempts, connectionExecution: args.execution,
+	});
+	return { layers: assembleBundle('code', result.covered, result.combine), handling: result.handling };
+}

@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-787cb8d4-faff-4096-abc3-afb68dcb3ddd",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.995Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Aggregator on the helper and aggregate failure capture",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "1807b8e8ed6aee36943456de9cb0b667d0d61cbffdab5058699b3a4f6ec7d91c",
+        "at": "2026-11-08T07:21:40.995Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.997Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Aggregator on the helper and aggregate failure capture",
+    "summary": "Move runAggregator onto the helper (absent-input section counted in every part and combine call), make classifyError keep the original as cause for a single-pass call, and keep any aggregate failure as failureData in TaskExecutionRecord.data in executeLeafTask.",
+    "size": "M",
+    "order": 10,
+    "acceptanceChecks": [
+      "through the real aggregator, walker and stored task record the failure data, the original cause and, for typed errors, the upstream values, producer identities and each failed part's cause chain are present in the task record",
+      "a single-pass aggregate failure keeps the prefixed error with the original as cause",
+      "the absent-input section is counted in admission of every part and combine call",
+      "a broad docs aggregate with an oversized terminal input completes through the real docs aggregate runtime and walker and delivers a final report with its handling"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "model-failure.test.ts: classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix"
+      },
+      {
+        "level": "integration",
+        "name": "aggregator-handling.test.ts: aggregator divides an oversized input and keeps the absent-input section in every part and combine call"
+      },
+      {
+        "level": "integration",
+        "name": "aggregate-failure.test.ts: real aggregator, walker and stored task record keep failureData, original cause, upstream values with producer identities and each failed part's cause chain"
+      },
+      {
+        "level": "integration",
+        "name": "docs-aggregate-run.test.ts: a broad docs run with an oversized terminal input and a nested aggregate completes through the real docs aggregate runtime and walker with a final report and its handling"
+      }
+    ],
+    "planTaskId": "t10"
+  },
+  "citations": []
+}

@@ -1,0 +1,98 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8c959035-966e-4f18-97d7-ac93ac0db398",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:41.008Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Whole-Story verification and the live regression record",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "da9e1a7e9a98bc8d39a02039b112d4ca44a1f1bc5f0e308f04057d74f78d7a66",
+        "at": "2026-11-08T07:21:41.009Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:41.010Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Whole-Story verification and the live regression record",
+    "summary": "Run the remaining cross-path integration tests the other tasks leave open (provider failure kinds across all four adapters, output cap, dependency regressions with forced partitions, nested-plan handling) and the INSRC_LIVE_TESTS regression of the broad docs request, repeating the docs run live and keeping the recorded run as the regression record; then the one full sweep in foreground chunks.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "the capability, code and dedupe forced-partition regressions pass",
+      "the live broad docs request returns a final report and its run is recorded",
+      "the full sweep passes"
+    ],
+    "tests": [
+      {
+        "level": "live",
+        "name": "docs-broad-live.test.ts: the broad docs request on this repository runs to a final report and the run id, handling line, parts and completeness are recorded as the regression record"
+      },
+      {
+        "level": "integration",
+        "name": "provider-failure-kinds.test.ts: all four adapters, output cap and Vibe single-pass prefix verified together after every caller is moved"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

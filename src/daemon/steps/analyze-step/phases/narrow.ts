@@ -38,7 +38,7 @@ import { getLogger } from '../../../../shared/logger.js';
 import { cacheExplorationFor } from '../../../../analyze/explore/exploration-cache-key.js';
 import { planRepoOf } from '../../../../analyze/context/scope.js';
 import { stepScope } from '../scope.js';
-import { prepareAnswerTurn } from '../answer-turn.js';
+import { prepareAnswerTurn, turnOutput } from '../answer-turn.js';
 import { measureLookupResults } from '../../../../analyze/measure.js';
 
 import {
@@ -53,6 +53,8 @@ import type {
 	StepErrorData,
 	StepInputNarrow,
 	StepOutputEmitBundle,
+	StepOutputEmitCombine,
+	StepOutputEmitPart,
 	StepOutputEmitNarrow,
 	StepOutputError,
 } from '../types.js';
@@ -66,7 +68,7 @@ const log = getLogger('mcp:analyze-step:narrow');
 export async function handleNarrow(
 	input: StepInputNarrow,
 	execution?: ConnectionExecutionContext,
-): Promise<StepOutputEmitBundle | StepOutputEmitNarrow | StepOutputError> {
+): Promise<StepOutputEmitBundle | StepOutputEmitPart | StepOutputEmitCombine | StepOutputEmitNarrow | StepOutputError> {
 	assertAnalysisAudience(execution);
 	await beginSessionReuse(execution);
 	assertSessionReuseNow(execution);
@@ -294,6 +296,7 @@ export async function handleNarrow(
 		synthesizerKey: state.synthesizerKey,
 		plan:           state.plan,
 		executed,
+		answer:         turn.progress,
 		stage:          'awaiting_bundle',
 	};
 
@@ -303,17 +306,7 @@ export async function handleNarrow(
 			totalMs:          executed.totalMs,
 	}, 'insrc_analyze_step[narrow]: plan complete; emitting synthesizer prompt']);
 
-	return {
-		next:     'emit_bundle',
-		guidance:
-			'Compose the AnalyzeContextBundle JSON matching the schema below, then ' +
-			'call insrc_analyze_step again with phase="bundle", bundle=<your JSON>, ' +
-			'state=<the state field verbatim>.',
-		prompt:   prepared.systemPrompt,
-		userTurn: prepared.userTurn,
-		schema:   prepared.schema as Record<string, unknown>,
-		state:    await reencodeState(input.state, nextState, execution),
-	};
+	return turnOutput(prepared, turn.turn, await reencodeState(input.state, nextState, execution));
 }
 
 // ---------------------------------------------------------------------------

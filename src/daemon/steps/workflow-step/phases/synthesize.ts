@@ -111,6 +111,10 @@ export async function handleSynthesize(
 	// controller MAY loop them through phase='resolve_question' now; the
 	// stage is complete regardless.
 	const stillOpen = openQuestionsOf(result.finalized.artifact);
+	// Tracker results are operational audit reports, not repository approval gates.
+	const isTrackerReport = state.intent.workflow === 'tracker.push'
+		|| state.intent.workflow === 'tracker.sync'
+		|| state.intent.workflow === 'tracker.post';
 
 	return {
 		next:     'done',
@@ -119,7 +123,7 @@ export async function handleSynthesize(
 		artifact: result.finalized.artifact,
 		...readiness,
 		...(stillOpen.length > 0 ? { openQuestions: stillOpen } : {}),
-		pendingApproval: {
+		...(isTrackerReport ? {} : { pendingApproval: {
 			artifactPath: paths.md,
 			...(finalizedMeta.epicHash !== undefined ? { epicHash: finalizedMeta.epicHash } : {}),
 			guidance:
@@ -128,7 +132,7 @@ export async function handleSynthesize(
 				'the user\'s explicit in-chat yes, call insrc_workflow_approve({ artifactPath }) ' +
 				'(or { epicHash } to batch every pending artifact under this epic). A review-' +
 				'blocked artifact comes back in skipped[] with a reason — relay that to the user.',
-		},
+		} }),
 	};
 }
 

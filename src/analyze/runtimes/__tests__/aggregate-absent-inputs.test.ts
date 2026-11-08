@@ -38,7 +38,7 @@ const routing = { router: { resolveProviderForRole: () => ({ provider: model }) 
 
 async function promptOf(runtime: TemplateRuntime, absentInputs: readonly AbsentInput[] | undefined, omit = false): Promise<string> {
 	const task = { taskId: 't09', template: runtime.templateId, kind: 'leaf', params: {}, produces: ['report'], rationale: 'test' } as unknown as PlannedTask;
-	const intent: ClassifiedIntent = { target: 'code', scope: 'M', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
+	const intent: ClassifiedIntent = { target: 'code', scope: 'S', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
 	const args: TemplateExecuteArgs = {
 		task, intent, upstreamOutputs: new Map([['t01', [{ taskId: 't01', template: 'demo.ok', params: {}, value: { found: ['pay'] } }]]]), runId: 'r1',
 		...(omit ? {} : { absentInputs }),
@@ -93,7 +93,7 @@ test('each of the five aggregate-report runtimes hands every output of a name to
 		]],
 		['modules', [{ taskId: 't01', template: 'code.discovery.modules', params: {}, value: ['pay', 'refund', 'ledger'] }]],
 	]);
-	const intent: ClassifiedIntent = { target: 'code', scope: 'M', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
+	const intent: ClassifiedIntent = { target: 'code', scope: 'S', focused: true, focus: 'refunds', scopeRef: { kind: 'repo', value: '/work/app' }, reasoning: 'test' };
 	for (const runtime of RUNTIMES) {
 		const id = runtime.templateId;
 		const task = { taskId: 't09', template: id, kind: 'leaf', params: {}, produces: ['report'], rationale: 'test' } as unknown as PlannedTask;

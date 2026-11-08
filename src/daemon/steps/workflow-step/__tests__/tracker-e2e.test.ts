@@ -34,6 +34,7 @@ const HASH = 'a3f4b8c9d1e2f3a4';
 const MISSING_HASH = '0000000000000000';
 const CREATED = '2026-07-18T00:00:00.000Z';   // anchors the nested docs-tree folder segment
 
+import { encodeState } from '../state.js';
 import { handleWorkflowStep } from '../handler.js';
 import { registerWorkflowRunners } from '../../../../workflow/index.js';
 import { _clearWorkflowStateStoreForTests } from '../state-store.js';
@@ -218,6 +219,7 @@ test('tracker.push: happy path binds the Epic and Story heads to the pushed issu
 		disposeCfg = seedApprovedEpic(repo, slug, { withGithubConfig: true });
 		const { done } = await walk(repo, slug, 'tracker.push', PUSH_EXEC_OK, PUSH_VERIFY_OK);
 		assert.equal(done['next'], 'done', JSON.stringify(done));
+		assert.equal(Object.hasOwn(done, 'pendingApproval'), false);
 
 		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.equal(epic.meta.tracker.adapter, 'github');
@@ -268,6 +270,7 @@ test('tracker.sync: happy path merges status + lastSyncedAt into meta.tracker', 
 		// Then sync.
 		const { done } = await walk(repo, slug, 'tracker.sync', SYNC_EXEC_OK, SYNC_VERIFY_OK);
 		assert.equal(done['next'], 'done', JSON.stringify(done));
+		assert.equal(Object.hasOwn(done, 'pendingApproval'), false);
 
 		const epic = JSON.parse(readFileSync(defineArtifactPaths(repo, slug, CREATED, 'epic', 'tag-filtering').json, 'utf8'));
 		assert.deepEqual(epic.meta.tracker.storyStatus, { s1: 'in-progress', s2: 'open' });
@@ -347,6 +350,32 @@ test('tracker.push: refuses when Epic is unapproved', async () => {
 			phase: 'plan', plan: PUSH_PLAN, state,
 		}));
 		assert.equal(planOut['next'], 'error');
+	} finally {
+		rmSync(repo, { recursive: true, force: true });
+	}
+});
+
+// Start at synthesis: post's finalizer must retain the report and posted reference
+// without inventing an approval gate after the external action already completed.
+test('tracker.post: completed comment produces an audit report without pending approval', async () => {
+	await _clearWorkflowStateStoreForTests();
+	const repo = mkdtempSync(join(tmpdir(), 'insrc-tracker-post-'));
+	try {
+		const refs = { targetKind: 'hld', targetIssue: 'myorg/myrepo#100', commentId: 'c123' };
+		const checklist = { items: [{ itemId: 'commentPresent', verdict: 'passed' }], failedCount: 0 };
+		const state = await encodeState({
+			version: 1, runId: `post-${Date.now()}`, epicKey: HASH, startedAtMs: Date.now(),
+			stage: 'awaiting_synthesize',
+			intent: { workflow: 'tracker.post', focus: 'post HLD summary', repoPath: repo, repoIndexedAt: null, params: { epicHash: HASH } },
+			stepOutputs: { s1: { gh: { owner: 'myorg', repo: 'myrepo' }, epicHash: HASH }, s2: refs, s3: checklist },
+		});
+		const done = payload(await handleWorkflowStep({ phase: 'synthesize', state, artifact: { refs, checklist } }));
+		assert.equal(done['next'], 'done', JSON.stringify(done));
+		assert.equal(Object.hasOwn(done, 'pendingApproval'), false);
+		const report = done['path'] as string;
+		assert.ok(report.includes('workflow-runs'), report);
+		assert.match(readFileSync(report, 'utf8'), /c123/);
+		assert.deepEqual((done['artifact'] as { body: { refs: unknown } }).body.refs, refs);
 	} finally {
 		rmSync(repo, { recursive: true, force: true });
 	}

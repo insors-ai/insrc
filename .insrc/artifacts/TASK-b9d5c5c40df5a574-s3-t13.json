@@ -1,0 +1,96 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-0a19a8d0-4bd6-42b2-8986-d8ec605469ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:41.005Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Step tool: AnswerProgress, part and combine turns, retries",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cdc23931badbdbd73c978827cf76d5dddb16c3536656d2e1ea585a0be367373a",
+        "at": "2026-11-08T07:21:41.005Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:41.007Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Step tool: AnswerProgress, part and combine turns, retries",
+    "summary": "Add the optional AnswerProgress (plan with reference blocks and envelopes, decision, budgets, parts) to the step state, startAnswerProgress in prepareAnswerTurn, the progress overload of finalizeSynthesize beside the unchanged bundle overload, the emit_part and emit_combine outputs with the retry field, persistence on every transition and a typed failure as StepOutputError with data.",
+    "size": "L",
+    "order": 13,
+    "acceptanceChecks": [
+      "finalizeSynthesize(input.bundle, execution) still resolves to the first overload and compiles unchanged",
+      "an invalid reply re-emits the current turn with a new token and a retry note, repeated invalid replies reach the retry bound, and a state without progress is read as single pass",
+      "emit_part and emit_combine turns carry the reference context for the targets that have it"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "step-tool-overload.test.ts: compile-time check that finalizeSynthesize(input.bundle, execution) resolves to the first overload and the progress call to the second"
+      },
+      {
+        "level": "integration",
+        "name": "step-tool-parts.test.ts: prepareAnswerTurn creates progress, state without progress reads as single pass, emit_part and emit_combine carry reference context, progress persisted with token replacement and released on terminal success and failure"
+      },
+      {
+        "level": "integration",
+        "name": "step-tool-parts.test.ts: invalid reply re-emits the turn with a new token and retry note, retry bound marks a part not covered across calls, retries reset on advance, typed failure returned as StepOutputError with data"
+      },
+      {
+        "level": "integration",
+        "name": "step-tool-parts.test.ts: the legacy emit_bundle turn still passes for an input that fits and the registered MCP bundle argument is unchanged"
+      }
+    ],
+    "planTaskId": "t13"
+  },
+  "citations": []
+}

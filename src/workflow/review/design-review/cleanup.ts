@@ -24,7 +24,7 @@ export function registerDesignCleanupRelease(project:string,release:(id:string)=
 function present(path:string):boolean{try{lstatSync(path);return true;}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return false;throw error;}}
 const digest=(bytes:Buffer)=>createHash('sha256').update(bytes).digest('hex');
 function bounded(path:string,limit:number):{bytes:Buffer;ino:number;dev:number}{
- const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW);
+ const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);
  try{const st=fstatSync(fd);requireDesign(st.isFile()&&st.size<=limit,'unsafe_cleanup','Expected bounded regular file');
   const bytes=Buffer.alloc(st.size+1);let size=0,n=0;while(size<bytes.length&&(n=readSync(fd,bytes,size,bytes.length-size,null))>0)size+=n;
   requireDesign(size===st.size,'unsafe_cleanup','File changed while reading');return{bytes:bytes.subarray(0,size),ino:st.ino,dev:st.dev};
@@ -33,7 +33,7 @@ function bounded(path:string,limit:number):{bytes:Buffer;ino:number;dev:number}{
 function syncDirectory(path:string):void{const fd=openSync(path,constants.O_RDONLY);try{fsyncSync(fd);}finally{closeSync(fd);}}
 function saveManifest(dir:string,claim:Claim,create=false):void{
  const path=join(dir,'claim.json');writeFileSync(path,JSON.stringify(claim),{mode:0o600,flag:create?'wx':'w'});
- const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW);try{fsyncSync(fd);}finally{closeSync(fd);}syncDirectory(dir);
+ const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW|constants.O_NONBLOCK);try{fsyncSync(fd);}finally{closeSync(fd);}syncDirectory(dir);
 }
 function decode(bytes:Buffer,project:string,id:string):DesignReviewCheckpoint{
  const cp=decodeDesign(DesignCheckpointSchema,JSON.parse(bytes.toString('utf8')));validateDesignCheckpointIdentity(project,id,cp);return cp;

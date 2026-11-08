@@ -1,0 +1,102 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-8e4b7613-021b-4c9c-a50b-57c31e5523c1",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.998Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Orchestrator failure route, plan sources and nested handling",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "b5577943268a7b6f941899de821bb83edbed19d4370a52241cf20355f1558ccb",
+        "at": "2026-11-08T07:21:40.998Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:41.000Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Orchestrator failure route, plan sources and nested handling",
+    "summary": "Copy the kept task failure data to RunFailure.data in the orchestrator, make collectPlanSources read a failed planner task's kept child result and each aggregate's handling, and have concludeRun merge nested handling.",
+    "size": "M",
+    "order": 11,
+    "acceptanceChecks": [
+      "through the orchestrator the failure data of a failed aggregate, including partFailures and upstream, is present in RunFailure.data",
+      "a failed nested aggregate under a succeeding root makes the run incomplete and names it",
+      "a nested plan's handling is merged with prefix-qualified part ids in the final report",
+      "the broad docs run check is repeated here through the orchestrator so a regression fails early"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "aggregate-failure.test.ts: failure data including partFailures and upstream reaches RunFailure.data under 'executor-aggregator-failed' through the orchestrator"
+      },
+      {
+        "level": "integration",
+        "name": "nested-aggregate-failure.test.ts: a failed nested aggregate under a succeeding root makes the run incomplete and names it, with no run failure raised"
+      },
+      {
+        "level": "integration",
+        "name": "run-handling-report.test.ts: root and nested aggregates with uncovered parts make the run incomplete, handling merged and the head shows the handling line"
+      },
+      {
+        "level": "integration",
+        "name": "docs-aggregate-run.test.ts: the broad docs run completes through the orchestrator with a final report"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

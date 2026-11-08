@@ -185,7 +185,10 @@ test('runAnalyze sets the intent\'s size from the measure on both classification
 	assert.deepEqual(stated.result.report?.measure, measure);
 	assert.deepEqual(stated.record?.report?.measure, measure);
 	const head = (stated.result.finalReport as { summary: string }).summary.split('\n\n')[0]!.split('\n');
-	assert.deepEqual(head, [renderCompletenessLine(stated.result.report!), renderMeasureLine(measure)]);
+	// The line that says how the answer steps were handled follows the measure line.
+	assert.equal(head.length, 3);
+	assert.deepEqual(head.slice(0, 2), [renderCompletenessLine(stated.result.report!), renderMeasureLine(measure)]);
+	assert.match(head[2]!, /^Handling: /);
 	assert.equal(head[1], 'Size: XS, measured from the area the request names: 1 file, 2 entities. The caller asked for L.');
 	// No model picked a size.
 	assertNoSizePick(stated);

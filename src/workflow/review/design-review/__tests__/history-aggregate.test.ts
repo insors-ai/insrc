@@ -85,3 +85,31 @@ test('host coverage diagnostics remain bounded without expanding model limitatio
  assert.equal(Value.Check(designChunkResultSchema(chunk), accepted), false);
  assert.throws(() => assessDesignResult(accepted, chunk, [], [f.md]));
 });
+
+test('permanent history validates unfinished full prefixes before any report exists',t=>{
+ const f=permanent(t),old=structuredClone(f.baseline),last=structuredClone(f.baseline);
+ old.status='interrupted';delete old.report;old.completedChunks=old.completedChunks.slice(0,1);
+ last.number=2;last.report!.attempt=2;f.record.attempts=[old,last];f.record.applicableAttempt=2;
+ const seal=(r:PermanentDesignReview)=>{r.preservationDigest=designPreservationDigest({...f.checkpoint,attempts:r.attempts});return r;};
+ assert.doesNotThrow(()=>validatePermanentDesignReview(seal(f.record),f.expected));
+ for(const mutate of [
+  (r:PermanentDesignReview)=>{delete r.attempts[0]!.plan;},
+  (r:PermanentDesignReview)=>{r.attempts[0]!.plan!.coverage=[];},
+  (r:PermanentDesignReview)=>{r.attempts[0]!.completedChunks[0]!.chunkId='edit';},
+  (r:PermanentDesignReview)=>{r.attempts[0]!.completedChunks[0]!.inspectedReferences=[];},
+  (r:PermanentDesignReview)=>{r.attempts[0]!.completedChunks[0]!.findings=[{id:'unreported',severity:'MED',location:'/body/summary',message:'Concern',evidenceReferences:[f.md]}];},
+ ]){const r=structuredClone(f.record);mutate(r);assert.throws(()=>validatePermanentDesignReview(seal(r),f.expected));}
+});
+test('permanent history validates unfinished impact selection provenance and accepted prefixes',t=>{
+ const f=permanent(t),partial=f.current,last=structuredClone(f.baseline);
+ partial.plan=f.plan;partial.impact=f.impact;partial.status='failed';partial.completedChunks=[structuredClone(f.baseline.completedChunks[1]!)];
+ last.number=3;last.report!.attempt=3;f.record.attempts=[f.baseline,partial,last];f.record.applicableAttempt=3;
+ const seal=(r:PermanentDesignReview)=>{r.preservationDigest=designPreservationDigest({...f.checkpoint,attempts:r.attempts});return r;};
+ assert.doesNotThrow(()=>validatePermanentDesignReview(seal(f.record),f.expected));
+ for(const mutate of [
+  (r:PermanentDesignReview)=>{r.attempts[1]!.impact!.retainedCoverage[0]!.fromAttempt=2;},
+  (r:PermanentDesignReview)=>{r.attempts[1]!.impact!.directChunkIds=[];},
+  (r:PermanentDesignReview)=>{r.attempts[1]!.completedChunks[0]!.chunkId='keep';},
+  (r:PermanentDesignReview)=>{r.attempts[1]!.completedChunks[0]!.inspectedReferences=[];},
+ ]){const r=structuredClone(f.record);mutate(r);assert.throws(()=>validatePermanentDesignReview(seal(r),f.expected));}
+});

@@ -1,0 +1,108 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "74359fbcb97792378e34b0f46b238febfbc4269bb74fc3de3d6d6ec646d1ad7f",
+        "at": "2026-11-08T18:56:17.274Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T19:00:39.174Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-8dcfea84-fcc4-4177-82f0-aa5c6da2e391",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T18:51:28.208Z",
+    "epicCreatedAt": "2026-11-08T18:44:17.617Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "1b83eadf639af8a9",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "do-not-request-artifact-approval-tracker",
+    "updatedAt": "2026-11-08T18:55:44.593Z"
+  },
+  "body": {
+    "focus": "Approved ISSUE-1b83eadf639af8a9: omit false pendingApproval on tracker.push/sync/post operational run reports, preserve real repository artifact gates and current tracker storage/side effects, and add focused regression coverage.",
+    "producesLld": false,
+    "commit": "fb85e7f12",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Tracker push/sync/post now return operational reports without pendingApproval; repository artifact gates remain. Regression coverage checks all three tracker completions, existing bindings/status persistence, and HLD approval.",
+    "testRecord": {
+      "md": "docs/standalone/do-not-request-artifact-approval-tracker-E202611081b83eadf/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-1b83eadf639af8a9.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-1b83eadf639af8a9.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      },
+      {
+        "target": {
+          "file": "docs/standalone/do-not-request-artifact-approval-tracker-E202611081b83eadf/ISSUE.md"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/workflow-step/phases/synthesize.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T18:55:44.593Z"
+      }
+    ]
+  },
+  "citations": []
+}

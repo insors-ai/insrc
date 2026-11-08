@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-bc6df88c-073c-411d-8ce2-6546d55d78e8",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:41.001Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Daemon and plan-tree mappings carry partFailures",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "5db146e194a8832bab17bbd8b92dc3ebcaab4940755bdfd0d183c0b1de8a27b3",
+        "at": "2026-11-08T07:21:41.002Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:41.003Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Daemon and plan-tree mappings carry partFailures",
+    "summary": "Extend the data the daemon mapping in src/daemon/analyze-rpc.ts and the plan tree's mapping in src/analyze/orchestrator/driver.ts build for a ShaperAnswerStepFailedError so it carries the JSON-safe partFailures and upstream with reason, results and report (finding 5).",
+    "size": "S",
+    "order": 12,
+    "acceptanceChecks": [
+      "through both mappings distinct outer and inner cause messages of several failed parts are present in the data and survive a JSON round trip",
+      "the existing fields of the data are unchanged and a lookup-path failure without partFailures maps as before"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "answer-failure-mapping.test.ts: HandlingBudgetError carries results and report through the daemon and plan-tree mappings"
+      },
+      {
+        "level": "integration",
+        "name": "answer-failure-mapping.test.ts: both mappings carry partFailures with distinct outer and inner cause messages through a JSON round trip, and a failure without partFailures maps as before"
+      }
+    ],
+    "planTaskId": "t12"
+  },
+  "citations": []
+}

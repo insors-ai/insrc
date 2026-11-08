@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import type { Completeness, PartialFinding } from '../completeness.js';
+import type { Completeness, HandlingReport, PartialFinding } from '../completeness.js';
+import type { PartFailure } from '../context/failure-data.js';
 import type { ResolvedScope } from '../context/scope.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
@@ -748,6 +749,8 @@ export interface FreeformProbeOutput {
 	 *  `meta.toolCalls` when this exploration drives the whole
 	 *  bundle. */
 	readonly toolCallCount: number;
+	/** How the loop's final answer was handled (Story s3); absent when the request's size was not given. */
+	readonly handling?: HandlingReport | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -794,6 +797,10 @@ export interface FailedExplorationOutput {
 	readonly message:   string;
 	/** What the lookup had found before it failed. Absent when it had found nothing. */
 	readonly partial?:  readonly PartialFinding[] | undefined;
+	/** How the answer step was handled, when the lookup failed because its final answer could not be written. */
+	readonly handling?:  HandlingReport | undefined;
+	/** The parts of a divided answer that were not covered, with their cause chains. */
+	readonly partFailures?: readonly PartFailure[] | undefined;
 }
 
 export type ExplorationOutput =

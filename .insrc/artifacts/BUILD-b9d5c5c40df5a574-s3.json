@@ -1,0 +1,574 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 30,
+        "contentHash": "b38b6493fbe484285a83d8fd5f269eeb47e13cb33130b4ff834b20992b2db88a",
+        "at": "2026-11-08T12:12:14.311Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "build",
+    "runId": "store-4bdf658c-37cf-4ea8-9561-3d075ea63ca7",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:25:11.022Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "revision": 30,
+    "updatedAt": "2026-11-08T12:11:24.206Z",
+    "authoredBy": "controller",
+    "epicSlug": "make-insrc-analysis-complete-used-right"
+  },
+  "body": {
+    "tasks": [
+      {
+        "id": "t1",
+        "passed": true
+      },
+      {
+        "id": "t2",
+        "passed": true
+      },
+      {
+        "id": "t3",
+        "passed": true
+      },
+      {
+        "id": "t4",
+        "passed": true
+      },
+      {
+        "id": "t5",
+        "passed": true
+      },
+      {
+        "id": "t6",
+        "passed": true
+      },
+      {
+        "id": "t7",
+        "passed": true
+      },
+      {
+        "id": "t8",
+        "passed": false
+      },
+      {
+        "id": "t9",
+        "passed": true
+      },
+      {
+        "id": "t10",
+        "passed": true
+      },
+      {
+        "id": "t11",
+        "passed": true
+      },
+      {
+        "id": "t12",
+        "passed": true
+      },
+      {
+        "id": "t13",
+        "passed": true
+      },
+      {
+        "id": "t14",
+        "passed": false
+      }
+    ],
+    "summary": "Whole-Story verification. (1) provider-failure-kinds.test.ts now checks all four adapters (Claude, Codex, Vibe CLI; Ollama) through the real aggregator after every caller moved: a single-pass outage keeps the 'aggregator-llm-unavailable:' prefix (Vibe included) with the original as cause; a divided call ends typed model-failed or invalid-answer with no prefix; Ollama part calls carry num_predict 8,192 and a single pass the configured tokens. (2) The full sweep was run in foreground chunks and compared with a clean checkout of the commit before any s3 code: analyze 2 failures, identical to base (role-router-global-tiers, allowlisted seam files); daemon 48 failing files, identical counts to base (one fewer failing test on this tree); agent, shared, config, indexer, cli, workflow (30 failing files) identical to base; mcp 23 vs 25 failing (fewer on this tree); db has three slow/pre-existing failures also at base; docgen/design/artifact-theme/bin pass. The sweep found and this task fixed three regressions of this Story: an overridden synthesize step must win over the real answer step (driver), one part with one reference round is asked as the one reply, and an import cycle between handling.ts and driver.ts (the answer-step errors now live in a leaf module). (3) The live regression test docs-broad-live.test.ts is written (gated by INSRC_LIVE_TESTS=1, goes through the daemon, records docs/epics/.../S003/LIVE-RUN.json) but NOT run: the running daemon is the installed clone and does not contain this code until the user pushes and updates it. It is therefore not reported.",
+    "testRecord": {
+      "md": "docs/epics/make-insrc-analysis-complete-used-right-E20261006b9d5c5c4/S003/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": "src/analyze/__tests__/handling-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/__tests__/handling-report.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/completeness.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/failure-contract.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/failure-data.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/model-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/failure-data.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/model-failure.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/lookup-failed.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/handling-admission.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/handling-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/part-output-cap.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/handling.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/partition-sections.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/section-envelope.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/sections.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/dependency-table.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/shared-context.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/dependency.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/handling-call.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/provider-failure-kinds.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/handling-call.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/partition-combine.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/handling-adapters.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/handling-parts.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/aggregator.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/synthesize-driver-handling.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/synthesize-handling.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/synthesizer.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/agent/read-only-tool-loop.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/freeform-handling.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/final-emit.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/executor.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/freeform-probe.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/explore/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/walker.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/aggregate-absent-inputs.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/aggregate-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/aggregate-fixtures.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/aggregator-handling.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/__tests__/docs-aggregate-run.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/__tests__/aggregator.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/runtimes/shared/aggregate-types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/executor/plan-sources.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/aggregate-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/nested-aggregate-failure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-handling-report.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/run-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/driver.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/docs-aggregate-run.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/__tests__/answer-failure-mapping.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/analyze-rpc.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/__tests__/analyze-rpc-measure.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/answer-progress.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-tool-overload.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/__tests__/step-tool-parts.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/answer-turn.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/phases/bundle.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/phases/narrow.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/phases/plan.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/state.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/steps/analyze-step/types.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/context/answer-step-error.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      },
+      {
+        "target": {
+          "file": "src/analyze/orchestrator/__tests__/docs-broad-live.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-08T12:11:24.206Z"
+      }
+    ],
+    "commit": "25568cc00"
+  },
+  "citations": []
+}

@@ -202,8 +202,179 @@ export interface AnswerReport {
 	readonly measure?:  RequestMeasure | undefined;
 	/** The scope the analysis ran on and who named it; absent on a report made before the scope was stated. */
 	readonly scope?:    AnswerReportScope | undefined;
-	/** Typed by Story s3. */
-	readonly handling?: unknown;
+	/** How the answer step was handled (Story s3); read it with `parseHandling`, a stored value may be malformed. */
+	readonly handling?: HandlingReport | undefined;
+}
+
+// ---------------------------------------------------------------------------
+// Handling report (sc4)
+// ---------------------------------------------------------------------------
+
+/** One input budget an answer step was held to, in its own unit; the units are never compared. */
+export interface HandlingBudget {
+	readonly unit:      'chars' | 'bytes';
+	readonly limit:     number;
+	readonly source:    'provider' | 'context-window' | 'default';
+	readonly basis:     'declared' | 'bytes-bound' | 'default';
+	readonly inputSize: number;
+}
+
+/**
+ * How a request was handled: at once or in parts, how many parts, and which
+ * parts were not covered. `trigger` says why it was divided and is absent on a
+ * single pass; `combineStages` counts the combine stages of a divided call.
+ */
+export interface HandlingReport {
+	readonly method:         'single-pass' | 'partitioned';
+	readonly parts:          number;
+	readonly partitionedBy?: 'directory' | 'file' | 'section' | 'mixed' | undefined;
+	readonly notCovered:     readonly { readonly part: string; readonly reason: string }[];
+	readonly budgets:        readonly HandlingBudget[];
+	readonly trigger?:       'size' | 'fit' | 'both' | undefined;
+	readonly combineStages?: number | undefined;
+}
+
+const PARTITIONED_BY = ['directory', 'file', 'section', 'mixed'];
+const TRIGGERS = ['size', 'fit', 'both'];
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+	return typeof v === 'object' && v !== null && !Array.isArray(v);
+}
+
+/** A finite, non-negative number: NaN, Infinity and negatives are malformed. */
+function isCount(v: unknown): v is number {
+	return typeof v === 'number' && Number.isFinite(v) && v >= 0;
+}
+
+function parseBudget(v: unknown): HandlingBudget | undefined {
+	if (!isRecord(v)) return undefined;
+	const { unit, limit, source, basis, inputSize } = v;
+	if (unit !== 'chars' && unit !== 'bytes') return undefined;
+	if (!isCount(limit) || !isCount(inputSize)) return undefined;
+	if (source !== 'provider' && source !== 'context-window' && source !== 'default') return undefined;
+	if (basis !== 'declared' && basis !== 'bytes-bound' && basis !== 'default') return undefined;
+	return { unit, limit, source, basis, inputSize };
+}
+
+/**
+ * Reads a stored handling value. Anything that is not a well-formed record
+ * (an empty object, a wrong type, a missing field) is read as absent, so a
+ * report made before the handling existed, or a damaged one, never throws.
+ */
+export function parseHandling(value: unknown): HandlingReport | undefined {
+	if (!isRecord(value)) return undefined;
+	const { method, parts, partitionedBy, notCovered, budgets, trigger, combineStages } = value;
+	if (method !== 'single-pass' && method !== 'partitioned') return undefined;
+	if (!isCount(parts) || !Array.isArray(notCovered)) return undefined;
+	const uncovered: { part: string; reason: string }[] = [];
+	for (const n of notCovered) {
+		if (!isRecord(n) || typeof n['part'] !== 'string' || typeof n['reason'] !== 'string') return undefined;
+		uncovered.push({ part: n['part'], reason: n['reason'] });
+	}
+	const parsedBudgets: HandlingBudget[] = [];
+	if (budgets !== undefined) {
+		if (!Array.isArray(budgets)) return undefined;
+		for (const b of budgets) {
+			const parsed = parseBudget(b);
+			if (parsed === undefined) return undefined;
+			parsedBudgets.push(parsed);
+		}
+	}
+	if (partitionedBy !== undefined && !PARTITIONED_BY.includes(partitionedBy as string)) return undefined;
+	if (trigger !== undefined && !TRIGGERS.includes(trigger as string)) return undefined;
+	if (combineStages !== undefined && !isCount(combineStages)) return undefined;
+	return {
+		method,
+		parts,
+		...(partitionedBy !== undefined ? { partitionedBy: partitionedBy as NonNullable<HandlingReport['partitionedBy']> } : {}),
+		notCovered: uncovered,
+		budgets:    parsedBudgets,
+		...(trigger !== undefined ? { trigger: trigger as NonNullable<HandlingReport['trigger']> } : {}),
+		...(combineStages !== undefined ? { combineStages } : {}),
+	};
+}
+
+/**
+ * One handling for two steps. An absent side is ignored. The method is
+ * 'partitioned' if either is, parts add up (a single pass counts 1),
+ * `prefix` qualifies the first side's part ids, budgets are joined and
+ * de-duplicated in their own units (the largest input size of identical
+ * entries is kept), combine stages add up, `partitionedBy` is the common
+ * value or 'mixed', and the trigger is the union of both.
+ */
+export function mergeHandling(
+	first:  HandlingReport | undefined,
+	second: HandlingReport | undefined,
+	prefix = '',
+): HandlingReport | undefined {
+	const qualify = (n: { readonly part: string; readonly reason: string }): { readonly part: string; readonly reason: string } =>
+		(prefix.length > 0 ? { ...n, part: `${prefix}${n.part}` } : n);
+	if (first === undefined) return second;
+	if (second === undefined) return prefix.length > 0 ? { ...first, notCovered: first.notCovered.map(qualify) } : first;
+	const budgets: HandlingBudget[] = [];
+	for (const b of [...first.budgets, ...second.budgets]) {
+		const i = budgets.findIndex(e => e.unit === b.unit && e.limit === b.limit && e.source === b.source && e.basis === b.basis);
+		if (i < 0) budgets.push(b);
+		else if (b.inputSize > (budgets[i] as HandlingBudget).inputSize) budgets[i] = b;
+	}
+	const by = first.partitionedBy === undefined ? second.partitionedBy
+		: second.partitionedBy === undefined || second.partitionedBy === first.partitionedBy ? first.partitionedBy
+			: 'mixed';
+	const triggers = new Set([first.trigger, second.trigger].filter(t => t !== undefined));
+	const trigger = triggers.size === 0 ? undefined : triggers.size > 1 || triggers.has('both') ? 'both' : [...triggers][0];
+	const combineStages = first.combineStages === undefined && second.combineStages === undefined
+		? undefined
+		: (first.combineStages ?? 0) + (second.combineStages ?? 0);
+	return {
+		method: first.method === 'partitioned' || second.method === 'partitioned' ? 'partitioned' : 'single-pass',
+		parts:  first.parts + second.parts,
+		...(by !== undefined ? { partitionedBy: by } : {}),
+		notCovered: [
+			...first.notCovered.map(qualify),
+			...second.notCovered,
+		],
+		budgets,
+		...(trigger !== undefined ? { trigger } : {}),
+		...(combineStages !== undefined ? { combineStages } : {}),
+	};
+}
+
+/**
+ * The report with the answer step's handling merged in, one incomplete source
+ * note per part the answer did not cover, and `complete` false when there is
+ * one. The input report is not changed.
+ */
+export function applyHandling(report: AnswerReport, handling: HandlingReport): AnswerReport {
+	const merged = mergeHandling(parseHandling(report.handling), handling);
+	const notes: SourceNote[] = handling.notCovered.map(n => ({
+		sourceId: `answer step / ${n.part}`, sourceKind: 'lookup', reason: n.reason,
+	}));
+	return {
+		...report,
+		completeness: {
+			...report.completeness,
+			complete:   report.completeness.complete && notes.length === 0,
+			incomplete: [...report.completeness.incomplete, ...notes],
+		},
+		...(merged !== undefined ? { handling: merged } : {}),
+	};
+}
+
+/** The one line that says how the answer was handled. */
+export function renderHandlingLine(handling: HandlingReport): string {
+	const how = handling.method === 'single-pass'
+		? 'Handling: answered in a single pass.'
+		: `Handling: divided into ${handling.parts} part${handling.parts === 1 ? '' : 's'}`
+			+ `${handling.partitionedBy !== undefined ? ` by ${handling.partitionedBy}` : ''}`
+			+ `${handling.trigger !== undefined ? ` (${handling.trigger})` : ''}`
+			+ `${handling.combineStages !== undefined ? `, ${handling.combineStages} combine stage${handling.combineStages === 1 ? '' : 's'}` : ''}.`;
+	const budgets = handling.budgets.map(b => `${b.limit} ${b.unit}`);
+	const uncovered = handling.notCovered.map(n => `${oneLine(n.part)} (${oneLine(n.reason)})`);
+	return [
+		how,
+		...(budgets.length > 0 ? [`Input budget: ${budgets.join(', ')}.`] : []),
+		...(uncovered.length > 0 ? [`Not covered: ${uncovered.join('; ')}.`] : []),
+	].join(' ');
 }
 
 /** True for a value with the shape `deriveAnswerReport` returns. */
@@ -378,6 +549,8 @@ export function renderReportHead(report: AnswerReport): string {
 	const lines = [renderCompletenessLine(report)];
 	if (report.measure !== undefined) lines.push(renderMeasureLine(report.measure));
 	if (report.scope !== undefined) lines.push(renderScopeLine(report.scope));
+	const handling = parseHandling(report.handling);
+	if (handling !== undefined) lines.push(renderHandlingLine(handling));
 	return lines.join('\n');
 }
 
@@ -408,6 +581,7 @@ export function mergeAnswerReports(first: AnswerReport, second: AnswerReport, pr
 		if (!basisNotes.includes(note)) basisNotes.push(note);
 	}
 	const answerFailure = first.answerFailure ?? second.answerFailure;
+	const handling = mergeHandling(parseHandling(first.handling), parseHandling(second.handling), prefix);
 	return {
 		completeness: {
 			complete:   first.completeness.complete && second.completeness.complete,
@@ -416,6 +590,7 @@ export function mergeAnswerReports(first: AnswerReport, second: AnswerReport, pr
 			...(basisNotes.length > 0 ? { basisNotes } : {}),
 		},
 		...(answerFailure !== undefined ? { answerFailure } : {}),
+		...(handling !== undefined ? { handling } : {}),
 	};
 }
 

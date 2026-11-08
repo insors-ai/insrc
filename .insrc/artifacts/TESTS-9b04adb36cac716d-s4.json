@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 22,
-        "contentHash": "85d1b1e29ca50139dcd7c7af6e115ac942ddd50a8b955155163fdef96c7d840b",
-        "at": "2026-11-08T06:50:24.959Z",
+        "number": 30,
+        "contentHash": "f08894b8f9e0605087f37d3d2dbcb35c2056f12db62e69ee748bacdd189e0cbc",
+        "at": "2026-11-08T10:02:49.092Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,17 +23,17 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:50:24.793Z",
+    "updatedAt": "2026-11-08T10:02:48.957Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 22
+    "revision": 30
   },
   "body": {
     "tasks": [
       {
         "taskId": "t1",
-        "commit": "5e7f04ef8",
-        "ranAt": "2026-11-07T19:47:05.310Z",
+        "commit": "ce7b891ca",
+        "ranAt": "2026-11-08T08:14:41.970Z",
         "testsPassed": true,
         "tests": [
           {
@@ -49,6 +49,16 @@
               {
                 "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
                 "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent history validates unfinished full prefixes before any report exists",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
+                "title": "permanent history validates unfinished impact selection provenance and accepted prefixes",
                 "result": "pass"
               }
             ],
@@ -78,7 +88,7 @@
             "file": "src/workflow/review/design-review/__tests__/history-aggregate.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 865,
+            "durationMs": 877,
             "titles": [
               {
                 "title": "permanent payload validates exact history, party, binding, digest and version",
@@ -94,6 +104,14 @@
               },
               {
                 "title": "host coverage diagnostics remain bounded without expanding model limitations",
+                "result": "pass"
+              },
+              {
+                "title": "permanent history validates unfinished full prefixes before any report exists",
+                "result": "pass"
+              },
+              {
+                "title": "permanent history validates unfinished impact selection provenance and accepted prefixes",
                 "result": "pass"
               }
             ],
@@ -175,8 +193,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "6d3865ff9",
-        "ranAt": "2026-11-08T05:11:22.727Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T10:02:48.957Z",
         "testsPassed": true,
         "tests": [
           {
@@ -201,6 +219,11 @@
                 "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
                 "title": "deterministic history id survives append and replace crashes and rejects conflicting replay",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -211,7 +234,7 @@
             "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 828,
+            "durationMs": 752,
             "titles": [
               {
                 "title": "design history alone receives a bounded UTF-8 allowance in sync and async readers",
@@ -223,13 +246,30 @@
               }
             ],
             "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1285,
+            "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
           }
         ]
       },
       {
         "taskId": "t4",
-        "commit": "6a661d6bf",
-        "ranAt": "2026-11-08T05:38:31.971Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T09:58:12.394Z",
         "testsPassed": true,
         "tests": [
           {
@@ -261,6 +301,11 @@
                 "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
                 "title": "known permanent-history minimum refuses before model work and explicitly resumes after the allowance is raised",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -284,6 +329,11 @@
                 "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -291,10 +341,27 @@
         ],
         "files": [
           {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1274,
+            "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
             "file": "src/workflow/review/design-review/__tests__/publication.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1333,
+            "durationMs": 1150,
             "titles": [
               {
                 "title": "journalled publication and lost-receipt recovery preserve one exact full history without model calls",
@@ -402,8 +469,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "6d35295fc",
-        "ranAt": "2026-11-08T06:47:14.831Z",
+        "commit": "7f80d3df1",
+        "ranAt": "2026-11-08T10:00:00.300Z",
         "testsPassed": true,
         "tests": [
           {
@@ -468,6 +535,11 @@
                 "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
                 "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
               }
             ],
             "files": []
@@ -478,7 +550,7 @@
             "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1403,
+            "durationMs": 1419,
             "titles": [
               {
                 "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
@@ -523,8 +595,12 @@
             "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 779,
+            "durationMs": 1269,
             "titles": [
+              {
+                "title": "FIFO document replacements refuse publication approval and recovery without blocking",
+                "result": "pass"
+              },
               {
                 "title": "document edits during publication and approval persistence fail closed through journal restart",
                 "result": "pass"
@@ -536,8 +612,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "dffb93691",
-        "ranAt": "2026-11-08T06:32:34.926Z",
+        "commit": "ce7b891ca",
+        "ranAt": "2026-11-08T08:17:29.726Z",
         "testsPassed": true,
         "tests": [
           {
@@ -584,6 +660,11 @@
                 "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
                 "title": "explicit override approval retains unfinished checkpoint state truthfully",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
+                "result": "pass"
               }
             ],
             "files": []
@@ -607,6 +688,11 @@
                 "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
                 "title": "foreign corrupt symlink unpreserved and unfinished override checkpoints are retained",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
+                "result": "pass"
               }
             ],
             "files": []
@@ -617,7 +703,7 @@
             "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1372,
+            "durationMs": 1716,
             "titles": [
               {
                 "title": "approval deletes only fully preserved private claims and fresh history remains readable",
@@ -662,6 +748,10 @@
               {
                 "title": "actual active model work retains its artifact while another artifact in the same project progresses",
                 "result": "pass"
+              },
+              {
+                "title": "FIFO checkpoints and claim metadata are retained without blocking the daemon",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -670,8 +760,8 @@
       },
       {
         "taskId": "t8",
-        "commit": "effcfa7f3",
-        "ranAt": "2026-11-08T06:50:24.793Z",
+        "commit": "984a8f448",
+        "ranAt": "2026-11-08T08:21:58.741Z",
         "testsPassed": true,
         "tests": [
           {
@@ -679,6 +769,11 @@
             "level": "integration",
             "source": "mapping",
             "cases": [
+              {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
+                "result": "pass"
+              },
               {
                 "file": "src/mcp/__tests__/design-review.test.ts",
                 "title": "normal MCP and main-owned unary recovery preserve partial native work while independent subjects progress",
@@ -695,13 +790,8 @@
                 "result": "pass"
               },
               {
-                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
-                "result": "pass"
-              },
-              {
-                "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
                 "result": "pass"
               }
             ],
@@ -718,6 +808,11 @@
                 "result": "pass"
               },
               {
+                "file": "src/mcp/__tests__/design-review.test.ts",
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
+                "result": "pass"
+              },
+              {
                 "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
                 "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
                 "result": "pass"
@@ -729,11 +824,6 @@
               },
               {
                 "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
-                "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
-                "result": "pass"
-              },
-              {
-                "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
                 "title": "shared current IDE wire fixture preserves common fields and versioned chunk data",
                 "result": "pass"
               }
@@ -741,7 +831,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "Production command PATH=/home/subho/.nvm/versions/node/v22.22.1/bin:$PATH npm run build exited 0: /tmp/s4-t8-production-build.log (tsc, tools typecheck, forbidden-spawn scan, broker/watchdog, model definitions and asset copies). Compiled MCP/current-code-review fixtures 8/8: /tmp/s4-t8-final-smoke.log. Reader/VS Code/shared-wire cases 4/4: /tmp/s4-t8-ide-readers.log. Actual current Kotlin RPC parser + DTOs + parseView executed unchanged in isolated Kotlin harness: python3 /tmp/s4-jetbrains-parser-qualification.py exited 0; /tmp/s4-jetbrains-parser-qualification.log contains PASS and source/snippet SHA256 provenance, also /tmp/s4-jetbrains-parser-qualification/provenance.json. Only logger stubbed; shared wire, absent legacy fields and structured errors checked. This is parser qualification, not a passing whole JetBrains build: unrelated SaveResult.Saved constructor error still blocks that build. All provider outputs in fixture tests synthetic, not hosted acceptance."
+              "evidence": "Compiled qualification is now default, not an environment assumption: host and stdio in src/mcp/__tests__/design-review.test.ts default compiled=true for every normal scenario. Current code-review smoke loads compiled CliProvider, coordinator and checkpoint modules and calls serve(...,true), which loads compiled daemon RPC/server and registers compiled Git tools. /tmp/s4-compiled-default-qualification.log: 9/9 pass. Recovery, retry exhaustion, connection authority, selective impact, publication failure/model-free retry/replay, mutation invalidation, approval refusal/override retention, successful cleanup and fresh history all exercised compiled. Exact correction snapshot 984a8f448 built successfully in isolated /tmp/insrc-s4-qualification-ce7b891ca; /tmp/s4-isolated-final-build.log. Earlier isolated all-focused 145/145 /tmp/s4-isolated-corrections-regression.log. Current IDE evidence retained: /tmp/s4-t8-ide-readers.log 4/4, /tmp/s4-jetbrains-parser-qualification.log PASS for unchanged production Kotlin parser/DTO extraction and source hashes; whole-plugin JVM build remains blocked by unrelated baseline Saved constructor issue. Synthetic fixture outputs only; live DEF qualification remains separately recorded under t9."
             }
           }
         ],
@@ -750,7 +840,7 @@
             "file": "src/mcp/__tests__/design-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 16614,
+            "durationMs": 18015,
             "titles": [
               {
                 "title": "normal stdio MCP and Unix IPC preserve native background work and controller connection authority",
@@ -775,6 +865,10 @@
               {
                 "title": "compiled registered MCP and daemon qualify both parties across DEF HLD LLD publication approval cleanup and history restart",
                 "result": "pass"
+              },
+              {
+                "title": "compiled both-party publication retry mutation invalidation and truthful approval gates preserve feedback",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -783,7 +877,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/activity-e2e.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2626,
+            "durationMs": 3146,
             "titles": [
               {
                 "title": "native adapter plus real IPC persists feedback on both routes and CLIs, and terminal resume never reruns a CLI",
@@ -797,31 +891,10 @@
             "otherFailures": []
           },
           {
-            "file": "src/workflow/review/design-review/__tests__/impact-execution.test.ts",
-            "exitCode": 0,
-            "timedOut": false,
-            "durationMs": 1150,
-            "titles": [
-              {
-                "title": "native impact persists one plan-selection pair and dispatches only selected chunks before mutation invalidation",
-                "result": "pass"
-              },
-              {
-                "title": "controller impact uses the same schema and validator with fenced exchange and durable exact replay",
-                "result": "pass"
-              },
-              {
-                "title": "impact acceptance save failure preserves prior bytes and dispatches no selected chunk",
-                "result": "pass"
-              }
-            ],
-            "otherFailures": []
-          },
-          {
             "file": "src/workflow/review/design-review/__tests__/readers.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 818,
+            "durationMs": 782,
             "titles": [
               {
                 "title": "versioned readers preserve legacy shape and expose real chunk feedback through current common fields",
@@ -843,6 +916,27 @@
             "otherFailures": []
           }
         ]
+      },
+      {
+        "taskId": "t9",
+        "commit": "276949430",
+        "ranAt": "2026-11-08T07:22:58.481Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "L1 installed daemon independent review, progress, permanent retrieval and human-approved cleanup",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "/tmp/s4-t9-live-evidence.json. Installed daemon status confirmed a4ea9d2eebf1632ae8025dc81519387e1758be52 after user update/restart. Registered insrc_review_step reviewed existing pending sandbox DEF-0f4fedd5c524b8b6 in registered /home/subho/work/dev/insors/insrc-test, reviewId s4-t9-live-def-20261108 attempt 1. Actual Codex CliProvider gpt-6.1-sol/medium; ACK 6268ms, review 153190ms (2026-11-08T07:12:52.157Z to 07:15:25.306Z), planning plus 3 dependency-ordered chunks = 4 dispatches, 0 automatic retries. Polled meaningful progress; read all three paginated results. Final incomplete: 0 HIGH, 1 MED, 2 LOW, missing upstream citation evidence. Permanent history entry 5997490366c2061cd3c453532904fe50ec310e62604874b2d2b845c36f89c691 validated against full preservation digest and unchanged Markdown. insrc_present returned presented for DEF; user explicitly approved qualification override in chat. Registered insrc_workflow_approve at 07:21:37.160Z approved with truthful override and returned deleted:[checkpoint], retained:[], errors:[]. Checkpoint absent; registered progress now returns source:history with original incomplete/counts. A fresh compiled coordinator with provider factory throwing also retrieves history. Live hosted coverage DEF only; HLD/LLD are explicitly unverified hosted and retain T8 compiled-fixture coverage. Current code-review smoke evidence /tmp/s4-t8-final-smoke.log passed 8/8; no activation framework or raw approval IPC used."
+            }
+          }
+        ],
+        "files": [],
+        "note": "the gate ran no test: every named test of this Task was reported by the builder"
       }
     ]
   },

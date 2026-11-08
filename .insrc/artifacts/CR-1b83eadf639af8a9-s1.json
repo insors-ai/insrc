@@ -1,0 +1,459 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-50f41ee3-9b33-42e0-b3e7-19889e93c8ac",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T18:58:14.130Z",
+    "epicCreatedAt": "2026-11-08T18:44:17.617Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "1b83eadf639af8a9",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "do-not-request-artifact-approval-tracker",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "f4f593c40d6c688c4b5ebc1e78bf2b7023a1d107b161d6e1ff77b3e889b632b0",
+        "at": "2026-11-08T18:58:14.131Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "tracker-report-gate-20261108",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "d54ff4d01eed422d3e6284bc1dc7b5f5707fd1f1be90749ff5f3ce41688ef7fe",
+        "attributionIdentity": "3b8fffd4e02d056ff5f7a0f46679271bdd36e66e355786d90aa1c7f80982d09d",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "1b7ed3ac2208ae9784412d38187f81af6c748db5e6540125cc23440438c9be77"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28",
+          "finalScope": {
+            "revision": "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28",
+            "identity": "d54ff4d01eed422d3e6284bc1dc7b5f5707fd1f1be90749ff5f3ce41688ef7fe",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/daemon/steps/workflow-step/phases/synthesize.ts",
+                "blobOid": "ca9e85c0aff2a2245b99770525eb8659642a9a18",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      111,
+                      114
+                    ]
+                  },
+                  {
+                    "after": [
+                      123,
+                      123
+                    ]
+                  },
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                "blobOid": "6b175c1a2c40763265e4ec188ba38a5aa1e7d801",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      37,
+                      37
+                    ]
+                  },
+                  {
+                    "after": [
+                      222,
+                      222
+                    ]
+                  },
+                  {
+                    "after": [
+                      273,
+                      273
+                    ]
+                  },
+                  {
+                    "after": [
+                      357,
+                      382
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 2,
+                "path": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+                "blobOid": "e650b8b5e8558fe802a6b00a5db19e3636202df3",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      237,
+                      237
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    111,
+                    114
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      111,
+                      114
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    123,
+                    123
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      123,
+                      123
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    132,
+                    132
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      132,
+                      132
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    37,
+                    37
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      37,
+                      37
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    222,
+                    222
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      222,
+                      222
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 2
+                },
+                "sourcePart": {
+                  "after": [
+                    273,
+                    273
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      273,
+                      273
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 3
+                },
+                "sourcePart": {
+                  "after": [
+                    357,
+                    382
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      357,
+                      382
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 2,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    237,
+                    237
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      237,
+                      237
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 2,
+            "attributionIdentity": "3b8fffd4e02d056ff5f7a0f46679271bdd36e66e355786d90aa1c7f80982d09d",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1,
+                  2
+                ],
+                "testIndexes": [
+                  0,
+                  1
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "1b7ed3ac2208ae9784412d38187f81af6c748db5e6540125cc23440438c9be77"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": ".insrc/artifacts/ISSUE-1b83eadf639af8a9.json",
+              "commit": "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28",
+              "parent": "88f948fbc7c534a350f7cc68dde07fe54938be51",
+              "files": [
+                {
+                  "path": "src/daemon/steps/workflow-step/phases/synthesize.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        111,
+                        114
+                      ]
+                    },
+                    {
+                      "after": [
+                        123,
+                        123
+                      ]
+                    },
+                    {
+                      "after": [
+                        132,
+                        132
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        37,
+                        37
+                      ]
+                    },
+                    {
+                      "after": [
+                        222,
+                        222
+                      ]
+                    },
+                    {
+                      "after": [
+                        273,
+                        273
+                      ]
+                    },
+                    {
+                      "after": [
+                        357,
+                        382
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        237,
+                        237
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "Reviewed all submitted changed segments at fb85e7f12d09e495eda8ea3ed5af531aef1d1b28 against the issue and acceptance checks. The change omits pendingApproval only for tracker.push/sync/post, preserves report storage and finalizer effects, and retains repository artifact approval gates. No blocking findings.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected both submitted test files, including fixtures, helpers, test bodies and assertions. All three tracker completions assert absence of pendingApproval. Push checks persisted Epic/Story bindings, tracker metadata and report existence; sync checks persisted statuses, timestamp and retained binding; post checks the stored report and returned comment reference. HLD asserts pendingApproval.artifactPath matches its repository document. Existing approval-boundary tests assert external paths are refused without writes. This completes the coverage assessment; it does not claim test execution or post-deployment synchronization.",
+              "evidenceReferences": [
+                "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+                "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+                "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/__tests__/approve-repo-gate.test.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: No tests, typecheck or build were run by this reviewer. The builder reports 14 passing focused tests and a passing typecheck; those execution results and their tested revision were not independently verified.",
+              "Optional execution: Post-deployment synchronization and publication without duplicate GitHub issues were not performed or verified. They remain operational follow-up after deployment."
+            ],
+            "inspectedReferences": [
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:.insrc/artifacts/ISSUE-1b83eadf639af8a9.json",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/phases/synthesize.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/__tests__/tracker-e2e.test.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/__tests__/design-epic-e2e.test.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/workflow/orchestrator.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/workflow/storage.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/steps/workflow-step/types.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/repo-call-gate.ts",
+              "fb85e7f12d09e495eda8ea3ed5af531aef1d1b28:src/daemon/__tests__/approve-repo-gate.test.ts"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-08T18:58:10.485Z",
+        "buildFingerprint": "5fcdaf5b721ee9501e611798f6fe70745915eac4fd35d871aeef7dc27653ace1"
+      }
+    ]
+  },
+  "citations": []
+}

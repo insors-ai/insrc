@@ -38,6 +38,7 @@ import type {
 	StepPlanResumeState,
 } from '../../../analyze/explore/index.js';
 import type { SynthesizerPromptKey } from '../../../analyze/context/synthesizer.js';
+import type { AnswerProgress } from '../../../analyze/context/answer-progress.js';
 
 import { loadState, replaceState, saveState, StateTokenNotFound } from './state-store.js';
 
@@ -95,6 +96,8 @@ export interface StepStatePayload {
 	 *  output for `narrow.explorationId` and resumes stepPlan with
 	 *  `narrow.resumeState`. */
 	readonly narrow?:        NarrowPause;
+	/** The answer step's progress: the plan of its parts and where it is. Absent on a state minted before parts existed, which is read as a single reply. */
+	readonly answer?:        AnswerProgress | undefined;
 	readonly stage:          StepStage;
 }
 

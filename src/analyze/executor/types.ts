@@ -199,6 +199,12 @@ export interface TaskExecutionRecord {
 	 * findings of its own, and its child plan's tasks stand in for it.
 	 */
 	readonly completeness?: Completeness | undefined;
+	/**
+	 * What a failed aggregate task kept of its failure, as a JSON-safe value
+	 * (`AggregateFailureData`): the typed failure's results, upstream inputs,
+	 * part failures and handling, or a plain error's name, message and cause.
+	 */
+	readonly data?: unknown;
 }
 
 /** Top-level result: root plan execution + every recursive subtree's. */

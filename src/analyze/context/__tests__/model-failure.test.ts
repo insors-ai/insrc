@@ -65,6 +65,8 @@ const SHAPE_FAILURES = [
 	'McpSamplingProvider: response was not valid JSON: Unexpected end. text=',
 ];
 
+/** A request the table answers in one pass: the legacy classification of a failed call applies to it. */
+const SMALL_INTENT = (): ClassifiedIntent => ({ ...INTENT, scope: 'S' });
 const INTENT: ClassifiedIntent = {
 	target:    'code',
 	scope:     'M',
@@ -177,7 +179,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 		assert.ok(!(planning instanceof DecomposerSchemaUnrecoverable));
 
 		const answer = await caught(() => synthesize({
-			intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code',
+			intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code',
 			provider: failingProvider(new Error(text)),
 		}));
 		assert.ok(answer instanceof SynthesizerLlmUnavailableError, `answer writing: ${text} -> ${(answer as Error).name}`);
@@ -190,7 +192,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(failure) }));
 	assert.ok(planning instanceof DecomposerLlmUnavailableError);
 	const answer = await caught(() => synthesize({
-		intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(failure),
+		intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(failure),
 	}));
 	assert.ok(answer instanceof SynthesizerLlmUnavailableError);
 });
@@ -200,7 +202,7 @@ test('a shape failure stays a schema error for both calls', async () => {
 		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error(text)) }));
 		assert.ok(planning instanceof DecomposerSchemaUnrecoverable, `planning: ${text} -> ${(planning as Error).name}`);
 		const answer = await caught(() => synthesize({
-			intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code',
+			intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code',
 			provider: failingProvider(new Error(text)),
 		}));
 		assert.ok(answer instanceof SynthesizerSchemaUnrecoverable, `answer writing: ${text} -> ${(answer as Error).name}`);
@@ -215,7 +217,7 @@ test('model-unavailable messages are provider-neutral and carry the underlying m
 	assert.ok(!planning.message.includes('Ollama'));
 
 	const answer = await caught(() => synthesize({
-		intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(new Error(cli)),
+		intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(new Error(cli)),
 	})) as SynthesizerLlmUnavailableError;
 	assert.equal(answer.message, `The model call for answer writing failed: ${cli}`);
 	assert.equal(answer.detail, cli);
@@ -253,6 +255,8 @@ test('the two prompt-missing errors carry the prompt path', () => {
 /** A real OllamaProvider whose client fails with a socket error mid-stream. */
 function ollamaWithBrokenSocket(): LLMProvider {
 	const p = new OllamaProvider();
+	// A window the answer's input fits, so the failure under test is the socket and not the admission rule.
+	(p as unknown as { numCtx: number }).numCtx = 65_536;
 	(p as unknown as { client: unknown }).client = {
 		chat: async () => (async function* () {
 			yield { message: { content: '{' }, done: false };
@@ -277,6 +281,38 @@ test('each consumer family of isModelCallFailure (the classifier, the planner, t
 	// The two pipeline calls, driven end to end through the real provider.
 	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: ollamaWithBrokenSocket() }));
 	assert.ok(planning instanceof DecomposerLlmUnavailableError, `decomposer: ${(planning as Error).name}: ${(planning as Error).message}`);
-	const answer = await caught(() => synthesize({ intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
+	const answer = await caught(() => synthesize({ intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
 	assert.ok(answer instanceof SynthesizerLlmUnavailableError, `synthesizer: ${(answer as Error).name}: ${(answer as Error).message}`);
+});
+
+test("isModelCallFailure recognises 'vibe exited with' with and without the retry prefix, not in quoted text, and excludes size refusals and schema-invalid replies", () => {
+	const exit = 'vibe exited with 1.';
+	assert.equal(isModelCallFailure(new Error(exit)), true);
+	assert.equal(isModelCallFailure(new Error(`structured-output: validation failed after 2 attempts: ${exit}`)), true);
+	// A model's quoted answer is not evidence about the call.
+	assert.equal(isModelCallFailure(new Error(`reply did not parse text="vibe exited with 1."`)), false);
+	assert.equal(isModelCallFailure(new Error('the answer says vibe exited with 1.')), false);
+	// A size refusal and a schema-invalid reply are not failed calls.
+	assert.equal(isModelCallFailure(new Error('Input is too large for the model: 70000 characters')), false);
+	assert.equal(isModelCallFailure(new ModelResponseShapeError('reply was not JSON', ['not JSON'])), false);
+	// The wordings it had are unchanged.
+	for (const text of ['claude --print failed: x', 'claude exited with 2.', 'codex emitted error event: x', 'codex exited with 1.']) {
+		assert.equal(isModelCallFailure(new Error(text)), true, text);
+	}
+});
+
+test("classifyError keeps prefixes and messages and sets the original as cause; single-pass Vibe exit gives the 'aggregator-llm-unavailable:' prefix", () => {
+	const vibe = new Error('vibe exited with 1. stderr=API Error: overloaded');
+	const out = aggregatorClassify(vibe);
+	assert.match(out.message, /^aggregator-llm-unavailable: /);
+	assert.equal(out.cause, vibe);
+	const claude = new Error('claude exited with 1.');
+	assert.match(aggregatorClassify(claude).message, /^aggregator-llm-unavailable: /);
+	assert.equal(aggregatorClassify(claude).cause, claude);
+	const shape = new ModelResponseShapeError('reply failed validation', ['bad']);
+	const schema = aggregatorClassify(shape);
+	assert.match(schema.message, /^aggregator-schema-unrecoverable: reply failed validation/);
+	assert.equal(schema.cause, shape);
+	assert.match(aggregatorClassify('plain').message, /^aggregator-internal: plain/);
+	assert.equal(aggregatorClassify('plain').cause, 'plain');
 });

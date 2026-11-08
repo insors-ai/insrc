@@ -33,7 +33,7 @@ import { addRepo, updateRepoStatus } from '../../db/repos.js';
 import { makeEntityId } from '../../indexer/parser/base.js';
 import type { AnalyzeScope, AnalyzeScopeRef, ClassifiedIntent } from '../../shared/analyze-types.js';
 import type { Entity, IpcStreamMessage, LLMProvider } from '../../shared/types.js';
-import { renderCompletenessLine, renderMeasureLine, renderScopeLine } from '../../analyze/completeness.js';
+import { renderCompletenessLine, renderHandlingLine, renderMeasureLine, renderScopeLine } from '../../analyze/completeness.js';
 import { renderBundleAsMarkdown } from '../steps/bundle-md.js';
 import { oneShotRunParams } from '../steps/analyze-oneshot.js';
 import { _setClassifierForTest, buildRun, classify, plan, planDepthScope, runStart } from '../analyze-rpc.js';
@@ -243,7 +243,7 @@ test("the one-shot tool and the workflow runner state no size of their own and t
 	assert.deepEqual([measure.source, measure.determined, measure.sizeHint], ['lookup-results', true, 'L']);
 	assert.ok(measure.items > 0, 'the stored function was found and counted');
 	assert.deepEqual(renderBundleAsMarkdown(answered.bundle, { includeMeta: false }).split('\n\n')[0]!.split('\n'),
-		[renderCompletenessLine(answered.bundle.report!), renderMeasureLine(measure), renderScopeLine(answered.bundle.report!.scope!)]);
+		[renderCompletenessLine(answered.bundle.report!), renderMeasureLine(measure), renderScopeLine(answered.bundle.report!.scope!), renderHandlingLine(answered.bundle.report!.handling!)]);
 	assert.match(renderMeasureLine(measure), /^Size: \w+, measured from what the lookups returned: .* The caller asked for L\.$/);
 	// With none stated the measure has no hint.
 	const plain = await withModel(null, () => buildRun(unstated), LOOKUPS);
@@ -261,9 +261,10 @@ test("the one-shot tool and the workflow runner state no size of their own and t
 	// --- The workflow runner's grounding text: the measure line under the completeness line, then the scope line, and no hint. ---
 	const text = await withModel(null, () => _groundingForTest('context.assemble', { runId: id('grounding'), intent: grounding }), LOOKUPS);
 	const head = text.split('\n\n')[0]!.split('\n');
-	assert.equal(head.length, 3, 'the completeness line, the measure line and the scope line');
+	assert.equal(head.length, 4, 'the completeness line, the measure line, the scope line and the handling line');
 	assert.equal(head[1], renderMeasureLine(counted));
 	assert.match(head[2]!, /^Scope: /);
+	assert.match(head[3]!, /^Handling: answered in a single pass\./);
 	assert.ok(!head[1]!.includes('The caller asked for'));
 
 	// --- One cached run bundle for a run and the plan request that follows it. ---

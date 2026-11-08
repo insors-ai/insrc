@@ -1,0 +1,97 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-d913562d-c12a-4ab6-8d0a-a0e9f55d4157",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-08T07:21:40.992Z",
+    "epicCreatedAt": "2026-10-06T17:47:38.720Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "b9d5c5c40df5a574",
+    "storyId": "s3",
+    "envelope": {
+      "description": "Free-form lookup: size, the failure bridge and single-pass normalisation",
+      "parent": {
+        "entityId": "STORY-b9d5c5c40df5a574-s3",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-b9d5c5c40df5a574-s3",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t7",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-b9d5c5c40df5a574-s3-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "9193c9193ba1a035828a921c5cc0836fbec6f30d804547a7342c2ee9edd7dc6a",
+        "at": "2026-11-08T07:21:40.992Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:21:40.993Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Free-form lookup: size, the failure bridge and single-pass normalisation",
+    "summary": "Pass the request size to runFinalStructuredEmit through the tool loop and move it onto the helper; make the free-form lookup carry every ShaperAnswerStepFailedError as a LookupFailedError with its data, handling and answerStepReason, have failedOutput copy the reason as errorCode 'answer-step:<reason>', and copy handling in extractSoleFreeformResult. Normalise a single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) into the same reason-preserving bridge so the gathered findings are kept and no second synthesis runs (finding 4).",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "HandlingBudgetError, model-failed and invalid-answer each reach the answer-step failure with their reason and the report through the real executor and context driver",
+      "an admitted XS or S conversation whose final emission fails by transport or by an invalid reply keeps its tool results and ends in the terminal answer-step failure with no second synthesis attempt",
+      "a conversation that fits at size S returns directly with single-pass handling and at size M is divided"
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "freeform-handling.test.ts: size reaches runFinalStructuredEmit; fits at S returns directly with single-pass handling; at M divided although it fits"
+      },
+      {
+        "level": "integration",
+        "name": "freeform-handling.test.ts: HandlingBudgetError, model-failed and invalid-answer become LookupFailedError with tool results, handling and answerStepReason, errorCode 'answer-step:<reason>', through executePlan with no second synthesis"
+      },
+      {
+        "level": "integration",
+        "name": "freeform-handling.test.ts: single-pass final-emit failure (ShaperLlmUnavailableError, ShaperSchemaUnrecoverable) is normalised into the bridge and keeps findings"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

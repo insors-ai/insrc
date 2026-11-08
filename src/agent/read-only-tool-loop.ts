@@ -73,7 +73,7 @@ export interface ReadOnlyToolLoopArgs {
 }
 
 export type ReadOnlyToolLoopResult =
-	| { readonly done: true;  readonly messages: LLMMessage[]; readonly toolCallCount: number }
+	| { readonly done: true;  readonly messages: LLMMessage[]; readonly toolCallCount: number; readonly gathered: readonly GatheredToolOutput[] }
 	| { readonly done: false; readonly messages: LLMMessage[]; readonly toolCallCount: number; readonly gathered: readonly GatheredToolOutput[] };
 
 /** The loop's deadline passed before a turn could start. */
@@ -137,7 +137,7 @@ export async function runReadOnlyToolLoop(args: ReadOnlyToolLoopArgs): Promise<R
 		const toolCalls = response.toolCalls ?? [];
 		if (response.stopReason !== 'tool_use' || toolCalls.length === 0) {
 			if (response.text.length > 0) convo.push({ role: 'assistant', content: response.text });
-			return { done: true, messages: convo, toolCallCount };
+			return { done: true, messages: convo, toolCallCount, gathered };
 		}
 
 		// The assistant's tool_use turn, verbatim, so the next round sees its decisions.

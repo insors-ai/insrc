@@ -29,6 +29,7 @@ const CLI_FAILURE_TEXTS: readonly string[] = [
 	'claude exited with',
 	'codex emitted error event',
 	'codex exited with',
+	'vibe exited with',
 ];
 
 /** A ModelCallFailedError's message opens with this (model-call-error.ts). */

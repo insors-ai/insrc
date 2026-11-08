@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import type { Entity, RegisteredRepo } from '../../../shared/types.js';
 import { ScopeNotFoundError, ScopeRepoMismatchError } from '../invariants.js';
 import {
-	canonicalPath, resolveScope, validateRequestScope,
+	canonicalPath, resolveScope, scopeAreaKey, validateRequestScope,
 	type ResolvedScope, type ScopeCheckDeps, type ScopeDeps,
 } from '../scope.js';
 
@@ -77,6 +77,11 @@ test('validateRequestScope refuses a nonexistent path, a wrong path kind and a s
 	assert.equal(spelled.value, `${A}/src`);
 	assert.deepEqual(await resolve('module', `${A}/./src`), spelled);
 	assert.deepEqual(await resolve('module', `${A}//src/../src`), spelled);
+	// equivalent spellings also share a cache area key, and a different directory does not
+	for (const spelling of [`${A}/src/`, `${A}/./src`, `${A}//src/../src`]) {
+		assert.equal(scopeAreaKey(await resolve('module', spelling)), scopeAreaKey(spelled), `${spelling} shares the area key`);
+	}
+	assert.notEqual(scopeAreaKey(await resolve('module', `${A}/pkg`)), scopeAreaKey(spelled), 'a different directory has a different area key');
 	const sym = await resolve('symbol', `${A}/../b/src/y.ts#f`);
 	assert.equal(sym.filePath, `${B}/src/y.ts`);
 	assert.equal(sym.repoPath, B);

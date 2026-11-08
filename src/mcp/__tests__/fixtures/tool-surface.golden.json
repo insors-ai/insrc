@@ -42,7 +42,7 @@
 								"value": {
 									"type": "string",
 									"minLength": 1,
-									"description": "An absolute path for module / file / manifest-dir, a symbol name, a connection name, or the repo path."
+									"description": "An absolute path for module / file / manifest-dir; for a symbol, `<absolute file path>#<entity name>` (a bare name is not accepted); a connection name; or the repo path."
 								}
 							},
 							"required": [
@@ -159,7 +159,7 @@
 								"value": {
 									"type": "string",
 									"minLength": 1,
-									"description": "An absolute path for module / file / manifest-dir, a symbol name, a connection name, or the repo path."
+									"description": "An absolute path for module / file / manifest-dir; for a symbol, `<absolute file path>#<entity name>` (a bare name is not accepted); a connection name; or the repo path."
 								}
 							},
 							"required": [
@@ -640,19 +640,14 @@
 														"type": "object",
 														"properties": {
 															"after": {
+																"minItems": 2,
+																"maxItems": 2,
 																"type": "array",
-																"items": [
-																	{
-																		"type": "integer",
-																		"minimum": 1,
-																		"maximum": 9007199254740991
-																	},
-																	{
-																		"type": "integer",
-																		"minimum": 1,
-																		"maximum": 9007199254740991
-																	}
-																]
+																"items": {
+																	"type": "integer",
+																	"minimum": 1,
+																	"maximum": 9007199254740991
+																}
 															},
 															"deletionAt": {
 																"type": "integer",

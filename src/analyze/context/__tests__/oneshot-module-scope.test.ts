@@ -59,7 +59,7 @@ const RAW = { system: 'sys', focus: 'f', summary: 'sum', structure: 'st', surfac
 /** The loop must never be used by a run-mode request. */
 const provider = new Proxy({}, { get: (_t, prop) => (prop === 'then' ? undefined : () => { throw new Error(`the tool loop was reached (${String(prop)})`); }) }) as unknown as LLMProvider;
 
-async function lookup(kind: 'module' | 'manifest-dir', value: string, name: string): Promise<{ found: string; repoPath: string; scopeKind: string }> {
+async function lookup(kind: 'module' | 'manifest-dir', value: string, name: string): Promise<{ found: string; symbolHits: Array<{ name: string; file: string; entityId: string }>; repoPath: string; scopeKind: string }> {
 	const plan = { answerType: 'structural-map', synthesisHint: 'h', explorations: [{ id: 'e1', type: 'symbol.locate', purpose: 'p', params: { names: [name], matchMode: 'exact' } }, { id: 'e2', type: 'module.profile', purpose: 'p', params: { path: value } }] } as unknown as ExplorationPlan;
 	let executedSeen: ExecutedPlan | undefined;
 	let seenRepo = '';
@@ -74,20 +74,23 @@ async function lookup(kind: 'module' | 'manifest-dir', value: string, name: stri
 	runIds.push(id);
 	const intent: ClassifiedIntent = { target: 'code', scope: 'M', focused: false, scopeRef: { kind, value }, reasoning: 'r' };
 	await runShaper({ promptPath: 'prompts/analyze/code.system.md', invocationMode: 'run', shaperId: 'code', inputs: { intent }, opts: { runId: id }, provider, pipelineSteps: steps });
-	return { found: JSON.stringify(executedSeen?.results.map(r => r.output) ?? []), repoPath: seenRepo, scopeKind: seenScope };
+	const located = executedSeen?.results.find(r => r.exploration.type === 'symbol.locate')?.output as { hits?: Array<{ name: string; file: string; entityId: string }> } | undefined;
+	return { found: JSON.stringify(executedSeen?.results.map(r => r.output) ?? []), symbolHits: located?.hits ?? [], repoPath: seenRepo, scopeKind: seenScope };
 }
 
 test('the one-shot shaper session and executePlan use the containing repository for module and manifest-dir scopes, and a lookup returns the stored entities', async () => {
 	const mod = await lookup('module', join(repo, 'src', 'pay'), 'settle');
 	assert.equal(mod.repoPath, repo);
 	assert.equal(mod.scopeKind, 'module');
-	assert.match(mod.found, /settle\.ts/, 'the symbol lookup found the entity stored under the repository root');
+	assert.deepEqual(mod.symbolHits.map(h => [h.name, h.entityId]), [['settle', 'e-settle']], 'the symbol lookup itself returned the entity stored under the repository root');
+	assert.match(mod.symbolHits[0]!.file, /settle\.ts$/);
 	assert.match(mod.found, /"entityCount":1\b/, 'the module profile counted the entity stored under the repository root');
 
 	const manifest = await lookup('manifest-dir', join(repo, 'deploy'), 'chart');
 	assert.equal(manifest.repoPath, repo);
 	assert.equal(manifest.scopeKind, 'manifest-dir');
-	assert.match(manifest.found, /chart\.ts/, 'the symbol lookup found the entity stored under the repository root');
+	assert.deepEqual(manifest.symbolHits.map(h => [h.name, h.entityId]), [['chart', 'e-chart']], 'the symbol lookup itself returned the entity stored under the repository root');
+	assert.match(manifest.symbolHits[0]!.file, /chart\.ts$/);
 	assert.match(manifest.found, /"entityCount":1\b/, 'the module profile counted the entity stored under the repository root');
 });
 

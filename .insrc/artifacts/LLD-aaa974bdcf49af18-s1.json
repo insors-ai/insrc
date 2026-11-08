@@ -1,0 +1,543 @@
+{
+  "meta": {
+    "workflow": "design.story",
+    "runId": "wf-1793866009479-wbb3w4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-05T08:10:31.023Z",
+    "epicCreatedAt": "2026-11-05T05:54:29.780Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "client"
+        }
+      ]
+    },
+    "elapsedMs": 219175,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "aaa974bdcf49af18",
+    "epicSlug": "retry-failed-review-unit-place-let",
+    "storyId": "s1",
+    "hldBaseRunId": "wf-1793866009479-wbb3w4",
+    "hldEffectiveHash": "c77860b1d43a15c39973661055abc36cd176e39ee6ad6493995611df86a10fce",
+    "hldAmendmentsApplied": [],
+    "standalone": true,
+    "sizeClass": "feature",
+    "authoredBy": "controller",
+    "revision": 4
+  },
+  "body": {
+    "summary": {
+      "audience": "technical",
+      "prose": "A code-review unit that fails for a technical reason is run again in the same run, up to MAX_UNIT_RETRIES = 2 extra tries in the daemon party only, with the count stored in an optional attempt-header field; only when the tries are used up is the unit committed as 'failed'. The CR record also stops letting an all-failed review hold the Story's status down once a later review has an assessment. This Story amends two shared contracts of the approved HLD docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/HLD.md: sc2 (checkpoint and attempt header, HLD.md:99) gains an optional header field, and sc3 (permanent CR projection and status rule, HLD.md:117) gains a supersede clause. Both amendments are additive and backward compatible, the owner story s1 and the consumers s2 and s3 of that epic are built, and the amendment is recorded in this LLD rather than as an Epic extension because it is a bounded defect fix with no new story boundary."
+    },
+    "hldContextSlice": {
+      "frameworkSummary": "Standalone feature — no parent HLD. Design directly against the repo, grounded on the s1 analyze passes. There are no HLD shared contracts to honour.",
+      "ownedContracts": [],
+      "consumedContracts": [],
+      "boundary": {
+        "storyId": "s1",
+        "owns": [],
+        "depends": [],
+        "internal": "Retry a failed review unit in place and let a later pass supersede a failed review"
+      },
+      "adjacentBoundaries": [],
+      "rolloutPhase": "standalone",
+      "nonFunctional": {}
+    },
+    "contractDetails": {
+      "surfaceLevel": "internal",
+      "api": [
+        {
+          "name": "MAX_UNIT_RETRIES",
+          "signature": "export const MAX_UNIT_RETRIES: 2",
+          "parameters": [],
+          "returns": {
+            "type": "2",
+            "meaning": "Extra tries of one unit's assessment after the first try, following the retry-count pattern of the design review (reserveDesignUnit, retriesUsed)."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Exhausting the tries commits the unit as 'failed' through taskFailure; the design review instead pauses with technical_retry_exhausted because a code review attempt must end with a verdict."
+          ]
+        },
+        {
+          "name": "TaskReviewCoordinator.run",
+          "signature": "run(...): Promise<void>  // existing method, behaviour extended",
+          "parameters": [],
+          "returns": {
+            "type": "Promise<void>",
+            "meaning": "Unchanged: every unit ends with a stored result."
+          },
+          "errors": [
+            {
+              "type": "persistence error",
+              "condition": "Saving the extra-try count fails; the run stops and a later resume may start one more uncounted try per persistent save failure, which is accepted."
+            }
+          ],
+          "preconditions": [
+            "A unit with a stored result is skipped (coordinator.ts:168)."
+          ],
+          "postconditions": [
+            "Timeouts (stored 'incomplete'), persistence failures and shared attribution failures (budget MAX_ATTRIBUTION_SUBMISSIONS = 3, unchanged) are not retried.",
+            "A retry is not a new attempt or round; only the latest try's diagnostic is kept because persistFailureDiagnostic replaces by phase, task and provider.",
+            "ControllerTaskReview failures (controller.ts:72, :190) are not retried."
+          ]
+        },
+        {
+          "name": "supersedeAwareStatus",
+          "signature": "function supersedeAwareStatus(reviews: TaskReviewSummary[]): TaskStatus",
+          "parameters": [
+            {
+              "name": "reviews",
+              "type": "TaskReviewSummary[]",
+              "purpose": "Summaries of the record body.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TaskStatus",
+            "meaning": "Status under the supersede rule: an all-'failed' review is dropped when another kept review with a later completedAt has a non-failed task; a review with any assessment always counts; a lone or later all-failed review still reports 'failed'. Precedence comes from aggregateTaskStatus."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "Applies to both parties' records."
+          ]
+        },
+        {
+          "name": "latestReviewStatus",
+          "signature": "function latestReviewStatus(reviews: TaskReviewSummary[]): TaskStatus  // existing",
+          "parameters": [
+            {
+              "name": "reviews",
+              "type": "TaskReviewSummary[]",
+              "purpose": "Summaries of the record body.",
+              "optional": false
+            }
+          ],
+          "returns": {
+            "type": "TaskStatus",
+            "meaning": "Migration step 1: unchanged (previous rule). Step 2: computes the supersede rule so publishing writes it."
+          },
+          "errors": [],
+          "preconditions": [],
+          "postconditions": [
+            "validateTaskBody accepts the status of either rule in step 1 and step 2 so old and new records both validate."
+          ]
+        }
+      ]
+    },
+    "dataModelChanges": [
+      {
+        "entity": "ReviewAttempt.header (sc2, HLD.md:99)",
+        "change": "field-add",
+        "details": "Optional map from task id to the number of extra tries started. The header schema is closed (additionalProperties false), so the field is added to the type and the schema; absent means zero. Additive and backward compatible; stored attempts without it load unchanged.",
+        "callSites": [
+          "src/workflow/code-review/task-review/contracts.ts:90",
+          "src/workflow/code-review/task-review/contracts.ts:107",
+          "src/workflow/code-review/task-review/checkpoint.ts:17",
+          "src/workflow/code-review/task-review/checkpoint.ts:43",
+          "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/HLD.md:99"
+        ]
+      },
+      {
+        "entity": "CR record status rule (sc3, HLD.md:117)",
+        "change": "invariant-change",
+        "details": "latestReviewSummaries keeps the highest attempt per reviewId and a review with any assessment always counts (record.ts:21-25); status precedence stays aggregateTaskStatus (results.ts:44-48). New clause: an all-'failed' review is superseded by a later kept review with a non-failed task. Migration: step 1 adds supersedeAwareStatus used only by validateTaskBody (accepting either status) plus the header field, rollbackable; step 2 switches latestReviewStatus and latestReviewSummaries to the supersede rule, not rollbackable once such a record is published; step 3 adds the coordinator retry, rollbackable; step 4 runs the full task-review tests and a live review. A published summary is never changed (record.ts:57-58).",
+        "callSites": [
+          "src/workflow/code-review/task-review/record.ts:21-25",
+          "src/workflow/code-review/task-review/record.ts:26-28",
+          "src/workflow/code-review/task-review/record.ts:30-46",
+          "src/workflow/code-review/task-review/record.ts:47-61",
+          "src/workflow/code-review/task-review/results.ts:44-48",
+          "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/HLD.md:117"
+        ]
+      },
+      {
+        "entity": "Unit failure path",
+        "change": "invariant-change",
+        "details": "Retry wraps only the assessment phase (coordinator.ts:251) inside run (coordinator.ts:159-281); taskFailure (assessment.ts:42-44) is still the exhaustion result and commitResult's guard (coordinator.ts:183-184) is unchanged. Tests: retry.test.ts, record-supersede.test.ts, publication.test.ts, controller.test.ts.",
+        "callSites": [
+          "src/workflow/code-review/task-review/coordinator.ts:159-281",
+          "src/workflow/code-review/task-review/coordinator.ts:183-184",
+          "src/workflow/code-review/task-review/assessment.ts:42-44",
+          "src/workflow/code-review/task-review/diagnostics.ts:29-56",
+          "src/workflow/code-review/task-review/attribution-repair.ts:6",
+          "src/workflow/code-review/task-review/controller.ts:72",
+          "src/workflow/code-review/task-review/controller.ts:190"
+        ]
+      }
+    ],
+    "interactionWithShared": [],
+    "errorPaths": {
+      "errorCases": [
+        {
+          "scenario": "A unit's assessment fails technically on every try",
+          "detection": "The flow throws in the assessment phase (coordinator.ts:251) and the stored extra-try count has reached MAX_UNIT_RETRIES.",
+          "response": "Commit taskFailure(task.id, message, false) as 'failed' through commitResult; the latest try's diagnostic is kept.",
+          "userImpact": "The review reports 'failed' for that unit; a later pass can supersede it in the CR record.",
+          "recoverable": true
+        },
+        {
+          "scenario": "Saving the extra-try count fails",
+          "detection": "saveCheckpoint rejects with the persistence error before the retry starts.",
+          "response": "The error propagates and stops that run; the try is not started. A later resume may start one more uncounted try per persistent save failure, which is accepted.",
+          "userImpact": "The run stops with the persistence error; resume continues.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A unit times out",
+          "detection": "The flow throws a timeout (inactivity or session) and taskFailure marks timedOut.",
+          "response": "Not retried; committed as 'incomplete'.",
+          "userImpact": "Unchanged from today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "The shared task attribution fails",
+          "detection": "A cached attributionFailure makes each task flow rethrow before the assessment phase.",
+          "response": "Not retried by the unit retry; the attribution budget MAX_ATTRIBUTION_SUBMISSIONS = 3 is unchanged.",
+          "userImpact": "Unchanged from today.",
+          "recoverable": true
+        },
+        {
+          "scenario": "A stored record has a status from the previous rule",
+          "detection": "validateTaskBody compares body.status with both the previous and the supersede-aware status.",
+          "response": "Accept either; refuse anything else with the existing error.",
+          "userImpact": "Old records stay valid.",
+          "recoverable": true
+        }
+      ],
+      "edgeCases": [
+        {
+          "input": "A retry succeeds on the second try",
+          "expected": "The unit stores the successful assessment; no failure is committed and the count stays recorded in the header."
+        },
+        {
+          "input": "Resume after a run that used one extra try",
+          "expected": "The stored count is read, so only the remaining tries are available; units with a stored result are skipped."
+        },
+        {
+          "input": "A stored attempt header without the new field",
+          "expected": "Loads unchanged and counts as zero extra tries."
+        },
+        {
+          "input": "One all-failed review and no other review",
+          "expected": "The record status is 'failed'."
+        },
+        {
+          "input": "An all-failed review that is later than a passing review",
+          "expected": "It is not superseded; the record status is 'failed'."
+        },
+        {
+          "input": "An earlier all-failed review and a later review with a non-failed task",
+          "expected": "The earlier review is dropped; the status comes from the remaining reviews by aggregateTaskStatus precedence."
+        },
+        {
+          "input": "A review with one failed and one passed task",
+          "expected": "It has an assessment and always counts."
+        }
+      ],
+      "invariantsToPreserve": [
+        {
+          "text": "Every unit still ends with exactly one stored result, and commitResult refuses a different second result for the same task.",
+          "source": "c1"
+        },
+        {
+          "text": "The attempt header schema stays closed; the new field is added to the schema and type explicitly, never admitted by loosening additionalProperties.",
+          "source": "c9"
+        },
+        {
+          "text": "Controller-party failures (rejected attribution, failed reuse) are recorded as before and never retried; the record rule still covers them.",
+          "source": "c10"
+        },
+        {
+          "text": "A controller reuse failure is likewise not retried.",
+          "source": "c11"
+        },
+        {
+          "text": "The attribution repair budget MAX_ATTRIBUTION_SUBMISSIONS = 3 is unchanged and separate from the unit retry budget.",
+          "source": "c12"
+        },
+        {
+          "text": "A review with any assessment always counts in the record (latestReviewSummaries); a published summary is never changed (record.ts:57-58).",
+          "source": "c4"
+        },
+        {
+          "text": "Status precedence stays failed, incomplete, changes_requested, passed (aggregateTaskStatus).",
+          "source": "c5"
+        },
+        {
+          "text": "A stored result is skipped on resume and replay is refused by the in-run guard.",
+          "source": "c3"
+        },
+        {
+          "text": "taskFailure still stores 'incomplete' for timeouts and 'failed' otherwise.",
+          "source": "c2"
+        },
+        {
+          "text": "The commitResult replay guard is unchanged.",
+          "source": "c6"
+        },
+        {
+          "text": "A published attempt summary for a reviewId and attempt is not rewritten.",
+          "source": "c7"
+        },
+        {
+          "text": "Failure diagnostics keep one entry per phase, task and provider, replaced in place.",
+          "source": "c8"
+        }
+      ]
+    },
+    "testStrategy": {
+      "testLevels": [
+        {
+          "level": "unit",
+          "purpose": "Pin the unit retry rule and the supersede status rule.",
+          "subjects": [
+            "src/workflow/code-review/task-review/__tests__/retry.test.ts: retry succeeds on a later try, exhaustion commits 'failed', timeouts and attribution failures are not retried, count survives resume, a failed count save stops the run",
+            "src/workflow/code-review/task-review/__tests__/record-supersede.test.ts: supersedeAwareStatus cases (lone all-failed, later all-failed, earlier all-failed superseded, mixed review always counts) and validateTaskBody accepting either status"
+          ],
+          "fixturesNeeded": [
+            "fake provider of the coordinator tests",
+            "publication-fixture.ts"
+          ]
+        },
+        {
+          "level": "integration",
+          "purpose": "Show publishing writes the new status and old records still validate; the controller party is covered by the record rule and not retried.",
+          "subjects": [
+            "src/workflow/code-review/task-review/__tests__/publication.test.ts",
+            "src/workflow/code-review/task-review/__tests__/controller.test.ts",
+            "src/workflow/code-review/task-review/__tests__/recovery.test.ts"
+          ]
+        },
+        {
+          "level": "live",
+          "purpose": "Run a real task-based review after the build (gated by INSRC_LIVE_TESTS=1).",
+          "subjects": [
+            "one live code review of the Story's own change"
+          ]
+        }
+      ],
+      "acceptanceMapping": [
+        {
+          "criterionId": "ac1",
+          "provingTests": [
+            "retry.test.ts: a unit that fails then succeeds stores the assessment",
+            "retry.test.ts: a unit that fails on every try is committed 'failed' after MAX_UNIT_RETRIES extra tries"
+          ]
+        },
+        {
+          "criterionId": "ac2",
+          "provingTests": [
+            "retry.test.ts: timeouts, persistence failures and attribution failures are not retried",
+            "controller.test.ts: controller failures are recorded and not retried"
+          ]
+        },
+        {
+          "criterionId": "ac3",
+          "provingTests": [
+            "record-supersede.test.ts: an earlier all-failed review is superseded by a later review with a non-failed task",
+            "record-supersede.test.ts: a lone or later all-failed review still reports 'failed'",
+            "publication.test.ts: publishing writes the supersede status"
+          ]
+        },
+        {
+          "criterionId": "ac4",
+          "provingTests": [
+            "record-supersede.test.ts: validateTaskBody accepts a record with the previous status",
+            "publication.test.ts: stored attempts without the header field load unchanged"
+          ]
+        }
+      ],
+      "testFramework": "node:test via npx tsx --test"
+    },
+    "migration": {
+      "stateBefore": "A failed reviewer unit is committed at once as 'failed' (or 'incomplete' on timeout) by taskFailure (coordinator.ts:159-281, assessment.ts:42-44). The attempt header is closed (contracts.ts:107). The CR record status is latestReviewStatus over the highest attempt per reviewId (record.ts:21-28), validated by validateTaskBody (record.ts:30-46) and written by mergeTaskSummary (record.ts:47-61), so one all-failed review holds the Story status at 'failed' even after a later pass.",
+      "stateAfter": "A technically failed unit is retried up to MAX_UNIT_RETRIES = 2 extra tries in the daemon party, counted in an optional header field, and committed 'failed' only after the tries are used up. The CR record status follows the supersede rule, and validation accepts the status of either the previous or the supersede rule. This amends sc2 (HLD.md:99) and sc3 (HLD.md:117) of the approved HLD additively.",
+      "migrationSteps": [
+        {
+          "order": 1,
+          "action": "Add the optional header field (type and schema) and add a separate supersede-aware status function used only by validateTaskBody, which accepts the status of either the previous or the supersede-aware rule, while latestReviewStatus still computes the previous rule.",
+          "rollbackable": true
+        },
+        {
+          "order": 2,
+          "action": "Switch latestReviewStatus and latestReviewSummaries to the supersede rule so mergeTaskSummary writes it. Once a record with the new status is published, reverting would leave records the previous code rejects.",
+          "rollbackable": false
+        },
+        {
+          "order": 3,
+          "action": "Add the in-run retry of the assessment phase to the coordinator run loop, saving the extra-try count in the header before each extra try.",
+          "rollbackable": true
+        },
+        {
+          "order": 4,
+          "action": "Run the full task-review tests and one live review of the Story's change.",
+          "rollbackable": true
+        }
+      ],
+      "backwardCompat": "Additive. Attempts stored without the header field load as zero extra tries. Records written under the previous status rule still validate because validation accepts either rule. The checkpoint schema stays closed; the field is added explicitly.",
+      "zeroDowntime": true,
+      "dataRewriteRequired": false
+    },
+    "alternativesConsidered": [
+      {
+        "id": "a1",
+        "name": "Bounded in-run retry of a failed unit's assessment following the design review's retry-count pattern, and a record rule that an all-failed review never outranks a later review",
+        "oneLineSummary": "Run a unit's assessment again, up to MAX_UNIT_RETRIES = 2 extra tries counted in the attempt header, when its reviewer fails with a process or output failure; commit 'failed' when the budget is spent; and exclude an all-failed review from the CR status once a later review with an assessment exists.",
+        "approach": "Retry, daemon party only. This follows the pattern the design review coordinator already uses (a per-unit retry count stored in the attempt, bounded by a budget, surviving resume; reserveDesignUnit and retriesUsed in src/workflow/review/design-review/coordinator.ts:147), and differs on exhaustion: the design review pauses for a user decision (technical_retry_exhausted), but a code review attempt must end with a verdict for the CR record, so an exhausted unit is committed as 'failed' and the caller supersedes it with a later review. In TaskReviewCoordinator.run, when the assessment phase of a unit throws before a durable result with a failure that taskFailure would store as 'failed', and the unit's count of extra tries in the attempt header (keyed by task id) is below an exported constant MAX_UNIT_RETRIES = 2, the count is incremented and saved and the unit's assessment is run again; otherwise the failure is committed as today. A failed save of the count raises the persistence error and stops that run; each resume is a caller action, so one uncounted try per persistent save failure is accepted. A failure of the shared task attribution, a timeout or inactivity failure ('incomplete') and a persistence failure are never retried. The diagnostic of a unit is stored once per phase, task and provider and the next try overwrites it. A try is not an attempt. ControllerTaskReview is unchanged. Contract amendments, recorded here: the header field amends sc2 and the supersede clause amends sc3 of the approved HLD of the review-committed-work-task-checkpoints epic (HLD.md:99, HLD.md:117), both additively; the header schema and type (contracts.ts:90, :107) gain the optional field, and the record rule is: latestReviewSummaries drops a kept review whose every task is 'failed' when another kept review with a later completedAt has a task that is not 'failed', with validation accepting the status of either the previous or the supersede-aware rule so stored records stay readable.",
+        "pros": [
+          "Fixes the observed failures where they happen, before anything is published",
+          "Reuses a retry pattern the code base already has, with the exhaustion behaviour the CR record needs",
+          "No change to the attempt, round or publication model; a retry cannot conflict with a saved summary",
+          "A genuine finding can never be hidden: only reviews with no assessment at all are superseded",
+          "Old checkpoints and CR records stay readable, and both contract amendments are additive"
+        ],
+        "cons": [
+          "Touches the coordinator, the header contract and the record aggregation, with a compatibility rule for validation",
+          "A unit that keeps failing costs up to two extra reviewer sessions before it is reported failed",
+          "Earlier tries' diagnostics are overwritten by the latest one",
+          "The controller party gets the record rule but no retry"
+        ],
+        "costEstimate": "M"
+      },
+      {
+        "id": "a2",
+        "name": "Resume re-runs failed units and republishes the same attempt",
+        "oneLineSummary": "Let operation resume discard the stored failed results of an attempt and re-run those units, then publish again.",
+        "approach": "Change admission so resume treats a stored 'failed' result as not done, removes it, re-runs the unit and publishes the attempt again. The published summary for that reviewId and attempt is replaced instead of conflicting.",
+        "pros": [
+          "The caller's existing resume call becomes the retry",
+          "No automatic extra reviewer sessions"
+        ],
+        "cons": [
+          "Replaces a saved, published attempt summary, which mergeTaskSummary refuses today as a conflict, weakening the record's immutability",
+          "A failed attempt that was published and read by the approval gate would change under it",
+          "Still needs a supersede rule for a retry under another reviewId"
+        ],
+        "costEstimate": "M",
+        "reasonRejected": "Replaces a published, immutable attempt summary, which the record deliberately refuses."
+      },
+      {
+        "id": "a3",
+        "name": "Retry as an automatic next attempt of the same review",
+        "oneLineSummary": "On resume of a review with failed units, open attempt N+1 of the same reviewId that reassesses the failed units and reuses the rest.",
+        "approach": "Reuse the existing attempt mechanism: resume of a failed attempt creates the next attempt of the same reviewId with reassess for the failed units and reuse for the others, so the per-reviewId latest-attempt rule already supersedes the failed attempt. The start and resume responses name the reviewId and next attempt to use after a failure.",
+        "pros": [
+          "No change to the record aggregation or its validation",
+          "Reuses reassess and reuse"
+        ],
+        "cons": [
+          "Attempts multiply for infrastructure glitches, and the attempt number looks like a new round",
+          "Changes what resume means and needs task attribution to run again",
+          "A pass under a different reviewId still leaves the failed review standing"
+        ],
+        "costEstimate": "L",
+        "reasonRejected": "Reuses attempts but multiplies them for glitches, changes what resume means and still leaves a failed review standing when a pass runs under another reviewId."
+      },
+      {
+        "id": "a4",
+        "name": "Record rule and advice only",
+        "oneLineSummary": "Add the supersede rule and tell the caller which reviewId and attempt to use, without any retry.",
+        "approach": "Apply the record rule of a1 and have the start and progress responses say that a failed unit is retried by running the next attempt of the same reviewId.",
+        "pros": [
+          "Smallest change",
+          "No extra reviewer sessions"
+        ],
+        "cons": [
+          "Does not retry anything: a glitch still costs the caller a manual round",
+          "Leaves the observed crash and unverified-coverage cases unfixed"
+        ],
+        "costEstimate": "S",
+        "reasonRejected": "Cheap and safe but retries nothing, so the observed failures still cost a manual round."
+      }
+    ],
+    "chosenAlternative": "a1",
+    "openQuestions": [
+      "alt2: constraintScore is empty because the standalone Story has no Story, Epic or HLD constraints to score against."
+    ]
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:159-281"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/assessment.ts:42-44"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:168"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts:21-61"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/results.ts:44-48"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/coordinator.ts:183-184"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/record.ts:57-58"
+    },
+    {
+      "id": "c8",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/diagnostics.ts:29-56"
+    },
+    {
+      "id": "c9",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/contracts.ts:107"
+    },
+    {
+      "id": "c10",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts:72"
+    },
+    {
+      "id": "c11",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/controller.ts:190"
+    },
+    {
+      "id": "c12",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/attribution-repair.ts:6"
+    },
+    {
+      "id": "c13",
+      "kind": "doc",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/HLD.md:99"
+    },
+    {
+      "id": "c14",
+      "kind": "doc",
+      "ref": "docs/epics/review-committed-work-task-checkpoints-E20261030e6ddcdcb/HLD.md:117"
+    },
+    {
+      "id": "c15",
+      "kind": "code",
+      "ref": "src/workflow/review/design-review/coordinator.ts:147"
+    }
+  ]
+}

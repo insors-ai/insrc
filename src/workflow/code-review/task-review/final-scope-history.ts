@@ -74,7 +74,11 @@ export function validateFinalScope(review: CompletedReviewSummary): FinalScopeSn
   validateAcceptedBindings({attempt:review.attempt,selectedTaskIds:s.selectedTaskIds,finalScopeIdentity:s.identity,attributionIdentity:s.attributionIdentity,acceptedAttribution:s.tasks.map(({identity:_id,...row})=>row),taskScopeIdentities:review.taskScopeIdentities},origins.length,s.testCount);
   requireReview(isDeepStrictEqual(s.tasks.map(({taskId,identity})=>({taskId,identity})),review.taskScopeIdentities),'finalScope','Task snapshot identity mismatch');
   for(const row of s.tasks)for(const d of s.dispositions)if(row.changeIndexes.includes(d.source.changeIndex))requireReview(d.replacementWitnesses.every(w=>row.changeIndexes.includes(w.changeIndex)),'finalScope','Task omits replacement witness');
-  for(const row of s.tasks){const origin=review.origins?.find(o=>o.taskId===row.taskId);requireReview(row.decision.action==='reuse'?origin?.sourceAttempt===row.decision.sourceAttempt&&origin.reason===row.decision.reason:origin===undefined,'finalScope','Reuse provenance disagrees with accepted decision');}
+  for(const row of s.tasks){
+   const origin=review.origins?.find(o=>o.taskId===row.taskId),result=review.tasks.find(t=>t.taskId===row.taskId);
+   const unsuccessful=result&&(result.status==='failed'||result.status==='incomplete')&&!result.findings.length&&result.testCoverage.assessment==='unverified'&&result.limitations.length>0&&!result.inspectedReferences.length&&!result.testCoverage.evidenceReferences.length&&!result.executedTests.length;
+   requireReview(row.decision.action==='reuse'?(origin?origin.sourceAttempt===row.decision.sourceAttempt&&origin.reason===row.decision.reason:unsuccessful):origin===undefined,'finalScope','Reuse provenance disagrees with accepted decision');
+  }
  }else{
   requireReview(review.taskScopeIdentities===undefined&&!review.origins?.length&&s.attributionIdentity===attributionIdentity('unmapped_failure',s.identity,s.selectedTaskIds,s.testCount,[]),'finalScope','Invalid unmapped attribution binding');
   requireReview(Buffer.byteLength(s.attributionFailure.code)<=64&&Buffer.byteLength(s.attributionFailure.summary)<=8192,'finalScope','Oversize attribution failure');

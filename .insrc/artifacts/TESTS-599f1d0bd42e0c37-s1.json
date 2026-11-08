@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 19,
-        "contentHash": "4770a3666cb9f8a1300312975f64b9927908b2c4358ba1b450d99749c59cada9",
-        "at": "2026-11-07T09:03:55.079Z",
+        "number": 27,
+        "contentHash": "8df3142f13292b97f53af2d066ecf793caa95b83d6a9b34e5e434bbf05597d3c",
+        "at": "2026-11-07T13:42:05.557Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "599f1d0bd42e0c37",
     "storyId": "s1",
     "createdAt": "2026-11-07T04:56:57.771Z",
-    "updatedAt": "2026-11-07T09:03:54.932Z",
+    "updatedAt": "2026-11-07T13:42:05.443Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-05T03:38:11.751Z",
     "epicSlug": "reconcile-later-submitted-fixes-before-reporting",
-    "revision": 19
+    "revision": 27
   },
   "body": {
     "tasks": [
@@ -339,8 +339,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "fcdde7b58",
-        "ranAt": "2026-11-07T05:42:10.173Z",
+        "commit": "200ab3286",
+        "ranAt": "2026-11-07T13:39:59.722Z",
         "testsPassed": true,
         "tests": [
           {
@@ -356,6 +356,16 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
                 "title": "partial replacement witnesses must cover the entire changed target and deletions retain explicit witnesses",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
                 "result": "pass"
               }
             ],
@@ -436,7 +446,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/projection.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2558,
+            "durationMs": 3554,
             "titles": [
               {
                 "title": "selected later witnesses justify complete supersession and immutable origin accounting",
@@ -476,6 +486,14 @@
               },
               {
                 "title": "production projection budgets accept their exact ceilings and refuse the next unit",
+                "result": "pass"
+              },
+              {
+                "title": "selected rename then deletion projects absent final blobs and still requires the deletion witness",
+                "result": "pass"
+              },
+              {
+                "title": "verified rename deletion ignores unrelated and identical recreation at the original pathname",
                 "result": "pass"
               }
             ],
@@ -669,8 +687,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "03943cf59",
-        "ranAt": "2026-11-07T06:30:25.152Z",
+        "commit": "0b6204998",
+        "ranAt": "2026-11-07T12:25:29.995Z",
         "testsPassed": true,
         "tests": [
           {
@@ -686,6 +704,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
                 "title": "unsupported directory sync retains successful-save policy and cleanup never removes an unowned collision",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
+                "title": "same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes",
                 "result": "pass"
               }
             ],
@@ -743,7 +766,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4040,
+            "durationMs": 4990,
             "titles": [
               {
                 "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
@@ -772,6 +795,10 @@
               {
                 "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits",
                 "result": "pass"
+              },
+              {
+                "title": "same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -780,8 +807,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "b7b0e4a5e",
-        "ranAt": "2026-11-07T06:47:53.207Z",
+        "commit": "0b6204998",
+        "ranAt": "2026-11-07T12:27:09.623Z",
         "testsPassed": true,
         "tests": [
           {
@@ -792,6 +819,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
                 "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+                "title": "failed accepted reuse publishes truthful failure without invented provenance on both routes",
                 "result": "pass"
               }
             ],
@@ -852,7 +884,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/final-scope-history.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2461,
+            "durationMs": 2429,
             "titles": [
               {
                 "title": "final history: source-verified shifted renamed per-task scope roundtrips offline and idempotently",
@@ -880,13 +912,46 @@
               }
             ],
             "otherFailures": []
+          },
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/history.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 10905,
+            "titles": [
+              {
+                "title": "reuse decisions: source task/attempt/party validation, acyclic ancestry and unchanged result/evidence strength",
+                "result": "pass"
+              },
+              {
+                "title": "sequential re-review: full history in attribution, fresh pins and reasoned reassess/reuse across both actual reviewer adapters",
+                "result": "pass"
+              },
+              {
+                "title": "history prompts: actual fresh-task reviewers can consult relevant prior feedback and complete attempt history",
+                "result": "pass"
+              },
+              {
+                "title": "CR provenance: exact retained outcomes, origin labels, latest aggregation and replay conflict handling",
+                "result": "pass"
+              },
+              {
+                "title": "all-reuse attempts and invalid attribution preserve route parity without extra task calls",
+                "result": "pass"
+              },
+              {
+                "title": "failed accepted reuse publishes truthful failure without invented provenance on both routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
           }
         ]
       },
       {
         "taskId": "t8",
-        "commit": "fa70c3e60",
-        "ranAt": "2026-11-07T08:34:18.498Z",
+        "commit": "200ab3286",
+        "ranAt": "2026-11-07T13:42:05.443Z",
         "testsPassed": true,
         "tests": [
           {
@@ -897,6 +962,16 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
+                "title": "terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes",
                 "result": "pass"
               }
             ],
@@ -964,7 +1039,7 @@
             "file": "src/config/__tests__/review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1405,
+            "durationMs": 1319,
             "titles": [
               {
                 "title": "review JSON limit is configurable discoverable live and rejects invalid values",
@@ -981,7 +1056,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5429,
+            "durationMs": 22620,
             "titles": [
               {
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
@@ -1009,6 +1084,14 @@
               },
               {
                 "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary",
+                "result": "pass"
+              },
+              {
+                "title": "terminal capacity: diagnostic-bearing attribution failure and timeout publish unmapped outcomes at the boundary on both routes",
                 "result": "pass"
               }
             ],
@@ -1161,8 +1244,8 @@
       },
       {
         "taskId": "t10",
-        "commit": "f9052c424",
-        "ranAt": "2026-11-07T09:03:54.932Z",
+        "commit": "02ca57144",
+        "ranAt": "2026-11-07T12:35:13.672Z",
         "testsPassed": true,
         "tests": [
           {
@@ -1173,6 +1256,11 @@
               {
                 "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
                 "title": "historical reproduction: both reviewer routes inspect asserted final code and tests, suppress stale root finding and retain genuine requiredReferences defect",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
                 "result": "pass"
               }
             ],
@@ -1237,7 +1325,7 @@
             "files": [],
             "reported": {
               "result": "pass",
-              "evidence": "/tmp/t10-final-smoke.log; command HOME=<isolated /tmp HOME> PATH=<Node22 bin> node scripts/smoke-task-review.mjs. Output compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, explicitRestartResume:true, priorAttemptsPreserved:true, finalMultiCommitPin:eac01bf5f4d22c20fd8d50a1c411c09a360dee1b, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Synthetic native responses assert received final source; installed daemon untouched."
+              "evidence": "/tmp/599-round1-smoke-final.log; current committed runtime compiled by /tmp/599-round1-build-final.log. Isolated HOME, Node22, scripts/smoke-task-review.mjs. compiled:true, hostedModels:false, realWorkerThread:2, independentReviews:2, nativeCalls:12, explicitRestartResume:true, priorAttemptsPreserved:true, excludedHeadAndWorktreeCanaries:true, cleanup.deleted4/errors[]. Installed daemon untouched."
             }
           },
           {
@@ -1269,7 +1357,7 @@
             "file": "src/mcp/__tests__/forward-step.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2285,
+            "durationMs": 2204,
             "titles": [
               {
                 "title": "forwarder named errors: ENOENT/ECONNREFUSED give DaemonUnreachableError, unknown method or step-unknown-tool give DaemonTooOldError, and no handler runs",
@@ -1302,7 +1390,7 @@
             "file": "src/mcp/__tests__/task-review.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2724,
+            "durationMs": 2484,
             "titles": [
               {
                 "title": "Normal MCP start/progress/publication use committed packets and reject retired or inferred scopes",
@@ -1327,7 +1415,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 3773,
+            "durationMs": 3648,
             "titles": [
               {
                 "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
@@ -1352,7 +1440,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/capacity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 5582,
+            "durationMs": 18046,
             "titles": [
               {
                 "title": "terminal capacity: real serializers account for all outcomes prior history accepted decisions and exact fit",
@@ -1381,6 +1469,10 @@
               {
                 "title": "terminal capacity: both actual routes refuse oversized results and preserve publishable remaining outcomes",
                 "result": "pass"
+              },
+              {
+                "title": "terminal capacity: both routes persist late diagnostics and every outcome at the qualified boundary",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1389,7 +1481,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/checkpoint-outcomes.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 4355,
+            "durationMs": 4792,
             "titles": [
               {
                 "title": "checkpoint writer classifies pre-replacement, visible replacement and uncertain acknowledgement failures",
@@ -1418,6 +1510,10 @@
               {
                 "title": "a proven prior pending checkpoint may re-attribute only after explicit resume, as the approved LLD permits",
                 "result": "pass"
+              },
+              {
+                "title": "same coordinator refreshes its fence after repeated visible resume acknowledgement failure on both routes",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1426,7 +1522,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2831,
+            "durationMs": 2775,
             "titles": [
               {
                 "title": "Successful story BUILD approval removes only matching fully preserved task/story checkpoints",
@@ -1455,7 +1551,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/historical-regression.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2771,
+            "durationMs": 2855,
             "titles": [
               {
                 "title": "historical reproduction: exact immutable sources prove the old root failure and included fix without raw checkpoint claims",
@@ -1472,7 +1568,7 @@
             "file": "src/workflow/code-review/task-review/__tests__/qualification.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 2116,
+            "durationMs": 3337,
             "titles": [
               {
                 "title": "qualification: independent IDs and final pins publish concurrently on both routes without changing each others feedback",
@@ -1484,6 +1580,10 @@
               },
               {
                 "title": "qualification: all 35 exact LLD subjects and ac1-ac5 have existing behavioral test references",
+                "result": "pass"
+              },
+              {
+                "title": "qualification: fresh publication restores distinct assigned tests and full identities on both routes without attribution calls",
                 "result": "pass"
               }
             ],

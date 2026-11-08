@@ -149,10 +149,12 @@ export class TaskReviewCoordinator {
    this.storyWork.set(path, this.storyKey(project, admitted.prepared.epicHash, admitted.checkpoint.storyId));
    if (operation === 'resume' && admitted.attempt['review-response'].crPublication === 'complete') return admitted;
    if (admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) preflight?.();
+   const prior = structuredClone(admitted.checkpoint);
    if (operation === 'resume' && admitted.attempt.header.selectedTaskIds.some(id => !admitted.attempt['review-response'].tasks.some(task => task.taskId === id))) {
     admitted.attempt.header.status = 'pending'; delete admitted.attempt.header.interrupted; delete admitted.attempt.header.activeTaskId; delete admitted.attempt.header.completedAt;
    }
-   await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
+   if (fence) await persistAcceptedAttribution(admitted, {...this.deps, onAcceptanceFailure: next => this.storageFences.set(admitted.path, next)}, prior);
+   else await (this.deps.save ?? saveCheckpoint)(admitted.path, admitted.checkpoint);
    this.storageFences.delete(admitted.path);
    return admitted;
   } catch (error) { this.release(path); throw error; }

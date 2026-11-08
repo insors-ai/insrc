@@ -26,8 +26,8 @@ __pycache__/
 # the write journal is a local crash-recovery file, never committed
 .insrc/journal/
 
-# Private per-block review recovery (never workflow artifacts or source)
-.insrc/review-runs/investigation-v1/
+# Private review execution journals and recovery checkpoints.
+.insrc/review-runs/
 
-# Live design-review baselines and feedback are private runtime checkpoints.
-.insrc/tmp/design-review/
+# Review checkpoints, baselines and feedback are private runtime state.
+.insrc/tmp/

@@ -119,6 +119,11 @@ export async function projectFileIntervals(origin: SelectedChange, originChangeI
  const before = lines(origin.after, budget?.decode.bind(budget)), after = lines(final, budget?.decode.bind(budget));
  let changes: readonly ChangedRange[];
  if (origin.after?.oid === final?.oid || (origin.after === null && final === null)) changes = [];
+ else if (final === null) {
+  // Both sides are already verified: the entire original text is gone.
+  // A tree diff at origin.path could read an unrelated replacement file.
+  changes = before.length ? [{ before: [1, before.length], deletionAt: 0 }] : [];
+ }
  else {
   changes = await sources.changedRanges(revision, origin.commit, [...new Set([finalPath, origin.path])]);
   requireReview(changes.length > 0, 'scope_conflict', 'Different committed blobs have no verifiable diff');

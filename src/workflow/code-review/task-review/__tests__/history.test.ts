@@ -121,3 +121,29 @@ test('all-reuse attempts and invalid attribution preserve route parity without e
   }finally{f.cleanup();}
  }
 });
+
+test('failed accepted reuse publishes truthful failure without invented provenance on both routes',async()=>{
+ for(const party of ['daemon','controller']as const){
+  const f=await historyFixture(party,false,true);let failNext=false;
+  const sources={commit:f.deps.sources.commit.bind(f.deps.sources),isAncestor:f.deps.sources.isAncestor.bind(f.deps.sources),changedRanges:f.deps.sources.changedRanges.bind(f.deps.sources),file:async(commit:string,path:string)=>{
+   if(failNext&&path==='reuse-evidence.js'){failNext=false;throw new Error('Reuse source temporarily unavailable');}return f.deps.sources.file(commit,path);
+  }};
+  const c=new TaskReviewCoordinator({sources,save:async(path,state)=>{await saveCheckpoint(path,state);if(state.attempts.at(-1)!.header.attributionState==='accepted'&&!state.attempts.at(-1)!['review-response'].tasks.length)failNext=true;},provider:()=>provider(async prompt=>prompt.startsWith('Derive task attribution')?f.scope():f.fresh('t2')),publish:(repo,id,_hash,baseline)=>publishTaskCheckpoint(repo,hash,id,{...f.deps,...(baseline?{baseline}:{})})});
+  try{
+   if(party==='daemon'){await c.start(f.repo,'history',2,f.packet);await c.settled(f.repo,'history');}
+   else{
+    const owner={id:'failed-reuse',signal:new AbortController().signal};const frame=await c.startController(f.repo,'history',2,f.packet,owner);
+    const task=await c.controllerScope(f.repo,'history',2,f.scope(),owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    assert.equal(task.taskId,'t2');await c.controllerResult(f.repo,'history',2,f.fresh('t2'),owner,{taskId:task.taskId,executionId:task.executionId,sequence:task.nextSequence});
+   }
+   const saved=f.read(checkpointPath(f.repo,'history')).attempts[1]!;
+   assert.equal(saved['review-response'].crPublication,'complete');assert.equal(saved['review-response'].tasks[0]!.status,'failed');
+   assert.equal(saved['review-response'].origins?.some(o=>o.taskId==='t1')??false,false);
+   const body=f.readRecord(`${f.repo}/.insrc/artifacts/CR-${hash}-s1.json`).body;assert.doesNotThrow(()=>validateTaskBody(body));
+   const timeout=structuredClone(body);timeout.reviews[1]!.tasks[0]!.status='incomplete';delete timeout.reviews[1]!.tasks[0]!.error;timeout.reviews[1]!.status='incomplete';timeout.status='incomplete';
+   assert.doesNotThrow(()=>validateTaskBody(timeout),'an explicit unsuccessful reuse may also be incomplete without a copied origin');
+   const invalid=structuredClone(body),task=invalid.reviews[1]!.tasks[0]!;task.status='passed';task.testCoverage.assessment='verified';task.limitations=[];
+   assert.throws(()=>validateTaskBody(invalid),/Reuse provenance/);
+  }finally{f.cleanup();}
+ }
+});

@@ -7,7 +7,7 @@ import { fixture } from './publication-fixture.js';
 import { prepareReviewPacket } from '../packet.js';
 import { projectReviewScope, ProjectionBudget, validateProjectionWitnesses } from '../projection.js';
 import { normalizeProjectedSegments } from '../projection-intervals.js';
-import { TaskReviewInputError, MAX_REVIEW_JSON_BYTES } from '../contracts.js';
+import { TaskReviewInputError, reviewJsonLimit } from '../contracts.js';
 import type { ReviewPacket } from '../contracts.js';
 import type { ReviewSources } from '../sources.js';
 import { buildDiffArgv, buildStatArgv, gitDiffTool } from '../../../../daemon/tools/builtins/git/diff.js';
@@ -153,7 +153,7 @@ test('actual diff truncation stays changes while oversized JSON refuses input be
   let calls = 0;
   const unexpected = async (): Promise<never> => { calls++; throw new Error('Unexpected source read'); };
   const coordinator = new TaskReviewCoordinator({ sources: { commit: unexpected, file: unexpected, changedRanges: unexpected, isAncestor: unexpected }, provider: () => { calls++; throw new Error('Unexpected provider'); } });
-  await assert.rejects(coordinator.start(f.repo, 'oversized', 1, { ...f.packet, functionalSummary: 'x'.repeat(MAX_REVIEW_JSON_BYTES) }), error => error instanceof TaskReviewInputError && error.field === 'input');
+  await assert.rejects(coordinator.start(f.repo, 'oversized', 1, { ...f.packet, functionalSummary: 'x'.repeat(reviewJsonLimit()) }), error => error instanceof TaskReviewInputError && error.field === 'input');
   assert.equal(calls, 0); assert.equal(existsSync(checkpointPath(f.repo, 'oversized')), false); assert.equal(readFileSync(path, 'utf8'), bytes);
   f.put('large.txt', `${'old content\n'.repeat(250000)}`); f.git('add', 'large.txt'); f.git('commit', '-qm', 'large old blob'); const parent = f.git('rev-parse', 'HEAD');
   f.put('large.txt', `${'new content\n'.repeat(250000)}`); f.git('add', 'large.txt'); f.git('commit', '-qm', 'large new blob'); const commit = f.git('rev-parse', 'HEAD');
@@ -168,4 +168,38 @@ test('production projection budgets accept their exact ceilings and refuse the n
  const fragments = new ProjectionBudget(); for (let i = 0; i < 100000; i++) fragments.fragment(); assert.throws(() => fragments.fragment(), field);
  const bytes = new ProjectionBudget(); bytes.decode(64 * 1024 * 1024); assert.throws(() => bytes.decode(1), field);
  assert.throws(() => new ProjectionBudget({ reads: 10001 }), field, 'test seams cannot widen production limits');
+});
+
+test('selected rename then deletion projects absent final blobs and still requires the deletion witness', async () => {
+ const f=await fixture();try{
+  const first=f.packet.reviewSet[0]!.commit;
+  f.git('mv','source.js','moved.js');f.put('moved.js','export const total = 3;\n');f.git('add','moved.js');f.git('commit','-qm','selected rename');const move=f.git('rev-parse','HEAD');
+  f.git('rm','moved.js');f.git('commit','-qm','selected deletion');const revision=f.git('rev-parse','HEAD');
+  const packet:ReviewPacket={...f.packet,reviewRevision:revision,reviewSet:[...f.packet.reviewSet,
+   {commit:move,parent:first,files:[{path:'moved.js',previousPath:'source.js',segments:[{after:[1,1]}]}]},
+   {commit:revision,parent:move,files:[{path:'moved.js',segments:[{deletionAt:0}]}]}]};
+  const prepared=await prepareReviewPacket(packet,f.deps.sources);
+  assert.deepEqual(prepared.projection!.entries.map(e=>e.findingScope),['none','none','selected']);
+  assert.deepEqual(prepared.projection!.entries[2]!.segments,[{deletionAt:0}]);
+  assert.ok(prepared.projection!.entries.every(e=>e.path==='moved.js'&&e.after===null));
+  packet.reviewSet.pop();await assert.rejects(prepareReviewPacket(packet,f.deps.sources),/scope_conflict/);
+ }finally{f.cleanup();}
+});
+
+test('verified rename deletion ignores unrelated and identical recreation at the original pathname',async()=>{
+ for(const replacement of ['export const unrelated = 99;\n','export const total = 2;\n']){
+  const f=await fixture();try{
+   const first=f.packet.reviewSet[0]!.commit;
+   f.git('mv','source.js','moved.js');f.put('moved.js','export const total = 3;\n');f.git('add','moved.js');f.git('commit','-qm','selected move');const move=f.git('rev-parse','HEAD');
+   f.git('rm','moved.js');f.put('source.js',replacement);f.git('add','source.js');f.git('commit','-qm','selected deletion and independent recreated path');const revision=f.git('rev-parse','HEAD');
+   const packet:ReviewPacket={...f.packet,reviewRevision:revision,reviewSet:[...f.packet.reviewSet,
+    {commit:move,parent:first,files:[{path:'moved.js',previousPath:'source.js',segments:[{after:[1,1]}]}]},
+    {commit:revision,parent:move,files:[{path:'moved.js',segments:[{deletionAt:0}]},{path:'source.js',segments:[{after:[1,1]}]}]}]};
+   const result=await prepareReviewPacket(packet,f.deps.sources);
+   assert.deepEqual(result.projection!.entries.map(e=>e.findingScope),['none','none','selected','selected']);
+   assert.ok(result.projection!.entries.slice(0,3).every(e=>e.path==='moved.js'&&e.after===null));
+   assert.equal(result.projection!.entries[3]!.path,'source.js');assert.deepEqual(result.projection!.entries[3]!.segments,[{after:[1,1]}]);
+   packet.reviewSet[2]!.files.shift();await assert.rejects(prepareReviewPacket(packet,f.deps.sources),/scope_conflict/,'recreation cannot substitute for the missing selected deletion witness');
+  }finally{f.cleanup();}
+ }
 });

@@ -1777,9 +1777,13 @@ async function tryExplorationPipeline(
 			executed,
 			target:   synthesizeTarget,
 		};
+		// A set of steps that gives its own answer step is used as it is. The real answer step also says how it was
+		// handled; a stand-in `synthesize` laid over the real steps wins over it and records no handling.
 		const handled = steps.synthesizeHandled !== undefined
 			? await steps.synthesizeHandled({ ...synthArgs, found })
-			: { layers: await steps.synthesize(synthArgs), handling: undefined };
+			: steps.synthesize === synthesize
+				? await synthesizeHandled({ ...synthArgs, found })
+				: { layers: await steps.synthesize(synthArgs), handling: undefined };
 		assertAnalysisConnectionExecution(execution);
 		return {
 			kind:             'bundle',
@@ -1814,7 +1818,6 @@ const REAL_PIPELINE_STEPS: PipelineSteps = {
 	decompose,
 	executePlan,
 	synthesize,
-	synthesizeHandled,
 	fallbackFreeformPlan,
 	lastIndexedAt: resolveRepoLastIndexedAt,
 };

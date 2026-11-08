@@ -18,7 +18,7 @@ import { ArtifactIds, InvalidArtifactKeyError } from '../artifact-ids.js';
 import { getLogger } from '../../shared/logger.js';
 import { ARTIFACTS_DIR } from '../storage.js';
 import { JOURNAL_DIR } from './journal.js';
-import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit, isDesignHistoryRecord, MAX_SIDECAR_ENTRY_BYTES } from './sidecar.js';
+import { appendSidecarLine, checkSidecarEntrySize, sidecarOuterLimit, designHistoryLimit, isDesignHistoryRecord, MAX_SIDECAR_ENTRY_BYTES } from './sidecar.js';
 import type { SidecarFile, SidecarIo } from './sidecar.js';
 import { HistoryReadError } from './types.js';
 import type { SidecarRecord } from './types.js';
@@ -43,26 +43,32 @@ const FRAME_RE = /^(\d+)\t(.*)$/s;
 /** Bound each frame while reading, before allocating its declared body or parsing JSON. */
 function boundedLines(path: string): string[] {
  const fd = openSync(path, 'r'), chunk = Buffer.alloc(65536), lines: string[] = [];
- let parts: Buffer[] = [], size = 0, prefix = '';
+ let parts: Buffer[] = [], size = 0, header = '', checked = false;
+ const accept = (part: Buffer): void => {
+  // Inspect the ASCII header before copying any body into accumulated frame storage.
+  if (!checked) for (const byte of part) {
+   if (byte === 9) {
+    if (/^\d+$/.test(header) && (!Number.isSafeInteger(Number(header)) || Number(header) > sidecarOuterLimit())) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
+    checked = true; break;
+   }
+   if (byte < 48 || byte > 57) { checked = true; break; }
+   header += String.fromCharCode(byte);
+   if (header.length > 20) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
+  }
+  if (size + part.length > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
+  parts.push(Buffer.from(part)); size += part.length;
+ };
  try {
   for (;;) {
    const n = readSync(fd, chunk, 0, chunk.length, null); if (!n) break;
    let start = 0;
    for (let i = 0; i < n; i++) {
     if (chunk[i] !== 10) continue;
-    const part = Buffer.from(chunk.subarray(start, i)); parts.push(part); size += part.length;
-    if (size > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
-    lines.push(Buffer.concat(parts, size).toString('utf8')); parts = []; size = 0; prefix = ''; start = i + 1;
+    accept(chunk.subarray(start,i)); lines.push(Buffer.concat(parts,size).toString('utf8'));
+    parts = []; size = 0; header = ''; checked = false; start = i + 1;
    }
-   if (start < n) { const part = Buffer.from(chunk.subarray(start,n)); parts.push(part); size += part.length; }
-   if (size > sidecarOuterLimit() + 32) throw new HistoryReadError('Sidecar frame exceeds bounded capacity');
-   if (size && !prefix.includes('\t')) {
-    prefix = Buffer.concat(parts, Math.min(size, 32)).subarray(0,32).toString('ascii');
-    const header = /^(\d+)\t/.exec(prefix);
-    if (header && (!Number.isSafeInteger(Number(header[1])) || Number(header[1]) > sidecarOuterLimit())) throw new HistoryReadError('Declared sidecar frame exceeds bounded capacity');
-   }
+   if (start < n) accept(chunk.subarray(start,n));
   }
-  // Preserve the existing reader's abandoned-fragment convention.
   lines.push(parts.length ? Buffer.concat(parts,size).toString('utf8') : ''); return lines;
  } finally { closeSync(fd); }
 }
@@ -157,7 +163,7 @@ export class FileSidecarStore implements SidecarStore {
 				throw new HistoryReadError(`${where} is not a sidecar record with an artifactId and an entry`);
 			}
 			checkSidecarEntrySize(r as SidecarRecord<unknown>);
-   const physicalLimit = isDesignHistoryRecord(r as SidecarRecord<unknown>) ? sidecarOuterLimit() : MAX_SIDECAR_ENTRY_BYTES;
+   const physicalLimit = isDesignHistoryRecord(r as SidecarRecord<unknown>) ? designHistoryLimit() : MAX_SIDECAR_ENTRY_BYTES;
    if (Buffer.byteLength(json,'utf8') > physicalLimit) throw new HistoryReadError(`${where} exceeds its actual encoded byte limit`);
 			if (r.artifactId !== artifactId) return;
 			const id = entryIdOf(r.entry);

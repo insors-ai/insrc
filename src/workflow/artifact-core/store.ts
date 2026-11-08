@@ -212,7 +212,10 @@ export class ArtifactStore {
      if (JSON.stringify(previous.outcome) !== JSON.stringify(resolved.outcome) || previous.operation !== (resolved.operation ?? 'update') ||
       JSON.stringify(previous.actor) !== JSON.stringify(by) || JSON.stringify(previous.references) !== JSON.stringify(resolved.references) ||
       current.description !== result.next.description || JSON.stringify(current.payload) !== JSON.stringify(result.next.payload) ||
-      JSON.stringify(current.lifecycle) !== JSON.stringify(result.next.lifecycle)) throw new ArtifactShapeError('Conflicting deterministic history entry id');
+      JSON.stringify(current.lifecycle) !== JSON.stringify(result.next.lifecycle) ||
+      JSON.stringify(current.parent) !== JSON.stringify(result.next.parent) || JSON.stringify(current.references) !== JSON.stringify(result.next.references) ||
+      JSON.stringify(current.binding) !== JSON.stringify(result.next.binding) || JSON.stringify(current.attachments) !== JSON.stringify(result.next.attachments) ||
+      (resolved.addresses !== undefined && JSON.stringify(previous.addresses) !== JSON.stringify(resolved.addresses))) throw new ArtifactShapeError('Conflicting deterministic history entry id');
      return { wrote: false, entry: previous };
     }
    }
@@ -407,7 +410,7 @@ export class ArtifactStore {
 		}
 		const entries = await this.deps.history.log(id);
   const existing = entries.find(e => e.id === op.entry.id);
-  if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'history-id-conflict', 'Staged history id already exists with different content; journal retained');
+  if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Staged history id already exists with different content; journal retained');
 		if (!existing) await this.deps.history.appendLog(id, op.entry);
 		if (replace) (this.deps.writeHead ?? writeAtomic)(path, op.bytes);
 		await this.clearQuietly(id, op.operationId);

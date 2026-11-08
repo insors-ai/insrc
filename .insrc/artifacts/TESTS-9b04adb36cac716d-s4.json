@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 3,
-        "contentHash": "52e3b17ff7079065622411996aed44530b686de82b6a9d930d8fc395af660769",
-        "at": "2026-11-08T05:00:49.564Z",
+        "number": 4,
+        "contentHash": "199310efabb3efbc00f2f99d06fd37f1f4109ad8797aca71950d22b8b1cfc509",
+        "at": "2026-11-08T05:03:16.949Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T05:00:49.407Z",
+    "updatedAt": "2026-11-08T05:03:16.801Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 3
+    "revision": 4
   },
   "body": {
     "tasks": [
@@ -148,8 +148,8 @@
       },
       {
         "taskId": "t3",
-        "commit": "e413e9f23",
-        "ranAt": "2026-11-08T05:00:49.407Z",
+        "commit": "9ded13c8d",
+        "ranAt": "2026-11-08T05:03:16.801Z",
         "testsPassed": true,
         "tests": [
           {
@@ -184,7 +184,7 @@
             "file": "src/workflow/artifact-core/__tests__/design-history-storage.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 838,
+            "durationMs": 890,
             "titles": [
               {
                 "title": "design history alone receives a bounded UTF-8 allowance in sync and async readers",

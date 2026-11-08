@@ -18,12 +18,12 @@ import { join } from 'node:path';
 
 import { writeAtomic } from '../storage.js';
 import type { ChangeLogEntry } from './types.js';
-import { checkSidecarEntrySize, isDesignHistoryRecord, sidecarOuterLimit, MAX_DESIGN_HISTORY_BYTES } from './sidecar.js';
+import { checkSidecarEntrySize, isDesignHistoryRecord, sidecarOuterLimit, designHistoryLimit, MAX_DESIGN_HISTORY_BYTES } from './sidecar.js';
 
 function journalBytes(id: string, op: StagedOperation): string {
  checkSidecarEntrySize({artifactId:id,entry:op.entry});
  const raw = JSON.stringify(op);
- const limit = isDesignHistoryRecord({artifactId:id,entry:op.entry}) ? sidecarOuterLimit() : MAX_DESIGN_HISTORY_BYTES * 2;
+ const limit = isDesignHistoryRecord({artifactId:id,entry:op.entry}) ? designHistoryLimit() : MAX_DESIGN_HISTORY_BYTES * 2;
  if (Buffer.byteLength(raw) > limit) throw new Error('Journal envelope exceeds bounded history capacity');
  return raw;
 }
@@ -90,7 +90,7 @@ export function createFileJournal(repoPath: string): WriteJournal {
 		catch (err) { throw new Error(`the journal file ${path} is not valid JSON (${(err as Error).message})`); }
 		if (!isStagedOperation(parsed)) throw new Error(`the journal file ${path} is not a staged operation`);
   journalBytes(id,parsed);
-  if (isDesignHistoryRecord({artifactId:id,entry:parsed.entry}) && Buffer.byteLength(raw)>sidecarOuterLimit()) throw new Error('Journal envelope exceeds actual encoded history capacity');
+  if (isDesignHistoryRecord({artifactId:id,entry:parsed.entry}) && Buffer.byteLength(raw)>designHistoryLimit()) throw new Error('Journal envelope exceeds actual encoded history capacity');
 		return parsed;
 	};
 	return {

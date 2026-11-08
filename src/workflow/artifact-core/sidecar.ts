@@ -22,7 +22,8 @@ import { Value } from '@sinclair/typebox/value';
 /** The largest serialised record, in bytes, that a line file or the journal accepts. */
 export const MAX_SIDECAR_ENTRY_BYTES = 256 * 1024;
 export const MAX_DESIGN_HISTORY_BYTES = 64 * 1024 * 1024;
-export const sidecarOuterLimit = (): number => Math.max(MAX_SIDECAR_ENTRY_BYTES, Math.min(reviewJsonLimit(), MAX_DESIGN_HISTORY_BYTES));
+export const designHistoryLimit = (configPath?: string): number => Math.min(reviewJsonLimit(configPath), MAX_DESIGN_HISTORY_BYTES);
+export const sidecarOuterLimit = (): number => Math.max(MAX_SIDECAR_ENTRY_BYTES, designHistoryLimit());
 export function isDesignHistoryRecord(record: SidecarRecord<unknown>): boolean {
  const entry = record.entry as { operation?: unknown; outcome?: { data?: unknown } } | null;
  return entry?.operation === 'review' && Value.Check(PermanentDesignReviewSchema, entry.outcome?.data) &&
@@ -40,7 +41,7 @@ export interface SidecarIo {
 }
 
 /** The serialised record, refused with HistoryEntryError when it is over {@link MAX_SIDECAR_ENTRY_BYTES}. Shared with the journal's size check. */
-export function checkSidecarEntrySize(record: SidecarRecord<unknown>, designLimit: number = sidecarOuterLimit()): string {
+export function checkSidecarEntrySize(record: SidecarRecord<unknown>, designLimit: number = designHistoryLimit()): string {
 	const json = JSON.stringify(record);
 	const bytes = Buffer.byteLength(json, 'utf8');
 	const limit = isDesignHistoryRecord(record) ? Math.min(designLimit, MAX_DESIGN_HISTORY_BYTES) : MAX_SIDECAR_ENTRY_BYTES;

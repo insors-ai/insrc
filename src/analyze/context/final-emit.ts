@@ -26,6 +26,22 @@ import type { EvidenceBlock } from './sections.js';
 
 const SUMMARY_CAP = 2_000;
 
+/** A tool result larger than this is cut into blocks at line breaks, so a `path:line: text` entry is never cut in two. */
+const RESULT_CHUNK = 6_000;
+
+/** The text in chunks of about RESULT_CHUNK that end at a line break; a line longer than a chunk stays whole. */
+export function chunkAtLines(text: string, size = RESULT_CHUNK): readonly string[] {
+	if (text.length <= size) return [text];
+	const chunks: string[] = [];
+	let current = '';
+	for (const line of text.split('\n')) {
+		const next = current.length === 0 ? line : `${current}\n${line}`;
+		if (current.length > 0 && next.length > size) { chunks.push(current); current = line; } else current = next;
+	}
+	if (current.length > 0) chunks.push(current);
+	return chunks;
+}
+
 const textOf = (content: LLMMessage['content']): string => (typeof content === 'string' ? content : JSON.stringify(content));
 
 /** The tool results of a conversation as blocks, named after the tool call that produced each. */
@@ -38,11 +54,14 @@ export function conversationBlocks(messages: readonly LLMMessage[]): readonly Ev
 			if (block.type === 'tool_use') calls.set(block.id, { name: block.name, input: block.input });
 			if (block.type === 'tool_result') {
 				const call = calls.get(block.tool_use_id);
-				blocks.push({
-					key: `${call?.name ?? 'tool'}#${blocks.length + 1}`,
+				const text = typeof block.content === 'string' ? block.content : JSON.stringify(block.content);
+				const chunks = chunkAtLines(text);
+				const ordinal = new Set(blocks.map(b => b.key.split('.')[0])).size + 1;
+				chunks.forEach((chunk, j) => blocks.push({
+					key: `${call?.name ?? 'tool'}#${ordinal}${chunks.length > 1 ? `.${j + 1}` : ''}`,
 					envelope: { tool: call?.name ?? 'tool', input: call?.input ?? {} },
-					text: typeof block.content === 'string' ? block.content : JSON.stringify(block.content),
-				});
+					text: chunk,
+				}));
 			}
 		}
 	}

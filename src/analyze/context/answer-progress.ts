@@ -21,7 +21,7 @@ import type { StructuredSchema } from '../../shared/types.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ExecutedPlan } from '../explore/types.js';
-import { evidenceBlocks, planReference, ruleFacts, selectSharedContext } from './dependency.js';
+import { candidatePaths, evidenceBlocks, planReference, ruleFacts, selectSharedContext } from './dependency.js';
 import type { ReferenceRound, RuleFacts } from './dependency.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { HandlingBudgetError } from './answer-step-error.js';
@@ -78,6 +78,8 @@ export interface AnswerProgress {
 	readonly retries: number;
 	/** The rules counted from every lookup, kept with the progress so a finished answer needs nothing else. */
 	readonly ruleFacts?: RuleFacts | undefined;
+	/** The paths of the reuse candidates, so a module that is one is never listed among the others. */
+	readonly candidatePaths?: readonly string[] | undefined;
 }
 
 export interface AnswerArgs {
@@ -125,7 +127,7 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	const reference = selectSharedContext(args.target, args.executed);
 	const base = { target: args.target, budgets: [decision.budget], parts: [], rounds: [], groupSize: 2, sectioned: false, unadmittable: [], completed: [], roundReplies: [], failures: [], stageItems: [], stageOutputs: [], combineStages: 0, retries: 0 } as const;
 	// With no evidence there is nothing to divide: the reference is repeated in every part, never a part of its own.
-	if (blocks.length === 0 || (!forcePartition && decision.method === 'single-pass')) return { mode: 'single', ...base, ruleFacts: ruleFacts(args.executed) };
+	if (blocks.length === 0 || (!forcePartition && decision.method === 'single-pass')) return { mode: 'single', ...base, ruleFacts: ruleFacts(args.executed), candidatePaths: candidatePaths(args.executed) };
 
 	const limit = inputLimitFor(target, 'part');
 	// With a reference the prompt carries its wrapper, which an empty round leaves out: the probe round is not empty.
@@ -137,7 +139,7 @@ export function startAnswerProgress(args: AnswerArgs, size: AnalyzeScope | undef
 	const fixed = messagesSize(adapter.renderCombine([], refPlan.rounds[0] ?? emptyRound, refPlan.rounds.length - 1), limit.unit);
 	const perSummary = (limit.unit === 'bytes' ? 4 : 1) * 2_000 + 64;
 	const progress: AnswerProgress = {
-		...base, ruleFacts: ruleFacts(args.executed), mode: 'partitioned', trigger: forcePartition ? 'fit' : decision.trigger, limit,
+		...base, ruleFacts: ruleFacts(args.executed), candidatePaths: candidatePaths(args.executed), mode: 'partitioned', trigger: forcePartition ? 'fit' : decision.trigger, limit,
 		budgets: [{ ...limit, inputSize: measureInput(input, limit.unit) }],
 		parts: packed.parts, rounds: refPlan.rounds, sectioned: packed.sectioned, unadmittable: packed.unadmittable,
 		groupSize: Math.max(2, Math.floor((limit.limit - fixed) / perSummary)),
@@ -297,7 +299,7 @@ function afterPart(progress: AnswerProgress, index: number, covered: CompletedPa
 
 function finish(progress: AnswerProgress, ctx: { readonly executed: ExecutedPlan }): FinalizedAnswerTurn {
 	const covered = progress.completed.map(c => ({ id: c.id, ordinal: c.ordinal, reply: c.reply }));
-	const layers = assembleBundle(progress.target, covered, progress.narrative, progress.ruleFacts ?? ruleFacts(ctx.executed));
+	const layers = assembleBundle(progress.target, covered, progress.narrative, progress.ruleFacts ?? ruleFacts(ctx.executed), progress.candidatePaths ?? candidatePaths(ctx.executed));
 	return { kind: 'final', layers, handling: handlingOf({ ...progress, pending: undefined }) };
 }
 

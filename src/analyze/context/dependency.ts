@@ -151,6 +151,13 @@ export interface RuleFacts {
 	readonly rules: readonly { readonly text: string; readonly file: string; readonly heading: string }[];
 }
 
+/** The paths of every reuse candidate the capability lookups returned, counted over the whole reference. */
+export function candidatePaths(executed: ExecutedPlan): readonly string[] {
+	const paths = new Set<string>();
+	for (const r of executed.results) if (r.output.type === 'capability.reuse-check') for (const c of r.output.candidates) paths.add(c.path);
+	return [...paths];
+}
+
 export function ruleFacts(executed: ExecutedPlan): RuleFacts {
 	const rules: { text: string; file: string; heading: string }[] = [];
 	for (const r of executed.results) {

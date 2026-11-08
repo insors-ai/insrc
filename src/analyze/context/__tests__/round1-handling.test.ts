@@ -13,6 +13,7 @@ import assert from 'node:assert/strict';
 
 import { InputTooLargeError } from '../../../agent/providers/cli-provider.js';
 import type { LLMMessage, LLMProvider, StructuredSchema } from '../../../shared/types.js';
+import { chunkAtLines, emitDivided } from '../final-emit.js';
 import { synthesizeHandled } from '../synthesizer.js';
 import type { synthesize } from '../synthesizer.js';
 import { HandlingBudgetError } from '../answer-step-error.js';
@@ -178,4 +179,67 @@ test('an oversized rule reference goes through the real synthesizer: every secti
 	assert.ok(partPrompts.length >= 3 * 2, 'every part is asked once per round of the reference');
 	for (const n of [0, 1, 2]) assert.ok(out.layers.structure.includes(`- site ${n}: violates`), `site ${n} is classified in the delivered answer`);
 	assert.ok(out.layers.focus.includes('RULE-START') && out.layers.focus.includes('RULE-END'), 'the delivered answer states the rule whole');
+});
+
+test('a reuse candidate is never listed among the other modules, even when the candidates span several rounds of the reference', async () => {
+	const candidates = Array.from({ length: 120 }, (_, i) => ({
+		path: i === 100 ? 'src/a' : `src/cand${i}`, moduleName: `m${i}`, verdict: 'partial-match', rationale: `r${i} ${'x'.repeat(900)}`, evidenceEntities: [], conceptScore: 0.5,
+	}));
+	const executed = {
+		plan: { answerType: 'capability-discovery', synthesisHint: 'h', explorations: [] },
+		results: [
+			{ exploration: { id: 'e1', type: 'capability.reuse-check', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+				output: { type: 'capability.reuse-check', capability: 'c', candidates, notFoundNote: '', completeness: { complete: true, incomplete: [], failed: [] } } },
+			{ exploration: { id: 'e2', type: 'concept.resolve', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+				output: { type: 'concept.resolve', query: 'q', hits: [{ path: 'src/a' }, { path: 'src/free' }], completeness: { complete: true, incomplete: [], failed: [] } } },
+		],
+		totalMs: 1, totalCached: 0,
+	} as unknown as Parameters<typeof synthesize>[0]['executed'];
+	let rounds = 0;
+	const provider = {
+		inputBudgetChars: 76_000,
+		completeStructured: async (messages: LLMMessage[], schema: { required?: string[] }) => {
+			if ((schema.required ?? []).length === 3) return { system: 'S', focus: 'F', summary: 'combined summary of every part' };
+			rounds++;
+			return { system: 's', focus: 'f', summary: 'part', structure: '## Related modules (concept.resolve)\n- src/a\n- src/free', surface: '', artefacts: '', upstream: '' };
+		},
+	} as unknown as LLMProvider;
+	const intent = { target: 'code', scope: 'XL', focused: true, focus: 'f', scopeRef: { kind: 'repo', value: '/tmp/r' }, reasoning: 'r' } as const;
+	const out = await synthesizeHandled({ intent, executed, runId: 'r', target: 'capability', provider });
+	assert.ok(rounds >= 2, `the candidates span several rounds of the reference: ${rounds}`);
+	const lines = out.layers.structure.split('\n');
+	assert.ok(!lines.includes('- src/a'), 'a candidate of another round is not listed among the other modules');
+	assert.ok(lines.includes('- src/free'), 'a module that is no candidate still is');
+});
+
+test('a tool result cut into blocks is cut at line breaks: no entry loses its source prefix, and nothing is lost', async () => {
+	const lines = Array.from({ length: 600 }, (_, i) => `src/f${i}.ts:${i + 1}: needle ${i}`);
+	const text = lines.join('\n');
+	const chunks = chunkAtLines(text);
+	assert.ok(chunks.length > 1);
+	assert.equal(chunks.join('\n'), text, 'the chunks are the whole result, in order');
+	for (const chunk of chunks) for (const line of chunk.split('\n')) assert.ok(lines.includes(line), `an entry is whole: ${line}`);
+	// And through the final answer in parts, every part prompt holds whole entries.
+	const seen: string[] = [];
+	const provider = {
+		inputBudgetChars: 16_000 + 12_000,
+		completeStructured: async (messages: LLMMessage[], schema: { required?: string[] }) => {
+			if ((schema.required ?? []).length === 3) return { system: 'S', focus: 'F', summary: 'combined summary of every part' };
+			seen.push(String(messages[messages.length - 1]?.content));
+			return { system: 'sys', focus: 'f', summary: 'part', structure: 's', surface: 'u', artefacts: 'a', upstream: '' };
+		},
+	} as unknown as LLMProvider;
+	const messages: LLMMessage[] = [
+		{ role: 'system', content: 'You are the code shaper.' }, { role: 'user', content: 'find needles' },
+		{ role: 'assistant', content: [{ type: 'tool_use', id: 'c1', name: 'search_grep', input: { pattern: 'needle' } }] },
+		{ role: 'user', content: [{ type: 'tool_result', tool_use_id: 'c1', content: text, isError: false }] },
+	];
+	const divided = await emitDivided({
+		provider, target: { kind: 'cli', inputBudgetChars: 28_000 }, messages, schema: { type: 'object', properties: {} } as never,
+		found: { results: [], report: { completeness: { complete: true, incomplete: [], failed: [] } } }, trigger: 'size', maxAttempts: 1,
+	});
+	assert.ok(divided.handling.parts >= 2);
+	const entries = seen.flatMap(p => p.split('\n').filter(l => /needle \d+/.test(l)));
+	assert.equal(new Set(entries).size, 600, 'every entry reached a part');
+	for (const e of entries) assert.match(e, /^src\/f\d+\.ts:\d+: needle \d+$/);
 });

@@ -187,3 +187,26 @@ test('the three-argument finish of a partitioned adherence answer still states t
 		assert.ok(done.layers.focus.includes('Rule one.') && done.layers.focus.includes('Rule two.'));
 	}
 });
+
+test('the cause of an invalid part survives the stored progress and the terminal failure with its exact content', () => {
+	const executed = plan([failedLookup('e1'), search('e2', 40_000), search('e3', 40_000)]);
+	let current: AnswerProgress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(current.mode, 'partitioned');
+	const parts = current.parts.length;
+	let thrown: unknown;
+	for (let i = 0; i < parts + 1 && thrown === undefined; i++) {
+		// Each turn's progress is stored as JSON between calls, as the step tool does.
+		current = JSON.parse(JSON.stringify(current)) as AnswerProgress;
+		try {
+			const out = recordInvalid(current, `part ${i + 1} reply was not a bundle`, 1, { executed });
+			if (out.kind !== 'next') break;
+			current = out.progress;
+		} catch (e) { thrown = e; }
+	}
+	assert.ok(thrown instanceof ShaperAnswerStepFailedError, String(thrown));
+	assert.equal(thrown.partFailures?.length, parts);
+	thrown.partFailures?.forEach((f, i) => {
+		assert.equal(f.kind, 'invalid-reply');
+		assert.deepEqual(f.cause, { name: 'Error', message: `part ${i + 1} reply was not a bundle` }, 'the cause keeps its name and message');
+	});
+});

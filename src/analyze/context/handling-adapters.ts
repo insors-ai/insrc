@@ -53,7 +53,7 @@ function lineKey(line: string): string | undefined {
  * the first occurrence winning. A `surface` entry covers the whole layer; any
  * other names a `## ` sub-section of the layer.
  */
-export function dedupeLayer(text: string, layer: string, target: SynthesizerPromptKey): string {
+export function dedupeLayer(text: string, layer: string, target: SynthesizerPromptKey, excluded?: ReadonlySet<string>): string {
 	const keys = DEDUPE_KEYS[target];
 	const lines = text.split('\n');
 	const out: string[] = [];
@@ -66,6 +66,8 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 		const rule = keys.find(k => (k.section === 'surface' ? layer === 'surface' : section !== undefined && section.includes(k.section)));
 		const key = rule === undefined || heading !== null ? undefined : lineKey(line);
 		if (rule === undefined || key === undefined) { out.push(line); continue; }
+		// A module that is a reuse candidate is not listed among the other modules, whichever part saw it.
+		if (rule.section === 'Related modules' && excluded !== undefined && (excluded.has(key) || excluded.has(key.split(/\s+/)[0] ?? ''))) continue;
 		const bucket = seen.get(rule.section) ?? new Set<string>();
 		seen.set(rule.section, bucket);
 		if (bucket.has(key)) continue;
@@ -81,6 +83,7 @@ export function assembleBundle(
 	covered: readonly CoveredPart<BundleLayers>[],
 	combine: BundleNarrative | undefined,
 	facts?: RuleFacts | undefined,
+	candidatePaths?: readonly string[] | undefined,
 ): BundleLayers {
 	const first = covered[0]?.reply;
 	const narrative: BundleNarrative = combine ?? {
@@ -92,7 +95,7 @@ export function assembleBundle(
 			.filter(c => c.reply[layer].trim().length > 0)
 			.map(c => (covered.length > 1 ? `### ${c.id}\n${c.reply[layer]}` : c.reply[layer]))
 			.join('\n\n');
-		return [layer, dedupeLayer(joined, layer, target)];
+		return [layer, dedupeLayer(joined, layer, target, candidatePaths === undefined ? undefined : new Set(candidatePaths))];
 	})) as Record<(typeof EVIDENCE_LAYERS)[number], string>;
 	// The rule count and the rules themselves are counted from every lookup in code: a reply saw one round of the
 	// reference at most, so what it states of them may be partial.

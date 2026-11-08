@@ -60,12 +60,22 @@ export type AggregateFailureData =
 /** How many levels of cause a kept failure nests. */
 export const MAX_CAUSE_DEPTH = 3;
 
+function isPlainCause(v: unknown): v is { name: string; message: string; cause?: unknown } {
+	return typeof v === 'object' && v !== null && !(v instanceof Error)
+		&& typeof (v as { name?: unknown }).name === 'string' && typeof (v as { message?: unknown }).message === 'string';
+}
+
 /**
  * The cause chain of `err` as plain values, at most `depth` levels deep. A
  * value that is not an Error is kept as its string.
  */
 export function causeOf(err: unknown, depth = MAX_CAUSE_DEPTH): FailureCause | undefined {
 	if (err === undefined || err === null || depth <= 0) return undefined;
+	// A cause that was already made plain (kept in stored progress) is kept as it is, to the same depth.
+	if (isPlainCause(err)) {
+		const cause = causeOf(err.cause, depth - 1);
+		return { name: err.name, message: err.message, ...(cause !== undefined ? { cause } : {}) };
+	}
 	if (!(err instanceof Error)) return { name: 'non-error', message: String(err) };
 	const cause = causeOf(err.cause, depth - 1);
 	return { name: err.name, message: err.message, ...(cause !== undefined ? { cause } : {}) };

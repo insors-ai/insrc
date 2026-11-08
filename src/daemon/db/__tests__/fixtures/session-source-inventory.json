@@ -16580,7 +16580,14 @@
       ],
       "siteCount": 12,
       "sitesDigest": "931d07e3458e3d656af5f0cdb2ac5df5523f3e6c59e9292b181eabcb8bfe6bef",
-      "sourceDigest": "e7689d5dec0f6aafd7bfb8a4b79db022f61fd46cb5614ecd2a593faf9401dc6f"
+      "sourceDigest": "c38c560df16293d95efce169ef8925821765efef0c09d05c6ce46d8e3a043954",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/threads/maintenance.ts": {
       "classification": "routing-background-boundary",
@@ -17079,7 +17086,12 @@
       ],
       "siteCount": 5,
       "sitesDigest": "fcaf496b38cbb3b22211173de69b63a3b992009d287989f2e88692e92a4d81cb",
-      "sourceDigest": "737e0efdb16f923a7de575285a4436c87ac1defb7336d304a8840f7cf3b16926"
+      "sourceDigest": "4084639e44e999962748354eac46a7cde9ed92ac60188c8aca72bb99c2ebc5ce",
+      "boundaries": [
+        "provider-adapter",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/threads/worker-requests.ts": {
       "classification": "routing-background-boundary",

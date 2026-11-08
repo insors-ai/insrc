@@ -27,7 +27,8 @@ import { getModelRegistry } from '../model-registry.js';
 import { TOOL_SETTINGS_OP, replaceToolSettings } from '../tools/config.js';
 import type { ToolSettings } from '../tools/config.js';
 import { HubClient } from './channel.js';
-import { INDEX_RUNS_OP } from './main-services.js';
+import { INDEX_RUNS_OP, KEYSTORE_OP } from './main-services.js';
+import { forwardKeystoreCalls } from '../../shared/keystore.js';
 import { HubStepStateStore, installStepStateStore } from './step-state.js';
 import { wireWorkerStoreHealth } from './store-health-hub.js';
 
@@ -73,6 +74,8 @@ export function startDaemonWorker(init: DaemonWorkerInit): HubClient {
 	installLockManager(init.lockBlock);
 	enableMaintenanceLock();
 	const hub = new HubClient(init.hubPort);
+	// Only the main thread touches the Keychain (ISSUE-fefa97b991537da7).
+	forwardKeystoreCalls(call => hub.request(KEYSTORE_OP, call));
 	wireWorkerStoreHealth(hub);
 	// The embedder's backend is per thread: take the one the main thread decided (Epic 86197ac6 s2).
 	hub.onPush('embedder.backend', backend => setActiveEmbedderBackend(backend as EmbedderBackend));

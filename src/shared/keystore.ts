@@ -8,6 +8,9 @@
  * A secret from before the vault stays in its own legacy item under the old service until it is first
  * used, when it is copied in. Copying never deletes the legacy item: only an explicit delete does.
  *
+ * The main thread owns the vault; a worker's calls are forwarded to it over the hub, so one process makes
+ * one Keychain read. With daemon threads off the main thread uses it directly.
+ *
  * Entries are held in a Map, so a name such as `__proto__` is an ordinary key. Decrypted values are never
  * written to disk or logged, and an error never quotes the payload.
  */
@@ -34,10 +37,17 @@ export class KeystoreUnavailableError extends Error {
 
 /** A malformed secret name or value. Checked at runtime because IPC params are only cast. */
 export class KeystoreInputError extends Error {
-  constructor(what: 'name' | 'value') {
-    super(what === 'name' ? 'A secret name must be a non-empty string.' : 'A secret value must be a string.');
+  constructor(message: string) {
+    super(message);
     this.name = 'KeystoreInputError';
   }
+}
+
+/** A keystore operation from a worker thread, unvalidated until it reaches the vault's owner. */
+export interface KeystoreCall {
+  readonly op: 'get' | 'set' | 'delete' | 'list';
+  readonly name?: unknown;
+  readonly value?: unknown;
 }
 
 /** The part of keytar the vault uses; tests replace it below the vault. */
@@ -66,6 +76,23 @@ let loadFailure: { readonly cause: unknown; readonly at: number } | undefined;
 let mutations: Promise<unknown> = Promise.resolve();
 /** For the run only: what is known about a name held in neither the vault nor the retired list. */
 const legacyRuns = new Map<string, LegacyRun>();
+/** Set on a worker thread: every call goes to the vault's owner and never to the Keychain. */
+let forward: ((call: KeystoreCall) => Promise<unknown>) | undefined;
+
+/** Sends this thread's keystore calls to the vault's owner, or back to this thread's own vault with undefined. */
+export function forwardKeystoreCalls(to: ((call: KeystoreCall) => Promise<unknown>) | undefined): void {
+  forward = to;
+}
+
+/** A refusal of the request stays what it is; anything else on the way to the owner means unavailable. */
+async function forwarded<T>(to: (call: KeystoreCall) => Promise<unknown>, call: KeystoreCall): Promise<T> {
+  try {
+    return await to(call) as T;
+  } catch (cause) {
+    if ((cause as Error).name === 'KeystoreInputError') throw new KeystoreInputError((cause as Error).message);
+    throw new KeystoreUnavailableError({ cause });
+  }
+}
 
 /** Test-only: replace the Keychain below the vault and forget everything held for the previous one. */
 export function setKeychainBackendForTest(replacement: KeychainBackend | undefined): void {
@@ -149,7 +176,7 @@ function mutate(change: (draft: Vault) => boolean | void): Promise<void> {
 }
 
 function assertName(name: unknown): asserts name is string {
-  if (typeof name !== 'string' || name.length === 0) throw new KeystoreInputError('name');
+  if (typeof name !== 'string' || name.length === 0) throw new KeystoreInputError('A secret name must be a non-empty string.');
 }
 
 /** A found legacy value enters the vault unless a save or delete got there first. */
@@ -206,8 +233,7 @@ function legacyLookup(name: string): Promise<string | null> {
   return result;
 }
 
-/** Retrieve a secret, or null when it does not exist. A secret not yet in the vault is copied in on first use. */
-export async function getKey(name: string): Promise<string | null> {
+async function ownerGetKey(name: unknown): Promise<string | null> {
   assertName(name);
   const current = await loadVault();
   const held = current.secrets.get(name);
@@ -215,10 +241,9 @@ export async function getKey(name: string): Promise<string | null> {
   return current.retired.has(name) ? null : legacyLookup(name);
 }
 
-/** Store a secret. An empty string is a valid value. */
-export async function setKey(name: string, value: string): Promise<void> {
+async function ownerSetKey(name: unknown, value: unknown): Promise<void> {
   assertName(name);
-  if (typeof value !== 'string') throw new KeystoreInputError('value');
+  if (typeof value !== 'string') throw new KeystoreInputError('A secret value must be a string.');
   await mutate(draft => {
     draft.secrets.set(name, value);
     draft.retired.delete(name);
@@ -226,8 +251,7 @@ export async function setKey(name: string, value: string): Promise<void> {
   legacyRuns.delete(name);
 }
 
-/** Remove a secret and record it as retired, so a leftover legacy item cannot bring it back. */
-export async function deleteKey(name: string): Promise<void> {
+async function ownerDeleteKey(name: unknown): Promise<void> {
   assertName(name);
   await mutate(draft => {
     draft.secrets.delete(name);
@@ -241,9 +265,40 @@ export async function deleteKey(name: string): Promise<void> {
   }
 }
 
-/** The names held in the vault; never their values. */
-export async function listKeys(): Promise<string[]> {
+async function ownerListKeys(): Promise<string[]> {
   return [...(await loadVault()).secrets.keys()];
+}
+
+/** The vault's owner answering a worker: everything is checked here, because nothing was checked there. */
+export function serveKeystoreCall(call: unknown): Promise<unknown> {
+  const request = (typeof call === 'object' && call !== null ? call : {}) as KeystoreCall;
+  switch (request.op) {
+    case 'get': return ownerGetKey(request.name);
+    case 'set': return ownerSetKey(request.name, request.value);
+    case 'delete': return ownerDeleteKey(request.name);
+    case 'list': return ownerListKeys();
+    default: return Promise.reject(new KeystoreInputError('A keystore request must name a known operation.'));
+  }
+}
+
+/** Retrieve a secret, or null when it does not exist. A secret not yet in the vault is copied in on first use. */
+export function getKey(name: string): Promise<string | null> {
+  return forward ? forwarded(forward, { op: 'get', name }) : ownerGetKey(name);
+}
+
+/** Store a secret. An empty string is a valid value. */
+export function setKey(name: string, value: string): Promise<void> {
+  return forward ? forwarded(forward, { op: 'set', name, value }) : ownerSetKey(name, value);
+}
+
+/** Remove a secret and record it as retired, so a leftover legacy item cannot bring it back. */
+export function deleteKey(name: string): Promise<void> {
+  return forward ? forwarded(forward, { op: 'delete', name }) : ownerDeleteKey(name);
+}
+
+/** The names held in the vault; never their values. */
+export function listKeys(): Promise<string[]> {
+  return forward ? forwarded(forward, { op: 'list' }) : ownerListKeys();
 }
 
 /**

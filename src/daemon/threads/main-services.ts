@@ -35,6 +35,7 @@ import { StatusBoard, statusBoardHubHandlers } from './status-board.js';
 import { LocalStepStateStore, installStepStateStore, stepStateHubHandlers } from './step-state.js';
 import type { SharedStepStateStore } from './step-state.js';
 import { wireMainStoreHealth } from './store-health-hub.js';
+import { serveKeystoreCall } from '../../shared/keystore.js';
 import { DEFAULT_MAINTENANCE_CONFIG } from './maintenance.js';
 import type { MaintenanceConfig } from './maintenance.js';
 
@@ -102,6 +103,8 @@ export const DAEMON_INFO_OP = 'daemon.info';
 export const EMBEDDER_BACKEND_OP = 'embedder.backend';
 /** A worker asks the main thread to shut the daemon down (daemon.shutdown and daemon.update served on the admin worker). */
 export const SHUTDOWN_OP = 'daemon.shutdown';
+/** A worker's keystore call, served by the vault on the main thread. */
+export const KEYSTORE_OP = 'keystore.call';
 /** The code-indexing worker's daemon.compact asks the main thread to run maintenance now; answers its CompactResult. */
 export const MAINTENANCE_RUN_OP = 'maintenance.run';
 /**
@@ -167,6 +170,7 @@ export class ThreadServices {
 			...stepStateHubHandlers(steps),
 			...wireMainStoreHealth(() => this.ports),
 			[DAEMON_INFO_OP]: () => this.info(),
+			[KEYSTORE_OP]: call => serveKeystoreCall(call),
 			[SHUTDOWN_OP]: reason => { this.shutdown?.(String(reason)); },
 			[ROUTE_OP]: a => {
 				if (this.route === undefined) throw new Error('the daemon cannot route a nested call yet');

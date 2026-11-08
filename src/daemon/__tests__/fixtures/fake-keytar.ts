@@ -12,6 +12,7 @@ import { EventEmitter } from 'node:events';
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
+import { isMainThread } from 'node:worker_threads';
 import keytar from 'keytar';
 
 const dir = process.env['INSRC_TEST_KEYTAR_DIR'];
@@ -19,6 +20,7 @@ if (dir === undefined) throw new Error('INSRC_TEST_KEYTAR_DIR is required');
 const storePath = join(dir, 'store.json');
 const read = (): Record<string, string> => existsSync(storePath) ? JSON.parse(readFileSync(storePath, 'utf8')) as Record<string, string> : {};
 function enter(call: string): void {
+	if (!isMainThread) { appendFileSync(join(dir!, 'calls.log'), `WORKER ${call}\n`); throw new Error('a worker thread reached the Keychain'); }
 	appendFileSync(join(dir!, 'calls.log'), `${call}\n`);
 	if (existsSync(join(dir!, 'refuse'))) throw new Error('The user denied access.');
 }

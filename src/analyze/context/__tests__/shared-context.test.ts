@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 import type { ExecutedExploration, ExecutedPlan } from '../../explore/types.js';
 import { HandlingBudgetError } from '../driver.js';
 import { MIN_SECTION_ROOM, inputLimitFor } from '../handling.js';
-import { partitionResults, planReference, ruleFacts, selectSharedContext } from '../dependency.js';
+import { pairPartsWithReference, partitionResults, planReference, ruleFacts, selectSharedContext } from '../dependency.js';
 import { renderSection } from '../sections.js';
 
 const LOCAL = { kind: 'local', windowTokens: 32_768, singlePassOutputTokens: 20_480 } as const;
@@ -142,11 +142,22 @@ test('an oversized single rule record is cut into sections, each part sees every
 	const joined = reference.rounds.flatMap(r => r.sections).filter(s => s.blockKey === 'e2.constraints[0]').map(s => s.text).join('');
 	assert.equal(joined, ruleBlock?.text);
 
-	// Each part is judged against every round, in sequence: a part x round loop sees each section of the reference once per part.
-	const parts = ['part 1: src/a', 'part 2: src/b'];
-	const calls: string[] = [];
-	for (const part of parts) for (const [i] of reference.rounds.entries()) calls.push(`${part} / round ${i + 1}`);
+	// Each part is judged against every round, in sequence: part by part, round by round within a part, none left out.
+	const parts = ['part 1: src/a', 'part 2: src/b', 'part 3: src/c'];
+	const calls = pairPartsWithReference(parts, reference);
 	assert.equal(calls.length, parts.length * reference.rounds.length);
+	assert.deepEqual(
+		calls.map(c => [c.part, c.roundIndex]),
+		parts.flatMap(p => reference.rounds.map((_, i) => [p, i])),
+	);
+	for (const part of parts) {
+		const mine = calls.filter(c => c.part === part);
+		const seen = mine.flatMap(c => c.round.sections.filter(sec => sec.blockKey === 'e2.constraints[0]')).map(sec => sec.text).join('');
+		assert.equal(seen, ruleBlock?.text, `${part} is judged against the whole rule`);
+	}
+	// A one-round reference is one call per part, and no part is dropped.
+	const one = pairPartsWithReference(parts, planReference({ blocks: [], limit: PART, promptSize, found: FOUND }));
+	assert.deepEqual(one.map(c => c.part), parts);
 
 	// The rule-source count comes from the whole reference, not from any one round.
 	assert.equal(ruleFacts(executed).count, 1);

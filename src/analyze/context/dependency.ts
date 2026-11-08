@@ -235,6 +235,24 @@ export function planReference(args: {
 	return { rounds };
 }
 
+/** One call of a divided answer: a part of the evidence, judged against one round of the reference. */
+export interface PartCall {
+	readonly part:       string;
+	/** 0-based position among the reference rounds. */
+	readonly roundIndex: number;
+	readonly round:      ReferenceRound;
+}
+
+/**
+ * The calls that cover a divided answer when the reference is in rounds: every
+ * part is paired with every round, part by part, round by round within a part,
+ * so a part is judged against the whole reference in sequence and none is
+ * left out. With a one-round reference this is one call per part.
+ */
+export function pairPartsWithReference(parts: readonly string[], reference: ReferencePlan): readonly PartCall[] {
+	return parts.flatMap(part => reference.rounds.map((round, roundIndex): PartCall => ({ part, roundIndex, round })));
+}
+
 // ---------------------------------------------------------------------------
 // Dedupe
 // ---------------------------------------------------------------------------

@@ -5,9 +5,10 @@ import { readFile } from 'node:fs/promises';
 import { isDeepStrictEqual } from 'node:util';
 import type { ReviewCheckpoint, ReviewAttempt } from './contracts.js';
 import type { PreparedReviewPacket } from './packet.js';
+import type { TaskInputFingerprint } from './attribution-binding.js';
 import { saveCheckpoint, loadCheckpoint, CheckpointSaveError } from './checkpoint.js';
 import { aggregateTaskStatus } from './results.js';
-export interface AdmittedReview { path:string;checkpoint:ReviewCheckpoint;attempt:ReviewAttempt;prepared:PreparedReviewPacket; storageFailure?: CheckpointSaveError | undefined; capacity?: CapacityBaseline | undefined; }
+export interface AdmittedReview { path:string;checkpoint:ReviewCheckpoint;attempt:ReviewAttempt;prepared:PreparedReviewPacket; priorTaskInputs?: ReadonlyMap<number,ReadonlyMap<string,TaskInputFingerprint>> | undefined; storageFailure?: CheckpointSaveError | undefined; capacity?: CapacityBaseline | undefined; }
 export interface AcceptanceFence { readonly prior: ReviewCheckpoint; readonly candidate: ReviewCheckpoint; readonly error: CheckpointSaveError; }
 export interface ReviewPersistence { readonly save?:typeof saveCheckpoint|undefined; readonly read?:typeof loadCheckpoint|undefined; readonly onAcceptanceFailure?: ((fence: AcceptanceFence) => void) | undefined; readonly publish?:((project:string,id:string,epicHash:string,baseline?:CapacityBaseline)=>Promise<unknown>)|undefined; }
 export async function persistReview(review:AdmittedReview,deps:ReviewPersistence):Promise<void>{if(review.storageFailure)throw review.storageFailure;if(review.attempt['review-response'].crPublication!=='complete')qualifyReviewCapacity(review);await(deps.save??saveCheckpoint)(review.path,review.checkpoint);}

@@ -11,6 +11,8 @@ import { assignmentsToRows, bindTaskFinalIdentities, taskFinalIdentity, validate
 import { checkpointPath, saveCheckpoint } from '../checkpoint.js';
 import { TaskReviewCoordinator } from '../coordinator.js';
 import { publishTaskCheckpoint } from '../publication.js';
+import { previousRoundFeedback } from '../previous-round-feedback.js';
+import { taskFailure } from '../assessment.js';
 
 test('both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics', async () => {
  for (const party of ['daemon', 'controller'] as const) for (const full of [false, true]) {
@@ -98,10 +100,50 @@ test('task identity binds relevant code requirements documents and full tests bu
   const packet = { ...f.packet, reviewRevision: changed, reviewSet: [...f.packet.reviewSet, { commit: changed, parent: moved, files: [{ path: 'source.js', segments: [{ after: [1, 1] as [number, number] }] }] }] };
   const review = await prepareReviewAdmission(f.repo, 'publication', 2, packet, 'daemon', f.deps.sources);
   const reuse = { summary: 'Attempt reuse', tasks: [{ taskId: 't1', changeIndexes: [0, 1], testIndexes: [0], action: 'reuse', reason: 'Unchanged', sourceAttempt: 1 }] };
-  assert.throws(() => reviewAssignments(review, reuse), /inputs changed/);
+  assert.throws(() => reviewAssignments(review, reuse), error=>error instanceof Error&&/inputs changed/.test(error.message)&&/sources.*source\.js/.test(error.message)&&/reassess/.test(error.message));
   assert.throws(() => reviewAssignments(review, { ...reuse, tasks: [{ ...reuse.tasks[0]!, sourceAttempt: 2 }] }), /earlier/);
   review.checkpoint.attempts[0]!.header.reviewer = 'controller'; assert.throws(() => reviewAssignments(review, reuse), /foreign-party/);
  } finally { f.cleanup(); }
+});
+
+test('changed evidence names the affected reuse task and both routes accept corrected reassessment without losing eligible reuse',async()=>{
+ for(const party of ['daemon','controller'] as const){
+  const f=await historyFixture(party,true);try{
+   f.put('test-t3.js','// New assertion evidence for task3\n');f.git('add','test-t3.js');f.git('commit','-qm','updated task3 evidence');
+   const revision=f.git('rev-parse','HEAD'),packet={...f.packet,reviewRevision:revision};
+   const bad=f.scope(),good=structuredClone(bad),third=good.tasks.find(t=>t.taskId==='t3')!;
+   third.action='reassess';delete third.sourceAttempt;third.reason='Reassess changed test evidence';
+   let scopes=0,assessments=0;
+   const result=(id:string)=>({...f.fresh(id),inspectedReferences:[`${revision}:${id==='t2'?'source.js':'stable-t3.js'}`],testCoverage:{...f.result.testCoverage,evidenceReferences:[`${revision}:test-${id}.js`]}});
+   const verify=(prompt:string)=>{assert.match(prompt,/Task \\"t3\\" cannot reuse attempt 1/);assert.match(prompt,/tests.*test-t3\.js/);assert.match(prompt,/reassess/);};
+   const coordinator=new TaskReviewCoordinator({sources:f.deps.sources,provider:()=>provider(async prompt=>{
+    if(prompt.startsWith('Derive task attribution')){scopes++;if(scopes===1)return bad;verify(prompt);assert.equal(assessments,0);return good;}
+    assessments++;return result(/"taskId":"(t\d+)"/.exec(prompt)![1]!);
+   })});
+   if(party==='daemon'){
+    await coordinator.start(f.repo,'history',2,packet);await coordinator.settled(f.repo,'history');assert.equal(scopes,2);assert.equal(assessments,2);
+   }else{
+    const owner={id:'reuse-repair-controller',signal:new AbortController().signal};
+    let frame=await coordinator.startController(f.repo,'history',2,packet,owner);
+    frame=await coordinator.controllerScope(f.repo,'history',2,bad,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    assert.equal(frame.kind,'scope');verify(frame.prompt!);
+    frame=await coordinator.controllerScope(f.repo,'history',2,good,owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    while(frame.kind==='task')frame=await coordinator.controllerResult(f.repo,'history',2,result(frame.taskId!),owner,{taskId:frame.taskId,executionId:frame.executionId,sequence:frame.nextSequence});
+    assert.equal(frame.kind,'done');
+   }
+   const saved=f.read(checkpointPath(f.repo,'history'));assert.deepEqual(saved.attempts[0],f.original);
+   const current=saved.attempts[1]!;assert.equal(current.header.status,'passed');assert.equal(current.header.attributionRepair!.rejections,1);
+   assert.deepEqual(current['review-response'].origins!.map(o=>o.taskId),['t1']);
+   // A future attempt receives a safe host template targeted to only the affected task,
+   // including on the controller route when no CLI diagnostic snapshot was emitted.
+   const prepared=await prepareReviewPacket(packet,f.deps.sources),future=structuredClone(current);future.header.attempt=3;
+   const failed=structuredClone(current);failed['review-response'].tasks=prepared.tasks.map(t=>taskFailure(t.id,'Unmapped attribution',false));
+   const feedback=previousRoundFeedback({path:checkpointPath(f.repo,'history'),prepared,attempt:future,checkpoint:{...saved,attempts:[saved.attempts[0]!,failed,future]}});
+   assert.deepEqual(feedback.previousRoundFeedback.map(r=>r.taskId),['t3']);
+   assert.equal(feedback.previousRoundFeedback[0]!.errors[0]!.field,'origins/tasks/2/sourceAttempt/1');
+   assert.match(feedback.previousRoundFeedback[0]!.errors[0]!.correction,/reassess.*omit sourceAttempt/);
+  }finally{f.cleanup();}
+ }
 });
 
 test('fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes', async () => {

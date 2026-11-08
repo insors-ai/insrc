@@ -16,6 +16,7 @@ function correction(code: string, field: string): string {
   case 'SCHEMA_CONFIGURATION_ERROR': return 'Correct the supplied review schema before resubmitting.';
   case 'SCHEMA_CONSTRAINT': case 'NATIVE_VALIDATION_ERROR': return 'Return this field according to the supplied schema.';
   case 'HOST_VALIDATION_ERROR':
+   if (/^origins\/tasks\/\d+\/sourceAttempt\/\d+$/.test(field)) return 'Set action to "reassess" and omit sourceAttempt for this task. Its exact inputs changed; retain eligible reuse for other tasks.';
    if (field === 'attribution') return 'Return every selected task and cover all submitted changes and tests.';
    if (field === 'location') return 'Keep finding locations inside the submitted change selection.';
    if (field === 'taskId') return 'Use the assigned task ID.';
@@ -55,12 +56,23 @@ export function previousRoundFeedback(review?: AdmittedReview, onlyTaskId?: stri
   ];
   let count = 0;
   const seen = new Set<string>();
+  // Controller repair has host-owned feedback even when no CLI diagnostic was sent.
+  // Project only the structured field and a host template, never arbitrary prose.
+  const hostReuse=/^(origins\/tasks\/(\d+)\/sourceAttempt\/\d+):/.exec(latest.header.attributionRepair?.feedback??'');
+  if(hostReuse&&latest.header.selectedTaskIds[Number(hostReuse[2])]===taskId){
+   const field=hostReuse[1]!,error={code:'HOST_VALIDATION_ERROR',field,correction:correction('HOST_VALIDATION_ERROR',field)};
+   const row:FeedbackRow={attempt:latest.header.attempt,taskId,phase:'attribution',errors:[error]};
+   if(!fits([...output.previousRoundFeedback,row])){output.previousRoundFeedbackTruncated=true;return output;}
+   output.previousRoundFeedback.push(row);seen.add(JSON.stringify(['attribution',error.code,field]));count++;
+  }
   for (const entry of entries) {
    if (entry.resolved) continue;
    const row: FeedbackRow = { attempt: entry.phase === 'attribution' ? latest.header.attempt : source.header.attempt, taskId, phase: entry.phase, errors: [] };
    // A concrete schema/host failure is more useful than its generic CLI exit.
    const specific = entry.diagnostic.issues.some(issue => !['NATIVE_CLI_FAILURE','NATIVE_VALIDATION_ERROR'].includes(issue.code));
    for (const issue of entry.diagnostic.issues) {
+    const reuse=issue.code==='HOST_VALIDATION_ERROR'?/^origins\/tasks\/(\d+)\/sourceAttempt\/(\d+)$/.exec(issue.field):null;
+    if(reuse&&latest.header.selectedTaskIds[Number(reuse[1])]!==taskId)continue;
     if (specific && ['NATIVE_CLI_FAILURE','NATIVE_VALIDATION_ERROR'].includes(issue.code)) continue;
     const key = JSON.stringify([entry.phase,issue.code,issue.field]);
     if (seen.has(key)) continue;

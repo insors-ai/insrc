@@ -65,6 +65,8 @@ const SHAPE_FAILURES = [
 	'McpSamplingProvider: response was not valid JSON: Unexpected end. text=',
 ];
 
+/** A request the table answers in one pass: the legacy classification of a failed call applies to it. */
+const SMALL_INTENT = (): ClassifiedIntent => ({ ...INTENT, scope: 'S' });
 const INTENT: ClassifiedIntent = {
 	target:    'code',
 	scope:     'M',
@@ -177,7 +179,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 		assert.ok(!(planning instanceof DecomposerSchemaUnrecoverable));
 
 		const answer = await caught(() => synthesize({
-			intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code',
+			intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code',
 			provider: failingProvider(new Error(text)),
 		}));
 		assert.ok(answer instanceof SynthesizerLlmUnavailableError, `answer writing: ${text} -> ${(answer as Error).name}`);
@@ -190,7 +192,7 @@ test('planning and answer-writing classifiers raise their model-unavailable erro
 	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(failure) }));
 	assert.ok(planning instanceof DecomposerLlmUnavailableError);
 	const answer = await caught(() => synthesize({
-		intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(failure),
+		intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(failure),
 	}));
 	assert.ok(answer instanceof SynthesizerLlmUnavailableError);
 });
@@ -200,7 +202,7 @@ test('a shape failure stays a schema error for both calls', async () => {
 		const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: failingProvider(new Error(text)) }));
 		assert.ok(planning instanceof DecomposerSchemaUnrecoverable, `planning: ${text} -> ${(planning as Error).name}`);
 		const answer = await caught(() => synthesize({
-			intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code',
+			intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code',
 			provider: failingProvider(new Error(text)),
 		}));
 		assert.ok(answer instanceof SynthesizerSchemaUnrecoverable, `answer writing: ${text} -> ${(answer as Error).name}`);
@@ -215,7 +217,7 @@ test('model-unavailable messages are provider-neutral and carry the underlying m
 	assert.ok(!planning.message.includes('Ollama'));
 
 	const answer = await caught(() => synthesize({
-		intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(new Error(cli)),
+		intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: failingProvider(new Error(cli)),
 	})) as SynthesizerLlmUnavailableError;
 	assert.equal(answer.message, `The model call for answer writing failed: ${cli}`);
 	assert.equal(answer.detail, cli);
@@ -277,7 +279,7 @@ test('each consumer family of isModelCallFailure (the classifier, the planner, t
 	// The two pipeline calls, driven end to end through the real provider.
 	const planning = await caught(() => decompose({ intent: INTENT, runId: 'r', scope: SCOPE, provider: ollamaWithBrokenSocket() }));
 	assert.ok(planning instanceof DecomposerLlmUnavailableError, `decomposer: ${(planning as Error).name}: ${(planning as Error).message}`);
-	const answer = await caught(() => synthesize({ intent: INTENT, executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
+	const answer = await caught(() => synthesize({ intent: SMALL_INTENT(), executed: EXECUTED, runId: 'r', target: 'code', provider: ollamaWithBrokenSocket() }));
 	assert.ok(answer instanceof SynthesizerLlmUnavailableError, `synthesizer: ${(answer as Error).name}: ${(answer as Error).message}`);
 });
 

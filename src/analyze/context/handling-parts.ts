@@ -321,8 +321,10 @@ export type HandledResult<R, C> =
 export async function runHandled<R, C>(args: HandledArgs<R, C>): Promise<HandledResult<R, C>> {
 	const decision = decideHandling({ size: args.size, target: args.target, input: args.singleMessages.map(m => (typeof m.content === 'string' ? m.content : JSON.stringify(m.content))).join('\n') });
 	let trigger = decision.trigger;
-	if (decision.method === 'single-pass') {
-		const limit = inputLimitFor(args.target, 'single');
+	// With no evidence to divide the prompt alone is the input: dividing cannot shrink it, so it is sent as one pass.
+	const nothingToDivide = args.blocks.length === 0 && args.reference.length === 0;
+	if (decision.method === 'single-pass' || nothingToDivide) {
+		const limit = nothingToDivide ? { ...inputLimitFor(args.target, 'single'), limit: Number.POSITIVE_INFINITY } : inputLimitFor(args.target, 'single');
 		const outcome = await callWithRepair<R>({
 			provider: args.provider, messages: args.singleMessages, schema: args.singleSchema, limit,
 			maxTokens: outputTokensFor(args.target, 'single'), maxAttempts: args.maxAttempts,

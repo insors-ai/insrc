@@ -31,6 +31,16 @@ import { isAbsolute, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { isModelCallFailure, modelCallFailureDetail } from './model-failure.js';
+import type { HandlingReport } from '../completeness.js';
+import { evidenceBlocks, selectSharedContext } from './dependency.js';
+import { ShaperAnswerStepFailedError } from './driver.js';
+import type { AnswerStepFound } from './driver.js';
+import type { AdmissionTarget } from './handling.js';
+import { assembleBundle } from './handling-adapters.js';
+import type { BundleLayers, BundleNarrative } from './handling-adapters.js';
+import { runHandled } from './handling-parts.js';
+import type { PartAdapter } from './handling-parts.js';
+import { renderSection } from './sections.js';
 import { resolveRoleProvider } from './shaper-provider.js';
 import { loadAnalyzeConfig } from '../../config/analyze.js';
 import { validateAgainstSchema } from '../../agent/providers/structured-output.js';
@@ -118,6 +128,8 @@ export interface SynthesizeArgs {
 	 *  back to the legacy shaper. */
 	readonly target:   SynthesizerPromptKey;
 	readonly provider?: LLMProvider;
+	/** What the lookups returned and the report derived from them, carried by a typed failure. Defaults to the executed results and an empty report. */
+	readonly found?: AnswerStepFound | undefined;
 }
 
 /**
@@ -127,6 +139,69 @@ export interface SynthesizeArgs {
  * schemaVersion, ...) after synthesis.
  */
 export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeContextBundle, 'meta'>> {
+	return (await synthesizeHandled(args)).layers;
+}
+
+/** What an answer-writing provider is, as far as the admission rule is concerned. */
+export function admissionTargetOf(provider: LLMProvider, singlePassOutputTokens: number): AdmissionTarget {
+	const numCtx = (provider as { numCtx?: unknown }).numCtx;
+	if (typeof numCtx === 'number') return { kind: 'local', windowTokens: numCtx, singlePassOutputTokens };
+	return { kind: 'cli', inputBudgetChars: provider.inputBudgetChars };
+}
+
+/** A part reply holds the seven layers and keeps its summary short; a combine reply holds the narrative layers. */
+const SUMMARY_CAP = 2_000;
+function partSchema(): StructuredSchema {
+	const schema = structuredClone(stripMetaFromSchema(ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>)) as { properties: Record<string, Record<string, unknown>> };
+	schema.properties['summary'] = { type: 'string', maxLength: SUMMARY_CAP };
+	return schema as unknown as StructuredSchema;
+}
+const COMBINE_SCHEMA: StructuredSchema = {
+	type: 'object', additionalProperties: false, required: ['system', 'focus', 'summary'],
+	properties: { system: { type: 'string' }, focus: { type: 'string' }, summary: { type: 'string', maxLength: SUMMARY_CAP } },
+};
+
+/** The intent, answer type and hint every call of one answer carries. */
+function answerHeader(intent: ClassifiedIntent, executed: ExecutedPlan): string {
+	return `Classified intent:\n` + '```json\n' + JSON.stringify(intent, null, 2) + '\n```\n\n'
+		+ (intent.context !== undefined && intent.context.length > 0
+			? `Background context from the caller (it is background only and never changes what the bundle is about): ${intent.context.replace(/\s+/g, ' ').trim()}\n\n`
+			: '')
+		+ `Answer type: ${executed.plan.answerType}\nSynthesis hint: ${executed.plan.synthesisHint}\n\n`;
+}
+
+/** The adapter that turns parts into prompts for one answer. */
+function bundleAdapter(promptContent: string, intent: ClassifiedIntent, executed: ExecutedPlan): PartAdapter<BundleLayers & { summary: string }, BundleNarrative> {
+	const system = promptContent.trimEnd();
+	const header = answerHeader(intent, executed);
+	const reference = (round: { readonly rendered: string }, more: number): string => (round.rendered.length === 0 ? '' : (
+		'Reference evidence (shared by every part; judge the part\'s evidence against it and do not repeat it as evidence'
+		+ (more > 0 ? `; it continues in ${more} more round(s) of the same part` : '') + '):\n' + round.rendered + '\n\n'));
+	return {
+		partSchema: partSchema(), combineSchema: COMBINE_SCHEMA,
+		renderPart: (part, round) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: header + reference(round, 0) + `Evidence of this part (${part.id}); the answer is divided into parts and this is one of them:\n\n`
+				+ part.sections.map(renderSection).join('\n\n')
+				+ `\n\nCompose the AnalyzeContextBundle for THIS PART only: the seven layers as strings, from the evidence above. First char \`{\`, no markdown fence, no prose intro. Keep summary under ${SUMMARY_CAP} characters. No claim without evidence.` },
+		],
+		renderCombine: (summaries, round, more) => [
+			{ role: 'system', content: system },
+			{ role: 'user', content: header + reference(round, more) + 'The answer was written in parts. Part summaries:\n\n'
+				+ summaries.map(x => `### ${x.id}\n${x.summary}`).join('\n\n')
+				+ `\n\nEmit the narrative layers of the whole answer as JSON {system, focus, summary}: one line system, one paragraph focus, a summary under ${SUMMARY_CAP} characters that covers every part. The evidence layers are assembled from the parts; do not write them.` },
+		],
+		summaryOf: r => r.summary, summaryOfCombine: c => c.summary,
+		mergeRounds: rs => ({ ...(rs[0] as BundleLayers & { summary: string }), summary: rs.map(r => r.summary).join(' ').slice(0, SUMMARY_CAP),
+			structure: rs.map(r => r.structure).join('\n'), surface: rs.map(r => r.surface).join('\n'), artefacts: rs.map(r => r.artefacts).join('\n'), upstream: rs.map(r => r.upstream).join('\n') }),
+	};
+}
+
+/**
+ * Compose the bundle layers and say how the answer was handled: in one pass
+ * when the request is XS or S and its input is admitted, else in parts.
+ */
+export async function synthesizeHandled(args: SynthesizeArgs): Promise<{ readonly layers: Omit<AnalyzeContextBundle, 'meta'>; readonly handling: HandlingReport }> {
 	assertConnectionProviderAdmission(args.connectionExecution);
 	assertAnalysisConnectionExecution(args.connectionExecution);
 	const cfg = loadAnalyzeConfig();
@@ -134,38 +209,44 @@ export async function synthesize(args: SynthesizeArgs): Promise<Omit<AnalyzeCont
 	const provider = args.provider ?? resolveRoleProvider('analyze.synthesize', cfg, undefined, args.connectionExecution);
 
 	const messages = buildMessages(promptContent, args.intent, args.executed);
+	const found: AnswerStepFound = args.found ?? { results: args.executed.results, report: { completeness: { complete: true, incomplete: [], failed: [] } } };
 
-	let raw: Omit<AnalyzeContextBundle, 'meta'>;
+	let layers: Omit<AnalyzeContextBundle, 'meta'>;
+	let handling: HandlingReport;
 	try {
-		raw = await provider.completeStructured<Omit<AnalyzeContextBundle, 'meta'>>(
-			messages,
-			// Reuse the bundle schema but drop the `meta` requirement --
-			// the driver stamps `meta` post-synthesis.
-			stripMetaFromSchema(ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>),
-			{
-				maxAttempts:     cfg.shaper.structuredOutputRetries,
-				disableThinking: true,
-				// Same output-token budget as the legacy shaper -- the
-				// bundle shape is unchanged.
-				maxTokens:       cfg.shaper.ollamaNumPredict,
-			},
-		);
+		const handled = await runHandled<BundleLayers & { summary: string }, BundleNarrative>({
+			provider, target: admissionTargetOf(provider, cfg.shaper.ollamaNumPredict), adapter: bundleAdapter(promptContent, args.intent, args.executed),
+			blocks: evidenceBlocks(args.target, args.executed), reference: selectSharedContext(args.target, args.executed),
+			found, maxAttempts: cfg.shaper.structuredOutputRetries, connectionExecution: args.connectionExecution,
+			size: args.intent.scope, singleMessages: messages,
+			// Reuse the bundle schema but drop the `meta` requirement -- the driver stamps `meta` post-synthesis.
+			singleSchema: stripMetaFromSchema(ANALYZE_CONTEXT_BUNDLE_SCHEMA as Record<string, unknown>) as StructuredSchema,
+		});
+		if (handled.kind === 'single') {
+			layers = handled.reply;
+		} else {
+			layers = assembleBundle(args.target, handled.covered, handled.combine);
+		}
+		handling = handled.handling;
 	} catch (err) {
-		const errClass = classifyError(err);
-		throw errClass;
+		// A typed failure of a divided call is already the right error; a single pass keeps the legacy classification.
+		if (err instanceof ShaperAnswerStepFailedError) throw err;
+		throw classifyError(err);
 	}
 
 	captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{
 			runId:            args.runId,
 			target:           args.target,
 			explorationCount: args.executed.results.length,
-			summaryLen:       raw.summary?.length ?? 0,
-			structureLen:     raw.structure?.length ?? 0,
-			surfaceLen:       raw.surface?.length ?? 0,
-			artefactsLen:     raw.artefacts?.length ?? 0,
+			method:           handling.method,
+			parts:            handling.parts,
+			summaryLen:       layers.summary?.length ?? 0,
+			structureLen:     layers.structure?.length ?? 0,
+			surfaceLen:       layers.surface?.length ?? 0,
+			artefactsLen:     layers.artefacts?.length ?? 0,
 	}, 'synthesizer: bundle emitted']);
 
-	return raw;
+	return { layers, handling };
 }
 
 // ---------------------------------------------------------------------------

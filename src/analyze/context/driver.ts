@@ -96,9 +96,10 @@ import {
 import { getReadOnlyTools, READ_ONLY_TOOL_IDS } from './tool-surface.js';
 import { withSubsystemContext } from './subsystem-context.js';
 import { decompose, DecomposerLlmUnavailableError, DecomposerPromptMissingError } from './decomposer.js';
-import { synthesize, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
+import { synthesize, synthesizeHandled, SynthesizerLlmUnavailableError, SynthesizerPromptMissingError } from './synthesizer.js';
 import { executePlan } from '../explore/index.js';
 import type { ExecutedExploration, ExplorationPlan } from '../explore/index.js';
+import { applyHandling } from '../completeness.js';
 import type { AnswerReport, PartialFinding } from '../completeness.js';
 import { reportFromLookups } from '../explore/answer-report.js';
 import { measureLookupResults, measureResolvedScope } from '../measure.js';
@@ -1435,6 +1436,8 @@ export interface PipelineSteps {
 	readonly decompose:            typeof decompose;
 	readonly executePlan:          typeof executePlan;
 	readonly synthesize:           typeof synthesize;
+	/** Writes the answer and says how it was handled; when a set of steps gives none, `synthesize` is used and the handling is not recorded. */
+	readonly synthesizeHandled?:   typeof synthesizeHandled | undefined;
 	readonly fallbackFreeformPlan: (intent: ClassifiedIntent, shaperId: ShaperId) => ExplorationPlan;
 	/** The repo's last-indexed time, part of the lookup cache key. */
 	readonly lastIndexedAt:        (scopePath: string) => Promise<number | undefined>;
@@ -1741,23 +1744,29 @@ async function tryExplorationPipeline(
 							? 'capability'
 							: 'code';
 	try {
-		const raw = await steps.synthesize({
+		const synthArgs = {
 			connectionExecution: execution,
 			runId:    args.runId,
 			intent:   answerIntent,
 			executed,
 			target:   synthesizeTarget,
-		});
+		};
+		const handled = steps.synthesizeHandled !== undefined
+			? await steps.synthesizeHandled({ ...synthArgs, found })
+			: { layers: await steps.synthesize(synthArgs), handling: undefined };
 		assertAnalysisConnectionExecution(execution);
 		return {
 			kind:             'bundle',
-			raw,
+			raw:              handled.layers,
 			explorationCount: executed.results.length,
-			found,
+			// The report the delivered bundle carries: the lookups' own, with how the answer was handled. The model's own report is never used.
+			found:            handled.handling !== undefined ? { ...found, report: applyHandling(found.report, handled.handling) } : found,
 		};
 	} catch (err) {
 		assertAnalysisConnectionExecution(execution);
 		if (err instanceof ConnectionExecutionError) throw err;
+		// A divided call that covered no part ends in its own typed failure, which carries the results and the report.
+		if (err instanceof ShaperAnswerStepFailedError) throw err;
 		if (err instanceof SynthesizerLlmUnavailableError) {
 			captureAnalysisDiagnostics(log, args.connectionExecution).emit('info', () => [{ runId: args.runId, err: err.message }, 'exploration pipeline: the answer-writing call failed']);
 			return didNotProceed('answer-model-failed', err.detail, { found });
@@ -1779,6 +1788,7 @@ const REAL_PIPELINE_STEPS: PipelineSteps = {
 	decompose,
 	executePlan,
 	synthesize,
+	synthesizeHandled,
 	fallbackFreeformPlan,
 	lastIndexedAt: resolveRepoLastIndexedAt,
 };

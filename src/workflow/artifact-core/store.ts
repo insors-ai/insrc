@@ -12,9 +12,9 @@ import { reviewJsonLimit, requireReview } from '../code-review/task-review/contr
  */
 
 import { randomUUID } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, openSync, closeSync, fstatSync, readSync, realpathSync, constants } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, relative } from 'node:path';
 
 import { ArtifactIds, InvalidArtifactKeyError, isArtifactIdKind } from '../artifact-ids.js';
 import type { ArtifactKey } from '../artifact-ids.js';
@@ -26,8 +26,8 @@ import { decodeArtifactHead, isActor, isAttachment, isBinding } from './decode.j
 import { validateLogEntry } from './history.js';
 import { checkSidecarEntrySize } from './sidecar.js';
 import type { History } from './history.js';
-import { createMemoryJournal, headHashOf } from './journal.js';
-import type { StagedOperation, WriteJournal } from './journal.js';
+import { createMemoryJournal, headHashOf, isDocumentPrecondition } from './journal.js';
+import type { StagedOperation, WriteJournal, DocumentPrecondition } from './journal.js';
 import { TERMINAL, assertLegalStatusChange, checkHeadIntegrity, checkIntegrity, isLifecycleOperation } from './lifecycle.js';
 import { ArtifactNotFoundError, ArtifactShapeError, HistoryEntryError, IllegalTransitionError, LifecycleConflictError } from './types.js';
 import type { Actor, Artifact, ChangeLogEntry, Feedback, Operation, Reference } from './types.js';
@@ -74,6 +74,7 @@ function revisedBytes(bytes: string, number: number): string {
 /** What a caller can say about the change log entry of a write. */
 export interface WriteOptions {
  readonly expectedHeadHash?: string | undefined;
+ readonly expectedDocument?:DocumentPrecondition;
  readonly entryId?: string | undefined;
 	/** The log operation; create or update when absent. A lifecycle operation must match the status change it makes. */
 	readonly operation?:  Operation | undefined;
@@ -364,12 +365,14 @@ export class ArtifactStore {
 		validateLogEntry(entry);
 		checkSidecarEntrySize({ artifactId: a.id, entry });
 		decodeArtifactHead(a.id, prepared.bytes);
-		const op: StagedOperation = { operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
+		const op: StagedOperation = { ...(options.expectedDocument?{expectedDocument:options.expectedDocument}:{}),operationId, priorRevision, priorHeadHash: headHashOf(priorBytes), bytes: prepared.bytes, entry };
 
+		this.checkDocument(a.id,options.expectedDocument);
 		await this.deps.journal.stage(a.id, op);
 		await this.deps.history.appendLog(a.id, entry);
 		try {
    if (options.expectedHeadHash !== undefined && headHashOf(existsSync(path)?readFileSync(path,'utf8'):undefined) !== options.expectedHeadHash) throw new LifecycleConflictError(a.id,'head-changed-after-stage','Head changed during journal/log awaits; pending publication retained');
+   this.checkDocument(a.id,options.expectedDocument);
    (this.deps.writeHead ?? writeAtomic)(path, prepared.bytes);
   }
 		catch (err) {
@@ -392,6 +395,18 @@ export class ArtifactStore {
 	 * The head is replaced only while it still hashes to the head the write started from; a head that moved on is never
 	 * overwritten and the journal file is kept. A staged entry the log would refuse is discarded, or it would block every later write.
 	 */
+ private checkDocument(id:string,doc:DocumentPrecondition|undefined):void{
+  if(doc===undefined)return;
+  try{
+   if(!isDocumentPrecondition(doc)||resolve(doc.path)!==doc.path||realpathSync(doc.path)!==doc.path||relative(realpathSync(this.deps.repoPath),doc.path).startsWith('..'))throw Error('Unsafe document precondition');
+   const fd=openSync(doc.path,constants.O_RDONLY|constants.O_NOFOLLOW);
+   try{const stat=fstatSync(fd);if(!stat.isFile()||stat.size>8*1024*1024)throw Error('Unbounded document');
+    const bytes=Buffer.alloc(stat.size+1);let size=0,n=0;while(size<bytes.length&&(n=readSync(fd,bytes,size,bytes.length-size,null))>0)size+=n;
+    if(size!==stat.size||headHashOf(bytes.subarray(0,size).toString('utf8'))!==doc.hash)throw Error('Document changed');
+   }finally{closeSync(fd);}
+  }catch(error){throw new LifecycleConflictError(id,'head-changed-after-stage',`Reviewed document changed or is unreadable; pending operation retained: ${String(error)}`);}
+ }
+
 	private async completePending(id: string, path: string, resolving = false): Promise<void> {
 		const op = await this.deps.journal.pending(id);
 		if (op === undefined) return;
@@ -417,6 +432,7 @@ export class ArtifactStore {
 			}
 			throw new LifecycleConflictError(id, 'head-changed-after-stage', `${id} changed after a write was staged (operation ${op.operationId}); the staged write was not applied and a person has to resolve it`);
 		}
+		if(replace)this.checkDocument(id,op.expectedDocument);
 		const entries = await this.deps.history.log(id);
   const existing = entries.find(e => e.id === op.entry.id);
   if (existing && JSON.stringify(existing) !== JSON.stringify(op.entry)) throw new LifecycleConflictError(id, 'head-changed-after-stage', 'Staged history id already exists with different content; journal retained');
@@ -424,7 +440,7 @@ export class ArtifactStore {
 		if (replace) {
    const latest=existsSync(path)?readFileSync(path,'utf8'):undefined;
    if(latest!==op.bytes&&headHashOf(latest)!==op.priorHeadHash)throw new LifecycleConflictError(id,'head-changed-after-stage','Head changed during journal recovery; pending operation retained');
-   if(latest!==op.bytes)(this.deps.writeHead ?? writeAtomic)(path, op.bytes);
+   if(latest!==op.bytes){this.checkDocument(id,op.expectedDocument);(this.deps.writeHead ?? writeAtomic)(path, op.bytes);}
   }
 		await this.clearQuietly(id, op.operationId);
 	}

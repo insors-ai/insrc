@@ -418,7 +418,7 @@ Invalidated work requires user approval and operation restart_full with userDeci
 action restart_full, reason and recordedAt. It appends a full fresh attempt, with no
 chunk reuse. External changes are ignored for same-attempt recovery. Report progress
 and wait for full completion before corrections. Failed storage/domain state is not an
-automatic retry. retry_publication is unavailable until the later publication story.
+automatic retry. Use operation retry_publication for pending publication: it persists accepted feedback without another model call. Completion is visible only after its permanent history receipt is durable.
 Correction attempts assess direct and indirect effects from current paths and prior checkpoint
 history. The reviewer submits a complete current plan plus sc4 impact in one output; both
 are accepted atomically. Retain only justified eligible same-party coverage without limitations;
@@ -479,7 +479,7 @@ fallback. A story with no valid independent whole-story review is withheld.
    and origins. Only a passing whole-story current BUILD binding permits completion.
 6. Present BUILD and CR and ask for human approval; never auto-approve. Story BUILD
    approval cleanup is handled by the host when available; retained/errors mean retry
-   cleanup explicitly without re-review. Design review uses its separate initial-attempt protocol; checkpoint feedback does not yet publish approval history.
+   cleanup explicitly without re-review. Design review uses its separate initial-attempt protocol and publishes complete versioned history before approval. Normal design approval requires current independent evidence; successful approval cleans only inactive fully preserved checkpoints. After cleanup, progress requires the exact artifactPath when no mapping remains, and reads permanent history without a model.
 
 For rollout, finish qualification before deployment. Drain or explicitly interrupt active
 reviews, retain checkpoints, and coordinate the daemon restart with updated submitters

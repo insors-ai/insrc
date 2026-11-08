@@ -36,7 +36,14 @@ export function headHashOf(bytes: string | undefined): string {
 	return bytes === undefined ? 'absent' : createHash('sha256').update(bytes, 'utf8').digest('hex');
 }
 
+export interface DocumentPrecondition {readonly path:string;readonly hash:string;}
+export function isDocumentPrecondition(value:unknown):value is DocumentPrecondition{
+ if(typeof value!=='object'||value===null)return false;const d=value as Record<string,unknown>;
+ return typeof d.path==='string'&&d.path.length>0&&d.path.length<=8192&&typeof d.hash==='string'&&/^[a-f0-9]{64}$/.test(d.hash);
+}
 export interface StagedOperation {
+ readonly expectedDocument?:DocumentPrecondition;
+
 	/** A hash of the artifact id, the prior revision and the prepared bytes; also the id of the change log entry. */
 	readonly operationId:   string;
 	readonly priorRevision: number;
@@ -74,6 +81,7 @@ function isStagedOperation(v: unknown): v is StagedOperation {
 	const entry = o['entry'] as Record<string, unknown> | null | undefined;
 	return typeof o['operationId'] === 'string' && o['operationId'] !== '' && Number.isInteger(o['priorRevision'])
 		&& typeof o['priorHeadHash'] === 'string' && typeof o['bytes'] === 'string'
+		&& (o['expectedDocument']===undefined||isDocumentPrecondition(o['expectedDocument']))
 		&& typeof entry === 'object' && entry !== null && entry['id'] === o['operationId'];
 }
 

@@ -1,3 +1,4 @@
+import { ReviewRequiredError } from '../artifact-core/types.js';
 /*---------------------------------------------------------------------------------------------
  *  Copyright (c) Procix Software India. All rights reserved.
  *  Licensed under the MIT License. See License.txt in the project root for license information.
@@ -143,12 +144,12 @@ for (const [kind, name, workflow] of DESIGN) {
 			} finally { r.cleanup(); }
 		});
 
-		test(`T6 a ${kind} authored by the ${party} and reviewed by the ${other} with nothing blocking is approved`, async () => {
+		test(`T6 a ${kind} authored by the ${party} with a historical ${other} review requires preserved new-format evidence`, async () => {
 			const r = repo();
 			try {
 				const p = write(r.dir, name, { workflow, storyId: 's1', authoredBy: party, review: review(other) });
-				await approveJson(p);
-				assert.ok(isApproved(p));
+				await assert.rejects(approveJson(p),ReviewRequiredError);
+				assert.ok(!isApproved(p));
 				assert.equal(overrideOf(p), undefined);
 			} finally { r.cleanup(); }
 		});
@@ -166,12 +167,12 @@ test('T6 an other-party review whose verdict BLOCKS still withholds without an o
 	} finally { r.cleanup(); }
 });
 
-test('T6 an unknown author never withholds by itself', async () => {
+test('T6 historical evidence with unknown authorship cannot authorize a new approval', async () => {
 	const r = repo();
 	try {
 		const unknownAuthor = write(r.dir, `DEF-${HASH}.json`, { workflow: 'define', review: review('controller') });
-		await approveJson(unknownAuthor);
-		assert.ok(isApproved(unknownAuthor));
+		await assert.rejects(approveJson(unknownAuthor),ReviewRequiredError);
+		assert.ok(!isApproved(unknownAuthor));
 	} finally { r.cleanup(); }
 });
 
@@ -304,8 +305,9 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 		const plan       = write(r.dir, `PLAN-${HASH}-s1.json`, { workflow: 'plan', storyId: 's1', authoredBy: 'controller' });
 
 		const out = await approveTarget({ repoPath: r.root, epicHash: HASH }, { enforce: false });
-		assert.deepEqual(out.approved.map(a => a.path).sort(), [reviewed, plan].sort());
-		const reasons = Object.fromEntries(out.skipped.map(s => [s.path, s.reason]));
+		assert.deepEqual(out.approved.map(a => a.path).sort(), [plan].sort());
+		const reasons = Object.fromEntries(out.skipped.filter(s=>s.path!==reviewed).map(s => [s.path, s.reason]));
+		assert.match(out.skipped.find(s=>s.path===reviewed)!.reason,/missing new-format/);
 		assert.deepEqual(reasons, {
 			[unreviewed]: 'approval requires a review; none was run',
 			[sameParty]:  'the review was done by the party that authored the work (daemon)',
@@ -316,8 +318,8 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 
 		// With an override reason the same batch approves the three it withheld.
 		const over = await approveTarget({ repoPath: r.root, epicHash: HASH, overrideReview: 'batch override' }, { enforce: false });
-		assert.deepEqual(over.approved.map(a => a.path).sort(), [unreviewed, sameParty, blocking].sort());
-		for (const p of [unreviewed, sameParty, blocking]) assert.equal(overrideOf(p), 'batch override');
+		assert.deepEqual(over.approved.map(a => a.path).sort(), [reviewed, unreviewed, sameParty, blocking].sort());
+		for (const p of [reviewed, unreviewed, sameParty, blocking]) assert.equal(overrideOf(p), 'batch override');
 	} finally { r.cleanup(); }
 });
 
@@ -325,14 +327,13 @@ test('T8 a batch approval lists every withheld artifact in skipped[] with its re
 
 for (const [kind, name, workflow] of [...DESIGN, ['BUILD', `BUILD-${HASH}-s1.json`, 'build']] as const) {
 	for (const author of ['controller', 'daemon', undefined] as const) {
-		test(`T18 a ${kind} fixture (author: ${author ?? 'none'}) stamped with the shared helper is approved with no override`, async () => {
+		test(`T18 a ${kind} fixture (author: ${author ?? 'none'}) stamped with ${kind==='BUILD'?'the shared helper is approved with no override':'the historical helper cannot substitute for new-format evidence'}`, async () => {
 			const r = repo();
 			try {
 				const p = write(r.dir, name, { workflow, storyId: 's1', ...(author !== undefined ? { authoredBy: author } : {}) });
 				await assert.rejects(approveJson(p), ReviewBlockedError, 'without the helper it is withheld');
 				stampOtherPartyReview(p);
-				await approveJson(p);
-				assert.ok(isApproved(p));
+				if(kind!=='BUILD'){await assert.rejects(approveJson(p),ReviewRequiredError);assert.ok(!isApproved(p));}else{await approveJson(p);assert.ok(isApproved(p));}
 				assert.equal(overrideOf(p), undefined);
 			} finally { r.cleanup(); }
 		});

@@ -1,3 +1,4 @@
+import type { WriteOptions } from '../../artifact-core/store.js';
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { createHash } from 'node:crypto';
 import { realpathSync } from 'node:fs';
@@ -36,9 +37,9 @@ export async function recordDesignAdmission(cp:DesignReviewCheckpoint,store:Arti
  });
 }
 /** Called inside the artifact queue, under the coordinator fence. No providers or nested writes. */
-export async function requireCurrentDesignApproval(projectInput:string,head:Artifact<HeadPayload>,log:readonly ChangeLogEntry[],override?:string):Promise<string>{
+export async function requireCurrentDesignApproval(projectInput:string,head:Artifact<HeadPayload>,log:readonly ChangeLogEntry[],override?:string):Promise<Pick<WriteOptions,'expectedHeadHash'|'expectedDocument'>>{
  const project=realpathSync(projectInput),path=artifactJsonPath(project,head.id),raw=readDesignFile(project,path),hash=createHash('sha256').update(raw).digest('hex');
- if(override?.trim())return hash;
+ if(override?.trim())return {expectedHeadHash:hash};
  const reject=(why:string):never=>{throw new ReviewRequiredError(`${head.id}: ${why}; review the current design or explicitly approve with an override`);};
  if(designArtifactActive(project,head.id))reject('design review is active');
  const rv=head.lifecycle.review,ref=rv?.report;
@@ -56,5 +57,5 @@ export async function requireCurrentDesignApproval(projectInput:string,head:Arti
  if(!latest||latest.reviewId!==record.reviewId||latest.attempt!==record.applicableAttempt||latest.contentIdentity!==record.binding.reviewedContentIdentity)reject('a later or untracked review admission has no applicable completed publication');
  const cp=await loadDesignCheckpoint(project,record.reviewId);
  if(cp){const a=cp.attempts.at(-1)!;if(a.number!==record.applicableAttempt||a.status!=='passed'||a.publication?.state!=='complete'||a.publication.artifactHistoryEntryId!==entry!.id||designPreservationDigest(cp)!==record.preservationDigest)reject('latest review work is unfinished or not preserved');}
- return hash;
+ return {expectedHeadHash:hash,expectedDocument:{path:prepared.subject.documentPath,hash:record.binding.documentDigest}};
 }

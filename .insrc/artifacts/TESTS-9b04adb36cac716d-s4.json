@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 18,
-        "contentHash": "278c20f53b276a42a362e5deb5a8b4930af4efd0dc99b8ddadf524597378774b",
-        "at": "2026-11-08T06:29:16.160Z",
+        "number": 19,
+        "contentHash": "74d9c1260f48510e1afe92b2fec76955c5d2bff6ebf40d1a1a4dc9a1cc61239f",
+        "at": "2026-11-08T06:32:35.095Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:29:15.989Z",
+    "updatedAt": "2026-11-08T06:32:34.926Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 18
+    "revision": 19
   },
   "body": {
     "tasks": [
@@ -518,8 +518,8 @@
       },
       {
         "taskId": "t7",
-        "commit": "e0d7f2ccb",
-        "ranAt": "2026-11-08T06:29:15.989Z",
+        "commit": "dffb93691",
+        "ranAt": "2026-11-08T06:32:34.926Z",
         "testsPassed": true,
         "tests": [
           {
@@ -577,7 +577,12 @@
             "cases": [
               {
                 "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
-                "title": "active and busy artifacts retain promptly while independent artifacts clean up",
+                "title": "real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively",
+                "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
+                "title": "actual active model work retains its artifact while another artifact in the same project progresses",
                 "result": "pass"
               },
               {
@@ -594,7 +599,7 @@
             "file": "src/workflow/review/design-review/__tests__/cleanup.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 985,
+            "durationMs": 1372,
             "titles": [
               {
                 "title": "approval deletes only fully preserved private claims and fresh history remains readable",
@@ -630,6 +635,14 @@
               },
               {
                 "title": "explicit override approval retains unfinished checkpoint state truthfully",
+                "result": "pass"
+              },
+              {
+                "title": "real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively",
+                "result": "pass"
+              },
+              {
+                "title": "actual active model work retains its artifact while another artifact in the same project progresses",
                 "result": "pass"
               }
             ],

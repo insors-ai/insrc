@@ -127,13 +127,13 @@ export class LifecycleService {
 				}
 			}
 			if (op === 'reopen' && isUnit) await this.checkParentOpen(id);
-   let expectedHeadHash:string|undefined;
+   let approvalProof:Pick<WriteOptions,'expectedHeadHash'|'expectedDocument'>|undefined;
    if(op==='approve'&&key&&['DEF','HLD','LLD'].includes(key.kind)){
     if(['approved','in-signoff','signed-off','completed'].includes(head.lifecycle.status)&&head.lifecycle.approval?.revision===head.lifecycle.revision.number){
      const prior=[...changeLog].reverse().find(e=>e.operation==='approve'&&e.revision?.number===head.lifecycle.revision.number);
      if(prior){standing={lifecycle:head.lifecycle,entry:prior};return undefined;}
     }
-    expectedHeadHash=await requireCurrentDesignApproval(store.repoPath,head,changeLog,detail.override?.reason);
+    approvalProof=await requireCurrentDesignApproval(store.repoPath,head,changeLog,detail.override?.reason);
    }
 
 			// The unit's own transition is validated before any member is touched, so a refusal leaves everything as it was.
@@ -167,7 +167,7 @@ export class LifecycleService {
 				next: { ...head, lifecycle },
 				options: {
 					operation: op,
-     ...(expectedHeadHash!==undefined?{expectedHeadHash}:{}),
+     ...approvalProof,
 					...(cascade ? { cascade } : {}),
 					...(outcome !== undefined ? { outcome } : {}),
 					...(detail.request !== undefined ? { references: [detail.request] } : {}),

@@ -67,7 +67,7 @@ export async function publishDesignReview(cp:DesignReviewCheckpoint,deps:DesignP
    {review:{reviewer:actor,party:cp.subject.reviewer,verdict,counts:attempt.report!.counts,report:reviewReference(cp.artifactId,id)}});
   const outcome={result:verdict,summary:`Design review ${cp.reviewId} attempt ${attempt.number}`,data:record};
   checkSidecarEntrySize({artifactId:cp.artifactId,entry:{id,actor,timestamp:at,operation:'review',outcome}},(deps.historyLimit??designHistoryLimit)());
-  return {next:{...current,lifecycle},options:{entryId:id,expectedHeadHash:attempt.baseline.subjectFingerprints.canonical,operation:'review',outcome}};
+  return {next:{...current,lifecycle},options:{expectedDocument:{path:cp.subject.documentPath,hash:attempt.baseline.subjectFingerprints.document},entryId:id,expectedHeadHash:attempt.baseline.subjectFingerprints.canonical,operation:'review',outcome}};
  }).then(result=>{published??=result.entry;}).catch(error=>{
   if(error instanceof LifecycleConflictError&&error.reason==='head-changed-after-stage')throw new DesignReviewError('artifact_changed',error.message);
   throw error;

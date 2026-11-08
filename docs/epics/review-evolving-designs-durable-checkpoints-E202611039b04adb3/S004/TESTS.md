@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 42 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 43 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -155,7 +155,7 @@ Run at 2026-11-08T06:22:30.368Z on commit `02bec2288`. Tests check: **passed**. 
 
 ## t7
 
-Run at 2026-11-08T06:29:15.989Z on commit `e0d7f2ccb`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T06:32:34.926Z on commit `dffb93691`. Tests check: **passed**. 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: I4 private claims, replacement races, full-history preservation and restart**
 
@@ -174,11 +174,12 @@ Run at 2026-11-08T06:29:15.989Z on commit `e0d7f2ccb`. Tests check: **passed**. 
 
 | Result | Test | File |
 | :--- | :--- | :--- |
-| pass | active and busy artifacts retain promptly while independent artifacts clean up | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | real coordinator start correction and publication contend with cleanup without acquiring the store queue recursively | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
+| pass | actual active model work retains its artifact while another artifact in the same project progresses | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 | pass | foreign corrupt symlink unpreserved and unfinished override checkpoints are retained | `src/workflow/review/design-review/__tests__/cleanup.test.ts` |
 
 **Files run**
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 9 | 1 s |  |
+| `src/workflow/review/design-review/__tests__/cleanup.test.ts` | 0 | 11 | 1.4 s |  |

@@ -5,12 +5,12 @@ import test from 'node:test';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
-test('MCP SDK lists and calls a schema tool over stdio', { timeout: 15_000 }, async () => {
-  const entry = fileURLToPath(new URL('../../bin/insrc-mcp.ts', import.meta.url));
+test('Compiled MCP SDK lists and calls a schema tool over stdio', { timeout: 15_000 }, async () => {
+  const entry = fileURLToPath(new URL('../../../out/bin/insrc-mcp.js', import.meta.url));
   const client = new Client({ name: 'stdio-dependencies-test', version: '1' });
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: ['--import', 'tsx', entry],
+    args: [entry],
     stderr: 'pipe',
   });
   transport.stderr?.resume();

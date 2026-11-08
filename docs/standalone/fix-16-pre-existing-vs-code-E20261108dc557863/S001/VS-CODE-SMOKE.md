@@ -1,13 +1,15 @@
 # VS Code verification for issue #103
 
-The automated sweep ran on Node 26.5.1 at revision `f3d6caeb0fe9ac7ca4308c0c001c079d1a32ca7f`. It started at 12:55:21 UTC and finished at 12:56:58 UTC on 2026-11-08, after the daemon recorded passing verdicts for tasks t1 through t3.
+The automated sweep ran on Node 26.5.1 at revision `9d86fb9f5610ec68c50dc379306b829b4e0213d0`. It started at 13:13:39 UTC and finished at 13:15:18 UTC on 2026-11-08, after the daemon recorded passing verdicts for tasks t1 through t3.
 
 ```sh
 node --import tsx --test --test-concurrency=1 --test-force-exit --test-reporter=tap 'vscode-plugin/src/**/__tests__/*.test.ts'
 node_modules/.bin/tsc -p vscode-plugin/tsconfig.json --pretty false
 ```
 
-The final sweep ran 1,707 cases. 1,698 passed, nine gated live cases skipped, and zero failed. The extension TypeScript check passed within the sweep. See [the build test record](TESTS.md) for exact focused case names and results.
+The final sweep ran 1,708 cases. 1,699 passed, nine gated live cases skipped, and zero failed. The extension TypeScript check passed within the sweep. See [the build test record](TESTS.md) for exact focused case names and results.
+
+The first code review requested a test for Tracker consent and write outcomes. The added test covers declined and dismissed consent plus saved, refused, and failed writes, and checks the persisted value after refresh. The production code and the reported manual results are the same as in the first review.
 
 | Baseline failure group | Cases | Final result |
 | --- | ---: | --- |

@@ -20,6 +20,75 @@ const overload = JSON.stringify({ type: 'result', user_message_uuid: '__REQUEST_
 const init = JSON.stringify({ type: 'system', subtype: 'init', session_id: 'sess-x' });
 const edit = JSON.stringify({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Edit', input: { file_path: '/repo/a.ts', old_string: 'a', new_string: 'b' } }] }, session_id: 'sess-x' });
 
+test('v2 migration preserves records, defers live owners and rolls back atomically', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'insrc-queue-migrate-'));
+  const path = join(dir, 'queue.sqlite');
+  const openDatabase = (p: string): SqliteDatabase => new DatabaseSync(p) as unknown as SqliteDatabase;
+  const deps = { path, openDatabase, now: () => 5_000, pluginVersion: 'test' };
+  const legacy = createChatQueueStore(deps);
+  const owner = { windowKey: 'old-window', pid: 41, pidStartedAt: 8 };
+  try {
+    legacy.presence(owner);
+    const put = (sessionId: string, turnId: string) => legacy.enqueue({
+      key: `${sessionId}::${turnId}`, sessionId, turnId, windowKey: owner.windowKey, origin: 'typed',
+      text: turnId, attachments: [],
+    });
+    const first = put('A', 'active');
+    const retry = put('B', 'retry');
+    const queued = put('A', 'queued');
+    assert.ok(first.ok && retry.ok && queued.ok);
+    assert.equal(legacy.acknowledge(first.message.seq, owner), true);
+    assert.equal(legacy.attachCli(owner, { pid: 42, startedAt: 9 }), true);
+    assert.equal(legacy.markWaiting(first.message.seq, 'approval'), true);
+    const raw = new DatabaseSync(path);
+    raw.prepare("UPDATE messages SET state = 'retrying', attempts = 2, next_attempt_at = 65000 WHERE seq = ?").run(retry.message.seq);
+    raw.close();
+    const before = legacy.list();
+    const legacyLease = legacy.lease();
+    const legacyPresence = legacy.presenceOf(owner.windowKey);
+    const opts = { ...deps, mode: 'session-leases' } as const;
+    for (const observation of [{ kind: 'present', startedAt: 8 }, { kind: 'unknown' }] as const) {
+      assert.throws(() => createChatQueueStore({ ...opts, observe: () => observation }), /older VS Code windows/);
+      assert.deepEqual(legacy.list(), before);
+      assert.deepEqual(legacy.lease(), legacyLease);
+    }
+    const observe = () => ({ kind: 'absent' } as const);
+    assert.throws(() => createChatQueueStore({
+      ...opts, observe,
+      openDatabase: (p) => {
+        const db = openDatabase(p);
+        return {
+          prepare: (sql) => db.prepare(sql),
+          close: () => db.close(),
+          exec(sql) {
+            db.exec(sql);
+            if (sql === 'DROP TABLE lease') throw new Error('simulated migration failure after the DDL');
+          },
+        };
+      },
+    }), /simulated migration failure/);
+    assert.deepEqual(legacy.lease(), legacyLease);
+    assert.deepEqual(legacy.list(), before);
+    const retryV2 = createChatQueueStore(deps);
+    retryV2.close();
+
+    const migrated = createChatQueueStore({ ...opts, observe });
+    try {
+      assert.deepEqual(migrated.list(), before);
+      assert.deepEqual(migrated.presenceOf(owner.windowKey), legacyPresence);
+      assert.deepEqual(migrated.lease('A'), { ...legacyLease, sessionId: 'A', epoch: migrated.lease('A')?.epoch });
+      assert.ok(migrated.lease('A')?.epoch);
+      assert.throws(() => createChatQueueStore(deps), /newer plugin/);
+      assert.equal(put('C', 'stale-v2-writer').ok, false);
+    } finally {
+      migrated.close();
+    }
+  } finally {
+    legacy.close();
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
 function setup(scripts: FakeProcScript[]) {
   const dir = mkdtempSync(join(tmpdir(), 'insrc-fault-'));
   const clock = { t: Date.now() };

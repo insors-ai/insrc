@@ -2233,6 +2233,7 @@ async function finalizeDesignStory(
 		hldBaseRunId:         baseHld.meta.runId,
 		hldEffectiveHash:     effectiveHash,
 		hldAmendmentsApplied: appliedAmendments.map(a => a.id),
+		storyTitle:           story.title,
 	};
 	// sc4 (S003): render + attach the ER companion when the LLM authored an
 	// erDefinition (author-gate). Deterministic; a sibling of the LLD.md.
@@ -2415,6 +2416,7 @@ async function finalizeStandaloneLld(
 		hldBaseRunId:         runId,
 		hldEffectiveHash:     computeHldEffectiveHash(runId, []),
 		hldAmendmentsApplied: [],
+		storyTitle:           storyTitle ?? body.hldContextSlice.boundary.internal,
 		standalone:           true,
 		...(sizeClass !== undefined ? { sizeClass } : {}),
 		...(triageRationale !== undefined ? { triageRationale } : {}),

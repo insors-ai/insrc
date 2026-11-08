@@ -193,6 +193,8 @@ export interface LldMeta extends ArtifactMetaBase {
 	readonly hldEffectiveHash:     string;
 	readonly hldAmendmentsApplied: readonly string[];
 	readonly staleReason?:         string;
+	/** ISSUE-36cbeeac485c0af7: the Story's title, shown in the H1. Absent on an LLD written before it. */
+	readonly storyTitle?:          string | undefined;
 }
 
 export interface LldArtifact {
@@ -325,7 +327,9 @@ export function renderLldMarkdown(artifact: LldArtifact): string {
 	const eh = typeof meta.epicHash === 'string' && meta.epicHash.length > 0 ? meta.epicHash : undefined;
 	const marker = eh !== undefined ? artifactIdMarker(lldArtifactId(meta.epicHash, meta.storyId)) : undefined;
 	const lldSid = eh !== undefined ? ArtifactIds.tryMake({ kind: 'STORY', epicHash: eh, story: meta.storyId }) : undefined;
-	const h1 = `LLD: ${lldSid ?? meta.storyId}`;
+	// The format's `<story id — title>`; an LLD stored without a title keeps its id-only heading.
+	const title = meta.storyTitle?.replace(/\s+/g, ' ').trim() ?? '';
+	const h1 = `LLD: ${lldSid ?? meta.storyId}${title.length > 0 ? ` — ${title}` : ''}`;
 	const isStandalone = (meta as { standalone?: boolean }).standalone === true;
 
 	const summaryLines = (): string[] => {

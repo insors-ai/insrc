@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 20,
-        "contentHash": "11cc6cd8017a6e2ec41566f755a7705902fd1d9ba884736b2adbd924ed7bbc34",
-        "at": "2026-11-08T06:43:32.749Z",
+        "number": 21,
+        "contentHash": "34044d75d06d823fec9ff3eb1a721a5ee3ea79017809f23042ac09a3ca7aa560",
+        "at": "2026-11-08T06:47:14.987Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "9b04adb36cac716d",
     "storyId": "s4",
     "createdAt": "2026-11-07T19:47:05.310Z",
-    "updatedAt": "2026-11-08T06:43:32.591Z",
+    "updatedAt": "2026-11-08T06:47:14.831Z",
     "epicCreatedAt": "2026-11-03T08:15:34.350Z",
     "epicSlug": "review-evolving-designs-durable-checkpoints",
-    "revision": 20
+    "revision": 21
   },
   "body": {
     "tasks": [
@@ -402,8 +402,8 @@
       },
       {
         "taskId": "t6",
-        "commit": "02bec2288",
-        "ranAt": "2026-11-08T06:22:30.368Z",
+        "commit": "6d35295fc",
+        "ranAt": "2026-11-08T06:47:14.831Z",
         "testsPassed": true,
         "tests": [
           {
@@ -440,6 +440,11 @@
                 "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
                 "title": "changed authorship and workflow provenance cannot reuse independent evidence",
                 "result": "pass"
+              },
+              {
+                "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
+                "result": "pass"
               }
             ],
             "files": []
@@ -473,7 +478,7 @@
             "file": "src/workflow/review/design-review/__tests__/approval.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1476,
+            "durationMs": 1403,
             "titles": [
               {
                 "title": "normal and direct design approval share permanent independent evidence and preserve idempotent approval",
@@ -509,6 +514,19 @@
               },
               {
                 "title": "ISSUE SPEC and PLAN remain human-only approval gates through ordinary and direct routes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/workflow/review/design-review/__tests__/persistence-fence.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 779,
+            "titles": [
+              {
+                "title": "document edits during publication and approval persistence fail closed through journal restart",
                 "result": "pass"
               }
             ],

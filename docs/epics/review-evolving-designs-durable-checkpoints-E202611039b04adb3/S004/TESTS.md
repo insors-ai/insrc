@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 52 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 53 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -126,7 +126,7 @@ Run at 2026-11-08T06:07:40.976Z on commit `d83eecf71`. Tests check: **passed**. 
 
 ## t6
 
-Run at 2026-11-08T06:22:30.368Z on commit `02bec2288`. Tests check: **passed**. 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T06:47:14.831Z on commit `6d35295fc`. Tests check: **passed**. 10 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **unit: U4 approval applicability and truthful overrides**
 
@@ -138,6 +138,7 @@ Run at 2026-11-08T06:22:30.368Z on commit `02bec2288`. Tests check: **passed**. 
 | pass | active reviewer ownership excludes approval and approval fence excludes new review ownership | `src/workflow/review/design-review/__tests__/approval.test.ts` |
 | pass | unfinished checkpoint states and missing referenced history fail closed without altering the head | `src/workflow/review/design-review/__tests__/approval.test.ts` |
 | pass | changed authorship and workflow provenance cannot reuse independent evidence | `src/workflow/review/design-review/__tests__/approval.test.ts` |
+| pass | document edits during publication and approval persistence fail closed through journal restart | `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` |
 
 **integration: I3 ordinary/direct lifecycle gate and actual route prerequisites**
 
@@ -151,7 +152,8 @@ Run at 2026-11-08T06:22:30.368Z on commit `02bec2288`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/review/design-review/__tests__/approval.test.ts` | 0 | 9 | 1.5 s |  |
+| `src/workflow/review/design-review/__tests__/approval.test.ts` | 0 | 9 | 1.4 s |  |
+| `src/workflow/review/design-review/__tests__/persistence-fence.test.ts` | 0 | 1 | 0.8 s |  |
 
 ## t7
 

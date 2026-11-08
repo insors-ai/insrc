@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import type { Static } from '@sinclair/typebox';
 import { contentHash } from '../../artifact-core/lifecycle.js';
 import { validateDesignCheckpointIdentity, designCheckpointPath } from './checkpoint.js';
-import { consolidateDesignReview, validateDesignPlan, assessDesignResult, designRequiredReferences } from './results.js';
+import { consolidateDesignReview, validateDesignPlan, validateDesignImpact, assessDesignResult, designRequiredReferences } from './results.js';
 import { DesignCheckpointSchema, DesignStatusSchema, decodeDesign, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint } from './contracts.js';
 export { DesignPublicationSchema } from './contracts.js';
@@ -67,14 +67,21 @@ export function validatePermanentDesignReview(input: unknown, expected: { projec
    sha(raw.document) === attempt.baseline.subjectFingerprints.document &&
    sha(`${raw.canonical}\0${raw.document}`) === attempt.baseline.contentIdentity,
    'invalid_review_history', 'Preserved baseline fingerprints do not match its content');
-  if (!attempt.report) continue;
-  requireDesign(attempt.plan, 'invalid_review_history', 'Reported attempt has no plan');
-  validateDesignPlan(attempt.plan,attempt.inventory);
-  if(!attempt.impact)for(const [index,result]of attempt.completedChunks.entries()){
-   const chunk=attempt.plan.chunks[index];requireDesign(chunk&&chunk.id===result.chunkId,'invalid_review_history','Full report feedback is not an ordered plan prefix');
-   const checked=assessDesignResult(result,chunk,attempt.completedChunks.slice(0,index),designRequiredReferences(record.subject,chunk,designCheckpointPath(record.project,record.reviewId)),undefined,true);
-   requireDesign(JSON.stringify(checked)===JSON.stringify(result),'invalid_review_history','Full report feedback has unreported mandatory coverage');
+  const history=record.attempts.slice(0,attempt.number-1);
+  if(!attempt.plan){
+   requireDesign(!attempt.report&&!attempt.impact&&attempt.completedChunks.length===0,'invalid_review_history','Accepted feedback requires a preserved plan');
+   continue;
   }
+  validateDesignPlan(attempt.plan,attempt.inventory);
+  if(attempt.impact)validateDesignImpact({plan:attempt.plan,impact:attempt.impact},attempt,history);
+  const retained=new Set(attempt.impact?.retainedCoverage.map(r=>r.chunkId)??[]);
+  const selected=attempt.plan.chunks.filter(c=>!retained.has(c.id));
+  for(const [index,result]of attempt.completedChunks.entries()){
+   const chunk=selected[index];requireDesign(chunk&&chunk.id===result.chunkId,'invalid_review_history','Accepted feedback is not an ordered selected-plan prefix');
+   const checked=assessDesignResult(result,chunk,attempt.completedChunks.slice(0,index),designRequiredReferences(record.subject,chunk,designCheckpointPath(record.project,record.reviewId)),attempt.impact?{attempt,history}:undefined,true);
+   requireDesign(JSON.stringify(checked)===JSON.stringify(result),'invalid_review_history','Accepted feedback has unreported mandatory coverage');
+  }
+  if (!attempt.report) continue;
   const report = consolidateDesignReview(record.reviewId, attempt.number,
    { ...record.subject, reviewer: attempt.reviewer ?? attempt.report.reviewer }, attempt.baseline.contentIdentity,
    attempt.plan, attempt.completedChunks, attempt.impact ? { impact: attempt.impact, attempts: record.attempts.slice(0, attempt.number) } : undefined);

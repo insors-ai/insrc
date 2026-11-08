@@ -8,14 +8,14 @@
  * Pure and vscode-free.
  */
 
-import type { QueuedMessage } from './chat-queue-store.js';
+import { REPO_TURN_CAPACITY, sessionQueueWait, type QueuedMessage, type SessionQueueSnapshot, type SessionQueueWait } from './chat-queue-store.js';
 
 export interface OutboxRow {
   readonly seq: number;
   /** 1-based place among every waiting (queued or retrying) message of the repository; 1 runs next. */
   readonly position?: number | undefined;
   /** A message being processed is in the transcript, not the outbox. */
-  readonly state: 'queued' | 'retrying' | 'failed' | 'not-delivered';
+  readonly state: 'queued' | 'retrying' | 'failed' | 'not-delivered' | 'processing';
   readonly text: string;
   /** How many files go with it (the refs stay in the queue). */
   readonly attachments: number;
@@ -24,9 +24,10 @@ export interface OutboxRow {
   /** Infrastructure retries made (Story S004). */
   readonly attempt?: number | undefined;
   readonly nextAttemptAt?: number | undefined;
+  readonly waitReason?: SessionQueueWait | 'approval' | 'selection' | undefined;
 }
 
-export interface OutboxView {
+export interface LegacyOutboxView {
   readonly sessionId: string;
   readonly rows: readonly OutboxRow[];
   /** Other chats' waiting messages that run before this chat's first waiting one. */
@@ -38,6 +39,16 @@ export interface OutboxView {
   /** A one-off sentence, e.g. why an action was refused. */
   readonly note?: string | undefined;
 }
+
+export interface SessionOutboxView {
+  readonly sessionId: string;
+  readonly rows: readonly OutboxRow[];
+  readonly activeTurns: readonly { readonly sessionId: string; readonly title: string; readonly waitingOn?: QueuedMessage['waitingOn'] }[];
+  readonly capacity: { readonly occupied: number; readonly total: number };
+  readonly note?: string | undefined;
+}
+
+export type OutboxView = LegacyOutboxView | SessionOutboxView;
 
 /** The webview's request on one row. 'outbox-retry-now' is Story S004's. */
 export type OutboxAction = { readonly type: 'outbox-cancel' | 'outbox-dismiss' | 'outbox-resend' | 'outbox-retry-now'; readonly seq: number };
@@ -54,7 +65,7 @@ const isWaiting = (m: QueuedMessage): boolean => m.state === 'queued' || m.state
 const UNTITLED = 'another chat';
 
 /** The outbox for `sessionId` from every live row of the queue, in seq order. */
-export function projectOutbox(rows: readonly QueuedMessage[], sessionId: string, ctx: OutboxContext): OutboxView {
+export function projectOutbox(rows: readonly QueuedMessage[], sessionId: string, ctx: OutboxContext): LegacyOutboxView {
   const waiting = rows.filter(isWaiting);
   const place = new Map(waiting.map((m, i) => [m.seq, i + 1] as const));
   const firstMine = waiting.find((m) => m.sessionId === sessionId);
@@ -85,6 +96,33 @@ export function projectOutbox(rows: readonly QueuedMessage[], sessionId: string,
     aheadFromOtherChats: ahead,
     ...(other !== undefined && title !== undefined ? { runningChat: { title, here: ctx.here?.(other) === true } } : {}),
     ...(other?.waitingOn !== undefined && title !== undefined ? { blockedBy: { chatTitle: title, reason: other.waitingOn } } : {}),
+    ...(ctx.note !== undefined ? { note: ctx.note } : {}),
+  };
+}
+
+export function projectSessionOutbox(snapshot: SessionQueueSnapshot, sessionId: string, ctx: OutboxContext): SessionOutboxView {
+  let position = 0;
+  const rows: OutboxRow[] = [];
+  for (const row of snapshot.rows) {
+    if (row.sessionId !== sessionId || row.state === 'done') continue;
+    const waiting = isWaiting(row);
+    rows.push({
+      seq: row.seq, state: row.state, text: row.text, attachments: row.attachments.length, origin: row.origin,
+      ...(waiting ? { position: ++position, waitReason: sessionQueueWait(row, snapshot) } : {}),
+      ...(row.waitingOn !== undefined ? { waitReason: row.waitingOn } : {}),
+      ...(row.error !== undefined ? { error: row.error } : {}),
+      ...(row.attempts > 0 ? { attempt: row.attempts } : {}),
+      ...(row.nextAttemptAt !== undefined ? { nextAttemptAt: row.nextAttemptAt } : {}),
+    });
+  }
+  return {
+    sessionId, rows,
+    activeTurns: snapshot.leases.map((lease) => ({
+      sessionId: lease.sessionId,
+      title: ctx.titleOf(lease.sessionId) ?? UNTITLED,
+      waitingOn: snapshot.rows.find((row) => row.seq === lease.seq)?.waitingOn,
+    })),
+    capacity: { occupied: snapshot.leases.length, total: REPO_TURN_CAPACITY },
     ...(ctx.note !== undefined ? { note: ctx.note } : {}),
   };
 }

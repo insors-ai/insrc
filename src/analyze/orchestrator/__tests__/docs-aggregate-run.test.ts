@@ -109,7 +109,7 @@ test('the broad docs run completes through the orchestrator with a final report'
 		task({ taskId: 't03', template: 'docs.subrun.deep-dive', kind: 'planner', produces: ['deep'] }),
 		task({ taskId: 't04', template: 'docs.aggregate.report', produces: ['report'], consumes: ['inventory', 'deep'] }),
 	]), new Map([['t03', child]]));
-	_setOrchestratorStagesForTest({ planner: (async () => tree) as never, executor: undefined });
+	_setOrchestratorStagesForTest({ planner: (async () => tree) as never });
 	_resetRuntimeRegistryForTests();
 	registerTemplateRuntime(leaf);
 	registerTemplateRuntime(docsAggregateReportRuntime);

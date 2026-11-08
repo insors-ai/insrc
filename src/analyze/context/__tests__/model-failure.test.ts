@@ -290,7 +290,7 @@ test("isModelCallFailure recognises 'vibe exited with' with and without the retr
 	assert.equal(isModelCallFailure(new Error('the answer says vibe exited with 1.')), false);
 	// A size refusal and a schema-invalid reply are not failed calls.
 	assert.equal(isModelCallFailure(new Error('Input is too large for the model: 70000 characters')), false);
-	assert.equal(isModelCallFailure(new ModelResponseShapeError('codex', 'reply was not JSON')), false);
+	assert.equal(isModelCallFailure(new ModelResponseShapeError('reply was not JSON', ['not JSON'])), false);
 	// The wordings it had are unchanged.
 	for (const text of ['claude --print failed: x', 'claude exited with 2.', 'codex emitted error event: x', 'codex exited with 1.']) {
 		assert.equal(isModelCallFailure(new Error(text)), true, text);

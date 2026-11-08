@@ -302,6 +302,7 @@ test('citations: a badly formed path-only ref under analyze-bundle is refused, a
 });
 
 test('citations: a root-level file name alongside prose is refused', () => {
+	assert.equal(checkNonPathCitationRefs([{ id: 'c1', kind: 'analyze-bundle', ref: 'read:manifest:package.json controls dependencies' }]).ok, false, 'a file name attached to a colon label');
 	assert.match(refused('read:manifest: package.json controls dependencies')[0]!, /beside other text/);
 });
 

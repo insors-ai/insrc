@@ -1,0 +1,273 @@
+{
+  "meta": {
+    "workflow": "code-review",
+    "runId": "store-cda117b8-830d-4f5d-84fe-d352be9c8d7c",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T11:51:56.602Z",
+    "epicCreatedAt": "2026-11-08T11:46:34.545Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 2,
+    "epicHash": "f4ee5748836ddd1f",
+    "storyId": "s1",
+    "reviewedBy": "daemon",
+    "epicSlug": "refuse-url-attached-colon-label-lld",
+    "standalone": true,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "711176a124666ee83d20f2f2fcd0ad43e8dfd9181a2642698a6a5609cf23ba39",
+        "at": "2026-11-08T11:51:56.602Z",
+        "by": {
+          "id": "insrc:code-review",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "revision": 1
+  },
+  "body": {
+    "kind": "code-review",
+    "format": "task-based",
+    "storyId": "s1",
+    "status": "passed",
+    "reviews": [
+      {
+        "reviewId": "cr-f4ee5748836ddd1f-s1",
+        "attempt": 1,
+        "storyId": "s1",
+        "reviewer": "daemon",
+        "status": "passed",
+        "finalScopeIdentity": "b55334dec8406a2ef1ed561d2500f9b7b50b7b226396d8749ce89919df23cb94",
+        "attributionIdentity": "12388bfc4e1a8e0e4b409c9d309c735c14f8abcc58f7438c28b32391c5c15c2f",
+        "taskScopeIdentities": [
+          {
+            "taskId": "s1",
+            "identity": "895df8f5689d70d5350ff9e7f9ffc18e6a4d10155f65e18a45fa8b66534215b9"
+          }
+        ],
+        "scope": {
+          "reviewRevision": "c4a07a8c006b55e65988699364117b038838b26a",
+          "finalScope": {
+            "revision": "c4a07a8c006b55e65988699364117b038838b26a",
+            "identity": "b55334dec8406a2ef1ed561d2500f9b7b50b7b226396d8749ce89919df23cb94",
+            "entries": [
+              {
+                "originChangeIndex": 0,
+                "path": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "blobOid": "347ba2792c4058d9aa20d6b0435b6f2f8908465a",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      153,
+                      154
+                    ]
+                  },
+                  {
+                    "after": [
+                      312,
+                      312
+                    ]
+                  }
+                ]
+              },
+              {
+                "originChangeIndex": 1,
+                "path": "src/workflow/synthesizer.ts",
+                "blobOid": "4274ed9ec6de7423e5fe8692fd95959636843241",
+                "findingScope": "selected",
+                "segments": [
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  }
+                ]
+              }
+            ],
+            "dispositions": [
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    153,
+                    154
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      153,
+                      154
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 0,
+                  "segmentIndex": 1
+                },
+                "sourcePart": {
+                  "after": [
+                    312,
+                    312
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      312,
+                      312
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              },
+              {
+                "source": {
+                  "changeIndex": 1,
+                  "segmentIndex": 0
+                },
+                "sourcePart": {
+                  "after": [
+                    260,
+                    260
+                  ]
+                },
+                "kind": "surviving",
+                "finalSegments": [
+                  {
+                    "after": [
+                      260,
+                      260
+                    ]
+                  }
+                ],
+                "replacementWitnesses": []
+              }
+            ],
+            "selectedTaskIds": [
+              "s1"
+            ],
+            "testCount": 1,
+            "attributionIdentity": "12388bfc4e1a8e0e4b409c9d309c735c14f8abcc58f7438c28b32391c5c15c2f",
+            "attributionState": "accepted",
+            "tasks": [
+              {
+                "taskId": "s1",
+                "changeIndexes": [
+                  0,
+                  1
+                ],
+                "testIndexes": [
+                  0
+                ],
+                "decision": {
+                  "action": "initial"
+                },
+                "identity": "895df8f5689d70d5350ff9e7f9ffc18e6a4d10155f65e18a45fa8b66534215b9"
+              }
+            ]
+          },
+          "storyId": "s1",
+          "documents": {
+            "issue": {
+              "path": "docs/standalone/refuse-url-attached-colon-label-lld-E20261108f4ee5748/ISSUE.md",
+              "commit": "c4a07a8c006b55e65988699364117b038838b26a"
+            }
+          },
+          "reviewSet": [
+            {
+              "commit": "51785ec0cff1c03e2ec85a7e108a98d8d2d1ec73",
+              "parent": "ef63d9b9a896b556faf8b98af7ea87520b3b5aab",
+              "files": [
+                {
+                  "path": "src/workflow/__tests__/lld-authoring-gates.test.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        153,
+                        154
+                      ]
+                    },
+                    {
+                      "after": [
+                        312,
+                        312
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "path": "src/workflow/synthesizer.ts",
+                  "segments": [
+                    {
+                      "after": [
+                        260,
+                        260
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "tasks": [
+          {
+            "taskId": "s1",
+            "status": "passed",
+            "summary": "All submitted changed segments satisfy the issue and acceptance checks. No material defects found. Existing naming, encapsulation, citation kinds, finalize paths and serialized contracts remain intact.",
+            "findings": [],
+            "testCoverage": {
+              "assessment": "verified",
+              "explanation": "Inspected the changed assertions and relevant test bodies/helpers. The regression requires refusal of a colon-attached URL with a query string and checks the diagnostic. Positive assertions cover text-only labels, paths and standalone URLs, including comma/semicolon variants. Existing assertions cover citation-kind exclusions and finalize refusal without writes. The stored-document assertion compares exact strings with one explicit newline and no trimming. Coverage review is complete; this does not establish test execution.",
+              "evidenceReferences": [
+                "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/__tests__/lld-authoring-gates.test.ts",
+                "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/synthesizer.ts",
+                "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/orchestrator.ts"
+              ]
+            },
+            "limitations": [],
+            "advice": [
+              "Optional execution: Tests, typecheck and build were not run. The builder reports 27 passing tests under Node 22; the cited TESTS.md is absent from the pinned commit, so that execution and its tested revision were not independently verified."
+            ],
+            "inspectedReferences": [
+              "c4a07a8c006b55e65988699364117b038838b26a:docs/standalone/refuse-url-attached-colon-label-lld-E20261108f4ee5748/ISSUE.md",
+              "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/synthesizer.ts",
+              "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/__tests__/lld-authoring-gates.test.ts",
+              "51785ec0cff1c03e2ec85a7e108a98d8d2d1ec73:src/workflow/synthesizer.ts",
+              "51785ec0cff1c03e2ec85a7e108a98d8d2d1ec73:src/workflow/__tests__/lld-authoring-gates.test.ts",
+              "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/orchestrator.ts",
+              "c4a07a8c006b55e65988699364117b038838b26a:src/workflow/artifacts/lld.ts",
+              "c4a07a8c006b55e65988699364117b038838b26a:.insrc/artifacts/LLD-546198e11c24c1e3-s1.json",
+              "c4a07a8c006b55e65988699364117b038838b26a:docs/standalone/show-provider-icons-chat-dropdowns-relabel-E20261107546198e1/S001/LLD.md"
+            ],
+            "executedTests": []
+          }
+        ],
+        "summary": "1 selected task assessment(s): passed.",
+        "completedAt": "2026-11-08T11:51:56.170Z",
+        "buildFingerprint": "afbd56f6736536820ba739441b79e7443ab6dd87bfcb82b4d5744104dbc860d4"
+      }
+    ]
+  },
+  "citations": []
+}

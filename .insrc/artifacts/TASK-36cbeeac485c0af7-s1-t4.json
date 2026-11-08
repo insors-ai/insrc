@@ -1,0 +1,92 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-a029dd26-1b73-42e8-863a-e07cc14030c3",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T07:47:07.249Z",
+    "epicCreatedAt": "2026-11-08T07:13:05.866Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "36cbeeac485c0af7",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Record the real client and reported model on client-authored artifacts",
+      "parent": {
+        "entityId": "STORY-36cbeeac485c0af7-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-36cbeeac485c0af7-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "950c63f619d3ea3e5931ba81d8d6dda99da3ec7f69e77dd7fccd11b0af67ce88",
+        "at": "2026-11-08T07:47:07.249Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T07:47:07.250Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Record the real client and reported model on client-authored artifacts",
+    "summary": "Widen the stamp's runner to include 'unknown', add clientAttribution, add optional authorModel to the synthesize input and the workflow-step tool, build the stamp in handleSynthesize from the step context, and forward attribution on the standalone path.",
+    "size": "M",
+    "order": 4,
+    "acceptanceChecks": [
+      "A Codex client with a reported model stamps cli-codex and that model",
+      "An absent, blank or multiline authorModel stamps unknown",
+      "A client with no family stamps runner unknown",
+      "A supplied multi-output attribution stays unchanged on both finalize paths",
+      "The source type-checks with the widened runner and modelSummary prints an unknown stamp"
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "attribution: absent, blank and multiline authorModel stamp unknown"
+      },
+      {
+        "level": "unit",
+        "name": "attribution: a client with no family stamps runner unknown"
+      },
+      {
+        "level": "unit",
+        "name": "attribution: modelSummary prints an unknown stamp"
+      },
+      {
+        "level": "integration",
+        "name": "attribution: a Codex client with a reported model stamps cli-codex and that model"
+      },
+      {
+        "level": "integration",
+        "name": "attribution: a supplied multi-output attribution stays unchanged on both finalize paths"
+      }
+    ],
+    "planTaskId": "t4"
+  },
+  "citations": []
+}

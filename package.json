@@ -143,6 +143,12 @@
     },
     "tedious": {
       "@azure/identity": "^4.14.1"
+    },
+    "@huggingface/transformers": {
+      "sharp": "~0.35.5"
+    },
+    "onnxruntime-node": {
+      "tar": "^7.5.21"
     }
   }
 }

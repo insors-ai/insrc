@@ -11,6 +11,11 @@
  * The main thread owns the vault; a worker's calls are forwarded to it over the hub, so one process makes
  * one Keychain read. With daemon threads off the main thread uses it directly.
  *
+ * A refused Keychain read is remembered for five minutes, in which requests needing it fail at once
+ * without a dialog; the first after that retries, and can prompt again. The same applies to one legacy
+ * name, and it does not hold up any other. A legacy item remains after it is copied, so a failed copy
+ * or a partial migration loses nothing.
+ *
  * Entries are held in a Map, so a name such as `__proto__` is an ordinary key. Decrypted values are never
  * written to disk or logged, and an error never quotes the payload.
  */

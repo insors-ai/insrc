@@ -14154,7 +14154,18 @@
       ],
       "siteCount": 226,
       "sitesDigest": "f95a307abc17c612f3d9df4980bf8d27464f99ea6a80c4a783014ff702405c54",
-      "sourceDigest": "70743d779c331f2e977dc77a79f2437cab0b7165354dd15a637aa9b5c7f13208"
+      "sourceDigest": "88352a48eb47699dfe46923b65274c7a750e53c184a1bba2ec19c3ca150f20e2",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-read",
+        "filesystem-write",
+        "provider-adapter",
+        "provider-backend",
+        "provider-use",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/index.ts": {
       "classification": "daemon-admission-boundary",
@@ -35693,6 +35704,39 @@
       "siteCount": 21,
       "sitesDigest": "d2326f93bf20bc63d3d419be65a35924d680e7f4961f69cafce813285dc23393",
       "sourceDigest": "5d159c3b445acdd2d080c66ccec8dddf224dba07992e0319259bf6f531ad5e64"
+    },
+    "src/shared/keystore.ts": {
+      "classification": "saved-foundation-boundary",
+      "rationale": "The vault over the OS keychain: its only diagnostic logs a secret name when a legacy item cannot be deleted, never a value, and an invalid stored item is never quoted in an error.",
+      "sites": [
+        [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
+          "serialization",
+          "JSON.parse"
+        ],
+        [
+          "serialization",
+          "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
+        ],
+        [
+          "serialization",
+          "serializeVault"
+        ]
+      ],
+      "siteCount": 5,
+      "sitesDigest": "6a02ed3511889345e4f86fe6f994950d7bf3a817ae2f50629d6d99e8a4afd3fc",
+      "sourceDigest": "06062733b76ea52dedd95bf2d71376ee385b3ed8cfd157276ac0283285c876de",
+      "boundaries": [
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/shared/locks/lock-manager.ts": {
       "classification": "shared-transport-foundation",

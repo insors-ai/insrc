@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "580209c90ec285d1402a42f6ae422b618e27d43eb5ca580aa2cf6b35463d820f",
+        "at": "2026-11-08T11:04:57.887Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "146084d04395b88b",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T11:04:57.640Z",
+    "updatedAt": "2026-11-08T11:04:57.640Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-08T10:57:05.313Z",
+    "epicSlug": "make-rejected-code-review-reuse-actionable",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "2f3802c8c",
+        "ranAt": "2026-11-08T11:04:57.640Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/workflow/code-review/task-review/__tests__/attribution-binding.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 9461,
+            "titles": [
+              {
+                "title": "both routes durably accept direct/model mapping before acknowledgement or assessment without diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "offline binding rejects index-only, decision-only, selected task, state and test count tampering",
+                "result": "pass"
+              },
+              {
+                "title": "task identity binds relevant code requirements documents and full tests but excludes unrelated revision movement",
+                "result": "pass"
+              },
+              {
+                "title": "changed evidence names the affected reuse task and both routes accept corrected reassessment without losing eligible reuse",
+                "result": "pass"
+              },
+              {
+                "title": "fresh native/controller resume restores exact mixed decisions and summary before a planned reuse completes",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

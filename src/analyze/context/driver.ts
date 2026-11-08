@@ -1115,7 +1115,7 @@ async function runFinalStructuredEmit(
 				const unrecoverable = new ShaperSchemaUnrecoverable(structuredOutputRetries, [outcome.kind === 'failed' ? outcome.reason : 'the call failed']);
 				unrecoverable.cause = cause;
 				throw unrecoverable;
-			}
+			} // a call that failed is not divided: its error is the failure
 			if (nothingToDivide) {
 				throw new HandlingBudgetError(
 					`the conversation alone does not fit a call and there is no tool result to divide: ${outcome.kind === 'failed' ? outcome.reason : 'the provider refused it as too large'}`,

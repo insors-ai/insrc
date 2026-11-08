@@ -9,6 +9,14 @@ import keytar from 'keytar';
 
 const SERVICE = 'insrc';
 
+/** The OS keychain refused or failed an access. */
+export class KeystoreUnavailableError extends Error {
+  constructor(options?: ErrorOptions) {
+    super('The credential store is unavailable.', options);
+    this.name = 'KeystoreUnavailableError';
+  }
+}
+
 /**
  * Retrieve a key from the OS keychain.
  */

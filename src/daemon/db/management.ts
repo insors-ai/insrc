@@ -11,6 +11,7 @@ import { canonicalRequestJson, SavedTicketAuthority, TicketError } from './manag
 import { connectionsPath, loadConnections } from './config.js';
 import { credentialValues, materializeDraft, ProfileError, safeConnection } from './driver-profiles.js';
 import { CredentialGenerations, referencedSecrets } from './secrets.js';
+import { KeystoreUnavailableError } from '../../shared/keystore.js';
 import { ManagedRegistry, ManagedStoreError } from './managed-store.js';
 import type { RegistrySnapshot } from './managed-store.js';
 import type { DriverPool } from './pool.js';
@@ -59,10 +60,15 @@ export class ManagementServiceError extends Error {
 		this.name = 'ManagementServiceError';
 	}
 }
+/** The OS keychain, not the registry, is why this failed: the client gets 'secret-unavailable' and may retry. */
+export function isKeystoreFailure(error: unknown): boolean {
+	return (error instanceof TicketError && error.code === 'secret-unavailable') || error instanceof KeystoreUnavailableError
+		|| (error instanceof Error && error.cause instanceof KeystoreUnavailableError);
+}
 export function managementRejection(error: unknown): Extract<MutationOutcome, {
 	status: 'rejected';
 }> {
-	const code = error instanceof DriverLogPolicyError || error instanceof ManagementServiceError || error instanceof ManagedStoreError || error instanceof ConnectionUseError || error instanceof TicketError || error instanceof ProfileError || error instanceof ManagementInputError ? error.code : 'recovery-required';
+	const code = isKeystoreFailure(error) ? 'secret-unavailable' : error instanceof DriverLogPolicyError || error instanceof ManagementServiceError || error instanceof ManagedStoreError || error instanceof ConnectionUseError || error instanceof TicketError || error instanceof ProfileError || error instanceof ManagementInputError ? error.code : 'recovery-required';
 	const safe = new ManagementServiceError(code === 'unsupported-filesystem' ? 'recovery-required' : code);
 	return { status: 'rejected', code: safe.code, message: safe.message };
 }

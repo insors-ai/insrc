@@ -6,7 +6,7 @@ import type { TrustedRpcContext } from './request-context.js';
 import type { ManagementRequestContext, ManagementCapabilities, MutationRequest, DraftTestRequest, EffectiveDraft } from '../shared/connection-management.js';
 import { parseRemovalStateRequest, parseDraftTestRequest, parseConnectionKey, parseMutationRequest, parseOperationTicket, ManagementInputError } from '../shared/connection-management-wire.js';
 import { canonicalRequestJson } from './db/management-tickets.js';
-import { ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
+import { isKeystoreFailure, ManagementServiceError, managementRejection, savedManagementFor } from './db/management.js';
 import { connectionTestSupervisor, DraftTestAdmissionError } from './db/draft-test.js';
 import { prepareRuntimeConfig } from './db/runtime-config.js';
 import { ensureDefaultManagedRoot } from './db/management-defaults.js';
@@ -43,13 +43,28 @@ function trusted(context: TrustedRpcContext | undefined): TrustedRpcContext {
 export function managementContext(repoRoot: string, context: TrustedRpcContext): ManagementRequestContext {
 	return { connectionIdentity: context.connectionIdentity, access: { lookupRoot: repoRoot, managementRepoRoot: repoRoot, daemonEpoch: context.daemonEpoch } };
 }
+/** Opens the repository's saved connections on first use; a keystore failure is the request's answer, and the next request retries. */
+async function openOnDemand(repoRoot: string): Promise<void> {
+	if (savedManagementFor(repoRoot))
+		return;
+	try {
+		await ensureDefaultManagedRoot(repoRoot);
+	}
+	catch (error) {
+		if (isKeystoreFailure(error))
+			throw new ManagementServiceError('secret-unavailable');
+	}
+}
 async function owner(repoRoot: string) {
+	await openOnDemand(repoRoot);
 	const service = savedManagementFor(repoRoot);
 	if (!service)
 		throw new ManagementServiceError(await managementMarkerExists(connectionsPath(repoRoot)) ? 'recovery-required' : 'upgrade-required');
 	return service;
 }
 async function safeList(repoRoot: string, context: TrustedRpcContext) {
+	if (await managementMarkerExists(connectionsPath(repoRoot)))
+		await openOnDemand(repoRoot);
 	const service = savedManagementFor(repoRoot);
 	if (service)
 		return service.list(managementContext(repoRoot, context));

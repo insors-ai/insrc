@@ -8,7 +8,7 @@
     "src/daemon/connection-management-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "Default features retain per-action admission. Capability selection lazily opens only registered fresh roots, deduplicated under daemon ownership; existing legacy or corrupted registries fail closed. Removed the historical audit dependency, not ticket, session, root or privacy authorization.",
-      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3"
+      "sourceDigest": "69f2f607844f102c0df7425f7947d7c7b24c26c741f2dbe395567a133a8aa49f"
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -18,7 +18,7 @@
     "src/daemon/db-rpc.ts": {
       "classification": "owner-rpc-boundary",
       "rationale": "S004: legacy Saved upsert/delete compatibility is unchanged. A probe that borrows a persisted config now holds the existing Saved resolver lease through the supervisor drain; new unsaved drafts do not gain a fictitious stored revision. No session-to-Saved downgrade.",
-      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da"
+      "sourceDigest": "2057e9562ad68ff7e69a2d44edec72c7284fca485e90a1b1afb8fe197fee2b6d"
     },
     "src/daemon/db/draft-test.ts": {
       "classification": "saved-foundation-boundary",
@@ -28,7 +28,7 @@
     "src/daemon/db/management.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S004: existing Saved root gate, MAC/ticket authority, registry and credential journal atomically remove one selected revision. Ambiguous commit retains the old runtime barrier until exact same-ticket inode/receipt reconciliation. Detach precedes asynchronous cleanup; credential and resource phases are independently truthful. No source deletion or new store.",
-      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
+      "sourceDigest": "7571c8a670b382de86d1a4a82df4ac37cf89265d2355b43095a9e3015c370ce7"
     },
     "src/daemon/db/pool.ts": {
       "classification": "resolver-resource-foundation",
@@ -38,7 +38,7 @@
     "src/daemon/db/secrets.ts": {
       "classification": "saved-foundation-boundary",
       "rationale": "S004: metadata-only removal preparation reuses the protected sc2 journal, owns no staged replacement secrets, and selects only obsolete owned refs. Credential recovery uses existing fences and protected receipts; no plaintext credential is reconstructed for removal/state/retry. Protected cleanup refs remain internal, never sc6 wire/log values.",
-      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca"
+      "sourceDigest": "2275ccdcb49476e70197fb61afe9ea70579971b6c538a17219aeca41f2792d81"
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "session-private-generations",
@@ -8527,7 +8527,14 @@
       ],
       "siteCount": 7,
       "sitesDigest": "913aee092f747c95191abcbc3ec76ec0e578ed2e8b8be18189cd89cd258a7d84",
-      "sourceDigest": "2137d7df5c6e9815f0099510b1fac96d880da0c871f6274875079a295f6caaf3"
+      "sourceDigest": "69f2f607844f102c0df7425f7947d7c7b24c26c741f2dbe395567a133a8aa49f",
+      "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:symbol:savedConnectionResolver",
+        "connection-use",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/connection-session-rpc.ts": {
       "classification": "session-transport-authority",
@@ -8741,7 +8748,14 @@
       ],
       "siteCount": 13,
       "sitesDigest": "74e4a4c454f0c6e248853fb46a7a54c1fa154b0ca6c8431a78a514d8437d52f6",
-      "sourceDigest": "397f78255d4354635920fc798568f395cecf9d8f52099424f74329eb0a0237da"
+      "sourceDigest": "2057e9562ad68ff7e69a2d44edec72c7284fca485e90a1b1afb8fe197fee2b6d",
+      "boundaries": [
+        "acquisition:resolver-member",
+        "acquisition:symbol:savedConnectionResolver",
+        "connection-use",
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/daemon/db/config.ts": {
       "classification": "saved-foundation-boundary",
@@ -10839,7 +10853,13 @@
       ],
       "siteCount": 61,
       "sitesDigest": "69a89181cd97a2eac354dc8842e6526bd6acc5a1d1265e2d3becbe4119e79fe3",
-      "sourceDigest": "1290c8280312d6924ea262463762e494841f908ab114cd270bf254e74ada51e5"
+      "sourceDigest": "fa525ca1a21a571b62bb9ba7855f11a39419ef208d4d240599b102491b6f9516",
+      "boundaries": [
+        "filesystem-open",
+        "filesystem-read",
+        "filesystem-write",
+        "serialization"
+      ]
     },
     "src/daemon/db/management-adoption.ts": {
       "classification": "saved-foundation-boundary",
@@ -10907,12 +10927,20 @@
           "Buffer.alloc"
         ],
         [
+          "diagnostic",
+          "getLogger"
+        ],
+        [
           "serialization",
           "JSON.stringify"
         ],
         [
           "serialization",
           "JSON.stringify"
+        ],
+        [
+          "diagnostic",
+          "log.warn"
         ],
         [
           "storage-call",
@@ -10967,9 +10995,17 @@
           "writeProtected"
         ]
       ],
-      "siteCount": 16,
-      "sitesDigest": "b95e5aa395d1b067c555d11538e8bca63b13fd8d75a99d30e3ffebb9f827eaa3",
-      "sourceDigest": "16ee93d6595be26bc235e5cef4272d3a54768e28808a71fe11710aa0eedb14ee"
+      "siteCount": 18,
+      "sitesDigest": "9ef57259ec65a3c7af8ecb39f25e88df5ae687bc5e63b33c4911e1f9c0d17ef5",
+      "sourceDigest": "de4eaab06b4b3bf4ab9033e2d332e15620bf8390daf9030e7992d0d6ffa53da2",
+      "boundaries": [
+        "acquisition:acquire-call",
+        "diagnostic",
+        "filesystem-read",
+        "filesystem-write",
+        "serialization",
+        "storage-call"
+      ]
     },
     "src/daemon/db/management-enablement.ts": {
       "classification": "deployment-code-evidence",
@@ -11537,7 +11573,14 @@
       ],
       "siteCount": 47,
       "sitesDigest": "71f852b6ed2d2f2ce2d0f83ef7ea80e2b5a9cfe8afed157738147b5e138b9d4e",
-      "sourceDigest": "0cca96ca11e7d5e9172928c6f042e74d4cde6130f4bdc06b8e1b018355a4b489"
+      "sourceDigest": "7571c8a670b382de86d1a4a82df4ac37cf89265d2355b43095a9e3015c370ce7",
+      "boundaries": [
+        "acquisition:pool-member",
+        "acquisition:symbol:DriverPool",
+        "connection-use",
+        "filesystem-read",
+        "serialization"
+      ]
     },
     "src/daemon/db/memory-file-sources.ts": {
       "classification": "resolver-resource-foundation",
@@ -12592,7 +12635,11 @@
       ],
       "siteCount": 10,
       "sitesDigest": "8a749513dc120a7b98e858b783d553d028eefc0b7747a8f52a5d2a9ed538bf73",
-      "sourceDigest": "982c8c499c437d49643df71d65dfe01180eaf200081deb578c05b3ea53db61ca"
+      "sourceDigest": "2275ccdcb49476e70197fb61afe9ea70579971b6c538a17219aeca41f2792d81",
+      "boundaries": [
+        "diagnostic",
+        "serialization"
+      ]
     },
     "src/daemon/db/session-entries.ts": {
       "classification": "session-private-generations",
@@ -14227,14 +14274,6 @@
           "listRepos"
         ],
         [
-          "storage-call",
-          "listRepos"
-        ],
-        [
-          "storage-call",
-          "listRepos"
-        ],
-        [
           "diagnostic",
           "log.error"
         ],
@@ -14335,10 +14374,6 @@
           "log.warn"
         ],
         [
-          "diagnostic",
-          "log.warn"
-        ],
-        [
           "filesystem-write",
           "mkdirSync"
         ],
@@ -14379,9 +14414,17 @@
           "writePid"
         ]
       ],
-      "siteCount": 69,
-      "sitesDigest": "cd1632aac39fe9a7833e281606a62214b103a165a4893dd3bf0bb538a0a48148",
-      "sourceDigest": "525058ac08030e0a98baa49292f562d8485dca7d54b0ceb05016f16b6497a458"
+      "siteCount": 66,
+      "sitesDigest": "26179eb865ebf467ae0ad2ee08ed5b868d73b8766942c7d53a6596f27ff7ac16",
+      "sourceDigest": "d09d6ac5d5a1227731dd9b802ed40c5c2b2de2988e5bc5ef3bebbb54d54533bc",
+      "boundaries": [
+        "diagnostic",
+        "filesystem-write",
+        "provider-adapter",
+        "serialization",
+        "storage-call",
+        "unresolved-call"
+      ]
     },
     "src/daemon/lifecycle-registry.ts": {
       "classification": "daemon-admission-boundary",

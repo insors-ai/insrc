@@ -1,0 +1,100 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-9f1df683-ad24-4afa-9eff-e75b667c492f",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.082Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Build the dedicated review-worker runtime and bootstrap supervision",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t2",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c4a59348375131f9ce8a38d9fd5cbcf90ce2c4a2594cf26fa703f2b0cb67a2f9",
+        "at": "2026-11-09T07:42:48.082Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.084Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Build the dedicated review-worker runtime and bootstrap supervision",
+    "summary": "Add proposed src/daemon/threads/review-worker.ts using existing startWorker/startDaemonWorker, hub channels, maintenance/store guards and status infrastructure. Each instance hosts exactly one existing code or design family coordinator. Extend parent startup supervision for the approved ready-plus-durable-save bound; this is not a task/model deadline.",
+    "size": "M",
+    "order": 7,
+    "acceptanceChecks": [
+      "Worker startup works from source and compiled out paths and joins existing daemon model/tool/store/lock configuration.",
+      "The worker is dedicated to one canonical review identity and rejects other identities/families or stale incarnation messages.",
+      "Parent-owned 30-second bootstrap deadline starts before creation and ends after readiness plus durable admission-save acknowledgment; late messages cannot revive a closing instance.",
+      "Never-ready and pre-save-hung workers return named failures promptly; resource/lock/store cleanup proceeds with a targeted fence rather than blocking the request indefinitely.",
+      "Failure cannot silently fall back to a main/session worker or introduce an activation flag."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: real worker joins guards and starts from the registered entrypoint"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-bootstrap.test.ts: never-ready and pre-save-hung workers fail within the parent bound and reject late acknowledgments"
+      }
+    ],
+    "planTaskId": "t7"
+  },
+  "citations": []
+}

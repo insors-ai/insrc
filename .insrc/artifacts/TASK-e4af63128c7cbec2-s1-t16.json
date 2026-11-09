@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-1d5c1fbb-bdbd-45de-83a4-67e8dea08f3a",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.114Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Verify compiled packaging and document deployment/recovery",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t15",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "a93196408310bd88ef44962b52e157c44bbb635df51cc760f9e37d3547aea84b",
+        "at": "2026-11-09T07:42:48.114Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.116Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Verify compiled packaging and document deployment/recovery",
+    "summary": "Run package and supported-client checks on the complete implementation, prove compiled review-worker startup and both family protocol paths in isolated fixtures, and update docs/daemon.md and docs/workflow.md with worker ownership, pending admission, targeted recovery/local clearance and release coordination.",
+    "size": "M",
+    "order": 16,
+    "acceptanceChecks": [
+      "npm run build produces working out/ worker entrypoints, native helpers and schemas; compiled fixture starts code/design review workers without a source tree dependency.",
+      "Relevant backend/MCP/provider/process/thread regression suites, VS Code typecheck/tests and affected JetBrains DTO tests pass, or environmental/baseline limits are explicitly evidenced without claiming coverage not performed.",
+      "Docs describe local-client broker trust accurately, retain explicit recovery and no new activation flags, and explain that the separate TU1 projection-limit failure is not solved by isolation.",
+      "Create one committed whole-story review packet after all tasks, pin exactly the approved route documents/final source and include full test cases/results. Run the required independent code review before BUILD approval; do not add intermediate per-task independent review rounds.",
+      "Produce release/recovery instructions that require publication/deployment only after independent whole-story review and human BUILD approval, coordinated handling of active reviews, MCP reconnect and a controlled deployed smoke after restart. Validate pre-deployment behavior with compiled fixtures; this Task does not require a deployment or post-deployment result before BUILD approval."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: compiled worker entrypoints and both review families start from an isolated built package"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-package.test.ts: release instructions retain explicit recovery local trust and post-approval smoke ordering"
+      }
+    ],
+    "planTaskId": "t16"
+  },
+  "citations": []
+}

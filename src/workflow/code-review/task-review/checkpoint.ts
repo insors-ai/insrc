@@ -6,6 +6,8 @@ import { constants } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { CheckpointSchema, decodeReview, reviewJsonLimit, requireReview } from './contracts.js';
 import type { ReviewCheckpoint } from './contracts.js';
+import type { StoredReviewCheckpoint } from './contracts.js';
+import { decodeStoredCheckpoint } from './admission-checkpoint.js';
 import { validateSavedAttribution } from './attribution-binding.js';
 
 export function checkpointPath(project: string, id: string): string {
@@ -26,6 +28,14 @@ export function checkpointBytes(checkpoint:ReviewCheckpoint):string{return JSON.
 export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
  const serialized = checkpointBytes(checkpoint);
+ return writeCheckpoint(path, serialized, io);
+}
+/** The same atomic writer for the versioned admission contract. Production
+ * emission starts only when the worker adapters are cut over. */
+export async function saveStoredCheckpoint(path: string, checkpoint: StoredReviewCheckpoint, io: CheckpointIO = defaultIO): Promise<void> {
+ return writeCheckpoint(path, JSON.stringify(decodeStoredCheckpoint(checkpoint), null, 2) + '\n', io);
+}
+async function writeCheckpoint(path: string, serialized: string, io: CheckpointIO): Promise<void> {
  requireReview(Buffer.byteLength(serialized) <= reviewJsonLimit(), 'checkpoint', 'JSON exceeds limit');
  const temporary = `${path}.${randomUUID()}.tmp`;
  let created = false, renameStarted = false, replaced = false, failure: { cause: unknown } | undefined;
@@ -66,14 +76,19 @@ export async function saveCheckpoint(path: string, checkpoint: ReviewCheckpoint,
 
 /** Missing is valid for first admission; symlinks and oversized/corrupt files are not. */
 export async function loadCheckpoint(path: string): Promise<ReviewCheckpoint | undefined> {
+ const checkpoint = await loadStoredCheckpoint(path);
+ if (!checkpoint) return undefined;
+ requireReview(checkpoint.schemaVersion === 1, 'checkpoint', 'Admission checkpoint requires a version-2-aware consumer');
+ return checkpoint;
+}
+/** Discriminating reader for worker-aware consumers; never upgrades history. */
+export async function loadStoredCheckpoint(path: string): Promise<StoredReviewCheckpoint | undefined> {
  let file;
  try { file = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW); }
  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
  try {
   const stat = await file.stat();
   requireReview(stat.isFile() && stat.size <= reviewJsonLimit(), 'checkpoint', 'Expected bounded checkpoint file');
-  const checkpoint = decodeReview(CheckpointSchema, JSON.parse(await file.readFile('utf8')));
-  for (const attempt of checkpoint.attempts) { validateFailureDiagnostics(attempt); validateSavedAttribution(attempt); }
-  return checkpoint;
+  return decodeStoredCheckpoint(JSON.parse(await file.readFile('utf8')));
  } finally { await file.close(); }
 }

@@ -31,6 +31,8 @@ import { registerBuiltinRuntimes } from '../../runtimes/bootstrap.js';
 import { _setOrchestratorStagesForTest, runAnalyze } from '../driver.js';
 import { purgeRunForTests, readRunRecord } from '../persistence.js';
 
+/** What a call of the aggregate step may hold beyond the 16,000 characters kept back: small enough that its three inputs are not one part. */
+const AGGREGATE_ROOM = 4_500;
 let sandbox: string;
 let small: string;
 
@@ -104,13 +106,16 @@ test('failure data including partFailures and upstream reaches RunFailure.data u
 	// The aggregate step is given the size L (the table divides it) and every call of its model fails at the transport.
 	_setOrchestratorStagesForTest({ executor: args => runExecutor({ ...args, intent: { ...args.intent, scope: 'L' as AnalyzeScope } }) });
 	const runId = `aggregate-failure-orch-${Math.floor(Math.random() * 1e9).toString(16)}`;
+	let aggregateCalls = 0;
 	const routing = { router: { resolveProviderForRole: (role: string) => {
 		const completeStructured = async (_m: unknown, schema: unknown): Promise<unknown> => {
 			if (role === 'analyze.plan') return fourTaskPlan(small, 'XS');
-			if (role === 'analyze.aggregate') throw new ModelCallFailedError('claude exited with 1.', { cause: new Error('socket closed') });
+			// Every call fails with its own words, so each part's cause chain can be told from the others.
+			if (role === 'analyze.aggregate') { const n = ++aggregateCalls; throw new ModelCallFailedError(`claude exited with 1 on call ${n}.`, { cause: new Error(`socket closed on call ${n}`) }); }
 			return smallest(schema);
 		};
-		return { provider: { completeStructured } as unknown as LLMProvider };
+		// A small input budget for the aggregate step only, so its inputs are several parts.
+		return { provider: { completeStructured, ...(role === 'analyze.aggregate' ? { inputBudgetChars: 16_000 + AGGREGATE_ROOM } : {}) } as unknown as LLMProvider };
 	} } } as unknown as RoutingSeamContext;
 	try {
 		const result = await runWithRoutingContext(routing, () => runAnalyze({ runId, userPrompt: 'what is here', scopeRef: { kind: 'repo', value: small }, targetHint: 'code' }));
@@ -128,11 +133,77 @@ test('failure data including partFailures and upstream reaches RunFailure.data u
 		assert.equal(data.aggregate.reason, 'model-failed');
 		assert.deepEqual(data.aggregate.upstream.map(u => u.taskId).sort(), ['t01', 't02', 't03']);
 		assert.ok(data.aggregate.upstream.some(u => u.template === 'code.discovery.modules'));
-		assert.ok(data.aggregate.partFailures.length >= 1);
-		assert.equal(data.aggregate.partFailures[0]?.kind, 'call-failed');
-		assert.match(data.aggregate.partFailures[0]?.cause?.message ?? '', /claude exited with 1\./);
-		assert.equal(data.aggregate.partFailures[0]?.cause?.cause?.message, 'socket closed');
+		// Every failed part is kept, each with its own cause chain: none is dropped and none copies another's.
+		assert.ok(data.aggregate.partFailures.length >= 2, `several parts failed: ${data.aggregate.partFailures.length}`);
+		const outer = data.aggregate.partFailures.map(f => f.cause?.message);
+		const inner = data.aggregate.partFailures.map(f => f.cause?.cause?.message);
+		assert.equal(new Set(outer).size, outer.length, 'distinct outer messages');
+		assert.equal(new Set(inner).size, inner.length, 'distinct inner messages');
+		for (const f of data.aggregate.partFailures) {
+			assert.equal(f.kind, 'call-failed');
+			const n = /call (\d+)\./.exec(f.cause?.message ?? '')?.[1];
+			assert.ok(n !== undefined, `outer message names its call: ${f.cause?.message}`);
+			assert.equal(f.cause?.cause?.message, `socket closed on call ${n}`, 'the inner message belongs to the same call');
+		}
 		// The stored run record holds the same failure, as JSON.
 		assert.deepEqual(readRunRecord(runId)?.error?.data, JSON.parse(JSON.stringify(result.error.data)));
 	} finally { purgeRunForTests(runId); }
+});
+
+/** A whole run whose aggregate step is given `size` and a call budget of 16,000 + `room` characters, failing as `fail` says. */
+async function failedRun(label: string, size: AnalyzeScope, room: number, fail: (n: number) => Error): Promise<{ data: Record<string, any>; runId: string; stored: unknown }> {
+	_setOrchestratorStagesForTest({ executor: args => runExecutor({ ...args, intent: { ...args.intent, scope: size } }) });
+	const runId = `aggregate-failure-${label}-${Math.floor(Math.random() * 1e9).toString(16)}`;
+	let calls = 0;
+	const routing = { router: { resolveProviderForRole: (role: string) => {
+		const completeStructured = async (_m: unknown, schema: unknown): Promise<unknown> => {
+			if (role === 'analyze.plan') return fourTaskPlan(small, 'XS');
+			if (role === 'analyze.aggregate') throw fail(++calls);
+			return smallest(schema);
+		};
+		return { provider: { completeStructured, ...(role === 'analyze.aggregate' ? { inputBudgetChars: 16_000 + room } : {}) } as unknown as LLMProvider };
+	} } } as unknown as RoutingSeamContext;
+	try {
+		const result = await runWithRoutingContext(routing, () => runAnalyze({ runId, userPrompt: 'what is here', scopeRef: { kind: 'repo', value: small }, targetHint: 'code' }));
+		assert.equal(result.ok, false);
+		if (result.ok) throw new Error('the run succeeded');
+		const stored = readRunRecord(runId)?.error?.data;
+		assert.deepEqual(stored, JSON.parse(JSON.stringify(result.error.data)), 'the stored failure is the returned failure');
+		return { data: { code: result.error.code, ...(result.error.data as Record<string, unknown>) }, runId, stored };
+	} finally { purgeRunForTests(runId); }
+}
+
+/** Every upstream record the aggregate was given, with its producer, params and value, as the task records hold them. */
+function assertWholeUpstream(upstream: Array<{ taskId: string; template: string; params: unknown; value: unknown }>): void {
+	assert.deepEqual(upstream.map(u => u.taskId).sort(), ['t01', 't02', 't03']);
+	for (const u of upstream) {
+		assert.equal(typeof u.template, 'string');
+		assert.ok(u.params !== undefined && typeof u.params === 'object', `${u.taskId} keeps its params`);
+		assert.ok(u.value !== undefined && u.value !== null, `${u.taskId} keeps its value`);
+	}
+	assert.deepEqual(upstream.find(u => u.taskId === 't02')?.params, { module: 'src' });
+	assert.deepEqual(upstream.find(u => u.taskId === 't01')?.params, { scopeRef: { kind: 'repo', value: small } });
+}
+
+test('an input that fits no call reaches RunFailure.data as the typed budget failure, with every unadmittable part and the whole upstream', async () => {
+	// The call may hold less than the prompt and one input: nothing is admitted, so no call is made.
+	const { data } = await failedRun('budget', 'L', 3_500, n => new Error(`unexpected call ${n}`));
+	assert.equal(data['code'], 'executor-aggregator-failed');
+	assert.equal(data['aggregate'].kind, 'answer-step');
+	assert.equal(data['aggregate'].reason, 'input-does-not-fit');
+	assert.ok(data['aggregate'].partFailures.length >= 1);
+	for (const f of data['aggregate'].partFailures) { assert.equal(f.kind, 'unadmittable'); assert.ok(String(f.reason).length > 0); }
+	assertWholeUpstream(data['aggregate'].upstream);
+});
+
+test('a single pass that fails keeps the original error and its cause in RunFailure.data', async () => {
+	// Size XS is answered in one pass: the provider's own error is what fails the aggregate, not a typed division failure.
+	const { data } = await failedRun('single', 'XS', 60_000, () => new ModelCallFailedError('claude exited with 1 on the one call.', { cause: new Error('socket closed on the one call') }));
+	assert.equal(data['code'], 'executor-aggregator-failed');
+	// A plain error is kept as itself: its name, its words and its cause chain.
+	assert.equal(data['aggregate'].kind, 'error', JSON.stringify(data['aggregate']).slice(0, 300));
+	assert.match(data['aggregate'].message, /claude exited with 1 on the one call\./);
+	// The provider's error is the cause of the kept error, and its own cause is below it.
+	assert.match(data['aggregate'].cause?.message ?? '', /claude exited with 1 on the one call\./);
+	assert.equal(data['aggregate'].cause?.cause?.message, 'socket closed on the one call');
 });

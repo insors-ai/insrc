@@ -7,8 +7,9 @@ const object = (value:unknown):Record<string,unknown> => value && typeof value==
 /** Version/scope interpretation only. Approval events and checkpoint cleanup remain S3. */
 export function inspectTaskCompletion(input:unknown, build:unknown, epicHash:string, storyId:string):{counts:{high:number;med:number;low:number};gap?:string} {
  const head=object(input),meta=object(head['meta']);
- requireReview(meta['workflow']==='code-review' && meta['schemaVersion']===2 && meta['epicHash']===epicHash && meta['storyId']===storyId,'CR','Unknown version or mismatched CR identity');
+ requireReview(meta['workflow']==='code-review' && [2,3].includes(meta['schemaVersion'] as number) && meta['epicHash']===epicHash && meta['storyId']===storyId,'CR','Unknown version or mismatched CR identity');
  const body=validateTaskBody(head['body']);
+ requireReview((meta['schemaVersion']===3)===!!body.admissionFailures,'CR','CR capability does not match preserved admission history');
  requireReview(body.storyId===storyId,'storyId','Foreign story body');
  const counts={high:0,med:0,low:0};
  for(const review of latestReviewSummaries(body.reviews)) for(const task of review.tasks) for(const finding of task.findings) counts[finding.severity==='HIGH'?'high':finding.severity==='MED'?'med':'low']++;

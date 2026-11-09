@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-f7872759-8e29-4d7b-b705-28a4f7349118",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-08T18:32:29.881Z",
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Qualify packed consumers and store compatibility",
+      "parent": {
+        "entityId": "STORY-46667edffe5cc451-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-46667edffe5cc451-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 3"
+        },
+        {
+          "entityId": "TASK-46667edffe5cc451-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "651c9a95a0f0492fcb37db2e37e05f2f72e98314c281995893a68d054449dd81",
+        "at": "2026-11-08T18:32:29.881Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-08T18:32:29.883Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Qualify packed consumers and store compatibility",
+    "summary": "Run the exact tarball from t4 on macOS and Linux under Node 22.22.1. Extend independent qualification to exercise a populated store from the preceding release and verify the approved backup restoration procedure.",
+    "size": "M",
+    "order": 5,
+    "acceptanceChecks": [
+      "Capture actual native loading and package export smoke evidence for both platforms, with ordinary npm optional dependency behavior.",
+      "Verify records, vectors, pending queue and completed receipts from the preceding release in the upgraded package. Restore a verified consistent backup into scratch and open it with the previous artifact."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "Run packed project-memory API and native binding smoke on macOS and Linux Node 22.22.1"
+      },
+      {
+        "level": "integration",
+        "name": "Open populated pre-upgrade fixture and verify records, vectors, queue and receipts, then rehearse the approved restore in scratch"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

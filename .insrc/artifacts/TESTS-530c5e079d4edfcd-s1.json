@@ -1,0 +1,274 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 2,
+        "contentHash": "fab180018fb99d9c8f8fd3d01f5ea2958cc2860d63c9142148f61de7a37f0f9f",
+        "at": "2026-11-09T09:23:41.109Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "530c5e079d4edfcd",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T09:21:52.621Z",
+    "updatedAt": "2026-11-09T09:23:40.858Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T09:08:21.565Z",
+    "epicSlug": "fail-clearly-empty-planner-catalog-name",
+    "revision": 2
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "7efbf01e6",
+        "ranAt": "2026-11-09T09:23:40.858Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts"
+            ]
+          },
+          {
+            "name": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts"
+            ]
+          },
+          {
+            "name": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/analyze/planner/__tests__/driver-unit.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/cli-codex-strict-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1368,
+            "titles": [
+              {
+                "title": "a codex structured completion sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session sends the strict form of a non-strict schema and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the codex copy of a schema keeps only the keywords codex was probed to accept, leaves out every format but date-time, and leaves the caller's schema unchanged",
+                "result": "pass"
+              },
+              {
+                "title": "the analyzer bundle schema reaches codex without uniqueItems or any other refused keyword",
+                "result": "pass"
+              },
+              {
+                "title": "a codex structured completion rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reply that breaks the caller's schema throws ModelResponseShapeError carrying the validation reasons",
+                "result": "pass"
+              },
+              {
+                "title": "a codex reviewer session rejects a reply that breaks a keyword (also inside prefixItems) or a format left out of the codex copy, and accepts one that meets them",
+                "result": "pass"
+              },
+              {
+                "title": "a schema with a format the reply check cannot enforce, anywhere including a branch the copy leaves out, is refused before codex is called; the same word as data or as a property name is not",
+                "result": "pass"
+              },
+              {
+                "title": "a schema whose $ref points into a part the codex copy leaves out or renames (also under a property named like a data keyword) is refused before codex is called; a $ref into a kept part is sent",
+                "result": "pass"
+              },
+              {
+                "title": "Codex wire schemas omit string lengths recursively but preserve original host validation and other constraints",
+                "result": "pass"
+              },
+              {
+                "title": "Codex structured and bounded reviewer responses use the shared optional-null decoder",
+                "result": "pass"
+              },
+              {
+                "title": "a codex schema rejection names the keywords that were sent and where a list is empty, and stays a call failure",
+                "result": "pass"
+              },
+              {
+                "title": "the keyword summary of a rejected schema counts schema keywords only: data under const, enum, default and examples is not read as keywords",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/orchestrator/__tests__/scope-before-plan.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1762,
+            "titles": [
+              {
+                "title": "a docs run on a scope in no registered repo ends at stage 'classify' with 'scope-not-indexed' before anything is measured or built; a refused pairing still ends at 'classify'; a generic run is not checked (mutation: remove the check before planning)",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/analyze/planner/__tests__/driver-unit.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 759,
+            "titles": [
+              {
+                "title": "renderCatalog: empty catalog renders the no-templates marker",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: single template renders id + target + family + description + produces",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: aggregator template flags itself with INV-12 hint",
+                "result": "pass"
+              },
+              {
+                "title": "renderCatalog: catalog order is preserved",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: M scope reports 20-40 band",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: focused intent halves the lower bound only",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XS depth hint mentions detailed per-unit",
+                "result": "pass"
+              },
+              {
+                "title": "renderDepthPolicy: XL depth hint mentions structural breadth + child plans",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(ECONNREFUSED) -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Ollama is not running\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(\"Model not found\") -> PlanBuilderLlmUnavailableError",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(arbitrary error) -> PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "classifyError(non-Error) -> wraps in PlanBuilderSchemaUnrecoverable",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderLlmUnavailableError carries cause in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderSchemaUnrecoverable carries error list in message",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderPromptMissingError carries the absolute path",
+                "result": "pass"
+              },
+              {
+                "title": "PlanBuilderExhausted carries attempts + failures + lastFailure",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: emits 2 messages (system, user) with all the required sections",
+                "result": "pass"
+              },
+              {
+                "title": "buildInitialMessages: child-plan parentTaskPath emits the warning note",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: re-issues with the assistant turn + VALIDATOR FEEDBACK block",
+                "result": "pass"
+              },
+              {
+                "title": "MaxPlanDepthExceededError carries currentDepth, rootScope, cap on the instance",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: refuses BEFORE any LLM call when currentDepth+1 > cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope overrides intent.scope for the depth cap",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: rootScope=XS at currentDepth=2 (exactly the cap) is rejected",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: default currentDepth=0 always passes the depth check (cap >= 2)",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn with failure.target renders the pointer",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: escalation banner fires when the same (invariantId, taskId) repeats",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when previous failure was a different invariant",
+                "result": "pass"
+              },
+              {
+                "title": "appendCorrectionTurn: no escalation banner when same invariant hits a different task",
+                "result": "pass"
+              },
+              {
+                "title": "runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

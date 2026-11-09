@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-60f9713d-c2bb-48b1-862d-2d76d89e081e",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.080Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bridge review tool, Git and raw-byte subprocess execution",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "d4f840d7b33258c51673f72c06e5ccda6c385381923d9e52d768ba9bead1c44f",
+        "at": "2026-11-09T07:42:48.080Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.081Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bridge review tool, Git and raw-byte subprocess execution",
+    "summary": "Integrate host leases with src/daemon/tools/shell-helper.ts and review-reachable tool subprocess paths, including runShell, runShellBytes, spawnManaged and streaming/direct spawn sites. Keep permission/provenance checks and output parsing semantics; assemble the complete review-native-spawn inventory with the CLI bridge.",
+    "size": "L",
+    "order": 6,
+    "acceptanceChecks": [
+      "Git admission, shell/raw-byte/managed-tool commands record durable intent before host spawn and retain exact bytes, exit/error and truncation semantics.",
+      "Existing tool approval/provenance and effective abort signals survive the worker bridge; returned output is parsed in the worker.",
+      "An executable inventory refuses every unbridged review-reachable spawn/exec path, including provider binary resolution from t5; other callers are unchanged.",
+      "Real short-lived command fixtures exercise cancellation, byte bounds/backpressure, worker loss and unknown cleanup without affecting another review's leases."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/tools/__tests__/review-worker-shell.test.ts: Git shell and raw-byte commands preserve output bounds and abort semantics through leases"
+      },
+      {
+        "level": "unit",
+        "name": "src/daemon/threads/__tests__/review-spawn-inventory.test.ts: all review-reachable native spawn and exec paths use the host bridge"
+      }
+    ],
+    "planTaskId": "t6"
+  },
+  "citations": []
+}

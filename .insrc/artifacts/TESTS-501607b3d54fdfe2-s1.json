@@ -1,0 +1,68 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 1,
+        "contentHash": "9cf18fcc99ca4cc60cf702feba2b77cc074bd9c0cb3f5bf1819b1507d5613cbb",
+        "at": "2026-11-09T09:04:08.647Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "501607b3d54fdfe2",
+    "storyId": "s1",
+    "createdAt": "2026-11-09T09:04:08.379Z",
+    "updatedAt": "2026-11-09T09:04:08.379Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-09T08:39:14.931Z",
+    "epicSlug": "normalize-smtp-recipient-results-preserve-string",
+    "revision": 1
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "s1",
+        "commit": "35c9f815f",
+        "ranAt": "2026-11-09T09:04:08.379Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+            "source": "touched",
+            "cases": [],
+            "files": [
+              "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts"
+            ]
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 678,
+            "titles": [
+              {
+                "title": "email recipient results preserve mailbox strings for mixed address objects and empty results",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

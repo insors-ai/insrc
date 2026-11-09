@@ -41,7 +41,9 @@ function lineKey(line: string): string | undefined {
 	// A `<file> :: <heading>` entry names its whole file, whatever characters the file holds. Only an entry without
 	// that separator can start with a short kind word (`<kind> — <path>`), and the path after it is kept whole.
 	if (entry.includes(' :: ')) return entry.slice(0, entry.indexOf(' :: ')).replace(/^`|`$/g, '').trim() || undefined;
-	const kind = /^[A-Za-z][A-Za-z0-9_ -]{0,30} — (.+)$/.exec(entry);
+	// A plain file name may hold the separator too, so a kind is taken off only where a real path (with a directory)
+	// follows it; anything else is kept whole and only an identical entry is dropped.
+	const kind = /^[A-Za-z][A-Za-z0-9_-]{0,30} — (.*\/.+)$/.exec(entry);
 	return (kind?.[1] ?? entry).replace(/^`|`$/g, '').trim() || undefined;
 }
 
@@ -51,7 +53,7 @@ function lineKey(line: string): string | undefined {
  * the first occurrence winning. A `surface` entry covers the whole layer; any
  * other names a `## ` sub-section of the layer.
  */
-export function dedupeLayer(text: string, layer: string, target: SynthesizerPromptKey): string {
+export function dedupeLayer(text: string, layer: string, target: SynthesizerPromptKey, excluded?: ReadonlySet<string>): string {
 	const keys = DEDUPE_KEYS[target];
 	const lines = text.split('\n');
 	const out: string[] = [];
@@ -64,6 +66,8 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 		const rule = keys.find(k => (k.section === 'surface' ? layer === 'surface' : section !== undefined && section.includes(k.section)));
 		const key = rule === undefined || heading !== null ? undefined : lineKey(line);
 		if (rule === undefined || key === undefined) { out.push(line); continue; }
+		// A module that is a reuse candidate is not listed among the other modules, whichever part saw it.
+		if (rule.section === 'Related modules' && excluded !== undefined && isExcluded(key, excluded)) continue;
 		const bucket = seen.get(rule.section) ?? new Set<string>();
 		seen.set(rule.section, bucket);
 		if (bucket.has(key)) continue;
@@ -73,12 +77,21 @@ export function dedupeLayer(text: string, layer: string, target: SynthesizerProm
 	return out.join('\n');
 }
 
+/**
+ * True when the entry names a candidate module by its whole path. The prompt lists a related module by its path alone,
+ * so a longer path that merely begins with a candidate's (`src/a b`, `src/a (legacy)`) is another module.
+ */
+function isExcluded(key: string, excluded: ReadonlySet<string>): boolean {
+	return excluded.has(key);
+}
+
 /** The bundle layers of a divided answer. */
 export function assembleBundle(
 	target: SynthesizerPromptKey,
 	covered: readonly CoveredPart<BundleLayers>[],
 	combine: BundleNarrative | undefined,
 	facts?: RuleFacts | undefined,
+	candidatePaths?: readonly string[] | undefined,
 ): BundleLayers {
 	const first = covered[0]?.reply;
 	const narrative: BundleNarrative = combine ?? {
@@ -90,11 +103,11 @@ export function assembleBundle(
 			.filter(c => c.reply[layer].trim().length > 0)
 			.map(c => (covered.length > 1 ? `### ${c.id}\n${c.reply[layer]}` : c.reply[layer]))
 			.join('\n\n');
-		return [layer, dedupeLayer(joined, layer, target)];
+		return [layer, dedupeLayer(joined, layer, target, candidatePaths === undefined ? undefined : new Set(candidatePaths))];
 	})) as Record<(typeof EVIDENCE_LAYERS)[number], string>;
 	// The rule count and the rules themselves are counted from every lookup in code: a reply saw one round of the
 	// reference at most, so what it states of them may be partial.
-	const focus = target === 'adherence' && facts !== undefined && facts.count > 0
+	const focus = target === 'adherence' && facts !== undefined
 		? `${narrative.focus}\n\n${renderRuleFacts(facts)}`
 		: narrative.focus;
 	return { ...narrative, focus, ...layers };

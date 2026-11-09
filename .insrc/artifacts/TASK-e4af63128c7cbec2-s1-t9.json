@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-4b0c2197-7d35-4e3a-a160-84b39c2d4e69",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.088Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Adapt code review to durable background admission in its worker",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t3",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t5",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t6",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "f5be2c43a1fc0c7f2b727c7a897a569058ace5f3f7f7b4a270ef0eb5c16b5a64",
+        "at": "2026-11-09T07:42:48.088Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.090Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Adapt code review to durable background admission in its worker",
+    "summary": "Integrate the existing TaskReviewCoordinator and code admission/execution/progress paths with the owner worker and resource-guard writer. Persist unverified input before the acknowledgment, then perform existing route/source/projection/capacity checks and review tasks in that worker. Exercise the adapter through the registry without switching production entrypoints yet.",
+    "size": "L",
+    "order": 9,
+    "acceptanceChecks": [
+      "The durable pending acknowledgment precedes deliberately blocked Git/source admission; no provider call occurs before qualified checkpoint persistence.",
+      "Same-input submission replay after lost acknowledgment observes saved work; conflicting pinned input is refused and admission failure persists with actionable diagnostics.",
+      "Task attribution, dependency ordering, committed after-block scope, explicit final revision and existing projection limits remain unchanged.",
+      "Controller review transitions from pending admission to its first assignment without duplicate admission/execution identities; trusted exchanges and explicit recovery remain valid.",
+      "Shared serialized checkpoint updates retain native open intents alongside task feedback/progress and correctly close only disposed leases."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: durable acknowledgment precedes blocked source qualification and provider dispatch"
+      },
+      {
+        "level": "integration",
+        "name": "src/workflow/code-review/task-review/__tests__/worker-admission.test.ts: replay and controller admission-to-assignment retain one execution identity"
+      }
+    ],
+    "planTaskId": "t9"
+  },
+  "citations": []
+}

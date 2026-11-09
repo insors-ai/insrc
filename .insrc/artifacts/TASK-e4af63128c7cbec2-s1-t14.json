@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-402575d1-8901-4d65-beb3-e14c1b1739c4",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.106Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Switch all supported review entrypoints to dedicated workers",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t11",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t12",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t13",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "13dea4bf741e2e032204f46228cd5fb531f2954a5ab5582c7bf20e071af28e71",
+        "at": "2026-11-09T07:42:48.106Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.108Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Switch all supported review entrypoints to dedicated workers",
+    "summary": "Replace heavy main-owned coordinator execution in src/daemon/task-review-rpc.ts and src/daemon/design-review-rpc.ts with registry delegation, including normal MCP step routes and supported direct RPC/recovery/cleanup paths. Keep lightweight main-host authority/progress routing where required; remove heavy execution fallbacks rather than adding compatibility switches.",
+    "size": "M",
+    "order": 14,
+    "acceptanceChecks": [
+      "Every code and design review start, continued operation and recovery path reaches its dedicated owner worker; expensive admission/history/model orchestration never runs on main or the chat-session worker.",
+      "Both families cut over together only after required lifecycle/recovery dependencies are ready; no activation flag or main/session fallback remains.",
+      "Optional chat/session threading disabled still requires safe dedicated review workers or returns explicit unavailable.",
+      "Existing retired review endpoints keep their current refusal behavior; no legacy engine is restored.",
+      "The plan/deployment contract forbids installing an intermediate partial build before final qualification."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/review-worker-routing.test.ts: every supported review method delegates heavy work to its dedicated owner"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/__tests__/review-worker-routing.test.ts: optional session threading disabled cannot enable main or session review fallback"
+      }
+    ],
+    "planTaskId": "t14"
+  },
+  "citations": []
+}

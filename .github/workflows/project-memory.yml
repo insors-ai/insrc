@@ -40,7 +40,7 @@ jobs:
             done
           } | tee "$RUNNER_TEMP/memory-evidence/platform.log"
           test "${PIPESTATUS[0]}" = 0
-      - name: Install the independent package only
+      - name: Install independent development dependencies
         shell: bash
         env:
           CXXFLAGS: -std=c++17
@@ -50,7 +50,30 @@ jobs:
           npm install --no-audit --no-fund 2>&1 | tee "$RUNNER_TEMP/memory-evidence/install.log"
           npm run build
           npm ls --all --json > "$RUNNER_TEMP/memory-evidence/dependency-graph.json"
-          cp package-lock.json "$RUNNER_TEMP/memory-evidence/package-lock.json"
+          cp package-lock.json "$RUNNER_TEMP/memory-evidence/source-package-lock.json"
+      - name: Pack the release and its pre-upgrade baseline
+        if: inputs.suite == 'full'
+        shell: bash
+        env:
+          MEMORY_BASELINE: 33eefb2693c64ae393b54ebda479c5dce182d846
+          CXXFLAGS: -std=c++17
+        run: |
+          set -e
+          release_dir="$RUNNER_TEMP/memory-evidence/release"
+          baseline_dir="$RUNNER_TEMP/memory-evidence/baseline"
+          baseline_src="$RUNNER_TEMP/memory-baseline-source"
+          mkdir -p "$release_dir" "$baseline_dir" "$baseline_src"
+          git fetch --no-tags --depth=1 origin "$MEMORY_BASELINE"
+          git archive "$MEMORY_BASELINE" packages/project-memory | tar -x -C "$baseline_src"
+          (
+            cd "$baseline_src/packages/project-memory"
+            npm install --ignore-scripts --no-audit --no-fund
+            npm pack --pack-destination "$baseline_dir"
+          )
+          (
+            cd "$RUNNER_TEMP/project-memory"
+            npm run --silent pack:release -- "$release_dir" > "$release_dir/pack.json"
+          )
       - name: Complete standalone package regression
         if: inputs.suite == 'full'
         shell: bash
@@ -59,6 +82,9 @@ jobs:
           INSRC_MEMORY_STORE_PRIMITIVE_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-sdk.json
           INSRC_MEMORY_STORE_INTEGRATION_EVIDENCE: ${{ runner.temp }}/memory-evidence/store-integration.json
           INSRC_MEMORY_PACKAGE_EVIDENCE: ${{ runner.temp }}/memory-evidence/package.json
+          INSRC_MEMORY_DEPENDENCY_EVIDENCE: ${{ runner.temp }}/memory-evidence/package-lock.json
+          INSRC_MEMORY_PREVIOUS_TARBALL: ${{ runner.temp }}/memory-evidence/baseline/insrc-project-memory-0.1.0.tgz
+          INSRC_MEMORY_RELEASE_TARBALL: ${{ runner.temp }}/memory-evidence/release/insrc-project-memory-0.1.0.tgz
         run: |
           cd "$RUNNER_TEMP/project-memory"
           node --import tsx --test --test-concurrency=1 --test-reporter=tap src/__tests__/*.test.ts 2>&1 | tee "$RUNNER_TEMP/memory-evidence/full-package.tap"

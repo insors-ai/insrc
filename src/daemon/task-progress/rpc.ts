@@ -5,7 +5,7 @@ import { ProgressId, TaskRefSchema, progressObject } from '../../shared/task-pro
 import type { ProgressKind, TaskRef } from '../../shared/task-progress.js';
 import type { RpcHandlers, StreamHandlers } from '../server.js';
 import type { ProgressAccess } from './access.js';
-import type { ProgressCoordinator } from './coordinator.js';
+import type { ProgressCoordinator, TerminalDelivery } from './coordinator.js';
 
 type Details = { readonly kind: ProgressKind };
 export interface ProgressRuntime<D extends Details> {
@@ -84,13 +84,28 @@ export function createProgressRoutes<D extends Details>(runtime: () => Promise<P
         while (!signalOrStop.aborted) {
           await watch.wait();
           if (signalOrStop.aborted) break;
+          if (watch.invalidated()) throw new Error('task-unavailable');
           let snapshot;
-          try { snapshot = await access.read(input.observerId, context); }
+          const reserved = watch.terminal();
+          try {
+            snapshot = reserved === undefined
+              ? await access.read(input.observerId, context)
+              : await access.readReservedTerminal(input.observerId, reserved.snapshot, context);
+          }
           catch (error) {
             if (signalOrStop.aborted) break;
+            if (reserved === undefined && watch.terminal() !== undefined) continue;
             throw error;
           }
           if (signalOrStop.aborted) break;
+          if (watch.invalidated()) throw new Error('task-unavailable');
+          if (reserved !== undefined) {
+            const disposition = cursor === snapshot.cursor ? 'unchanged'
+              : cursor === undefined || cursor === reserved.previousCursor ? 'changed' : 'resync';
+            send({ id: 0, stream: 'done', data: { snapshot, disposition, schedule: 'stopped' } });
+            return;
+          }
+          if (watch.terminal() !== undefined) continue;
           const changed = coordinator.disposition(snapshot.task, cursor, snapshot.cursor);
           cursor = snapshot.cursor;
           if (coordinator.observationClosed(snapshot.task, snapshot.cursor)) {
@@ -124,14 +139,26 @@ async function waitForWrite(write: Promise<boolean>, signal: AbortSignal): Promi
   finally { signal.removeEventListener('abort', abort); }
 }
 
-/** Only one dirty bit is retained, so a lagging consumer rereads the latest authorized snapshot. */
+/** Coalesce intermediate updates and reserve one committed terminal frame per subscription. */
 function latestChange<D extends Details>(task: TaskRef, coordinator: ProgressCoordinator<D>, signal: AbortSignal) {
   let dirty = true;
+  let reserved: TerminalDelivery<D> | undefined;
+  let invalidated = false;
   let wake: (() => void) | undefined;
   const changed = (): void => { dirty = true; wake?.(); };
-  const detach = coordinator.onChange(task, changed);
+  const detach = coordinator.onChange(task, (current, terminal) => {
+    if (current.attempt !== task.attempt) {
+      invalidated = true;
+      reserved = undefined;
+    } else if (!invalidated && terminal !== undefined) {
+      reserved = terminal;
+    }
+    changed();
+  });
   signal.addEventListener('abort', changed, { once: true });
   return {
+    terminal: () => reserved,
+    invalidated: () => invalidated,
     async wait() {
       if (!dirty && !signal.aborted) await new Promise<void>(resolve => { wake = resolve; });
       wake = undefined;

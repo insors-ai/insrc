@@ -14,6 +14,11 @@ type Details = { readonly kind: ProgressKind };
 type RunningState = 'queued' | 'running' | 'waiting' | 'paused';
 type TerminalState = 'completed' | 'failed' | 'cancelled' | 'interrupted';
 export type CancelOutcome = 'pending' | 'unsupported' | TerminalState;
+export interface TerminalDelivery<D> {
+  readonly snapshot: ProgressSnapshot<D>;
+  readonly previousCursor: string;
+}
+type ChangeListener<D> = (task: TaskRef, terminal?: TerminalDelivery<D>) => void;
 export const OWNER_RENEWAL_MS = 30_000;
 const OWNER_LEASE_MS = 120_000;
 const INACTIVE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -114,7 +119,7 @@ export class ProgressCoordinator<D extends Details> {
   private readonly active = new Map<string, Runtime<D>>();
   private readonly owners = new WeakMap<OwnerHandle, Runtime<D>>();
   private readonly queues = new Map<string, Promise<void>>();
-  private readonly listeners = new Map<string, Set<() => void>>();
+  private readonly listeners = new Map<string, Set<ChangeListener<D>>>();
   private readonly cursorEpoch = randomUUID();
 
   constructor(
@@ -147,8 +152,11 @@ export class ProgressCoordinator<D extends Details> {
 
   read(task: TaskRef): ProgressSnapshot<D> | undefined {
     const record = this.store.get(task);
-    if (record === undefined) return undefined;
-    const runtime = this.active.get(progressTaskKey(task));
+    return record === undefined ? undefined : this.snapshot(record);
+  }
+
+  private snapshot(record: ProgressRecord<D>): ProgressSnapshot<D> {
+    const runtime = this.active.get(progressTaskKey(record.task));
     const live = runtime !== undefined && this.live(runtime) && runtime.epoch === record.owner?.ownerEpoch;
     const sample = record.measurement;
     return boundedSnapshot({
@@ -180,9 +188,9 @@ export class ProgressCoordinator<D extends Details> {
     return createHash('sha256').update(JSON.stringify([this.cursorEpoch, progressTaskKey(task), task.attempt, revision])).digest('base64url');
   }
 
-  onChange(task: TaskRef, listener: () => void): () => void {
+  onChange(task: TaskRef, listener: ChangeListener<D>): () => void {
     const key = progressTaskKey(task);
-    const listeners = this.listeners.get(key) ?? new Set<() => void>();
+    const listeners = this.listeners.get(key) ?? new Set<ChangeListener<D>>();
     listeners.add(listener);
     this.listeners.set(key, listeners);
     return () => {
@@ -339,9 +347,9 @@ export class ProgressCoordinator<D extends Details> {
     return next;
   }
 
-  notify(task: TaskRef): void {
+  notify(task: TaskRef, terminal?: TerminalDelivery<D>): void {
     for (const listener of this.listeners.get(progressTaskKey(task)) ?? []) {
-      try { listener(); } catch { /* Observer failure cannot affect the executor. */ }
+      try { listener(task, terminal); } catch { /* Observer failure cannot affect the executor. */ }
     }
   }
 
@@ -454,8 +462,10 @@ export class ProgressCoordinator<D extends Details> {
         runtime.stopped = true;
         runtime.probingOwner?.abort();
         this.active.delete(runtime.key);
+        this.notify(runtime.task, { snapshot: this.snapshot(next), previousCursor: this.cursor(record.task, record.revision) });
+      } else {
+        this.notify(runtime.task);
       }
-      this.notify(runtime.task);
       return 'recorded';
     });
   }

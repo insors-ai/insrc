@@ -1,8 +1,9 @@
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto';
-import type { ProgressKind, TaskRef } from '../../shared/task-progress.js';
+import type { ProgressKind, ProgressSnapshot, TaskRef } from '../../shared/task-progress.js';
 import type { TrustedRpcContext } from '../request-context.js';
 import { createProgressAuthority } from './coordinator.js';
 import type { ProgressCoordinator, ProducerAuthorization } from './coordinator.js';
+import { progressTaskKey } from './record.js';
 import type { ProgressRecord } from './record.js';
 import type { FallbackLease, FallbackScheduler } from './fallback.js';
 import type { ProgressStore } from './store.js';
@@ -220,6 +221,20 @@ export class ProgressAccess<D extends Details> {
     if (binding === undefined) throw unavailable();
     const snapshot = this.coordinator.read(task);
     if (snapshot === undefined) throw unavailable();
+    return this.projectSnapshot(binding, snapshot);
+  }
+
+  /** Only the subscription's reserved, previously committed terminal frame may outlive quota eviction. */
+  async readReservedTerminal(id: string, snapshot: ProgressSnapshot<D>, context: TrustedRpcContext | undefined) {
+    const binding = await this.authorizedBinding(id, context);
+    if (binding.task.attempt !== snapshot.task.attempt || progressTaskKey(binding.task) !== progressTaskKey(snapshot.task)) throw unavailable();
+    const retained = this.store.get(binding.task);
+    if (retained !== undefined) this.check(binding, 'observe', retained);
+    else if (binding.expiresAt <= this.now()) throw unavailable();
+    return this.projectSnapshot(binding, snapshot);
+  }
+
+  private projectSnapshot(binding: Binding, snapshot: ProgressSnapshot<D>): ProgressSnapshot<D> {
     // The scoped result identifier may be resolved only by the owner of the actual result surface.
     if (binding.purpose === 'history' && snapshot.measurement !== null) {
       return { ...snapshot, measurement: { ...snapshot.measurement, controls: [] as const } };
@@ -351,8 +366,7 @@ export class ProgressAccess<D extends Details> {
     this.fallback.detach(id);
   }
 
-  private check(binding: Binding, permission: Permission): void {
-    const record = this.store.get(binding.task);
+  private check(binding: Binding, permission: Permission, record = this.store.get(binding.task)): void {
     const grant = record?.grants?.[binding.purpose];
     if (grant === undefined || grant.expiresAt <= this.now() || !matches(grant.digest, binding.digest) ||
         (binding.purpose === 'conversation' && this.origins.get(record?.origin.extensionChatId ?? '')?.revoked === true) ||

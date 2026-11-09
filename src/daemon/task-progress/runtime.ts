@@ -5,6 +5,7 @@ import { ProgressAccess } from './access.js';
 import { createProgressAuthority, OWNER_RENEWAL_MS, ProgressCoordinator } from './coordinator.js';
 import type { DetailValidator } from './record.js';
 import { ProgressStore } from './store.js';
+import type { ProgressStoreLimits } from './store.js';
 import { FallbackScheduler } from './fallback.js';
 
 const log = getLogger('task-progress');
@@ -13,8 +14,9 @@ export async function openProgressRuntime<D extends { readonly kind: ProgressKin
   daemonRoot: string,
   projects: () => Promise<ReadonlyMap<string, number>>,
   validateDetails: DetailValidator<D>,
+  limits?: ProgressStoreLimits,
 ): Promise<{ access: ProgressAccess<D>; coordinator: ProgressCoordinator<D>; close(): Promise<void> }> {
-  const store = await ProgressStore.open(join(daemonRoot, 'task-progress'), validateDetails);
+  const store = await ProgressStore.open(join(daemonRoot, 'task-progress'), validateDetails, limits);
   const authority = createProgressAuthority();
   const coordinator = new ProgressCoordinator(store, authority.inspect);
   const fallback = new FallbackScheduler<D>({

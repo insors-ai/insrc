@@ -78,10 +78,12 @@ const ADDED_RPC = [
 	'workflow.reviewArtifact', 'workflow.resolveFinding',
 	'codeReview.task.activity', 'codeReview.task.assignment', 'codeReview.task.cleanup', 'codeReview.task.progress', 'codeReview.task.publish',
 	'codeReview.task.result', 'codeReview.task.scope', 'codeReview.task.start',
-	'designReview.activity', 'designReview.assignment', 'designReview.failure', 'designReview.plan', 'designReview.progress', 'designReview.recover',
+	'designReview.activity', 'designReview.assignment', 'designReview.failure', 'designReview.impact', 'designReview.plan', 'designReview.progress', 'designReview.recover',
 	'designReview.result', 'designReview.start',
+	'progress.attach', 'progress.control', 'progress.detach', 'progress.origin.bind',
+	'progress.origin.open', 'progress.origin.revoke', 'progress.read',
 ];
-const ADDED_STREAM = ['approval.subscribe', 'tools.call'];
+const ADDED_STREAM = ['approval.subscribe', 'progress.subscribe', 'tools.call'];
 
 /** A dependency that fails the test if building the tables touches it. */
 function untouchable(name: string): never {

@@ -23,7 +23,39 @@
     "standalone": true,
     "magnitude": "small",
     "authoredBy": "controller",
-    "revision": 1
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "cd6facefb75ced40542cf76a7e6d7f335a8f56be5655c718190e04017460314b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:00:55.031Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "501607b3d54fdfe2",
+      "slug": "EPIC-501607b3d54fdfe2"
+    }
   },
   "body": {
     "title": "Normalize SMTP recipient results to preserve string response fields",

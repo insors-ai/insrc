@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { ProgressSnapshot, TaskRef } from '../../shared/task-progress.js';
+import type { ObservationReply, ProgressSnapshot, TaskRef } from '../../shared/task-progress.js';
 import { progressTaskKey } from './record.js';
 
 export const FALLBACK_CADENCE_MS = 60_000;
@@ -34,18 +34,11 @@ const systemClock: Clock = {
   },
 };
 
-export type FallbackResult<D> = {
-  readonly snapshot: ProgressSnapshot<D>;
-  readonly schedule: 'fallback' | 'stopped';
-  readonly disposition: 'changed' | 'unchanged' | 'resync';
-  readonly nextEligibleAt?: string | undefined;
-};
-
 interface FallbackSources<D> {
   read(task: TaskRef): ProgressSnapshot<D> | undefined;
   hasLiveOwner(task: TaskRef): boolean;
   isTerminal(task: TaskRef): boolean;
-  disposition(task: TaskRef, prior: string | undefined, current: string): FallbackResult<D>['disposition'];
+  disposition(task: TaskRef, prior: string | undefined, current: string): ObservationReply<D>['disposition'];
   refresh(task: TaskRef, signal: AbortSignal): Promise<void>;
 }
 
@@ -55,7 +48,7 @@ export class FallbackScheduler<D> {
 
   constructor(private readonly source: FallbackSources<D>, private readonly clock: Clock = systemClock) {}
 
-  claim(task: TaskRef, binding: string): { lease: FallbackLease; observation: FallbackResult<D> } {
+  claim(task: TaskRef, binding: string): { lease: FallbackLease; observation: ObservationReply<D> } {
     const snapshot = this.source.read(task);
     if (snapshot === undefined) throw new Error('task-unavailable');
     if (this.source.isTerminal(task) || !this.source.hasLiveOwner(task)) throw new Error('schedule-suspended');
@@ -99,7 +92,7 @@ export class FallbackScheduler<D> {
   }
 
   async poll(task: TaskRef, binding: string, lease: FallbackLease, cursor: string | undefined,
-    reauthorize: () => Promise<void>): Promise<FallbackResult<D>> {
+    reauthorize: () => Promise<void>): Promise<ObservationReply<D>> {
     if (this.source.isTerminal(task)) {
       const schedule = this.schedules.get(progressTaskKey(task));
       if (schedule?.task.attempt !== task.attempt) throw new Error('stale-lease');
@@ -191,11 +184,11 @@ export class FallbackScheduler<D> {
     return new Date(this.clock.now() + Math.max(0, instant - this.clock.monotonic())).toISOString();
   }
 
-  private reply(snapshot: ProgressSnapshot<D>, cursor: string | undefined, schedule?: Schedule<D>): FallbackResult<D> {
+  private reply(snapshot: ProgressSnapshot<D>, cursor: string | undefined, schedule?: Schedule<D>): ObservationReply<D> {
     return {
-      snapshot: structuredClone(snapshot), schedule: schedule === undefined ? 'stopped' : 'fallback',
+      snapshot: structuredClone(snapshot), schedule: schedule === undefined ? 'stopped' : 'scheduled',
       disposition: this.source.disposition(snapshot.task, cursor, snapshot.cursor),
-      ...(schedule === undefined ? {} : { nextEligibleAt: this.wallAt(schedule.anchor + (schedule.watermark + 1) * FALLBACK_CADENCE_MS) }),
+      ...(schedule === undefined ? {} : { nextPollNotBefore: this.wallAt(schedule.anchor + (schedule.watermark + 1) * FALLBACK_CADENCE_MS) }),
     };
   }
 }

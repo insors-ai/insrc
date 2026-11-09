@@ -86,6 +86,8 @@ export interface TaskProgressDelegate<D extends { readonly kind: ProgressKind }>
   progress(task: TaskRef, signal?: AbortSignal): Promise<DelegateMeasurement<D> | null>;
   /** Local executor liveness check. Returns its next owner sequence or null. */
   ownerActivity?(task: TaskRef, signal: AbortSignal): Promise<number | null>;
+  /** Ask the verified executor to stop. A receipt does not certify termination. */
+  cancel?(task: TaskRef, requestId: string): Promise<void>;
 }
 
 export interface ProgressSnapshot<D> {
@@ -98,4 +100,11 @@ export interface ProgressSnapshot<D> {
   readonly workerHealth: 'alive' | 'lost' | 'unknown';
   readonly cancellation: 'none' | 'pending';
   readonly resultRef?: string | undefined;
+}
+
+export interface ObservationReply<D> {
+  readonly snapshot: ProgressSnapshot<D>;
+  readonly disposition: 'changed' | 'unchanged' | 'resync';
+  readonly schedule: 'native' | 'scheduled' | 'suspended' | 'stopped';
+  readonly nextPollNotBefore?: string | undefined;
 }

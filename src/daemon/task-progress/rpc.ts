@@ -24,6 +24,10 @@ const attach = progressObject({
 });
 const observer = progressObject({ observerId: ProgressId });
 const read = progressObject({ observerId: ProgressId, cursor: Type.Optional(Type.String({ minLength: 1, maxLength: 80 })) });
+const control = progressObject({
+  observerId: ProgressId, requestId: ProgressId,
+  action: Type.Union([Type.Literal('stop-observation'), Type.Literal('cancel-execution')]),
+});
 
 function decode<S extends TSchema>(schema: S, params: unknown): Static<S> {
   if (!Value.Check(schema, params)) throw new Error('invalid-progress-request');
@@ -56,35 +60,54 @@ export function createProgressRoutes<D extends Details>(runtime: () => Promise<P
       const input = decode(read, params);
       const { access, coordinator } = await runtime();
       const snapshot = await access.read(input.observerId, context);
-      return { snapshot, schedule: 'native', disposition: coordinator.disposition(snapshot.task, input.cursor, snapshot.cursor) };
+      return { snapshot, schedule: coordinator.observationClosed(snapshot.task, snapshot.cursor) ? 'stopped' : 'native',
+        disposition: coordinator.disposition(snapshot.task, input.cursor, snapshot.cursor) };
     },
     'progress.detach': async (params, context) => {
       (await runtime()).access.detach(decode(observer, params).observerId, context);
       return { stopped: true };
+    },
+    'progress.control': async (params, context) => {
+      const input = decode(control, params);
+      return { outcome: await (await runtime()).access.control(input.observerId, input.action, input.requestId, context) };
     },
   };
   return { rpc, streams: {
     'progress.subscribe': async (params, send, signal, context) => {
       const input = decode(read, params);
       const { access, coordinator } = await runtime();
-      const task = await access.authorize(input.observerId, 'observe', context);
-      const watch = latestChange(task, coordinator, signal);
+      const subscription = await access.subscribe(input.observerId, context);
+      const signalOrStop = AbortSignal.any([signal, subscription.signal]);
+      const watch = latestChange(subscription.task, coordinator, signalOrStop);
       let cursor = input.cursor;
       try {
-        while (!signal.aborted) {
+        while (!signalOrStop.aborted) {
           await watch.wait();
-          if (signal.aborted) break;
-          const snapshot = await access.read(input.observerId, context);
+          if (signalOrStop.aborted) break;
+          let snapshot;
+          try { snapshot = await access.read(input.observerId, context); }
+          catch (error) {
+            if (signalOrStop.aborted) break;
+            throw error;
+          }
+          if (signalOrStop.aborted) break;
           const changed = coordinator.disposition(snapshot.task, cursor, snapshot.cursor);
           cursor = snapshot.cursor;
-          if (coordinator.isTerminal(task)) {
+          if (coordinator.observationClosed(snapshot.task, snapshot.cursor)) {
             send({ id: 0, stream: 'done', data: { snapshot, disposition: changed, schedule: 'stopped' } });
-            break;
+            return;
           }
-          if (changed !== 'unchanged') send({ id: 0, stream: 'progress', data: { snapshot, disposition: changed, schedule: 'native' } });
+          if (changed !== 'unchanged') {
+            send({ id: 0, stream: 'progress', data: { snapshot, disposition: changed, schedule: 'native' } });
+            if (context?.awaitProgressWrite !== undefined && !(await context.awaitProgressWrite())) return;
+          }
+        }
+        if (subscription.signal.aborted && !signal.aborted) {
+          send({ id: 0, stream: 'done', data: { outcome: 'stopped' } });
         }
       } finally {
         watch.close();
+        subscription.close();
       }
     },
   } };

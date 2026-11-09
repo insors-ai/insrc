@@ -13,6 +13,7 @@ import type { ProgressStore } from './store.js';
 type Details = { readonly kind: ProgressKind };
 type RunningState = 'queued' | 'running' | 'waiting' | 'paused';
 type TerminalState = 'completed' | 'failed' | 'cancelled' | 'interrupted';
+export type CancelOutcome = 'pending' | 'unsupported' | TerminalState;
 export const OWNER_RENEWAL_MS = 30_000;
 const OWNER_LEASE_MS = 120_000;
 const INACTIVE_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -124,6 +125,9 @@ export class ProgressCoordinator<D extends Details> {
         ...(delegate.ownerActivity === undefined ? {} : {
           ownerActivity: (task: TaskRef, signal: AbortSignal) => delegate.ownerActivity!(task, signal),
         }),
+        ...(delegate.cancel === undefined ? {} : {
+          cancel: (task: TaskRef, requestId: string) => delegate.cancel!(task, requestId),
+        }),
       }),
       signalMeasurement: (owner, sequence) => this.signal(kind, owner, sequence),
       recordLifecycle: (owner, evidence) => this.lifecycle(kind, owner, evidence),
@@ -142,13 +146,13 @@ export class ProgressCoordinator<D extends Details> {
       state: record.retention === 'active' && !live ? 'interrupted' : record.state,
       freshness: sample === null ? 'unavailable' : record.measurementStale || (record.retention === 'active' && !live) ? 'stale' : 'live',
       measurement: sample === null ? null : {
-        ...sample, task: record.task,
+        ...sample, task: record.task, controls: live && runtime?.delegate.cancel !== undefined ? sample.controls : [],
         measuredAt: new Date(sample.measuredAt).toISOString(),
         lastMeaningfulAt: sample.lastMeaningfulAt === null ? null : new Date(sample.lastMeaningfulAt).toISOString(),
       },
       lastOwnerActivityAt: record.lastOwnerActivityAt === null ? null : new Date(record.lastOwnerActivityAt).toISOString(),
       workerHealth: live ? 'alive' : record.retention === 'expired' ? 'lost' : 'unknown',
-      cancellation: 'none',
+      cancellation: record.retention === 'active' && record.cancelRequestId !== undefined ? 'pending' : 'none',
       ...(record.resultRef === undefined ? {} : { resultRef: record.resultRef }),
     };
   }
@@ -179,6 +183,42 @@ export class ProgressCoordinator<D extends Details> {
 
   isTerminal(task: TaskRef): boolean {
     return this.store.get(task)?.retention === 'terminal';
+  }
+
+  observationClosed(task: TaskRef, cursor: string): boolean {
+    const record = this.store.get(task);
+    return record !== undefined && record.retention !== 'active' && this.cursor(task, record.revision) === cursor;
+  }
+
+  async cancel(task: TaskRef, requestId: string, reauthorize: () => Promise<unknown>): Promise<CancelOutcome> {
+    const key = progressTaskKey(task);
+    const decision = await this.run(key, async (): Promise<{ outcome: CancelOutcome; runtime?: Runtime<D> }> => {
+      await this.store.settle();
+      await reauthorize();
+      const record = this.store.get(task);
+      if (record === undefined) throw new Error('task-unavailable');
+      if (record.priorAttempts.some(attempt => attempt.cancelRequestId === requestId)) throw new Error('conflicting-request');
+      if (record.retention === 'terminal') return { outcome: record.state as TerminalState };
+      if (record.retention === 'active' && record.cancelRequestId !== undefined) return { outcome: 'pending' };
+      const runtime = this.active.get(key);
+      if (runtime === undefined || this.current(runtime) === undefined || runtime.delegate.cancel === undefined ||
+          record.measurement?.controls.includes('cancel') !== true) return { outcome: 'unsupported' };
+      await this.store.commit({ ...record, revision: record.revision + 1, cancelRequestId: requestId }, record.revision);
+      this.notify(task);
+      return { outcome: 'pending', runtime };
+    });
+    const runtime = decision.runtime;
+    if (runtime !== undefined) {
+      void Promise.resolve().then(() => {
+        if (this.current(runtime) !== undefined) return runtime.delegate.cancel!({ ...task }, requestId);
+        return undefined;
+      }).catch(() => { /* Only verified executor lifecycle evidence resolves the durable receipt. */ });
+    }
+    return decision.outcome;
+  }
+
+  isCancellationRequest(task: TaskRef, requestId: string): boolean {
+    return this.store.get(task)?.cancelRequestId === requestId;
   }
 
   hasLiveOwner(task: TaskRef): boolean {
@@ -341,6 +381,7 @@ export class ProgressCoordinator<D extends Details> {
           }
           const priorAttempts = prior === undefined ? [] : [...prior.priorAttempts, {
             attempt: prior.task.attempt, state: prior.state, updatedAt: prior.updatedAt,
+            ...(prior.cancelRequestId === undefined ? {} : { cancelRequestId: prior.cancelRequestId }),
           }].slice(-16);
           record = {
             version: 1, task: prior === undefined ? task : { ...task, attempt: task.attempt + 1 },

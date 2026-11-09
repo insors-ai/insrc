@@ -11,7 +11,7 @@ const log = getLogger('task-progress');
 
 export async function openProgressRuntime<D extends { readonly kind: ProgressKind }>(
   daemonRoot: string,
-  projects: () => Promise<ReadonlySet<string>>,
+  projects: () => Promise<ReadonlyMap<string, number>>,
   validateDetails: DetailValidator<D>,
 ): Promise<{ access: ProgressAccess<D>; coordinator: ProgressCoordinator<D>; close(): Promise<void> }> {
   const store = await ProgressStore.open(join(daemonRoot, 'task-progress'), validateDetails);

@@ -1,0 +1,569 @@
+{
+  "meta": {
+    "workflow": "define",
+    "runId": "wf-1794203852552-tg40ov",
+    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
+    "createdAt": "2026-11-09T06:00:04.355Z",
+    "epicCreatedAt": "2026-11-09T06:00:04.355Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-codex",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 151801,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "206db3426ffd4428",
+    "epicSlug": "show-long-running-task-progress-chat",
+    "authoredBy": "controller",
+    "revision": 2,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "8ebe74dc406131f655417862a731249d2bcf2bcda51dfc81c0448a9e864a5a22",
+        "at": "2026-11-09T06:14:06.455Z",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "review": {
+        "revision": 2,
+        "reviewer": {
+          "id": "agent:design-review-daemon",
+          "kind": "agent",
+          "properties": {
+            "party": "daemon"
+          }
+        },
+        "party": "daemon",
+        "verdict": "block",
+        "counts": {
+          "HIGH": 0,
+          "MED": 0,
+          "LOW": 0
+        },
+        "at": "2026-11-09T06:32:03.202Z",
+        "report": {
+          "entityId": "DEF-206db3426ffd4428",
+          "type": "change-log-entry",
+          "relation": "reviews",
+          "fragment": "17f4a6d8aac5272b15740e9975e6902ff04c05e7455efd2932d11ad8908b882a"
+        }
+      },
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:44:28.217Z",
+        "override": {
+          "reason": "Independent review completed all six chunks with zero findings and resolved all four prior findings. The remaining incomplete verification was limited to the reviewer’s GitHub connectivity. Authenticated GitHub checks independently confirmed the predecessor epic #41, stories #42–#44, and successor #146 are open. Reciprocal tracker linkage and disposition are a separate follow-up. User explicitly approved the presented DEF with this override."
+        }
+      }
+    }
+  },
+  "body": {
+    "summary": {
+      "audience": "product",
+      "prose": "Follow long-running reviews, test sweeps, workflow operations and analysis from the conversation that launched them. See measured progress and the final result while work continues across turns, chat switches and supported reconnects. Native delivery needs no extra model calls, with optional one-minute polling where direct delivery is unavailable."
+    },
+    "problem": "Users following long-running daemon workflows, analysis, reviews and test sweeps receive uneven progress feedback across clients and often have to ask whether work is still running. Output silence makes it hard to distinguish measured work, a healthy wait and a lost observer. A chat can appear finished or age out while its background task is still running, and switching conversations or reconnecting can hide the task's latest state.",
+    "nonGoals": [
+      {
+        "text": "Changes to review execution, workflow stages, approval gates or model providers",
+        "rationale": "Observation follows existing execution ownership and results."
+      },
+      {
+        "text": "insrc TUI changes, deprecated insrc-ide work, or third-party CLI patches",
+        "rationale": "Initial delivery targets VS Code chat and verified native CLI surfaces."
+      },
+      {
+        "text": "General job scheduling, arbitrary process attachment or automatic task restart",
+        "rationale": "Initial delegates observe instrumented, authorized executions."
+      },
+      {
+        "text": "Fabricated ETA or progress, raw model output as progress, and universal MCP Tasks support",
+        "rationale": "Progress is measured, bounded and capability-specific."
+      }
+    ],
+    "assumptions": [
+      {
+        "text": "Current workflow and analyze producers already expose some shared progress. Workflow token batches and analyze stage frames have distinct evidence and availability.",
+        "confidence": "high",
+        "source": "c4"
+      },
+      {
+        "text": "Analyze producer tests cover stage frames and explicitly show cases where no token delta is emitted.",
+        "confidence": "high",
+        "source": "c5"
+      },
+      {
+        "text": "MCP forwarding code and tests exist. Native rendering and autonomous scheduling require separate live qualification.",
+        "confidence": "high",
+        "source": "c6"
+      },
+      {
+        "text": "Committed code-review checkpoints expose phase, active task and completed tasks as measured inputs.",
+        "confidence": "high",
+        "source": "c7"
+      }
+    ],
+    "constraints": [
+      {
+        "id": "k1",
+        "type": "contract",
+        "text": "Cover workflow and analyze operations through their supported IPC entry points, design reviews, code reviews and managed test sweeps with a shared authorized task/attempt progress contract.",
+        "source": "c1"
+      },
+      {
+        "id": "k2",
+        "type": "invariant",
+        "text": "Reuse the existing Unix IPC and typed progress/delta seams compatibly. Preserve existing frame semantics, cancellation, final results and behavior for clients without progress observers. Client database access remains IPC-only.",
+        "source": "c2"
+      },
+      {
+        "id": "k3",
+        "type": "contract",
+        "text": "Each initial task delegate supplies bounded structured progress() for an authorized attempt, shared by direct delivery and optional polling. Measured phase, counts, active unit, milestones and freshness stay distinct from lifecycle, connectivity, liveness and retention. Unknown measurements stay unknown.",
+        "source": "c3"
+      },
+      {
+        "id": "k4",
+        "type": "contract",
+        "text": "Publish native progress with zero extra model invocations. MCP forwards monotonic progress with an optional caller token only during its valid request lifetime. No token means normal completion without notifications. Live-qualify visible rendering independently of protocol support. Qualify delivery beyond the launching turn and across native session exit separately from in-request rendering and scheduling. Retain results for authorized reattachment where native session activity cannot be maintained.",
+        "source": "c3"
+      },
+      {
+        "id": "k5",
+        "type": "stakeholder",
+        "text": "Optional token-consuming agent fallback uses one shared fixed 60-second healthy schedule per task. Suppress duplicate narration without slowing cadence. Report degraded or unavailable scheduling and stop observation at terminal state. Before opt-in, disclose that fallback can consume agent tokens even on unchanged polls and can produce ordinary chat messages.",
+        "source": "c3"
+      },
+      {
+        "id": "k6",
+        "type": "contract",
+        "text": "Route one typed inline message to the owning VS Code chat and update it across turns and chat switching. Runtime task ownership renews bounded activity independently of observers and respects waiting-input, multiple attempts and unrelated chat concurrency. Explicit conversation closure detaches presentation. Removing the conversation releases its retention association and preserves authorized access to surviving task state and results through the owning project. Running execution continues unless the user explicitly cancels it.",
+        "source": "c3"
+      },
+      {
+        "id": "k7",
+        "type": "invariant",
+        "text": "Restore bounded authorized snapshots and milestones with cursor or explicit resync on reconnect. Preserve verified terminal outcomes, prevent stale attempts from overwriting newer state, and reconcile lost owners honestly. Stopping observation and cancelling execution are separate actions. Persist bounded snapshots, milestones and verified terminal outcomes across daemon restarts. Mark nonterminal execution interrupted or unknown until its owner verifies survival or genuine resumption. Discard delayed events from prior execution epochs.",
+        "source": "c3"
+      },
+      {
+        "id": "k8",
+        "type": "convention",
+        "text": "Use current VS Code and daemon entry points and qualify native Claude Code, Codex and Vibe per client. No deprecated client gates, TUI changes or direct provider API access.",
+        "source": "c8"
+      },
+      {
+        "id": "k9",
+        "type": "convention",
+        "text": "Preserve traceability to July epic #41 and its three stories #42–#44. Treat them as source requirements for this successor. Tracker retirement is a separate decision after successor approval and linkage.",
+        "source": "c9"
+      }
+    ],
+    "title": "Show long-running task progress in chat",
+    "flavor": "enhancement",
+    "stories": [
+      {
+        "id": "s1",
+        "title": "Track long-running work consistently across executors",
+        "userValue": "Users receive trustworthy, current progress for an authorized execution attempt even when the operation is quiet.",
+        "sizeEstimate": "L",
+        "existingCapabilityRefs": [
+          "c2",
+          "c4",
+          "c5",
+          "c7"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "Two authorized attempts are running",
+            "when": "their measurements advance, arrive out of order or repeat",
+            "then": "each exposes its own meaningful revision, measured phase and counts with declared units, source freshness and milestones. Duplicates, sample times and heartbeats do not fabricate progress.",
+            "operationalizes": [
+              "k1",
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "An observer reconnects or falls behind",
+            "when": "it requests the latest authorized state",
+            "then": "it receives the latest bounded snapshot and relevant milestones, then resumes or explicitly resyncs. Terminal results remain stable and stale attempts cannot overwrite new ones.",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "An owner becomes unavailable or a user stops observation",
+            "when": "the observation is reconciled",
+            "then": "missing progress is stale or unknown, and no execution is restarted or marked complete from loss of observation. Explicit cancellation stays pending until termination is verified.",
+            "operationalizes": [
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "An unrelated user or chat requests task details or logs",
+            "when": "access is evaluated",
+            "then": "unauthorized access is rejected and approved observations stay bounded and redacted without exposing raw model text, credentials or unbounded logs.",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "A reader compares the successor with July epic #41 and stories #42–#44",
+            "when": "they trace the predecessor scope",
+            "then": "the successor links the source epic and identifies all three story records, preserving the original requirements and their history.",
+            "operationalizes": [
+              "k9"
+            ]
+          },
+          {
+            "id": "ac6",
+            "given": "Running and terminal attempts have persisted snapshots and the daemon restarts",
+            "when": "an authorized observer reattaches and delayed events from the previous execution epoch arrive",
+            "then": "the last verified milestones and terminal results remain available. A nonterminal attempt is interrupted or unknown until its owner verifies survival or genuine resumption. Delayed events cannot replace newer state, and reattachment starts no execution.",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s2",
+        "title": "Preserve live progress for workflows and analysis",
+        "userValue": "Users can distinguish a quiet workflow or analysis from active stage advancement without losing current client compatibility.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c1",
+          "c2",
+          "c4",
+          "c5"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A supported daemon workflow and analysis run end to end",
+            "when": "each enters a new stage and reports supported measurements",
+            "then": "both expose the same progress contract with the current stage and measured ongoing production, including batched token counts only where actually available. Missing counts remain unknown.",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A legacy client or a caller without a progress observer starts either operation",
+            "when": "it runs to a terminal outcome",
+            "then": "existing stream semantics, operation results and cancellation behavior are preserved. Progress ends once the terminal outcome is delivered.",
+            "operationalizes": [
+              "k1",
+              "k2",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s3",
+        "title": "Report design and code review milestones",
+        "userValue": "Review participants see which stage or task is active and which measured work has finished.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c3",
+          "c7"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A design review and a committed task code review are running",
+            "when": "phases, tasks, checks or supported chunks advance",
+            "then": "the review-specific measurements show active and completed units, retries and discovered follow-up work separately. A quiet worker can report health without incrementing counts.",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A review is interrupted or resumed",
+            "when": "an observer returns or a delayed event arrives",
+            "then": "the latest verified attempt remains authoritative and findings, publication and approval gates retain their existing behavior.",
+            "operationalizes": [
+              "k3",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s4",
+        "title": "Report managed test-sweep counts and final outcome",
+        "userValue": "Users see test activity, reliable pass/fail/skip counts and the verified result before reading the full log.",
+        "sizeEstimate": "M",
+        "dependsOn": [
+          "s1"
+        ],
+        "existingCapabilityRefs": [
+          "c3"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A managed test command discovers and runs suites",
+            "when": "its reporter emits nested results, retries or partial failures",
+            "then": "the active suite and measured discovery/execution/completion counts are exposed with declared units and no double counting. Detailed output stays separately accessible.",
+            "operationalizes": [
+              "k1",
+              "k3"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "The command is aborted, exits nonzero or its reporter fails",
+            "when": "a terminal update is rendered",
+            "then": "incomplete or unsuccessful work is represented truthfully and the original command and exit semantics are preserved.",
+            "operationalizes": [
+              "k2",
+              "k3",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s5",
+        "title": "Keep inline progress with its originating VS Code chat",
+        "userValue": "Users can switch chats and continue working while background tasks stay visible and retain their own session.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1",
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c2",
+          "c3"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A review, test sweep, workflow or analysis is launched in chat A",
+            "when": "the user starts another turn, switches chats or reconnects",
+            "then": "a typed client surface updates one existing message in A without extra model calls and retains one compact terminal result. No event crosses into chat B.",
+            "operationalizes": [
+              "k2",
+              "k4",
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "Chat A has verified live work and no attached observers",
+            "when": "its idle window elapses or session capacity is reached",
+            "then": "the execution owner keeps A retained without agent polling or visible ticks. B can run independently and observation never owns an execution lock.",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "Chat A has two tasks, a newer turn and an unresolved decision",
+            "when": "an old attempt ends or a heartbeat arrives",
+            "then": "waiting-input takes precedence and done is projected only after all obligations end. Lost ownership expires within a bound and late events cannot resurrect work.",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "An owning conversation has a running task",
+            "when": "the user explicitly closes or removes the conversation",
+            "then": "presentation detaches and execution continues. Removing the conversation releases its retention association and preserves authorized access to surviving task state and results from the project. If the user explicitly cancels, cancellation remains pending until the executor verifies termination.",
+            "operationalizes": [
+              "k6",
+              "k7"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "s6",
+        "title": "Deliver progress in supported native CLI chats",
+        "userValue": "Claude Code, Codex and Vibe users get progress through capabilities verified for their own client.",
+        "sizeEstimate": "L",
+        "dependsOn": [
+          "s1",
+          "s2",
+          "s3",
+          "s4"
+        ],
+        "existingCapabilityRefs": [
+          "c3",
+          "c6"
+        ],
+        "acceptanceCriteria": [
+          {
+            "id": "ac1",
+            "given": "A long-running MCP request includes a valid caller progress token",
+            "when": "the operation reports progress and then finishes",
+            "then": "notifications use that token only during its valid lifetime, expose monotonic measured progress, and finish with the original result. A no-token request completes normally without notifications.",
+            "operationalizes": [
+              "k2",
+              "k4",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac2",
+            "given": "A client claims native progress or background scheduling support",
+            "when": "it is qualified end to end",
+            "then": "tool connectivity, token forwarding, visible rendering, scheduled observation, background lifetime after the launching turn and behavior on native session exit are verified separately for that client/version/session. Verified native delivery consumes no extra model calls.",
+            "operationalizes": [
+              "k4",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac3",
+            "given": "A user explicitly opts into fallback on a healthy host after being told that even unchanged polls can consume agent tokens and updates can produce ordinary chat messages",
+            "when": "several observers attach and the task alternates changes with unchanged snapshots",
+            "then": "one schedule returns current details every 60 seconds, suppressing duplicate narration without delaying the next poll. Terminal and action-required changes appear by the next healthy poll.",
+            "operationalizes": [
+              "k3",
+              "k5"
+            ]
+          },
+          {
+            "id": "ac4",
+            "given": "A fallback host loses scheduling or connectivity",
+            "when": "observation cannot continue on schedule",
+            "then": "the client reports a degraded or suspended observer, resumes the fixed healthy cadence after recovery where supported, and never implies execution cancellation.",
+            "operationalizes": [
+              "k5",
+              "k7",
+              "k8"
+            ]
+          },
+          {
+            "id": "ac5",
+            "given": "A native client can render progress during a request but cannot maintain native observation after the launching turn or session exit",
+            "when": "the request or session ends while execution remains owned",
+            "then": "the client surfaces the capability limit. Expired progress tokens are never reused, execution is not cancelled, and authorized reattachment can recover the saved task state and result.",
+            "operationalizes": [
+              "k4",
+              "k7",
+              "k8"
+            ]
+          }
+        ]
+      }
+    ],
+    "openQuestions": [],
+    "functionalDefinition": {
+      "requirements": [
+        {
+          "id": "E20261109206db342:FR001",
+          "statement": "Users see the latest verified stage, measurable work and terminal outcome for supported long-running operations.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261109206db342:FR002",
+          "statement": "Users can follow several tasks in their own chats across turns, switches and reconnects, with observations scoped to the right attempt.",
+          "scope": "doc"
+        },
+        {
+          "id": "E20261109206db342:FR003",
+          "statement": "Supported clients show native updates without extra model calls, and users can explicitly enable one-minute fallback observation where supported.",
+          "scope": "doc"
+        }
+      ]
+    }
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/DEF.md"
+    },
+    {
+      "id": "c2",
+      "kind": "prior-artifact",
+      "ref": "docs/epics/stream-incremental-progress-from-daemon-calling-E202607196d6cfaf9/HLD.md"
+    },
+    {
+      "id": "c3",
+      "kind": "prior-artifact",
+      "ref": "docs/standalone/show-background-task-progress-chat-E2026110407024f1d/SPEC.md"
+    },
+    {
+      "id": "c4",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/workflow-progress-map.test.ts"
+    },
+    {
+      "id": "c5",
+      "kind": "code",
+      "ref": "src/daemon/__tests__/analyze-progress.test.ts"
+    },
+    {
+      "id": "c6",
+      "kind": "code",
+      "ref": "src/mcp/__tests__/progress-forward.test.ts"
+    },
+    {
+      "id": "c7",
+      "kind": "code",
+      "ref": "src/workflow/code-review/task-review/progress.ts"
+    },
+    {
+      "id": "c8",
+      "kind": "convention",
+      "ref": "AGENTS.md"
+    },
+    {
+      "id": "c9",
+      "kind": "prior-artifact",
+      "ref": "https://github.com/insors-ai/insrc/issues/41"
+    }
+  ]
+}

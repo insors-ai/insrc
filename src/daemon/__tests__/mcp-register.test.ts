@@ -467,6 +467,15 @@ test('upsertVibeProjectServer repairs a config holding both forms, and adds no s
 	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
 });
 
+test('upsertVibeProjectServer recognises an inline insrc entry with a quoted name key and adds no second one', async () => {
+	const { upsertVibeProjectServer } = await import('../mcp-register.js');
+	const files = new Map([['/r', 'mcp_servers = [{ "name" = "insrc", command = "node" }]\n']]);
+	const deps = { vibeProjectConfigText: (p: string) => files.get(p), ensureVibeProjectDir: () => {}, writeVibeProjectConfig: (p: string, t: string) => { files.set(p, t); } };
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'registered');
+	assert.equal(files.get('/r'), '[[mcp_servers]]\n"name" = "insrc"\ncommand = "node"\n');
+	assert.equal(upsertVibeProjectServer('/r', '/x/m.js', deps), 'unchanged');
+});
+
 test('upsertVibeProjectServer leaves a config it cannot fix untouched and reports the failure', async () => {
 	const { upsertVibeProjectServer } = await import('../mcp-register.js');
 	let wrote = false;

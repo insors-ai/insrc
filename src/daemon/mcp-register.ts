@@ -222,7 +222,7 @@ export function upsertVibeAgentsSteering(deps: McpRegisterDeps = {}): 'unchanged
 
 export function vibeConfigHasServer(configText: string, name: string): boolean {
 	const chunks = configText.split(/^\[\[/m);
-	const nameLine = new RegExp(`^\\s*name\\s*=\\s*["']${name}["']`, 'm');
+	const nameLine = new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']${name}["']`, 'm');
 	return chunks.some(c => c.startsWith('mcp_servers]]') && nameLine.test(c));
 }
 

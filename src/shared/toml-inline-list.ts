@@ -88,6 +88,17 @@ function splitBracketed(text: string, open: number): { readonly end: number; rea
 	throw new TomlInlineListError('the list is not closed');
 }
 
+/** The key a line assigns, with its quotes and escapes resolved. */
+function keyText(raw: string): string {
+	if (raw.startsWith("'")) return raw.slice(1, -1);
+	if (!raw.startsWith('"')) return raw;
+	try {
+		return JSON.parse(raw) as string;
+	} catch {
+		throw new TomlInlineListError('a quoted key cannot be read');
+	}
+}
+
 /** Find `key = ...` in the root table, which ends at the first table header. */
 function findRootAssignment(text: string, key: string): { readonly keyStart: number; readonly value: number } | undefined {
 	let i = 0;
@@ -101,9 +112,10 @@ function findRootAssignment(text: string, key: string): { readonly keyStart: num
 			else i++;
 		}
 		if (text[i] !== '=') throw new TomlInlineListError('a line before the first table is not a key and a value');
-		const name = text.slice(keyStart, i).trim();
+		const name = keyText(text.slice(keyStart, i).trim());
 		i++;
-		if (name === key || name === `"${key}"` || name === `'${key}'`) {
+		if (name.startsWith(`${key}.`)) throw new TomlInlineListError(`'${key}' is a table of dotted keys, not a list`);
+		if (name === key) {
 			while (isBlank(text[i])) i++;
 			return { keyStart, value: i };
 		}
@@ -125,7 +137,7 @@ function tableFor(key: string, element: string): string {
  * or `key` has another form that `[[key]]` could not be added to.
  */
 export function moveInlineListToTables(text: string, key: string): string {
-	if (new RegExp(`^[ \\t]*\\[[ \\t]*${key}[ \\t]*\\][ \\t]*(#.*)?\\r?$`, 'm').test(text)) {
+	if (new RegExp(`^[ \\t]*\\[[ \\t]*["']?${key}["']?[ \\t]*\\][ \\t]*(#.*)?\\r?$`, 'm').test(text)) {
 		throw new TomlInlineListError(`'${key}' is a single table, not a list`);
 	}
 	const found = findRootAssignment(text, key);

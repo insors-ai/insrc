@@ -23,7 +23,7 @@ const HEADER_RE = /^\s*(\[\[|\[)\s*([A-Za-z0-9_.-]+)\s*(\]\]|\])\s*(?:#.*)?$/;
 
 /** A `name = "insrc"` (or 'insrc') line, optional trailing comment. */
 const nameLineRe = (name: string): RegExp =>
-  new RegExp(`^\\s*name\\s*=\\s*["']${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']\\s*(?:#.*)?$`);
+  new RegExp(`^\\s*(?:name|"name"|'name')\\s*=\\s*["']${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}["']\\s*(?:#.*)?$`);
 
 /** One parsed section: its header line index and its span in the line array. */
 interface TomlSection {

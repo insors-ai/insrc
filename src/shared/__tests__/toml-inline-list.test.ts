@@ -56,6 +56,12 @@ test('only the root-level key is moved', () => {
 	assert.equal(move(inArray), inArray);
 });
 
+test('a quoted or escaped spelling of the key is the same key', () => {
+	for (const spelling of ['"mcp_servers"', "'mcp_servers'", '"mcp\\u005fservers"']) {
+		assert.equal(move(`${spelling} = []\na = 1\n`), 'a = 1\n', spelling);
+	}
+});
+
 test('a comment after the list is kept on its own line', () => {
 	assert.equal(move('mcp_servers = [] # none yet\na = 1\n'), '# none yet\na = 1\n');
 });
@@ -73,6 +79,9 @@ test('what cannot be moved without loss is refused', () => {
 		['mcp_servers = [{ name = "a" }] b\n', /unexpected text/],
 		['mcp_servers = [\n', /not closed/],
 		['[mcp_servers]\nname = "a"\n', /single table/],
+		['["mcp_servers"]\nname = "a"\n', /single table/],
+		['mcp_servers.a = 1\n', /dotted keys/],
+		['"mcp\\qservers" = []\n', /cannot be read/],
 		['not a key\n', /not a key/],
 	] as const) {
 		assert.throws(() => move(text), (err: unknown) => err instanceof TomlInlineListError && why.test(err.message), text);

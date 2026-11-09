@@ -287,6 +287,12 @@ test('toml writeInsrcServer repairs a file holding both forms without adding a s
   assert.equal(fs.files.get(TOML), `\n[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = ["${ENTRY.args[0]}"]\n`);
 });
 
+test('toml writeInsrcServer recognises an inline insrc entry with a quoted name key and adds no second one', () => {
+  const fs = fakeFs({ [TOML]: 'mcp_servers = [{ "name" = "insrc", command = "old" }]\n' });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(fs.files.get(TOML), `[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = ["${ENTRY.args[0]}"]\n`);
+});
+
 test('toml writeInsrcServer refuses a config it cannot fix and leaves it unchanged', () => {
   const before = 'mcp_servers = "x"\n';
   const fs = fakeFs({ [TOML]: before });

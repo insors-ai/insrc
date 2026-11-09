@@ -6,6 +6,12 @@ The daemon build and the VS Code build and bundle passed on Node 22.23.2. The im
 
 Vibe 3.0.4 opened an isolated session with a temporary config and a loopback-only provider. The fixture default was `insrc-probe-default` at `low`. The shipped session verifier requested `insrc-selected-model` at `high`. Vibe reported the effective alias `insrc-probe-selected` and effort `high` from the running session. No prompt was submitted during this check.
 
+The [saved probe output](vibe-selection-smoke.json) records the effective model, alias, effort and both configuration hashes. To reproduce it from the repository root:
+
+```sh
+node --import tsx src/shared/__tests__/fixtures/vibe-selection-smoke.mjs
+```
+
 The fixture configuration had the same SHA-256 before and after the session.
 
 ```text

@@ -37,6 +37,14 @@ async function resolveSecretRef(ref: string | undefined): Promise<string | undef
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * The addresses of a transport's accepted or rejected list. nodemailer 10 types them as plain strings and nodemailer 7
+ * (and its @types) as strings or address objects; the list is read as either, so neither typing breaks the build.
+ */
+function recipientAddresses(list: readonly unknown[] | undefined): string[] {
+  return (list ?? []).map(r => (typeof r === 'string' ? r : (r as { address: string }).address));
+}
+
 function str(input: ToolInput, key: string): string | undefined {
   const v = input[key];
   return typeof v === 'string' && v.length > 0 ? v : undefined;
@@ -555,8 +563,8 @@ export const notifyEmailTool: Tool = {
       const data: EmailSendData = {
         smtpHost, from, to, cc, bcc,
         messageId: info.messageId,
-        accepted: (info.accepted ?? []).map(recipient => typeof recipient === 'string' ? recipient : recipient.address),
-        rejected: (info.rejected ?? []).map(recipient => typeof recipient === 'string' ? recipient : recipient.address),
+        accepted: recipientAddresses(info.accepted),
+        rejected: recipientAddresses(info.rejected),
         response: info.response,
       };
       const ok = data.rejected.length === 0;

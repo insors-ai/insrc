@@ -97,6 +97,8 @@ export class ProgressCoordinator<D extends Details> {
   private readonly active = new Map<string, Runtime<D>>();
   private readonly owners = new WeakMap<OwnerHandle, Runtime<D>>();
   private readonly queues = new Map<string, Promise<void>>();
+  private readonly listeners = new Map<string, Set<() => void>>();
+  private readonly cursorEpoch = randomUUID();
 
   constructor(
     private readonly store: ProgressStore<D>,
@@ -127,7 +129,7 @@ export class ProgressCoordinator<D extends Details> {
     const live = runtime !== undefined && runtime.epoch === record.owner?.ownerEpoch;
     const sample = record.measurement;
     return {
-      task: record.task, cursor: `${record.task.attempt}:${record.revision}`, state: record.state,
+      task: record.task, cursor: this.cursor(record.task, record.revision), state: record.state,
       freshness: sample === null ? 'unavailable' : record.measurementStale || (record.retention === 'active' && !live) ? 'stale' : 'live',
       measurement: sample === null ? null : {
         ...sample, task: record.task,
@@ -139,6 +141,40 @@ export class ProgressCoordinator<D extends Details> {
       cancellation: 'none',
       ...(record.resultRef === undefined ? {} : { resultRef: record.resultRef }),
     };
+  }
+
+  disposition(task: TaskRef, prior: string | undefined, current: string): 'changed' | 'unchanged' | 'resync' {
+    if (prior === undefined) return 'changed';
+    if (prior === current) return 'unchanged';
+    const record = this.store.get(task);
+    if (record !== undefined && this.cursor(task, record.revision) === current &&
+        prior === this.cursor(task, record.revision - 1)) return 'changed';
+    return 'resync';
+  }
+
+  private cursor(task: TaskRef, revision: number): string {
+    return createHash('sha256').update(JSON.stringify([this.cursorEpoch, progressTaskKey(task), task.attempt, revision])).digest('base64url');
+  }
+
+  onChange(task: TaskRef, listener: () => void): () => void {
+    const key = progressTaskKey(task);
+    const listeners = this.listeners.get(key) ?? new Set<() => void>();
+    listeners.add(listener);
+    this.listeners.set(key, listeners);
+    return () => {
+      listeners.delete(listener);
+      if (listeners.size === 0) this.listeners.delete(key);
+    };
+  }
+
+  isTerminal(task: TaskRef): boolean {
+    return this.store.get(task)?.retention === 'terminal';
+  }
+
+  notify(task: TaskRef): void {
+    for (const listener of this.listeners.get(progressTaskKey(task)) ?? []) {
+      try { listener(); } catch { /* Observer failure cannot affect the executor. */ }
+    }
   }
 
   private run<T>(key: string, work: () => Promise<T>): Promise<T> {
@@ -199,6 +235,7 @@ export class ProgressCoordinator<D extends Details> {
         };
         this.active.set(key, runtime);
         this.owners.set(owner, runtime);
+        this.notify(record.task);
         return { kind: 'admitted', task: { ...record.task }, owner, fence };
       } catch (error) {
         if (error instanceof ProgressStorageError && error.reason === 'capacity') return { kind: 'refused', reason: 'capacity' };
@@ -242,6 +279,7 @@ export class ProgressCoordinator<D extends Details> {
         runtime.stopped = true;
         this.active.delete(runtime.key);
       }
+      this.notify(runtime.task);
       return 'recorded';
     });
   }
@@ -259,6 +297,7 @@ export class ProgressCoordinator<D extends Details> {
         owner: { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: sequence },
       }, record.revision);
       runtime.sequence = sequence;
+      this.notify(runtime.task);
       return 'renewed';
     });
   }
@@ -297,6 +336,7 @@ export class ProgressCoordinator<D extends Details> {
             measurement: normalized ?? record.measurement, measurementStale: stale,
             owner: { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: runtime.sequence },
           }, record.revision);
+          this.notify(runtime.task);
         }
         if (!stale && sample !== null) runtime.sourceRevision = sample.meaningfulRevision;
       });

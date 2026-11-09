@@ -19,6 +19,9 @@ import { UnderstandingService } from '../understanding/service.js';
 import { mkdirSync, existsSync, rmSync } from 'node:fs';
 import { runBootSteeringRefresh } from './steering-inject.js';
 import { PATHS } from '../shared/paths.js';
+import type { ProgressKind } from '../shared/task-progress.js';
+import { openProgressRuntime } from './task-progress/runtime.js';
+import type { ProgressRuntime } from './task-progress/rpc.js';
 import { setLogMode, getLogger } from '../shared/logger.js';
 
 setLogMode('daemon');
@@ -469,12 +472,20 @@ async function main(): Promise<void> {
 	// Built at boot without daemon threads; with them, only when the first request that must stay
 	// on this thread arrives (s4), so a daemon that never sees one never builds the handler tables here.
 	let understandingRoutes: HandlerRuntime['understandingRoutes'] | undefined;
+	let progressRuntime: Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> | undefined;
+	const getProgressRuntime = (): Promise<ProgressRuntime<{ readonly kind: ProgressKind }>> => {
+		return progressRuntime ??= openProgressRuntime(PATHS.insrc,
+			async () => new Set((await listRepos(db)).map(repo => repo.path)),
+			(_kind, details): details is { readonly kind: ProgressKind } => false,
+		).catch(error => { progressRuntime = undefined; throw error; });
+	};
 	const buildRuntime = (): ForwardRequest => {
 		const runtime = buildHandlerRuntime({
 			db, configStore, queue, indexer, startedAt,
 			shutdown: reason => shutdown(reason),
 			attachedClients: () => server.attachedClients(),
 			understandingService: () => understandingService,
+			progressRuntime: getProgressRuntime,
 			// With daemon threads the session purge reaches the chat pool and todos bus through a nested call (s3).
 			...(router !== undefined ? { nestedCall: (method: string, params: unknown) => inDaemon.request(method, params) } : {}),
 		});
@@ -500,7 +511,10 @@ async function main(): Promise<void> {
 	const local = router !== undefined ? lazyForward(buildRuntime).forward : buildRuntime();
 	localForward = local;
 	const server = new IpcServer(connectionSessionRuntime.forward(router?.forward ?? local));
-	server.onConnectionClose(context => connectionSessionRuntime.disconnect(context));
+	server.onConnectionClose(context => {
+		connectionSessionRuntime.disconnect(context);
+		void progressRuntime?.then(runtime => runtime.access.disconnect(context)).catch(() => {});
+	});
 	connectionOwners.push({ close: () => connectionSessionRuntime.close() });
 	startupServer = server;
 	if (threadServices !== undefined && router !== undefined) {

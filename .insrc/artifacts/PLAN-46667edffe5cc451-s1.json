@@ -1,9 +1,9 @@
 {
   "meta": {
     "workflow": "plan",
-    "runId": "wf-1794162510470-et6te8",
-    "repoPath": "/Users/subhagho/work/projects/insors/insrc",
-    "createdAt": "2026-11-08T18:30:58.216Z",
+    "runId": "wf-1794198539250-edhel3",
+    "repoPath": "/private/tmp/insrc-dependabot-build.VhhDqJ",
+    "createdAt": "2026-11-09T04:29:58.004Z",
     "epicCreatedAt": "2026-11-08T16:46:43.683Z",
     "standalone": true,
     "attribution": {
@@ -16,7 +16,7 @@
         }
       ]
     },
-    "elapsedMs": 147450,
+    "elapsedMs": 58157,
     "repoIndexedAt": null,
     "schemaVersion": 1,
     "epicHash": "46667edffe5cc451",
@@ -25,17 +25,17 @@
     "lldRunId": "wf-1794158892326-31wwbi",
     "lldEffectiveHash": "7cca28aa1022bf998ab35918e0b0b7692a6b02f4466286eec275e61b20552646",
     "authoredBy": "controller",
-    "revision": 1,
     "envelope": {
       "description": "",
       "references": [],
       "attachments": []
     },
+    "revision": 3,
     "lifecycle": {
       "status": "approved",
       "revision": {
-        "number": 1,
-        "contentHash": "3f58267a33becbc31944f9d7ef24cc594ad22c6ae02a3e5a4a40c06447475697",
+        "number": 3,
+        "contentHash": "9e16af8a1825550fb849b0f743a40804d49bee704af22e31db03b7e841daa097",
         "at": "",
         "by": {
           "id": "insrc:system",
@@ -45,16 +45,16 @@
       },
       "signoffs": [],
       "approval": {
-        "revision": 1,
+        "revision": 3,
         "by": {
           "id": "insrc:approval",
           "kind": "system",
           "properties": {}
         },
-        "at": "2026-11-08T18:32:27.964Z"
+        "at": "2026-11-09T04:36:03.621Z"
       }
     },
-    "rangeBase": "d5567e4647980f7745a4223aa18b5784392ca7c3"
+    "rangeBase": "166764991427e8238ca6a803711bbecd571e731c"
   },
   "body": {
     "summary": {
@@ -105,7 +105,7 @@
         "summary": "Apply batch 2 Nodemailer, Cassandra and ZIP, MySQL, etcd and gRPC, and SQL Server Azure Identity changes. Preserve saved configuration loading and driver contracts.",
         "acceptanceChecks": [
           "Confirm every batch 2 resolved dependency is outside the mapped affected ranges.",
-          "Verify authenticated STARTTLS, recipient handling and attachments, plus existing Cassandra, etcd, MySQL and SQL Server configuration, connection, schema and read paths. Record each unavailable live service and what fixtures covered.",
+          "Verify authenticated STARTTLS, recipient handling and attachments. Run live saved-configuration connection, schema and bounded-read checks for Cassandra, etcd and MySQL. Verify SQL Server saved configuration, schema and bounded reads at the Tedious SDK boundary with the existing fixture. Record live SQL Server qualification as deferred at the user's direction, outside this build gate.",
           "Prove the overwrite-enabled destination symlink fixture detects baseline behavior and passes on the selected adm-zip release for synchronous, asynchronous and single-entry extraction."
         ],
         "derivedFrom": [
@@ -124,7 +124,11 @@
           },
           {
             "level": "live",
-            "name": "Load saved Cassandra, etcd, MySQL and SQL Server settings through daemon registration, then connect, read schema and perform a bounded read"
+            "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read"
+          },
+          {
+            "level": "integration",
+            "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture"
           }
         ]
       },
@@ -224,9 +228,9 @@
           "t5"
         ],
         "title": "Run the full sweep and record release verification",
-        "summary": "Once all implementation tasks pass targeted checks, perform the combined build and single full sweep. Reconcile all in-scope root ranges, archived evidence and live-service coverage. Define the authenticated GitHub reconciliation procedure for after the default-branch scan.",
+        "summary": "Once all implementation tasks pass targeted checks, perform the combined build and single full sweep. Reconcile all in-scope root ranges, archived evidence and live-service coverage. Define the authenticated GitHub reconciliation procedure for after the default-branch scan. Record the failed sweep and reconcile its signatures against the unchanged baseline. The user deferred reproduced baseline failures to GitHub #143.",
         "acceptanceChecks": [
-          "Record one full sweep after all implementation tasks pass targeted validation. Report pass, skip and failure counts and exact commands.",
+          "Verify the root build passed and record the single completed full sweep after targeted task validation, with exact commands, revision, exit status and pass, failure, cancellation and skip counts. Preserve the failed result. Identify baseline-reproduced failures tracked in GitHub #143 and show that story-specific failures are corrected with passing targeted validation.",
           "Check every captured in-scope root alert against every matching resolved dependency instance and preserve all four archived lockfiles byte-for-byte.",
           "Keep eight low alerts outside the gate. Keep live alert reconciliation explicitly pending until a fresh authenticated default-branch scan check can verify each scoped alert.",
           "Record each evidence-only alert and any ZIP advisory metadata discrepancy separately. Do not dismiss tracker alerts as a build side effect."
@@ -238,8 +242,8 @@
         ],
         "tests": [
           {
-            "level": "integration",
-            "name": "Run root build and one combined repository test sweep after targeted task validation"
+            "level": "smoke",
+            "name": "Verify root build, completed full sweep evidence and baseline failure deferral to GitHub #143"
           },
           {
             "level": "unit",

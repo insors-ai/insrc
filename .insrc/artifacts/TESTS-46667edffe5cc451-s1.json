@@ -1,0 +1,667 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "draft",
+      "revision": {
+        "number": 11,
+        "contentHash": "496c2f5e23a69f850a0a07efc06567cdb7b33bb2c14fec076be84de2faba2181",
+        "at": "2026-11-09T04:36:37.717Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": []
+    },
+    "workflow": "tests",
+    "epicHash": "46667edffe5cc451",
+    "storyId": "s1",
+    "createdAt": "2026-11-08T18:41:33.396Z",
+    "updatedAt": "2026-11-09T04:36:37.697Z",
+    "standalone": true,
+    "epicCreatedAt": "2026-11-08T16:46:43.683Z",
+    "epicSlug": "remediate-critical-high-moderate-dependabot-alerts",
+    "revision": 11
+  },
+  "body": {
+    "tasks": [
+      {
+        "taskId": "t1",
+        "commit": "67dc8d663",
+        "ranAt": "2026-11-08T18:46:05.194Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "MCP structural-schema, YAML merge and CSV reader regression suites",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/structural-schema.test.ts",
+                "title": "actual MCP code-review advertisement has object-valued array items throughout",
+                "result": "pass"
+              },
+              {
+                "file": "src/indexer/target-resolution/__tests__/core-and-parsers.test.ts",
+                "title": "Kubernetes parser resolves YAML merge keys, explicit overrides and multiple documents",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/saved-csv-dependencies.test.ts",
+                "title": "saved CSV registers, previews rows, and answers a bounded query through DuckDB",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "MCP stdio list and call plus HTTP TLS, redirect, abort, WebSocket and Ollama stream checks",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/mcp/__tests__/stdio-dependencies.test.ts",
+                "title": "Compiled MCP SDK lists and calls a schema tool over stdio",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/tools/builtins/http/__tests__/transport.test.ts",
+                "title": "HTTP tools preserve TLS validation, redirects, cancellation, and WebSocket negotiation",
+                "result": "pass"
+              },
+              {
+                "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Build and inspect packed backend entry points and resolved packages after unused dependency removal",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "Node 22.22.1 npm run build log at /tmp/insrc-dependabot-t1-build.log. npm pack --dry-run inventory /tmp/insrc-dependabot-t1-pack.json contains every declared bin. Compiled MCP listed tools and called insrc_schema, and the lockfile has zero PDF.js or csv-parse instances. Compiled tool smoke, YAML merge and saved CSV appear in /tmp/insrc-dependabot-t1-coverage.tap (18 passed)."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/ollama-private-transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2700,
+            "titles": [
+              {
+                "title": "memory-only Ollama transport rejects malformed frames before SDK console diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport retains completion until actual HTTP EOF after terminal frame",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only Ollama transport rejects non-JSON HTTP failures before SDK error diagnostics",
+                "result": "pass"
+              },
+              {
+                "title": "admitted Session expiry during real structured validation prevents the next SDK retry",
+                "result": "pass"
+              },
+              {
+                "title": "memory-only adapter refuses internal helper substitution before native construction",
+                "result": "pass"
+              },
+              {
+                "title": "issued proof from an actual changed artifact generation refuses with zero filesystem or spawn calls",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-csv-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 2075,
+            "titles": [
+              {
+                "title": "saved CSV registers, previews rows, and answers a bounded query through DuckDB",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/http/__tests__/transport.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 638,
+            "titles": [
+              {
+                "title": "HTTP tools preserve TLS validation, redirects, cancellation, and WebSocket negotiation",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/indexer/target-resolution/__tests__/core-and-parsers.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 750,
+            "titles": [
+              {
+                "title": "t1: ResolvedTarget discriminates on `resolved`; ConfigSourceLayer has the four members",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a concrete literal resolves true with identity=the literal (no map lookup)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: an interpolation referencing a key present only in localConfig resolves from the default",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a two-key interpolation with one missing key => {resolved:false} (no partial pin)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a missing key => unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a cyclic interpolation chain terminates and returns unresolved",
+                "result": "pass"
+              },
+              {
+                "title": "t3: a deep (nested) chain that terminates resolves to the final literal",
+                "result": "pass"
+              },
+              {
+                "title": "t3: protocol is carried through unchanged for http/messaging/rpc (no shape validation)",
+                "result": "pass"
+              },
+              {
+                "title": "t3: precedence via resolveAgainst — k8s beats envFile beats localConfig; k8s beats docker",
+                "result": "pass"
+              },
+              {
+                "title": "t2: .env parser — key=value, quoted, comments, export, malformed line skipped",
+                "result": "pass"
+              },
+              {
+                "title": "t2: Dockerfile ENV parser — KEY=VALUE (multi) + legacy KEY VALUE, tagged docker",
+                "result": "pass"
+              },
+              {
+                "title": "t2: docker-compose parser — environment map + list forms, tagged docker",
+                "result": "pass"
+              },
+              {
+                "title": "Kubernetes parser resolves YAML merge keys, explicit overrides and multiple documents",
+                "result": "pass"
+              },
+              {
+                "title": "t2: unparseable YAML is skipped without throwing",
+                "result": "pass"
+              },
+              {
+                "title": "t2: localConfig parser — flat JSON + key=value/key: value lines, tagged localConfig",
+                "result": "pass"
+              },
+              {
+                "title": "t2: buildConfigSourceMap — dispatch by filename + total precedence winner per key",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/stdio-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 801,
+            "titles": [
+              {
+                "title": "Compiled MCP SDK lists and calls a schema tool over stdio",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/mcp/__tests__/structural-schema.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 621,
+            "titles": [
+              {
+                "title": "homogeneous tuples advertise bounded fixed-length arrays without weakening validation",
+                "result": "pass"
+              },
+              {
+                "title": "heterogeneous tuples retain their positional validation contracts",
+                "result": "pass"
+              },
+              {
+                "title": "actual MCP code-review advertisement has object-valued array items throughout",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t2",
+        "commit": "445774cf2",
+        "ranAt": "2026-11-08T20:13:47.146Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Overwrite-enabled ZIP outside-sentinel regression for extractAllTo, extractAllToAsync and extractEntryTo",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/cassandra-zip-dependencies.test.ts",
+                "title": "Cassandra ZIP dependency preserves outside sentinel bytes and mode with overwrite enabled",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Authenticated SMTP STARTTLS with attachments, authentication failure, required-TLS failure and partial recipient rejection",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/tools/builtins/notify/__tests__/smtp-dependencies.test.ts",
+                "title": "SMTP tool delivers attachments over authenticated STARTTLS and reports SMTP refusals",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Load saved Cassandra, etcd and MySQL settings through the daemon registry, then connect, read schema and perform a bounded read",
+            "level": "live",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "MySQL three passing integration cases in /tmp/insrc-dependabot-t2-live.log and named Cassandra and etcd saved-driver cases in /tmp/insrc-dependabot-t2-kv-cases.tap. DRIVER-QUALIFICATION.md records the coverage."
+            }
+          },
+          {
+            "name": "Verify saved SQL Server configuration, schema and bounded reads at the Tedious SDK boundary using the fixture",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/daemon/db/__tests__/saved-driver-dependencies.test.ts",
+                "title": "saved SQL Server configuration uses Tedious for schema and bounded reads at the SDK boundary",
+                "result": "pass"
+              },
+              {
+                "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+                "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/daemon/db/__tests__/cassandra-zip-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 523,
+            "titles": [
+              {
+                "title": "Cassandra ZIP dependency preserves outside sentinel bytes and mode with overwrite enabled",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/saved-driver-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1139,
+            "titles": [
+              {
+                "title": "saved SQL Server configuration uses Tedious for schema and bounded reads at the SDK boundary",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/db/__tests__/session-driver-logs.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12374,
+            "titles": [
+              {
+                "title": "CM-S3-DRIVER-LOGS: normal daemon source and compiled SDK resources stay quiet through idle reconnect expiry and disposal while saved markers remain",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: ambient SDK debugging refuses temporary construction without disabling saved resources",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S3-DRIVER-LOGS: installed SDK diagnostic controls retain reviewed source and version evidence for all 14 modules",
+                "result": "pass"
+              },
+              {
+                "title": "CM-S4-PRIVACY/NO-PERSIST: source and compiled removal replies and rotating logs hide SDK journal and capability canaries",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          },
+          {
+            "file": "src/daemon/tools/builtins/notify/__tests__/smtp-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1922,
+            "titles": [
+              {
+                "title": "SMTP tool delivers attachments over authenticated STARTTLS and reports SMTP refusals",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t3",
+        "commit": "f0af23c1f",
+        "ranAt": "2026-11-08T19:06:25.021Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Clean macOS and Linux Node 22.22.1 daemon installs with native dependency version checks",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "NATIVE-QUALIFICATION.md records both platforms and binding versions. Clean npm ci and actual model output are in /tmp/insrc-dependabot-t3-macos.log and /tmp/insrc-dependabot-t3-linux.log."
+            }
+          },
+          {
+            "name": "Load local ONNX and run a representative embedding without a cloud dependency",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/onnx-native-dependencies.test.ts",
+                "title": "Daemon produces a 768-component local embedding with the patched native graph",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/onnx-native-dependencies.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1034,
+            "titles": [
+              {
+                "title": "Daemon produces a 768-component local embedding with the patched native graph",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t4",
+        "commit": "5aedc0347",
+        "ranAt": "2026-11-08T19:11:35.598Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "LanceDB staged tarball manifest-diff, integrity and license assertions",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "bundled LanceDB retains upstream code and notices with only approved manifest exclusions",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Build and pack the release artifact and inspect the default clean consumer dependency graph without host overrides",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 12296,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "bundled LanceDB retains upstream code and notices with only approved manifest exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              },
+              {
+                "title": "packed-store-private-commit-read-receipt-and-cold-public-status",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-native-missing-import-safe-open-not-ready-and-owner-released",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "db613ce26",
+        "ranAt": "2026-11-08T19:20:02.017Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Run packed project-memory API and native binding smoke on macOS and Linux Node 22.22.1",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed-store-private-commit-read-receipt-and-cold-public-status",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Open populated pre-upgrade fixture and verify records, vectors, queue and receipts, then rehearse the approved restore in scratch",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "packages/project-memory/src/__tests__/packed.test.ts",
+                "title": "packed upgrade reopens baseline rows vectors queue and receipts and old release restores backup",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "packages/project-memory/src/__tests__/packed.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 19341,
+            "titles": [
+              {
+                "title": "packed-isolated-node22-consumer",
+                "result": "pass"
+              },
+              {
+                "title": "packed-native-missing-import-versus-open",
+                "result": "pass"
+              },
+              {
+                "title": "tarball-public-dependency-and-asset-allowlist",
+                "result": "pass"
+              },
+              {
+                "title": "bundled LanceDB retains upstream code and notices with only approved manifest exclusions",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-dependency-stays-lazy-on-import",
+                "result": "pass"
+              },
+              {
+                "title": "packed-external-submit-crash-reopen-and-operation",
+                "result": "pass"
+              },
+              {
+                "title": "packed-store-private-commit-read-receipt-and-cold-public-status",
+                "result": "pass"
+              },
+              {
+                "title": "packed-lance-native-missing-import-safe-open-not-ready-and-owner-released",
+                "result": "pass"
+              },
+              {
+                "title": "packed upgrade reopens baseline rows vectors queue and receipts and old release restores backup",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t6",
+        "commit": "3a3d66c4a",
+        "ranAt": "2026-11-09T04:36:37.697Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "Verify root build, completed full sweep evidence and baseline failure deferral to GitHub #143",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/RELEASE-VERIFICATION.md and /tmp/insrc-dependabot-sweep.XHqEr6/ (build.log, sweep.tap, comparison.txt, mcp-baseline-probe-16.tap, t2-post-sweep.tap). Evidence check passes under revised plan. Full sweep itself exited 1 with 560 failures and 37 cancellations. Baseline signatures tracked in #143. Branch-specific pin fix passed seven targeted checks."
+            }
+          },
+          {
+            "name": "Recompute all captured in-scope root ranges and byte-check the four archived lockfiles",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/release-verification.test.ts",
+                "title": "all scoped root advisory ranges clear and archived lockfiles remain byte-identical",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "Record tracker reconciliation commands and pending state until GitHub rescans the default branch",
+            "level": "smoke",
+            "source": "mapping",
+            "cases": [],
+            "files": [],
+            "reported": {
+              "result": "pass",
+              "evidence": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/RELEASE-VERIFICATION.md, Post-deployment GitHub reconciliation. Documented read-only command and pending scan status verified."
+            }
+          }
+        ],
+        "files": [
+          {
+            "file": "docs/standalone/remediate-critical-high-moderate-dependabot-alerts-E2026110846667edf/S001/release-verification.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 728,
+            "titles": [
+              {
+                "title": "all scoped root advisory ranges clear and archived lockfiles remain byte-identical",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      }
+    ]
+  },
+  "citations": []
+}

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-dde5a1ac-b144-4cfa-96dc-000b5530ed52",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.071Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add design-review admission and resource-guard contracts",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t1",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "65b191e62ad5c0a14ec0db5209543237996d70e23cb88bbf5f903e823f9f38f2",
+        "at": "2026-11-09T07:42:48.071Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.072Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add design-review admission and resource-guard contracts",
+    "summary": "Consume the shared resource types and extend design-review contracts/checkpoint codecs/discriminating readers with the approved admission variant. Preserve current qualified attempt/chunk histories, source-subject identities and explicit recovery rules; do not switch production routing yet.",
+    "size": "L",
+    "order": 2,
+    "acceptanceChecks": [
+      "Design admission preserves immutable input/action identity while subject/history qualification remains unverified; planning/chunk results are absent until actually established.",
+      "Historical design checkpoints remain readable without rewriting accepted feedback; unknown formats and ambiguous attempted conversions refuse explicitly.",
+      "Design resourceGuard updates use the single serialized checkpoint writer alongside progress/results, preventing lost open intents or premature lease closure.",
+      "Existing artifact-change invalidation, explicit recovery and approval-evidence distinctions remain intact; unverified admission cannot approve an artifact."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/review/design-review/__tests__/admission-checkpoint.test.ts: historical design attempts and unverified admission retain separate semantics"
+      },
+      {
+        "level": "unit",
+        "name": "src/workflow/review/design-review/__tests__/checkpoint-progress.test.ts: serialized resource and progress updates cannot lose open intents"
+      }
+    ],
+    "planTaskId": "t2"
+  },
+  "citations": []
+}

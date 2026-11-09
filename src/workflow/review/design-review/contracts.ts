@@ -3,6 +3,7 @@ import { isAbsolute } from 'node:path';
 import { Type } from '@sinclair/typebox';
 import type { Static, TSchema, TLiteral, TUnion } from '@sinclair/typebox';
 import { Value } from '@sinclair/typebox/value';
+import { ReviewResourceGuardSchema } from '../../../shared/review-resources.js';
 
 export const DESIGN_LIMITS = {
  subjectBytes: 8 * 1024 * 1024, checkpointBytes: 64 * 1024 * 1024,
@@ -156,7 +157,7 @@ export const DesignActivitySchema = object({ sessionId: id, sequence: positive,
  toolId: Type.Optional(id),
 });
 export const DesignProgressSchema = object({ status: DesignStatusSchema,
- phase: enumeration(['planning','impact','chunk_review','tool_running','persisting','publishing','complete']),
+ phase: enumeration(['admission','planning','impact','chunk_review','tool_running','persisting','publishing','complete']),
  activeChunkId: Type.Optional(id), completedChunks: number, totalChunks: number,
  lastMeaningfulActivityAt: Type.Union([timestamp, Type.Null()]), activeToolCount: number,
  requiresUserInput: Type.Boolean(), checkpointPath: path, sequence: number,
@@ -214,6 +215,43 @@ export const DesignCheckpointSchema = object({ schemaVersion: Type.Literal(1), r
  attempts: Type.Array(DesignAttemptSchema, { minItems: 1, maxItems: DESIGN_LIMITS.attempts }),
 });
 export type DesignReviewCheckpoint = Static<typeof DesignCheckpointSchema>;
+/** Kept separate from qualified progress: zero chunks means unverified
+ * inventory during admission, never a successfully completed empty review. */
+export const DesignAdmissionAttemptSchema = object({
+ phase: Type.Literal('admission'), validation: Type.Literal('unverified'),
+ number: positive, reviewer: enumeration(['daemon', 'controller']),
+ status: enumeration(['pending', 'running', 'failed', 'interrupted']),
+ operation: enumeration(['start', 'recover']), actionId: id,
+ submitted: object({ artifactPath: Type.Optional(path), attempt: positive,
+  recovery: Type.Optional(object({ operation, userDecision: Type.Optional(userDecision) })),
+ }),
+ acceptedAt: timestamp, startedAt: timestamp, finishedAt: Type.Optional(timestamp),
+ progress: object({ phase: Type.Literal('admission'), totalChunks: Type.Literal(0),
+  completedChunks: Type.Literal(0), checkpointPath: path, sequence: number,
+  observedAt: timestamp, freshness: enumeration(['live', 'stored']),
+ }),
+ error: Type.Optional(object({ code: id, field: Type.String({ minLength: 1, maxLength: 256 }), summary: Type.String({ minLength: 1, maxLength: 2048 }) })),
+ resourceGuard: Type.Optional(ReviewResourceGuardSchema),
+});
+export type DesignAdmissionAttempt = Static<typeof DesignAdmissionAttemptSchema>;
+export const ResourceDesignAttemptSchema = object({ ...DesignAttemptSchema.properties,
+ submitted: Type.Optional(DesignAdmissionAttemptSchema.properties.submitted),
+ actionId: Type.Optional(id), operation: Type.Optional(enumeration(['start','recover'])),
+ acceptedAt: Type.Optional(timestamp), resourceGuard: Type.Optional(ReviewResourceGuardSchema),
+});
+export type ResourceDesignAttempt = Static<typeof ResourceDesignAttemptSchema>;
+export const DesignAdmissionCheckpointSchema = object({
+ schemaVersion: Type.Literal(2), reviewId: id, project: path,
+ artifactId: Type.Optional(path), subject: Type.Optional(DesignSubjectSchema),
+ submitted: Type.Optional(DesignCheckpointSchema.properties.submitted),
+ attempts: Type.Array(Type.Union([DesignAdmissionAttemptSchema, ResourceDesignAttemptSchema]), { minItems: 1, maxItems: DESIGN_LIMITS.attempts }),
+});
+export type DesignAdmissionCheckpoint = Static<typeof DesignAdmissionCheckpointSchema>;
+export const StoredDesignCheckpointSchema = Type.Union([DesignCheckpointSchema, DesignAdmissionCheckpointSchema]);
+export type StoredDesignCheckpoint = DesignReviewCheckpoint | DesignAdmissionCheckpoint;
+export function isDesignAdmission(attempt: DesignAttempt | ResourceDesignAttempt | DesignAdmissionAttempt): attempt is DesignAdmissionAttempt {
+ return 'phase' in attempt && attempt.phase === 'admission';
+}
 const identity = { repo: path, reviewId: id, attempt: positive };
 const submission = { ...identity, executionId: id, sequence: positive };
 export const DESIGN_REVIEW_PHASES = ['start','progress','assignment','plan','impact','activity','result','recover','failure'] as const;

@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 16,
-        "contentHash": "1de06306451a727529fbaf7fc47cfd47071168d1c76b532e23aba7e0e3475172",
-        "at": "2026-10-26T18:06:52.699Z",
+        "number": 18,
+        "contentHash": "c84c12f95178f203a2d98bbcf57ee702ef48a9bf461eace901bb8386e6d4b04d",
+        "at": "2026-11-08T19:47:36.310Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -29,8 +29,8 @@
     "schemaVersion": 1,
     "epicHash": "c66d49bb81925886",
     "storyId": "s1",
-    "revision": 16,
-    "updatedAt": "2026-10-26T18:06:01.332Z",
+    "revision": 18,
+    "updatedAt": "2026-11-08T19:46:29.063Z",
     "authoredBy": "controller",
     "epicSlug": "retain-durable-artifact-token-usage"
   },
@@ -81,194 +81,11 @@
         "passed": true
       }
     ],
-    "summary": "Full npm run build passed (tsc, native helpers, model-definition checks, asset copying), evidence /tmp/tu1-s1-t11-build.log and usage README. Public contract fixture now directly exercises correction, reconciliation, cumulative and transfer composition as well as attribution, identity/replay, unsupported input and ownership compatibility. Node 22.22.1 isolated packaging passed. Prior full-backend failures remain documented separately.",
+    "summary": "S1 pure immutable usage domain completed, including review corrections through 2349e2ebc and governing v1 native-coverage restriction. Required current verification: npm run build exit 0 (/tmp/tu1-s1-resume-build.log), all 40 usage tests pass (/tmp/tu1-s1-resume-tests.log), six artifact identity tests pass (/tmp/tu1-s1-resume-identity-tests.log). README now records these refreshed results. Earlier October baseline logs are unavailable and no baseline-comparison or full-backend-green claim is made; full backend sweep was not rerun.",
     "testRecord": {
       "md": "docs/epics/retain-durable-artifact-token-usage-E20261026c66d49bb/S001/TESTS.md"
     },
-    "changeLog": [
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/fixtures/types-contract.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/schema-contract.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/index.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/types.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/ledger-record.v1.avsc.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/ledger-record.v1.schema.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/schemas.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/identity.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/canonical.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/fixtures/domain-fixtures.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/source-capabilities.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/validation.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/capabilities.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/validation.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/attribution.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/attribution.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/domain-contract.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/reducer.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/reducer.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/reconciliation.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/basis.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/cumulative.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/transfer-state.test.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/ownership.ts"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/__tests__/fixtures/source-capabilities.v1.json"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      },
-      {
-        "target": {
-          "file": "src/workflow/usage/README.md"
-        },
-        "author": "insrc-build",
-        "timestamp": "2026-10-26T18:06:01.332Z"
-      }
-    ],
+    "changeLog": [],
     "commit": "323fb900a"
   },
   "citations": []

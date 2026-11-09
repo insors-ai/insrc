@@ -13,7 +13,9 @@ import { requireReviewActivity, REVIEW_INACTIVITY_MS } from '../../../shared/rev
 import { DESIGN_LIMITS, DesignPlanSchema, designChunkResultSchema, DesignImpactOutputSchema, DesignReviewError, DesignReviewConflictError, DesignReviewPersistenceError, currentDesignAttempt, parseDesignRequest, requireDesign } from './contracts.js';
 import type { DesignReviewCheckpoint, DesignAttempt, DesignReviewSubject, DesignReviewStart, DesignReviewRequest, DesignReviewAcknowledgement, DesignUnitAssignment, DesignChunk, DesignChunkPlan, DesignChunkResult, DesignRecoveryRequest, DesignImpactAssessment } from './contracts.js';
 import { prepareDesignSubject, assertDesignSubjectUnchanged } from './subject.js';
-import { designCheckpointPath, loadDesignCheckpoint, saveDesignCheckpoint } from './checkpoint.js';
+import { designCheckpointPath, loadDesignCheckpoint, loadStoredDesignCheckpoint, saveDesignCheckpoint } from './checkpoint.js';
+import { observeStoredDesignCheckpoint } from './progress.js';
+import { permanentStoredDesignCheckpoint } from './read.js';
 import { DesignProgressTracker, observeDesignCheckpoint } from './progress.js';
 import type { DesignObservation } from './progress.js';
 import { designPlanningPrompt, designChunkPrompt, designImpactPrompt } from './policy.js';
@@ -27,7 +29,6 @@ import { createDesignActivityMonitor } from './activity-monitor.js';
 import { assertDesignDispatchCapacity } from './capacity.js';
 import type { DesignPublication } from './contracts.js';
 import { publishDesignReview } from './publication.js';
-import { permanentDesignCheckpoint } from './read.js';
 
 const log=getLogger('design-review');
 // JSON object key order is not part of an immutable submission's identity.
@@ -267,12 +268,18 @@ export class DesignReviewCoordinator {
  }
  async progress(project:string,reviewId:string,attempt:number,options:{includeResult?:boolean|undefined;afterCompletedChunk?:number|undefined;artifactPath?:string|undefined}={}):Promise<DesignObservation>{
   project=await realpath(project);const key=this.key(project,reviewId),job=this.jobs.get(key);
-  const checkpoint=job?.checkpoint??await(this.deps.load??loadDesignCheckpoint)(project,reviewId);
+  const checkpoint=job?.checkpoint??await(this.deps.load??loadStoredDesignCheckpoint)(project,reviewId);
   if(!checkpoint){
    const locator=options.artifactPath??this.knownArtifacts.get(key);requireDesign(locator,'artifact-reference-required','Result has no checkpoint mapping; provide artifactPath for permanent history');
-   const stored=permanentDesignCheckpoint(project,locator,reviewId,attempt);
-   this.knownArtifacts.set(key,stored.checkpoint.subject.canonicalPath);
-   return {...observeDesignCheckpoint(stored.checkpoint,options),source:'history',publication:{reviewId,attempt,state:'complete',artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId}};
+   const stored=permanentStoredDesignCheckpoint(project,locator,reviewId,attempt);
+   if(stored.checkpoint.subject)this.knownArtifacts.set(key,stored.checkpoint.subject.canonicalPath);
+   const view=observeStoredDesignCheckpoint(stored.checkpoint,options);
+   return {...view,source:'history',...(!view.admission?{publication:{reviewId,attempt,state:'complete' as const,artifactHistoryEntryId:stored.entryId,reportReference:stored.entryId}}:{})};
+  }
+  if(checkpoint.schemaVersion===2){
+   requireDesign(checkpoint.attempts.some(a=>a.number===attempt),'missing_attempt','Design review attempt not found');
+   if(checkpoint.subject)this.knownArtifacts.set(key,checkpoint.subject.canonicalPath);
+   return{...observeStoredDesignCheckpoint({...checkpoint,attempts:checkpoint.attempts.filter(a=>a.number<=attempt)},options),source:'checkpoint'};
   }
   this.knownArtifacts.set(key,checkpoint.subject.canonicalPath);
   requireDesign(checkpoint.attempts[attempt-1]?.number===attempt,'missing_attempt','Design review attempt not found');

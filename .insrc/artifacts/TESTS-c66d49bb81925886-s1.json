@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 20,
-        "contentHash": "692ef4007a84f7a46822c1936036a634ed1eaf8d92a09fa0587c578eba53c7ba",
-        "at": "2026-10-26T18:06:01.423Z",
+        "number": 22,
+        "contentHash": "1d6b29a78df62f7db3455b78c50ed7ed203409ec749d18dc913ee9b7b682b68a",
+        "at": "2026-11-08T19:46:29.118Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,10 +23,10 @@
     "epicHash": "c66d49bb81925886",
     "storyId": "s1",
     "createdAt": "2026-10-26T13:03:05.535Z",
-    "updatedAt": "2026-10-26T18:06:01.332Z",
+    "updatedAt": "2026-11-08T19:46:29.063Z",
     "epicCreatedAt": "2026-10-26T04:57:41.638Z",
     "epicSlug": "retain-durable-artifact-token-usage",
-    "revision": 20
+    "revision": 22
   },
   "body": {
     "tasks": [
@@ -665,8 +665,8 @@
       },
       {
         "taskId": "t11",
-        "commit": "323fb900a",
-        "ranAt": "2026-10-26T18:06:01.332Z",
+        "commit": "04679fda9",
+        "ranAt": "2026-11-08T19:46:29.063Z",
         "testsPassed": true,
         "tests": [
           {
@@ -942,7 +942,7 @@
             "file": "src/workflow/__tests__/artifact-ids.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 344,
+            "durationMs": 362,
             "titles": [
               {
                 "title": "make produces the stored text for every existing kind and parse returns the same key",
@@ -975,7 +975,7 @@
             "file": "src/workflow/usage/__tests__/attribution.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 484,
+            "durationMs": 546,
             "titles": [
               {
                 "title": "mandatory activity table charges each exact authored or reviewed subject",
@@ -996,7 +996,7 @@
             "file": "src/workflow/usage/__tests__/domain-contract.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 1574,
+            "durationMs": 1699,
             "titles": [
               {
                 "title": "truncated closure and malformed evidence never assert a complete measured total",
@@ -1017,6 +1017,30 @@
               {
                 "title": "public reducer composes correction reconciliation cumulative and transfer accounting with qualified capability evidence",
                 "result": "pass"
+              },
+              {
+                "title": "verified empty groups differ from missing usage and conflicted calls retain explicit unresolved ownership",
+                "result": "pass"
+              },
+              {
+                "title": "public eventSetDigest directly verifies canonical set identity and bounded input rejection",
+                "result": "pass"
+              },
+              {
+                "title": "bad digest excludes only its disjoint call and every unresolved observed call retains an owner entry",
+                "result": "pass"
+              },
+              {
+                "title": "reference flags cannot hide an ordinary call or masquerade as a cumulative baseline",
+                "result": "pass"
+              },
+              {
+                "title": "record and scope binding validation reject unrelated epic and standalone-story membership",
+                "result": "pass"
+              },
+              {
+                "title": "cross-call model slices reject mixed qualification and conflicting models while labeling requested-only totals",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1025,7 +1049,7 @@
             "file": "src/workflow/usage/__tests__/identity.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 457,
+            "durationMs": 495,
             "titles": [
               {
                 "title": "canonical source identity preserves capture data and ignores only service metadata",
@@ -1046,7 +1070,7 @@
             "file": "src/workflow/usage/__tests__/reconciliation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 559,
+            "durationMs": 627,
             "titles": [
               {
                 "title": "replacement correction heads are deterministic and missing forked cyclic or cross-call references stay unresolved",
@@ -1067,7 +1091,7 @@
             "file": "src/workflow/usage/__tests__/reducer.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 554,
+            "durationMs": 642,
             "titles": [
               {
                 "title": "bounded reduction deduplicates delivery while counting all input work and exact bigint metrics",
@@ -1092,6 +1116,10 @@
               {
                 "title": "cumulative resets unknown buckets unqualified sessions and model mismatches never fabricate measured deltas",
                 "result": "pass"
+              },
+              {
+                "title": "cumulative model identity considers starts finishes and intermediate frames without null bridges",
+                "result": "pass"
               }
             ],
             "otherFailures": []
@@ -1100,7 +1128,7 @@
             "file": "src/workflow/usage/__tests__/schema-contract.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 9736,
+            "durationMs": 13408,
             "titles": [
               {
                 "title": "types preserve HLD contracts and reject invalid v1 payloads",
@@ -1121,7 +1149,7 @@
             "file": "src/workflow/usage/__tests__/source-capabilities.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 725,
+            "durationMs": 744,
             "titles": [
               {
                 "title": "capability declarations reject malformed or unqualified native completeness",
@@ -1142,7 +1170,7 @@
             "file": "src/workflow/usage/__tests__/transfer-state.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 540,
+            "durationMs": 545,
             "titles": [
               {
                 "title": "same-root single commitment changes effective artifact once and preserves immutable capture provenance",
@@ -1167,7 +1195,7 @@
             "file": "src/workflow/usage/__tests__/validation.test.ts",
             "exitCode": 0,
             "timedOut": false,
-            "durationMs": 502,
+            "durationMs": 509,
             "titles": [
               {
                 "title": "record validation rejects unsafe shapes, versions, identities and digests without invoking hooks",

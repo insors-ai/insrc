@@ -6,13 +6,14 @@ import { decodeReview } from './contracts.js';
 const count=Type.Integer({minimum:0,maximum:Number.MAX_SAFE_INTEGER});
 export const ProgressViewSchema=Type.Object({
  reviewId:Type.String({minLength:1,maxLength:128}),attempt:Type.Integer({minimum:1,maximum:Number.MAX_SAFE_INTEGER}),
- status:Type.Union((['pending','running','passed','changes_requested','incomplete','failed'] as const).map(v=>Type.Literal(v))),
+ status:Type.Union((['pending','running','passed','changes_requested','incomplete','failed','interrupted'] as const).map(v=>Type.Literal(v))),
  crPublication:Type.Union([Type.Literal('pending'),Type.Literal('complete')]),
  executionState:Type.Union([Type.Literal('active'),Type.Literal('starting'),Type.Literal('inactive')]),
  completedTasks:count,totalTasks:count,interrupted:Type.Boolean(),hasError:Type.Boolean(),
  freshness:Type.Union([Type.Literal('live'),Type.Literal('stale'),Type.Literal('unknown')]),
  progress:Type.Union([ProgressSchema,Type.Null()]),
  warning:Type.Optional(Type.Literal('progress_persistence_failed')),
+ admission:Type.Optional(Type.Object({validation:Type.Literal('unverified'),error:Type.Optional(Type.Object({code:Type.String({minLength:1,maxLength:128}),field:Type.String({minLength:1,maxLength:256}),summary:Type.String({minLength:1,maxLength:2048})},{additionalProperties:false}))},{additionalProperties:false})),
 },{additionalProperties:false});
 export type ReviewProgressView=Static<typeof ProgressViewSchema>;
 export const parseProgressView=(value:unknown):ReviewProgressView=>decodeReview(ProgressViewSchema,value);

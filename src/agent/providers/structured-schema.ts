@@ -143,6 +143,34 @@ const CODEX_KEPT_KEYWORDS: ReadonlySet<string> = new Set([
 	'format',
 ]);
 
+/**
+ * What a schema sent to a provider holds, as one line for an error: each keyword with how often it occurs, and the
+ * place of every empty `anyOf` / `oneOf` / `enum` / `required` list. A provider that refuses a schema names no keyword;
+ * this is how the keyword that was sent can be found. Total over any input.
+ */
+export function schemaKeywordSummary(schema: unknown): string {
+	const counts = new Map<string, number>();
+	const empty: string[] = [];
+	const MAPS = new Set(['properties', 'patternProperties', '$defs', 'definitions']);
+	// The value of these is data, not a schema: what it holds is never a keyword.
+	const DATA = new Set(['const', 'enum', 'default', 'examples', 'example']);
+	const walk = (v: unknown, path: string, inMap: boolean): void => {
+		if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`, false)); return; }
+		if (v === null || typeof v !== 'object') return;
+		for (const [k, x] of Object.entries(v as Record<string, unknown>)) {
+			if (!inMap) {
+				counts.set(k, (counts.get(k) ?? 0) + 1);
+				if (['anyOf', 'oneOf', 'allOf', 'enum', 'required'].includes(k) && Array.isArray(x) && x.length === 0) empty.push(`${path}.${k}`);
+			}
+			if (!inMap && DATA.has(k)) continue;
+			walk(x, `${path}.${k}`, !inMap && MAPS.has(k));
+		}
+	};
+	walk(schema, '$', false);
+	const keywords = [...counts].map(([k, n]) => `${k}×${n}`).join(', ');
+	return `keywords sent: ${keywords || 'none'}${empty.length > 0 ? `; empty lists at: ${empty.join(', ')}` : ''}`;
+}
+
 /** Keywords whose value maps names to schemas, and those whose value is a schema or a list of them. */
 const SCHEMA_MAPS = ['properties', 'patternProperties', '$defs', 'definitions'] as const;
 const SCHEMA_VALUES = ['items', 'additionalProperties', 'anyOf', 'oneOf'] as const;

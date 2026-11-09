@@ -64,6 +64,8 @@ function withoutQuotedAnswer(message: string): string {
 export function isModelCallFailure(err: unknown): boolean {
 	if (err instanceof ModelCallFailedError) return true;
 	if (!(err instanceof Error)) return false;
+	// A typed size refusal keeps the CLI's exit wording but is not a failed call: the input is what has to change.
+	if (err.name === 'InputTooLargeError') return false;
 	const msg = withoutQuotedAnswer(err.message);
 	// The provider's own wording for a failed call opens the message
 	// (after the retry helper's prefix, when there is one). It is never

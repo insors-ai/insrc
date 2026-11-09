@@ -20,6 +20,30 @@
  */
 
 import { spawn } from 'node:child_process';
+import type { ChildProcess } from 'node:child_process';
+
+export type ProcessDisposal =
+ | { readonly state: 'confirmed'; readonly reason: 'not_started' | 'closed' }
+ | { readonly state: 'unknown'; readonly reason: 'child_not_closed' | 'group_not_empty' | 'group_state_unknown' };
+
+/** Observe a child we actually own. Signals and helper settlement are not
+ * proof. Querying this function never signals a PID or starts another process. */
+export function observeOwnedProcessDisposal(child: ChildProcess): () => ProcessDisposal {
+ let exited = false, closed = false, spawnFailed = false;
+ child.once('exit', () => { exited = true; });
+ child.once('close', () => { closed = true; });
+ child.once('error', () => { spawnFailed = child.pid === undefined; });
+ return () => {
+  if (spawnFailed) return { state: 'confirmed', reason: 'not_started' };
+  if (!exited || !closed) return { state: 'unknown', reason: 'child_not_closed' };
+  // The Windows fallback kills only the direct child; it cannot establish
+  // that its descendants are gone. Keep that limitation explicit.
+  if (process.platform === 'win32' || child.pid === undefined) return { state: 'unknown', reason: 'group_state_unknown' };
+  try { process.kill(-child.pid, 0); return { state: 'unknown', reason: 'group_not_empty' }; }
+  catch (error) { return (error as NodeJS.ErrnoException).code === 'ESRCH'
+   ? { state: 'confirmed', reason: 'closed' } : { state: 'unknown', reason: 'group_state_unknown' }; }
+ };
+}
 
 export interface ProcessGroupResult {
 	readonly stdout:     string;

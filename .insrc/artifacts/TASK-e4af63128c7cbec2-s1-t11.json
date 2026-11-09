@@ -1,0 +1,105 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-b533b240-a571-4087-996e-892f57ecd798",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.094Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Implement targeted daemon-crash fences and local clearance",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t8",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t9",
+          "type": "TASK",
+          "relation": "depends-on"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t10",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "89c2dfbac3a8758f8f19b120bbb8273bfd14a4334ec2ea39014428e2c2b4070c",
+        "at": "2026-11-09T07:42:48.095Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.096Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Implement targeted daemon-crash fences and local clearance",
+    "summary": "Implement request-scoped resourceGuard discovery across retained attempts and explicit resourceClearance on existing code resume/design recover paths. Bind normal existing broker decisions to exact review/guard/lease sets, persist the receipt via a metadata-only recovery worker and require a separate subsequent review resume.",
+    "size": "L",
+    "order": 11,
+    "acceptanceChecks": [
+      "An unresolved previous-daemon lease or interrupted legacy active attempt with missing guard reconstructs only that review's fence before native work; PID absence cannot clear it.",
+      "Existing broker/client authentication is unchanged: valid human-UI and automated local-client answers are equally accepted; caller-provided receipts and stale/wrong-review/lease-set approval are refused.",
+      "No-client, decline, expiry, disconnect, lost pending broker request or changed guard state retains the fence. Re-read all unresolved retained-attempt guards before applying a decision.",
+      "Persist exact bounded request/guard/lease approval receipt and authorized closure idempotently; metadata-only recovery cannot call native tools/providers or grant artifact approval.",
+      "Disposable full-daemon-crash tests keep a surviving old child fenced, allow unrelated reviews, and permit work only after clearance plus explicit resume; never crash the live user daemon.",
+      "Partial clearance leaves remaining leases blocking; repeated clearances and response-loss replay preserve audit evidence without duplicate inference."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-recovery.test.ts: disposable daemon crash reconstructs unresolved guards and leaves unrelated reviews usable"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: existing local broker approval binds exact guards and requires a separate resume"
+      },
+      {
+        "level": "integration",
+        "name": "src/daemon/threads/__tests__/review-worker-clearance.test.ts: stale partial repeated or lost-response clearance preserves remaining fences and audit receipts"
+      }
+    ],
+    "planTaskId": "t11"
+  },
+  "citations": []
+}

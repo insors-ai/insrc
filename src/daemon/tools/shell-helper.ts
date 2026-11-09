@@ -15,6 +15,8 @@ import { spawn } from 'node:child_process';
 import type { ChildProcess, StdioOptions } from 'node:child_process';
 import { GIT_READ_ARGS, gitEnvironment } from './git-isolation.js';
 import { effectiveToolSignal } from './tool-signal.js';
+import { observeOwnedProcessDisposal } from '../../shared/process-group.js';
+import type { ProcessDisposal } from '../../shared/process-group.js';
 
 export interface ShellResult {
   stdout: string;
@@ -78,11 +80,11 @@ export interface ManagedExit {
  * nothing is spawned and `child` does not exist, so a caller must narrow on `spawned` before it reads it.
  */
 export type ManagedProcess =
-  | { spawned: true; child: ChildProcess; settled: Promise<ManagedExit> }
-  | { spawned: false; settled: Promise<ManagedExit> };
+  | { spawned: true; child: ChildProcess; settled: Promise<ManagedExit>; disposal: () => ProcessDisposal }
+  | { spawned: false; settled: Promise<ManagedExit>; disposal: () => ProcessDisposal };
 
 type Launched =
-  | { spawned: true; child: ChildProcess; settled: Promise<ManagedExit>; terminate: () => void }
+  | { spawned: true; child: ChildProcess; settled: Promise<ManagedExit>; terminate: () => void; disposal: () => ProcessDisposal }
   | { spawned: false; settled: Promise<ManagedExit> };
 
 /**
@@ -104,6 +106,7 @@ function launch(command: string, args: readonly string[], options: ManagedSpawnO
     // its own process group, so a kill reaches the grandchildren that hold the output pipes open
     detached: process.platform !== 'win32',
   });
+  const disposal = observeOwnedProcessDisposal(child);
   let timedOut = false;
   let aborted = false;
   let done = false;
@@ -137,10 +140,11 @@ function launch(command: string, args: readonly string[], options: ManagedSpawnO
   const onAbort = (): void => { aborted = true; terminate(); };
   const timer = options.timeoutMs === undefined ? undefined : setTimeout(() => { timedOut = true; terminate(); }, options.timeoutMs * timeoutScale);
   signal?.addEventListener('abort', onAbort, { once: true });
+  if (signal?.aborted) onAbort();
 
   child.on('error', () => finish(null, null));
   child.on('close', (code, sig) => finish(code, sig));
-  return { spawned: true, child, settled, terminate };
+  return { spawned: true, child, settled, terminate, disposal };
 }
 
 /**
@@ -149,7 +153,7 @@ function launch(command: string, args: readonly string[], options: ManagedSpawnO
  */
 export function spawnManaged(cmd: string, args: readonly string[], options: ManagedSpawnOptions = {}): ManagedProcess {
   const l = launch(cmd, args, options);
-  return l.spawned ? { spawned: true, child: l.child, settled: l.settled } : { spawned: false, settled: l.settled };
+  return l.spawned ? { spawned: true, child: l.child, settled: l.settled, disposal: l.disposal } : { spawned: false, settled: l.settled, disposal: () => ({ state: 'confirmed', reason: 'not_started' }) };
 }
 
 /**

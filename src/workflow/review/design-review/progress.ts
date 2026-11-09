@@ -1,7 +1,9 @@
 /* Copyright (c) Procix Software India. Licensed under the MIT License. */
 import { performance } from 'node:perf_hooks';
 import type { ReviewActivityEvent } from '../../../shared/review-activity.js';
-import { currentDesignAttempt, requireDesign } from './contracts.js';
+import { currentDesignAttempt, requireDesign, isDesignAdmission } from './contracts.js';
+import type { StoredDesignCheckpoint } from './contracts.js';
+import { qualifiedDesignProjection } from './checkpoint.js';
 import type { DesignPublication, DesignReviewCheckpoint, DesignReviewProgress, DesignReviewConsolidated, DesignChunkResult, DesignReviewStatus, DesignAttempt } from './contracts.js';
 import { selectedDesignChunks, nextDesignUnit } from './recovery-state.js';
 
@@ -74,7 +76,21 @@ export interface DesignObservation extends DesignReviewProgress {
  readonly completedResults: readonly DesignChunkResult[];
  readonly nextCompletedChunk:number;
  readonly report?:DesignReportMetadata|undefined;
- readonly failure?:{readonly code:string;readonly summary:string}|undefined;
+ readonly failure?:{readonly code:string;readonly summary:string;readonly field?:string|undefined}|undefined;
+ readonly admission?:{readonly validation:'unverified'}|undefined;
+}
+export function observeStoredDesignCheckpoint(checkpoint:StoredDesignCheckpoint,options:Parameters<typeof observeDesignCheckpoint>[1]={}):DesignObservation{
+ const attempt=checkpoint.attempts.at(-1)!;
+ if(!isDesignAdmission(attempt))return observeDesignCheckpoint(qualifiedDesignProjection(checkpoint)!,options);
+ requireDesign((options.afterCompletedChunk??0)===0,'invalid_cursor','Admission has no completed chunk feedback');
+ const active=options.active===true,status=!active&&['pending','running'].includes(attempt.status)?'interrupted':attempt.status;
+ return {status,phase:'admission',admission:{validation:'unverified'},completedChunks:0,totalChunks:0,
+  lastMeaningfulActivityAt:null,activeToolCount:0,requiresUserInput:!active,checkpointPath:attempt.progress.checkpointPath,
+  sequence:attempt.progress.sequence,reviewElapsedMs:Math.max(0,Date.parse(attempt.finishedAt??attempt.progress.observedAt)-Date.parse(attempt.acceptedAt)),unitElapsedMs:null,
+  observedAt:attempt.progress.observedAt,freshness:active?'live':'stored',completedResults:[],nextCompletedChunk:0,
+  ...(attempt.error?{failure:attempt.error}:{}),
+  guidance:active?'Preparing review; scope is not verified. Wait for admission.':'Technical admission did not complete a review. Wait for user direction; changed input requires the next attempt.',
+ };
 }
 export function observeDesignCheckpoint(checkpoint:DesignReviewCheckpoint,options:{active?:boolean|undefined;liveProgress?:DesignReviewProgress|undefined;afterCompletedChunk?:number|undefined;includeResult?:boolean|undefined}={}):DesignObservation{
  const attempt=currentDesignAttempt(checkpoint),cursor=options.afterCompletedChunk??0;

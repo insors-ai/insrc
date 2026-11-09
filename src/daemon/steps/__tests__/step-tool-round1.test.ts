@@ -150,3 +150,105 @@ test('naturally sectioned evidence next to a reference fits every turn: no part 
 		if (progress.pending?.kind === 'combine') break;
 	}
 });
+
+test('an M request with only rules is answered in one reply, and one that packs into a single part keeps the partitioned handling', async () => {
+	const rule = (id: string, i: number) => ({
+		exploration: { id, type: 'doc.constraint.enumerate', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: 1, completeness: WHOLE,
+			constraints: [{ constraint: `Rule ${i}.`, kind: 'must', sourceEntityId: `ent-${i}`, file: `docs/r${i}.md`, heading: 'Rule', rationale: 'why' }] },
+	}) as unknown as ExecutedExploration;
+	const onlyRules = plan(Array.from({ length: 3 }, (_, i) => rule(`e${i}`, i)));
+	const single = prepareAnswerTurn({ intent: { ...intent, scope: 'M' }, executed: onlyRules, target: 'adherence' });
+	assert.ok(single.ok);
+	if (single.ok) { assert.equal(single.progress.mode, 'single'); assert.equal(single.prepared.kind, undefined); }
+
+	const oneBlock = plan([rule('e0', 0), search('e1', 100)]);
+	const part = prepareAnswerTurn({ intent: { ...intent, scope: 'M' }, executed: oneBlock, target: 'adherence' });
+	assert.ok(part.ok);
+	if (part.ok) { assert.equal(part.progress.mode, 'partitioned'); assert.equal(part.prepared.kind, 'part'); }
+});
+
+test('the three-argument finish of a partitioned adherence answer still states the rules counted from every lookup', () => {
+	const rule = {
+		exploration: { id: 'e0', type: 'doc.constraint.enumerate', purpose: 'p', params: {} }, cached: false, elapsedMs: 1,
+		output: { type: 'doc.constraint.enumerate', subject: 's', notFoundNote: '', retrievedSectionCount: 2, completeness: WHOLE,
+			constraints: [
+				{ constraint: 'Rule one.', kind: 'must', sourceEntityId: 'a', file: 'docs/a.md', heading: 'A', rationale: 'w' },
+				{ constraint: 'Rule two.', kind: 'must', sourceEntityId: 'b', file: 'docs/b.md', heading: 'B', rationale: 'w' },
+			] },
+	} as unknown as ExecutedExploration;
+	const executed = plan([rule, search('e1', 100)]);
+	const progress = startAnswerProgress({ intent, executed, target: 'adherence' }, 'M');
+	assert.equal(progress.mode, 'partitioned');
+	const done = finalizeSynthesize({ ...LAYERS, summary: 'covers it' }, undefined, progress);
+	assert.equal(done.kind, 'final');
+	if (done.kind === 'final') {
+		assert.match(done.layers.focus, /Rule sources checked \(counted from every lookup\): 2/);
+		assert.ok(done.layers.focus.includes('Rule one.') && done.layers.focus.includes('Rule two.'));
+	}
+});
+
+test('the cause of an invalid part survives the stored progress and the terminal failure with its exact content', () => {
+	const executed = plan([failedLookup('e1'), search('e2', 40_000), search('e3', 40_000)]);
+	let current: AnswerProgress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(current.mode, 'partitioned');
+	const parts = current.parts.length;
+	let thrown: unknown;
+	for (let i = 0; i < parts + 1 && thrown === undefined; i++) {
+		// Each turn's progress is stored as JSON between calls, as the step tool does.
+		current = JSON.parse(JSON.stringify(current)) as AnswerProgress;
+		try {
+			const out = recordInvalid(current, `part ${i + 1} reply was not a bundle`, 1, { executed });
+			if (out.kind !== 'next') break;
+			current = out.progress;
+		} catch (e) { thrown = e; }
+	}
+	assert.ok(thrown instanceof ShaperAnswerStepFailedError, String(thrown));
+	assert.equal(thrown.partFailures?.length, parts);
+	thrown.partFailures?.forEach((f, i) => {
+		assert.equal(f.kind, 'invalid-reply');
+		assert.deepEqual(f.cause, { name: 'Error', message: `part ${i + 1} reply was not a bundle` }, 'the cause keeps its name and message');
+	});
+});
+
+test('a combine turn that stays invalid is asked again, then falls back to the parts with combine not covered', () => {
+	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+	let progress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(progress.mode, 'partitioned');
+	// Answer every part; the answer then asks for the combine.
+	for (let i = 0; i < progress.parts.length; i++) {
+		const next = applyReply(progress, { ...LAYERS, summary: `covers part ${i + 1}`, structure: `- finding of part ${i + 1}` }, { executed });
+		assert.equal(next.kind, 'next');
+		if (next.kind !== 'next') return;
+		progress = next.progress;
+	}
+	assert.equal(progress.pending?.kind, 'combine');
+	// The first invalid reply asks the same turn again; the second (the bound) ends the combine.
+	const again = recordInvalid(progress, 'not a narrative', 2, { executed });
+	assert.equal(again.kind, 'retry');
+	if (again.kind !== 'retry') return;
+	assert.equal(again.progress.pending?.kind, 'combine');
+	const done = recordInvalid(again.progress, 'still not a narrative', 2, { executed });
+	assert.equal(done.kind, 'final');
+	if (done.kind !== 'final') return;
+	assert.ok(done.handling.notCovered.some(n => n.part === 'combine'), 'the combine is named as not covered');
+	for (let i = 0; i < progress.parts.length; i++) assert.ok(done.layers.structure.includes(`- finding of part ${i + 1}`), `part ${i + 1} is kept`);
+});
+
+test('when every part of an answer over complete lookups is invalid, the terminal failure reports the answer as incomplete', () => {
+	const executed = plan([search('e1', 40_000), search('e2', 40_000)]);
+	let current: AnswerProgress = startAnswerProgress({ intent, executed, target: 'code' }, 'XL');
+	assert.equal(current.mode, 'partitioned');
+	let thrown: unknown;
+	for (let i = 0; i < current.parts.length + 1 && thrown === undefined; i++) {
+		try {
+			const out = recordInvalid(current, 'not a bundle', 1, { executed });
+			if (out.kind !== 'next') break;
+			current = out.progress;
+		} catch (e) { thrown = e; }
+	}
+	assert.ok(thrown instanceof ShaperAnswerStepFailedError, String(thrown));
+	const report = thrown.found.report;
+	assert.equal(report.completeness.complete, false, 'complete lookups, an uncovered answer: not complete');
+	assert.ok(report.completeness.incomplete.some(f => f.sourceId.startsWith('answer step / ')), 'the uncovered parts are named');
+});

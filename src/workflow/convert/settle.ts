@@ -40,6 +40,7 @@ const bodyOf = (h: RawHead): Obj => (isObj(h.json) && isObj(h.json['body']) ? h.
 const text = (v: unknown): string | undefined => (typeof v === 'string' && v.length > 0 ? v : undefined);
 const SETTLED: readonly unknown[] = ['completed', 'withdrawn', 'superseded'];
 const BUILD_ID = /^BUILD-([0-9a-f]{16})-([sS]\d+)$/;
+const storyOf = (raw: string): string => `s${Number(/\d+/.exec(raw)?.[0] ?? '0')}`;
 
 /** The approval of a BUILD head as stored, whether or not it has been migrated yet. */
 function buildApproval(head: RawHead): { readonly approved: boolean; readonly at: string | undefined } {
@@ -77,6 +78,11 @@ function plannedRollUp(repo: string, heads: readonly RawHead[], unit: string, st
 	};
 	const evidence: CompletionEvidence = {
 		...real,
+		// the migration before this step gives a legacy approval its lifecycle
+		storyBuildApproved: async (epicHash, story) => heads.some(h => {
+			const m = BUILD_ID.exec(h.artifactId);
+			return m !== null && m[1] === epicHash && storyOf(m[2]!) === story && buildApproval(h).approved;
+		}),
 		storyTasks: async (epicHash, story): Promise<StoryTasks> => {
 			if (find(ArtifactIds.make({ kind: 'TASKS', epicHash, story })) !== undefined) return real.storyTasks(epicHash, story);
 			const plan = planOf(epicHash, story);
@@ -96,6 +102,11 @@ function plannedRollUp(repo: string, heads: readonly RawHead[], unit: string, st
 	return rollUp(unit, reader, evidence);
 }
 
+/** Whether the live rule would complete a Story; one whose records the rule cannot read is not proposed, and the run reports it. */
+async function liveRuleCompletes(repo: string, heads: readonly RawHead[], unit: string, status: ReadonlyMap<string, Status>): Promise<boolean> {
+	try { return (await plannedRollUp(repo, heads, unit, status)) === 'completed'; } catch { return false; }
+}
+
 /** The plan rule: the units a repair would complete, so a held one is listed by no run and a second repair has nothing to say. */
 export const repairSettleRule: PlanRule = async (ctx): Promise<RulePlan> => {
 	const statusMap = new Map<string, Status>();
@@ -106,29 +117,32 @@ export const repairSettleRule: PlanRule = async (ctx): Promise<RulePlan> => {
 	const unusable = unusableStories(ctx.heads);
 	const changes: ConversionChange[] = [];
 	const settled = new Set<string>();
+	const walked = new Set<string>();
 	const holds = holdsOf(ctx.repo);
 	for (const head of ctx.heads) {
 		const m = BUILD_ID.exec(head.artifactId);
 		if (m === null) continue;
 		const approval = buildApproval(head);
 		if (!approval.approved) continue;
-		const story = storyId(m[1]!, `s${Number(/\d+/.exec(m[2]!)?.[0] ?? '0')}`);
+		const story = storyId(m[1]!, storyOf(m[2]!));
+		// a completed Story's settle walk still goes on to its Epic
+		if (statusMap.get(story) === 'completed' && !unusable.has(story)) walked.add(story);
 		if (SETTLED.includes(statusMap.get(story)) || unusable.has(story) || (await holds(story))) continue;
 		const old = isOldApproval(approval.at);
-		if (!old && (await plannedRollUp(ctx.repo, ctx.heads, story, statusMap)) !== 'completed') continue;
+		if (!old && !(await liveRuleCompletes(ctx.repo, ctx.heads, story, statusMap))) continue;
 		settled.add(story);
 		changes.push({ rule: 'settle-unit', artifactId: story, detail: old ? `the BUILD was approved before the completion rule (${approval.at})` : 'by the live rule' });
 	}
 	for (const epic of knownEpicsOf(ctx.heads)) {
 		const id = ArtifactIds.make({ kind: 'EPIC', epicHash: epic.hash });
 		const stories = epic.stories.map(s => storyId(epic.hash, s.id));
-		const completes = stories.some(s => settled.has(s)) && stories.every(s => settled.has(s) || SETTLED.includes(statusMap.get(s)));
+		const completes = stories.some(s => settled.has(s) || walked.has(s)) && stories.every(s => settled.has(s) || SETTLED.includes(statusMap.get(s)));
 		if (completes && !SETTLED.includes(statusMap.get(id)) && !(await holds(id))) changes.push({ rule: 'settle-unit', artifactId: id, detail: 'every Story is settled' });
 	}
 	return { changes };
 };
 
-/** Complete what the rules allow. Every other Story keeps going whatever one of them does. */
+/** Complete what the rules allow. Every other unit keeps going whatever one of them does, and each outcome names the unit it is about. */
 export async function applySettle(repo: string, deps: ConversionDeps, service: LifecycleService, failed: UnitOutcome[], held: UnitOutcome[]): Promise<void> {
 	const blocked = new Set(failed.map(f => f.artifactId));
 	const old = new LifecycleService({
@@ -136,6 +150,9 @@ export async function applySettle(repo: string, deps: ConversionDeps, service: L
 		evidence: ctx => oldApprovalEvidence(createCompletionEvidence(repo, { ...ctx, history: new History(createFileSidecarStore(repo)) })),
 	});
 	const ctx: EvidenceContext = { holds: holdsOf(repo) };
+	const holdsUnit = ctx.holds as NonNullable<EvidenceContext['holds']>;
+	const heldUnits = new Map<string, UnitOutcome>();
+	const failedUnits = new Map<string, UnitOutcome>();
 	for (const head of readRawHeads(repo).heads) {
 		const m = BUILD_ID.exec(head.artifactId);
 		if (m === null) continue;
@@ -143,13 +160,24 @@ export async function applySettle(repo: string, deps: ConversionDeps, service: L
 		if (!approval.approved || !APPROVED_OR_BEYOND.includes(String((metaOf(head)['lifecycle'] as Obj | undefined)?.['status']))) continue;
 		const story = storyId(m[1]!, m[2]!);
 		if (blocked.has(story)) continue;
-		const settling = isOldApproval(approval.at) ? old : service;
+		const epic = ArtifactIds.make({ kind: 'EPIC', epicHash: m[1]! });
+		// the head as it stands: inspecting it would finish a staged write and hide which unit failed
+		const statusOf = async (id: string): Promise<Status | undefined> => (await deps.store.read(id).catch(() => undefined))?.lifecycle.status;
 		try {
-			await settling.completeIfRolledUp(story, deps.actor, ctx);
-			const status = (await service.inspect(story))?.status;
-			if (status !== 'completed' && status !== 'withdrawn' && status !== 'superseded') held.push({ artifactId: story, reason: await service.holdReason(story, ctx), completedMembers: [] });
+			await (isOldApproval(approval.at) ? old : service).completeIfRolledUp(story, deps.actor, ctx);
+			const status = await statusOf(story);
+			if (status === 'completed') {
+				// the walk went on to the Epic: one a signoff holds is reported, and one that is only waiting for other Stories is not
+				if ((await statusOf(epic)) !== 'completed' && (await holdsUnit(epic)) === true) heldUnits.set(epic, { artifactId: epic, reason: await service.holdReason(epic, ctx), completedMembers: [] });
+			} else if (status !== 'withdrawn' && status !== 'superseded') {
+				heldUnits.set(story, { artifactId: story, reason: await service.holdReason(story, ctx), completedMembers: [] });
+			}
 		} catch (err) {
-			failed.push({ artifactId: story, reason: err instanceof Error ? err.message : String(err), completedMembers: await service.completedMembersOf(story).catch(() => []) });
+			// a Story that completed before the throw means it was its Epic that failed
+			const unit = (await statusOf(story)) === 'completed' ? epic : story;
+			failedUnits.set(unit, { artifactId: unit, reason: err instanceof Error ? err.message : String(err), completedMembers: await service.completedMembersOf(unit).catch(() => []) });
 		}
 	}
+	held.push(...heldUnits.values());
+	failed.push(...failedUnits.values());
 }

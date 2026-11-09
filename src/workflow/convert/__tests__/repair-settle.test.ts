@@ -16,6 +16,8 @@ import { basename, join } from 'node:path';
 import { test } from 'node:test';
 
 import { ArtifactIds } from '../../artifact-ids.js';
+import { reviewedBuildFingerprint } from '../../code-review/build-freshness.js';
+import { _setSignoffDepsForTests } from '../../team/signoff.js';
 import { History } from '../../artifact-core/history.js';
 import { createFileSidecarStore } from '../../artifact-core/sidecar-store.js';
 import { artifactJsonPath, writeAtomic } from '../../storage.js';
@@ -46,6 +48,14 @@ async function ready(r: Repo, story: string, approvedAt: string, failing: string
 	for (const t of ['t1', 't2']) await appendRound(r.repo, `TASK-${H}-${story}-${t}`, failing.includes(t) ? 'fail' : 'pass');
 }
 
+/** Bind the code review to the BUILD as it reads now, after a test has rewritten its head. */
+function buildAndReviewLegacyBinding(r: Repo): void {
+	const cr = head(r.repo, `CR-${H}-s1`);
+	const body = cr.body as { reviews: { buildFingerprint: string }[] };
+	body.reviews[0]!.buildFingerprint = reviewedBuildFingerprint(head(r.repo, `BUILD-${H}-s1`));
+	r.put(`CR-${H}-s1`, cr.meta, body);
+}
+
 /** A store whose head replace fails for files whose name starts with `prefix`, `times` times. */
 function failing(prefix: string, times = 1): (path: string, bytes: string) => void {
 	let left = times;
@@ -67,7 +77,7 @@ function belongs(w: RepairWrite, changes: readonly ConversionChange[]): boolean 
 	const named = (c: ConversionChange): boolean => norm(c.artifactId) === norm(w.artifactId) || c.detail.includes(w.artifactId) || c.artifactId === w.artifactId;
 	const rule = (...rules: string[]) => changes.filter(c => rules.includes(c.rule));
 	switch (w.step) {
-		case 'rename':        return rule('rename-id').some(named);
+		case 'rename':        return rule('rename-id', 'repo-rules').some(named);
 		case 'stamp':         return rule('stamp-epic-created-at').some(named);
 		case 'amendments':    return rule('convert-amendment').some(named);
 		case 'feedback':      return rule('convert-feedback').some(named);
@@ -227,6 +237,67 @@ test('a failure injected after earlier members commit is listed with completedMe
 		assert.equal(statusOf(r.repo, STORY), 'completed');
 		assert.equal(statusOf(r.repo, `EPIC-${H}`), 'completed');
 	} finally { r.done(); }
+});
+
+test('the preview proposes a later legacy approval the live rule will settle once it is migrated', async () => {
+	const r = repository();
+	try {
+		epicHead(r, H);
+		await ready(r, 's1', LATER);
+		const stored = head(r.repo, `BUILD-${H}-s1`);
+		const { lifecycle: _gone, ...legacy } = stored.meta;
+		r.put(`BUILD-${H}-s1`, { ...legacy, approvedAt: LATER }, stored.body);
+		// the review binds the BUILD as it now reads
+		buildAndReviewLegacyBinding(r);
+
+		const preview = await runRepair(r.repo, 'repair-preview');
+		assert.ok(preview.plan.changes.some(c => c.rule === 'settle-unit' && c.artifactId === STORY), JSON.stringify(preview.plan.changes.filter(c => c.rule !== 'migrate-head')));
+		const out = result(await runRepair(r.repo, 'repair'));
+		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
+		assert.equal(statusOf(r.repo, STORY), 'completed');
+	} finally { r.done(); }
+});
+
+test('an open Epic whose Stories are all completed is in the preview and is settled', async () => {
+	const r = repository();
+	try {
+		epicHead(r, H);
+		await ready(r, 's1', AT);
+		const failed = result(await runRepair(r.repo, 'repair', { writeHead: failing('EPIC-') }));
+		assert.equal(statusOf(r.repo, STORY), 'completed', 'control: the Story completed and only the Epic is open');
+		assert.equal(failed.failed.length, 1);
+
+		const preview = await runRepair(r.repo, 'repair-preview');
+		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'settle-unit').map(c => c.artifactId), [`EPIC-${H}`]);
+		result(await runRepair(r.repo, 'repair'));
+		assert.equal(statusOf(r.repo, `EPIC-${H}`), 'completed');
+	} finally { r.done(); }
+});
+
+test('a settlement outcome names the Epic that held or failed, not the Story that walked to it', async () => {
+	const r = repository();
+	try {
+		epicHead(r, H);
+		await ready(r, 's1', AT);
+		const out = result(await runRepair(r.repo, 'repair', { writeHead: failing('EPIC-') }));
+		assert.deepEqual(out.failed.map(f => f.artifactId), [`EPIC-${H}`], JSON.stringify(out.failed));
+		assert.match(out.failed[0]!.reason, /injected head failure/);
+		assert.ok(out.failed[0]!.completedMembers.includes(`DEF-${H}`), JSON.stringify(out.failed[0]!.completedMembers));
+		assert.ok(!out.failed[0]!.completedMembers.includes(T1), 'the members are the Epic\'s own');
+	} finally { r.done(); }
+
+	const held = repository();
+	try {
+		epicHead(held, H);
+		await ready(held, 's1', AT);
+		_setSignoffDepsForTests({ readPolicy: async () => ({ ok: true, value: { teamMode: true, signoffStages: ['DEF'], claimsEnforced: true, administrators: [], claimUnits: { epic: ['DEF', 'HLD'], story: ['LLD', 'PLAN'], task: ['BUILD'] }, forceTaskIssues: true, source: { ref: 'origin/main', fetchedAt: '2026-01-01T00:00:00Z', firstCommit: 'abc', firstCommitTime: '2026-06-01T00:00:00Z', anchorKnown: true } } as never }) });
+		try {
+			const out = result(await runRepair(held.repo, 'repair'));
+			assert.equal(statusOf(held.repo, STORY), 'completed');
+			assert.deepEqual(out.held.map(h => h.artifactId), [`EPIC-${H}`], JSON.stringify(out.held));
+			assert.match(out.held[0]!.reason, /signoff/);
+		} finally { _setSignoffDepsForTests(); }
+	} finally { held.done(); }
 });
 
 test('a second repair lists no changes', async () => {

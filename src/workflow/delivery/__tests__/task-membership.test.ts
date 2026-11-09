@@ -139,6 +139,19 @@ test('buildWorkItemGraph and gate: a PLAN plus an extra failed BUILD result, and
 	assert.ok(!noPlan.gates.attentionReasons.includes('needs-migration'), JSON.stringify(noPlan.gates.attentionReasons));
 });
 
+test('the PLAN fallback does not bring back a withdrawn or superseded Task as a headless row', () => {
+	const build = buildRecord(H, 's1', [{ id: 't1', passed: false }, { id: 't2', passed: false }], APPROVED);
+	for (const listing of [[], [tasksHead(CURRENT - 1, ['t1', 't2'])], [tasksHead(CURRENT, [])]]) {
+		const { tasks, gates } = run([...units(), planWith(['t1', 't2', 't3']), ...listing, taskHead('t1', 'withdrawn', 't1', 1), taskHead('t2', 'superseded', 't2', 2), build]);
+		assert.deepEqual(tasks.map(t => t.planRowId), ['t3'], 'only the genuinely new row is left');
+		assert.equal(gates.validation.failed, 0, 'the results of the withdrawn and superseded Tasks are not counted');
+		assert.equal(gates.conflict, null);
+	}
+	// a row whose Task was withdrawn and which a live Task now stands for stays
+	const replaced = run([...units(), planWith(['t1']), taskHead('t1', 'withdrawn', 't1', 1), taskHead('t5', 'approved', 't1', 1)]);
+	assert.deepEqual(replaced.tasks.map(t => tail(t.id)), ['T005']);
+});
+
 test('gate sorts tasks by taskOrder, null last, then id', () => {
 	const { gates } = run([...units(), planWith(['t1', 't2', 't3'], { t1: 3, t2: 2, t3: 3 }), tasksHead(CURRENT - 1, []),
 		buildRecord(H, 's1', [{ id: 't8', passed: true }, { id: 't7', passed: true }], APPROVED)]);

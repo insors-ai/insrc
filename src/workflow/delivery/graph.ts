@@ -440,7 +440,8 @@ function activeTasks(story: StoryInfo, byId: ReadonlyMap<string, ArtifactRecord>
 	}
 	if (plan !== undefined) {
 		const byRow = new Map(live.flatMap(h => { const row = rowOf(h); return row === null ? [] : [[row, h] as const]; }));
-		const slots = rows.map((row): TaskSlot => {
+		// a row whose Task was withdrawn or superseded is gone from the Story unless a live Task now stands for it
+		const slots = rows.filter(row => byRow.has(row.id) || !goneRows.has(row.id)).map((row): TaskSlot => {
 			const head = byRow.get(row.id);
 			// an interrupted re-plan: the order is the plan's, even when the Task head still carries an older one
 			return head === undefined

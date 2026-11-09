@@ -12,7 +12,19 @@
     "envelope": {
       "description": "",
       "references": [],
-      "attachments": [],
+      "attachments": [
+        {
+          "target": {
+            "entityId": "HLD-206db3426ffd4428",
+            "type": "HLD",
+            "relation": "documents",
+            "fragment": "docs/epics/show-long-running-task-progress-chat-E20261109206db342/HLD.md"
+          },
+          "revision": 2,
+          "at": "2026-11-09T09:25:33.227Z",
+          "externalId": "6736605140"
+        }
+      ],
       "binding": {
         "reference": {
           "entityId": "insors-ai/insrc#146",

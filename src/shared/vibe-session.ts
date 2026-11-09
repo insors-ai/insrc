@@ -66,6 +66,7 @@ export interface VibeSessionOptions {
 interface VibeTransport {
 	request(method: string, params: RecordValue): Promise<unknown>;
 	notify(method: string, params: RecordValue): void;
+	observe(onEvent: (method: string, params: RecordValue) => void, onFailure: (error: Error) => void): void;
 	close(): Promise<void>;
 }
 
@@ -95,6 +96,8 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 	const pending = new Map<string, PendingRequest>();
 	const closed = new Promise<void>(resolve => child.once('close', () => resolve()));
 	let failure: Error | undefined;
+	let eventListener: ((method: string, params: RecordValue) => void) | undefined;
+	let failureListener: ((error: Error) => void) | undefined;
 	let sequence = 0;
 	let buffer = '';
 
@@ -105,6 +108,7 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 		options.signal?.removeEventListener('abort', abort);
 		for (const request of pending.values()) request.reject(error);
 		pending.clear();
+		failureListener?.(error);
 		if (child.pid !== undefined) killProcessGroup(child.pid);
 		else child.kill('SIGKILL');
 	}
@@ -145,7 +149,15 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 				stop(new Error('Vibe app server returned invalid JSON'));
 				return;
 			}
+			const method = message?.['method'];
+			const params = record(message?.['params']);
 			const id = message?.['id'];
+			if (typeof method === 'string' && params !== undefined && id === undefined) {
+				try { eventListener?.(method, params); } catch (error) {
+					stop(new Error('Could not process a Vibe turn event', { cause: error }));
+				}
+				continue;
+			}
 			if (message === undefined || typeof id !== 'string') continue;
 			const request = pending.get(id);
 			if (request === undefined) continue;
@@ -169,11 +181,104 @@ function startTransport(options: VibeSessionOptions): VibeTransport {
 			});
 		},
 		notify(method, params) { send({ method, params }); },
+		observe(onEvent, onFailure) {
+			eventListener = onEvent;
+			failureListener = onFailure;
+			if (failure !== undefined) onFailure(failure);
+		},
 		close() {
 			stop(new Error('Vibe app server closed'));
 			return closed;
 		},
 	};
+}
+
+export type VibeDispatchState = 'not-sent' | 'possibly-sent' | 'accepted';
+
+export class VibeTurnError extends Error {
+	constructor(
+		readonly dispatchState: VibeDispatchState,
+		readonly sessionId: string | undefined,
+		cause: unknown,
+	) {
+		super(cause instanceof Error ? cause.message : 'Vibe turn failed', { cause });
+		this.name = 'VibeTurnError';
+	}
+}
+
+export interface VibeTurnOptions extends VibeSessionOptions {
+	readonly prompt: string;
+	readonly onSession?: ((sessionId: string) => void) | undefined;
+	readonly onHistory?: ((method: 'history/entryAdded' | 'history/entryUpdated', params: RecordValue) => void) | undefined;
+}
+
+export interface VibeTurnResult {
+	readonly sessionId: string;
+	readonly stopReason: string | undefined;
+}
+
+/** Own a single turn. An uncertain write is never reported as a safe retry. */
+export async function runVerifiedVibeTurn(options: VibeTurnOptions): Promise<VibeTurnResult> {
+	let dispatchState: VibeDispatchState = 'not-sent';
+	let session: VerifiedVibeSession | undefined;
+	try {
+		session = await openVerifiedVibeSession(options);
+		const { id, transport } = session;
+		options.onSession?.(id);
+		return await new Promise<VibeTurnResult>((resolve, reject) => {
+			let turnId: string | undefined;
+			let settled = false;
+			function fail(error: unknown): void {
+				settled = true;
+				reject(error);
+			}
+			function accept(turn: RecordValue | undefined): void {
+				const receivedId = turn?.['id'];
+				if (typeof receivedId !== 'string' || receivedId === '' || turn?.['sessionId'] !== id
+					|| (turnId !== undefined && receivedId !== turnId)) return;
+				turnId = receivedId;
+				dispatchState = 'accepted';
+				switch (turn['status']) {
+					case 'completed': {
+						const reason = turn['stopReason'];
+						settled = true;
+						resolve({ sessionId: id, stopReason: typeof reason === 'string' ? reason : undefined });
+						break;
+					}
+					case 'failed': {
+						const detail = record(turn['error'])?.['message'];
+						fail(new Error(typeof detail === 'string' ? detail.slice(0, 500) : 'Vibe turn failed'));
+						break;
+					}
+					case 'interrupted':
+						fail(new Error('Vibe turn was interrupted'));
+						break;
+				}
+			}
+			transport.observe((method, params) => {
+				if (settled || dispatchState === 'not-sent' || params['sessionId'] !== id) return;
+				if (method === 'turn/started' || method === 'turn/completed') accept(record(params['turn']));
+				else if ((method === 'history/entryAdded' || method === 'history/entryUpdated')
+					&& turnId !== undefined && params['turnId'] === turnId) options.onHistory?.(method, params);
+			}, fail);
+			if (settled) return;
+			options.signal?.throwIfAborted();
+			dispatchState = 'possibly-sent';
+			void transport.request('turn/start', { sessionId: id, message: [{ type: 'text', text: options.prompt }] }).then(reply => {
+				if (settled) return;
+				const turn = record(record(reply)?.['turn']);
+				if (typeof turn?.['id'] !== 'string' || turn['sessionId'] !== id) {
+					fail(new Error('Vibe app server returned an invalid turn acknowledgement'));
+					return;
+				}
+				accept(turn);
+			}, fail);
+		});
+	} catch (error) {
+		throw new VibeTurnError(dispatchState, session?.id, error);
+	} finally {
+		await session?.transport.close();
+	}
 }
 
 /** Open a local Vibe session without a first turn and verify the session-scoped selection. */

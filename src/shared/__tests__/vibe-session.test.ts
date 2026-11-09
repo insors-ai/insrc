@@ -6,7 +6,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
-import { openVerifiedVibeSession, VibeSelectionError } from '../vibe-session.js';
+import { openVerifiedVibeSession, runVerifiedVibeTurn, VibeSelectionError, VibeTurnError } from '../vibe-session.js';
 import type { VibeSessionOptions } from '../vibe-session.js';
 
 const fixture = String.raw`
@@ -20,6 +20,7 @@ const choices = [
 let activeModel = choices[0];
 const config = () => ({ runtime: { config: { activeModel, models: choices } } });
 const send = (id, result) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', id, result }) + '\n');
+const event = (method, params) => process.stdout.write(JSON.stringify({ jsonrpc: '2.0', method, params }) + '\n');
 const methods = [];
 createInterface({ input: process.stdin }).on('line', line => {
 	const { method, id, params } = JSON.parse(line);
@@ -56,6 +57,23 @@ createInterface({ input: process.stdin }).on('line', line => {
 			}
 			send(id, { status: 'applied' });
 			return;
+		case 'turn/start': {
+			assert.equal(methods.filter(value => value === 'turn/start').length, 1);
+			assert.deepEqual(params.message, [{ type: 'text', text: 'work once' }]);
+			const sessionId = params.sessionId;
+			const turn = { id: 'turn-id', sessionId, status: 'in_progress' };
+			if (mode === 'lost-ack') {
+				process.exit(1);
+			}
+			send(id, { turn });
+			event('turn/started', { sessionId, turn });
+			event('history/entryAdded', { sessionId, turnId: turn.id, entry: { type: 'reasoning', text: 'working' } });
+			event('history/entryUpdated', { sessionId, turnId: turn.id, entryId: 'entry-id', patch: [] });
+			if (mode === 'accepted-failure') return process.stdout.write('', () => process.exit(1));
+			if (mode === 'turn-hang') return;
+			event('turn/completed', { sessionId, turn: { ...turn, status: 'completed' } });
+			return;
+		}
 		default:
 			throw new Error('Unexpected request ' + method);
 	}
@@ -111,4 +129,35 @@ test('Vibe preflight releases the child on cancellation and timeout', async () =
 	controller.abort();
 	await assert.rejects(canceled, /aborted/);
 	await assert.rejects(openVerifiedVibeSession(setup('hang', { timeoutMs: 80 })), /timed out/);
+});
+
+test('Vibe dispatch sends one verified turn and forwards matching bounded events', async () => {
+	const events: string[] = [];
+	const result = await runVerifiedVibeTurn({
+		...setup('turn'), prompt: 'work once',
+		onSession: id => events.push(id),
+		onHistory: method => events.push(method),
+	});
+	assert.deepEqual(result, { sessionId: 'new-id', stopReason: undefined });
+	assert.deepEqual(events, ['new-id', 'history/entryAdded', 'history/entryUpdated']);
+});
+
+test('Vibe dispatch retains uncertainty across acknowledgement loss and accepted failure', async () => {
+	for (const [mode, state] of [['lost-ack', 'possibly-sent'], ['accepted-failure', 'accepted']] as const) {
+		await assert.rejects(runVerifiedVibeTurn({ ...setup(mode), prompt: 'work once' }), error =>
+			error instanceof VibeTurnError && error.dispatchState === state && error.sessionId === 'new-id');
+	}
+});
+
+test('Vibe dispatch cancellation preserves partial events and the native session ID', async () => {
+	const controller = new AbortController();
+	const received: unknown[] = [];
+	await assert.rejects(runVerifiedVibeTurn({
+		...setup('turn-hang', { signal: controller.signal }), prompt: 'work once',
+		onHistory: (_method, params) => {
+			received.push(params['entry']);
+			controller.abort();
+		},
+	}), error => error instanceof VibeTurnError && error.dispatchState === 'accepted' && error.sessionId === 'new-id');
+	assert.deepEqual(received, [{ type: 'reasoning', text: 'working' }]);
 });

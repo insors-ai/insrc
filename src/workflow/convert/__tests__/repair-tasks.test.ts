@@ -93,6 +93,26 @@ test('repair with crossed Task numbers and plan rows gives each BUILD result to 
 	} finally { r.done(); }
 });
 
+test('a BUILD result goes to the live Task when a withdrawn Task once stood for the same plan row', async () => {
+	const r = repository();
+	try {
+		const [one] = rows() as [PlanTask];
+		plan(r, H, 's1', 'approved', 1);
+		epicHead(r, H); storyHead(r, H, 's1');
+		task(r, H, 's1', 't1', one, 'withdrawn');   // withdrawn, and its row came back under a new number
+		task(r, H, 's1', 't5', one);
+		tasksHead(r, H, 's1', 1, ['t1', 't5']);
+		buildAndReview(r, H, 's1', [{ id: one.id, passed: true }], '2026-11-20T00:00:00.000Z');
+
+		const preview = await runRepair(r.repo, 'repair-preview');
+		assert.deepEqual(preview.plan.changes.filter(c => c.rule === 'backfill-round').map(c => c.artifactId), [`TASK-${H}-s1-t5`]);
+		const out = result(await runRepair(r.repo, 'repair'));
+		assert.equal(out.stoppedAt, undefined, JSON.stringify(out.stoppedAt));
+		assert.equal((await rounds(r.repo, `TASK-${H}-s1-t5`)).length, 1, 'the live Task has the round');
+		assert.equal((await rounds(r.repo, `TASK-${H}-s1-t1`)).length, 0, 'the withdrawn one does not');
+	} finally { r.done(); }
+});
+
 test('a failure injected while Task rounds are back-filled lists the rounds already written', async () => {
 	const r = repository();
 	try {

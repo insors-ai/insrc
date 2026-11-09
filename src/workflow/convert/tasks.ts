@@ -170,7 +170,7 @@ export async function applyTasks(repo: string, deps: ConversionDeps, options: Ap
 		if (!existed) sets.push(set.id);
 		for (const result of passedResults(heads, p)) {
 			// by the plan row alone: a Task's number can equal another Task's row
-			const task = set.tasks.find(t => (t.payload.body as unknown as TaskPayload).planTaskId === result.id);
+			const task = set.tasks.find(t => t.lifecycle.status !== 'withdrawn' && t.lifecycle.status !== 'superseded' && (t.payload.body as unknown as TaskPayload).planTaskId === result.id);
 			if (task === undefined) continue;
 			options.beforeRound?.(task.id);
 			const wrote = await deps.store.exclusive(task.id, async () => {

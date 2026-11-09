@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, open, rename, rm } from 'node:fs/promises';
+import { mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -258,12 +258,28 @@ test('Observation refusal at project and global capacity or on file failure leav
   });
   const coordinator = new ProgressCoordinator(store, f.authority.inspect, f.clock);
   const producer = coordinator.registerProducer('test', () => details);
-  const executions: string[] = [];
+  const executions = await mkdtemp(join(tmpdir(), 'insrc-progress-executor-'));
+  t.after(() => rm(executions, { recursive: true, force: true }));
   async function launch(projectId: string, invocationId: string) {
+    const result = join(executions, invocationId);
+    let started!: () => void;
+    const running = new Promise<void>(resolve => { started = resolve; });
+    let resume!: () => void;
+    const proceed = new Promise<void>(resolve => { resume = resolve; });
+    const execution = (async () => {
+      await writeFile(result, 'running');
+      started();
+      await proceed;
+      await writeFile(result, 'completed ' + invocationId);
+    })();
+    await Promise.race([running, execution]);
     const attempt = await producer.register(f.authority.mint({
       action: 'launch', projectId, invocationId, ownerId: 'executor', origin: {},
     }), 'suite', { progress: async () => null });
-    executions.push(invocationId);
+    assert.equal(await readFile(result, 'utf8'), 'running');
+    resume();
+    await execution;
+    assert.equal(await readFile(result, 'utf8'), 'completed ' + invocationId);
     return attempt;
   }
   const first = await launch('one', 'a');
@@ -282,5 +298,4 @@ test('Observation refusal at project and global capacity or on file failure leav
   fail = false;
   await store.settle();
   assert.equal(coordinator.read(second.task)?.workerHealth, 'alive');
-  assert.deepEqual(executions, ['a', 'blocked-project', 'b', 'blocked-global', 'c', 'disk-failed']);
 });

@@ -455,17 +455,21 @@ export class ProgressCoordinator<D extends Details> {
         owner: ended ? null : { ownerId: runtime.ownerId, ownerEpoch: runtime.epoch, ownerSequence: evidence.sequence },
         ...(ended && evidence.resultRef !== undefined ? { resultRef: evidence.resultRef } : {}),
       };
-      await this.store.commit(next, record.revision);
-      runtime.sequence = evidence.sequence;
-      runtime.lifecycle = structuredClone(evidence);
-      if (ended) {
-        runtime.stopped = true;
-        runtime.probingOwner?.abort();
-        this.active.delete(runtime.key);
-        this.notify(runtime.task, { snapshot: this.snapshot(next), previousCursor: this.cursor(record.task, record.revision) });
-      } else {
-        this.notify(runtime.task);
-      }
+      const accepted = structuredClone(evidence);
+      const publish = (): void => {
+        runtime.sequence = accepted.sequence;
+        runtime.lifecycle = accepted;
+        if (ended) {
+          runtime.stopped = true;
+          runtime.probingOwner?.abort();
+          this.active.delete(runtime.key);
+          this.notify(runtime.task, { snapshot: this.snapshot(next), previousCursor: this.cursor(record.task, record.revision) });
+        } else {
+          this.notify(runtime.task);
+        }
+      };
+      await this.store.commit(next, record.revision, ended ? publish : undefined);
+      publish();
       return 'recorded';
     });
   }

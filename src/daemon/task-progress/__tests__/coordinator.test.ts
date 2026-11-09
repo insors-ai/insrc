@@ -20,8 +20,13 @@ async function fixture(t: { after(fn: () => Promise<void>): void }) {
   t.after(() => rm(root, { recursive: true, force: true }));
   const path = join(root, 'state');
   let failRename = false;
+  let failDirectorySync = false;
   const store = await ProgressStore.open(path, validate, undefined, {
-    open,
+    open: async (file, flags, mode) => {
+      const handle = await open(file, flags, mode);
+      if (file === path && failDirectorySync) handle.sync = async () => { throw new Error('injected directory sync failure'); };
+      return handle;
+    },
     rename: async (source, target) => {
       if (failRename) throw new Error('injected rename failure');
       await rename(source, target);
@@ -37,7 +42,8 @@ async function fixture(t: { after(fn: () => Promise<void>): void }) {
     action: 'launch', invocationId, projectId: 'project', ownerId: 'owner', origin: { extensionChatId: 'chat' },
   });
   return { path, store, authority, coordinator, producer, mint, clock,
-    setTime: (value: number) => { time = value; }, failRename: (value: boolean) => { failRename = value; } };
+    setTime: (value: number) => { time = value; }, failRename: (value: boolean) => { failRename = value; },
+    failDirectorySync: (value: boolean) => { failDirectorySync = value; } };
 }
 
 type Fixture = Awaited<ReturnType<typeof fixture>>;
@@ -141,6 +147,29 @@ test('Progress coordinator publishes no terminal outcome when the durable write 
   f.failRename(false);
   assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 1, state: 'failed', resultRef: 'result' }), 'recorded');
   assert.equal(f.coordinator.read(a.task)?.state, 'failed');
+});
+
+test('Recovery publishes an ambiguously committed terminal result exactly once', async t => {
+  const f = await fixture(t);
+  const a = await admitted(f, 'a', { progress: async () => null });
+  const published: string[] = [];
+  const unsubscribe = f.coordinator.onChange(a.task, (_task, terminal) => {
+    if (terminal?.snapshot.resultRef !== undefined) published.push(terminal.snapshot.resultRef);
+  });
+  t.after(unsubscribe);
+  const evidence = { sequence: 1, state: 'completed', resultRef: 'verified-result' } as const;
+  f.failDirectorySync(true);
+  await assert.rejects(f.producer.recordLifecycle(a.owner, evidence), { reason: 'unavailable' });
+  assert.deepEqual(published, []);
+  assert.throws(() => f.coordinator.read(a.task), { reason: 'unavailable' });
+
+  f.failDirectorySync(false);
+  await f.coordinator.sweep();
+  assert.deepEqual(published, ['verified-result']);
+  assert.equal(f.coordinator.read(a.task)?.state, 'completed');
+  assert.equal(await f.producer.recordLifecycle(a.owner, evidence), 'replay');
+  await f.coordinator.sweep();
+  assert.deepEqual(published, ['verified-result']);
 });
 
 test('The complete delivered snapshot fits the byte limit and preserves the terminal result', async t => {

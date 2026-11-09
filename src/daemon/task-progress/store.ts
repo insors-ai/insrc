@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, opendir, rename, unlink } from 'node:fs/promises';
 import { dirname, isAbsolute, join } from 'node:path';
+import { isDeepStrictEqual } from 'node:util';
 import { decodeProgressRecord, MAX_PROGRESS_RECORD_BYTES, progressTaskKey, validProgressMeasurement } from './record.js';
 import type { DetailValidator, ProgressRecord } from './record.js';
 import type { Measurement, TaskOwnerFence, TaskRef } from '../../shared/task-progress.js';
@@ -44,7 +45,7 @@ async function unlinkIfPresent(path: string): Promise<void> {
 /** One daemon writer. Each mutation settles before the next quota decision. */
 export class ProgressStore<D> {
   private readonly records = new Map<string, ProgressRecord<D>>();
-  private readonly unsettled = new Set<string>();
+  private readonly unsettled = new Map<string, ((record: ProgressRecord<D> | undefined) => void) | undefined>();
   private tail = Promise.resolve();
   private quarantined = 0;
 
@@ -121,8 +122,8 @@ export class ProgressStore<D> {
     return next;
   }
 
-  /** A compare-and-replace prevents delayed callbacks from writing an older revision. */
-  commit(record: ProgressRecord<D>, expectedRevision: number | null): Promise<void> {
+  /** A compare-and-replace prevents delayed writes. Recovery reports only the exact adopted write. */
+  commit(record: ProgressRecord<D>, expectedRevision: number | null, onRecovered?: () => void): Promise<void> {
     let bytes: string;
     let candidate: ProgressRecord<D>;
     try {
@@ -144,7 +145,9 @@ export class ProgressStore<D> {
       try {
         await this.write(key, bytes);
       } catch (error) {
-        this.unsettled.add(key);
+        this.unsettled.set(key, onRecovered === undefined ? undefined : recovered => {
+          if (isDeepStrictEqual(recovered, candidate)) onRecovered();
+        });
         throw new ProgressStorageError('unavailable', error);
       }
       this.records.set(key, candidate);
@@ -164,7 +167,7 @@ export class ProgressStore<D> {
       await unlinkIfPresent(this.path(key));
       await this.flushDirectory();
     } catch (error) {
-      this.unsettled.add(key);
+      this.unsettled.set(key, undefined);
       throw new ProgressStorageError('unavailable', error);
     }
     this.records.delete(key);
@@ -260,11 +263,12 @@ export class ProgressStore<D> {
     if (this.unsettled.size === 0) return;
     try {
       await this.flushDirectory();
-      for (const key of this.unsettled) {
+      for (const [key, recovered] of this.unsettled) {
         const record = await this.read(key);
         if (record === undefined) this.records.delete(key);
         else this.records.set(key, record);
         this.unsettled.delete(key);
+        recovered?.(record);
       }
     } catch (error) {
       throw new ProgressStorageError('unavailable', error);

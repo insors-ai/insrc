@@ -16,11 +16,11 @@ describe('unitMembers', () => {
 		const kids = [`TASK-${H}-s1-t1`, `TASKS-${H}-s1`, `DIAG-${H}-s1-1`, `DIAG-${H}-s1-12`, `DIAG-${H}-s1-3`];
 		const fixed = ['LLD', 'PLAN', 'BUILD', 'CR', 'TESTS', 'EXT'].map(kind => `${kind}-${H}-s1`);
 
-		// the unit is the STORY head: its fixed-id records, its TASKS and its DIAG heads, but not itself and not its Tasks
+		// the unit is the STORY head: its fixed-id records, its Tasks, its TASKS and its DIAG heads, but not itself
 		const members = await unitMembers(STORY, reader(kids));
-		assert.deepEqual([...members].sort(), [...fixed, `TASKS-${H}-s1`, `DIAG-${H}-s1-1`, `DIAG-${H}-s1-12`, `DIAG-${H}-s1-3`].sort());
+		assert.deepEqual([...members].sort(), [...fixed, `TASK-${H}-s1-t1`, `TASKS-${H}-s1`, `DIAG-${H}-s1-1`, `DIAG-${H}-s1-12`, `DIAG-${H}-s1-3`].sort());
 		assert.ok(!members.includes(STORY), 'a unit is never its own member');
-		assert.ok(!members.some(m => m.startsWith('TASK-')), 'Tasks complete through their own roll-up');
+		assert.ok(members.includes(`TASK-${H}-s1-t1`), 'a completed Story freezes its Tasks');
 
 		// an Epic's members are EPIC, DEF and HLD, less the unit
 		assert.deepEqual([...await unitMembers(`EPIC-${H}`, reader([]))].sort(), [`DEF-${H}`, `HLD-${H}`]);

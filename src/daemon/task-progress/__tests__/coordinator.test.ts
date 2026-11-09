@@ -3,6 +3,7 @@ import { mkdtemp, open, readFile, rename, rm, writeFile } from 'node:fs/promises
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
+import { MAX_PROGRESS_SNAPSHOT_BYTES } from '../../../shared/task-progress.js';
 import type { DelegateMeasurement, TaskProgressDelegate } from '../../../shared/task-progress.js';
 import { createProgressAuthority, ProgressCoordinator } from '../coordinator.js';
 import type { ProducerAuthorization } from '../coordinator.js';
@@ -140,6 +141,29 @@ test('Progress coordinator publishes no terminal outcome when the durable write 
   f.failRename(false);
   assert.equal(await f.producer.recordLifecycle(a.owner, { sequence: 1, state: 'failed', resultRef: 'result' }), 'recorded');
   assert.equal(f.coordinator.read(a.task)?.state, 'failed');
+});
+
+test('The complete delivered snapshot fits the byte limit and preserves the terminal result', async t => {
+  const f = await fixture(t);
+  const authorization = f.authority.mint({
+    action: 'launch', projectId: 'p'.repeat(128), invocationId: 'i'.repeat(128), ownerId: 'owner', origin: {},
+  });
+  let next: DelegateMeasurement<Details> | null = null;
+  const a = await f.producer.register(authorization, 'producer', { progress: async () => next });
+  assert.equal(a.kind, 'admitted');
+  const milestones = Array.from({ length: 30 }, (_, i) => String(i).padEnd(128, 'é'));
+  next = { ...sample(a, 1, 1, 1000, 'execution', 1), milestones };
+  await f.producer.signalMeasurement(a.owner, 1);
+  assert.deepEqual(f.store.get(a.task)?.measurement?.milestones, milestones, 'the measurement itself fits');
+  const resultRef = 'r'.repeat(128);
+  await f.producer.recordLifecycle(a.owner, { sequence: 2, state: 'completed', resultRef });
+  const snapshot = f.coordinator.read(a.task);
+  assert.ok(snapshot);
+  assert.ok(Buffer.byteLength(JSON.stringify(snapshot)) <= MAX_PROGRESS_SNAPSHOT_BYTES);
+  assert.equal(snapshot.resultRef, resultRef);
+  assert.ok(snapshot.measurement);
+  assert.ok(snapshot.measurement.milestones.length < milestones.length);
+  assert.equal(snapshot.measurement.milestones.at(-1), milestones.at(-1));
 });
 
 test('Progress coordinator requires trusted revalidation to bind a recovered attempt to a new epoch', async t => {

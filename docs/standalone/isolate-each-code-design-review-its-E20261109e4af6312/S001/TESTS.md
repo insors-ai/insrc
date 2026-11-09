@@ -4,7 +4,7 @@
 
 What the build validation gate ran for each Task of this Story, and what each test case did. The gate runs the tests itself; a result here is never a builder's statement unless it says so. `not found` means no test of that title ran in that file.
 
-**Totals:** 9 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+**Totals:** 11 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 ## t1
 
@@ -103,3 +103,25 @@ Run at 2026-11-09T10:00:23.617Z on commit `9f8c8c660`. Tests check: **passed**. 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
 | `src/daemon/threads/__tests__/review-processes.test.ts` | 0 | 2 | 1 s |  |
+
+## t5
+
+Run at 2026-11-09T10:11:53.272Z on commit `bb08cd12c`. Tests check: **passed**. 2 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+
+**integration: src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | fake native review CLI streams and cancellation use host-owned leases | `src/agent/providers/__tests__/review-worker-process.test.ts` |
+
+**unit: src/agent/providers/__tests__/review-worker-process.test.ts: review binary lookup cannot spawn synchronously on the worker**
+
+| Result | Test | File |
+| :--- | :--- | :--- |
+| pass | review binary lookup cannot spawn synchronously on the worker | `src/agent/providers/__tests__/review-worker-process.test.ts` |
+
+**Files run**
+
+| File | Exit code | Titles | Time | Note |
+| :--- | :--- | :--- | :--- | :--- |
+| `src/agent/providers/__tests__/review-worker-process.test.ts` | 0 | 2 | 1.8 s |  |

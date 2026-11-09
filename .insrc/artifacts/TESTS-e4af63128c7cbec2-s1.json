@@ -8,9 +8,9 @@
     "lifecycle": {
       "status": "draft",
       "revision": {
-        "number": 6,
-        "contentHash": "81d733ac91742e50c6e4af76f63d6ef9fd08e7ae64bb6fa03ae6afe2ac36f5db",
-        "at": "2026-11-09T10:00:23.677Z",
+        "number": 8,
+        "contentHash": "6c2684073a9b4cf6d3cdcbbdedd4b6d2131f209fc7a8e29e7f9c6e07090a0955",
+        "at": "2026-11-09T10:11:53.353Z",
         "by": {
           "id": "insrc:build",
           "kind": "system",
@@ -23,11 +23,11 @@
     "epicHash": "e4af63128c7cbec2",
     "storyId": "s1",
     "createdAt": "2026-11-09T07:52:13.312Z",
-    "updatedAt": "2026-11-09T10:00:23.617Z",
+    "updatedAt": "2026-11-09T10:11:53.272Z",
     "standalone": true,
     "epicCreatedAt": "2026-11-09T04:29:20.389Z",
     "epicSlug": "isolate-each-code-design-review-its",
-    "revision": 6
+    "revision": 8
   },
   "body": {
     "tasks": [
@@ -305,6 +305,59 @@
               },
               {
                 "title": "worker loss and unknown child cleanup fence only the owning review",
+                "result": "pass"
+              }
+            ],
+            "otherFailures": []
+          }
+        ]
+      },
+      {
+        "taskId": "t5",
+        "commit": "bb08cd12c",
+        "ranAt": "2026-11-09T10:11:53.272Z",
+        "testsPassed": true,
+        "tests": [
+          {
+            "name": "src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases",
+            "level": "integration",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          },
+          {
+            "name": "src/agent/providers/__tests__/review-worker-process.test.ts: review binary lookup cannot spawn synchronously on the worker",
+            "level": "unit",
+            "source": "mapping",
+            "cases": [
+              {
+                "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+                "title": "review binary lookup cannot spawn synchronously on the worker",
+                "result": "pass"
+              }
+            ],
+            "files": []
+          }
+        ],
+        "files": [
+          {
+            "file": "src/agent/providers/__tests__/review-worker-process.test.ts",
+            "exitCode": 0,
+            "timedOut": false,
+            "durationMs": 1791,
+            "titles": [
+              {
+                "title": "fake native review CLI streams and cancellation use host-owned leases",
+                "result": "pass"
+              },
+              {
+                "title": "review binary lookup cannot spawn synchronously on the worker",
                 "result": "pass"
               }
             ],

@@ -371,3 +371,28 @@ test('Codex structured and bounded reviewer responses use the shared optional-nu
   }finally{f.cleanup();rmSync(cwd,{recursive:true,force:true});}
  }
 });
+
+/** A fake codex that refuses the schema as the real one does: an error event with invalid_json_schema, no keyword named. */
+const REFUSING = `#!/usr/bin/env node
+for await (const _ of process.stdin) { /* drain */ }
+process.stdout.write(JSON.stringify({ type: 'error', message: JSON.stringify({ type: 'error', error: { message: "Invalid schema for response_format 'codex_output_schema': invalid schema keyword.", type: 'invalid_request_error', param: 'text.format.schema', code: 'invalid_json_schema' }, status: 400 }) }) + '\\n');
+process.exit(1);
+`;
+
+test('a codex schema rejection names the keywords that were sent and where a list is empty, and stays a call failure', async () => {
+	const dir = mkdtempSync(join(tmpdir(), 'insrc-fake-codex-refuse-'));
+	const bin = join(dir, 'fake.mjs');
+	writeFileSync(bin, REFUSING);
+	chmodSync(bin, 0o755);
+	try {
+		const p = new CliProvider({ kind: 'codex', binPath: bin });
+		const schema = { type: 'object', required: ['params'], properties: { params: { anyOf: [] } } } as unknown as StructuredSchema;
+		const err = await p.completeStructured([{ role: 'user', content: 'plan' }], schema).then(() => undefined, (e: unknown) => e);
+		assert.ok(err instanceof Error);
+		assert.match(err.message, /invalid_json_schema/, 'codex\'s own words are kept');
+		assert.match(err.message, /keywords sent: .*anyOf×1/, 'the keywords sent are named');
+		assert.match(err.message, /empty lists at: \$\.properties\.params\.anyOf/, 'the empty list is located');
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});

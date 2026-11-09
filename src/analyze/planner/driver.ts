@@ -138,6 +138,26 @@ export class MaxPlanDepthExceededError extends Error {
 	}
 }
 
+/**
+ * The plan builder was given no templates to plan with. The schema it sends
+ * lists one alternative per template, so an empty catalog would send an empty
+ * list, which a structured-output provider refuses without saying why. The
+ * planner stops here instead, before the schema is built or a model is called.
+ */
+export class EmptyPlanCatalogError extends Error {
+	readonly target: string;
+
+	constructor(target: string) {
+		super(
+			`Plan Builder refused: no task template is registered for target '${target}', ` +
+				'so there is nothing to plan with. The template catalog is filled at daemon start ' +
+				'(registerBuiltinTemplates); an empty one means that did not run or the target has no templates.',
+		);
+		this.name = 'EmptyPlanCatalogError';
+		this.target = target;
+	}
+}
+
 // ---------------------------------------------------------------------------
 // runPlanner -- public entry point
 // ---------------------------------------------------------------------------
@@ -192,6 +212,8 @@ export async function runPlanner(args: RunPlannerArgs): Promise<PlanTask> {
 	const catalog = catalogArg.length > 0
 		? catalogArg
 		: getTemplatesForTarget(intent.target);
+
+	if (catalog.length === 0) throw new EmptyPlanCatalogError(intent.target);
 
 	// The schema sent to the model: PLAN_TASK_SCHEMA with each task's params
 	// in a form codex's strict grammar can express (ISSUE-8d39ef09).

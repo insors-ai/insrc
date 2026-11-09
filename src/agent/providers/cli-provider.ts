@@ -72,7 +72,7 @@ import type { ProcessGroupOpts } from '../../shared/process-group.js';
 import type { ReviewExecutionKind, ReviewProviderBudgetProfile } from '../../shared/review-budget.js';
 import { freezeReviewBudgetProfile, REVIEW_BUDGET_DEFAULTS, ReviewBudgetError } from './budget/accounting.js';
 import { preflightProviderReviewBudget, reviewWireSchemaJson, reviewPromptChars } from './review-budget.js';
-import { codexStrictSchema, rootUnionKey, validateCodexReply, validateNativeReply } from './structured-schema.js';
+import { codexStrictSchema, rootUnionKey, schemaKeywordSummary, validateCodexReply, validateNativeReply } from './structured-schema.js';
 import { buildRetryNote, validateAgainstSchema, withStructuredRetry } from './structured-output.js';
 import { ModelResponseShapeError } from './model-call-error.js';
 import { checkOllamaTarget, OllamaTargetError } from './ollama-target.js';
@@ -432,7 +432,16 @@ export class CliProvider implements LLMProvider {
 			const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];
 			const exec = this.execIn(opts?.cwd, opts?.timeoutMs, opts?.signal, opts?.reviewBudget !== undefined);
 			const silence = opts?.stallMs !== undefined ? { ...exec, timeoutMs: exec?.timeoutMs ?? this.timeoutMs, stallMs: opts.stallMs } : exec;
-			const { agentText } = await this.runCodex(args, prompt, silence);
+			let agentText: string | undefined;
+			try {
+				({ agentText } = await this.runCodex(args, prompt, silence));
+			} catch (err) {
+				// Codex names no keyword when it refuses a schema; the summary of what was sent is how the keyword is found.
+				if (err instanceof Error && /invalid_json_schema|Invalid schema for response_format/.test(err.message)) {
+					err.message = `${err.message} [${schemaKeywordSummary(JSON.parse(wireSchema))}]`;
+				}
+				throw err;
+			}
 			if (agentText === undefined) {
 				throw new Error('codex emitted no agent_message item');
 			}

@@ -6,7 +6,7 @@ import { artifactJsonPath } from '../../../storage.js';
 import { prepareDesignSubject } from '../subject.js';
 import { designCheckpointPath } from '../checkpoint.js';
 import { DesignProgressTracker } from '../progress.js';
-import type { DesignReviewCheckpoint } from '../contracts.js';
+import type { DesignReviewCheckpoint, DesignAdmissionCheckpoint } from '../contracts.js';
 
 export function designFixture(t:{after:(fn:()=>void)=>void},author:'controller'|'daemon'='controller'){
  const repo=mkdtempSync(join(tmpdir(),'design-review-'));t.after(()=>rmSync(repo,{recursive:true,force:true}));
@@ -18,4 +18,14 @@ export function designFixture(t:{after:(fn:()=>void)=>void},author:'controller'|
  const prepared=prepareDesignSubject(repo,json),path=designCheckpointPath(repo,'review-1'),tracker=new DesignProgressTracker(path);
  const checkpoint:DesignReviewCheckpoint={schemaVersion:1,reviewId:'review-1',project:repo,artifactId:id,subject:prepared.subject,submitted:{artifactPath:json,attempt:1},attempts:[{number:1,status:'pending',baseline:prepared.baseline,inventory:prepared.inventory,completedChunks:[],progress:tracker.snapshot(),startedAt:time}]};
  return {repo,json,md,id,path,prepared,tracker,checkpoint};
+}
+
+export function admissionFixture(f: ReturnType<typeof designFixture>): DesignAdmissionCheckpoint {
+ const time = '2026-11-09T00:00:00.000Z';
+ return { schemaVersion: 2, project: f.repo, reviewId: 'review-1', attempts: [{
+  phase: 'admission', validation: 'unverified', number: 1, reviewer: 'daemon', status: 'pending',
+  operation: 'start', actionId: 'start-1', submitted: { artifactPath: f.json, attempt: 1 },
+  acceptedAt: time, startedAt: time,
+  progress: { phase: 'admission', totalChunks: 0, completedChunks: 0, checkpointPath: f.path, sequence: 0, observedAt: time, freshness: 'stored' },
+ }] };
 }

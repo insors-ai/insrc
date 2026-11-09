@@ -108,7 +108,7 @@ export function reviewRecordOf(log: readonly ChangeLogEntry[], artifactId: strin
   const project=(data as {project?:unknown}).project;
   if(typeof project!=='string')throw new Error('Permanent design review has no project binding');
   const history=validatePermanentDesignReview(data,{project,artifactId});
-  return {kind:'design-chunk-review',report:history.attempts[history.applicableAttempt-1]!.report!,history};
+  return {kind:'design-chunk-review',report:history.attempts.find(a=>a.number===history.applicableAttempt)!.report!,history};
  }
 	if (entry === undefined || entry.operation !== 'review' || data?.kind !== 'review') return undefined;
 	const first = data as unknown as ReviewEntryData;

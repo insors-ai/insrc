@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-68eb102d-bdbd-4525-965a-0b667dfb2590",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.068Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Add code-review admission and resource-guard contracts",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "e9681f460cae8f839cdcb2a78d33bdf9af240a55eaebd54e54a64a63f57ed726",
+        "at": "2026-11-09T07:42:48.068Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.069Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Add code-review admission and resource-guard contracts",
+    "summary": "Introduce the approved unverified admission variant and bounded shared resource-guard types (proposed src/shared/review-resources.ts), then update code-review checkpoint codecs/discriminating readers. Keep historical qualified records readable and current routes safe; production does not emit the new variant until worker cutover.",
+    "size": "L",
+    "order": 1,
+    "acceptanceChecks": [
+      "Code admission is a distinct unverified variant with exact immutable input and no invented selected tasks, accepted scope or approval binding.",
+      "Code checkpoint readers round-trip historical qualified attempts and refuse unknown versions; changed pinned input is rejected and admission failures/interruption retain explicit attempt semantics.",
+      "Shared resourceGuard/open-lease/clearance receipt shapes are bounded, exact-review scoped and ready for serialized family checkpoint writes; unresolved leases cannot be truncated.",
+      "All affected code consumers compile and fail safely on unqualified admission; existing source-pin and completion checks remain mandatory."
+    ],
+    "tests": [
+      {
+        "level": "unit",
+        "name": "src/workflow/code-review/task-review/__tests__/admission-checkpoint.test.ts: unverified admission and resource guards preserve pinned code history and refuse approval"
+      },
+      {
+        "level": "unit",
+        "name": "src/shared/__tests__/review-resources.test.ts: bounded exact review lease and clearance receipt contracts reject invalid input"
+      }
+    ],
+    "planTaskId": "t1"
+  },
+  "citations": []
+}

@@ -68,7 +68,7 @@ export async function prepareReviewAdmission(project: string, reviewId: string, 
    if (index < saved.attempts.length - 1) requireReview(entry['review-response'].crPublication === 'complete' && !['pending', 'running'].includes(entry.header.status), 'attempt', 'Earlier attempt was not published');
    if (entry['review-response'].crPublication === 'complete') {
     const cr = JSON.parse(await readFile(artifactJsonPath(canonical, codeReviewArtifactId(prepared.epicHash, canonicalReviewStory(saved.storyId, prepared.epicHash))), 'utf8')) as { meta?: { schemaVersion?: number }; body?: unknown };
-    requireReview(cr.meta?.schemaVersion === 2, 'publication', 'Expected task-based CR history');
+    requireReview(cr.meta?.schemaVersion === 2 || cr.meta?.schemaVersion === 3, 'publication', 'Expected task-based CR history');
     const summary = validateTaskBody(cr.body).reviews.find(review => review.reviewId === reviewId && review.attempt === entry.header.attempt);
     const scope = { ...(entry.submitted.reviewRevision?{reviewRevision:entry.submitted.reviewRevision,finalScope:captureFinalScope(prepared,entry)}:{}),storyId: entry.submitted.storyId, ...(entry.submitted.taskId ? { taskId: entry.submitted.taskId } : {}), documents: entry.submitted.documents, reviewSet: entry.submitted.reviewSet };
     requireReview(summary && summary.reviewer === entry.header.reviewer && summary.status === entry.header.status && summary.completedAt === entry.header.completedAt

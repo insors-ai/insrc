@@ -208,7 +208,7 @@ Run at 2026-10-26T17:58:53.436Z on commit `0b3556bc6`. Tests check: **passed**. 
 
 ## t11
 
-Run at 2026-10-26T18:06:01.332Z on commit `323fb900a`. Tests check: **passed**. 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
+Run at 2026-11-08T19:46:29.063Z on commit `04679fda9`. Tests check: **passed**. 47 pass, 0 fail, 0 skipped, 0 not found; 0 reported by the builder and not run by the gate.
 
 **integration: src/workflow/usage/__tests__/domain-contract.test.ts: complete public domain surface, ownership/basis consistency, replay/permutation and no sibling side effects**
 
@@ -281,13 +281,13 @@ Run at 2026-10-26T18:06:01.332Z on commit `323fb900a`. Tests check: **passed**. 
 
 | File | Exit code | Titles | Time | Note |
 | :--- | :--- | :--- | :--- | :--- |
-| `src/workflow/__tests__/artifact-ids.test.ts` | 0 | 6 | 0.3 s |  |
+| `src/workflow/__tests__/artifact-ids.test.ts` | 0 | 6 | 0.4 s |  |
 | `src/workflow/usage/__tests__/attribution.test.ts` | 0 | 3 | 0.5 s |  |
-| `src/workflow/usage/__tests__/domain-contract.test.ts` | 0 | 5 | 1.6 s |  |
+| `src/workflow/usage/__tests__/domain-contract.test.ts` | 0 | 11 | 1.7 s |  |
 | `src/workflow/usage/__tests__/identity.test.ts` | 0 | 3 | 0.5 s |  |
 | `src/workflow/usage/__tests__/reconciliation.test.ts` | 0 | 3 | 0.6 s |  |
-| `src/workflow/usage/__tests__/reducer.test.ts` | 0 | 6 | 0.6 s |  |
-| `src/workflow/usage/__tests__/schema-contract.test.ts` | 0 | 3 | 9.7 s |  |
+| `src/workflow/usage/__tests__/reducer.test.ts` | 0 | 7 | 0.6 s |  |
+| `src/workflow/usage/__tests__/schema-contract.test.ts` | 0 | 3 | 13.4 s |  |
 | `src/workflow/usage/__tests__/source-capabilities.test.ts` | 0 | 3 | 0.7 s |  |
 | `src/workflow/usage/__tests__/transfer-state.test.ts` | 0 | 4 | 0.5 s |  |
 | `src/workflow/usage/__tests__/validation.test.ts` | 0 | 3 | 0.5 s |  |

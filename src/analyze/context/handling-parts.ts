@@ -19,6 +19,7 @@
  * typed by the terminal precedence rule. Calls are made serially.
  */
 
+import { applyHandling } from '../completeness.js';
 import type { HandlingBudget, HandlingReport } from '../completeness.js';
 import type { ConnectionExecutionContext } from '../../shared/step-context.js';
 import type { AnalyzeScope } from '../../shared/analyze-types.js';
@@ -306,7 +307,8 @@ export function terminalFailure(failures: readonly Failure[], args: { readonly f
 		part: f.part, kind: f.kind, reason: f.reason,
 		...(f.cause !== undefined ? { cause: causeOf(f.cause) } : {}),
 	}));
-	const found: AnswerStepFound = { results: args.found.results, report: { ...args.found.report, handling } };
+	// The report states what was not covered: the handling's own completeness rule applies, as it does to a delivered answer.
+	const found: AnswerStepFound = { results: args.found.results, report: applyHandling(args.found.report, handling) };
 	const extra = { upstream: args.upstream, partFailures };
 	const allUnadmittable = failures.length > 0 && failures.every(f => f.kind === 'unadmittable');
 	if (failures.length === 0 || allUnadmittable) {

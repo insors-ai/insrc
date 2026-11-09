@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "workflow": "plan",
+    "runId": "store-e7447aa7-32c8-4760-9b52-65187d9ef56c",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T07:42:48.077Z",
+    "epicCreatedAt": "2026-11-09T04:29:20.389Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "e4af63128c7cbec2",
+    "storyId": "s1",
+    "envelope": {
+      "description": "Bridge native review CLI execution and binary resolution",
+      "parent": {
+        "entityId": "STORY-e4af63128c7cbec2-s1",
+        "type": "STORY",
+        "relation": "derived-from"
+      },
+      "references": [
+        {
+          "entityId": "PLAN-e4af63128c7cbec2-s1",
+          "type": "PLAN",
+          "relation": "derived-from",
+          "fragment": "revision 1"
+        },
+        {
+          "entityId": "TASK-e4af63128c7cbec2-s1-t4",
+          "type": "TASK",
+          "relation": "depends-on"
+        }
+      ],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "c89ae909e3b874a0650d0babac3ced72cabde09fe61bf901265d08f045982190",
+        "at": "2026-11-09T07:42:48.077Z",
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T07:42:48.078Z"
+      }
+    },
+    "revision": 1
+  },
+  "body": {
+    "title": "Bridge native review CLI execution and binary resolution",
+    "summary": "Integrate the review-worker bridge with src/shared/process-group.ts and src/agent/providers/cli-provider.ts. Route supported native CLI session spawn/output/cancellation through main-host leases while keeping model selection and structured-output parsing in the worker. Remove the review-worker resolveBin synchronous which spawn by host-supplied/asynchronously bridged resolution.",
+    "size": "L",
+    "order": 5,
+    "acceptanceChecks": [
+      "No review CLI starts without a host lease and durable intent receipt; cancellation and worker loss are handled by the surviving host owner.",
+      "CLI stream bytes use bounded backpressure and owner-scoped cancellation; structured response and model/tool activity parsing remain in the review worker.",
+      "Review binary lookup cannot execute execFileSync which in the worker; non-review callers keep current behavior and supported reviewer/provider selection is unchanged.",
+      "Fake CLI fixtures cover spawn failure, observer failure, cancellation, late output and worker loss without cloud calls or direct REST access."
+    ],
+    "tests": [
+      {
+        "level": "integration",
+        "name": "src/agent/providers/__tests__/review-worker-process.test.ts: fake native review CLI streams and cancellation use host-owned leases"
+      },
+      {
+        "level": "unit",
+        "name": "src/agent/providers/__tests__/review-worker-process.test.ts: review binary lookup cannot spawn synchronously on the worker"
+      }
+    ],
+    "planTaskId": "t5"
+  },
+  "citations": []
+}

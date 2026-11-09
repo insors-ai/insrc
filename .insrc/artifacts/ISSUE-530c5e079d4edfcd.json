@@ -1,0 +1,86 @@
+{
+  "meta": {
+    "workflow": "issue",
+    "runId": "wf-1794215253254-pmldci",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T09:08:21.565Z",
+    "epicCreatedAt": "2026-11-09T09:08:21.565Z",
+    "attribution": {
+      "outputs": [
+        {
+          "role": "(client)",
+          "tier": "core",
+          "runner": "cli-claude",
+          "model": "unknown"
+        }
+      ]
+    },
+    "elapsedMs": 48311,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "issueHash": "530c5e079d4edfcd",
+    "epicSlug": "fail-clearly-empty-planner-catalog-name",
+    "standalone": true,
+    "magnitude": "small",
+    "authoredBy": "controller",
+    "revision": 1,
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 1,
+        "contentHash": "3d50b0d994f82232dc96756af27de14d959a179d25124675c01d0fe06364876b",
+        "at": "",
+        "by": {
+          "id": "insrc:system",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 1,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:15:09.904Z"
+      }
+    },
+    "parentRef": {
+      "epicHash": "530c5e079d4edfcd",
+      "slug": "EPIC-530c5e079d4edfcd"
+    }
+  },
+  "body": {
+    "title": "Fail clearly on an empty planner catalog and name the schema keywords of a codex schema rejection",
+    "reproduction": "1. Build the planner's wire schema for an empty template catalog (plannerWireSchema([])). Each task's `params` becomes `anyOf: []`.\n2. Send it through the codex provider (CliProvider kind codex, completeStructured). Codex answers 400: \"Invalid schema for response_format 'codex_output_schema': invalid schema keyword\" (code invalid_json_schema), and the plan stage fails with `plan-builder-llm-unavailable`.\nObserved: a model-unavailable error that blames the model and does not say which part of the schema was refused. Expected: the planner refuses an empty catalog itself with a clear typed error before any model call, and a codex schema rejection says which schema keywords were sent.\nNote: with the real template catalogs (5 targets, 6 to 27 templates) codex accepts the planner schema; a live broad docs run failed in the plan stage with this exact error and the schema the daemon sent could not be seen.",
+    "rootCause": "plannerWireSchema builds `params` as an anyOf over one branch per catalog template and never checks that the catalog is non-empty, so an empty catalog yields `anyOf: []`, which codex's strict mode refuses; runPlanner passes any provider error through classifyError, which reports it as the plan builder's model being unavailable. The CLI provider's codex error carries only codex's own text, so a rejected schema cannot be traced to the keyword that caused it.",
+    "fixIntent": "Make runPlanner (or plannerWireSchema) refuse an empty template catalog with a typed planner error that names the target and the empty catalog, before building the schema or calling a model. Make the CLI provider add a summary of the schema keywords it sent (the distinct keywords and where anyOf/oneOf lists are empty) to the error it raises when codex answers invalid_json_schema, so a rejection can be traced. Cover both with tests."
+  },
+  "citations": [
+    {
+      "id": "c1",
+      "kind": "code",
+      "ref": "src/analyze/planner/wire-schema.ts",
+      "quotedText": "taskProps['params'] = { anyOf: branches };"
+    },
+    {
+      "id": "c2",
+      "kind": "code",
+      "ref": "src/analyze/planner/driver.ts",
+      "quotedText": "throw classifyError(err);"
+    },
+    {
+      "id": "c3",
+      "kind": "code",
+      "ref": "src/agent/providers/cli-provider.ts",
+      "quotedText": "const args = ['exec', '--output-schema', schemaPath, '--json', ...this.modelArgs(opts)];"
+    }
+  ]
+}

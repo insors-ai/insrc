@@ -169,7 +169,8 @@ test('the step tool\'s plan phase resolves the scope from the token and runs the
 		},
 	});
 	assert.notEqual(planned.isError, true, planned.content[0]!.text.slice(0, 400));
-	assert.equal(parse<{ next: string }>(planned).next, 'emit_bundle');
+	// The lookups found nothing to measure, which the table treats as undetermined, i.e. answered in parts; the one part is asked as such.
+	assert.equal(parse<{ next: string }>(planned).next, 'emit_part');
 
 	// The lookup ran where the scope resolved to, and was handed the scope.
 	assert.equal(seen.length, 1);

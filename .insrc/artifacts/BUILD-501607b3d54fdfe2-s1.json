@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "envelope": {
+      "description": "",
+      "references": [],
+      "attachments": []
+    },
+    "lifecycle": {
+      "status": "approved",
+      "revision": {
+        "number": 2,
+        "contentHash": "d6a16ae4484747ce5a0bb821e79e983219c103868ed261a6c18032254de9272e",
+        "at": "2026-11-09T09:04:44.387Z",
+        "by": {
+          "id": "insrc:build",
+          "kind": "system",
+          "properties": {}
+        }
+      },
+      "signoffs": [],
+      "approval": {
+        "revision": 2,
+        "by": {
+          "id": "insrc:approval",
+          "kind": "system",
+          "properties": {}
+        },
+        "at": "2026-11-09T09:15:15.853Z"
+      }
+    },
+    "workflow": "build",
+    "runId": "store-18f8bf06-51f9-436e-a552-7f4602fd8887",
+    "repoPath": "/home/subho/work/dev/insors/insrc",
+    "createdAt": "2026-11-09T09:01:52.044Z",
+    "epicCreatedAt": "2026-11-09T08:39:14.931Z",
+    "elapsedMs": 0,
+    "repoIndexedAt": null,
+    "schemaVersion": 1,
+    "epicHash": "501607b3d54fdfe2",
+    "storyId": "s1",
+    "revision": 2,
+    "standalone": true,
+    "sizeClass": "trivial",
+    "authoredBy": "controller",
+    "epicSlug": "normalize-smtp-recipient-results-preserve-string",
+    "updatedAt": "2026-11-09T09:04:08.379Z"
+  },
+  "body": {
+    "focus": "Normalize SMTP recipient results to preserve string response fields\n\nUsing the current dependencies on Node 22, run `node node_modules/typescript/bin/tsc --noEmit` from the repository root. Compilation reports TS2322 at `src/daemon/tools/builtins/notify/index.ts:558` and `src/daemon/tools/builtins/notify/index.ts:559`: `(string | Address)[]` is not assignable to `readonly string[]`. Expected: the global build passes and email_send continues returning mailbox-address strings in accepted/rejected. This currently blocks validation of review-worker isolation Task `e4af63128c7cbec2/s1/t3`. Evidence is captured in `/tmp/review-worker-t3-typecheck.log`. [[c1]] [[c2]]\n\nThe email tool assigns `info.accepted` and `info.rejected` directly to the string-array fields of EmailSendData. The installed SMTP transport declarations permit each result entry to be either a string or a Nodemailer Mail.Address object, so these assignments no longer satisfy the established response contract. The mismatch is in provider-result adaptation; no mail delivery failure is required to reproduce it. [[c1]] [[c2]]\n\nNormalize provider recipient results to their actual mailbox-address strings before constructing EmailSendData. Preserve the existing accepted/rejected response shape and partial-delivery success semantics. Cover mixed string/object entries and empty results with deterministic tests, retain existing SMTP integration coverage, and restore the global typecheck. Do not widen the public output contract, hide the problem with a cast, change delivery/authentication, or send real email. [[c1]] [[c2]]",
+    "producesLld": false,
+    "commit": "35c9f815f",
+    "tasks": [
+      {
+        "id": "s1",
+        "passed": true
+      }
+    ],
+    "summary": "Normalized mixed SMTP string/Address accepted/rejected entries to mailbox strings, preserving public response and partial-delivery behavior. Mixed/empty/absent result and transport cleanup test plus existing local authenticated STARTTLS/attachment/rejection integration test pass; global Node 22 typecheck passes.",
+    "testRecord": {
+      "md": "docs/standalone/normalize-smtp-recipient-results-preserve-string-E20261109501607b3/S001/TESTS.md"
+    },
+    "changeLog": [
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-501607b3d54fdfe2.json"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:04:08.379Z"
+      },
+      {
+        "target": {
+          "file": ".insrc/artifacts/ISSUE-501607b3d54fdfe2.log.jsonl"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:04:08.379Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/notify/__tests__/recipient-results.test.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:04:08.379Z"
+      },
+      {
+        "target": {
+          "file": "src/daemon/tools/builtins/notify/index.ts"
+        },
+        "author": "insrc-build",
+        "timestamp": "2026-11-09T09:04:08.379Z"
+      }
+    ]
+  },
+  "citations": []
+}

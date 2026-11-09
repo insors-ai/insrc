@@ -24,6 +24,8 @@ import assert from 'node:assert/strict';
 import { ModelCallFailedError } from '../../../agent/providers/model-call-error.js';
 
 import {
+	_resetTemplateRegistryForTests,
+	EmptyPlanCatalogError,
 	MaxPlanDepthExceededError,
 	PlanBuilderExhausted,
 	PlanBuilderLlmUnavailableError,
@@ -546,4 +548,25 @@ test('appendCorrectionTurn: no escalation banner when same invariant hits a diff
 	const out = _appendCorrectionTurnForTest(prior, rejected, failure, priorFailures);
 	const userBody = out[2]!.content as string;
 	assert.doesNotMatch(userBody, /REPEATED FAILURE/);
+});
+
+test('runPlanner: an empty template catalog is refused with a typed error before any schema is built or model is called', async () => {
+	_resetAnalyzeConfigCacheForTests();
+	_resetTemplateRegistryForTests();
+	let called = 0;
+	const provider = { completeStructured: async () => { called++; return {}; } } as unknown as LLMProvider;
+	const emptyBundle: AnalyzeContextBundle = { system: '', focus: '', summary: '', structure: '', surface: '', artefacts: '', upstream: '' };
+	const err = await runPlanner({
+		input: {
+			intent: { target: 'docs', scope: 'S', focused: false, scopeRef: { kind: 'repo', value: '/r' }, reasoning: 'empty catalog fixture' },
+			contextBundle: emptyBundle,
+			catalog: [],
+		},
+		opts: { runId: 'empty-catalog-test' },
+		provider,
+	}).then(() => undefined, (e: unknown) => e);
+	assert.ok(err instanceof EmptyPlanCatalogError, String(err));
+	assert.equal(err.target, 'docs');
+	assert.match(err.message, /no task template is registered for target 'docs'/);
+	assert.equal(called, 0, 'no model is called');
 });

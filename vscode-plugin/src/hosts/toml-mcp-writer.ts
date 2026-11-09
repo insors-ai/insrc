@@ -14,6 +14,7 @@
  * Duplicate insrc sections are ambiguous and throw (never guess), mirroring the
  * steering writer's duplicate-marker guard.
  */
+import { moveInlineListToTables, TomlInlineListError } from '../../../src/shared/toml-inline-list.js';
 import { HostFileAccessError, type HostFileSystem } from './fs.js';
 import { SERVER_KEY, type McpConfigWriter } from './mcp-writer.js';
 
@@ -107,7 +108,14 @@ export function createTomlMcpConfigWriter(fs: HostFileSystem): McpConfigWriter {
         writeOrThrow(mcpConfigPath, `[[mcp_servers]]\n${body.join('\n')}\n`);
         return;
       }
-      const { lines } = toLines(existing);
+      let tablesOnly: string;
+      try {
+        tablesOnly = moveInlineListToTables(existing, 'mcp_servers');
+      } catch (err) {
+        if (!(err instanceof TomlInlineListError)) throw err;
+        throw new HostFileAccessError(`insrc: cannot add the server to ${mcpConfigPath}: ${err.message}`, { cause: err });
+      }
+      const { lines } = toLines(tablesOnly);
       const matches = insrcSections(parseSections(lines));
       if (matches.length > 1) {
         throw new HostFileAccessError(`insrc: host mcp config has ${matches.length} '${SERVER_KEY}' [[mcp_servers]] sections; refusing to guess: ${mcpConfigPath}`);

@@ -240,6 +240,60 @@ permission = "ask"
   assert.equal(fs2.files.get(TOML), 'active_model = "x"\n');
 });
 
+test('toml writeInsrcServer removes an empty inline mcp_servers list so the file stays valid; idempotent', () => {
+  const fs = fakeFs({ [TOML]: 'theme = "x"\nmcp_servers = []\n\n[tools.bash]\nmode = 1\n' });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(fs.files.get(TOML), [
+    'theme = "x"',
+    '',
+    '[tools.bash]',
+    'mode = 1',
+    '',
+    '[[mcp_servers]]',
+    'name = "insrc"',
+    'transport = "stdio"',
+    'command = "node"',
+    `args = ["${ENTRY.args[0]}"]`,
+    '',
+  ].join('\n'));
+  let wrote = false;
+  const spyFs = { ...fs, write: (p: string, c: string) => { wrote = true; fs.files.set(p, c); } };
+  createTomlMcpConfigWriter(spyFs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(wrote, false, 'a second write changes nothing');
+});
+
+test('toml writeInsrcServer moves inline servers to tables and keeps them', () => {
+  const fs = fakeFs({ [TOML]: 'mcp_servers = [\n    { name = "docs", command = "d" },\n]\ntheme = "x"\n' });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(fs.files.get(TOML), [
+    'theme = "x"',
+    '',
+    '[[mcp_servers]]',
+    'name = "docs"',
+    'command = "d"',
+    '',
+    '[[mcp_servers]]',
+    'name = "insrc"',
+    'transport = "stdio"',
+    'command = "node"',
+    `args = ["${ENTRY.args[0]}"]`,
+    '',
+  ].join('\n'));
+});
+
+test('toml writeInsrcServer repairs a file holding both forms without adding a second insrc section', () => {
+  const fs = fakeFs({ [TOML]: 'mcp_servers = []\n\n[[mcp_servers]]\nname = "insrc"\n' });
+  createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY);
+  assert.equal(fs.files.get(TOML), `\n[[mcp_servers]]\nname = "insrc"\ntransport = "stdio"\ncommand = "node"\nargs = ["${ENTRY.args[0]}"]\n`);
+});
+
+test('toml writeInsrcServer refuses a config it cannot fix and leaves it unchanged', () => {
+  const before = 'mcp_servers = "x"\n';
+  const fs = fakeFs({ [TOML]: before });
+  assert.throws(() => createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, ENTRY), HostFileAccessError);
+  assert.equal(fs.files.get(TOML), before);
+});
+
 test('toml writer escapes quotes/backslashes in the launch path (TOML basic string)', () => {
   const fs = fakeFs();
   createTomlMcpConfigWriter(fs).writeInsrcServer(TOML, { command: 'node', args: ['C:\\Users\\u "x"\\insrc-mcp.js'] });

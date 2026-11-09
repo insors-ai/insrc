@@ -26,7 +26,8 @@ import { planConversion } from './plan.js';
 import { applyRenames, renameRule } from './rename.js';
 import { applyStamps, stampRule } from './stamps.js';
 import { applyStoryHistory, storyHistoryRule } from './story-history.js';
-import { applyTasks, repairTasksRule } from './tasks.js';
+import { readRawHeads } from './raw-heads.js';
+import { applyTasks, hasUnusableTaskSet, repairTasksRule } from './tasks.js';
 import type { TasksResult } from './tasks.js';
 import { ConversionRefused } from './types.js';
 import type { ConversionChange, ConversionDeps, ConversionPlan, RepairRecorder, RepairReport, RepairStep, RepairWrite, UnitOutcome } from './types.js';
@@ -89,8 +90,8 @@ export async function runRepair(repo: string, mode: RepairMode, options: RepairO
 	if (plan.problems.length > 0) {
 		throw new ConversionRefused(`the plan lists ${plan.problems.length} files that cannot be repaired: ${plan.problems.slice(0, 3).map(p => `${p.file} (${p.reason})`).join('; ')}`);
 	}
-	// opening the store creates files, so a repository with nothing to do is left exactly as it is
-	if (plan.changes.length === 0) return { mode, plan, result: { written: [], remaining: [], held: [], failed: [] } };
+	// opening the store creates files, so a repository with nothing to do or report is left exactly as it is
+	if (plan.changes.length === 0 && !hasUnusableTaskSet(readRawHeads(repo).heads)) return { mode, plan, result: { written: [], remaining: [], held: [], failed: [] } };
 
 	const written: RepairWrite[] = [];
 	let current: RepairStep = 'rename';

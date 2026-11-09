@@ -127,6 +127,18 @@ export interface ApplyTasksOptions {
 	readonly beforeRound?: ((taskId: string) => void) | undefined;
 }
 
+/** Whether any Task set a repair would visit is unusable as it stands, which it has to report even when nothing else needs doing. Reads only. */
+export function hasUnusableTaskSet(heads: readonly RawHead[]): boolean {
+	return plannedStories(heads, true).some(p => {
+		const tasksId = ArtifactIds.make({ kind: 'TASKS', epicHash: p.epicHash, story: p.story });
+		const tasks = heads.find(h => h.artifactId === tasksId);
+		if (tasks === undefined) return false;
+		const lifecycle = metaOf(p.head)['lifecycle'];
+		const number = isObj(lifecycle) && isObj(lifecycle['revision']) ? lifecycle['revision']['number'] : undefined;
+		return listedTaskMissing(heads, p, tasksId) !== undefined || (typeof number === 'number' && bodyOf(tasks)['planRevision'] !== Math.max(1, number));
+	});
+}
+
 /** Why the Task set of a Story cannot be used as it stands: its head lists a Task that has no head, or it answers an error of the Task set's own. */
 function listedTaskMissing(heads: readonly RawHead[], p: PlannedStory, tasksId: string): string | undefined {
 	const listed = bodyOf(heads.find(h => h.artifactId === tasksId) ?? { artifactId: tasksId, json: {} })['taskIds'];

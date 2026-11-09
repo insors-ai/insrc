@@ -201,5 +201,12 @@ test('a TASKS head listing a missing Task, or made from a different plan revisio
 		for (const story of ['s1', 's2']) assert.notEqual(head(r.repo, `STORY-${H}-${story}`).meta['lifecycle'].status, 'completed', story);
 		assert.ok(has(r.repo, `TASKS-${H}-s3`), 'the other Story went on');
 		assert.equal(head(r.repo, `TASKS-${H}-s3`).body['taskIds'].length, 2);
+
+		// a later run with nothing else to do still reports them
+		const preview = await runRepair(r.repo, 'repair-preview');
+		assert.deepEqual(preview.plan.changes, [], 'control: nothing is left to change');
+		const later = result(await runRepair(r.repo, 'repair'));
+		assert.deepEqual(later.failed.map(f => f.artifactId).sort(), [`STORY-${H}-s1`, `STORY-${H}-s2`]);
+		assert.deepEqual(later.written, []);
 	} finally { r.done(); }
 });
